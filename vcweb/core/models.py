@@ -29,11 +29,13 @@ class Experimenter(models.Model):
 
 class GameConfiguration(models.Model):    
     game = models.ForeignKey(GameMetadata)
+    creator = models.ForeignKey(Experimenter)
     name = models.CharField(max_length=255)
     maximum_number_of_participants = models.PositiveIntegerField()
     date_created = models.DateField(auto_now_add=True)
     last_modified = models.DateField(auto_now=True)
     is_public = models.BooleanField(default=True)
+
     
 #    class Meta:
 #        db_table = 'vcweb_game_configuration'
@@ -64,8 +66,8 @@ class ConfigurationParameter(Parameter):
     def __unicode__(self):
         return 'Configuration Parameter: ' + self.name
     
-    class Meta:
-        db_table = 'vcweb_configuration_parameter'
+#    class Meta:
+#        db_table = 'vcweb_configuration_parameter'
      
      
 class DataParameter(Parameter):
@@ -75,7 +77,7 @@ class DataParameter(Parameter):
 #    class Meta:
 #        db_table = 'vcweb_data_parameter'
     
-# how to define a constraint that the  
+# round parameters are 
 class RoundParameter(models.Model):
     round_configuration = models.ForeignKey(RoundConfiguration)
     parameter = models.ForeignKey(ConfigurationParameter)
@@ -126,6 +128,15 @@ class Participant(models.Model):
     email = models.EmailField(unique=True)
     number = models.PositiveIntegerField()
     group = models.ForeignKey(Group)
+    
+class ParticipantData(models.Model):
+    participant = models.ForeignKey(Participant)
+    round_configuration = models.ForeignKey(RoundConfiguration)
+    
+class ParticipantDataParameter(models.Model):
+    participant_data = models.ForeignKey(ParticipantData)
+    parameter = models.ForeignKey(DataParameter)
+    parameter_value = models.TextField()
     
     
      
