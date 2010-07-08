@@ -14,18 +14,21 @@ class GameMetadata(models.Model):
     def __unicode__(self):
         return self.name
     
-#    class Meta:
-#        db_table = 'vcweb_game_metadata'
+    class Meta:
+        ordering = ['name', 'date_created']
 
 class Experimenter(models.Model):
     email = models.EmailField()
+    last_name = models.TextField()
+    first_name = models.TextField()
+    institution = models.TextField()
     password = models.CharField(max_length=255)
     approved = models.BooleanField()
     last_login_date = models.DateTimeField()
     failed_password_attempts = models.PositiveIntegerField()
     
-#    class Meta:
-#        db_table = 'vcweb_experimenter'
+    class Meta:
+        ordering = ['last_name', 'first_name', 'email']
 
 class GameConfiguration(models.Model):    
     game = models.ForeignKey(GameMetadata)
@@ -37,8 +40,8 @@ class GameConfiguration(models.Model):
     is_public = models.BooleanField(default=True)
 
     
-#    class Meta:
-#        db_table = 'vcweb_game_configuration'
+    class Meta:
+        ordering = ['game', 'creator', 'date_created']
     
     
 class RoundConfiguration(models.Model):
@@ -61,6 +64,7 @@ class Parameter(models.Model):
     
     class Meta:
         abstract = True
+        ordering = ['name']
         
 class ConfigurationParameter(Parameter):
     def __unicode__(self):
@@ -93,7 +97,7 @@ class GameInstance(models.Model):
     authentication_code = models.CharField(max_length=255)
     current_round_number = models.PositiveIntegerField()
     experimenter = models.ForeignKey(Experimenter)
-    game = models.ForeignKey(GameMetadata)
+    game_metadata = models.ForeignKey(GameMetadata)
     game_configuration = models.ForeignKey(GameConfiguration)
     
 #    class Meta:
@@ -102,8 +106,12 @@ class GameInstance(models.Model):
 class Group(models.Model):
     number = models.PositiveIntegerField()
     max_size = models.PositiveIntegerField()
+    game_instance = models.ForeignKey(GameInstance)
     def __unicode__(self):
         return 'Group ' + self.number
+    
+    class Meta:
+        ordering = ['game_instance', 'number']
     
     
 class GroupRoundData (models.Model):
@@ -113,14 +121,13 @@ class GroupRoundData (models.Model):
 #    class Meta:
 #        db_table = 'vcweb_group_round_data'
 
-
 class GroupRoundDataParameter(models.Model):
     group_round_data = models.ForeignKey(GroupRoundData)
     parameter = models.ForeignKey(DataParameter)
     parameter_value = models.TextField()
     
-#    class Meta:
-#        ordering = [ 'parameter' ]
+    class Meta:
+        ordering = [ 'parameter' ]
     
 
 class Participant(models.Model):
@@ -128,6 +135,9 @@ class Participant(models.Model):
     email = models.EmailField(unique=True)
     number = models.PositiveIntegerField()
     group = models.ForeignKey(Group)
+    
+    class Meta:
+        ordering = ['number']
     
 class ParticipantData(models.Model):
     participant = models.ForeignKey(Participant)
@@ -138,11 +148,5 @@ class ParticipantDataParameter(models.Model):
     parameter = models.ForeignKey(DataParameter)
     parameter_value = models.TextField()
     
-    
-     
 
-
-
-    
-    
 
