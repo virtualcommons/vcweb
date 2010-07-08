@@ -62,7 +62,6 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 )
-
 ROOT_URLCONF = 'vcweb.urls'
 
 TEMPLATE_DIRS = (
@@ -76,9 +75,9 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'django.contrib.admin',
+    'south',
     'vcweb.core'
 )
 
 from settings_local import *
-
-
