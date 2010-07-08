@@ -9,7 +9,7 @@ class GameMetadata(models.Model):
     date_created = models.DateField(auto_now_add=True)
     last_modified = models.DateField(auto_now=True)
     url = models.URLField()
-    default_game_configuration = models.ForeignKey('GameConfiguration')
+    default_game_configuration = models.ForeignKey('GameConfiguration', null=True, blank=True)
     
     def __unicode__(self):
         return self.name
