@@ -42,7 +42,20 @@ class GameConfiguration(models.Model):
     
     class Meta:
         ordering = ['game', 'creator', 'date_created']
-    
+
+# an actual instance of a game; represents a concrete
+# parameterization of this game.
+class GameInstance(models.Model):
+    GAME_STATUS_CHOICES = ('INACTIVE', 'ACTIVE', 'COMPLETED')
+    authentication_code = models.CharField(max_length=255)
+    current_round_number = models.PositiveIntegerField()
+    experimenter = models.ForeignKey(Experimenter)
+    game_metadata = models.ForeignKey(GameMetadata)
+    game_configuration = models.ForeignKey(GameConfiguration)
+    status = models.CharField(max_length=32, choices = GAME_STATUS_CHOICES)
+    time_started = models.TimeField(null=True)
+    start_time = models.TimeField(null=True)
+    end_time = models.TimeField(null=True)
     
 class RoundConfiguration(models.Model):
     game_configuration = models.ForeignKey(GameConfiguration)
@@ -60,7 +73,7 @@ class Parameter(models.Model):
                     ('boolean', (('True', True), ('False', False))),
                     )
     name = models.CharField(max_length=255)
-    type = models.CharField(max_length='32', choices=PARAMETER_TYPES)
+    type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
     
     class Meta:
         abstract = True
@@ -91,14 +104,7 @@ class RoundParameter(models.Model):
 #        db_table = 'vcweb_round_parameter'
     
 
-# an actual instance of a game; represents a concrete
-# parameterization of this game.
-class GameInstance(models.Model):
-    authentication_code = models.CharField(max_length=255)
-    current_round_number = models.PositiveIntegerField()
-    experimenter = models.ForeignKey(Experimenter)
-    game_metadata = models.ForeignKey(GameMetadata)
-    game_configuration = models.ForeignKey(GameConfiguration)
+
     
 #    class Meta:
 #        db_table = 'vcweb_game_instance'
