@@ -1,6 +1,7 @@
 from django.db import models
 
-# may split this into multiple modules?
+# FIXME: split this into multiple modules or have one monolithic models file?  Seems
+# like the standard is to have a single models.py per app
 
 # Create your models here.
 class GameMetadata(models.Model):
@@ -131,6 +132,7 @@ class GroupRoundDataParameter(models.Model):
     group_round_data = models.ForeignKey(GroupRoundData)
     parameter = models.ForeignKey(DataParameter)
     parameter_value = models.TextField()
+    time_recorded = models.TimeField()
     
     class Meta:
         ordering = [ 'parameter' ]
@@ -141,6 +143,7 @@ class Participant(models.Model):
     email = models.EmailField(unique=True)
     number = models.PositiveIntegerField()
     group = models.ForeignKey(Group)
+    date_created = models.DateField(auto_now_add=True)
     
     class Meta:
         ordering = ['number']
@@ -153,6 +156,7 @@ class ParticipantDataParameter(models.Model):
     participant_data = models.ForeignKey(ParticipantData)
     parameter = models.ForeignKey(DataParameter)
     parameter_value = models.TextField()
+    time_recorded = models.TimeField()
     
 
 
