@@ -18,11 +18,16 @@ class GameMetadata(models.Model):
     class Meta:
         ordering = ['name', 'date_created']
 
+class Institution(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True)
+    url = models.URLField(null=True)
+
 class Experimenter(models.Model):
     email = models.EmailField()
-    last_name = models.TextField()
-    first_name = models.TextField()
-    institution = models.TextField()
+    last_name = models.CharField(max_length=64)
+    first_name = models.CharField(max_length=64)
+    institution = models.ForeignKey(Institution)
     password = models.CharField(max_length=255)
     approved = models.BooleanField()
     last_login_date = models.DateTimeField()
@@ -47,7 +52,11 @@ class GameConfiguration(models.Model):
 # an actual instance of a game; represents a concrete
 # parameterization of this game.
 class GameInstance(models.Model):
-    GAME_STATUS_CHOICES = ('INACTIVE', 'ACTIVE', 'COMPLETED')
+    GAME_STATUS_CHOICES = (
+                           ('INACTIVE', 'Not active'),
+                           ('ACTIVE', 'Active'),
+                           ('COMPLETED', 'Completed'),
+                           )
     authentication_code = models.CharField(max_length=255)
     current_round_number = models.PositiveIntegerField()
     experimenter = models.ForeignKey(Experimenter)
@@ -57,6 +66,15 @@ class GameInstance(models.Model):
     time_started = models.TimeField(null=True)
     start_time = models.TimeField(null=True)
     end_time = models.TimeField(null=True)
+    
+    def ___eq___(self, other):
+        return self.id == other.id
+    
+    def ___cmp___(self, other):
+        return self.id.___cmp___(other.id)
+    
+    def ___hash___(self):
+        return self.id.___hash___()
     
 class RoundConfiguration(models.Model):
     game_configuration = models.ForeignKey(GameConfiguration)
@@ -89,6 +107,17 @@ class ConfigurationParameter(Parameter):
      
      
 class DataParameter(Parameter):
+    
+    def ___eq___(self, other):
+        return self.name == other.name
+    
+    def ___cmp___(self, other):
+        return self.name.__cmp__(other.name)
+    
+    def ___hash___(self):
+        return self.name.__hash__()
+    
+    
     def __unicode__(self):
         return 'Data Parameter - [name: ' + self.name + '] [type: ' + self.type + ']'
     
@@ -99,7 +128,7 @@ class DataParameter(Parameter):
 class RoundParameter(models.Model):
     round_configuration = models.ForeignKey(RoundConfiguration)
     parameter = models.ForeignKey(ConfigurationParameter)
-    parameter_value = models.TextField()
+    parameter_value = models.CharField(max_length=255)
     
 #    class Meta:
 #        db_table = 'vcweb_round_parameter'
@@ -128,15 +157,25 @@ class GroupRoundData (models.Model):
 #    class Meta:
 #        db_table = 'vcweb_group_round_data'
 
-class GroupRoundDataParameter(models.Model):
-    group_round_data = models.ForeignKey(GroupRoundData)
+class DataValue(models.Model):
     parameter = models.ForeignKey(DataParameter)
-    parameter_value = models.TextField()
-    time_recorded = models.TimeField()
+    parameter_value = models.CharField(max_length=255)
+    time_recorded = models.TimeField(auto_now_add = True)
+    game_instance = models.ForeignKey(GameInstance)
+    
+    @staticmethod
+    def find(incoming_parameter, incoming_game_instance):
+        DataValue.objects.filter(parameter=incoming_parameter, game_instance=incoming_game_instance)
+        
     
     class Meta:
-        ordering = [ 'parameter' ]
+        abstract = True
     
+class GroupRoundDataValue(DataValue):
+    group_round_data = models.ForeignKey(GroupRoundData)
+    class Meta:
+        ordering = [ 'parameter' ]
+
 
 class Participant(models.Model):
     name = models.CharField(max_length=255)
@@ -152,11 +191,11 @@ class ParticipantData(models.Model):
     participant = models.ForeignKey(Participant)
     round_configuration = models.ForeignKey(RoundConfiguration)
     
-class ParticipantDataParameter(models.Model):
+class ParticipantDataValue(DataValue):
     participant_data = models.ForeignKey(ParticipantData)
-    parameter = models.ForeignKey(DataParameter)
-    parameter_value = models.TextField()
-    time_recorded = models.TimeField()
+    
+    class Meta:
+        ordering = [ 'parameter' ]
     
 
 
