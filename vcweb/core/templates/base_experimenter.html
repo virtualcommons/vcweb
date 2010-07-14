@@ -1,0 +1,42 @@
+{% extends "base_vcweb.html" %}
+
+{% block title %} Virtual Commons Web Experimenter Interface {% endblock %} 
+
+{% block header %}
+<div id="masthead">
+<table width="100%"
+	style="background-color: #9ACD32; background-repeat: no-repeat;"
+	border="0">
+	<tr>
+		<th align="left" valign="top" style="background-color: #9ACD32;">
+		<img height="35" alt="imageTree" src="/static/images/Logo3.png/" /></th>
+		<th align="right" valign="top"><b style="color:purple; margin-right:10px;">{{username}}</b></th>
+	</tr>
+</table>
+</div>
+
+
+<div id="top_nav">
+<table>
+	<tr>
+		<td align="left"></td>
+		<td align="center"><a href="/games/" style="color: yellow"> <b>Home</b></a>
+		</td>
+		<td align="center"><a href="/games/config" style="color: yellow"><b>Create</b></a>
+		</td>
+		<td align="center"><a href="/games/list" style="color: yellow"><b>List</b></a>
+		</td>
+	</tr>
+</table>
+</div>
+{% endblock header %}
+
+{% block content %}
+<div id="page_content">
+<p>
+This is the base for the experimenter interface.
+</p>
+</div>
+
+{% endblock content %}
+

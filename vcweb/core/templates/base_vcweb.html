@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<link href="/static/media/css/style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+
+<div id='header'>
+{% block header %}
+
+{% endblock %}
+</div>
+
+<div id="content">
+ {% block content %}
+
+ {% endblock %}
+</div>
+
+<div id="footer">
+{% block footer %}
+<small>
+<p align="right"><a href='http://shesc.asu.edu'>School of Human Evolution and Social Change</a> <br />
+<a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a> <br />
+
+The project is funded by the <a href='http://nsf.gov'>National Science Foundation</a><sup>*</sup> and <a href='http://www.asu.edu'>Arizona
+State University</a>.<br />
+<br />
+
+<sup>*</sup>Any opinions, findings, conclusions or recommendations
+expressed in this material are those of the authors and do not
+necessarily reflect the views of the National Science Foundation.</p>
+</small>
+{% endblock %}
+</div>
+
+</body>
+
+</html>

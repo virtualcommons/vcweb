@@ -196,6 +196,17 @@ class ParticipantDataValue(DataValue):
     
     class Meta:
         ordering = [ 'parameter' ]
+
+class Session(models.Model):
+    login_time = models.DateTimeField(auto_now_add=True)
+    logout_time = models.DateTimeField()        
+
+class ExperimenterSession(Session):
+    experimenter_id = models.ForeignKey(Experimenter)
+    
+class ParticipantSession(Session):
+    participant_id = models.ForeignKey(Participant)
+    
     
 
 
