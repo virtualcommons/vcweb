@@ -3,8 +3,8 @@ from django.http import HttpResponse
 from django.template import Context, loader
 
 
-def home(request):
-    t = loader.get_template('base_participant.html')
+def index(request):
+    t = loader.get_template('index.html')
     c = Context({
         'main': "Welcome!",
         'username':"foo",
@@ -19,7 +19,7 @@ def list(request):
     })
     return HttpResponse(t.render(c))
 
-def config(request):
+def configure(request):
     t = loader.get_template('base_participant.html')
     c = Context({
         'main': "configuration of the experiment!",

@@ -3,3 +3,4 @@ syntax:glob
 *.pyc
 *~
 settings_local.py
+vcweb.db

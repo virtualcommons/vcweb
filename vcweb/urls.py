@@ -8,13 +8,12 @@ import settings
 from django.contrib import admin
 admin.autodiscover()
 
-urlpatterns = patterns('',                   
+urlpatterns = patterns('',
+    (r'^$', 'django.views.generic.simple.direct_to_template', {'template':'index.html'}),                   
     (r'^admin/', include(admin.site.urls)),
-    
-    (r'^games/$', 'vcweb.core.views.home'),
-    (r'^games/list/$', 'vcweb.core.views.list'),
-    (r'^games/config/$', 'vcweb.core.views.config'),
-    (r'^static/(?P<path>.*)/$', 'django.views.static.serve', {'document_root': settings.BASE_DIR, 'show_indexes': True})
+    (r'^vcweb/', include('vcweb.core.urls')),
+
+
                            
     # Example:
     # (r'^vcweb/', include('vcweb.foo.urls')),
@@ -26,3 +25,10 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     # (r'^admin/', include(admin.site.urls)),
 )
+
+if settings.LOCAL_DEVELOPMENT:
+    urlpatterns += patterns('', 
+        (r'^static/(?P<path>.*)/$', 'django.views.static.serve', 
+         {'document_root': settings.STATIC_BASE_DIR, 'show_indexes': True})
+        )
+
