@@ -27,17 +27,13 @@ class Institution(models.Model):
 
 class Experimenter(models.Model):
     user = models.ForeignKey(User)
-    email = models.EmailField()
-    last_name = models.CharField(max_length=64)
-    first_name = models.CharField(max_length=64)
     institution = models.ForeignKey(Institution)
-    password = models.CharField(max_length=255)
     approved = models.BooleanField()
     last_login_date = models.DateTimeField()
     failed_password_attempts = models.PositiveIntegerField()
     
     class Meta:
-        ordering = ['last_name', 'first_name', 'email']
+        ordering = ['user']
 
 class GameConfiguration(models.Model):    
     game = models.ForeignKey(GameMetadata)
