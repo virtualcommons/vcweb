@@ -9,9 +9,12 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    (r'^$', 'django.views.generic.simple.direct_to_template', {'template':'index.html'}),                   
-    (r'^admin/', include(admin.site.urls)),
-    (r'^vcweb/', include('vcweb.core.urls')),
+    url(r'^$', 'django.views.generic.simple.direct_to_template', {'template':'index.html'}, name='home'),
+    url(r'^about/$', 'django.views.generic.simple.direct_to_template', {'template':'about.html'}, name='about'),                                      
+    url(r'^admin/', include(admin.site.urls)),
+    url(r'^vcweb/', include('vcweb.core.urls')),
+    url(r'^forestry/', include('vcweb.forestry.urls')),
+    
 
 
                            
@@ -29,6 +32,8 @@ urlpatterns = patterns('',
 if settings.LOCAL_DEVELOPMENT:
     urlpatterns += patterns('', 
         (r'^static/(?P<path>.*)/$', 'django.views.static.serve', 
-         {'document_root': settings.STATIC_BASE_DIR, 'show_indexes': True})
+         {'document_root': settings.STATIC_BASE_DIR, 'show_indexes': True}
+         ),
+         
         )
 

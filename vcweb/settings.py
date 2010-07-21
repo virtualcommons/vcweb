@@ -82,7 +82,14 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.admin',
     'south',
-    'vcweb.core'
+    'vcweb.core',
+    'vcweb.forestry',
+)
+
+# use email as username for authentication
+AUTHENTICATION_BACKENDS = (
+                           "vcweb.core.emailauth.EmailBackend",
+                           "django.contrib.auth.backends.ModelBackend",
 )
 
 # only needed for windows boxes.  Put in settings_local instead?

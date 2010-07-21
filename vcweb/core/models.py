@@ -1,5 +1,7 @@
 from django.db import models
 
+from django.contrib.auth.models import User
+
 # FIXME: split this into multiple modules or have one monolithic models file?  Seems
 # like the standard is to have a single models.py per app
 
@@ -24,6 +26,7 @@ class Institution(models.Model):
     url = models.URLField(null=True)
 
 class Experimenter(models.Model):
+    user = models.ForeignKey(User)
     email = models.EmailField()
     last_name = models.CharField(max_length=64)
     first_name = models.CharField(max_length=64)
