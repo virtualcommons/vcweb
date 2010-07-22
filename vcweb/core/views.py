@@ -14,8 +14,8 @@ def index(request):
     })
     return HttpResponse(t.render(c))
 
-def experimenter_list(request):
-    t = loader.get_template('base_experimenter.html')
+def experimenter_index(request):
+    t = loader.get_template('experimenter-index.html')
     c = RequestContext(request, {
         'main': "List of experiments!",
         'username':"foo",
@@ -32,8 +32,8 @@ def configure(request, game_instance_id):
     })
     return HttpResponse(t.render(c))
 
-def participate(request):
+def participant_index(request):
     # FIXME: check if logged in
-    t = loader.get_template('participant_login.html')
+    t = loader.get_template('participant-index.html')
     c = RequestContext(request)
     return HttpResponse(t.render(c))

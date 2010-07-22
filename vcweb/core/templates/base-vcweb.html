@@ -9,6 +9,14 @@
 <link rel="stylesheet" href="/static/css/blueprint/print.css" type="text/css" media="print">    
 <!--[if lt IE 8]><link rel="stylesheet" href="/static/media/css/blueprint/ie.css" type="text/css" media="screen, projection"><![endif]-->
 <link href="/static/css/guarantee/style.css" rel="stylesheet" type="text/css" media="screen" />
+
+<script type='text/javascript' src='/static/js/jquery-1.4.2.min.js'></script>
+<script type='text/javascript'>
+<!-- sets all external links to open up in new windows -->
+$(document).ready(function() {
+	$('a.external').attr({ target: "_blank" });
+});
+</script>
 </head>
 {% endblock %}
 

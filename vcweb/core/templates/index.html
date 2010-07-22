@@ -9,8 +9,8 @@
 		<li class='current_page_item'><a href='{% url home %}' class='first'>Home</a></li>
 		<li><a href='about/'>About</a></li>
 		<li><a class='external' href='http://commons.asu.edu/contact'>Contact us</a></li>
-		<li><a href='experimenter/'>Experimenters</a></li>
-		<li><a href='{% url participate %}'>Participate</a></li>
+		<li><a href='{% url experimenter-index %}'>Experimenters</a></li>
+		<li><a href='{% url participant-index %}'>Participants</a></li>
 	</ul>
 </div>
 {% endblock header %}
@@ -19,14 +19,17 @@
 <div id='post'>
 	<h2 class='title'>Welcome</h2>
 	<div class='entry'>
-	Welcome to the Virtual Commons Web Environment, an open software initiative hosted at <a class='external' href='http://www.asu.edu'>Arizona State University</a>.    
-	We develop and support a variety of web-based collective action experiments.  For more information, please visit 
-	<a class='external' href='http://commons.asu.edu'>commons.asu.edu</a>.
+	Welcome to the Virtual Commons Web Environment, an open software initiative hosted at 
+	<a class='external' href='http://www.asu.edu'>Arizona State University</a>.    
+	We develop and support a variety of web-based collective action experiments.  
+	For more information, please visit <a class='external' href='http://commons.asu.edu'>http://commons.asu.edu</a>.
 	</div>
 	<br/>
 	<h2 class='title'>Current development</h2>
 	<div class='entry'>
-	Development is currently focused on the <a href='{% url forestry-index %}'>Forestry web-based experiment</a>.  
+	Development is currently focused on converting the 
+	<a class='external' href='http://commons.asu.edu/papers'>field experiments on water, forests, and fisheries</a> 
+	into web-based experiments, starting with the <a href='{% url forestry-index %}'>forestry experiment</a>.  
 	</div>
 	
 

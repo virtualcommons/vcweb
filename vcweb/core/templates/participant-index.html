@@ -1,0 +1,26 @@
+{% extends "base-vcweb.html" %}
+
+{% block title %}Virtual Commons Web Participant Interface{% endblock %}
+
+{% block header %}
+<div id="masthead">
+<table width="100%"
+	style="background-color: #9ACD32; background-repeat: no-repeat;"
+	border="0">
+	<tr>
+		<th align="left" valign="top" style="background-color: #9ACD32;">
+		<img height="35" alt="imageTree" src="/static/images/Logo3.png/" /></th>
+		<th align="right" valign="bottom"><b style="color:purple; margin-right:10px;">{{username}}</b></th>
+	</tr>
+</table>
+</div>
+
+{% endblock header %}
+
+{% block content %}
+<div id="page_content">
+<p>
+The base participant interface, will be customized for each experiment.
+</p>
+</div>
+{% endblock content %}
