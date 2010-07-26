@@ -1,0 +1,29 @@
+{% extends "base-vcweb.html" %}
+
+{% block title %}Virtual Commons Web Experiment{% endblock %}
+
+{% block header %}
+<div id='menu'>
+	<ul>
+		<li><a href='{% url home %}' class='first'>Home</a></li>
+		<li><a href='{% url about %}'>About</a></li>
+		<li><a class='external' href='http://commons.asu.edu/contact'>Contact us</a></li>
+		<li class='current_page_item'><a href='{% url experimenter-index %}'>Experimenters</a></li>
+		<li><a href='{% url participant-index %}'>Participants</a></li>
+	</ul>
+</div>
+
+
+{% endblock header %}
+
+{% block content %}
+
+<form action='' method='post'>
+{% include "form-as-div.html" %}
+<div class='field'>
+<input type='submit' value='Login' />
+</div>
+</form>
+
+{% endblock content %}
+
