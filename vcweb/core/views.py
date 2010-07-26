@@ -13,7 +13,6 @@ def index(request):
     c = RequestContext(request, {
         'main': "Welcome!",
         'username':"foo",
-        'template_dirs' : settings.TEMPLATE_DIRS,
     })
     return HttpResponse(t.render(c))
 
@@ -21,8 +20,7 @@ def index(request):
 def experimenter_index(request):
     t = loader.get_template('experimenter-index.html')
     c = RequestContext(request, {
-        'main': "List of experiments!",
-        'username':"foo",
+                                 
     })
     return HttpResponse(t.render(c))
 
