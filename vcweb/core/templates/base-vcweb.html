@@ -1,15 +1,14 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
-{% block head %}
 <head>
+{% block head %}
 <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" href="/static/css/blueprint/screen.css" type="text/css" media="screen, projection">
 <link rel="stylesheet" href="/static/css/blueprint/print.css" type="text/css" media="print">    
 <!--[if lt IE 8]><link rel="stylesheet" href="/static/media/css/blueprint/ie.css" type="text/css" media="screen, projection"><![endif]-->
 <link href="/static/css/guarantee/style.css" rel="stylesheet" type="text/css" media="screen" />
-
 <script type='text/javascript' src='/static/js/jquery-1.4.2.min.js'></script>
 <script type='text/javascript'>
 <!-- sets all external links to open up in new windows -->
@@ -17,8 +16,8 @@ $(document).ready(function() {
 	$('a.external').attr({ target: "_blank" });
 });
 </script>
-</head>
 {% endblock %}
+</head>
 
 <body>
 	<div id='logo'>
@@ -26,11 +25,14 @@ $(document).ready(function() {
 	</div>
 	
 	<hr/>
-	
-    <div id='header'>
-    	{% block header %}
-    	{% endblock %}
-    </div>
+
+
+
+<div id='header'>
+{% block header %}
+{% include "includes/nav-menu.inc" %}
+{% endblock %}
+</div>
 
 <div id='page'>
 	<div id="content">

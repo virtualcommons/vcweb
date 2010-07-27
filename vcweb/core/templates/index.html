@@ -2,18 +2,6 @@
 
 {% block title %}Virtual Commons Web Experiment{% endblock %}
 
-{% block header %}
-<!--  FIXME: add dynamic nav menu ala http://finiteline.homeip.net/blog/?p=42 -->
-<div id='menu'>
-	<ul>
-		<li class='current_page_item'><a href='{% url home %}' class='first'>Home</a></li>
-		<li><a href='{% url about %}'>About</a></li>
-		<li><a class='external' href='http://commons.asu.edu/contact'>Contact us</a></li>
-		<li><a href='{% url experimenter-index %}'>Experimenters</a></li>
-		<li><a href='{% url participant-index %}'>Participants</a></li>
-	</ul>
-</div>
-{% endblock header %}
 
 {% block content %}
 <div id='post'>
@@ -31,9 +19,6 @@
 	<a class='external' href='http://commons.asu.edu/papers'>field experiments on water, forests, and fisheries</a> 
 	into web-based experiments, starting with the <a href='{% url forestry-index %}'>forestry experiment</a>.  
 	</div>
-	
-
-
 </div>
 {% endblock content %}
 

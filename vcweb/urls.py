@@ -11,14 +11,11 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^$', 'django.views.generic.simple.direct_to_template', {'template':'index.html'}, name='home'),
     url(r'^about/$', 'django.views.generic.simple.direct_to_template', {'template':'about.html'}, name='about'),
-    url(r'^accounts/login/$', 'django.contrib.auth.views.login'),                                      
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^accounts/login/$', 'django.contrib.auth.views.login', name='login'),
     url(r'^vcweb/', include('vcweb.core.urls')),
-    url(r'^forestry/', include('vcweb.forestry.urls')),
-    
+    url(r'^forestry/', include('vcweb.forestry.urls')),    
+    url(r'^admin/', include(admin.site.urls)),
 
-
-                           
     # Example:
     # (r'^vcweb/', include('vcweb.foo.urls')),
 
