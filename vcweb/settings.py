@@ -59,7 +59,8 @@ TEMPLATE_LOADERS = (
 #     'django.template.loaders.eggs.load_template_source',
 )
 
-TEMPLATE_CONTEXT_PROCESSORS = ('django.core.context_processors.request',)
+TEMPLATE_CONTEXT_PROCESSORS = ('django.core.context_processors.request',
+                               'django.contrib.auth.context_processors.auth')
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
