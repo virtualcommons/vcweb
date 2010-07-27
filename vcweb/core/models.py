@@ -8,10 +8,10 @@ from django.db import models
 # Create your models here.
 class GameMetadata(models.Model):
     name = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(null=True)
     date_created = models.DateField(auto_now_add=True)
     last_modified = models.DateField(auto_now=True)
-    url = models.URLField()
+    url = models.URLField(null=True)
     default_game_configuration = models.ForeignKey('GameConfiguration', null=True, blank=True)
     
     def __unicode__(self):

@@ -1,0 +1,11 @@
+- model: core.Institution
+  pk: 1
+  fields:
+    name: Arizona State University
+    url: http://www.asu.edu
+- model: core.Experimenter
+  pk: 1
+  fields:
+    user: 1
+    institution: 1
+    approved: True
