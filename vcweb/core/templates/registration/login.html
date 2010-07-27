@@ -5,10 +5,17 @@
 {% block content %}
 
 <form action='' method='post'>
+<fieldset>
+<legend>Login</legend>
+<p>
+Don&quot;t have an account or a first-time user?  Please <a href='{% url register %}'>register first</a>.
+</p> 
 {% include "includes/form-as-div.inc" %}
 <div class='submit'>
 <input type='submit' value='Login' />
 </div>
+</fieldset>
+
 </form>
 
 {% endblock content %}

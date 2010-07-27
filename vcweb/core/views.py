@@ -8,14 +8,6 @@ from django.conf import settings
 
 from vcweb.core.emailauth import EmailBackend
 
-def index(request):
-    t = loader.get_template('index.html')
-    c = RequestContext(request, {
-        'main': "Welcome!",
-        'username':"foo",
-    })
-    return HttpResponse(t.render(c))
-
 @login_required
 def experimenter_index(request):
     t = loader.get_template('experimenter-index.html')
