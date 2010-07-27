@@ -11,7 +11,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^$', 'django.views.generic.simple.direct_to_template', {'template':'index.html'}, name='home'),
     url(r'^about/$', 'django.views.generic.simple.direct_to_template', {'template':'about.html'}, name='about'),
-    url(r'^accounts/login/$', 'django.contrib.auth.views.login', name='login'),
+    url(r'^accounts/login/$', 'vcweb.core.views.login', name='login'),
     url(r'^accounts/register/$', 'vcweb.core.views.register', name='register'),
     url(r'^accounts/password/reset/$', 'django.contrib.auth.views.password_reset', name='password-reset'),
     url(r'^vcweb/', include('vcweb.core.urls')),

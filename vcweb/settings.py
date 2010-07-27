@@ -1,5 +1,11 @@
 # Django settings for vcweb project.
 import os.path
+import logging
+
+logging.basicConfig(
+                    level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s %(message)s',
+                    )
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -88,10 +94,6 @@ INSTALLED_APPS = (
     'vcweb.core',
     'vcweb.forestry',
 )
-
-LOGIN_URL="/login/"
-
-LOGIN_REDIRECT_URL="/vcweb/list/"
 
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (

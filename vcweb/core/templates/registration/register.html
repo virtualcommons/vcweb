@@ -7,6 +7,9 @@
 
 <script type='text/javascript'>
 $(document).ready(function() {
+	$('#id_experimenter').click(function() {
+		$('#experimenterDiv').toggle(this.checked);
+	});
 	$('#registrationForm').validate();
 });
 </script>
@@ -22,7 +25,61 @@ $(document).ready(function() {
 <legend>New User</legend>
 <p>
 Returning users can <a href='{% url login %}'>login here</a> or <a href='{% url password-reset %}'>retrieve your password</a>.
-{% include "includes/form-as-div.inc" %}
+
+<div class='field'>
+<span class='label'><label for="id_email">Email</label>:</span>
+<input id="id_email" type="text" class="required email" name="email" />
+{% if form.email.errors %}
+<label class='error' for='id_email' generated='true'>{{ form.email.errors|join:". " }}</label>
+{% endif %}
+</div>
+
+<div class='field'>
+<span class='label'><label for="id_password">Password</label>:</span>
+<input id="id_password" type="password" class="required " name="password" />
+{% if form.password.errors %}
+<label class='error' for='id_password' generated='true'>{{ form.password.errors|join:". " }}</label>
+{% endif %}
+</div>
+
+<div class='field'>
+<span class='label'><label for="id_confirm_password">Confirm password</label>:</span>
+<input id="id_confirm_password" type="password" class="required" name="confirm_password" />
+{% if form.confirm_password.errors %}
+<label class='error' for='id_confirm_password' generated='true'>{{ form.confirm_password.errors|join:". " }}</label>
+{% endif %}
+</div>
+
+<div class='field'>
+<span class='label'><label for="id_experimenter">Experimenter</label>:</span>
+<input type="checkbox" name="experimenter" id="id_experimenter" />
+</div>
+
+<!-- experimenter fields -->
+<div id='experimenterDiv' style='display:none;'>
+
+
+
+<div class='field'>
+<span class='label'><label for="id_first_name">First name</label>:</span>
+
+<input id="id_first_name" type="text" class="required" name="first_name" />
+
+</div>
+
+<div class='field'>
+<span class='label'><label for="id_last_name">Last name</label>:</span>
+<input id="id_last_name" type="text" class="required" name="last_name" />
+</div>
+
+<div class='field'>
+<span class='label'><label for="id_institution">Institution</label>:</span>
+<input id="id_institution" type="text" class="required" name="institution" />
+</div>
+
+</div>
+
+
 <div class='submit'>
 <input type='submit' value='Login' />
 </div>

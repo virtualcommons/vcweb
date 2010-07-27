@@ -1,16 +1,37 @@
 # Create your views here.
+from django.conf import settings
+from django.contrib import auth
+from django.contrib.auth.decorators import *
+from django.contrib.auth.models import User
 from django.http import HttpResponse
+from django.shortcuts import render_to_response, redirect
 from django.template import Context, loader
 from django.template.context import RequestContext
+from vcweb.core.forms import RegistrationForm, LoginForm
+from vcweb.core.models import Experimenter
 
-from django.contrib.auth.decorators import *
-from django.conf import settings
+import logging
 
-from django.shortcuts import render_to_response, redirect
+logger = logging.getLogger("core-views")
 
-from vcweb.core.emailauth import EmailBackend
-
-from vcweb.core.forms import RegistrationForm
+def login(request):
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            cleaned_data = form.cleaned_data
+            email = cleaned_data['email']
+            password = cleaned_data['password']
+            person = auth.authenticate(username=email, password=password)
+            if person is None:
+                logger.debug("user " + email + " failed to authenticate.")
+                return render_to_response('registration/login.html', locals(), context_instance=RequestContext(request))
+            else:
+            # check if user is an experimenter
+                auth.login(request, person.user)
+                return redirect('experimenter-index' if hasattr(person, 'approved') else 'participant-index')
+    else:
+        form = LoginForm()
+        return render_to_response('registration/login.html', locals(), context_instance=RequestContext(request))
 
 def register(request):
     if request.method == 'POST':
@@ -19,7 +40,6 @@ def register(request):
             cleaned_data = form.cleaned_data
             # do something with cleaned data
             return redirect('core-index')
-        
     else:
         form = RegistrationForm() 
         return render_to_response('registration/register.html', locals(), context_instance=RequestContext(request))

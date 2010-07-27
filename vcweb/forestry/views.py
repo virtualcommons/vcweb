@@ -1,12 +1,11 @@
 # Create your views here.
 from django.http import HttpResponse, Http404
+from django.shortcuts import render_to_response
 from django.template import Context, loader
 from django.template.context import RequestContext
 
 def index(request):
-    template = loader.get_template('forestry-index.html')
-    context = RequestContext(request)
-    return HttpResponse(template.render(context))
+    return render_to_response('forestry-index.html', RequestContext(request))
 
 def configure(request):
     return Http404()

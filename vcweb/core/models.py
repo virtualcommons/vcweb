@@ -28,9 +28,11 @@ class Institution(models.Model):
 class Experimenter(models.Model):
     user = models.OneToOneField(User)
     institution = models.ForeignKey(Institution)
-    approved = models.BooleanField()
-    last_login_date = models.DateTimeField()
-    failed_password_attempts = models.PositiveIntegerField()
+    approved = models.BooleanField(default=False)
+    failed_password_attempts = models.PositiveIntegerField(null=True)
+    
+    def __unicode__(self):
+        return self.user.__unicode__()
     
     class Meta:
         ordering = ['user']
@@ -43,7 +45,6 @@ class GameConfiguration(models.Model):
     date_created = models.DateField(auto_now_add=True)
     last_modified = models.DateField(auto_now=True)
     is_public = models.BooleanField(default=True)
-
     
     class Meta:
         ordering = ['game', 'creator', 'date_created']
@@ -129,15 +130,6 @@ class RoundParameter(models.Model):
     parameter = models.ForeignKey(ConfigurationParameter)
     parameter_value = models.CharField(max_length=255)
     
-#    class Meta:
-#        db_table = 'vcweb_round_parameter'
-    
-
-
-    
-#    class Meta:
-#        db_table = 'vcweb_game_instance'
-    
 class Group(models.Model):
     number = models.PositiveIntegerField()
     max_size = models.PositiveIntegerField()
@@ -175,13 +167,12 @@ class GroupRoundDataValue(DataValue):
     class Meta:
         ordering = [ 'parameter' ]
 
-
 class Participant(models.Model):
-    name = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)
+    user = models.OneToOneField(User)
     number = models.PositiveIntegerField()
     group = models.ForeignKey(Group)
-    date_created = models.DateField(auto_now_add=True)
+    def __unicode__(self):
+        return self.user.__unicode__()
     
     class Meta:
         ordering = ['number']

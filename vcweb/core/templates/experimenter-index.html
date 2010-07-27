@@ -4,18 +4,6 @@
 
 {% block header %}
 
-<div id='menu'>
-	<ul>
-		<li class='current_page_item'><a href='/' class='first'>Home</a></li>
-		<!--  if not logged in, otherwise present logout url.. -->
-		<li>{% url login %}</li>
-		<li><a href='login'>Participate</a></li>
-		<li><a href='analyze'>analyze</a></li>
-
-		<li><a class='external' href='http://commons.asu.edu/contact'>Contact us</a></li>
-	</ul>
-</div>
-
 {% endblock header %}
 
 {% block content %}

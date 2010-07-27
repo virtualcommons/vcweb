@@ -7,4 +7,4 @@
 {% endif %}
 </div>
 {% endfor %}
-
+{% csrf_token %}
