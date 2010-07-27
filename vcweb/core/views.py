@@ -6,7 +6,23 @@ from django.template.context import RequestContext
 from django.contrib.auth.decorators import *
 from django.conf import settings
 
+from django.shortcuts import render_to_response, redirect
+
 from vcweb.core.emailauth import EmailBackend
+
+from vcweb.core.forms import RegistrationForm
+
+def register(request):
+    if request.method == 'POST':
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            cleaned_data = form.cleaned_data
+            # do something with cleaned data
+            return redirect('core-index')
+        
+    else:
+        form = RegistrationForm() 
+        return render_to_response('registration/register.html', locals(), context_instance=RequestContext(request))
 
 @login_required
 def experimenter_index(request):

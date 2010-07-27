@@ -15,17 +15,22 @@ body {
 }
 
 .submit input {
-	margin-left: 8.5em;
+	margin-left: 12em;
+}
+
+input[type=text], input[type=password] {
+	width: 23em;
 }
 
 span.label {
 	float: left;
 	text-align: right;
-    width: 6em;
+    width: 11em;
     font-weight: bolder;
-    margin-right: 0.5em;
-    margin-top: 0.2em;
-    display:block;
+    margin-top: 0.37em;
+    margin-right: 0.37em;
+    display:inline;
+    font-size: 0.8em;
 }
 
 h1, h2, h3 {
@@ -166,6 +171,24 @@ hr { display: none; }
 	float: right;
 	margin: 0;
 	padding: 4px 0px 0 0;
+}
+
+fieldset.small {
+  font: 0.8em "Helvetica Neue", helvetica, arial, sans-serif;
+  color: #666;
+  background-color: #efefef;                                                                                                                                                       
+  padding: 2px;
+  border: solid 1px #d3d3d3;
+  width: 350px;
+}
+
+legend {
+  color: #666;
+  font-weight: bold;
+  text-transform: lowercase;
+  background-color: #d3d3d3;
+  padding: 2px 6px;
+  margin-bottom: 8px;
 }
 
 #search fieldset {
@@ -346,6 +369,22 @@ hr { display: none; }
 	list-style: none;
 	line-height: normal;
 }
+
+input.error {
+	padding:0.1em;
+	border: 1px solid;
+}
+
+label.error {
+	background: url('/static/images/unchecked.gif') no-repeat left center #FBE3E4;
+	line-height: normal;
+	font-size: .8em;
+	margin:0.3em;
+	padding:0.3em;
+	padding-left: 1.1em;
+	margin-left: 0.3em;
+}
+
 
 #sidebar li {
 	margin-bottom: 30px;

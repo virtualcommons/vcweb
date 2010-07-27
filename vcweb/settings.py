@@ -88,6 +88,10 @@ INSTALLED_APPS = (
     'vcweb.forestry',
 )
 
+LOGIN_URL="/login/"
+
+LOGIN_REDIRECT_URL="/vcweb/list/"
+
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (
                            "vcweb.core.emailauth.EmailBackend",

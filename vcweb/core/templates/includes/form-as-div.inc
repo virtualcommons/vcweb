@@ -1,8 +1,10 @@
 {% for field in form %}
 <div class='field'>
-<span class='input-errors'>{{ field.errors }}</span>
 <span class='label'>{{ field.label_tag }}:</span>
-<span class='input-field'> {{ field }} </span>
+{{ field }}
+{% if field.errors %}
+<label class='error' for='id_{{ field.name }}' generated='true'>{{ field.errors|join:". " }}</label>
+{% endif %}
 </div>
 {% endfor %}
 
