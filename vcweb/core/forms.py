@@ -26,3 +26,4 @@ class RegistrationForm(forms.Form):
 class LoginForm(forms.Form):
     email = forms.EmailField(required=True, widget=widgets.TextInput(attrs=EMAIL_ATTRIBUTES))
     password = forms.CharField(required=True, widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
+

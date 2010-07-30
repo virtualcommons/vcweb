@@ -79,9 +79,9 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    
-    os.path.join(os.path.dirname(__file__), 'templates').replace('\\','/'),
-    
+
+    os.path.join(os.path.dirname(__file__), 'templates').replace('\\', '/'),
+
 )
 
 INSTALLED_APPS = (
@@ -97,11 +97,11 @@ INSTALLED_APPS = (
 
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (
-                           "vcweb.core.emailauth.EmailBackend",
+                           "vcweb.core.auth.AuthenticationBackend",
                            "django.contrib.auth.backends.ModelBackend",
 )
 
 # only needed for windows boxes.  Put in settings_local instead?
-STATIC_BASE_DIR = os.path.join(os.path.dirname(__file__), 'static').replace('\\','/')
+STATIC_BASE_DIR = os.path.join(os.path.dirname(__file__), 'static').replace('\\', '/')
 
 from settings_local import *

@@ -1,0 +1,58 @@
+[
+    {
+        "pk": 1, 
+        "model": "core.institution", 
+        "fields": {
+            "url": "http://www.asu.edu", 
+            "name": "Arizona State University", 
+            "description": null
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "core.experimenter", 
+        "fields": {
+            "approved": true, 
+            "user": 1, 
+            "failed_password_attempts": 0, 
+            "institution": 1
+        }
+    },
+    {   
+        "pk": 1,
+        "model": "auth.group",
+        "fields": {
+            "name": "Experimenters",
+            "permissions": []
+        }
+    },
+    {   
+        "pk": 2,
+        "model": "auth.group",
+        "fields": {
+            "name": "Participants",
+            "permissions": []
+        }
+    },
+    {   
+        "pk": 1,
+        "model": "auth.user",
+        "fields": {
+            "username": "alee",
+            "first_name": "Allen",
+            "last_name": "Lee",
+            "is_active": true,
+            "is_superuser": true,
+            "is_staff": true,
+            "last_login": "2010-07-29 21:36:40",
+            "groups": [
+                1
+            ],
+            "user_permissions": [],
+            "password": "sha1$90c58$91aa79bb8ab2b40c376c093d360fafd57accd10a",
+            "email": "allen.lee@asu.edu",
+            "date_joined": "2010-07-29 21:36:40"
+        }
+    }
+
+]
