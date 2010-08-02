@@ -6,6 +6,7 @@ Created on Jul 14, 2010
 '''
 urlpatterns = patterns('vcweb.core.views',
     url(r'accounts/login/$', 'login', name='login'),
+    url(r'accounts/logout/$', 'logout', name='logout'),
     url(r'accounts/register/$', 'register', name='register'),
     url(r'accounts/profile/$', 'account_profile', name='profile'),
     url(r'experimenter/$', 'experimenter_index', name='experimenter-index'),

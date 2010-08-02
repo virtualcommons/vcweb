@@ -30,6 +30,10 @@ def login(request):
         form = LoginForm()
         return render_to_response('registration/login.html', locals(), context_instance=RequestContext(request))
 
+def logout(request):
+    auth.logout(request)
+    return redirect('home')
+
 def register(request):
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
