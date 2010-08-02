@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb.core.forms import RegistrationForm, LoginForm
-from vcweb.core.models import Participant
+from vcweb.core.models import Participant, GameInstance, Experimenter
 import logging
 
 logger = logging.getLogger("core-views")
@@ -44,7 +44,13 @@ def register(request):
 
 @login_required
 def experimenter_index(request):
-    return render_to_response('experimenter-index.html', RequestContext(request))
+    user = request.user
+    try:
+        experimenter = user.experimenter
+        games = GameInstance.objects.filter(experimenter=experimenter)
+        return render_to_response('experimenter-index.html', RequestContext(request, locals()))
+    except Experimenter.DoesNotExist:
+        return redirect('home')
 
 @login_required
 def participant_index(request):

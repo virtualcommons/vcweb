@@ -3,7 +3,7 @@
 {% block title %} Virtual Commons Web Experimenter Interface {% endblock %} 
 
 {% block header %}
-
+{% include "includes/experimenter-nav-menu.inc" %}
 {% endblock header %}
 
 {% block content %}
@@ -11,6 +11,15 @@
 <p>
 This is the base for the experimenter interface.
 </p>
+<fieldset>
+<legend>Your games</legend>
+<ul>
+{% for game in games %}
+<li>{{ game }}</li>
+
+{% endfor %}
+</ul>
+</fieldset>
 </div>
 
 {% endblock content %}
