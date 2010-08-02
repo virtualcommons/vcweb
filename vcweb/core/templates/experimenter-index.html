@@ -7,18 +7,25 @@
 {% endblock header %}
 
 {% block content %}
-<div id="page_content">
-<p>
-This is the base for the experimenter interface.
-</p>
+<div class='notice'>
+Welcome to the experimenter interface.  You are logged in as {{experimenter}}.
+</div> 
+<div id="post">
 <fieldset>
-<legend>Your games</legend>
+<legend>Your experiments</legend>
+<div class='sidebar'>
 <ul>
 {% for game in games %}
-<li>{{ game }}</li>
+<li>
+<a href='/experimenter/{{game.namespace}}/manage/{{game.id}}'>
+{{ game }}
+</a>
+
+</li>
 
 {% endfor %}
 </ul>
+</div>
 </fieldset>
 </div>
 

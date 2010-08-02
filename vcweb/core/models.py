@@ -279,7 +279,7 @@ class Institution(models.Model):
     url = models.URLField(null=True, blank=True, verify_exists=True)
 
     def __unicode__(self):
-        return "{0} ({2})".format(self.name, self.description, self.url)
+        return "{0} ({1})".format(self.name, self.url)
 
 class CommonsUser(models.Model):
     # for docs on related_name see http://docs.djangoproject.com/en/dev/topics/db/models/#be-careful-with-related-name
@@ -293,7 +293,7 @@ class CommonsUser(models.Model):
         return self.user.is_authenticated()
 
     def __unicode__(self):
-        return self.user.__unicode__()
+        return "{0} ({1})".format(self.user.get_full_name(), self.user.username)
 
     class Meta:
         abstract = True
@@ -342,8 +342,12 @@ class GameInstance(models.Model):
     tick_duration = models.CharField(max_length=32)
     end_time = models.DateTimeField(null=True, blank=True)
 
+    @property
+    def namespace(self):
+        return self.game_metadata.namespace
+
     def __unicode__(self):
-        return "instance of {game} created by {experimenter} on {date_created}: {status}".format(game=self.game_metadata, experimenter=self.experimenter, date_created=self.date_created, status=self.status)
+        return "{game} created by {experimenter} on {date_created}: {status}".format(game=self.game_metadata, experimenter=self.experimenter, date_created=self.date_created, status=self.status)
 
     def ___eq___(self, other):
         return self.id == other.id
@@ -372,6 +376,9 @@ class Parameter(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
 
+    def __unicode__(self):
+        return "{0} ({1})".format(self.name, self.type)
+
     class Meta:
         abstract = True
         ordering = ['name']
@@ -397,7 +404,7 @@ class DataParameter(Parameter):
 
 
     def __unicode__(self):
-        return 'Data Parameter - [name: ' + self.name + '] [type: ' + self.type + ']'
+        return "Name: {0} - Type: {1}".format(self.name, self.type)
 
 #    class Meta:
 #        db_table = 'vcweb_data_parameter'
@@ -407,6 +414,9 @@ class RoundParameter(models.Model):
     round_configuration = models.ForeignKey(RoundConfiguration)
     parameter = models.ForeignKey(ConfigurationParameter)
     parameter_value = models.CharField(max_length=255)
+
+    def __unicode__(self):
+        return "{0} -- Parameter: {1} Value: {2}".format(self.round_configuration, self.parameter, self.parameter_value)
 
 class Group(models.Model):
     number = models.PositiveIntegerField()
@@ -423,6 +433,9 @@ class GroupRoundData (models.Model):
     group = models.ForeignKey(Group)
     round = models.ForeignKey(RoundConfiguration)
 
+    def __unicode__(self):
+        return "Round Data for {0} in {1}".format(self.group, self.round)
+
 #    class Meta:
 #        db_table = 'vcweb_group_round_data'
 
@@ -436,6 +449,8 @@ class DataValue(models.Model):
     def find(incoming_parameter, incoming_game_instance):
         DataValue.objects.filter(parameter=incoming_parameter, game_instance=incoming_game_instance)
 
+    def __unicode__(self):
+        return "Data value: parameter {0}, value {1}, time recorded {2}, game {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.game_instance)
 
     class Meta:
         abstract = True

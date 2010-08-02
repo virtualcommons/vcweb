@@ -7,14 +7,16 @@
 
 {% endblock %}
 {% block content %}
-<h2>Welcome back, {{ user }}</h2>
+<div class='notice'>
+Welcome back, {{participant}}.  Games you are participating in are listed below.
+</div>
 
 <fieldset>
-<legend>Your games</legend>
+<legend>Your experiments</legend>
 <ul>
 {% for game in games %}
-<li>{{ game }}</li>
-
+<li>
+<a href='/participate/{{game.namespace}}/{{game.id}}'>{{ game }}</a></li>
 {% endfor %}
 </ul>
 </fieldset>
