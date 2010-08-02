@@ -262,7 +262,7 @@ class GameMetadata(models.Model):
     namespace = models.CharField(max_length=255, unique=True, validators=[RegexValidator(regex=r'^\w+$'), ])
     description = models.TextField(null=True, blank=True)
     date_created = models.DateField(auto_now_add=True)
-    last_modified = models.DateField(auto_now=True)
+    last_modified = models.DateTimeField(auto_now=True)
     about_url = models.URLField(null=True, blank=True, verify_exists=True)
     logo_url = models.URLField(null=True, blank=True, verify_exists=True)
     default_game_configuration = models.ForeignKey('GameConfiguration', null=True, blank=True)
@@ -311,7 +311,7 @@ class GameConfiguration(models.Model):
     name = models.CharField(max_length=255)
     maximum_number_of_participants = models.PositiveIntegerField()
     date_created = models.DateField(auto_now_add=True)
-    last_modified = models.DateField(auto_now=True)
+    last_modified = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=True)
 
     def __unicode__(self):
@@ -335,12 +335,12 @@ class GameInstance(models.Model):
     game_configuration = models.ForeignKey(GameConfiguration)
     status = models.CharField(max_length=32, choices=GAME_STATUS_CHOICES)
     date_created = models.DateTimeField(auto_now_add=True)
-    start_time = models.TimeField(null=True, blank=True)
+    start_date_time = models.DateTimeField(null=True, blank=True)
     # how long this experiment should run
     duration = models.CharField(max_length=32)
     # duration of each tick.
     tick_duration = models.CharField(max_length=32)
-    end_time = models.DateTimeField(null=True, blank=True)
+    end_date_time = models.DateTimeField(null=True, blank=True)
 
     @property
     def namespace(self):
@@ -362,6 +362,9 @@ class RoundConfiguration(models.Model):
     game_configuration = models.ForeignKey(GameConfiguration)
     sequence_number = models.PositiveIntegerField()
 
+    def __unicode__(self):
+        return "Round # {0} for game {1} ".format(self.sequence_number, self.game_configuration)
+
 #    class Meta:
 #        db_table = 'vcweb_round_configuration'
 
@@ -372,6 +375,7 @@ class Parameter(models.Model):
                     ('string', 'String'),
                     ('float', 'Float'),
                     ('boolean', (('True', True), ('False', False))),
+                    ('enum', 'enum')
                     )
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
@@ -411,7 +415,7 @@ class DataParameter(Parameter):
 
 # round parameters are 
 class RoundParameter(models.Model):
-    round_configuration = models.ForeignKey(RoundConfiguration)
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='parameters')
     parameter = models.ForeignKey(ConfigurationParameter)
     parameter_value = models.CharField(max_length=255)
 
@@ -442,7 +446,8 @@ class GroupRoundData (models.Model):
 class DataValue(models.Model):
     parameter = models.ForeignKey(DataParameter)
     parameter_value = models.CharField(max_length=255)
-    time_recorded = models.TimeField(auto_now_add=True)
+    # FIXME: change to DateTimeField
+    time_recorded = models.DateTimeField(auto_now_add=True)
     game_instance = models.ForeignKey(GameInstance)
 
     @staticmethod
