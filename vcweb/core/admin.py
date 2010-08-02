@@ -16,4 +16,4 @@ admin.site.register(Experimenter)
 admin.site.register(Participant)
 admin.site.register(Group)
 admin.site.register(GameInstance)
-
+admin.site.register(ParticipantGroup)

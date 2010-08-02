@@ -445,12 +445,34 @@ class GroupRoundDataValue(DataValue):
     class Meta:
         ordering = [ 'parameter' ]
 
+class ParticipantManager(models.Manager):
+    def get_all_game_instances(self, participant_id):
+        # generate appropriate query using Groups?
+        # link from groups to game instances
+        participant_groups = ParticipantGroup.objects.filter(participant__id=participant_id)
+
+        return GameInstance.objects.filter(pk__in=[])
+
 class Participant(CommonsUser):
-    number = models.PositiveIntegerField()
     can_receive_invitations = models.BooleanField(default=False)
-    group = models.ForeignKey(Group)
+    group = models.ManyToManyField(Group, through='ParticipantGroup', related_name='groups')
+    objects = ParticipantManager()
     class Meta:
-        ordering = ['number', 'user']
+        ordering = ['user']
+
+
+class ParticipantGroup(models.Model):
+    participant_number = models.PositiveIntegerField()
+    participant = models.ForeignKey(Participant)
+    group = models.ForeignKey(Group)
+    round_joined = models.ForeignKey(RoundConfiguration)
+    date_joined = models.DateTimeField(auto_now_add=True)
+
+    def __unicode__(self):
+        return "{0}: {1} (in {2})".format(self.participant, self.participant_number, self.group)
+
+    class Meta:
+        ordering = ['participant_number', 'participant']
 
 class ParticipantData(models.Model):
     participant = models.ForeignKey(Participant)

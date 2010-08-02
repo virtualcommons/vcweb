@@ -1,15 +1,11 @@
 # Create your views here.
-from django.conf import settings
+
 from django.contrib import auth
-from django.contrib.auth.decorators import *
-from django.contrib.auth.models import User
-from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render_to_response, redirect
-from django.template import Context, loader
 from django.template.context import RequestContext
 from vcweb.core.forms import RegistrationForm, LoginForm
-from vcweb.core.models import Experimenter
-
+from vcweb.core.models import Participant
 import logging
 
 logger = logging.getLogger("core-views")
@@ -50,19 +46,23 @@ def register(request):
 def experimenter_index(request):
     return render_to_response('experimenter-index.html', RequestContext(request))
 
-def configure(request, game_instance_id):
-# lookup game instance id (or create a new one?)
-    t = loader.get_template('base_participant.html')
-    c = RequestContext(request, {
-        'main': "configuration of the experiment!",
-        'username':"foo",
-
-    })
-    return HttpResponse(t.render(c))
-
+@login_required
 def participant_index(request):
-    # FIXME: check if logged in
-    t = loader.get_template('participant-index.html')
-    c = RequestContext(request)
-    return HttpResponse(t.render(c))
+    user = request.user
+    try:
+        participant = user.participant
+        games = [ group.game_instance for group in participant.group.all() ]
+        return render_to_response('participant-index.html', RequestContext(request, locals()))
+    except Participant.DoesNotExist:
+        # what to do?
+        return redirect('home')
 
+@login_required
+def account_profile(request):
+    return redirect('home')
+
+
+@login_required
+def configure(request, game_instance_id):
+    # lookup game instance id (or create a new one?)
+    return render_to_response('configure.html', RequestContext(request))
