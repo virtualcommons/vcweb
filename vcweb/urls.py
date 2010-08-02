@@ -11,12 +11,12 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^$', 'django.views.generic.simple.direct_to_template', {'template':'index.html'}, name='home'),
     url(r'^about/$', 'django.views.generic.simple.direct_to_template', {'template':'about.html'}, name='about'),
-    url(r'^accounts/login/$', 'vcweb.core.views.login', name='login'),
-    url(r'^accounts/register/$', 'vcweb.core.views.register', name='register'),
     url(r'^accounts/password/reset/$', 'django.contrib.auth.views.password_reset', name='password-reset'),
-    url(r'^vcweb/', include('vcweb.core.urls')),
-    url(r'^forestry/', include('vcweb.forestry.urls')),    
+    url(r'^forestry/', include('vcweb.forestry.urls', namespace='forestry', app_name='forestry')),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'', include('vcweb.core.urls', namespace='core', app_name='vcweb')),
+    # make sure this is last
+
 
     # Example:
     # (r'^vcweb/', include('vcweb.foo.urls')),
@@ -30,10 +30,10 @@ urlpatterns = patterns('',
 )
 
 if settings.LOCAL_DEVELOPMENT:
-    urlpatterns += patterns('', 
-        (r'^static/(?P<path>.*)/$', 'django.views.static.serve', 
+    urlpatterns += patterns('',
+        (r'^static/(?P<path>.*)/$', 'django.views.static.serve',
          {'document_root': settings.STATIC_BASE_DIR, 'show_indexes': True}
          ),
-         
+
         )
 

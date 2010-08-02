@@ -10,7 +10,27 @@ $(document).ready(function() {
 	$('#id_experimenter').click(function() {
 		$('#experimenterDiv').toggle(this.checked);
 	});
-	$('#registrationForm').validate();
+	$('#registrationForm').validate({
+        rules: {
+            id_confirm_password: {
+                equalTo: "#id_password",
+                minlength: 3
+            },
+            id_password: {
+                minlength: 3
+            }
+        },
+
+        messages: {
+            id_password: {
+                minlength: jQuery.format("Your password must be at least {0} characters.")
+            },
+            id_confirm_password: {
+                equalTo: "Your confirmation password doesn't match."
+                minlength: jQuery.format("Your password must be at least {0} characters.")
+            }
+        }
+    });
 });
 </script>
 
@@ -24,7 +44,7 @@ $(document).ready(function() {
 <fieldset>
 <legend>New User</legend>
 <p>
-Returning users can <a href='{% url login %}'>login here</a> or <a href='{% url password-reset %}'>retrieve your password</a>.
+Returning users can <a href='{% url core:login %}'>login here</a> or <a href='{% url password-reset %}'>retrieve your password</a>.
 
 <div class='field'>
 <span class='label'><label for="id_email">Email</label>:</span>

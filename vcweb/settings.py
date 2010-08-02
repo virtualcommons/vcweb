@@ -90,10 +90,14 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
-    'south',
     'vcweb.core',
     'vcweb.forestry',
 )
+
+# activation window
+ACCOUNT_ACTIVATION_DAYS = 30
+
+DEFAULT_FROM_EMAIL = 'commons@asu.edu'
 
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (

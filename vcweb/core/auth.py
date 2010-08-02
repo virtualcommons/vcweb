@@ -25,6 +25,7 @@ class AuthenticationBackend(ModelBackend):
                 # FIXME: check for Participant game codes.
                 if user.check_password(password):
                     return user
+                # password may be game code.  check it against participant's game game codes.
             except User.DoesNotExist:
                 return None
         return None

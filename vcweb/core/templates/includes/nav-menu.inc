@@ -2,9 +2,9 @@
 
 {% url home as home %}
 {% url about as about %}
-{% url login as login %}
-{% url logout as logout %}
-{% url register as register %}
+{% url core:login as login %}
+{% url core:logout as logout %}
+{% url core:register as register %}
 
 <div id='menu'>
 <ul>

@@ -29,7 +29,7 @@ def login(request):
             else:
                 auth.login(request, user)
                 # check if user is an experimenter
-                return redirect('experimenter-index' if user.experimenter else 'participant-index')
+                return redirect('core:experimenter-index' if hasattr(user, 'experimenter') else 'core:participant-index')
     else:
         form = LoginForm()
         return render_to_response('registration/login.html', locals(), context_instance=RequestContext(request))
@@ -40,6 +40,7 @@ def register(request):
         if form.is_valid():
             cleaned_data = form.cleaned_data
             # do something with cleaned data
+
             return redirect('core-index')
     else:
         form = RegistrationForm()
