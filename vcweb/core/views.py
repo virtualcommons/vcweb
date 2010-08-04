@@ -64,7 +64,7 @@ def participant_index(request):
         games = [ group.game_instance for group in participant.group.all() ]
         return render_to_response('participant-index.html', RequestContext(request, locals()))
     except Participant.DoesNotExist:
-        # what to do?
+        # add error message
         return redirect('home')
 
 @login_required

@@ -14,9 +14,9 @@ Welcome back, {{participant}}.  Games you are participating in are listed below.
 <fieldset>
 <legend>Your experiments</legend>
 <ul>
-{% for game in games %}
+{% for game_instance in games %}
 <li>
-<a href='/participate/{{game.namespace}}/{{game.id}}'>{{ game }}</a></li>
+<a href='{{game_instance.participant_url}}'>{{ game_instance }}</a></li>
 {% endfor %}
 </ul>
 </fieldset>

@@ -15,9 +15,9 @@ Welcome to the experimenter interface.  You are logged in as {{experimenter}}.
 <legend>Your experiments</legend>
 <div class='sidebar'>
 <ul>
-{% for game in games %}
+{% for game_instance in games %}
 <li>
-<a href='/experimenter/{{game.namespace}}/manage/{{game.id}}'>
+<a href='{{game_instance.management_url}}'>
 {{ game }}
 </a>
 

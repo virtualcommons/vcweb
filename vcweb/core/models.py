@@ -2,13 +2,14 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.template.loader import render_to_string
+from django.utils.translation import ugettext_lazy as _
 from vcweb import settings
 import datetime
 import hashlib
 import logging
 import random
 import re
-from django.utils.translation import ugettext_lazy as _
+from vcweb.core import auth
 
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
@@ -255,6 +256,16 @@ class RegistrationProfile(models.Model):
 
         self.user.email_user(subject, message, settings.DEFAULT_FROM_EMAIL)
 
+## may use for urls.attribute_name trick shown in http://adam.gomaa.us/blog/2008/aug/11/the-python-property-builtin/
+#def attrproperty(getter_function):
+#    class _Object(object):
+#        def __init__(self, obj):
+#            self.obj = obj
+#            def __getattr__(self, attr):
+#                return getter_function(self.obj, attr)
+#            return property(_Object)
+
+
 # Create your models here.
 class GameMetadata(models.Model):
     title = models.CharField(max_length=255)
@@ -343,8 +354,29 @@ class GameInstance(models.Model):
     end_date_time = models.DateTimeField(null=True, blank=True)
 
     @property
+    def url(self, request):
+        user = request.user
+        if user.is_authenticated():
+            return "/{0}/{1}".format("participant" if auth.is_participant(user) else "experimenter", self.url_id)
+        else:
+            return self.namespace
+
+
+    @property
+    def participant_url(self):
+        return "/participant/{0}".format(self.url_id)
+
+    @property
+    def management_url(self):
+        return "/experimenter/{0}".format(self.url_id)
+
+    @property
     def namespace(self):
         return self.game_metadata.namespace
+
+    @property
+    def url_id(self):
+        return "{0}/{1}".format(self.game_metadata.namespace, self.id)
 
     def __unicode__(self):
         return "{game} created by {experimenter} on {date_created}: {status}".format(game=self.game_metadata, experimenter=self.experimenter, date_created=self.date_created, status=self.status)
