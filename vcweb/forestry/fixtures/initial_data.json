@@ -1,0 +1,23 @@
+[
+    {
+        "pk": 1, 
+        "model": "core.gamemetadata", 
+        "fields": {
+            "description": "Web-based version of the forestry field experiments.", 
+            "title": "Forestry Web Experiment", 
+            "namespace": "forestry", 
+            "about_url": "http://commons.asu.edu" 
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "core.gameconfiguration", 
+        "fields": {
+            "name": "Forestry Default Configuration", 
+            "creator": 1, 
+            "maximum_number_of_participants": 20, 
+            "game": ["forestry"], 
+            "is_public": true
+        }
+    }
+]

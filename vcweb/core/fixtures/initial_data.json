@@ -1,20 +1,6 @@
 [
     {
         "pk": 1, 
-        "model": "core.gamemetadata", 
-        "fields": {
-            "description": "Web-based version of the forestry field experiments.", 
-            "title": "Forestry Web Experiment", 
-            "namespace": "forestry", 
-            "last_modified": "2010-08-01", 
-            "date_created": "2010-08-01", 
-            "logo_url": "", 
-            "about_url": "http://commons.asu.edu", 
-            "default_game_configuration": null
-        }
-    }, 
-    {
-        "pk": 1, 
         "model": "core.institution", 
         "fields": {
             "url": "http://www.asu.edu", 

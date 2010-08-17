@@ -265,6 +265,12 @@ class RegistrationProfile(models.Model):
 #                return getter_function(self.obj, attr)
 #            return property(_Object)
 
+# manager classes
+class GameMetadataManager(models.Manager):
+
+    def get_by_natural_key(self, key):
+        return self.get(namespace=key)
+
 
 # Create your models here.
 class GameMetadata(models.Model):
@@ -278,6 +284,11 @@ class GameMetadata(models.Model):
     logo_url = models.URLField(null=True, blank=True, verify_exists=True)
     default_game_configuration = models.ForeignKey('GameConfiguration', null=True, blank=True)
 
+    objects = GameMetadataManager()
+
+    def natural_key(self):
+        return [self.namespace]
+
     def __unicode__(self):
         return self.title
 
@@ -285,7 +296,7 @@ class GameMetadata(models.Model):
         ordering = ['namespace', 'date_created']
 
 class Institution(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     url = models.URLField(null=True, blank=True, verify_exists=True)
 
@@ -314,7 +325,6 @@ class Experimenter(CommonsUser):
     approved = models.BooleanField(default=False)
     class Meta:
         ordering = ['user']
-
 
 class GameConfiguration(models.Model):
     game = models.ForeignKey(GameMetadata)
@@ -497,18 +507,10 @@ class GroupRoundDataValue(DataValue):
     class Meta:
         ordering = [ 'parameter' ]
 
-class ParticipantManager(models.Manager):
-    def get_all_game_instances(self, participant_id):
-        # generate appropriate query using Groups?
-        # link from groups to game instances
-        participant_groups = ParticipantGroup.objects.filter(participant__id=participant_id)
-
-        return GameInstance.objects.filter(pk__in=[])
-
 class Participant(CommonsUser):
     can_receive_invitations = models.BooleanField(default=False)
     group = models.ManyToManyField(Group, through='ParticipantGroup', related_name='groups')
-    objects = ParticipantManager()
+#    objects = ParticipantManager()
     class Meta:
         ordering = ['user']
 
