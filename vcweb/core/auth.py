@@ -11,25 +11,17 @@ and http://scottbarnham.com/blog/2008/08/21/extending-the-django-user-model-with
 
 
 from django.contrib.auth.backends import ModelBackend
-
+from django.contrib.auth.models import User
 from django.core.validators import email_re
-from vcweb.core.models import *
+
+import logging
+
 
 
 
 logger = logging.getLogger('vcweb.core.auth')
 
-def is_experimenter(user):
-    try:
-        return user.experimenter
-    except Experimenter.DoesNotExist:
-        return None
 
-def is_participant(user):
-    try:
-        return user.participant
-    except Participant.DoesNotExist:
-        return None
 
 class AuthenticationBackend(ModelBackend):
     def authenticate(self, username=None, password=None):

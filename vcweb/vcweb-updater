@@ -1,0 +1,8 @@
+#!/bin/bash
+
+export DJANGO_SETTINGS_MODULE=settings
+
+while [ "true" ]; do
+    python update.py
+    sleep 1
+done

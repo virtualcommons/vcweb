@@ -9,7 +9,6 @@ import hashlib
 import logging
 import random
 import re
-from vcweb.core import auth
 
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
@@ -256,15 +255,6 @@ class RegistrationProfile(models.Model):
 
         self.user.email_user(subject, message, settings.DEFAULT_FROM_EMAIL)
 
-## may use for urls.attribute_name trick shown in http://adam.gomaa.us/blog/2008/aug/11/the-python-property-builtin/
-#def attrproperty(getter_function):
-#    class _Object(object):
-#        def __init__(self, obj):
-#            self.obj = obj
-#            def __getattr__(self, attr):
-#                return getter_function(self.obj, attr)
-#            return property(_Object)
-
 # manager classes
 class GameMetadataManager(models.Manager):
 
@@ -304,8 +294,13 @@ class Institution(models.Model):
         return "{0} ({1})".format(self.name, self.url)
 
 class CommonsUser(models.Model):
-    # for docs on related_name see http://docs.djangoproject.com/en/dev/topics/db/models/#be-careful-with-related-name
-    # this related name makes user.experimenter and user.participant resolvable 
+    """
+    for docs on related_name see
+        http://docs.djangoproject.com/en/dev/topics/db/models/#be-careful-with-related-name
+    this related name makes user.experimenter and user.participant resolvable.  
+    FIXME: should revisit to see if this is recommended practice.
+    (either one or the other)
+    """
     user = models.OneToOneField(User, related_name='%(class)s', verbose_name=u'Django User', unique=True)
     failed_password_attempts = models.PositiveIntegerField(default=0)
     institution = models.ForeignKey(Institution, null=True, blank=True)
@@ -341,6 +336,12 @@ class GameConfiguration(models.Model):
     class Meta:
         ordering = ['game', 'creator', 'date_created']
 
+
+class GameInstanceManager(models.Manager):
+    def get_all_active(self):
+        return self.filter(status='ACTIVE')
+
+
 # an actual instance of a game; represents a concrete
 # parameterization of this game.
 class GameInstance(models.Model):
@@ -357,17 +358,29 @@ class GameInstance(models.Model):
     status = models.CharField(max_length=32, choices=GAME_STATUS_CHOICES)
     date_created = models.DateTimeField(auto_now_add=True)
     start_date_time = models.DateTimeField(null=True, blank=True)
-    # how long this experiment should run
+    # how long this experiment should run in a date format
+    # 1w2d = 1 week 2 days = 9d
     duration = models.CharField(max_length=32)
-    # duration of each tick.
+    """
+    how often the game server should tick.. 
+    """
     tick_duration = models.CharField(max_length=32)
     end_date_time = models.DateTimeField(null=True, blank=True)
+    """
+    If true, signifies that this is an extended game that should execute over the course of a few days or even months, utilizes cron for scheduling 
+    of events.
+    
+    If false, signifies that this is an experimenter-driven or short-term timer-driven game.
+    """
+    is_extended = models.BooleanField(default=False)
+
+    objects = GameInstanceManager()
 
     @property
     def url(self, request):
         user = request.user
         if user.is_authenticated():
-            return "/{0}/{1}".format("participant" if auth.is_participant(user) else "experimenter", self.url_id)
+            return "/{0}/{1}".format("participant" if is_participant(user) else "experimenter", self.url_id)
         else:
             return self.namespace
 
@@ -403,6 +416,11 @@ class GameInstance(models.Model):
 class RoundConfiguration(models.Model):
     game_configuration = models.ForeignKey(GameConfiguration)
     sequence_number = models.PositiveIntegerField()
+    """
+    How long should this round execute before advancing to the next?
+    
+    """
+    duration = models.PositiveIntegerField()
 
     def __unicode__(self):
         return "Round # {0} for game {1} ".format(self.sequence_number, self.game_configuration)
@@ -548,6 +566,16 @@ class ExperimenterSession(SessionTracker):
 class ParticipantSession(SessionTracker):
     participant_id = models.ForeignKey(Participant)
 
+def is_experimenter(user):
+    try:
+        return user.experimenter
+    except Experimenter.DoesNotExist:
+        return None
 
+def is_participant(user):
+    try:
+        return user.participant
+    except Participant.DoesNotExist:
+        return None
 
 

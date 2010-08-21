@@ -1,0 +1,54 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:             vcweb
+# Default-Start:        4 5
+# Default-Stop:         
+# Short-Description:    Virtual Commons Web external monitoring daemon that pings the VCWEB web application each second.
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+DESC="vcweb monitoring daemon"
+DAEMON=/usr/local/bin/vcweb-updater
+PIDFILE=/var/run/vcweb.pid
+
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+        echo -n "Starting $DESC."
+        start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON || true
+        echo -n "$DESC started, pidfile at $PIDFILE"
+  stop)
+        echo -n "Stopping $DESC: "
+        start-stop-daemon --stop --quiet --pidfile $PIDFILE \
+                --exec $DAEMON || true
+        echo "Stopped $DESC"
+        ;;
+  restart|force-reload)
+        echo -n "Restarting $DESC: "
+        start-stop-daemon --stop --quiet --pidfile \
+                $PIDFILE --exec $DAEMON || true
+        sleep 1
+        start-stop-daemon --start --quiet --pidfile \
+                $PIDFILE --exec $DAEMON || true
+        echo "started $DESC."
+        ;;
+  reload)
+        echo -n "Reloading $DESC configuration: "
+        start-stop-daemon --stop --signal HUP --quiet --pidfile $PIDFILE \
+            --exec $DAEMON || true
+        echo "reloaded $DESC."
+        ;;
+  status)
+        status_of_proc -p $PIDFILE "$DAEMON" vcweb-updater && exit 0 || exit $?
+        ;;
+  *)
+        echo "Usage: $NAME {start|stop|restart|reload|force-reload|status|configtest}" >&2
+        exit 1
+        ;;
+esac
+
