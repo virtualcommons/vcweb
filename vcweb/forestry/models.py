@@ -11,13 +11,3 @@ def forestry_second_tick(self):
     '''
     check all forestry game instances
     '''
-
-def start_monitor_thread(sender, **kwargs):
-    t = threading.Thread(target=forestry_second_tick, kwargs)
-    t.setDaemon(True)
-    t.start()
-
-
-second_tick.connect(start_monitor_thread, sender=None)
-
-

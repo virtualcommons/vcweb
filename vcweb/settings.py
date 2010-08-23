@@ -12,6 +12,7 @@ TEMPLATE_DEBUG = DEBUG
 LOCAL_DEVELOPMENT = True
 
 ADMINS = (
+          ('Allen Lee', 'allen.lee@asu.edu')
     # ('Your Name', 'your_email@domain.com'),
 )
 
@@ -92,7 +93,18 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'vcweb.core',
     'vcweb.forestry',
+    'djcelery',
 )
+BROKER_HOST = "localhost"
+BROKER_PORT = 5672
+BROKER_USER = "vcweb-celery"
+BROKER_PASSWORD = 'override this in settings_local.py'
+BROKER_VHOST = "vcweb.rabbitmq.host"
+
+
+import djcelery
+
+djcelery.setup_loader()
 
 # activation window
 ACCOUNT_ACTIVATION_DAYS = 30
