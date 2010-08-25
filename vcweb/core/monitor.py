@@ -10,11 +10,8 @@ from vcweb.core import signals
 
 from datetime import datetime
 
-class GameMonitor():
-    @classmethod
-    def update(cls):
-        now = datetime.now()
-        print "Sending second tick signal at %s" % now
-        print ["\n\t" + gameInstance + "\n" for gameInstance in GameInstance.objects.get_all_active()]
-        signals.second_tick.send(sender=cls, now)
+def second_tick_handler(sender, **kwargs):
+    print "handling second tick signal."
+
+signals.second_tick.connect(second_tick_handler)
 

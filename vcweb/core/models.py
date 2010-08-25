@@ -4,6 +4,7 @@ from django.db import models, transaction
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
 from vcweb import settings
+from vcweb.core import signals
 import datetime
 import hashlib
 import logging
@@ -13,6 +14,13 @@ import re
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
 logger = logging.getLogger('vcweb.core.models')
+
+def second_tick_handler(sender, time=None, **kwargs):
+    logger.debug("handling second tick signal at %s" % time)
+
+
+signals.second_tick.connect(second_tick_handler, sender=None)
+
 # FIXME: separate accounts / registration / experimenter / participant app from the core app
 
 # registration manager included / forked from http://bitbucket.org/ubernostrum/django-registration/

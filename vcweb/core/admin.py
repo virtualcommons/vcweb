@@ -7,7 +7,6 @@ Created on Jul 8, 2010
 from django.contrib import admin
 from vcweb.core.models import *
 
-admin.site.register(GameMetadata)
 admin.site.register(DataParameter)
 admin.site.register(RoundParameter)
 admin.site.register(GameConfiguration)

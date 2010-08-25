@@ -101,6 +101,11 @@ BROKER_USER = "vcweb-celery"
 BROKER_PASSWORD = 'override this in settings_local.py'
 BROKER_VHOST = "vcweb.rabbitmq.host"
 
+# celerybeat configuration
+CELERYBEAT_MAX_LOOP_INTERVAL = 5
+CELERYBEAT_LOG_FILE = 'celerybeat.log'
+CELERYBEAT_LOG_LEVEL = 'ERROR'
+
 
 import djcelery
 
