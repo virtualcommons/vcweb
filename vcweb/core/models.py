@@ -15,9 +15,14 @@ SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
 logger = logging.getLogger('vcweb.core.models')
 
+# tick handlers
+
 def second_tick_handler(sender, time=None, **kwargs):
     logger.debug("handling second tick signal at %s" % time)
-
+    # inspect all active games and update their time left
+    for gameInstance in GameInstance.objects.filter(status='ROUND_IN_PROGRESS'):
+        gameInstance.increment_elapsed_time()
+        gameInstance.save()
 
 signals.second_tick.connect(second_tick_handler, sender=None)
 
@@ -356,6 +361,9 @@ class GameInstance(models.Model):
     GAME_STATUS_CHOICES = (
                            ('INACTIVE', 'Not active'),
                            ('ACTIVE', 'Active'),
+                           ('PAUSED', 'Paused'),
+                           ('INSTRUCTIONS', 'Instructions'),
+                           ('ROUND_IN_PROGRESS', 'Round in progress'),
                            ('COMPLETED', 'Completed'),
                            )
     authentication_code = models.CharField(max_length=255)
@@ -373,16 +381,40 @@ class GameInstance(models.Model):
     how often the game server should tick.. 
     """
     tick_duration = models.CharField(max_length=32)
-    end_date_time = models.DateTimeField(null=True, blank=True)
+
+    ''' 
+    total elapsed time in seconds since this game was started, incremented by the heartbeat monitor.
+    '''
+    total_elapsed_time = models.PositiveIntegerField()
+    '''
+    elapsed time in seconds for the current round.
+    '''
+    current_round_elapsed_time = models.PositiveIntegerField()
     """
-    If true, signifies that this is an extended game that should execute over the course of a few days or even months, utilizes cron for scheduling 
-    of events.
+    If true, signifies that this is an extended game that should execute over the course of a few days or even months
     
     If false, signifies that this is an experimenter-driven or short-term timer-driven game.
     """
     is_extended = models.BooleanField(default=False)
 
     objects = GameInstanceManager()
+
+    def advance_to_next_round(self):
+        self.current_round_elapsed_time = 0
+        self.current_round_number += 1
+        self.status = 'INSTRUCTIONS'
+
+    def start_round(self):
+        self.status = 'ROUND_IN_PROGRESS'
+
+    def increment_elapsed_time(self):
+        self.total_elapsed_time += 1
+        self.current_round_elapsed_time += 1
+
+
+    @property
+    def get_current_round(self):
+        return RoundConfiguration.objects.get(game_configuration=self.game_configuration, sequence_number=self.current_round_number)
 
     @property
     def url(self, request):
@@ -426,7 +458,6 @@ class RoundConfiguration(models.Model):
     sequence_number = models.PositiveIntegerField()
     """
     How long should this round execute before advancing to the next?
-    
     """
     duration = models.PositiveIntegerField()
 
