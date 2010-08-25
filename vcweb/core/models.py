@@ -385,11 +385,11 @@ class GameInstance(models.Model):
     ''' 
     total elapsed time in seconds since this game was started, incremented by the heartbeat monitor.
     '''
-    total_elapsed_time = models.PositiveIntegerField()
+    total_elapsed_time = models.PositiveIntegerField(default=0)
     '''
     elapsed time in seconds for the current round.
     '''
-    current_round_elapsed_time = models.PositiveIntegerField()
+    current_round_elapsed_time = models.PositiveIntegerField(default=0)
     """
     If true, signifies that this is an extended game that should execute over the course of a few days or even months
     
