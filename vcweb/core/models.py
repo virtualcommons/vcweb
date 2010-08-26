@@ -16,11 +16,15 @@ SHA1_RE = re.compile('^[a-f0-9]{40}$')
 logger = logging.getLogger('vcweb.core.models')
 
 # tick handlers
-
+"""
+handles each second tick.  Might rethink this and use timed / delayed tasks in celery execute at the end of each round for 
+controlled experiments and for longer-scale experiments use 1 minute granularity for performance sake.
+"""
 def second_tick_handler(sender, time=None, **kwargs):
     logger.debug("handling second tick signal at %s" % time)
     # inspect all active games and update their time left
     for gameInstance in GameInstance.objects.filter(status='ROUND_IN_PROGRESS'):
+        # how to invoke a game-type-specific handler here?
         gameInstance.increment_elapsed_time()
         gameInstance.save()
 
@@ -377,25 +381,18 @@ class GameInstance(models.Model):
     # how long this experiment should run in a date format
     # 1w2d = 1 week 2 days = 9d
     duration = models.CharField(max_length=32)
-    """
-    how often the game server should tick.. 
-    """
+    """ how often the game server should tick. """
     tick_duration = models.CharField(max_length=32)
 
-    ''' 
-    total elapsed time in seconds since this game was started, incremented by the heartbeat monitor.
-    '''
+    """ total elapsed time in seconds since this game was started, incremented by the heartbeat monitor. """
     total_elapsed_time = models.PositiveIntegerField(default=0)
-    '''
-    elapsed time in seconds for the current round.
-    '''
+    """ elapsed time in seconds for the current round. """
     current_round_elapsed_time = models.PositiveIntegerField(default=0)
     """
-    If true, signifies that this is an extended game that should execute over the course of a few days or even months
-    
-    If false, signifies that this is an experimenter-driven or short-term timer-driven game.
+    Experimenter driven experiments have checkpoints where the experimenter needs to explicitly signal the system to 
+    move to the next round or stage.
     """
-    is_extended = models.BooleanField(default=False)
+    is_experimenter_driven = models.BooleanField(default=True)
 
     objects = GameInstanceManager()
 
@@ -519,14 +516,15 @@ class RoundParameter(models.Model):
     parameter_value = models.CharField(max_length=255)
 
     def __unicode__(self):
-        return "{0} -- Parameter: {1} Value: {2}".format(self.round_configuration, self.parameter, self.parameter_value)
+        return "{0} -- Parameter: {1} Value: {2}" % self.round_configuration, self.parameter, self.parameter_value
 
 class Group(models.Model):
     number = models.PositiveIntegerField()
     max_size = models.PositiveIntegerField()
     game_instance = models.ForeignKey(GameInstance)
+
     def __unicode__(self):
-        return "Group #{0} in {1}".format(self.number, self.game_instance)
+        return "Group #{0} in {1}" % self.number, self.game_instance
 
     class Meta:
         ordering = ['game_instance', 'number']
@@ -537,7 +535,7 @@ class GroupRoundData (models.Model):
     round = models.ForeignKey(RoundConfiguration)
 
     def __unicode__(self):
-        return "Round Data for {0} in {1}".format(self.group, self.round)
+        return "Round Data for {0} in {1}" % self.group, self.round
 
 #    class Meta:
 #        db_table = 'vcweb_group_round_data'
@@ -554,7 +552,7 @@ class DataValue(models.Model):
         DataValue.objects.filter(parameter=incoming_parameter, game_instance=incoming_game_instance)
 
     def __unicode__(self):
-        return "Data value: parameter {0}, value {1}, time recorded {2}, game {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.game_instance)
+        return "Data value: parameter {0}, value {1}, time recorded {2}, game {3}" % self.parameter, self.parameter_value, self.time_recorded, self.game_instance
 
     class Meta:
         abstract = True
@@ -571,7 +569,10 @@ class Participant(CommonsUser):
     class Meta:
         ordering = ['user']
 
-
+"""
+Many-to-many relationship entity storing a participant, group, their participant number in that group, the 
+round in which 
+"""
 class ParticipantGroup(models.Model):
     participant_number = models.PositiveIntegerField()
     participant = models.ForeignKey(Participant)
@@ -580,7 +581,7 @@ class ParticipantGroup(models.Model):
     date_joined = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
-        return "{0}: {1} (in {2})".format(self.participant, self.participant_number, self.group)
+        return "{0}: {1} (in {2})" % self.participant, self.participant_number, self.group
 
     class Meta:
         ordering = ['participant_number', 'participant']

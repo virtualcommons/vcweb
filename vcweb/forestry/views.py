@@ -5,7 +5,7 @@ from django.template import Context, loader
 from django.template.context import RequestContext
 
 def index(request):
-    return render_to_response('forestry-index.html', RequestContext(request))
+    return render_to_response('forestry/index.html', RequestContext(request))
 
 def configure(request):
     return Http404()
