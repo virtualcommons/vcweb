@@ -371,6 +371,7 @@ class GameInstance(models.Model):
                            ('PAUSED', 'Paused'),
                            ('INSTRUCTIONS', 'Instructions'),
                            ('ROUND_IN_PROGRESS', 'Round in progress'),
+                           ('DEBRIEFING', 'Debriefing'),
                            ('COMPLETED', 'Completed'),
                            )
     authentication_code = models.CharField(max_length=255)
@@ -455,6 +456,13 @@ class GameInstance(models.Model):
         return self.id.___hash___()
 
 class RoundConfiguration(models.Model):
+    ROUND_TYPE_CHOICES = (
+                          ('INSTRUCTIONS', 'Instructions'),
+                          ('QUIZ', 'Quiz round'),
+                          ('CHAT', 'Chat round'),
+                          ('PRACTICE', 'Practice round'),
+                          ('PLAY', 'Actual game round'),
+                          )
     game_configuration = models.ForeignKey(GameConfiguration)
     sequence_number = models.PositiveIntegerField()
     date_created = models.DateTimeField(auto_now_add=True)
@@ -465,20 +473,32 @@ class RoundConfiguration(models.Model):
     duration = models.PositiveIntegerField(default=0)
     """ instructions, if any, to display before the round begins """
     instructions = models.TextField(null=True, blank=True)
-    """ debriefing, if any, to display before the round begins """
+    """ debriefing, if any, to display after the round ends """
     debriefing = models.TextField(null=True, blank=True)
 
-    def get_instructions(self, participant_id=None, **kwargs):
-        if self.instructions is None:
-            logger.debug("No instructions available for %s" % self.__unicode__())
-            return ''
+    round_type = models.CharField(max_length=32, choices=ROUND_TYPE_CHOICES, default='PLAY')
+
+    def get_debriefing(self, participant_id=None, **kwargs):
+        if self.debriefing:
+            return self.templatize(self.debriefing, participant_id, kwargs)
         else:
+            logger.debug("No debriefing available for %s" % self)
+            return None
+
+    def get_instructions(self, participant_id=None, **kwargs):
+        if self.instructions:
+            return self.templatize(self.instructions, participant_id, kwargs)
+        else:
+            logger.debug("No instructions available for %s" % self)
+            return None
+
+    def templatize(self, template_string, participant_id=None, **kwargs):
+        if template_string:
             try:
-                return Template(self.instructions).substitute(kwargs, round_number=self.sequence_number, participant_id=participant_id)
-            except ValueError as error:
-                return "Error while parsing instructions: %s \nAborting." % error
-
-
+                return Template(template_string).substitute(kwargs, round_number=self.sequence_number, participant_id=participant_id)
+            except ValueError as templateError:
+                return "Error while parsing template_string text: %s" % templateError
+        return None
 
     def __unicode__(self):
         return "Round # {0} for game {1} ".format(self.sequence_number, self.game_configuration)
