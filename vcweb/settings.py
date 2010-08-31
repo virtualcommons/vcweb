@@ -125,4 +125,9 @@ AUTHENTICATION_BACKENDS = (
 # only needed for windows boxes.  Put in settings_local instead?
 STATIC_BASE_DIR = os.path.join(os.path.dirname(__file__), 'static').replace('\\', '/')
 
-from settings_local import *
+try:
+    from settings_local import *
+except ImportError:
+    print "Couldn't load local settings"
+    pass
+

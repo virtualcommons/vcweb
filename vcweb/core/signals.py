@@ -12,6 +12,8 @@ round_started = Signal(providing_args=["game_instance_id", 'round_configuration_
 round_ended = Signal(providing_args=['game_instance_id', 'round_configuration_id'])
 second_tick = Signal(providing_args=['time'])
 
+post_login = Signal(providing_args=['user'])
+post_logout = Signal(providing_args=['user'])
 
 
 

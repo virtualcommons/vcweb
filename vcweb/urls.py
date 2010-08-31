@@ -1,11 +1,11 @@
 from django.conf.urls.defaults import *
-
+from django.contrib import admin
 import settings
+
 
 # FIXME: needed?
 #import settings (r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.BASE_DIR+'/core/static/', 'show_indexes': True})
 # Uncomment the next two lines to enable the admin:
-from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
@@ -17,7 +17,7 @@ urlpatterns = patterns('',
     url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$', 'django.contrib.auth.views.password_reset_confirm', {'template_name':'password_reset_confirm.html'}),
     url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete', {'template_name':'password_reset_complete.html'}),
 
-    url(r'^forestry/', include('vcweb.forestry.urls', namespace='forestry', app_name='forestry')),
+    url(r'^forestry/', include('forestry.urls', namespace='forestry', app_name='forestry')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'', include('vcweb.core.urls', namespace='core', app_name='vcweb')),
     # make sure this is last

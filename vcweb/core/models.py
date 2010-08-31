@@ -3,6 +3,7 @@ from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
+from string import Template
 from vcweb import settings
 from vcweb.core import signals
 import datetime
@@ -297,7 +298,7 @@ class GameMetadata(models.Model):
         return [self.namespace]
 
     def __unicode__(self):
-        return self.title
+        return "title:{0} namespace:{1} - created on {2}, last modified at {3}".format(self.title, self.namespace, self.date_created, self.last_modified)
 
     class Meta:
         ordering = ['namespace', 'date_created']
@@ -306,6 +307,8 @@ class Institution(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     url = models.URLField(null=True, blank=True, verify_exists=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
         return "{0} ({1})".format(self.name, self.url)
@@ -377,6 +380,7 @@ class GameInstance(models.Model):
     game_configuration = models.ForeignKey(GameConfiguration)
     status = models.CharField(max_length=32, choices=GAME_STATUS_CHOICES)
     date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     start_date_time = models.DateTimeField(null=True, blank=True)
     # how long this experiment should run in a date format
     # 1w2d = 1 week 2 days = 9d
@@ -453,10 +457,28 @@ class GameInstance(models.Model):
 class RoundConfiguration(models.Model):
     game_configuration = models.ForeignKey(GameConfiguration)
     sequence_number = models.PositiveIntegerField()
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     """
     How long should this round execute before advancing to the next?
     """
-    duration = models.PositiveIntegerField()
+    duration = models.PositiveIntegerField(default=0)
+    """ instructions, if any, to display before the round begins """
+    instructions = models.TextField(null=True, blank=True)
+    """ debriefing, if any, to display before the round begins """
+    debriefing = models.TextField(null=True, blank=True)
+
+    def get_instructions(self, participant_id=None, **kwargs):
+        if self.instructions is None:
+            logger.debug("No instructions available for %s" % self.__unicode__())
+            return ''
+        else:
+            try:
+                return Template(self.instructions).substitute(kwargs, round_number=self.sequence_number, participant_id=participant_id)
+            except ValueError as error:
+                return "Error while parsing instructions: %s \nAborting." % error
+
+
 
     def __unicode__(self):
         return "Round # {0} for game {1} ".format(self.sequence_number, self.game_configuration)
@@ -475,6 +497,9 @@ class Parameter(models.Model):
                     )
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    creator = models.ForeignKey(Experimenter)
 
     def __unicode__(self):
         return "{0} ({1})".format(self.name, self.type)
@@ -483,6 +508,9 @@ class Parameter(models.Model):
         abstract = True
         ordering = ['name']
 
+"""
+Configuration parameters are used to tune the 
+"""
 class ConfigurationParameter(Parameter):
     def __unicode__(self):
         return 'Configuration Parameter: ' + self.name
@@ -516,7 +544,7 @@ class RoundParameter(models.Model):
     parameter_value = models.CharField(max_length=255)
 
     def __unicode__(self):
-        return "{0} -- Parameter: {1} Value: {2}" % self.round_configuration, self.parameter, self.parameter_value
+        return "{0} -- Parameter: {1} Value: {2}".format(self.round_configuration, self.parameter, self.parameter_value)
 
 class Group(models.Model):
     number = models.PositiveIntegerField()
@@ -524,35 +552,39 @@ class Group(models.Model):
     game_instance = models.ForeignKey(GameInstance)
 
     def __unicode__(self):
-        return "Group #{0} in {1}" % self.number, self.game_instance
+        return "Group #{0} in {1}".format(self.number, self.game_instance)
 
     class Meta:
         ordering = ['game_instance', 'number']
 
 
+"""
+Data values stored for a particular group in a particular round.
+"""
 class GroupRoundData (models.Model):
     group = models.ForeignKey(Group)
     round = models.ForeignKey(RoundConfiguration)
+    """ show instructions before the round begins? """
+    show_instructions = models.BooleanField(default=True)
+    """ show debriefing after the round ends? """
+    show_debriefing = models.BooleanField(default=False)
+    elapsed_time = models.PositiveIntegerField(default=0)
 
     def __unicode__(self):
-        return "Round Data for {0} in {1}" % self.group, self.round
+        return "Round Data for {0} in {1}".format(self.group, self.round)
 
 #    class Meta:
 #        db_table = 'vcweb_group_round_data'
 
 class DataValue(models.Model):
     parameter = models.ForeignKey(DataParameter)
-    parameter_value = models.CharField(max_length=255)
+    parameter_value = models.CharField(max_length=512)
     # FIXME: change to DateTimeField
     time_recorded = models.DateTimeField(auto_now_add=True)
     game_instance = models.ForeignKey(GameInstance)
 
-    @staticmethod
-    def find(incoming_parameter, incoming_game_instance):
-        DataValue.objects.filter(parameter=incoming_parameter, game_instance=incoming_game_instance)
-
     def __unicode__(self):
-        return "Data value: parameter {0}, value {1}, time recorded {2}, game {3}" % self.parameter, self.parameter_value, self.time_recorded, self.game_instance
+        return "Data value: parameter {0}, value {1}, time recorded {2}, game {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.game_instance)
 
     class Meta:
         abstract = True
@@ -581,17 +613,23 @@ class ParticipantGroup(models.Model):
     date_joined = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
-        return "{0}: {1} (in {2})" % self.participant, self.participant_number, self.group
+        return "{0}: {1} (in {2})".format(self.participant, self.participant_number, self.group)
 
     class Meta:
         ordering = ['participant_number', 'participant']
 
-class ParticipantData(models.Model):
+"""
+holds all participant data for a given round and participant.
+"""
+class ParticipantRoundData(models.Model):
     participant = models.ForeignKey(Participant)
     round_configuration = models.ForeignKey(RoundConfiguration)
 
+"""
+The particular participant data value for a given ParticipantRoundData (round + participant entity)
+"""
 class ParticipantDataValue(DataValue):
-    participant_data = models.ForeignKey(ParticipantData)
+    participant_data = models.ForeignKey(ParticipantRoundData)
 
     class Meta:
         ordering = [ 'parameter' ]
@@ -599,6 +637,7 @@ class ParticipantDataValue(DataValue):
 class SessionTracker(models.Model):
     login_time = models.DateTimeField(auto_now_add=True)
     logout_time = models.DateTimeField()
+    # hook into logout signal?
 
 class ExperimenterSession(SessionTracker):
     experimenter_id = models.ForeignKey(Experimenter)

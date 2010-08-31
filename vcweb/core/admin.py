@@ -4,8 +4,10 @@ Created on Jul 8, 2010
 @author: alllee
 '''
 
+from Canvas import Group
 from django.contrib import admin
-from vcweb.core.models import *
+from vcweb.core.models import DataParameter, RoundParameter, GameConfiguration, \
+    RoundConfiguration, Experimenter, Participant, GameInstance, ParticipantGroup
 
 admin.site.register(DataParameter)
 admin.site.register(RoundParameter)
