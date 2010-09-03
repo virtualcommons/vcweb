@@ -330,7 +330,7 @@ class CommonsUser(models.Model):
         return self.user.is_authenticated()
 
     def __unicode__(self):
-        return "{0} ({1})".format(self.user.get_full_name(), self.user.username)
+        return "{0} ({1})".format(self.user.get_full_name(), self.user.email)
 
     class Meta:
         abstract = True
@@ -351,7 +351,10 @@ class ExperimentConfiguration(models.Model):
     is_public = models.BooleanField(default=True)
 
     def __unicode__(self):
-        return "Experiment Configuration [{name}] for {experiment_metadata} created by {creator} on {date_created}".format(name=self.name, experiment_metadata=self.experiment_metadata, creator=self.creator, date_created=self.date_created)
+        return "Experiment Configuration [{name}] for {experiment_metadata} created by {creator} on {date_created}".format(name=self.name,
+                                                                                                                           experiment_metadata=self.experiment_metadata,
+                                                                                                                           creator=self.creator,
+                                                                                                                           date_created=self.date_created)
 
     class Meta:
         ordering = ['experiment_metadata', 'creator', 'date_created']
@@ -616,16 +619,29 @@ class GroupRoundDataValue(DataValue):
 
 class Participant(CommonsUser):
     can_receive_invitations = models.BooleanField(default=False)
-    group = models.ManyToManyField(Group, through='ParticipantGroup', related_name='groups')
+    group = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='groups')
 #    objects = ParticipantManager()
     class Meta:
         ordering = ['user']
 
 """
-Many-to-many relationship entity storing a participant, group, their participant number in that group, the 
-round in which 
+Many-to-many relationship entity storing a participant and the experiment they are participating in.
 """
-class ParticipantGroup(models.Model):
+class ParticipantExperimentRelationship(models.Model):
+    participant = models.ForeignKey(Participant)
+    experiment = models.ForeignKey(Experiment)
+    date_created = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User)
+
+    def __unicode__(self):
+        return "Experiment {0} - participant {1} (created {2})".format(self.experiment, self.participant, self.date_created)
+
+
+"""
+Many-to-many relationship entity storing a participant, group, their participant number in that group, the 
+round in which they joined the group, and the datetime that they joined the group.
+"""
+class ParticipantGroupRelationship(models.Model):
     participant_number = models.PositiveIntegerField()
     participant = models.ForeignKey(Participant)
     group = models.ForeignKey(Group)
