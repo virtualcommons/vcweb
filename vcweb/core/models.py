@@ -23,11 +23,11 @@ controlled experiments and for longer-scale experiments use 1 minute granularity
 """
 def second_tick_handler(sender, time=None, **kwargs):
     logger.debug("handling second tick signal at %s" % time)
-    # inspect all active games and update their time left
-    for gameInstance in GameInstance.objects.filter(status='ROUND_IN_PROGRESS'):
-        # how to invoke a game-type-specific handler here?
-        gameInstance.increment_elapsed_time()
-        gameInstance.save()
+    # inspect all active experiments and update their time left
+    for experiment in Experiment.objects.filter(status='ROUND_IN_PROGRESS'):
+        # how to invoke a experiment_metadata-type-specific handler here?
+        experiment.increment_elapsed_time()
+        experiment.save()
 
 signals.second_tick.connect(second_tick_handler, sender=None)
 
@@ -274,25 +274,25 @@ class RegistrationProfile(models.Model):
         self.user.email_user(subject, message, settings.DEFAULT_FROM_EMAIL)
 
 # manager classes
-class GameMetadataManager(models.Manager):
+class ExperimentMetadataManager(models.Manager):
 
     def get_by_natural_key(self, key):
         return self.get(namespace=key)
 
 
 # Create your models here.
-class GameMetadata(models.Model):
+class ExperimentMetadata(models.Model):
     title = models.CharField(max_length=255)
-    # the URL namespace that this game will occupy
+    # the URL namespace that this experiment_metadata will occupy
     namespace = models.CharField(max_length=255, unique=True, validators=[RegexValidator(regex=r'^\w+$'), ])
     description = models.TextField(null=True, blank=True)
     date_created = models.DateField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     about_url = models.URLField(null=True, blank=True, verify_exists=True)
     logo_url = models.URLField(null=True, blank=True, verify_exists=True)
-    default_game_configuration = models.ForeignKey('GameConfiguration', null=True, blank=True)
+    default_configuration = models.ForeignKey('ExperimentConfiguration', null=True, blank=True)
 
-    objects = GameMetadataManager()
+    objects = ExperimentMetadataManager()
 
     def natural_key(self):
         return [self.namespace]
@@ -341,8 +341,8 @@ class Experimenter(CommonsUser):
     class Meta:
         ordering = ['user']
 
-class GameConfiguration(models.Model):
-    game = models.ForeignKey(GameMetadata)
+class ExperimentConfiguration(models.Model):
+    experiment_metadata = models.ForeignKey(ExperimentMetadata)
     creator = models.ForeignKey(Experimenter)
     name = models.CharField(max_length=255)
     maximum_number_of_participants = models.PositiveIntegerField()
@@ -351,21 +351,21 @@ class GameConfiguration(models.Model):
     is_public = models.BooleanField(default=True)
 
     def __unicode__(self):
-        return "{name} (GameConfiguration) for {game} created by {creator} on {date_created}".format(name=self.name, game=self.game, creator=self.creator, date_created=self.date_created)
+        return "Experiment Configuration [{name}] for {experiment_metadata} created by {creator} on {date_created}".format(name=self.name, experiment_metadata=self.experiment_metadata, creator=self.creator, date_created=self.date_created)
 
     class Meta:
-        ordering = ['game', 'creator', 'date_created']
+        ordering = ['experiment_metadata', 'creator', 'date_created']
 
 
-class GameInstanceManager(models.Manager):
+class ExperimentManager(models.Manager):
     def get_all_active(self):
         return self.filter(status='ACTIVE')
 
 
-# an actual instance of a game; represents a concrete
-# parameterization of this game.
-class GameInstance(models.Model):
-    GAME_STATUS_CHOICES = (
+# an actual instance of an experiment; represents a concrete
+# parameterization of this experiment.
+class Experiment(models.Model):
+    STATUS_CHOICES = (
                            ('INACTIVE', 'Not active'),
                            ('ACTIVE', 'Active'),
                            ('PAUSED', 'Paused'),
@@ -377,19 +377,19 @@ class GameInstance(models.Model):
     authentication_code = models.CharField(max_length=255)
     current_round_number = models.PositiveIntegerField()
     experimenter = models.ForeignKey(Experimenter)
-    game_metadata = models.ForeignKey(GameMetadata)
-    game_configuration = models.ForeignKey(GameConfiguration)
-    status = models.CharField(max_length=32, choices=GAME_STATUS_CHOICES)
+    experiment_metadata = models.ForeignKey(ExperimentMetadata)
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration)
+    status = models.CharField(max_length=32, choices=STATUS_CHOICES)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     start_date_time = models.DateTimeField(null=True, blank=True)
     # how long this experiment should run in a date format
     # 1w2d = 1 week 2 days = 9d
     duration = models.CharField(max_length=32)
-    """ how often the game server should tick. """
+    """ how often the experiment_metadata server should tick. """
     tick_duration = models.CharField(max_length=32)
 
-    """ total elapsed time in seconds since this game was started, incremented by the heartbeat monitor. """
+    """ total elapsed time in seconds since this experiment_metadata was started, incremented by the heartbeat monitor. """
     total_elapsed_time = models.PositiveIntegerField(default=0)
     """ elapsed time in seconds for the current round. """
     current_round_elapsed_time = models.PositiveIntegerField(default=0)
@@ -399,7 +399,7 @@ class GameInstance(models.Model):
     """
     is_experimenter_driven = models.BooleanField(default=True)
 
-    objects = GameInstanceManager()
+    objects = ExperimentManager()
 
     def advance_to_next_round(self):
         self.current_round_elapsed_time = 0
@@ -416,7 +416,7 @@ class GameInstance(models.Model):
 
     @property
     def get_current_round(self):
-        return RoundConfiguration.objects.get(game_configuration=self.game_configuration, sequence_number=self.current_round_number)
+        return RoundConfiguration.objects.get(experiment_configuration=self.experiment_configuration, sequence_number=self.current_round_number)
 
     @property
     def url(self, request):
@@ -437,14 +437,14 @@ class GameInstance(models.Model):
 
     @property
     def namespace(self):
-        return self.game_metadata.namespace
+        return self.experiment_metadata.namespace
 
     @property
     def url_id(self):
-        return "{0}/{1}".format(self.game_metadata.namespace, self.id)
+        return "{0}/{1}".format(self.experiment_metadata.namespace, self.id)
 
     def __unicode__(self):
-        return "{game} created by {experimenter} on {date_created}: {status}".format(game=self.game_metadata, experimenter=self.experimenter, date_created=self.date_created, status=self.status)
+        return "{experiment_metadata} created by {experimenter} on {date_created}: {status}".format(experiment_metadata=self.experiment_metadata, experimenter=self.experimenter, date_created=self.date_created, status=self.status)
 
     def ___eq___(self, other):
         return self.id == other.id
@@ -461,9 +461,9 @@ class RoundConfiguration(models.Model):
                           ('QUIZ', 'Quiz round'),
                           ('CHAT', 'Chat round'),
                           ('PRACTICE', 'Practice round'),
-                          ('PLAY', 'Actual game round'),
+                          ('PLAY', 'Actual experiment_metadata round'),
                           )
-    game_configuration = models.ForeignKey(GameConfiguration)
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration)
     sequence_number = models.PositiveIntegerField()
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -501,7 +501,7 @@ class RoundConfiguration(models.Model):
         return None
 
     def __unicode__(self):
-        return "Round # {0} for game {1} ".format(self.sequence_number, self.game_configuration)
+        return "Round # {0} for experiment_metadata {1} ".format(self.sequence_number, self.experiment_configuration)
 
 #    class Meta:
 #        db_table = 'vcweb_round_configuration'
@@ -569,13 +569,13 @@ class RoundParameter(models.Model):
 class Group(models.Model):
     number = models.PositiveIntegerField()
     max_size = models.PositiveIntegerField()
-    game_instance = models.ForeignKey(GameInstance)
+    experiment = models.ForeignKey(Experiment)
 
     def __unicode__(self):
-        return "Group #{0} in {1}".format(self.number, self.game_instance)
+        return "Group #{0} in {1}".format(self.number, self.experiment)
 
     class Meta:
-        ordering = ['game_instance', 'number']
+        ordering = ['experiment', 'number']
 
 
 """
@@ -601,10 +601,10 @@ class DataValue(models.Model):
     parameter_value = models.CharField(max_length=512)
     # FIXME: change to DateTimeField
     time_recorded = models.DateTimeField(auto_now_add=True)
-    game_instance = models.ForeignKey(GameInstance)
+    experiment = models.ForeignKey(Experiment)
 
     def __unicode__(self):
-        return "Data value: parameter {0}, value {1}, time recorded {2}, game {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.game_instance)
+        return "Data value: parameter {0}, value {1}, time recorded {2}, experiment_metadata {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.experiment)
 
     class Meta:
         abstract = True

@@ -3,22 +3,19 @@
 {% block title %}Forestry{% endblock %}
 
 {% block header %}
-<div id='menu'>
-	<ul>
-		<li><a href='experimenter/'>Experimenters</a></li>
-		<li><a href='{% url participate %}'>Participate</a></li>
-	</ul>
-</div>
-
-
+{% include "includes/participant-nav-menu.inc" %}
 {% endblock header %}
 
 {% block content %}
 <div id='post'>
-	<h2 class='title'>Forestry</h2>
+	<h2 class='title'>Forestry Experiment</h2>
 	<div class='entry'>
-	The forestry experiment.
-	 
+	Welcome back, {{ user }}
+	TODO:
+	<ul>
+	<li>List current experiments.</li>
+	<li>List past experiments (?)</li>
+	</ul>
 	</div>
 	
 

@@ -8,16 +8,23 @@
 {% endblock %}
 {% block content %}
 <div class='notice'>
-Welcome back, {{participant}}.  Games you are participating in are listed below.
+Welcome back, {{participant}}.  Experiments you are currently participating in are listed below.
 </div>
 
 <fieldset>
 <legend>Your experiments</legend>
+{% if games %}
 <ul>
-{% for game_instance in games %}
-<li>
-<a href='{{game_instance.participant_url}}'>{{ game_instance }}</a></li>
-{% endfor %}
+	{% for game_instance in games %}
+	<li><a href='{{game_instance.participant_url}}'>{{
+	game_instance }}</a></li>
+	{% endfor %}
 </ul>
+{% else %}
+<div class='info'>
+You are not participating in any active experiments.	
+</div>
+{% endif %}
+
 </fieldset>
 {% endblock content %}

@@ -3,25 +3,30 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
-from vcweb.core.models import GameInstance
+from vcweb.core.models import Experiment, is_participant
 import logging
 
 logger = logging.getLogger('forestry.views')
 
+@login_required
 def index(request):
-    return render_to_response('forestry/index.html', RequestContext(request))
+    if is_participant(request.user):
+        return render_to_response('forestry/index.html', RequestContext(request))
+    return redirect('experimenter')
 
+@login_required
 def configure(request):
     return Http404()
 
-
+@login_required
 def experimenter(request):
-    return Http404()
+    return render_to_response('forestry/experimenter.html', RequestContext(request))
+
 
 @login_required
-def participate(request, game_instance_id=None):
-    if game_instance_id is None:
-        logger.debug("No game instance id specified, redirecting to forestry index page.")
+def participate(request, experiment_id=None):
+    if experiment_id is None:
+        logger.debug("No experiment id specified, redirecting to forestry index page.")
         return redirect('index')
     try:
         participant = request.user.participant
@@ -29,12 +34,12 @@ def participate(request, game_instance_id=None):
         logger.debug("No participant available on logged in user %s" % request.user)
         return redirect('index')
     try:
-        game_instance = GameInstance.objects.get(pk=game_instance_id)
+        experiment = Experiment.objects.get(pk=experiment_id)
         return render_to_response('forestry/participate.html',
-                                  { 'participant': participant, 'game_instance' : game_instance },
+                                  { 'participant': participant, 'experiment' : experiment },
                                   context_instance=RequestContext(request))
-    except GameInstance.DoesNotExist:
-        logger.warning("No game instance for id [%s]" % game_instance_id)
+    except Experiment.DoesNotExist:
+        logger.warning("No experiment for id [%s]" % experiment_id)
         return redirect('index')
 
 

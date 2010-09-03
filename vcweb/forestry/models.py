@@ -7,7 +7,7 @@ import threading
 
 
 def forestry_second_tick(self):
-    print "Monitoring Forestry Game Instances."
+    print "Monitoring Forestry Experiments."
     '''
-    check all forestry game instances
+    check all forestry experiments.
     '''

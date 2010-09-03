@@ -12,7 +12,7 @@ from vcweb.core import signals
 
 @periodic_task(run_every=timedelta(seconds=1), ignore_result=True)
 def every_second():
-    # use signal or just update game instance models directly here?
+    # use signal or just update experiment instance models directly here?
     signals.second_tick.send(sender=None, time=datetime.now())
 
 

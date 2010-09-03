@@ -1,7 +1,7 @@
 [
     {
         "pk": 1, 
-        "model": "core.gamemetadata", 
+        "model": "core.experimentmetadata", 
         "fields": {
             "description": "Web-based version of the forestry field experiments.", 
             "title": "Forestry Web Experiment", 
@@ -11,12 +11,12 @@
     }, 
     {
         "pk": 1, 
-        "model": "core.gameconfiguration", 
+        "model": "core.experimentconfiguration", 
         "fields": {
             "name": "Forestry Default Configuration", 
             "creator": 1, 
             "maximum_number_of_participants": 20, 
-            "game": ["forestry"], 
+            "experiment_metadata": ["forestry"], 
             "is_public": true
         }
     }

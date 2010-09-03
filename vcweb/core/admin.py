@@ -1,20 +1,17 @@
 '''
-Created on Jul 8, 2010
-
-@author: alllee
+registering django models with django admin
 '''
 
-from Canvas import Group
 from django.contrib import admin
-from vcweb.core.models import DataParameter, RoundParameter, GameConfiguration, \
-    RoundConfiguration, Experimenter, Participant, GameInstance, ParticipantGroup
+from vcweb.core.models import DataParameter, RoundParameter, ExperimentConfiguration, \
+    RoundConfiguration, Experimenter, Participant, Experiment, ParticipantGroup, Group
 
 admin.site.register(DataParameter)
 admin.site.register(RoundParameter)
-admin.site.register(GameConfiguration)
+admin.site.register(ExperimentConfiguration)
 admin.site.register(RoundConfiguration)
 admin.site.register(Experimenter)
 admin.site.register(Participant)
 admin.site.register(Group)
-admin.site.register(GameInstance)
+admin.site.register(Experiment)
 admin.site.register(ParticipantGroup)

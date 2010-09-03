@@ -17,15 +17,14 @@ import logging
 
 logger = logging.getLogger('vcweb.core.auth')
 
+# FIXME: check for and handle Participant experiment auth codes.
 class AuthenticationBackend(ModelBackend):
     def authenticate(self, username=None, password=None):
         if email_re.search(username):
             try:
                 user = User.objects.get(email=username)
-                # FIXME: check for Participant game codes.
                 if user.check_password(password):
                     return user
-                # password may be game code.  check it against participant's game game codes.
             except User.DoesNotExist:
                 return None
         return None

@@ -11,5 +11,5 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'accounts/profile/$', 'account_profile', name='profile'),
     url(r'experimenter/$', 'experimenter_index', name='experimenter-index'),
     url(r'participant/$', 'participant_index', name='participant-index'),
-    url(r'experimenter/configure/(?P<game_instance_id>\d+)$', 'configure', name='configure-experiment'),
+    url(r'experimenter/configure/(?P<experiment_id>\d+)$', 'configure', name='configure-experiment'),
 )
