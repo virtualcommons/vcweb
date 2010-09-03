@@ -3,8 +3,7 @@ registering django models with django admin
 '''
 
 from django.contrib import admin
-from vcweb.core.models import DataParameter, RoundParameter, ExperimentConfiguration, \
-    RoundConfiguration, Experimenter, Participant, Experiment, ParticipantGroup, Group
+from vcweb.core.models import *
 
 admin.site.register(DataParameter)
 admin.site.register(RoundParameter)
@@ -14,4 +13,5 @@ admin.site.register(Experimenter)
 admin.site.register(Participant)
 admin.site.register(Group)
 admin.site.register(Experiment)
-admin.site.register(ParticipantGroup)
+admin.site.register(ParticipantExperimentRelationship)
+admin.site.register(ParticipantGroupRelationship)
