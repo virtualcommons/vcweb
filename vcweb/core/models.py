@@ -381,7 +381,7 @@ class Experiment(models.Model):
     current_round_number = models.PositiveIntegerField()
     experimenter = models.ForeignKey(Experimenter)
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
-    experiment_configuration = models.ForeignKey(ExperimentConfiguration)
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='experiments')
     status = models.CharField(max_length=32, choices=STATUS_CHOICES)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -414,6 +414,9 @@ class Experiment(models.Model):
     def allocate_groups(self, randomize=True):
         logger.debug("allocating groups from all participants: %s" % self.participants)
 
+
+    def get_participant_number(self, participant):
+        """ ASSUMPTION: there will always be at least one Group for an Experiment """
 
 
 
@@ -483,7 +486,7 @@ class RoundConfiguration(models.Model):
                           ('PRACTICE', 'Practice round'),
                           ('PLAY', 'Actual experiment round'),
                           )
-    experiment_configuration = models.ForeignKey(ExperimentConfiguration)
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configurations')
     sequence_number = models.PositiveIntegerField()
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -591,7 +594,7 @@ class RoundParameter(models.Model):
 class Group(models.Model):
     number = models.PositiveIntegerField()
     max_size = models.PositiveIntegerField()
-    experiment = models.ForeignKey(Experiment)
+    experiment = models.ForeignKey(Experiment, related_name='groups')
 
     def __unicode__(self):
         return "Group #{0} in {1}".format(self.number, self.experiment)
@@ -604,8 +607,8 @@ class Group(models.Model):
 Data values stored for a particular group in a particular round.
 """
 class GroupRoundData (models.Model):
-    group = models.ForeignKey(Group)
-    round = models.ForeignKey(RoundConfiguration)
+    group = models.ForeignKey(Group, related_name='group_round_data')
+    round = models.ForeignKey(RoundConfiguration, related_name='group_round_data')
     """ show instructions before the round begins? """
     show_instructions = models.BooleanField(default=True)
     """ show debriefing after the round ends? """
@@ -632,7 +635,7 @@ class DataValue(models.Model):
         abstract = True
 
 class GroupRoundDataValue(DataValue):
-    group_round_data = models.ForeignKey(GroupRoundData)
+    group_round_data = models.ForeignKey(GroupRoundData, related_name='group_round_data_values')
     class Meta:
         ordering = [ 'parameter' ]
 
@@ -656,6 +659,21 @@ class ParticipantExperimentRelationship(models.Model):
     def __unicode__(self):
         return "Experiment {0} - participant {1} (created {2})".format(self.experiment, self.participant, self.date_created)
 
+class ChatMessage(models.Model):
+    participant = models.ForeignKey(Participant, related_name='chat_messages')
+    message = models.CharField(max_length=512)
+    """ if set, this is a targeted message.  If null, this is a broadcast message to the entire group """
+    target_participant = models.ForeignKey(Participant, null=True, blank=True, related_name='targets')
+    target_group = models.ForeignKey(Group, null=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    experiment = models.ForeignKey(Experiment, related_name='chat_messages')
+
+    def __unicode__(self):
+        """ return this participant's sequence number combined with the message """
+        participant_number = self.experiment.get_participant_number(self.participant)
+        return "{0}: {1}".format(participant_number, self.message)
+
+
 
 """
 Many-to-many relationship entity storing a participant, group, their participant number in that group, the 
@@ -678,15 +696,14 @@ class ParticipantGroupRelationship(models.Model):
 holds all participant data for a given round and participant.
 """
 class ParticipantRoundData(models.Model):
-    participant = models.ForeignKey(Participant)
-    round_configuration = models.ForeignKey(RoundConfiguration)
+    participant = models.ForeignKey(Participant, related_name='round_data')
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_data')
 
 """
 The particular participant data value for a given ParticipantRoundData (round + participant entity)
 """
 class ParticipantDataValue(DataValue):
-    participant_data = models.ForeignKey(ParticipantRoundData)
-
+    participant_data = models.ForeignKey(ParticipantRoundData, related_name='participant_data')
     class Meta:
         ordering = [ 'parameter' ]
 
