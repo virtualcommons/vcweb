@@ -351,7 +351,7 @@ class ExperimentConfiguration(models.Model):
     is_public = models.BooleanField(default=True)
 
     def __unicode__(self):
-        return "Experiment Configuration [{name}] for {experiment_metadata} created by {creator} on {date_created}".format(name=self.name,
+        return "Experiment configuration [{name}] for {experiment_metadata} created by {creator} on {date_created}".format(name=self.name,
                                                                                                                            experiment_metadata=self.experiment_metadata,
                                                                                                                            creator=self.creator,
                                                                                                                            date_created=self.date_created)
@@ -403,6 +403,23 @@ class Experiment(models.Model):
     is_experimenter_driven = models.BooleanField(default=True)
 
     objects = ExperimentManager()
+
+    def start(self):
+        if self.is_started():
+            self.allocate_groups()
+            self.status = 'ACTIVE'
+            self.save()
+
+
+    def allocate_groups(self, randomize=True):
+        logger.debug("allocating groups from all participants: %s" % self.participants)
+
+
+
+
+    def is_started(self):
+        return self.status != 'INACTIVE'
+
 
     def advance_to_next_round(self):
         self.current_round_elapsed_time = 0
@@ -460,11 +477,11 @@ class Experiment(models.Model):
 
 class RoundConfiguration(models.Model):
     ROUND_TYPE_CHOICES = (
-                          ('INSTRUCTIONS', 'Instructions'),
+                          ('INSTRUCTIONS', 'Instructions round'),
                           ('QUIZ', 'Quiz round'),
                           ('CHAT', 'Chat round'),
                           ('PRACTICE', 'Practice round'),
-                          ('PLAY', 'Actual experiment_metadata round'),
+                          ('PLAY', 'Actual experiment round'),
                           )
     experiment_configuration = models.ForeignKey(ExperimentConfiguration)
     sequence_number = models.PositiveIntegerField()
@@ -524,6 +541,7 @@ class Parameter(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
     creator = models.ForeignKey(Experimenter)
 
+
     def __unicode__(self):
         return "{0} ({1})".format(self.name, self.type)
 
@@ -535,6 +553,7 @@ class Parameter(models.Model):
 Configuration parameters are used to tune the 
 """
 class ConfigurationParameter(Parameter):
+    is_required = models.BooleanField(default=False)
     def __unicode__(self):
         return 'Configuration Parameter: ' + self.name
 
@@ -607,7 +626,7 @@ class DataValue(models.Model):
     experiment = models.ForeignKey(Experiment)
 
     def __unicode__(self):
-        return "Data value: parameter {0}, value {1}, time recorded {2}, experiment_metadata {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.experiment)
+        return "Data value: [parameter {0}, value {1}], recorded at {2} for experiment {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.experiment)
 
     class Meta:
         abstract = True
@@ -619,7 +638,8 @@ class GroupRoundDataValue(DataValue):
 
 class Participant(CommonsUser):
     can_receive_invitations = models.BooleanField(default=False)
-    group = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='groups')
+    groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participants')
+    experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participants')
 #    objects = ParticipantManager()
     class Meta:
         ordering = ['user']

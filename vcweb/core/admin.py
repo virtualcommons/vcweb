@@ -7,6 +7,7 @@ from vcweb.core.models import *
 
 admin.site.register(DataParameter)
 admin.site.register(RoundParameter)
+admin.site.register(ConfigurationParameter)
 admin.site.register(ExperimentConfiguration)
 admin.site.register(RoundConfiguration)
 admin.site.register(Experimenter)
