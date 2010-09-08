@@ -19,5 +19,39 @@
             "experiment_metadata": ["forestry"], 
             "is_public": true
         }
+    },
+    {
+        "pk": 1, 
+        "model": "core.experiment", 
+        "fields": {
+            "experiment_metadata": 1, 
+            "status": "INACTIVE", 
+            "start_date_time": null, 
+            "current_round_elapsed_time": 0, 
+            "tick_duration": "10s", 
+            "current_round_number": 1, 
+            "authentication_code": "TEST_FORESTRY", 
+            "total_elapsed_time": 0, 
+            "last_modified": "2010-09-07 15:10:37", 
+            "experimenter": 1, 
+            "duration": "1h", 
+            "date_created": "2010-09-07 13:10:47", 
+            "experiment_configuration": 1, 
+            "is_experimenter_driven": true
+        }
+    }, 
+        {
+        "pk": 1, 
+        "model": "core.roundconfiguration", 
+        "fields": {
+            "round_type": "INSTRUCTIONS", 
+            "debriefing": "Initial debriefing for the forestry experiment.", 
+            "last_modified": "2010-09-07 15:13:03", 
+            "duration": 0, 
+            "date_created": "2010-09-07 15:13:03", 
+            "experiment_configuration": 1, 
+            "sequence_number": 1, 
+            "instructions": "Initial instructions for the forestry experiment."
+        }
     }
 ]
