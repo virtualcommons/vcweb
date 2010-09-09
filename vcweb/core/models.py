@@ -420,6 +420,7 @@ class Experiment(models.Model):
 
 
 
+
     def is_started(self):
         return self.status != 'INACTIVE'
 
@@ -591,10 +592,30 @@ class RoundParameter(models.Model):
     def __unicode__(self):
         return "{0} -- Parameter: {1} Value: {2}".format(self.round_configuration, self.parameter, self.parameter_value)
 
+
 class Group(models.Model):
     number = models.PositiveIntegerField()
-    max_size = models.PositiveIntegerField()
+    """ how many members can this group hold at a maximum? Should be specified as a ConfigurationParameter somewhere """
+    max_size = models.PositiveIntegerField(default=5)
+    """ size could also be a calculated field based on group.participants.count() """
+    size = models.PositiveIntegerField()
     experiment = models.ForeignKey(Experiment, related_name='groups')
+
+    def is_full(self):
+        return self.size < self.max_size
+
+    def add(self, participant):
+        if self.is_full():
+            self.size += 1
+            p = ParticipantGroupRelationship(participant=participant, group=self, round_joined=self.experiment.get_current_round(), participant_number=self.size)
+            p.save()
+            self.save()
+            return True
+        else:
+            logger.warning("Group is full: {0} of {1}".format(self.size, self.max_size))
+            return False
+
+
 
     def __unicode__(self):
         return "Group #{0} in {1}".format(self.number, self.experiment)

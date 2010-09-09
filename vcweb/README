@@ -1,0 +1,28 @@
+Dependencies:
+    Python:
+        (either run as root or inside a virtualenv)
+        pip install celery
+        pip install django
+        pip install django-celery
+    EXPERIMENTAL:
+        pip install stomp.py (for experimental chat)
+        pip install orbited for server push chat
+
+    RabbitMQ
+
+
+Use manage.py to set up your dev environment:
+
+./manage.py syncdb --noinput
+
+To load a set of fake test users:
+./manage.py loaddata test_users_participants
+
+To load a set of forestry test data:
+./manage.py loaddata forestry_test_data
+
+To start celery properly for task scheduling, you'll need to start both a celeryd
+and celerybeat, e.g.,
+
+./manage.py celeryd
+./manage.py celerybeat
