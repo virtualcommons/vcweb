@@ -5,13 +5,13 @@ from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
 from string import Template
 from vcweb import settings
-from vcweb.core import signals
 import datetime
 import hashlib
 import logging
 import random
 import re
-import experiment
+
+import signals
 
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
@@ -38,20 +38,7 @@ def second_tick_handler(sender, time=None, **kwargs):
 
 signals.second_tick.connect(second_tick_handler, sender=None)
 
-
-def get_participant_number(experiment, participant):
-    """ ASSUMPTION: there will always be at least one Group for an Experiment """
-    try:
-        p = ParticipantGroupRelationship.objects.get(group__experiment=experiment, participant=participant)
-        return p.participant_number
-    except ParticipantGroupRelationship.DoesNotExist:
-        return None
-
-
-
-
 # FIXME: separate accounts / registration / experimenter / participant app from the core app
-
 # registration manager included / forked from http://bitbucket.org/ubernostrum/django-registration/
 class RegistrationManager(models.Manager):
     """
@@ -425,21 +412,21 @@ class Experiment(models.Model):
     objects = ExperimentManager()
 
     def start(self):
-        if self.is_started():
+        if not self.is_started():
             self.allocate_groups()
             self.status = 'ACTIVE'
             self.save()
+            signals.round_started.send_robust(self, experiment_id=self.id, experimenter=self.experimenter, time=datetime.datetime.now())
+            # notify all 
 
     def allocate_groups(self, randomize=True):
-        logger.debug("allocating groups from all participants: %s" % self.participants)
         current_group = Group(number=1, max_size=self.experiment_configuration.max_group_size, experiment=self)
         current_group.save()
-
         if randomize:
             participants = list(self.participants.all())
             random.shuffle(participants)
         else:
-            participants = self.participants
+            participants = self.participants.all()
 
         for p in participants:
             current_group = current_group.add_participant(p)
@@ -630,8 +617,8 @@ class Group(models.Model):
     def is_open(self):
         return self.size < self.max_size
 
-    def create_next_group(self):
-        return Group(number=self.number + 1, max_size=self.max_size, experiment=self.experiment)
+    def create_next_group(self, size=0):
+        return Group(number=self.number + 1, max_size=self.max_size, experiment=self.experiment, size=size)
     """
     Adds the given participant to this group or a new group if this group is full.
     Returns the group the participant was added to.
@@ -643,14 +630,13 @@ class Group(models.Model):
             return self
 
         group = self
-        if group.is_open():
-            self.size += 1
-        else:
-            logger.warning("Group is full: {0} of {1}".format(self.size, self.max_size))
+        if not group.is_open():
+            logger.warning("Group is full: ({0} of {1})".format(self.size, self.max_size))
             group = self.create_next_group()
 
+        group.size += 1
         group.save()
-        participant_group_rel = ParticipantGroupRelationship(participant=participant, group=group, round_joined=self.experiment.get_current_round(), participant_number=self.size)
+        participant_group_rel = ParticipantGroupRelationship(participant=participant, group=group, round_joined=self.experiment.get_current_round(), participant_number=group.size)
         participant_group_rel.save()
         return group
 
@@ -701,6 +687,12 @@ class Participant(CommonsUser):
     can_receive_invitations = models.BooleanField(default=False)
     groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participants')
     experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participants')
+
+    def get_participant_number(self, experiment):
+        return ParticipantGroupRelationship.objects.get_participant_number(experiment, self) if experiment else None
+
+    def get_group(self, experiment):
+        return ParticipantGroupRelationship.objects.get_group(experiment, self) if experiment else None
 #    objects = ParticipantManager()
     class Meta:
         ordering = ['user']
@@ -728,10 +720,24 @@ class ChatMessage(models.Model):
 
     def __unicode__(self):
         """ return this participant's sequence number combined with the message """
-        participant_number = get_participant_number(self.experiment, self.participant)
+        participant_number = self.participant.get_participant_number(self.experiment)
         return "{0}: {1}".format(participant_number, self.message)
 
 
+class ParticipantGroupRelationshipManager(models.Manager):
+
+    def get_group(self, experiment, participant):
+        return self.get_participant_group(experiment, participant).group
+
+    def get_participant_group(self, experiment, participant):
+        try:
+            return self.get(group__experiment=experiment, participant=participant)
+        except ParticipantGroupRelationship.DoesNotExist:
+            logger.warning("Participant %s does not belong to a group in %s" % (participant, experiment))
+            return None
+
+    def get_participant_number(self, experiment, participant):
+        return self.get_participant_group(experiment, participant).participant_number
 
 """
 Many-to-many relationship entity storing a participant, group, their participant number in that group, the 
@@ -743,6 +749,8 @@ class ParticipantGroupRelationship(models.Model):
     group = models.ForeignKey(Group)
     round_joined = models.ForeignKey(RoundConfiguration)
     date_joined = models.DateTimeField(auto_now_add=True)
+
+    objects = ParticipantGroupRelationshipManager()
 
     def __unicode__(self):
         return "{0}: {1} (in {2})".format(self.participant, self.participant_number, self.group)
