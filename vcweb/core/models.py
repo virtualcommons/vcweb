@@ -11,13 +11,20 @@ import hashlib
 import logging
 import random
 import re
+import experiment
 
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
 logger = logging.getLogger('vcweb.core.models')
 
-# tick handlers
 """
+Contains all data models used in the core as well as a number of helper functions.  
+Is getting pretty big / unwieldy.  Should probably refactor and split into smaller pieces.
+"""
+
+"""
+tick handlers.
+
 handles each second tick.  Might rethink this and use timed / delayed tasks in celery execute at the end of each round for 
 controlled experiments and for longer-scale experiments use 1 minute granularity for performance sake.
 """
@@ -30,6 +37,18 @@ def second_tick_handler(sender, time=None, **kwargs):
         experiment.save()
 
 signals.second_tick.connect(second_tick_handler, sender=None)
+
+
+def get_participant_number(experiment, participant):
+    """ ASSUMPTION: there will always be at least one Group for an Experiment """
+    try:
+        p = ParticipantGroupRelationship.objects.get(group__experiment=experiment, participant=participant)
+        return p.participant_number
+    except ParticipantGroupRelationship.DoesNotExist:
+        return None
+
+
+
 
 # FIXME: separate accounts / registration / experimenter / participant app from the core app
 
@@ -345,10 +364,11 @@ class ExperimentConfiguration(models.Model):
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
     creator = models.ForeignKey(Experimenter)
     name = models.CharField(max_length=255)
-    maximum_number_of_participants = models.PositiveIntegerField()
+    max_number_of_participants = models.PositiveIntegerField(default=0)
     date_created = models.DateField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=True)
+    max_group_size = models.PositiveIntegerField(default=5)
 
     def __unicode__(self):
         return "Experiment configuration [{name}] for {experiment_metadata} created by {creator} on {date_created}".format(name=self.name,
@@ -410,15 +430,19 @@ class Experiment(models.Model):
             self.status = 'ACTIVE'
             self.save()
 
-
     def allocate_groups(self, randomize=True):
         logger.debug("allocating groups from all participants: %s" % self.participants)
+        current_group = Group(number=1, max_size=self.experiment_configuration.max_group_size, experiment=self)
+        current_group.save()
 
+        if randomize:
+            participants = list(self.participants.all())
+            random.shuffle(participants)
+        else:
+            participants = self.participants
 
-    def get_participant_number(self, participant):
-        """ ASSUMPTION: there will always be at least one Group for an Experiment """
-
-
+        for p in participants:
+            current_group = current_group.add_participant(p)
 
 
     def is_started(self):
@@ -438,7 +462,6 @@ class Experiment(models.Model):
         self.current_round_elapsed_time += 1
 
 
-    @property
     def get_current_round(self):
         return RoundConfiguration.objects.get(experiment_configuration=self.experiment_configuration, sequence_number=self.current_round_number)
 
@@ -598,24 +621,38 @@ class Group(models.Model):
     """ how many members can this group hold at a maximum? Should be specified as a ConfigurationParameter somewhere """
     max_size = models.PositiveIntegerField(default=5)
     """ size could also be a calculated field based on group.participants.count() """
-    size = models.PositiveIntegerField()
+    size = models.PositiveIntegerField(default=0)
     experiment = models.ForeignKey(Experiment, related_name='groups')
 
     def is_full(self):
+        return self.size >= self.max_size
+
+    def is_open(self):
         return self.size < self.max_size
 
-    def add(self, participant):
-        if self.is_full():
+    def create_next_group(self):
+        return Group(number=self.number + 1, max_size=self.max_size, experiment=self.experiment)
+    """
+    Adds the given participant to this group or a new group if this group is full.
+    Returns the group the participant was added to.
+    If participant is invalid, returns this group as a no-op.
+    """
+    def add_participant(self, participant):
+        if not participant:
+            logger.warning("Trying to add an invalid participant %s to group %s" % (participant, self))
+            return self
+
+        group = self
+        if group.is_open():
             self.size += 1
-            p = ParticipantGroupRelationship(participant=participant, group=self, round_joined=self.experiment.get_current_round(), participant_number=self.size)
-            p.save()
-            self.save()
-            return True
         else:
             logger.warning("Group is full: {0} of {1}".format(self.size, self.max_size))
-            return False
+            group = self.create_next_group()
 
-
+        group.save()
+        participant_group_rel = ParticipantGroupRelationship(participant=participant, group=group, round_joined=self.experiment.get_current_round(), participant_number=self.size)
+        participant_group_rel.save()
+        return group
 
     def __unicode__(self):
         return "Group #{0} in {1}".format(self.number, self.experiment)
@@ -691,7 +728,7 @@ class ChatMessage(models.Model):
 
     def __unicode__(self):
         """ return this participant's sequence number combined with the message """
-        participant_number = self.experiment.get_participant_number(self.participant)
+        participant_number = get_participant_number(self.experiment, self.participant)
         return "{0}: {1}".format(participant_number, self.message)
 
 

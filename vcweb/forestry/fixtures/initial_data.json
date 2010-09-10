@@ -15,7 +15,8 @@
         "fields": {
             "name": "Forestry Default Configuration", 
             "creator": 1, 
-            "maximum_number_of_participants": 20, 
+            "max_number_of_participants": 20, 
+            "max_group_size": 5,
             "experiment_metadata": ["forestry"], 
             "is_public": true
         }
