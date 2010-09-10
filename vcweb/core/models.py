@@ -412,11 +412,12 @@ class Experiment(models.Model):
     objects = ExperimentManager()
 
     def start(self):
-        if not self.is_started():
+        if not self.is_already_running():
             self.allocate_groups()
             self.status = 'ACTIVE'
             self.save()
-            signals.round_started.send_robust(self, experiment_id=self.id, experimenter=self.experimenter, time=datetime.datetime.now())
+            logger.debug("About to send round started signal")
+            signals.round_started.send_robust(None, experiment_id=self.id, time=datetime.datetime.now(), round_configuration_id=self.get_current_round().id)
             # notify all 
 
     def allocate_groups(self, randomize=True):
@@ -432,7 +433,7 @@ class Experiment(models.Model):
             current_group = current_group.add_participant(p)
 
 
-    def is_started(self):
+    def is_already_running(self):
         return self.status != 'INACTIVE'
 
 
@@ -749,6 +750,7 @@ class ParticipantGroupRelationship(models.Model):
     group = models.ForeignKey(Group)
     round_joined = models.ForeignKey(RoundConfiguration)
     date_joined = models.DateTimeField(auto_now_add=True)
+    active = models.BooleanField(default=True)
 
     objects = ParticipantGroupRelationshipManager()
 

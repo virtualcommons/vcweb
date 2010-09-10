@@ -9,6 +9,7 @@ Replace these with more appropriate tests for your application.
 from django.test import TestCase
 from vcweb.core.models import Participant, Experiment, Group
 import logging
+import signals
 
 logger = logging.getLogger('vcweb.core.tests')
 
@@ -25,13 +26,31 @@ class VcwebTest(TestCase):
         abstract = True
 
 class ExperimentTest(VcwebTest):
+
+    def round_started_test_handler(self, experiment_id=None, time=None, round_configuration_id=None, **kwargs):
+        logger.debug("invoking round started test handler")
+        self.failUnlessEquals(experiment_id, self.experiment.pk)
+        self.failUnlessEquals(round_configuration_id, self.experiment.get_current_round().id)
+        raise Exception
+
+
+    def test_start(self):
+        signals.round_started.connect(self.round_started_test_handler, sender=None)
+        try:
+            self.experiment.start()
+            self.fail("Should have raised an exception.")
+        except Exception:
+            logger.debug("expected exception raised.")
+
     def test_allocate_groups(self):
         self.experiment.allocate_groups(randomize=False)
         self.failUnlessEqual(self.experiment.groups.count(), 2, "should be 2 groups after non-randomized allocation")
         for p in self.participants:
             participant_number = p.get_participant_number(self.experiment)
-            self.failIf(participant_number <= 0 or participant_number > p.get_group(self.experiment))
-
+            group = p.get_group(self.experiment)
+            self.failIf(participant_number <= 0 or participant_number > group.max_size)
+            self.failUnlessEqual(participant_number % group.max_size, p.id % group.max_size)
+            logger.debug("randomized participant number %i (id: %i)" % (participant_number, p.pk))
 
 
 
