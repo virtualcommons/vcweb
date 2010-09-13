@@ -24,7 +24,6 @@ class BaseVcwebTest(TestCase):
         self.experiment_metadata = ExperimentMetadata.objects.get(pk=1)
         self.experiment_configuration = ExperimentConfiguration.objects.get(pk=1)
         self.group_of_10 = Group(number=1, max_size=10, experiment=self.experiment)
-        self.group2 = Group(number=2, experiment=self.experiment)
 
     def create_new_experiment(self):
         return Experiment(experimenter=self.experimenter, experiment_configuration=self.experiment_configuration, experiment_metadata=self.experiment_metadata)
@@ -77,6 +76,7 @@ class GroupTest(BaseVcwebTest):
         Tests get_participant_number after groups have been assigned
         """
         g = self.group_of_10
+        g.save()
         count = 0;
         for p in self.participants:
             g.add_participant(p)

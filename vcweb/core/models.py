@@ -601,9 +601,11 @@ class Group(models.Model):
     number = models.PositiveIntegerField()
     """ how many members can this group hold at a maximum? Should be specified as a ConfigurationParameter somewhere """
     max_size = models.PositiveIntegerField(default=5)
-    """ size could also be a calculated field based on group.participants.count() """
-    size = models.PositiveIntegerField(default=0)
     experiment = models.ForeignKey(Experiment, related_name='groups')
+
+    @property
+    def size(self):
+        return self.participants.count()
 
     def is_full(self):
         return self.size >= self.max_size
@@ -612,7 +614,9 @@ class Group(models.Model):
         return self.size < self.max_size
 
     def create_next_group(self, size=0):
-        return Group(number=self.number + 1, max_size=self.max_size, experiment=self.experiment, size=size)
+        g = Group(number=self.number + 1, max_size=self.max_size, experiment=self.experiment)
+        g.save()
+        return g
     """
     Adds the given participant to this group or a new group if this group is full.
     Returns the group the participant was added to.
@@ -628,9 +632,7 @@ class Group(models.Model):
             logger.warning("Group is full: ({0} of {1})".format(self.size, self.max_size))
             group = self.create_next_group()
 
-        group.size += 1
-        group.save()
-        participant_group_rel = ParticipantGroupRelationship(participant=participant, group=group, round_joined=self.experiment.get_current_round(), participant_number=group.size)
+        participant_group_rel = ParticipantGroupRelationship(participant=participant, group=group, round_joined=self.experiment.get_current_round(), participant_number=group.size + 1)
         participant_group_rel.save()
         return group
 
@@ -705,8 +707,6 @@ class ParticipantExperimentRelationship(models.Model):
     def __init__(self, *args, **kwargs):
         super(ParticipantExperimentRelationship, self).__init__(*args, **kwargs)
         self.generate_identifier()
-
-
 
     """ generates a unique identifier for the given participant and experiment stored in this relationship """
     def generate_identifier(self):
