@@ -7,25 +7,33 @@ Replace these with more appropriate tests for your application.
 """
 
 from django.test import TestCase
-from vcweb.core.models import Participant, Experiment, Group
+from vcweb.core.models import Experiment, Experimenter, ExperimentConfiguration, \
+    Participant, ParticipantExperimentRelationship, Group, ExperimentMetadata
 import logging
 import signals
 
 logger = logging.getLogger('vcweb.core.tests')
 
-class VcwebTest(TestCase):
+class BaseVcwebTest(TestCase):
     fixtures = ['test_users_participants', 'forestry_test_data']
 
     def setUp(self):
         self.participants = Participant.objects.all()
         self.experiment = Experiment.objects.get(pk=1)
+        self.experimenter = Experimenter.objects.get(pk=1)
+        self.experiment_metadata = ExperimentMetadata.objects.get(pk=1)
+        self.experiment_configuration = ExperimentConfiguration.objects.get(pk=1)
         self.group_of_10 = Group(number=1, max_size=10, experiment=self.experiment)
         self.group2 = Group(number=2, experiment=self.experiment)
+
+    def create_new_experiment(self):
+        return Experiment(experimenter=self.experimenter, experiment_configuration=self.experiment_configuration, experiment_metadata=self.experiment_metadata)
+
 
     class Meta:
         abstract = True
 
-class ExperimentTest(VcwebTest):
+class ExperimentTest(BaseVcwebTest):
 
     def round_started_test_handler(self, experiment_id=None, time=None, round_configuration_id=None, **kwargs):
         logger.debug("invoking round started test handler")
@@ -41,6 +49,7 @@ class ExperimentTest(VcwebTest):
             self.fail("Should have raised an exception.")
         except Exception:
             logger.debug("expected exception raised.")
+            self.failUnless(self.experiment.is_running())
 
     def test_allocate_groups(self):
         self.experiment.allocate_groups(randomize=False)
@@ -62,7 +71,7 @@ class ExperimentTest(VcwebTest):
             self.failUnless(participant_number > 0, 'participant number should be greater than 0')
             logger.debug("participant number %i (id: %i)" % (participant_number, p.pk))
 
-class GroupTest(VcwebTest):
+class GroupTest(BaseVcwebTest):
     def test_group_add(self):
         """
         Tests get_participant_number after groups have been assigned
@@ -73,7 +82,29 @@ class GroupTest(VcwebTest):
             g.add_participant(p)
             count += 1
             self.assertTrue(g.participants)
-            self.failUnlessEqual(g.participants.count(), count, "group.participants should be of size 1")
-            self.failUnlessEqual(g.size, count, "group size should be 1")
+            self.failUnlessEqual(g.participants.count(), count, "group.participants size should be %i" % count)
+            self.failUnlessEqual(g.size, count, "group.size should be %i" % count)
+
+
+class ParticipantExperimentRelationshipTest(BaseVcwebTest):
+
+    def test_participant_identifier(self):
+        """ exercises the generation of participant_identifier """
+        e = self.create_new_experiment()
+        e.save()
+        for p in self.participants:
+            per = ParticipantExperimentRelationship(participant=p, experiment=e, created_by=self.experimenter.user)
+            per.save()
+            self.failUnless(per.id > 0)
+            logger.debug("Participant identifier is %s - sequential id is %i" % (per.participant_identifier, per.sequential_participant_identifier))
+            self.failUnless(per.participant_identifier)
+            self.failUnless(per.sequential_participant_identifier > 0)
+
+        self.failUnlessEqual(e.participants.count(), self.participants.count())
+
+
+
+
+
 
 

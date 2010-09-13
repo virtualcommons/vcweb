@@ -5,6 +5,7 @@ from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
 from string import Template
 from vcweb import settings
+import base64
 import datetime
 import hashlib
 import logging
@@ -289,8 +290,8 @@ class ExperimentMetadataManager(models.Manager):
 # Create your models here.
 class ExperimentMetadata(models.Model):
     title = models.CharField(max_length=255)
-    # the URL namespace that this experiment_metadata will occupy
-    namespace = models.CharField(max_length=255, unique=True, validators=[RegexValidator(regex=r'^\w+$'), ])
+    # the URL fragment that this experiment_metadata will occupy, 
+    namespace = models.CharField(max_length=255, unique=True, validators=[RegexValidator(regex=r'^\w+$')])
     description = models.TextField(null=True, blank=True)
     date_created = models.DateField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -372,6 +373,9 @@ class ExperimentManager(models.Manager):
         return self.filter(status='ACTIVE')
 
 
+
+
+
 # an actual instance of an experiment; represents a concrete
 # parameterization of this experiment.
 class Experiment(models.Model):
@@ -384,20 +388,20 @@ class Experiment(models.Model):
                            ('DEBRIEFING', 'Debriefing'),
                            ('COMPLETED', 'Completed'),
                            )
-    authentication_code = models.CharField(max_length=255)
-    current_round_number = models.PositiveIntegerField()
+    authentication_code = models.CharField(max_length=32, default="vcweb.auth.code")
+    current_round_number = models.PositiveIntegerField(default=0)
     experimenter = models.ForeignKey(Experimenter)
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='experiments')
-    status = models.CharField(max_length=32, choices=STATUS_CHOICES)
+    status = models.CharField(max_length=32, choices=STATUS_CHOICES, default='INACTIVE')
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     start_date_time = models.DateTimeField(null=True, blank=True)
     # how long this experiment should run in a date format
     # 1w2d = 1 week 2 days = 9d
-    duration = models.CharField(max_length=32)
+    duration = models.CharField(max_length=32, null=True, blank=True)
     """ how often the experiment_metadata server should tick. """
-    tick_duration = models.CharField(max_length=32)
+    tick_duration = models.CharField(max_length=32, null=True, blank=True)
 
     """ total elapsed time in seconds since this experiment_metadata was started, incremented by the heartbeat monitor. """
     total_elapsed_time = models.PositiveIntegerField(default=0)
@@ -412,7 +416,7 @@ class Experiment(models.Model):
     objects = ExperimentManager()
 
     def start(self):
-        if not self.is_already_running():
+        if not self.is_running():
             self.allocate_groups()
             self.status = 'ACTIVE'
             self.save()
@@ -429,11 +433,14 @@ class Experiment(models.Model):
         else:
             participants = self.participants.all()
 
+        """
+        group.add_participant returns a new group or the existing group depending on whether or not the group is full. 
+        """
         for p in participants:
             current_group = current_group.add_participant(p)
 
 
-    def is_already_running(self):
+    def is_running(self):
         return self.status != 'INACTIVE'
 
 
@@ -496,50 +503,36 @@ class RoundConfiguration(models.Model):
                           ('QUIZ', 'Quiz round'),
                           ('CHAT', 'Chat round'),
                           ('PRACTICE', 'Practice round'),
-                          ('PLAY', 'Actual experiment round'),
+                          ('PLAY', 'Interactive experiment round'),
                           )
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configurations')
-    sequence_number = models.PositiveIntegerField()
+    sequence_number = models.PositiveIntegerField(help_text='Ordering of rounds')
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     """
-    How long should this round execute before advancing to the next?
+    How long should this round execute before advancing to the next?  Interpreted as whole seconds.
     """
-    duration = models.PositiveIntegerField(default=0)
+    duration = models.PositiveIntegerField(default=0, help_text='Duration in seconds.  0 means an untimed round that can only be advanced by an experimenter.')
     """ instructions, if any, to display before the round begins """
     instructions = models.TextField(null=True, blank=True)
     """ debriefing, if any, to display after the round ends """
     debriefing = models.TextField(null=True, blank=True)
-
     round_type = models.CharField(max_length=32, choices=ROUND_TYPE_CHOICES, default='PLAY')
 
     def get_debriefing(self, participant_id=None, **kwargs):
-        if self.debriefing:
-            return self.templatize(self.debriefing, participant_id, kwargs)
-        else:
-            logger.debug("No debriefing available for %s" % self)
-            return None
+        return self.templatize(self.debriefing, participant_id, kwargs)
 
     def get_instructions(self, participant_id=None, **kwargs):
-        if self.instructions:
-            return self.templatize(self.instructions, participant_id, kwargs)
-        else:
-            logger.debug("No instructions available for %s" % self)
-            return None
+        return self.templatize(self.instructions, participant_id, kwargs)
 
     def templatize(self, template_string, participant_id=None, **kwargs):
-        if template_string:
-            try:
-                return Template(template_string).substitute(kwargs, round_number=self.sequence_number, participant_id=participant_id)
-            except ValueError as templateError:
-                return "Error while parsing template_string text: %s" % templateError
-        return None
+        return Template(template_string).substitute(kwargs, round_number=self.sequence_number, participant_id=participant_id)
 
     def __unicode__(self):
         return "Round # {0} for experiment_metadata {1} ".format(self.sequence_number, self.experiment_configuration)
 
-#    class Meta:
-#        db_table = 'vcweb_round_configuration'
+    class Meta:
+        ordering = [ 'experiment_configuration', 'sequence_number' ]
 
 
 class Parameter(models.Model):
@@ -690,10 +683,10 @@ class Participant(CommonsUser):
     experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participants')
 
     def get_participant_number(self, experiment):
-        return ParticipantGroupRelationship.objects.get_participant_number(experiment, self) if experiment else None
+        return ParticipantGroupRelationship.objects.get_participant_number(experiment, self)
 
     def get_group(self, experiment):
-        return ParticipantGroupRelationship.objects.get_group(experiment, self) if experiment else None
+        return ParticipantGroupRelationship.objects.get_group(experiment, self)
 #    objects = ParticipantManager()
     class Meta:
         ordering = ['user']
@@ -703,9 +696,28 @@ Many-to-many relationship entity storing a participant and the experiment they a
 """
 class ParticipantExperimentRelationship(models.Model):
     participant = models.ForeignKey(Participant)
+    participant_identifier = models.CharField(max_length=32)
+    sequential_participant_identifier = models.PositiveIntegerField()
     experiment = models.ForeignKey(Experiment)
     date_created = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User)
+
+    def __init__(self, *args, **kwargs):
+        super(ParticipantExperimentRelationship, self).__init__(*args, **kwargs)
+        self.generate_identifier()
+
+
+
+    """ generates a unique identifier for the given participant and experiment stored in this relationship """
+    def generate_identifier(self):
+        """ set participant_identifier if it hasn't been set already.  """
+        if not self.participant_identifier:
+            sha1 = hashlib.sha1()
+            sha1.update("%s%i%s" % (self.participant.user.email, self.experiment.id, self.date_created))
+            self.participant_identifier = base64.urlsafe_b64encode(sha1.digest())
+            self.sequential_participant_identifier = ParticipantExperimentRelationship.objects.filter(experiment=self.experiment).count() + 1
+        return self.participant_identifier
+
 
     def __unicode__(self):
         return "Experiment {0} - participant {1} (created {2})".format(self.experiment, self.participant, self.date_created)
@@ -717,6 +729,7 @@ class ChatMessage(models.Model):
     target_participant = models.ForeignKey(Participant, null=True, blank=True, related_name='targets')
     target_group = models.ForeignKey(Group, null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='chat_messages')
     experiment = models.ForeignKey(Experiment, related_name='chat_messages')
 
     def __unicode__(self):
@@ -728,7 +741,8 @@ class ChatMessage(models.Model):
 class ParticipantGroupRelationshipManager(models.Manager):
 
     def get_group(self, experiment, participant):
-        return self.get_participant_group(experiment, participant).group
+        participant_group = self.get_participant_group(experiment, participant)
+        return participant_group.group if participant_group else None
 
     def get_participant_group(self, experiment, participant):
         try:
@@ -738,7 +752,8 @@ class ParticipantGroupRelationshipManager(models.Manager):
             return None
 
     def get_participant_number(self, experiment, participant):
-        return self.get_participant_group(experiment, participant).participant_number
+        participant_group = self.get_participant_group(experiment, participant)
+        return participant_group.participant_number if participant_group else None
 
 """
 Many-to-many relationship entity storing a participant, group, their participant number in that group, the 
