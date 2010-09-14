@@ -23,10 +23,19 @@ class BaseVcwebTest(TestCase):
         self.experimenter = Experimenter.objects.get(pk=1)
         self.experiment_metadata = ExperimentMetadata.objects.get(pk=1)
         self.experiment_configuration = ExperimentConfiguration.objects.get(pk=1)
-        self.group_of_10 = Group(number=1, max_size=10, experiment=self.experiment)
 
     def create_new_experiment(self):
-        return Experiment(experimenter=self.experimenter, experiment_configuration=self.experiment_configuration, experiment_metadata=self.experiment_metadata)
+        e = Experiment(experimenter=self.experimenter, experiment_configuration=self.experiment_configuration, experiment_metadata=self.experiment_metadata)
+        e.save()
+        return e
+
+    def create_new_group(self, max_size=10, experiment=None):
+        if not experiment:
+            experiment = self.experiment
+        g = Group(number=1, max_size=max_size, experiment=experiment)
+        g.save()
+        return g
+
 
 
     class Meta:
@@ -35,9 +44,11 @@ class BaseVcwebTest(TestCase):
 class ExperimentTest(BaseVcwebTest):
 
     def round_started_test_handler(self, experiment_id=None, time=None, round_configuration_id=None, **kwargs):
-        logger.debug("invoking round started test handler")
+        logger.debug("invoking round started test handler with args experiment_id:%i time:%s round_configuration_id:%s"
+                     % (experiment_id, time, round_configuration_id))
         self.failUnlessEquals(experiment_id, self.experiment.pk)
         self.failUnlessEquals(round_configuration_id, self.experiment.get_current_round().id)
+        self.failUnless(time, "time should be set")
         raise Exception
 
 
@@ -75,15 +86,14 @@ class GroupTest(BaseVcwebTest):
         """
         Tests get_participant_number after groups have been assigned
         """
-        g = self.group_of_10
-        g.save()
+        g = self.create_new_group(max_size=10, experiment=self.experiment)
         count = 0;
         for p in self.participants:
             g.add_participant(p)
             count += 1
             self.assertTrue(g.participants)
             self.failUnlessEqual(g.participants.count(), count, "group.participants size should be %i" % count)
-            self.failUnlessEqual(g.size, count, "group.size should be %i" % count)
+            self.failUnlessEqual(g.size, count, "group size should be %i" % count)
 
 
 class ParticipantExperimentRelationshipTest(BaseVcwebTest):
@@ -91,7 +101,6 @@ class ParticipantExperimentRelationshipTest(BaseVcwebTest):
     def test_participant_identifier(self):
         """ exercises the generation of participant_identifier """
         e = self.create_new_experiment()
-        e.save()
         for p in self.participants:
             per = ParticipantExperimentRelationship(participant=p, experiment=e, created_by=self.experimenter.user)
             per.save()

@@ -412,6 +412,8 @@ class Experiment(models.Model):
     move to the next round or stage.
     """
     is_experimenter_driven = models.BooleanField(default=True)
+    """ name of the AMQP exchange hosting this experiment """
+    amqp_exchange_name = models.CharField(max_length=64, default="vcweb.default.exchange")
 
     objects = ExperimentManager()
 
@@ -421,8 +423,9 @@ class Experiment(models.Model):
             self.status = 'ACTIVE'
             self.save()
             logger.debug("About to send round started signal")
+            # notify game handlers...
             signals.round_started.send_robust(None, experiment_id=self.id, time=datetime.datetime.now(), round_configuration_id=self.get_current_round().id)
-            # notify all 
+
 
     def allocate_groups(self, randomize=True):
         current_group = Group(number=1, max_size=self.experiment_configuration.max_group_size, experiment=self)
@@ -602,6 +605,11 @@ class Group(models.Model):
     """ how many members can this group hold at a maximum? Should be specified as a ConfigurationParameter somewhere """
     max_size = models.PositiveIntegerField(default=5)
     experiment = models.ForeignKey(Experiment, related_name='groups')
+    amqp_queue_name = models.CharField(max_length=64, default='vcweb.default.queue')
+
+    @property
+    def amqp_exchange_name(self):
+        return self.experiment.amqp_exchange_name
 
     @property
     def size(self):
