@@ -502,7 +502,7 @@ class Experiment(models.Model):
         return "{0}/{1}".format(self.experiment_metadata.namespace, self.id)
 
     def __unicode__(self):
-        return "{experiment_metadata} created by {experimenter} on {date_created}: {status}".format(experiment_metadata=self.experiment_metadata, experimenter=self.experimenter, date_created=self.date_created, status=self.status)
+        return "{experiment_metadata} created by {experimenter} on {date_created}: {status}".format(self.__dict__)
 
     def ___eq___(self, other):
         return self.id == other.id
@@ -539,13 +539,15 @@ class RoundConfiguration(models.Model):
     """ 
     name of the quiz template to be used this round.  Won't be used unless round_type='QUIZ' and should be just the template filename, e.g., if set to
     quiz_2.html in the forestry experiment app, this should be loaded from forestry/templates/forestry/quiz_2.html 
-    FIXME: figure out better method for storing template names. 
+    FIXME: figure out better method for storing template names.  should we manage quizzes as Quiz objects instead? 
     """
-    quiz_template = models.CharField(max_length=32, null=True, blank=True, help_text='path to the quiz template file that should be relative to the root, e.g., "quiz_2.html"')
-    """ FIXME: should we manage quizzes within the system as Quiz objects? """
+    quiz_template = models.CharField(max_length=32,
+                                     null=True,
+                                     blank=True,
+                                     help_text='path to the quiz template file that should be relative to the root, e.g., "quiz_2.html"')
 
     @property
-    def quiz_template(self):
+    def quiz_template_path(self):
         return "%s/%s" % (self.experiment_configuration.namespace, self.quiz_template)
 
     def get_debriefing(self, participant_id=None, **kwargs):
@@ -592,7 +594,7 @@ class Parameter(models.Model):
 
 
     def __unicode__(self):
-        return "{0} ({1})".format(self.name, self.type)
+        return "%s (%s)" % (self.name, self.type)
 
     class Meta:
         abstract = True
@@ -604,7 +606,7 @@ Configuration parameters are used to tune the
 class ConfigurationParameter(Parameter):
     is_required = models.BooleanField(default=False)
     def __unicode__(self):
-        return 'Configuration Parameter: ' + self.name
+        return "CPRM: [name:%s, type:%s]" % (self.name, self.type)
 
 #    class Meta:
 #        db_table = 'vcweb_configuration_parameter'

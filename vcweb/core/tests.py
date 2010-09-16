@@ -30,7 +30,9 @@ class BaseVcwebTest(TestCase):
         self.experiment_configuration = ExperimentConfiguration.objects.get(pk=1)
 
     def create_new_experiment(self):
-        e = Experiment(experimenter=self.experimenter, experiment_configuration=self.experiment_configuration, experiment_metadata=self.experiment_metadata)
+        e = Experiment(experimenter=self.experimenter,
+                       experiment_configuration=self.experiment_configuration,
+                       experiment_metadata=self.experiment_metadata)
         e.save()
         return e
 
@@ -59,13 +61,23 @@ class ExperimentMetadataTest(BaseVcwebTest):
             em.save()
 
     def test_invalid_namespaces(self):
+        from django.core.exceptions import ValidationError
         invalid_namespaces = ('#$what the!',
                               "$$!it's a trap!",
                               '/!@')
         for namespace in invalid_namespaces:
             em = self.create_experiment_metadata(namespace)
-            self.failUnlessRaises(Exception, lambda x: em.save())
+            self.failUnlessRaises(ValidationError, em.full_clean)
             self.failIf(self.namespace_regex.match(namespace))
+
+    def test_unicode(self):
+        em = self.create_experiment_metadata('test_unicode_namespace')
+        em.save()
+        self.failUnless(em.pk and (em.pk > 0), 'test unicode namespace experiment metadata record should have valid id now')
+        self.failUnless(em.__unicode__())
+        self.failUnlessRaises(ValueError, em.__unicode__().index, '{')
+        logger.debug("unicode is %s" % em.__unicode__())
+
 
 class ExperimentTest(BaseVcwebTest):
 
@@ -128,10 +140,14 @@ class ParticipantExperimentRelationshipTest(BaseVcwebTest):
         """ exercises the generation of participant_identifier """
         e = self.create_new_experiment()
         for p in self.participants:
-            per = ParticipantExperimentRelationship(participant=p, experiment=e, created_by=self.experimenter.user)
+            per = ParticipantExperimentRelationship(participant=p,
+                                                    experiment=e,
+                                                    created_by=self.experimenter.user)
+            per.full_clean()
             per.save()
             self.failUnless(per.id > 0)
-            logger.debug("Participant identifier is %s - sequential id is %i" % (per.participant_identifier, per.sequential_participant_identifier))
+            logger.debug("Participant identifier is %s - sequential id is %i"
+                         % (per.participant_identifier, per.sequential_participant_identifier))
             self.failUnless(per.participant_identifier)
             self.failUnless(per.sequential_participant_identifier > 0)
 
