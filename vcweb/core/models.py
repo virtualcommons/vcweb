@@ -11,8 +11,10 @@ import hashlib
 import logging
 import random
 import re
-
 import signals
+
+
+
 
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
@@ -32,10 +34,11 @@ controlled experiments and for longer-scale experiments use 1 minute granularity
 def second_tick_handler(sender, time=None, **kwargs):
     logger.debug("handling second tick signal at %s" % time)
     # inspect all active experiments and update their time left
-    for experiment in Experiment.objects.filter(status='ROUND_IN_PROGRESS'):
-        # how to invoke a experiment_metadata-type-specific handler here?
-        experiment.increment_elapsed_time()
-        experiment.save()
+    Experiment.objects.increment_elapsed_time(status='ROUND_IN_PROGRESS')
+
+
+
+
 
 signals.second_tick.connect(second_tick_handler, sender=None)
 
@@ -365,10 +368,7 @@ class ExperimentConfiguration(models.Model):
         return self.experiment_metadata.namespace
 
     def __unicode__(self):
-        return "Experiment configuration [{name}] for {experiment_metadata} created by {creator} on {date_created}".format(name=self.name,
-                                                                                                                           experiment_metadata=self.experiment_metadata,
-                                                                                                                           creator=self.creator,
-                                                                                                                           date_created=self.date_created)
+        return "Experiment configuration [{name}] for {experiment_metadata} created by {creator} on {date_created}".format(self.__dict__)
 
     class Meta:
         ordering = ['experiment_metadata', 'creator', 'date_created']
@@ -378,8 +378,11 @@ class ExperimentManager(models.Manager):
     def get_all_active(self):
         return self.filter(status='ACTIVE')
 
-
-
+    def increment_elapsed_time(self, status='ROUND_IN_PROGRESS'):
+        if status:
+            es = self.filter(status=status)
+            es.update(current_round_elapsed_time=models.F('current_round_elapsed_time') + 1,
+                      total_elapsed_time=models.F('total_elapsed_time') + 1)
 
 
 # an actual instance of an experiment; represents a concrete
@@ -399,8 +402,10 @@ class Experiment(models.Model):
     current_round_number = models.PositiveIntegerField(default=0)
     experimenter = models.ForeignKey(Experimenter)
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
-    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='experiments')
-    status = models.CharField(max_length=32, choices=STATUS_CHOICES, default='INACTIVE')
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration,
+                                                 related_name='experiments')
+    status = models.CharField(max_length=32, choices=STATUS_CHOICES,
+                              default='INACTIVE')
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     start_date_time = models.DateTimeField(null=True, blank=True)
@@ -410,12 +415,16 @@ class Experiment(models.Model):
     """ how often the experiment_metadata server should tick. """
     tick_duration = models.CharField(max_length=32, null=True, blank=True)
 
-    """ total elapsed time in seconds since this experiment_metadata was started, incremented by the heartbeat monitor. """
+    """ total elapsed time in seconds since this experiment_metadata was started, 
+    incremented by the heartbeat monitor. """
     total_elapsed_time = models.PositiveIntegerField(default=0)
+    """ current round start time """
+    current_round_start_time = models.DateTimeField(null=True, blank=True)
     """ elapsed time in seconds for the current round. """
     current_round_elapsed_time = models.PositiveIntegerField(default=0)
     """
-    Experimenter driven experiments have checkpoints where the experimenter needs to explicitly signal the system to 
+    Experimenter driven experiments have checkpoints where the experimenter needs to
+     explicitly signal the system to 
     move to the next round or stage.
     """
     is_experimenter_driven = models.BooleanField(default=True)
@@ -462,19 +471,16 @@ class Experiment(models.Model):
 
     def advance_to_next_round(self):
         self.current_round_elapsed_time = 0
-        self.current_round_number += 1
-        self.status = 'INSTRUCTIONS'
+        self.current_round_number = models.F('current_round_number') + 1
+        self.save()
+        return Experiment.objects.get(pk=self.pk)
 
     def start_round(self):
         self.status = 'ROUND_IN_PROGRESS'
 
-    def increment_elapsed_time(self):
-        self.total_elapsed_time += 1
-        self.current_round_elapsed_time += 1
-
-
     def get_current_round(self):
-        return RoundConfiguration.objects.get(experiment_configuration=self.experiment_configuration, sequence_number=self.current_round_number)
+        return RoundConfiguration.objects.get(experiment_configuration=self.experiment_configuration,
+                                              sequence_number=self.current_round_number)
 
     @property
     def url(self, request):
@@ -522,29 +528,36 @@ class RoundConfiguration(models.Model):
                           ('PLAY', 'Interactive experiment round'),
                           ('DEBRIEFING', 'Debriefing round'),
                           )
-    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configurations')
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration,
+                                                 related_name='round_configurations')
     sequence_number = models.PositiveIntegerField(help_text='Ordering of rounds')
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     """
-    How long should this round execute before advancing to the next?  Interpreted as whole seconds.
+    How long should this round execute before advancing to the next?  
+    Interpreted as whole seconds.
     """
-    duration = models.PositiveIntegerField(default=0, help_text='Duration in seconds.  0 means an untimed round that can only be advanced by an experimenter.')
+    duration = models.PositiveIntegerField(default=0,
+                                           help_text='Duration in seconds.  0 means an untimed round that can only be advanced by an experimenter.')
     """ instructions, if any, to display before the round begins """
     instructions = models.TextField(null=True, blank=True)
     """ debriefing, if any, to display after the round ends """
     debriefing = models.TextField(null=True, blank=True)
-    round_type = models.CharField(max_length=32, choices=ROUND_TYPE_CHOICES, default='PLAY')
+    round_type = models.CharField(max_length=32,
+                                  choices=ROUND_TYPE_CHOICES,
+                                  default='PLAY')
 
     """ 
-    name of the quiz template to be used this round.  Won't be used unless round_type='QUIZ' and should be just the template filename, e.g., if set to
-    quiz_2.html in the forestry experiment app, this should be loaded from forestry/templates/forestry/quiz_2.html 
+    name of the quiz template to be used this round.  
+    Won't be used unless round_type='QUIZ' and should be just the template filename, 
+    e.g., if set to quiz_2.html in the forestry experiment app, this should be loaded 
+    from forestry/templates/forestry/quiz_2.html 
     FIXME: figure out better method for storing template names.  should we manage quizzes as Quiz objects instead? 
     """
     quiz_template = models.CharField(max_length=32,
                                      null=True,
                                      blank=True,
-                                     help_text='path to the quiz template file that should be relative to the root, e.g., "quiz_2.html"')
+                                     help_text='quiz template filename e.g., "quiz_2.html"')
 
     @property
     def quiz_template_path(self):
@@ -677,7 +690,7 @@ class Group(models.Model):
     """
     def add_participant(self, participant):
         if not participant:
-            logger.warning("Trying to add an invalid participant %s to group %s" % (participant, self))
+            logger.warning("Trying to add invalid participant %s to group %s" % (participant, self))
             return self
 
         group = self

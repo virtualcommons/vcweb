@@ -22,9 +22,13 @@ based on the forestry experiment
 class BaseVcwebTest(TestCase):
     fixtures = ['test_users_participants', 'forestry_test_data']
 
+    def load_experiment(self):
+        self.experiment = Experiment.objects.get(pk=1)
+        return self.experiment
+
     def setUp(self):
         self.participants = Participant.objects.all()
-        self.experiment = Experiment.objects.get(pk=1)
+        self.load_experiment()
         self.experimenter = Experimenter.objects.get(pk=1)
         self.experiment_metadata = ExperimentMetadata.objects.get(pk=1)
         self.experiment_configuration = ExperimentConfiguration.objects.get(pk=1)
@@ -89,7 +93,6 @@ class ExperimentTest(BaseVcwebTest):
         self.failUnless(time, "time should be set")
         raise Exception
 
-
     def test_start(self):
         signals.round_started.connect(self.round_started_test_handler, sender=None)
         try:
@@ -109,6 +112,23 @@ class ExperimentTest(BaseVcwebTest):
             self.failUnlessEqual(participant_number % group.max_size, p.id % group.max_size)
             logger.debug("randomized participant number %i (id: %i)" % (participant_number, p.pk))
 
+    def test_next_round(self):
+        experiment = self.experiment
+        round_number = experiment.current_round_number
+        self.failUnless(round_number >= 0)
+        experiment = experiment.advance_to_next_round()
+        self.failUnless(experiment.current_round_number == (round_number + 1))
+
+    def test_increment_elapsed_time(self):
+        experiment = self.experiment
+        current_round_elapsed_time = experiment.current_round_elapsed_time
+        self.failUnless(current_round_elapsed_time == 0)
+        total_elapsed_time = experiment.total_elapsed_time
+        self.failUnless(total_elapsed_time == 0)
+        Experiment.objects.increment_elapsed_time(status='INACTIVE')
+        experiment = self.load_experiment()
+        self.failUnlessEqual(experiment.current_round_elapsed_time, current_round_elapsed_time + 1)
+        self.failUnlessEqual(experiment.total_elapsed_time, total_elapsed_time + 1)
 
 
     def test_get_participant_number(self):
