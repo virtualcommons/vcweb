@@ -14,6 +14,11 @@ import signals
 
 logger = logging.getLogger('vcweb.core.tests')
 
+""" 
+base class for vcweb.core tests, sets up test fixtures for participants, 
+forestry_test_data, and a number of participants, experiments, etc., 
+based on the forestry experiment 
+"""
 class BaseVcwebTest(TestCase):
     fixtures = ['test_users_participants', 'forestry_test_data']
 
@@ -35,11 +40,32 @@ class BaseVcwebTest(TestCase):
         g = Group(number=1, max_size=max_size, experiment=experiment)
         g.save()
         return g
-
-
-
     class Meta:
         abstract = True
+
+class ExperimentMetadataTest(BaseVcwebTest):
+    namespace_regex = ExperimentMetadata.namespace_regex
+
+    def create_experiment_metadata(self, namespace=None):
+        return ExperimentMetadata(title="test title: %s" % namespace, namespace=namespace)
+
+    def test_valid_namespaces(self):
+        valid_namespaces = ('forestry/hooha', 'furestry', 'f', 'hallo/h', '/f',
+                            'abcdefghijklmnopqrstuvwxyz1234567890/abcdefghijklmnopqrstuvwxyz1234567890',
+                            )
+        for namespace in valid_namespaces:
+            self.failUnless(self.namespace_regex.match(namespace))
+            em = self.create_experiment_metadata(namespace)
+            em.save()
+
+    def test_invalid_namespaces(self):
+        invalid_namespaces = ('#$what the!',
+                              "$$!it's a trap!",
+                              '/!@')
+        for namespace in invalid_namespaces:
+            em = self.create_experiment_metadata(namespace)
+            self.failUnlessRaises(Exception, lambda x: em.save())
+            self.failIf(self.namespace_regex.match(namespace))
 
 class ExperimentTest(BaseVcwebTest):
 

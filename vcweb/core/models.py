@@ -282,16 +282,18 @@ class RegistrationProfile(models.Model):
 
 # manager classes
 class ExperimentMetadataManager(models.Manager):
-
     def get_by_natural_key(self, key):
         return self.get(namespace=key)
 
-
-# Create your models here.
+"""
+ExperimentMetadata contains records for each type of supported and implement experiment.  A single app could add multiple experiment metadata records 
+but they should be closely related.  
+"""
 class ExperimentMetadata(models.Model):
     title = models.CharField(max_length=255)
-    # the URL fragment that this experiment_metadata will occupy, 
-    namespace = models.CharField(max_length=255, unique=True, validators=[RegexValidator(regex=r'^\w+$')])
+    # the URL fragment that this experiment_metadata will occupy,
+    namespace_regex = re.compile(r'^(?:[/]?[a-z0-9_]+\/?)+$')
+    namespace = models.CharField(max_length=255, unique=True, validators=[RegexValidator(regex=namespace_regex)])
     description = models.TextField(null=True, blank=True)
     date_created = models.DateField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -358,6 +360,10 @@ class ExperimentConfiguration(models.Model):
     is_public = models.BooleanField(default=True)
     max_group_size = models.PositiveIntegerField(default=5)
 
+    @property
+    def namespace(self):
+        return self.experiment_metadata.namespace
+
     def __unicode__(self):
         return "Experiment configuration [{name}] for {experiment_metadata} created by {creator} on {date_created}".format(name=self.name,
                                                                                                                            experiment_metadata=self.experiment_metadata,
@@ -384,6 +390,7 @@ class Experiment(models.Model):
                            ('ACTIVE', 'Active'),
                            ('PAUSED', 'Paused'),
                            ('INSTRUCTIONS', 'Instructions'),
+                           ('QUIZ', 'Quiz in progress'),
                            ('ROUND_IN_PROGRESS', 'Round in progress'),
                            ('DEBRIEFING', 'Debriefing'),
                            ('COMPLETED', 'Completed'),
@@ -415,7 +422,13 @@ class Experiment(models.Model):
     """ name of the AMQP exchange hosting this experiment """
     amqp_exchange_name = models.CharField(max_length=64, default="vcweb.default.exchange")
 
+
     objects = ExperimentManager()
+
+
+    @property
+    def event_channel_name(self):
+        return "%s.%s" % (self.experiment_metadata.namespace, self.id)
 
     def start(self):
         if not self.is_running():
@@ -507,6 +520,7 @@ class RoundConfiguration(models.Model):
                           ('CHAT', 'Chat round'),
                           ('PRACTICE', 'Practice round'),
                           ('PLAY', 'Interactive experiment round'),
+                          ('DEBRIEFING', 'Debriefing round'),
                           )
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configurations')
     sequence_number = models.PositiveIntegerField(help_text='Ordering of rounds')
@@ -522,11 +536,35 @@ class RoundConfiguration(models.Model):
     debriefing = models.TextField(null=True, blank=True)
     round_type = models.CharField(max_length=32, choices=ROUND_TYPE_CHOICES, default='PLAY')
 
+    """ 
+    name of the quiz template to be used this round.  Won't be used unless round_type='QUIZ' and should be just the template filename, e.g., if set to
+    quiz_2.html in the forestry experiment app, this should be loaded from forestry/templates/forestry/quiz_2.html 
+    FIXME: figure out better method for storing template names. 
+    """
+    quiz_template = models.CharField(max_length=32, null=True, blank=True, help_text='path to the quiz template file that should be relative to the root, e.g., "quiz_2.html"')
+    """ FIXME: should we manage quizzes within the system as Quiz objects? """
+
+    @property
+    def quiz_template(self):
+        return "%s/%s" % (self.experiment_configuration.namespace, self.quiz_template)
+
     def get_debriefing(self, participant_id=None, **kwargs):
         return self.templatize(self.debriefing, participant_id, kwargs)
 
     def get_instructions(self, participant_id=None, **kwargs):
         return self.templatize(self.instructions, participant_id, kwargs)
+
+    def is_debriefing_round(self):
+        return self.round_type == 'DEBRIEFING'
+
+    def is_chat_round(self):
+        return self.round_type == 'CHAT'
+
+    def is_instructions_round(self):
+        return self.round_type == 'INSTRUCTIONS'
+
+    def is_quiz_round(self):
+        return self.round_type == 'QUIZ'
 
     def templatize(self, template_string, participant_id=None, **kwargs):
         return Template(template_string).substitute(kwargs, round_number=self.sequence_number, participant_id=participant_id)
@@ -605,11 +643,16 @@ class Group(models.Model):
     """ how many members can this group hold at a maximum? Should be specified as a ConfigurationParameter somewhere """
     max_size = models.PositiveIntegerField(default=5)
     experiment = models.ForeignKey(Experiment, related_name='groups')
-    amqp_queue_name = models.CharField(max_length=64, default='vcweb.default.queue')
+
+    """ should return a unique chat / event channel to communicate on """
+    @property
+    def channel(self):
+        return "%s.%i" % (self.experiment.event_channel_name, self.number)
+
 
     @property
-    def amqp_exchange_name(self):
-        return self.experiment.amqp_exchange_name
+    def experiment_channel(self):
+        return self.experiment.event_channel_name
 
     @property
     def size(self):
