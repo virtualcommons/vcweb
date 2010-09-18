@@ -38,10 +38,18 @@ def register(request):
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            cleaned_data = form.cleaned_data
-            # do something with cleaned data
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+            first_name = form.cleaned_data['first_name']
+            last_name = form.cleaned_data['last_name']
+            institution = form.cleaned_data['institution']
 
-            return redirect('core-index')
+            participant = Participant(institution=institution)
+
+
+
+
+            return redirect('core:profile')
     else:
         form = RegistrationForm()
         return render_to_response('registration/register.html', locals(), context_instance=RequestContext(request))
@@ -69,7 +77,7 @@ def participant_index(request):
 
 @login_required
 def account_profile(request):
-    return redirect('home')
+    return render_to_response('registration/profile.html', RequestContext(request))
 
 
 @login_required

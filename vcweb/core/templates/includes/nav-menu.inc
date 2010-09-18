@@ -8,7 +8,7 @@
 
 <div id='menu'>
 <ul>
-	<li class='{% active request "^/$" %}'' ><a href='/' class='first'>Home</a></li>
+	<li class='{% active request "^/$" %}' ><a href='/' class='first'>Home</a></li>
 	<li class='{% active request about %}'><a href='{{ about }}'>About</a></li>
 	<li><a class='external' href='http://commons.asu.edu/contact/'>Contact us</a></li>
 	{% if request.is_authenticated %}

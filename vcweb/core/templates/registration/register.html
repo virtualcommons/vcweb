@@ -1,36 +1,21 @@
 {% extends "base-vcweb-form.html" %}
-
-
-
 {% block head %}
 {{ block.super }}
 
 <script type='text/javascript'>
 $(document).ready(function() {
-	$('#id_experimenter').click(function() {
-		$('#experimenterDiv').toggle(this.checked);
+	$("#registrationForm :input:visible:enabled:first").focus();
+	$('#registrationForm').validate();
+	$('#id_password').rules("add", {
+		minlength: 3
 	});
-	$('#registrationForm').validate({
-        rules: {
-            id_confirm_password: {
-                equalTo: "#id_password",
-                minlength: 3
-            },
-            id_password: {
-                minlength: 3
-            }
-        },
-
-        messages: {
-            id_password: {
-                minlength: jQuery.format("Your password must be at least {0} characters.")
-            },
-            id_confirm_password: {
-                equalTo: "Your confirmation password doesn't match."
-                minlength: jQuery.format("Your password must be at least {0} characters.")
-            }
-        }
-    });
+	$('#id_confirm_password').rules("add", { 
+		equalTo: "#id_password", 
+		minlength: 3,
+		messages: {
+			equalTo: "Please make sure your passwords match."
+		} 
+	});
 });
 </script>
 
@@ -45,6 +30,19 @@ $(document).ready(function() {
 <legend>New User</legend>
 <p>
 Returning users can <a href='{% url core:login %}'>login here</a> or <a href='{% url password-reset %}'>retrieve your password</a>.
+</p>
+<div class='field'>
+<span class='label'><label for="id_first_name">First name</label>:</span>
+
+<input id="id_first_name" type="text" class="required" name="first_name" />
+
+</div>
+
+<div class='field'>
+<span class='label'><label for="id_last_name">Last name</label>:</span>
+<input id="id_last_name" type="text" class="required" name="last_name" />
+</div>
+
 
 <div class='field'>
 <span class='label'><label for="id_email">Email</label>:</span>
@@ -71,34 +69,9 @@ Returning users can <a href='{% url core:login %}'>login here</a> or <a href='{%
 </div>
 
 <div class='field'>
-<span class='label'><label for="id_experimenter">Experimenter</label>:</span>
-<input type="checkbox" name="experimenter" id="id_experimenter" />
-</div>
-
-<!-- experimenter fields -->
-<div id='experimenterDiv' style='display:none;'>
-
-
-
-<div class='field'>
-<span class='label'><label for="id_first_name">First name</label>:</span>
-
-<input id="id_first_name" type="text" class="required" name="first_name" />
-
-</div>
-
-<div class='field'>
-<span class='label'><label for="id_last_name">Last name</label>:</span>
-<input id="id_last_name" type="text" class="required" name="last_name" />
-</div>
-
-<div class='field'>
 <span class='label'><label for="id_institution">Institution</label>:</span>
 <input id="id_institution" type="text" class="required" name="institution" />
 </div>
-
-</div>
-
 
 <div class='submit'>
 <input type='submit' value='Login' />

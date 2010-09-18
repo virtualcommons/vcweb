@@ -13,9 +13,6 @@ import random
 import re
 import signals
 
-
-
-
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
 logger = logging.getLogger('vcweb.core.models')
@@ -35,10 +32,6 @@ def second_tick_handler(sender, time=None, **kwargs):
     logger.debug("handling second tick signal at %s" % time)
     # inspect all active experiments and update their time left
     Experiment.objects.increment_elapsed_time(status='ROUND_IN_PROGRESS')
-
-
-
-
 
 signals.second_tick.connect(second_tick_handler, sender=None)
 
@@ -530,7 +523,7 @@ class RoundConfiguration(models.Model):
                           )
     experiment_configuration = models.ForeignKey(ExperimentConfiguration,
                                                  related_name='round_configurations')
-    sequence_number = models.PositiveIntegerField(help_text='Ordering of rounds')
+    sequence_number = models.PositiveIntegerField(help_text='Determines the ordering of the rounds in an experiment in an ascending format.  1 is before 2, etc.')
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     """
@@ -588,7 +581,7 @@ class RoundConfiguration(models.Model):
         return "Round # {0} for experiment_metadata {1} ".format(self.sequence_number, self.experiment_configuration)
 
     class Meta:
-        ordering = [ 'experiment_configuration', 'sequence_number' ]
+        ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]
 
 
 class Parameter(models.Model):

@@ -25,6 +25,7 @@ class AuthenticationBackend(ModelBackend):
                 user = User.objects.get(email=username)
                 if user.check_password(password):
                     return user
+                # check for and handle participants logging in with an auth?
             except User.DoesNotExist:
                 return None
         return None

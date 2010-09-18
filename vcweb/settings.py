@@ -117,10 +117,7 @@ ACCOUNT_ACTIVATION_DAYS = 30
 DEFAULT_FROM_EMAIL = 'commons@asu.edu'
 
 # use email as username for authentication
-AUTHENTICATION_BACKENDS = (
-                           "vcweb.core.auth.AuthenticationBackend",
-                           "django.contrib.auth.backends.ModelBackend",
-)
+AUTHENTICATION_BACKENDS = ("vcweb.core.auth.AuthenticationBackend", "django.contrib.auth.backends.ModelBackend",)
 
 # only needed for windows boxes.  Put in settings_local instead?
 STATIC_BASE_DIR = os.path.join(os.path.dirname(__file__), 'static').replace('\\', '/')
