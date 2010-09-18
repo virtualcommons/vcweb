@@ -2,6 +2,7 @@
 
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb.core.forms import RegistrationForm, LoginForm
@@ -43,12 +44,12 @@ def register(request):
             first_name = form.cleaned_data['first_name']
             last_name = form.cleaned_data['last_name']
             institution = form.cleaned_data['institution']
-
-            participant = Participant(institution=institution)
-
-
-
-
+            user = User.objects.create_user(email, email, password)
+            user.first_name = first_name
+            user.last_name = last_name
+            user.save()
+            participant = Participant(institution=institution, user=user)
+            participant.save()
             return redirect('core:profile')
     else:
         form = RegistrationForm()
