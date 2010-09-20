@@ -307,7 +307,7 @@ class ExperimentMetadata(models.Model):
         return [self.namespace]
 
     def __unicode__(self):
-        return "Experiment Type: %s (namespace: %s, created on %s)" % (self.title, self.namespace, self.date_created)
+        return u"Experiment Type: %s (namespace: %s, created on %s)" % (self.title, self.namespace, self.date_created)
 
     class Meta:
         ordering = ['namespace', 'date_created']
@@ -320,7 +320,7 @@ class Institution(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
-        return "%s (%s)" % (self.name, self.url)
+        return u"%s (%s)" % (self.name, self.url)
 
 class CommonsUser(models.Model):
     """
@@ -339,7 +339,7 @@ class CommonsUser(models.Model):
         return self.user.is_authenticated()
 
     def __unicode__(self):
-        return "%s (%s)" % (self.user.get_full_name(), self.user.email)
+        return u"%s (%s)" % (self.user.get_full_name(), self.user.email)
 
     class Meta:
         abstract = True
@@ -365,7 +365,7 @@ class ExperimentConfiguration(models.Model):
         return self.experiment_metadata.namespace
 
     def __unicode__(self):
-        return "ExperimentConfiguration %s for %s" % (self.name, self.experiment_metadata)
+        return u"ExperimentConfiguration %s for %s" % (self.name, self.experiment_metadata)
 
     class Meta:
         ordering = ['experiment_metadata', 'creator', 'date_created']
@@ -505,7 +505,7 @@ class Experiment(models.Model):
         return "%s/%s" % (self.experiment_metadata.namespace, self.id)
 
     def __unicode__(self):
-        return "%s (status: %s, last updated on %s)" % (self.experiment_metadata.name, self.status, self.last_modified)
+        return u"%s (status: %s, last updated on %s)" % (self.experiment_metadata.name, self.status, self.last_modified)
 
     def ___eq___(self, other):
         return self.id == other.id
@@ -582,7 +582,7 @@ class RoundConfiguration(models.Model):
         return Template(template_string).substitute(kwargs, round_number=self.sequence_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return "Round %d for %s" % (self.sequence_number, self.experiment_configuration)
+        return u"Round %d for %s" % (self.sequence_number, self.experiment_configuration)
 
     class Meta:
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]
@@ -604,7 +604,7 @@ class Parameter(models.Model):
 
 
     def __unicode__(self):
-        return "%s (%s)" % (self.name, self.type)
+        return u"%s (%s)" % (self.name, self.type)
 
     class Meta:
         abstract = True
@@ -616,7 +616,7 @@ Configuration parameters are used to tune the
 class ConfigurationParameter(Parameter):
     is_required = models.BooleanField(default=False)
     def __unicode__(self):
-        return "CPRM: [name:%s, type:%s]" % (self.name, self.type)
+        return u"CPRM: [name:%s, type:%s]" % (self.name, self.type)
 
 #    class Meta:
 #        db_table = 'vcweb_configuration_parameter'
@@ -635,7 +635,7 @@ class DataParameter(Parameter):
 
 
     def __unicode__(self):
-        return "Name: {0} - Type: {1}".format(self.name, self.type)
+        return u"Name: {0} - Type: {1}".format(self.name, self.type)
 
 #    class Meta:
 #        db_table = 'vcweb_data_parameter'
@@ -647,7 +647,7 @@ class RoundParameter(models.Model):
     parameter_value = models.CharField(max_length=255)
 
     def __unicode__(self):
-        return "{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.parameter_value)
+        return u"{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.parameter_value)
 
 
 class Group(models.Model):
@@ -659,7 +659,7 @@ class Group(models.Model):
     """ should return a unique chat / event channel to communicate on """
     @property
     def channel(self):
-        return "%s.%d" % (self.experiment.event_channel_name, self.number)
+        return u"%s.%d" % (self.experiment.event_channel_name, self.number)
 
 
     @property
@@ -700,7 +700,7 @@ class Group(models.Model):
         return group
 
     def __unicode__(self):
-        return "Group #{0} in {1}".format(self.number, self.experiment)
+        return u"Group #{0} in {1}".format(self.number, self.experiment)
 
     class Meta:
         ordering = ['experiment', 'number']
@@ -719,7 +719,7 @@ class GroupRoundData (models.Model):
     elapsed_time = models.PositiveIntegerField(default=0)
 
     def __unicode__(self):
-        return "Round Data for {0} in {1}".format(self.group, self.round)
+        return u"Round Data for {0} in {1}".format(self.group, self.round)
 
 #    class Meta:
 #        db_table = 'vcweb_group_round_data'
@@ -732,13 +732,15 @@ class DataValue(models.Model):
     experiment = models.ForeignKey(Experiment)
 
     def __unicode__(self):
-        return "Data value: [parameter {0}, value {1}], recorded at {2} for experiment {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.experiment)
+        return u"Data value: [parameter {0}, value {1}], recorded at {2} for experiment {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.experiment)
 
     class Meta:
         abstract = True
 
 class GroupRoundDataValue(DataValue):
     group_round_data = models.ForeignKey(GroupRoundData, related_name='group_round_data_values')
+    def __unicode__(self):
+        return u"data value {0}: {1} for group {2}".format(self.parameter, self.parameter_value, self.group_round_data.group)
     class Meta:
         ordering = [ 'parameter' ]
 
@@ -783,7 +785,7 @@ class ParticipantExperimentRelationship(models.Model):
 
 
     def __unicode__(self):
-        return "Experiment {0} - participant {1} (created {2})".format(self.experiment, self.participant, self.date_created)
+        return u"Experiment {0} - participant {1} (created {2})".format(self.experiment, self.participant, self.date_created)
 
 class ChatMessage(models.Model):
     participant = models.ForeignKey(Participant, related_name='chat_messages')
@@ -798,7 +800,7 @@ class ChatMessage(models.Model):
     def __unicode__(self):
         """ return this participant's sequence number combined with the message """
         participant_number = self.participant.get_participant_number(self.experiment)
-        return "{0}: {1}".format(participant_number, self.message)
+        return u"{0}: {1}".format(participant_number, self.message)
 
 
 class ParticipantGroupRelationshipManager(models.Manager):
@@ -833,7 +835,7 @@ class ParticipantGroupRelationship(models.Model):
     objects = ParticipantGroupRelationshipManager()
 
     def __unicode__(self):
-        return "{0}: {1} (in {2})".format(self.participant, self.participant_number, self.group)
+        return u"{0}: {1} (in {2})".format(self.participant, self.participant_number, self.group)
 
     class Meta:
         ordering = ['participant_number', 'participant']
