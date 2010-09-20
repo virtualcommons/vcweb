@@ -6,28 +6,21 @@
 {% include "includes/experimenter-nav-menu.inc" %}
 {% endblock header %}
 
-{% block content %}
+{% block page %}
 <div class='notice'>
 Welcome to the experimenter interface.  You are logged in as {{experimenter}}.
 </div> 
 <div id="post">
 <fieldset>
 <legend>Your experiments</legend>
-<div class='sidebar'>
 <ul>
-{% for game_instance in games %}
+{% for e in experiments %}
 <li>
-<a href='{{game_instance.management_url}}'>
-{{ game }}
-</a>
-
+<a href='{{e.management_url}}'>{{ e }}</a>
 </li>
-
 {% endfor %}
 </ul>
-</div>
 </fieldset>
 </div>
-
-{% endblock content %}
+{% endblock page %}
 

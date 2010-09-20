@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
-from vcweb.core.models import Experiment, is_participant
+from vcweb.core.models import Experiment, is_participant, is_experimenter
 import logging
 
 logger = logging.getLogger('forestry.views')
@@ -19,8 +19,19 @@ def configure(request):
     return Http404()
 
 @login_required
-def experimenter(request):
-    return render_to_response('forestry/experimenter.html', RequestContext(request))
+def experimenter(request, experiment_id=None):
+    if experiment_id is None:
+        logger.debug("No experiment id specified")
+        return redirect('index')
+
+    try:
+        experiment = Experiment.objects.get(pk=experiment_id)
+        return render_to_response('forestry/experimenter.html',
+                                  { 'experiment' : experiment },
+                                  context_instance=RequestContext(request))
+    except Experiment.DoesNotExist:
+        logger.warning("No experiment available with id [%s]" % experiment_id)
+        return redirect('core:experimenter-index')
 
 
 @login_required
@@ -39,7 +50,7 @@ def participate(request, experiment_id=None):
                                   { 'participant': participant, 'experiment' : experiment },
                                   context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
-        logger.warning("No experiment for id [%s]" % experiment_id)
+        logger.warning("No experiment with id [%s]" % experiment_id)
         return redirect('index')
 
 
