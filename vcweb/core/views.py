@@ -75,7 +75,7 @@ def participant_index(request):
     user = request.user
     try:
         participant = user.participant
-        experiments = [ group.experiment for group in participant.groups.all() ]
+        experiments = participant.experiments.all()
         return render_to_response('participant-index.html', RequestContext(request, locals()))
     except Participant.DoesNotExist:
         # add error message

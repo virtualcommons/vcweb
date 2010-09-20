@@ -299,11 +299,15 @@ class ExperimentMetadata(models.Model):
 
     objects = ExperimentMetadataManager()
 
+    @property
+    def name(self):
+        return self.title
+
     def natural_key(self):
         return [self.namespace]
 
     def __unicode__(self):
-        return "title:{0} namespace:{1} - created on {2}, last modified at {3}".format(self.title, self.namespace, self.date_created, self.last_modified)
+        return "Experiment Type: %s (namespace: %s, created on %s)" % (self.title, self.namespace, self.date_created)
 
     class Meta:
         ordering = ['namespace', 'date_created']
@@ -316,7 +320,7 @@ class Institution(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
-        return "{0} ({1})".format(self.name, self.url)
+        return "%s (%s)" % (self.name, self.url)
 
 class CommonsUser(models.Model):
     """
@@ -335,7 +339,7 @@ class CommonsUser(models.Model):
         return self.user.is_authenticated()
 
     def __unicode__(self):
-        return "{0} ({1})".format(self.user.get_full_name(), self.user.email)
+        return "%s (%s)" % (self.user.get_full_name(), self.user.email)
 
     class Meta:
         abstract = True
@@ -361,7 +365,7 @@ class ExperimentConfiguration(models.Model):
         return self.experiment_metadata.namespace
 
     def __unicode__(self):
-        return "Experiment configuration [{name}] for {experiment_metadata} created by {creator} on {date_created}".format(self.__dict__)
+        return "ExperimentConfiguration %s for %s" % (self.name, self.experiment_metadata)
 
     class Meta:
         ordering = ['experiment_metadata', 'creator', 'date_created']
@@ -429,7 +433,7 @@ class Experiment(models.Model):
 
 
     @property
-    def event_channel_name(self):
+    def channel_name(self):
         return "%s.%s" % (self.experiment_metadata.namespace, self.id)
 
     def start(self):
@@ -486,11 +490,11 @@ class Experiment(models.Model):
 
     @property
     def participant_url(self):
-        return "/participant/{0}".format(self.url_id)
+        return "/%s" % (self.url_id)
 
     @property
     def management_url(self):
-        return "/experimenter/{0}".format(self.url_id)
+        return "/%s/experimenter" % (self.url_id)
 
     @property
     def namespace(self):
@@ -498,10 +502,10 @@ class Experiment(models.Model):
 
     @property
     def url_id(self):
-        return "{0}/{1}".format(self.experiment_metadata.namespace, self.id)
+        return "%s/%s" % (self.experiment_metadata.namespace, self.id)
 
     def __unicode__(self):
-        return "{experiment_metadata} created by {experimenter} on {date_created}: {status}".format(self.__dict__)
+        return "%s (status: %s, last updated on %s)" % (self.experiment_metadata.name, self.status, self.last_modified)
 
     def ___eq___(self, other):
         return self.id == other.id
@@ -523,7 +527,7 @@ class RoundConfiguration(models.Model):
                           )
     experiment_configuration = models.ForeignKey(ExperimentConfiguration,
                                                  related_name='round_configurations')
-    sequence_number = models.PositiveIntegerField(help_text='Determines the ordering of the rounds in an experiment in an ascending format.  1 is before 2, etc.')
+    sequence_number = models.PositiveIntegerField(help_text='Determines the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5')
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     """
@@ -578,7 +582,7 @@ class RoundConfiguration(models.Model):
         return Template(template_string).substitute(kwargs, round_number=self.sequence_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return "Round # {0} for experiment_metadata {1} ".format(self.sequence_number, self.experiment_configuration)
+        return "Round %d for %s" % (self.sequence_number, self.experiment_configuration)
 
     class Meta:
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]
@@ -643,7 +647,7 @@ class RoundParameter(models.Model):
     parameter_value = models.CharField(max_length=255)
 
     def __unicode__(self):
-        return "{0} -- Parameter: {1} Value: {2}".format(self.round_configuration, self.parameter, self.parameter_value)
+        return "{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.parameter_value)
 
 
 class Group(models.Model):
@@ -655,7 +659,7 @@ class Group(models.Model):
     """ should return a unique chat / event channel to communicate on """
     @property
     def channel(self):
-        return "%s.%i" % (self.experiment.event_channel_name, self.number)
+        return "%s.%d" % (self.experiment.event_channel_name, self.number)
 
 
     @property

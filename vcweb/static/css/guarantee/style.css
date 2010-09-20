@@ -40,11 +40,11 @@ h1, h2, h3 {
 	color: #549900;
 }
 
-h1 { font-size: 44px; }
+h1 { font-size: 1.8em; }
 
-h2 { font-size: 18px; }
+h2 { font-size: 1.4em; }
 
-h3 { }
+h3 { font-size: 1.2em}
 
 p, ul, ol {
 	margin-top: 0;
@@ -81,29 +81,7 @@ img.right {
 
 hr { display: none; }
 
-.list1 {
-}
-
-.list1 li {
-	float: left;
-	line-height: normal;
-}
-
-.list1 li img {
-	margin: 0 30px 30px 0;
-}
-
-.list1 li.alt img {
-	margin-right: 0;
-}
-
-#wrapper {
-}
-
 /* Header */
-
-#header-wrapper {
-}
 
 #header {
 	width: 940px;
@@ -277,7 +255,7 @@ legend {
 
 #content {
 	float: left;
-	width: 940px;
+	width: 670px;
 }
 
 /* Post */
@@ -372,7 +350,7 @@ legend {
 
 input.error {
 	padding:0.1em;
-	border: 1px solid;
+	border: 0.06em solid;
 }
 
 label.error {
@@ -387,23 +365,23 @@ label.error {
 
 
 #sidebar li {
-	margin-bottom: 30px;
-	padding: 0 0 10px 0px;
+	margin-bottom: 1.88em;
+	padding: 0 0 0.63em 0;
 }
 
 #sidebar li ul {
-	margin: 0px 14px;
+	margin: 0 0.88em;
 }
 
 #sidebar li li {
 	margin: 0;
-	padding: 12px 0px;
-	border-bottom: 1px solid #E9E8DD;
-	background: url(/static/images/guarantee/img08.gif) no-repeat left 18px;
+	padding: 0.50em 0.3em;
+	border-bottom: 0.06em solid #E9E8DD;
+	background: url(/static/images/guarantee/img08.gif) no-repeat left 1.13em;
 }
 
 #sidebar li li a {
-	padding: 0px 0px 0px 20px;
+	padding: 0 0 0 1.25em;
 	font-weight: normal;
 	color: #EB5716;
 }
@@ -414,13 +392,13 @@ label.error {
 
 #sidebar p {
 	margin: 0;
-	padding: 0px 14px;
+	padding: 0 0.88em;
 }
 
 #sidebar h2 {
-	height: 30px;
-	margin: 0 0 10px 0px;
-	padding: 6px 0 2px 14px;
+	height: 1.88em;
+	margin: 0 0 0.63em 0;
+	padding: 0.38em 0 0.14em 0.88em;
 	background: url(/static/images/guarantee/img05.gif) repeat-x left top;
 	text-transform: capitalize;
 	font-size: 1.5em;

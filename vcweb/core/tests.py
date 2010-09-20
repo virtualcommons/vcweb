@@ -98,8 +98,8 @@ class ExperimentTest(BaseVcwebTest):
         try:
             self.experiment.start()
             self.fail("Should have raised an exception.")
-        except Exception:
-            logger.debug("expected exception raised.")
+        except Exception, e:
+            logger.debug("expected exception raised: %s" % e)
             self.failUnless(self.experiment.is_running())
 
     def test_allocate_groups(self):

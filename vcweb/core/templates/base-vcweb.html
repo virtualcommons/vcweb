@@ -17,46 +17,45 @@
 	<div id='logo'>
 		<h1>{% block logo %}The Virtual Commons Web Environment{% endblock %}</h1>
 	</div>
-	
-	<hr/>
-
-
-
-<div id='header'>
-{% block header %}
-{% include "includes/nav-menu.inc" %}
-{% endblock %}
-</div>
-
-<div id='page'>
-	<div id="content">
- 	{% block content %}
-
- 	{% endblock %}
+	<hr/>	
+	<div id='header'>
+		{% block header %}
+		{% include "includes/nav-menu.inc" %}
+		{% endblock %}
 	</div>
 
+	<div id='page'>
+		{% block page %}
+		<div id="content">
+ 			{% block content %}
 
-	<div style='clear: both;'>&nbsp;</div>
+ 			{% endblock content %}
+		</div>
+		<div id='sidebar'>
+			{% block sidebar %}
+			{% endblock sidebar %}
+		</div>
+		<div style='clear: both;'>&nbsp;</div>
+		{% endblock page %}
 	<!--  end #page -->
-</div>
+	</div>
 
-<div id="footer">
-	{% block footer %}
-	<p>
-	<a href='http://shesc.asu.edu'>School of Human Evolution and Social Change</a> <br />
-	<a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a>
-	</p>
-	<p class='legal'>
-	Copyright (c) 2010 Arizona Board of Regents.  Design adapted from <a href="http://www.freecsstemplates.org/">Free CSS Templates</a>.<br/>
-	This project is funded by the <a href='http://nsf.gov'>National Science Foundation</a> and <a href='http://www.asu.edu'>Arizona State University</a>.
-	<br />
-	</p>
-	{% endblock footer %}
-
-</div>
+	<div id="footer">
+		{% block footer %}
+		<p>
+		<a href='http://shesc.asu.edu'>School of Human Evolution and Social Change</a> <br />
+		<a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a>
+		</p>
+		<p class='legal'>
+		Copyright (c) 2010 Arizona Board of Regents.  Design adapted from <a href="http://www.freecsstemplates.org/">Free CSS Templates</a>.<br/>
+		This project is funded by the <a href='http://nsf.gov'>National Science Foundation</a> and <a href='http://www.asu.edu'>Arizona State University</a>.
+		<br />
+		</p>
+		{% endblock footer %}
+	</div>
 	<script type='text/javascript'>
-<!-- sets all external links to open up in new windows -->
-	$('a.external').attr({ target: "_blank" });
+	<!-- sets all external links to open up in new windows -->
+		$('a.external').attr({ target: "_blank" });
 	</script>
 </body>
 
