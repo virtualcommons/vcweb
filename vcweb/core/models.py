@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models, transaction
+from django.db.models.aggregates import Max
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
 from string import Template
@@ -361,6 +362,10 @@ class ExperimentConfiguration(models.Model):
     max_group_size = models.PositiveIntegerField(default=5)
 
     @property
+    def last_round_sequence_number(self):
+        return RoundConfiguration.objects.filter(experiment_configuration=self).aggregate(max_sequence_number=Max('sequence_number'))['max_sequence_number']
+
+    @property
     def namespace(self):
         return self.experiment_metadata.namespace
 
@@ -443,7 +448,7 @@ class Experiment(models.Model):
             self.save()
             logger.debug("About to send round started signal")
             # notify game handlers...
-            signals.round_started.send_robust(None, experiment_id=self.id, time=datetime.datetime.now(), round_configuration_id=self.get_current_round().id)
+            signals.round_started.send_robust(None, experiment_id=self.id, time=datetime.datetime.now(), round_configuration_id=self.current_round.id)
 
 
     def allocate_groups(self, randomize=True):
@@ -488,7 +493,8 @@ class Experiment(models.Model):
                           is_experimenter_driven=self.is_experimenter_driven
                           )
 
-    def get_current_round(self):
+    @property
+    def current_round(self):
         return RoundConfiguration.objects.get(experiment_configuration=self.experiment_configuration,
                                               sequence_number=self.current_round_number)
 
@@ -708,7 +714,10 @@ class Group(models.Model):
             logger.warning("Group is full: ({0} of {1})".format(self.size, self.max_size))
             group = self.create_next_group()
 
-        participant_group_rel = ParticipantGroupRelationship(participant=participant, group=group, round_joined=self.experiment.get_current_round(), participant_number=group.size + 1)
+        participant_group_rel = ParticipantGroupRelationship(participant=participant,
+                                                             group=group,
+                                                             round_joined=self.experiment.current_round,
+                                                             participant_number=group.size + 1)
         participant_group_rel.save()
         return group
 

@@ -8,7 +8,8 @@ Replace these with more appropriate tests for your application.
 
 from django.test import TestCase
 from vcweb.core.models import Experiment, Experimenter, ExperimentConfiguration, \
-    Participant, ParticipantExperimentRelationship, Group, ExperimentMetadata
+    Participant, ParticipantExperimentRelationship, Group, ExperimentMetadata, \
+    RoundConfiguration
 import logging
 import signals
 
@@ -32,6 +33,15 @@ class BaseVcwebTest(TestCase):
         self.experimenter = Experimenter.objects.get(pk=1)
         self.experiment_metadata = ExperimentMetadata.objects.get(pk=1)
         self.experiment_configuration = ExperimentConfiguration.objects.get(pk=1)
+
+    def create_new_round_configuration(self, round_type='PLAY', quiz_template=None):
+        rc = RoundConfiguration(experiment_configuration=self.experiment_configuration,
+                                sequence_number=(self.experiment_configuration.last_round_sequence_number + 1),
+                                round_type=round_type,
+                                quiz_template=quiz_template
+                                )
+        rc.save()
+        return rc
 
     def create_new_experiment(self):
         e = Experiment(experimenter=self.experimenter,
@@ -89,7 +99,7 @@ class ExperimentTest(BaseVcwebTest):
         logger.debug("invoking round started test handler with args experiment_id:%i time:%s round_configuration_id:%s"
                      % (experiment_id, time, round_configuration_id))
         self.failUnlessEquals(experiment_id, self.experiment.pk)
-        self.failUnlessEquals(round_configuration_id, self.experiment.get_current_round().id)
+        self.failUnlessEquals(round_configuration_id, self.experiment.current_round.id)
         self.failUnless(time, "time should be set")
         raise Exception
 

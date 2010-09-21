@@ -95,21 +95,17 @@ INSTALLED_APPS = (
     'vcweb.forestry',
     'djcelery',
 )
-BROKER_HOST = "localhost"
+BROKER_HOST = "149.169.203.115"
 BROKER_PORT = 5672
 BROKER_USER = "vcweb-celery"
 BROKER_PASSWORD = 'override this in settings_local.py'
-BROKER_VHOST = "vcweb.rabbitmq.host"
+BROKER_VHOST = "vcweb.rabbitmq.vhost"
 
 # celerybeat configuration
 CELERYBEAT_MAX_LOOP_INTERVAL = 5
 CELERYBEAT_LOG_FILE = 'celerybeat.log'
-CELERYBEAT_LOG_LEVEL = 'DEBUG'
+CELERYBEAT_LOG_LEVEL = 'ERROR'
 
-
-import djcelery
-
-djcelery.setup_loader()
 
 # activation window
 ACCOUNT_ACTIVATION_DAYS = 30
@@ -127,4 +123,9 @@ try:
 except ImportError:
     print "Couldn't load local settings"
     pass
+
+import djcelery
+
+djcelery.setup_loader()
+
 

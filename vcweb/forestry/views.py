@@ -42,16 +42,34 @@ def participate(request, experiment_id=None):
     try:
         participant = request.user.participant
     except AttributeError:
-        logger.debug("No participant available on logged in user %s" % request.user)
+        logger.debug("logged in user %s wasn't a participant" % request.user)
         return redirect('index')
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
-        return render_to_response('forestry/participate.html',
+        return render_to_response(get_template(experiment),
                                   { 'participant': participant, 'experiment' : experiment },
                                   context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
         logger.warning("No experiment with id [%s]" % experiment_id)
         return redirect('index')
+
+round_type_to_template = {
+                          'INSTRUCTIONS' : lambda x: 'instructions.html',
+                          'CHAT' : lambda x: 'chat.html',
+                          'PRACTICE' : lambda x: 'practice.html',
+                          'DEBRIEFING' : lambda x: 'debriefing.html',
+                          'PLAY' : lambda x: 'participate.html',
+                          'QUIZ': lambda x: x.quiz_template if x.quiz_template else 'quiz.html'
+                          }
+
+def get_template(experiment):
+    round_configuration = experiment.current_round
+    round_type = round_configuration.round_type
+    return "%s/%s" % (experiment.namespace, round_type_to_template[round_type](round_configuration))
+
+
+
+
 
 
 
