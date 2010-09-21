@@ -9,10 +9,18 @@
 {% block page %}
 <div class='notice'>
 Welcome to the experimenter interface.  You are logged in as {{experimenter}}.
-</div> 
+<br/>
+<br/>
+<a href='http://libai.la.asu.edu:8080/admin'>add / configure an experiment</a> | 
+<a href='http://libai.la.asu.edu:8080/admin'>download data</a> |
+<a href='http://commons.asu.edu/contact'>report a bug</a>
+
+</div>
+ 
 <div id="post">
 <fieldset>
 <legend>Your experiments</legend>
+{% if experiments %}
 <ul>
 {% for e in experiments %}
 <li>
@@ -20,6 +28,11 @@ Welcome to the experimenter interface.  You are logged in as {{experimenter}}.
 </li>
 {% endfor %}
 </ul>
+{% else %}
+<div class='info'>
+You are not currently running any experiments.     	
+</div>
+{% endif %}
 </fieldset>
 </div>
 {% endblock page %}
