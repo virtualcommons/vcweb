@@ -475,6 +475,19 @@ class Experiment(models.Model):
     def start_round(self):
         self.status = 'ROUND_IN_PROGRESS'
 
+    """ returns a fresh copy of this experiment with configuration / metadata intact """
+    def clone(self, experimenter=None):
+        if not experimenter:
+            experimenter = self.experimenter
+        return Experiment(experimenter=experimenter,
+                          authentication_code=self.authentication_code,
+                          experiment_metadata=self.experiment_metadata,
+                          experiment_configuration=self.experiment_configuration,
+                          duration=self.duration,
+                          tick_duration=self.tick_duration,
+                          is_experimenter_driven=self.is_experimenter_driven
+                          )
+
     def get_current_round(self):
         return RoundConfiguration.objects.get(experiment_configuration=self.experiment_configuration,
                                               sequence_number=self.current_round_number)
