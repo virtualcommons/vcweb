@@ -20,7 +20,9 @@ logger = logging.getLogger('vcweb.core.models')
 
 """
 Contains all data models used in the core as well as a number of helper functions.  
-Is getting pretty big / unwieldy.  Should probably refactor and split into smaller pieces.
+
+Is getting big / unwieldy.  Should try to refactor into smaller parts, but creating models directory has
+been painful due to circular imports. 
 """
 
 """

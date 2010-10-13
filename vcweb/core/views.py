@@ -1,4 +1,6 @@
-# Create your views here.
+"""
+vcweb.core views 
+"""
 
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
@@ -10,6 +12,8 @@ from vcweb.core.models import Participant, Experiment, Experimenter, Institution
 import logging
 
 logger = logging.getLogger("core-views")
+
+""" account registration / login / logout / profile views """
 
 def login(request):
     if request.method == 'POST':
@@ -61,6 +65,16 @@ def register(request):
     return render_to_response('registration/register.html', locals(), context_instance=RequestContext(request))
 
 @login_required
+def account_profile(request):
+    return render_to_response('registration/profile.html', RequestContext(request))
+
+
+""" 
+experimenter views 
+FIXME: add has_perms authorization to ensure that only experimenters can access
+these.
+"""
+@login_required
 def experimenter_index(request):
     user = request.user
     try:
@@ -70,6 +84,29 @@ def experimenter_index(request):
     except Experimenter.DoesNotExist:
         return redirect('home')
 
+@login_required
+def configure(request, experiment_id=None):
+    if experiment_id:
+        experiment = Experiment.objects.get(pk=experiment_id)
+    # lookup game instance id (or create a new one?)
+        return render_to_response('configure.html', RequestContext(request, locals()))
+    else:
+        return redirect('home')
+
+@login_required
+def start_experiment(request, experiment_id=None):
+    if experiment_id:
+        try:
+            experiment = Experiment.objects.get(pk=experiment_id)
+            experiment.start()
+            return redirect('core:manage-experiment', experiment_id=experiment_id)
+        except Experiment.DoesNotExist:
+            pass
+    logger.warn("tried to start an experiment that doesn't exist (id: %s)" % experiment_id)
+    return redirect('core:experimenter-index')
+
+
+""" participant home page """
 @login_required
 def participant_index(request):
     user = request.user
@@ -81,12 +118,5 @@ def participant_index(request):
         # add error message
         return redirect('home')
 
-@login_required
-def account_profile(request):
-    return render_to_response('registration/profile.html', RequestContext(request))
 
 
-@login_required
-def configure(request, experiment_id):
-    # lookup game instance id (or create a new one?)
-    return render_to_response('configure.html', RequestContext(request))

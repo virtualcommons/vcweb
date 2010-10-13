@@ -3,8 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
-from vcweb.core.models import Experiment, is_participant, is_experimenter
+from vcweb.core.models import is_participant, Experiment
 import logging
+
 
 logger = logging.getLogger('forestry.views')
 
@@ -12,7 +13,8 @@ logger = logging.getLogger('forestry.views')
 def index(request):
     if is_participant(request.user):
         return render_to_response('forestry/index.html', RequestContext(request))
-    return redirect('experimenter')
+    """ FIXME: should redirect to forestry-specific experimenter dashboard instead """
+    return redirect('core:experimenter-index')
 
 @login_required
 def configure(request):
