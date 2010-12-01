@@ -1,6 +1,6 @@
 from django.db import models
-from vcweb.core.signals import *
-import threading
+from vcweb.core import signals
+
 
 # Create your models here.
 

@@ -11,7 +11,7 @@ from vcweb.core.models import Experiment, Experimenter, ExperimentConfiguration,
     Participant, ParticipantExperimentRelationship, Group, ExperimentMetadata, \
     RoundConfiguration
 import logging
-import signals
+from vcweb.core import signals
 
 logger = logging.getLogger('vcweb.core.tests')
 

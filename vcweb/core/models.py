@@ -12,7 +12,7 @@ import hashlib
 import logging
 import random
 import re
-import signals
+from vcweb.core import signals
 
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
