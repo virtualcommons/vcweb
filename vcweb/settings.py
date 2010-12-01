@@ -115,13 +115,13 @@ DEFAULT_FROM_EMAIL = 'commons@asu.edu'
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = ("vcweb.core.auth.AuthenticationBackend", "django.contrib.auth.backends.ModelBackend",)
 
-# only needed for windows boxes.  Put in settings_local instead?
+# static base dir used in dev mode with a sanity check for windows paths
 STATIC_BASE_DIR = os.path.join(os.path.dirname(__file__), 'static').replace('\\', '/')
 
 try:
     from settings_local import *
 except ImportError:
-    print "Couldn't load local settings"
+    logging.debug("Couldn't load local settings")
     pass
 
 import djcelery
