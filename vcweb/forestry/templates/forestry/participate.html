@@ -4,8 +4,21 @@
 
 {% block content %}
 <h3>Forestry</h3>
-<p>
-<div class='round'>
+
+<div class='forestry-resource'>
+<img src='/static/images/forestry/pine-tree.jpg'>
 </div>
+<p>
+The resource size is <b>{{ resource_size }}</b>.
 </p>
+<form action='submit-resource-decision' method='post'>
+
+<div>
+<label for='resource.decision.id'>Number of resources you wish to extract: </label>
+<input id='resource.decision.id' type="text" name='resource.decision'>
+</div>
+<div>
+<input type='submit' value='Submit'>
+</div>
+</form>
 {% endblock content %}
