@@ -7,5 +7,10 @@ register = template.Library()
 
 @register.simple_tag
 def active(request, pattern):
+    return 'active' if pattern == request.path else 'inactive'
+
+@register.simple_tag
+def active_re(request, pattern):
     import re
     return 'active' if re.search(pattern, request.path) else 'inactive'
+
