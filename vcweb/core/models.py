@@ -548,7 +548,9 @@ class RoundConfiguration(models.Model):
                           )
     experiment_configuration = models.ForeignKey(ExperimentConfiguration,
                                                  related_name='round_configurations')
-    sequence_number = models.PositiveIntegerField(help_text='Determines the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5')
+    sequence_number = models.PositiveIntegerField(help_text='Used internally to determine the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5')
+    round_number = models.PositiveIntegerField(default=0,
+                                               help_text='The round number to be displayed with this round.  If not explicitly set, defaults to the internally used sequence_number.')
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     """
@@ -581,6 +583,10 @@ class RoundConfiguration(models.Model):
     def quiz_template_path(self):
         return "%s/%s" % (self.experiment_configuration.namespace, self.quiz_template)
 
+    @property
+    def round_number(self):
+        return self.sequence_number if self.round_number == 0 else self.round_number
+
     def get_debriefing(self, participant_id=None, **kwargs):
         return self.templatize(self.debriefing, participant_id, kwargs)
 
@@ -600,7 +606,7 @@ class RoundConfiguration(models.Model):
         return self.round_type == 'QUIZ'
 
     def templatize(self, template_string, participant_id=None, **kwargs):
-        return Template(template_string).substitute(kwargs, round_number=self.sequence_number, participant_id=participant_id)
+        return Template(template_string).substitute(kwargs, round_number=self.round_number, participant_id=participant_id)
 
     def __unicode__(self):
         return u"Round %d for %s" % (self.sequence_number, self.experiment_configuration)
