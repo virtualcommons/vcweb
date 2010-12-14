@@ -3,8 +3,7 @@
 {% block title %} Forestry Participant Interface {% endblock %}
 
 {% block content %}
-<h3>Forestry</h3>
-
+<h3>Forestry round number {{ experiment.current_round.round_number }}</h3>
 <div class='forestry-resource'>
 <img src='/static/images/forestry/pine-tree.jpg'>
 </div>
@@ -13,12 +12,15 @@ The resource size is <b>{{ resource_size }}</b>.
 </p>
 <form action='submit-resource-decision' method='post'>
 
-<div>
-<label for='resource.decision.id'>Number of resources you wish to extract: </label>
+<div class='input'>
+<label for='resource.decision.id'>Enter a number between 0 and 5:</label>
 <input id='resource.decision.id' type="text" name='resource.decision'>
 </div>
-<div>
+<div class='input'>
 <input type='submit' value='Submit'>
+</div>
+<div>
+
 </div>
 </form>
 {% endblock content %}

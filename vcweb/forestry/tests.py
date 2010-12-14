@@ -19,11 +19,11 @@ class ForestryViewsTest(BaseVcwebTest):
     def test_get_quiz_template(self):
         e = self.experiment
         rc = self.create_new_round_configuration(round_type='QUIZ', quiz_template='quiz_4.html')
-        e.current_round_number = rc.sequence_number
+        e.current_round_sequence_number = rc.sequence_number
         self.failUnlessEqual(get_template(e), 'forestry/quiz_4.html', 'should return specified quiz_template')
 
         rc = self.create_new_round_configuration(round_type='QUIZ')
-        e.current_round_number = rc.sequence_number
+        e.current_round_sequence_number = rc.sequence_number
         self.failUnlessEqual(get_template(e), 'forestry/quiz.html', 'should return default quiz.html')
 
 

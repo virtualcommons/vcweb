@@ -403,7 +403,7 @@ class Experiment(models.Model):
                            ('COMPLETED', 'Completed'),
                            )
     authentication_code = models.CharField(max_length=32, default="vcweb.auth.code")
-    current_round_number = models.PositiveIntegerField(default=0)
+    current_round_sequence_number = models.PositiveIntegerField(default=0)
     experimenter = models.ForeignKey(Experimenter)
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
     experiment_configuration = models.ForeignKey(ExperimentConfiguration,
@@ -475,7 +475,7 @@ class Experiment(models.Model):
 
     def advance_to_next_round(self):
         self.current_round_elapsed_time = 0
-        self.current_round_number = models.F('current_round_number') + 1
+        self.current_round_sequence_number = models.F('current_round_sequence_number') + 1
         self.save()
         return Experiment.objects.get(pk=self.pk)
 
@@ -498,7 +498,7 @@ class Experiment(models.Model):
     @property
     def current_round(self):
         return RoundConfiguration.objects.get(experiment_configuration=self.experiment_configuration,
-                                              sequence_number=self.current_round_number)
+                                              sequence_number=self.current_round_sequence_number)
 
     @property
     def url(self, request):
@@ -549,8 +549,8 @@ class RoundConfiguration(models.Model):
     experiment_configuration = models.ForeignKey(ExperimentConfiguration,
                                                  related_name='round_configurations')
     sequence_number = models.PositiveIntegerField(help_text='Used internally to determine the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5')
-    round_number = models.PositiveIntegerField(default=0,
-                                               help_text='The round number to be displayed with this round.  If not explicitly set, defaults to the internally used sequence_number.')
+    display_number = models.PositiveIntegerField(default=0,
+                                               help_text='The round number to be displayed with this round.  If set to zero, defaults to the internally used sequence_number.')
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     """
@@ -585,7 +585,7 @@ class RoundConfiguration(models.Model):
 
     @property
     def round_number(self):
-        return self.sequence_number if self.round_number == 0 else self.round_number
+        return self.sequence_number if self.display_number == 0 else self.display_number
 
     def get_debriefing(self, participant_id=None, **kwargs):
         return self.templatize(self.debriefing, participant_id, kwargs)
@@ -606,10 +606,10 @@ class RoundConfiguration(models.Model):
         return self.round_type == 'QUIZ'
 
     def templatize(self, template_string, participant_id=None, **kwargs):
-        return Template(template_string).substitute(kwargs, round_number=self.round_number, participant_id=participant_id)
+        return Template(template_string).substitute(kwargs, round_number=self.display_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return u"Round %d for %s" % (self.sequence_number, self.experiment_configuration)
+        return u"Round %d (displayed as: %d) for %s" % (self.sequence_number, self.round_number, self.experiment_configuration)
 
     class Meta:
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]

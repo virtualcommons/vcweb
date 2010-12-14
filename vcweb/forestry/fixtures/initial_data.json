@@ -1,58 +1,89 @@
 [
     {
-        "pk": 1, 
-        "model": "core.experimentmetadata", 
         "fields": {
+            "about_url": "http://commons.asu.edu", 
             "description": "Web-based version of the forestry field experiments.", 
-            "title": "Forestry Web Experiment", 
             "namespace": "forestry", 
-            "about_url": "http://commons.asu.edu" 
-        }
+            "title": "Forestry Web Experiment"
+        }, 
+        "model": "core.experimentmetadata", 
+        "pk": 1
     }, 
     {
-        "pk": 1, 
-        "model": "core.experimentconfiguration", 
         "fields": {
-            "name": "Forestry Default Configuration", 
             "creator": 1, 
+            "experiment_metadata": [
+                "forestry"
+            ], 
+            "is_public": true, 
+            "max_group_size": 5, 
             "max_number_of_participants": 20, 
-            "max_group_size": 5,
-            "experiment_metadata": ["forestry"], 
-            "is_public": true
-        }
-    },
-    {
-        "pk": 1, 
-        "model": "core.experiment", 
-        "fields": {
-            "experiment_metadata": 1, 
-            "status": "INACTIVE", 
-            "start_date_time": null, 
-            "current_round_elapsed_time": 0, 
-            "tick_duration": "10s", 
-            "current_round_number": 1, 
-            "authentication_code": "TEST_FORESTRY", 
-            "total_elapsed_time": 0, 
-            "last_modified": "2010-09-07 15:10:37", 
-            "experimenter": 1, 
-            "duration": "1h", 
-            "date_created": "2010-09-07 13:10:47", 
-            "experiment_configuration": 1, 
-            "is_experimenter_driven": true
-        }
+            "name": "Forestry Default Configuration"
+        }, 
+        "model": "core.experimentconfiguration", 
+        "pk": 1
     }, 
-        {
-        "pk": 1, 
-        "model": "core.roundconfiguration", 
+    {
         "fields": {
-            "round_type": "INSTRUCTIONS", 
-            "debriefing": "Initial debriefing for the forestry experiment.", 
-            "last_modified": "2010-09-07 15:13:03", 
-            "duration": 0, 
-            "date_created": "2010-09-07 15:13:03", 
+            "authentication_code": "TEST_FORESTRY", 
+            "current_round_elapsed_time": 0, 
+            "current_round_sequence_number": 1, 
+            "date_created": "2010-09-07 13:10:47", 
+            "duration": "1h", 
             "experiment_configuration": 1, 
-            "sequence_number": 1, 
-            "instructions": "Initial instructions for the forestry experiment."
-        }
+            "experiment_metadata": 1, 
+            "experimenter": 1, 
+            "is_experimenter_driven": true, 
+            "last_modified": "2010-09-07 15:10:37", 
+            "start_date_time": null, 
+            "status": "INACTIVE", 
+            "tick_duration": "10s", 
+            "total_elapsed_time": 0
+        }, 
+        "model": "core.experiment", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "date_created": "2010-09-07 15:13:03", 
+            "debriefing": "Initial debriefing for the forestry experiment.", 
+            "duration": 0, 
+            "experiment_configuration": 1, 
+            "instructions": "Initial instructions for the forestry experiment.", 
+            "last_modified": "2010-09-07 15:13:03", 
+            "round_type": "INSTRUCTIONS", 
+            "sequence_number": 1
+        }, 
+        "model": "core.roundconfiguration", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "date_created": "2010-09-07 15:13:03", 
+            "debriefing": "Initial debriefing for the forestry experiment.", 
+            "duration": 0, 
+            "experiment_configuration": 1, 
+            "instructions": "Initial instructions for the forestry experiment.", 
+            "last_modified": "2010-09-07 15:13:03", 
+            "round_type": "PRACTICE", 
+            "sequence_number": 2
+        }, 
+        "model": "core.roundconfiguration", 
+        "pk": 2
+    }, 
+    {
+        "fields": {
+            "date_created": "2010-09-07 15:13:03", 
+            "debriefing": "Initial debriefing for the forestry experiment.", 
+            "display_number": 1, 
+            "duration": 0, 
+            "experiment_configuration": 1, 
+            "instructions": "Initial instructions for the forestry experiment.", 
+            "last_modified": "2010-09-07 15:13:03", 
+            "round_type": "PLAY", 
+            "sequence_number": 3
+        }, 
+        "model": "core.roundconfiguration", 
+        "pk": 3
     }
 ]

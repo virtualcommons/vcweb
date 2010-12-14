@@ -124,10 +124,10 @@ class ExperimentTest(BaseVcwebTest):
 
     def test_next_round(self):
         experiment = self.experiment
-        round_number = experiment.current_round_number
+        round_number = experiment.current_round_sequence_number
         self.failUnless(round_number >= 0)
         experiment = experiment.advance_to_next_round()
-        self.failUnless(experiment.current_round_number == (round_number + 1))
+        self.failUnless(experiment.current_round_sequence_number == (round_number + 1))
 
     def test_increment_elapsed_time(self):
         experiment = self.experiment
