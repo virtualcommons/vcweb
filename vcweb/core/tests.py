@@ -7,11 +7,11 @@ Replace these with more appropriate tests for your application.
 """
 
 from django.test import TestCase
+from vcweb.core import signals
 from vcweb.core.models import Experiment, Experimenter, ExperimentConfiguration, \
     Participant, ParticipantExperimentRelationship, Group, ExperimentMetadata, \
     RoundConfiguration
 import logging
-from vcweb.core import signals
 
 logger = logging.getLogger('vcweb.core.tests')
 
@@ -34,11 +34,11 @@ class BaseVcwebTest(TestCase):
         self.experiment_metadata = ExperimentMetadata.objects.get(pk=1)
         self.experiment_configuration = ExperimentConfiguration.objects.get(pk=1)
 
-    def create_new_round_configuration(self, round_type='PLAY', quiz_template=None):
+    def create_new_round_configuration(self, round_type='PLAY', template_name=None):
         rc = RoundConfiguration(experiment_configuration=self.experiment_configuration,
                                 sequence_number=(self.experiment_configuration.last_round_sequence_number + 1),
                                 round_type=round_type,
-                                quiz_template=quiz_template
+                                template_name=template_name
                                 )
         rc.save()
         return rc
@@ -183,6 +183,27 @@ class ParticipantExperimentRelationshipTest(BaseVcwebTest):
 
         self.failUnlessEqual(e.participants.count(), self.participants.count())
 
+
+class RoundConfigurationTest(BaseVcwebTest):
+
+    def test_round_configuration_enums(self):
+        self.failUnless(len(RoundConfiguration.ROUND_TYPES) == 6, 'Currently 6 round types are supported')
+        self.failUnlessEqual(RoundConfiguration.PRACTICE, 'PRACTICE')
+        self.failUnlessEqual(RoundConfiguration.BASIC, 'BASIC')
+        choices = RoundConfiguration.ROUND_TYPE_CHOICES
+        logger.debug("choices are: %s" % choices)
+        self.failUnless(len(choices) == 6)
+        for pair in choices:
+            self.failUnless(pair[0] in RoundConfiguration.ROUND_TYPES.keys())
+            self.failIf(pair[1].isupper())
+
+    def test_get_templates(self):
+        e = self.experiment
+        for round_type, data in RoundConfiguration.ROUND_TYPES.items():
+            logger.debug("inspecting round type: %s with data %s" % (round_type, data))
+            rc = self.create_new_round_configuration(round_type=round_type)
+            e.current_round_sequence_number = rc.sequence_number
+            self.failUnlessEqual(e.current_round_template, "%s/%s" % (e.namespace, data[1]), 'should have returned template for ' + data[0])
 
 
 

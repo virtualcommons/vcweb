@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
-from vcweb.core.models import is_participant, Experiment
+from vcweb.core.models import is_participant, Experiment, RoundConfiguration
 import logging
 
 
@@ -48,28 +48,15 @@ def participate(request, experiment_id=None):
         return redirect('index')
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
-        return render_to_response(get_template(experiment),
+        return render_to_response(experiment.current_round_template,
                                   { 'participant': participant, 'experiment' : experiment },
                                   context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
         logger.warning("No experiment with id [%s]" % experiment_id)
         return redirect('index')
 
-round_type_to_template = {
-                          'INSTRUCTIONS' : lambda x: 'instructions.html',
-                          'CHAT' : lambda x: 'chat.html',
-                          'PRACTICE' : lambda x: 'practice.html',
-                          'DEBRIEFING' : lambda x: 'debriefing.html',
-                          'PLAY' : lambda x: 'participate.html',
-                          'QUIZ': lambda x: x.quiz_template if x.quiz_template else 'quiz.html'
-                          }
-
-def get_template(experiment):
-    round_configuration = experiment.current_round
-    round_type = round_configuration.round_type
-    return "%s/%s" % (experiment.namespace, round_type_to_template[round_type](round_configuration))
-
-
+def template_generator(default_template):
+    return lambda round_configuration: round_configuration.template_name if round_configuration.template_name else default_template
 
 
 

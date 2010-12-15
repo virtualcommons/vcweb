@@ -392,16 +392,11 @@ class ExperimentManager(models.Manager):
 # an actual instance of an experiment; represents a concrete
 # parameterization of this experiment.
 class Experiment(models.Model):
-    STATUS_CHOICES = (
-                           ('INACTIVE', 'Not active'),
-                           ('ACTIVE', 'Active'),
-                           ('PAUSED', 'Paused'),
-                           ('INSTRUCTIONS', 'Instructions'),
-                           ('QUIZ', 'Quiz in progress'),
-                           ('ROUND_IN_PROGRESS', 'Round in progress'),
-                           ('DEBRIEFING', 'Debriefing'),
-                           ('COMPLETED', 'Completed'),
-                           )
+    STATUS_CHOICES = (('INACTIVE', 'Not active'),
+                      ('ACTIVE', 'Active'),
+                      ('PAUSED', 'Paused'),
+                      ('ROUND_IN_PROGRESS', 'Round in progress'),
+                      ('COMPLETED', 'Completed'))
     authentication_code = models.CharField(max_length=32, default="vcweb.auth.code")
     current_round_sequence_number = models.PositiveIntegerField(default=0)
     experimenter = models.ForeignKey(Experimenter)
@@ -496,6 +491,10 @@ class Experiment(models.Model):
                           )
 
     @property
+    def current_round_template(self):
+        return "%s/%s" % (self.namespace, self.current_round.custom_template_name)
+
+    @property
     def current_round(self):
         return RoundConfiguration.objects.get(experiment_configuration=self.experiment_configuration,
                                               sequence_number=self.current_round_sequence_number)
@@ -538,14 +537,16 @@ class Experiment(models.Model):
         return self.id.___hash___()
 
 class RoundConfiguration(models.Model):
-    ROUND_TYPE_CHOICES = (
-                          ('INSTRUCTIONS', 'Instructions round'),
-                          ('QUIZ', 'Quiz round'),
-                          ('CHAT', 'Chat round'),
-                          ('PRACTICE', 'Practice round'),
-                          ('PLAY', 'Interactive experiment round'),
-                          ('DEBRIEFING', 'Debriefing round'),
-                          )
+    ROUND_TYPES = dict(BASIC=('Regular interactive experiment round', 'participate.html'),
+                       CHAT=('Chat round', 'chat.html'),
+                       DEBRIEFING=('Debriefing round', 'debriefing.html'),
+                       INSTRUCTIONS=('Instructions round', 'instructions.html'),
+                       PRACTICE=('Practice round', 'practice.html'),
+                       QUIZ=('Quiz round', 'quiz.html'))
+    (BASIC, CHAT, DEBRIEFING, INSTRUCTIONS, PRACTICE, QUIZ) = sorted(ROUND_TYPES.keys())
+
+    ROUND_TYPE_CHOICES = [(round_type, ROUND_TYPES[round_type][0]) for round_type in sorted(ROUND_TYPES.keys())]
+
     experiment_configuration = models.ForeignKey(ExperimentConfiguration,
                                                  related_name='round_configurations')
     sequence_number = models.PositiveIntegerField(help_text='Used internally to determine the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5')
@@ -565,23 +566,24 @@ class RoundConfiguration(models.Model):
     debriefing = models.TextField(null=True, blank=True)
     round_type = models.CharField(max_length=32,
                                   choices=ROUND_TYPE_CHOICES,
-                                  default='PLAY')
-
-    """ 
-    name of the quiz template to be used this round.  
-    Won't be used unless round_type='QUIZ' and should be just the template filename, 
-    e.g., if set to quiz_2.html in the forestry experiment app, this should be loaded 
-    from forestry/templates/forestry/quiz_2.html 
-    FIXME: figure out better method for storing template names.  should we manage quizzes as Quiz objects instead? 
+                                  default=BASIC)
     """
-    quiz_template = models.CharField(max_length=32,
-                                     null=True,
-                                     blank=True,
-                                     help_text='quiz template filename e.g., "quiz_2.html"')
+    name of a custom template to be used this round.  
+    e.g., if set to quiz_2.html in the forestry experiment app, this would be loaded 
+    from forestry/templates/forestry/quiz_2.html 
+    """
+    template_name = models.CharField(max_length=64, null=True, blank=True,
+                                            help_text='''The name of the template to use to render when executing this round.  
+                                            This file should exist in your templates directory as your-experiment-namespace/template-name.html, 
+                                            e.g., if set to foo.html, vcweb will look for templates/forestry/foo.html''')
 
     @property
-    def quiz_template_path(self):
-        return "%s/%s" % (self.experiment_configuration.namespace, self.quiz_template)
+    def custom_template_name(self):
+        return self.template_name if self.template_name else RoundConfiguration.ROUND_TYPES[self.round_type][1]
+
+    @property
+    def template_path(self):
+        return "%s/%s" % (self.experiment_configuration.namespace, self.custom_template_name)
 
     @property
     def round_number(self):
