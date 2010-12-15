@@ -5,7 +5,6 @@ unittest). These will both pass when you run "manage.py test".
 Replace these with more appropriate tests for your application.
 """
 
-from vcweb.core.models import RoundConfiguration
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.forestry.views import get_template
 import logging
