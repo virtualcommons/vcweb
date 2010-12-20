@@ -618,22 +618,21 @@ class RoundConfiguration(models.Model):
 
 
 class Parameter(models.Model):
-    PARAMETER_TYPES = (
-                    ('int', 'Integer'),
-                    ('string', 'String'),
-                    ('float', 'Float'),
-                    ('boolean', (('True', True), ('False', False))),
-                    ('enum', 'enum')
-                    )
+    PARAMETER_TYPES = (('int', 'Integer'),
+                       ('string', 'String'),
+                       ('float', 'Float'),
+                       ('boolean', (('True', True), ('False', False))),
+                       ('enum', 'enum'))
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     creator = models.ForeignKey(Experimenter)
-
+    experiment_metadata = models.ForeignKey(ExperimentMetadata)
+    enum_choices = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return u"%s (%s)" % (self.name, self.type)
+        return u"%s (%s) for experiment %s" % (self.name, self.type, self.experiment_metadata)
 
     class Meta:
         abstract = True
@@ -645,13 +644,23 @@ Configuration parameters are used to tune the
 class ConfigurationParameter(Parameter):
     is_required = models.BooleanField(default=False)
     def __unicode__(self):
-        return u"CPRM: [name:%s, type:%s]" % (self.name, self.type)
+        return u"cfg param: [name:%s, type:%s]" % (self.name, self.type)
 
 #    class Meta:
 #        db_table = 'vcweb_configuration_parameter'
 
 
 class DataParameter(Parameter):
+    """
+    the scope of a data parameter can range from 
+    individual participant decisions (e.g., individual harvest decision) 
+    to group data (e.g., shared resource level) 
+    to experiment-wide data (e.g., ???)
+    """
+    SCOPE_CHOICES = (('GROUP', 'Data shared by an entire group'),
+                     ('PARTICIPANT', 'Data created by an individual participant'),
+                     ('EXPERIMENT', 'Data shared across an instance of an experiment'))
+    scope = models.CharField(max_length=32, choices=SCOPE_CHOICES)
 
     def ___eq___(self, other):
         return self.name == other.name
@@ -752,9 +761,6 @@ class GroupRoundData (models.Model):
 
     def __unicode__(self):
         return u"Round Data for {0} in {1}".format(self.group, self.round)
-
-#    class Meta:
-#        db_table = 'vcweb_group_round_data'
 
 class DataValue(models.Model):
     parameter = models.ForeignKey(DataParameter)

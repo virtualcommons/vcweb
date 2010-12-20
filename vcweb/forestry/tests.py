@@ -15,7 +15,7 @@ logger = logging.getLogger('vcweb.forestry.tests')
 
 class ForestryViewsTest(BaseVcwebTest):
 
-    def test_get_quiz_template(self):
+    def test_get_template(self):
         e = self.experiment
         rc = self.create_new_round_configuration(round_type=RoundConfiguration.QUIZ, template_name='quiz_23.html')
         e.current_round_sequence_number = rc.sequence_number

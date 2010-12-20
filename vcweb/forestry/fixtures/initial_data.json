@@ -85,5 +85,27 @@
         }, 
         "model": "core.roundconfiguration", 
         "pk": 3
+    },
+    {
+        "fields": {
+        	"name":"forestry_harvest_decision",
+        	"experiment_metadata": 1,
+        	"creator": 1,
+        	"type": "int",
+        	"scope": "participant"
+        }, 
+        "model": "core.dataparameter", 
+        "pk": 1
+    },
+    {
+        "fields": {
+        	"name":"forestry_resource_level",
+        	"experiment_metadata": 1,
+        	"creator": 1,
+        	"type": "int",
+        	"scope": "group"
+        }, 
+        "model": "core.dataparameter", 
+        "pk": 2
     }
 ]

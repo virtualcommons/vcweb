@@ -1,9 +1,22 @@
 {% extends "base-participant.html" %}
 
-{% block title %} Forestry Practice Round{% endblock %}
+{% block title %} Forestry Instructions{% endblock %}
 
 {% block content %}
-<h3>Forestry</h3>
+<h3>Forestry Instructions</h3>
 <p>
+Welcome.  Thank you for participating in this experiment. 
+The following exercise is a way to actively participate in a project about individual decisions and natural resources.
+We intend to recreate a situation in which a group or family must make decisions about the use of a forest.  You and 
+four other randomly selected participants have been placed into a group that has access to this forest.  
+</p>
+<p>
+You will play several rounds equivalent to years or wood harvest seasons.  Initially your group has an area of forest with 100 initial resource units.
+Each round you and every other participant in your group will have to make a decision about how many resource units you want to harvest.  At the start
+you can harvest a maximum of 5 units and a minimum of 0 units from the resource.    
 </p>
 {% endblock content %}
+
+{% block sidebar %}
+{% include "includes/harvest-table.inc" %}
+{% endblock sidebar %}

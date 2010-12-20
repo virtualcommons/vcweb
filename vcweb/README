@@ -1,5 +1,5 @@
 Dependencies:
-    Python:
+    Python 2.6:
         (either run as root or inside a virtualenv)
         pip install celery
         pip install django
@@ -11,7 +11,7 @@ Dependencies:
     RabbitMQ
 
 
-Use manage.py to set up your dev environment:
+Use manage.py to set up your dev environment or the supplied setup-devdb.sh script
 
 ./manage.py syncdb --noinput
 
