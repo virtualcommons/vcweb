@@ -88,7 +88,7 @@
     },
     {
         "fields": {
-        	"name":"forestry_harvest_decision",
+        	"name":"harvest_decision",
         	"experiment_metadata": 1,
         	"creator": 1,
         	"type": "int",
@@ -99,7 +99,7 @@
     },
     {
         "fields": {
-        	"name":"forestry_resource_level",
+        	"name":"resource_level",
         	"experiment_metadata": 1,
         	"creator": 1,
         	"type": "int",

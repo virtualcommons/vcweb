@@ -26,6 +26,14 @@ class ForestryViewsTest(BaseVcwebTest):
         self.failUnlessEqual(e.current_round_template, 'forestry/quiz.html', 'should return default quiz.html')
 
 
+class ForestryParametersTest(BaseVcwebTest):
+
+    def test_get_all_data_parameters(self):
+        e = self.experiment
+        self.failUnlessEqual(2, len(e.data_parameters), 'Currently 2 data parameters')
+        for data_param in e.data_parameters:
+            self.failUnlessEqual(data_param.type, 'int', 'Currently all data parameters for the forestry experiment are ints.')
+
 
 
 

@@ -293,6 +293,8 @@ class ExperimentMetadata(models.Model):
     # the URL fragment that this experiment_metadata will occupy,
     namespace_regex = re.compile(r'^(?:[/]?[a-z0-9_]+\/?)+$')
     namespace = models.CharField(max_length=255, unique=True, validators=[RegexValidator(regex=namespace_regex)])
+    # short name slug
+    short_name = models.SlugField(max_length=32)
     description = models.TextField(null=True, blank=True)
     date_created = models.DateField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -437,6 +439,10 @@ class Experiment(models.Model):
     @property
     def channel_name(self):
         return "%s.%s" % (self.experiment_metadata.namespace, self.id)
+
+    @property
+    def data_parameters(self):
+        return DataParameter.objects.filter(experiment_metadata=self.experiment_metadata)
 
     def start(self):
         if not self.is_running():
@@ -632,7 +638,7 @@ class Parameter(models.Model):
     enum_choices = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return u"%s (%s) for experiment %s" % (self.name, self.type, self.experiment_metadata)
+        return u"%s: %s (%s)" % (self.experiment_metadata.namespace, self.name, self.type)
 
     class Meta:
         abstract = True
