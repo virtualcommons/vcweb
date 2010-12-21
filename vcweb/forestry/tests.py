@@ -6,7 +6,8 @@ Replace these with more appropriate tests for your application.
 """
 
 from vcweb.core.models import RoundConfiguration, DataValue, \
-    ParticipantDataValue, ParticipantExperimentRelationship, Participant
+    ParticipantDataValue, ParticipantExperimentRelationship, Participant, \
+    RoundParameter, Parameter
 from vcweb.core.tests import BaseVcwebTest
 import logging
 
@@ -29,7 +30,19 @@ class ForestryViewsTest(BaseVcwebTest):
 
 class ForestryParametersTest(BaseVcwebTest):
 
-    def test_get_all_data_parameters(self):
+    def test_round_parameters(self):
+        e = self.experiment
+
+        p = Parameter(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
+        p.save()
+        rp = RoundParameter(parameter=p, round_configuration=e.current_round)
+        rp.save()
+        self.failUnless(p.pk > 0)
+        self.failUnless(rp.pk > 0)
+
+
+
+    def test_data_parameters(self):
         e = self.experiment
         self.failUnlessEqual(2, len(e.data_parameters), 'Currently 2 data parameters')
         for data_param in e.data_parameters:

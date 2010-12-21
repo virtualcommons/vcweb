@@ -622,11 +622,11 @@ class RoundConfiguration(models.Model):
 
 
 class Parameter(models.Model):
-    PARAMETER_TYPES = (('int', 'Integer'),
-                       ('string', 'String'),
-                       ('float', 'Float'),
+    PARAMETER_TYPES = (('int', 'Integer value'),
+                       ('string', 'String value'),
+                       ('float', 'Float value'),
                        ('boolean', (('True', True), ('False', False))),
-                       ('enum', 'enum'))
+                       ('enum', 'Enumeration'))
     CONVERTERS = {
                   'int': int,
                   'string':str,
@@ -639,8 +639,7 @@ class Parameter(models.Model):
                         ('group', 'Group wide parameter'),
                         ('participant', 'Participant parameter'))
 
-
-    scope = models.CharField(max_length=32, choices=PARAMETER_SCOPES)
+    scope = models.CharField(max_length=32, choices=PARAMETER_SCOPES, default='round')
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -648,6 +647,7 @@ class Parameter(models.Model):
     creator = models.ForeignKey(Experimenter)
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
     enum_choices = models.TextField(null=True, blank=True)
+    is_required = models.BooleanField(default=False)
 
     @property
     def value_field(self):
@@ -664,27 +664,47 @@ class Parameter(models.Model):
     class Meta:
         ordering = ['name']
 
-"""
-Configuration parameters are used to tune individual rounds in an experiment.
-"""
-class ConfigurationParameter(Parameter):
-    is_required = models.BooleanField(default=False)
 
-    def __unicode__(self):
-        return u"cfg param: [name:%s, type:%s]" % (self.name, self.type)
 
-class RoundParameter(models.Model):
+class ParameterizedValue(models.Model):
+    parameter = models.ForeignKey(Parameter)
+    string_value = models.CharField(max_length=512, null=True, blank=True)
+    int_value = models.IntegerField(null=True)
+    float_value = models.FloatField(null=True)
+    boolean_value = models.NullBooleanField(null=True)
+    time_recorded = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def convert_string_value(self):
+        import warnings
+        warnings.warn('deprecated', DeprecationWarning)
+        return self.parameter.convert(self.string_value)
+
+    @property
+    def value(self):
+        return getattr(self, self.parameter.value_field)
+
+    @value.setter
+    def value(self, obj):
+        setattr(self, self.parameter.value_field, obj)
+
+    class Meta:
+        abstract = True
+
+class RoundParameter(ParameterizedValue):
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='parameters')
-    parameter = models.ForeignKey(ConfigurationParameter)
-    string_value = models.CharField(max_length=255)
-    int_value = models.IntegerField()
-    float_value = models.FloatField()
-    boolean_value = models.BooleanField()
-
 
     def __unicode__(self):
         return u"{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.parameter_value)
 
+class DataValue(ParameterizedValue):
+    experiment = models.ForeignKey(Experiment)
+
+    def __unicode__(self):
+        return u"Data value: [parameter {0}, value {1}], recorded at {2} for experiment {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.experiment)
+
+    class Meta:
+        abstract = True
 
 class Group(models.Model):
     number = models.PositiveIntegerField()
@@ -696,7 +716,6 @@ class Group(models.Model):
     @property
     def channel(self):
         return u"%s.%d" % (self.experiment.event_channel_name, self.number)
-
 
     @property
     def experiment_channel(self):
@@ -760,37 +779,10 @@ class GroupRoundData (models.Model):
     def __unicode__(self):
         return u"Round Data for {0} in {1}".format(self.group, self.round)
 
-class DataValue(models.Model):
-    parameter = models.ForeignKey(Parameter)
-    string_value = models.CharField(max_length=512, null=True, blank=True)
-    int_value = models.IntegerField(null=True)
-    float_value = models.FloatField(null=True)
-    boolean_value = models.NullBooleanField(null=True)
-    time_recorded = models.DateTimeField(auto_now_add=True)
-    experiment = models.ForeignKey(Experiment)
 
-    @property
-    def convert_string_value(self):
-        return self.parameter.convert(self.string_value)
-
-    @property
-    def value(self):
-        return getattr(self, self.parameter.value_field)
-
-
-    @value.setter
-    def value(self, obj):
-        setattr(self, self.parameter.value_field, obj)
-
-
-    def __unicode__(self):
-        return u"Data value: [parameter {0}, value {1}], recorded at {2} for experiment {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.experiment)
-
-    class Meta:
-        abstract = True
 
 class GroupRoundDataValue(DataValue):
-    group_round_data = models.ForeignKey(GroupRoundData, related_name='group_round_data_values')
+    group_round_data = models.ForeignKey(GroupRoundData, related_name='values')
     def __unicode__(self):
         return u"data value {0}: {1} for group {2}".format(self.parameter, self.parameter_value, self.group_round_data.group)
     class Meta:
