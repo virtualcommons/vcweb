@@ -440,7 +440,7 @@ class Experiment(models.Model):
 
     @property
     def data_parameters(self):
-        return DataParameter.objects.filter(experiment_metadata=self.experiment_metadata)
+        return Parameter.objects.filter(experiment_metadata=self.experiment_metadata)
 
     def start(self):
         if not self.is_running():
@@ -633,6 +633,14 @@ class Parameter(models.Model):
                   'float': float,
                   'boolean': lambda x: x == 'True'
                   }
+
+    PARAMETER_SCOPES = (('round', 'parameter applies just for this round'),
+                        ('experiment', 'parameter applies to this entire experiment'),
+                        ('group', 'Group wide parameter'),
+                        ('participant', 'Participant parameter'))
+
+
+    scope = models.CharField(max_length=32, choices=PARAMETER_SCOPES)
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -640,6 +648,11 @@ class Parameter(models.Model):
     creator = models.ForeignKey(Experimenter)
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
     enum_choices = models.TextField(null=True, blank=True)
+
+    @property
+    def value_field(self):
+        return '%s_value' % (self.type)
+
 
     def convert(self, value=None):
         converter = Parameter.CONVERTERS[self.type]
@@ -649,50 +662,25 @@ class Parameter(models.Model):
         return u"%s: %s (%s)" % (self.experiment_metadata.namespace, self.name, self.type)
 
     class Meta:
-        abstract = True
         ordering = ['name']
 
 """
-Configuration parameters are used to tune the 
+Configuration parameters are used to tune individual rounds in an experiment.
 """
 class ConfigurationParameter(Parameter):
     is_required = models.BooleanField(default=False)
+
     def __unicode__(self):
         return u"cfg param: [name:%s, type:%s]" % (self.name, self.type)
-
-#    class Meta:
-#        db_table = 'vcweb_configuration_parameter'
-
-
-class DataParameter(Parameter):
-    """
-    the scope of a data parameter can range from 
-    individual participant decisions (e.g., individual harvest decision) 
-    to group data (e.g., shared resource level) 
-    to experiment-wide data (e.g., ???)
-    """
-    SCOPE_CHOICES = (('GROUP', 'Data shared by an entire group'),
-                     ('PARTICIPANT', 'Data created by an individual participant'),
-                     ('EXPERIMENT', 'Data shared across an instance of an experiment'))
-    scope = models.CharField(max_length=32, choices=SCOPE_CHOICES)
-
-    def ___eq___(self, other):
-        return self.name == other.name
-
-    def ___cmp___(self, other):
-        return self.name.__cmp__(other.name)
-
-    def ___hash___(self):
-        return self.name.__hash__()
-
-
-    def __unicode__(self):
-        return u"Name: {0} - Type: {1}".format(self.name, self.type)
 
 class RoundParameter(models.Model):
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='parameters')
     parameter = models.ForeignKey(ConfigurationParameter)
-    parameter_value = models.CharField(max_length=255)
+    string_value = models.CharField(max_length=255)
+    int_value = models.IntegerField()
+    float_value = models.FloatField()
+    boolean_value = models.BooleanField()
+
 
     def __unicode__(self):
         return u"{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.parameter_value)
@@ -773,14 +761,27 @@ class GroupRoundData (models.Model):
         return u"Round Data for {0} in {1}".format(self.group, self.round)
 
 class DataValue(models.Model):
-    parameter = models.ForeignKey(DataParameter)
-    parameter_value = models.CharField(max_length=512)
+    parameter = models.ForeignKey(Parameter)
+    string_value = models.CharField(max_length=512, null=True, blank=True)
+    int_value = models.IntegerField(null=True)
+    float_value = models.FloatField(null=True)
+    boolean_value = models.NullBooleanField(null=True)
     time_recorded = models.DateTimeField(auto_now_add=True)
     experiment = models.ForeignKey(Experiment)
 
     @property
+    def convert_string_value(self):
+        return self.parameter.convert(self.string_value)
+
+    @property
     def value(self):
-        return self.parameter.convert(self.parameter_value)
+        return getattr(self, self.parameter.value_field)
+
+
+    @value.setter
+    def value(self, obj):
+        setattr(self, self.parameter.value_field, obj)
+
 
     def __unicode__(self):
         return u"Data value: [parameter {0}, value {1}], recorded at {2} for experiment {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.experiment)

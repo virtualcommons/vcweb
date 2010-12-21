@@ -94,7 +94,7 @@
         	"type": "int",
         	"scope": "participant"
         }, 
-        "model": "core.dataparameter", 
+        "model": "core.parameter", 
         "pk": 1
     },
     {
@@ -105,7 +105,7 @@
         	"type": "int",
         	"scope": "group"
         }, 
-        "model": "core.dataparameter", 
+        "model": "core.parameter", 
         "pk": 2
     }
 ]
