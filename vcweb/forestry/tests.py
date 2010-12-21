@@ -5,7 +5,8 @@ unittest). These will both pass when you run "manage.py test".
 Replace these with more appropriate tests for your application.
 """
 
-from vcweb.core.models import RoundConfiguration
+from vcweb.core.models import RoundConfiguration, DataValue, \
+    ParticipantDataValue, ParticipantExperimentRelationship
 from vcweb.core.tests import BaseVcwebTest
 import logging
 
@@ -35,14 +36,22 @@ class ForestryParametersTest(BaseVcwebTest):
             self.failUnlessEqual(data_param.type, 'int', 'Currently all data parameters for the forestry experiment are ints.')
 
 
+    def test_data_values(self):
+        e = self.experiment
+        rc = e.current_round
 
+        for data_param in e.data_parameters:
+            for p in self.participants:
+                pexpr = ParticipantExperimentRelationship.objects.get(participant=p, experiment=e)
+                dv = ParticipantDataValue(parameter=data_param, parameter_value=pexpr.sequential_participant_identifier * 2, experiment=e, participant=p, round_configuration=rc)
+                dv.save()
+        self.failUnlessEqual(20, len(ParticipantDataValue.objects.filter(experiment=e)))
 
+        for p in self.participants:
+            self.failUnlessEqual(p.data_values.count(), 2)
+            pexpr = p.get_participant_experiment_relationship(e)
+            for dv in p.data_values.all():
+                self.failUnlessEqual(pexpr.sequential_participant_identifier * 2, dv.value)
 
-
-
-
-
-
-
-
-
+        rc = e.advance_to_next_round().current_round
+        self.failUnlessEqual(0, len(ParticipantDataValue.objects.filter(experiment=e, round_configuration=rc)))

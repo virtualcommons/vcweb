@@ -187,12 +187,12 @@ class ParticipantExperimentRelationshipTest(BaseVcwebTest):
 class RoundConfigurationTest(BaseVcwebTest):
 
     def test_round_configuration_enums(self):
-        self.failUnless(len(RoundConfiguration.ROUND_TYPES) == 6, 'Currently 6 round types are supported')
+        self.failUnlessEqual(len(RoundConfiguration.ROUND_TYPES), 6, 'Currently 6 round types are supported')
         self.failUnlessEqual(RoundConfiguration.PRACTICE, 'PRACTICE')
         self.failUnlessEqual(RoundConfiguration.BASIC, 'BASIC')
         choices = RoundConfiguration.ROUND_TYPE_CHOICES
         logger.debug("choices are: %s" % choices)
-        self.failUnless(len(choices) == 6)
+        self.failUnlessEqual(len(choices), 6)
         for pair in choices:
             self.failUnless(pair[0] in RoundConfiguration.ROUND_TYPES.keys())
             self.failIf(pair[1].isupper())

@@ -6,13 +6,13 @@ from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
 from string import Template
 from vcweb import settings
+from vcweb.core import signals
 import base64
 import datetime
 import hashlib
 import logging
 import random
 import re
-from vcweb.core import signals
 
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
@@ -432,9 +432,7 @@ class Experiment(models.Model):
     """ name of the AMQP exchange hosting this experiment """
     amqp_exchange_name = models.CharField(max_length=64, default="vcweb.default.exchange")
 
-
     objects = ExperimentManager()
-
 
     @property
     def channel_name(self):
@@ -629,6 +627,12 @@ class Parameter(models.Model):
                        ('float', 'Float'),
                        ('boolean', (('True', True), ('False', False))),
                        ('enum', 'enum'))
+    CONVERTERS = {
+                  'int': int,
+                  'string':str,
+                  'float': float,
+                  'boolean': lambda x: x == 'True'
+                  }
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -636,6 +640,10 @@ class Parameter(models.Model):
     creator = models.ForeignKey(Experimenter)
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
     enum_choices = models.TextField(null=True, blank=True)
+
+    def convert(self, value=None):
+        converter = Parameter.CONVERTERS[self.type]
+        return converter(value) if converter else value
 
     def __unicode__(self):
         return u"%s: %s (%s)" % (self.experiment_metadata.namespace, self.name, self.type)
@@ -681,10 +689,6 @@ class DataParameter(Parameter):
     def __unicode__(self):
         return u"Name: {0} - Type: {1}".format(self.name, self.type)
 
-#    class Meta:
-#        db_table = 'vcweb_data_parameter'
-
-# round parameters are 
 class RoundParameter(models.Model):
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='parameters')
     parameter = models.ForeignKey(ConfigurationParameter)
@@ -771,9 +775,12 @@ class GroupRoundData (models.Model):
 class DataValue(models.Model):
     parameter = models.ForeignKey(DataParameter)
     parameter_value = models.CharField(max_length=512)
-    # FIXME: change to DateTimeField
     time_recorded = models.DateTimeField(auto_now_add=True)
     experiment = models.ForeignKey(Experiment)
+
+    @property
+    def value(self):
+        return self.parameter.convert(self.parameter_value)
 
     def __unicode__(self):
         return u"Data value: [parameter {0}, value {1}], recorded at {2} for experiment {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.experiment)
@@ -792,6 +799,9 @@ class Participant(CommonsUser):
     can_receive_invitations = models.BooleanField(default=False)
     groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participants')
     experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participants')
+
+    def get_participant_experiment_relationship(self, experiment):
+        return ParticipantExperimentRelationship.objects.get(participant=self, experiment=experiment)
 
     def get_participant_number(self, experiment):
         return ParticipantGroupRelationship.objects.get_participant_number(experiment, self)
@@ -885,17 +895,12 @@ class ParticipantGroupRelationship(models.Model):
         ordering = ['participant_number', 'participant']
 
 """
-holds all participant data for a given round and participant.
-"""
-class ParticipantRoundData(models.Model):
-    participant = models.ForeignKey(Participant, related_name='round_data')
-    round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_data')
-
-"""
 The particular participant data value for a given ParticipantRoundData (round + participant entity)
 """
 class ParticipantDataValue(DataValue):
-    participant_data = models.ForeignKey(ParticipantRoundData, related_name='participant_data')
+    participant = models.ForeignKey(Participant, related_name='data_values')
+    round_configuration = models.ForeignKey(RoundConfiguration)
+
     class Meta:
         ordering = [ 'parameter' ]
 
