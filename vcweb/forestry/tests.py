@@ -46,16 +46,11 @@ class ForestryParametersTest(BaseVcwebTest):
         self.failUnless(p.pk > 0)
         self.failUnlessEqual(p.value_field, 'int_value')
 
-        for val in (14, '14', 14.0):
+        for val in (14, '14', 14.0, '14.0'):
             rp = RoundParameter(parameter=p, round_configuration=e.current_round, value=val)
             rp.save()
             self.failUnless(rp.pk > 0)
             self.failUnlessEqual(rp.value, 14)
-
-        '''
-        this should fail, strings that look like floats make int(...) hurl ValueErrors
-        '''
-        self.failUnlessRaises(ValueError, lambda: RoundParameter(parameter=p, round_configuration=e.current_round, value='14.0'))
 
         '''
         The type field in Parameter generates the value_field property by concatenating the name of the type with _value.     

@@ -686,7 +686,14 @@ class ParameterizedValue(models.Model):
 
     @value.setter
     def value(self, obj):
-        setattr(self, self.parameter.value_field, self.parameter.convert(obj))
+        try:
+            converted_value = self.parameter.convert(obj)
+        except ValueError:
+            if self.parameter.type == 'int':
+                # last-ditch effort, try converting to float first
+                converted_value = int(float(obj))
+            pass
+        setattr(self, self.parameter.value_field, converted_value)
 
     class Meta:
         abstract = True
