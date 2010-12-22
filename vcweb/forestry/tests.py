@@ -30,15 +30,46 @@ class ForestryViewsTest(BaseVcwebTest):
 
 class ForestryParametersTest(BaseVcwebTest):
 
-    def test_round_parameters(self):
+    def test_parameterized_value(self):
         e = self.experiment
-
         p = Parameter(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
         p.save()
-        rp = RoundParameter(parameter=p, round_configuration=e.current_round)
+        rp = RoundParameter(parameter=p, round_configuration=e.current_round, value='14')
         rp.save()
+        self.failUnlessEqual(14, rp.int_value)
+
+
+    def test_round_parameters(self):
+        e = self.experiment
+        p = Parameter(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
+        p.save()
         self.failUnless(p.pk > 0)
-        self.failUnless(rp.pk > 0)
+        self.failUnlessEqual(p.value_field, 'int_value')
+
+        for val in (14, '14', 14.0):
+            rp = RoundParameter(parameter=p, round_configuration=e.current_round, value=val)
+            rp.save()
+            self.failUnless(rp.pk > 0)
+            self.failUnlessEqual(rp.value, 14)
+
+        '''
+        this should fail, strings that look like floats make int(...) hurl ValueErrors
+        '''
+        self.failUnlessRaises(ValueError, lambda: RoundParameter(parameter=p, round_configuration=e.current_round, value='14.0'))
+
+        '''
+        The type field in Parameter generates the value_field property by concatenating the name of the type with _value.     
+        '''
+        sample_values_for_type = {'int':3, 'float':3.0, 'string':'ich bin ein mublumubla', 'boolean':True}
+        for type in ('int', 'float', 'string', 'boolean'):
+            p = Parameter(scope='round', name='test_nonunique_round_parameter', type=type, creator=e.experimenter, experiment_metadata=e.experiment_metadata)
+            p.save()
+            self.failUnless(p.pk > 0)
+            self.failUnlessEqual(p.value_field, '%s_value' % type)
+            rp = RoundParameter(parameter=p, round_configuration=e.current_round, value=sample_values_for_type[type])
+            rp.save()
+            self.failUnlessEqual(rp.value, sample_values_for_type[type])
+
 
 
 

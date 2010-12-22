@@ -631,7 +631,7 @@ class Parameter(models.Model):
                   'int': int,
                   'string':str,
                   'float': float,
-                  'boolean': lambda x: x == 'True'
+                  'boolean': lambda x: x or x == 'True'
                   }
 
     PARAMETER_SCOPES = (('round', 'parameter applies just for this round'),
@@ -686,7 +686,7 @@ class ParameterizedValue(models.Model):
 
     @value.setter
     def value(self, obj):
-        setattr(self, self.parameter.value_field, obj)
+        setattr(self, self.parameter.value_field, self.parameter.convert(obj))
 
     class Meta:
         abstract = True
