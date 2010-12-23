@@ -675,12 +675,6 @@ class ParameterizedValue(models.Model):
     time_recorded = models.DateTimeField(auto_now_add=True)
 
     @property
-    def convert_string_value(self):
-        import warnings
-        warnings.warn('deprecated', DeprecationWarning)
-        return self.parameter.convert(self.string_value)
-
-    @property
     def value(self):
         return getattr(self, self.parameter.value_field)
 
@@ -689,6 +683,7 @@ class ParameterizedValue(models.Model):
         try:
             converted_value = self.parameter.convert(obj)
         except ValueError:
+            # currently only checking int/float conversions
             if self.parameter.type == 'int':
                 # last-ditch effort, try converting to float first
                 converted_value = int(float(obj))
