@@ -66,7 +66,7 @@ class ForestryParametersTest(BaseVcwebTest):
             self.failUnlessEqual(rp.value, sample_values_for_type[type])
 
 
-    def test_get_data_parameters_by_name(self):
+    def test_group_round_data(self):
         e = self.experiment
         e.allocate_groups()
         for g in e.groups.all():
@@ -74,6 +74,11 @@ class ForestryParametersTest(BaseVcwebTest):
                 # test string conversion
                 logger.debug("current round data: %s" % data_value)
                 self.failUnless(data_value.pk > 0)
+                data_value.value = 100
+                data_value.save()
+                self.failUnlessEqual(100, data_value.value)
+                self.failUnlessEqual('resource_level', data_value.parameter.name)
+
         self.failUnlessEqual(e.get_group_data_parameters().count(), 1)
 
     def test_data_parameters(self):
