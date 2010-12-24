@@ -68,14 +68,21 @@ class ForestryParametersTest(BaseVcwebTest):
 
     def test_get_data_parameters_by_name(self):
         e = self.experiment
-
-
+        e.allocate_groups()
+        for g in e.groups.all():
+            for data_value in g.get_current_round_data().all():
+                # test string conversion
+                logger.debug("current round data: %s" % data_value)
+                self.failUnless(data_value.pk > 0)
+        self.failUnlessEqual(e.get_group_data_parameters().count(), 1)
 
     def test_data_parameters(self):
         e = self.experiment
         self.failUnlessEqual(2, len(e.parameters), 'Currently 2 data parameters')
         for data_param in e.parameters:
+            logger.debug("inspecting data param %s" % data_param)
             self.failUnlessEqual(data_param.type, 'int', 'Currently all data parameters for the forestry experiment are ints.')
+
 
     def create_participant_data_values(self):
         e = self.experiment
@@ -100,7 +107,9 @@ class ForestryParametersTest(BaseVcwebTest):
         for p in self.participants:
             self.failUnlessEqual(p.data_values.count(), 2)
             pexpr = p.get_participant_experiment_relationship(e)
+            logger.debug("relationship %s" % pexpr)
             for dv in p.data_values.all():
+                logger.debug("verifying data value %s" % dv)
                 self.failUnlessEqual(pexpr.sequential_participant_identifier * 2, dv.value)
                 self.failUnless(dv.value)
                 self.failUnlessEqual(dv.int_value, pexpr.sequential_participant_identifier * 2)

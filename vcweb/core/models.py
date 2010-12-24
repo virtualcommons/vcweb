@@ -448,9 +448,6 @@ class Experiment(models.Model):
     def get_group_data_parameters(self, group=None):
         return Parameter.objects.filter(experiment_metadata=self.experiment_metadata, scope=Parameter.GROUP_SCOPE)
 
-
-
-
     def start(self):
         if not self.is_running():
             self.allocate_groups()
@@ -723,13 +720,13 @@ class RoundParameter(ParameterizedValue):
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='parameters')
 
     def __unicode__(self):
-        return u"{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.parameter_value)
+        return u"{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.value)
 
 class DataValue(ParameterizedValue):
     experiment = models.ForeignKey(Experiment)
 
     def __unicode__(self):
-        return u"Data value: [parameter {0}, value {1}], recorded at {2} for experiment {3}".format(self.parameter, self.parameter_value, self.time_recorded, self.experiment)
+        return u"Data value: [parameter {0}, value {1}], recorded at {2} for experiment {3}".format(self.parameter, self.value, self.time_recorded, self.experiment)
 
     class Meta:
         abstract = True
@@ -761,22 +758,18 @@ class Group(models.Model):
         key = { 'group': self, 'round': self.current_round }
         try:
             group_round_data = GroupRoundData.objects.get(**key)
+            logger.debug("group round data (%s) found with key %s" % (group_round_data, key))
             return group_round_data.data_values
         except GroupRoundData.DoesNotExist:
             group_round_data = GroupRoundData(**key)
-            data_parameters = self.experiment.get_group_data_parameters()
             group_round_data.save()
+            data_parameters = self.experiment.get_group_data_parameters()
             for group_data_parameter in data_parameters:
                 # create a fresh GroupRoundDataValue for each data parameter
-                data_value = GroupRoundDataValue(parameter=group_data_parameter, group_round_data=group_round_data)
+                logger.debug("Creating parameter %s" % group_data_parameter)
+                data_value = GroupRoundDataValue(parameter=group_data_parameter, group_round_data=group_round_data, experiment=self.experiment)
                 data_value.save()
             return group_round_data.data_values
-
-
-
-
-
-
 
     def is_full(self):
         return self.size >= self.max_size
@@ -835,9 +828,9 @@ class GroupRoundData (models.Model):
 
 
 class GroupRoundDataValue(DataValue):
-    group_round_data = models.ForeignKey(GroupRoundData, related_name='values')
+    group_round_data = models.ForeignKey(GroupRoundData, related_name='data_values')
     def __unicode__(self):
-        return u"data value {0}: {1} for group {2}".format(self.parameter, self.parameter_value, self.group_round_data.group)
+        return u"data value {0}: {1} for group {2}".format(self.parameter, self.value, self.group_round_data.group)
     class Meta:
         ordering = [ 'parameter' ]
 
