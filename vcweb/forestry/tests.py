@@ -7,7 +7,7 @@ Replace these with more appropriate tests for your application.
 
 from vcweb.core.models import RoundConfiguration, DataValue, \
     ParticipantDataValue, ParticipantExperimentRelationship, Participant, \
-    RoundParameter, Parameter
+    RoundParameter, Parameter, GroupRoundData, GroupRoundDataValue
 from vcweb.core.tests import BaseVcwebTest
 import logging
 
@@ -74,10 +74,36 @@ class ForestryParametersTest(BaseVcwebTest):
                 # test string conversion
                 logger.debug("current round data: %s" % data_value)
                 self.failUnless(data_value.pk > 0)
+                self.failIf(data_value.value)
                 data_value.value = 100
                 data_value.save()
                 self.failUnlessEqual(100, data_value.value)
                 self.failUnlessEqual('resource_level', data_value.parameter.name)
+                data_value.value = 50
+                data_value.save()
+                self.failUnlessEqual(50, data_value.value)
+
+        self.failUnlessEqual(GroupRoundDataValue.objects.filter(experiment=e).count(), 2)
+
+        e.advance_to_next_round()
+        for g in e.groups.all():
+            for data_value in g.get_current_round_data().all():
+                # test string conversion
+                logger.debug("current round data: %s" % data_value)
+                self.failUnless(data_value.pk > 0)
+                self.failIf(data_value.value)
+                data_value.value = 100
+                data_value.save()
+                self.failUnlessEqual(100, data_value.value)
+                self.failUnlessEqual('resource_level', data_value.parameter.name)
+                data_value.value = 50
+                data_value.save()
+                self.failUnlessEqual(50, data_value.value)
+
+        self.failUnlessEqual(GroupRoundDataValue.objects.filter(experiment=e).count(), 4)
+
+
+
 
         self.failUnlessEqual(e.get_group_data_parameters().count(), 1)
 

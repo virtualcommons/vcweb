@@ -755,13 +755,13 @@ class Group(models.Model):
         return self.experiment.current_round
 
     def get_current_round_data(self):
-        key = { 'group': self, 'round': self.current_round }
+        group_round_dict = { 'group': self, 'round': self.current_round }
         try:
-            group_round_data = GroupRoundData.objects.get(**key)
-            logger.debug("group round data (%s) found with key %s" % (group_round_data, key))
+            group_round_data = GroupRoundData.objects.get(**group_round_dict)
+            logger.debug("group round data (%s) found with group_round_dict %s" % (group_round_data, group_round_dict))
             return group_round_data.data_values
         except GroupRoundData.DoesNotExist:
-            group_round_data = GroupRoundData(**key)
+            group_round_data = GroupRoundData(**group_round_dict)
             group_round_data.save()
             data_parameters = self.experiment.get_group_data_parameters()
             for group_data_parameter in data_parameters:
