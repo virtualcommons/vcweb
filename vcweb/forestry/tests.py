@@ -66,18 +66,21 @@ class ForestryParametersTest(BaseVcwebTest):
             self.failUnlessEqual(rp.value, sample_values_for_type[type])
 
 
+    def test_get_data_parameters_by_name(self):
+        e = self.experiment
+
 
 
     def test_data_parameters(self):
         e = self.experiment
-        self.failUnlessEqual(2, len(e.data_parameters), 'Currently 2 data parameters')
-        for data_param in e.data_parameters:
+        self.failUnlessEqual(2, len(e.parameters), 'Currently 2 data parameters')
+        for data_param in e.parameters:
             self.failUnlessEqual(data_param.type, 'int', 'Currently all data parameters for the forestry experiment are ints.')
 
     def create_participant_data_values(self):
         e = self.experiment
         rc = e.current_round
-        for data_param in e.data_parameters:
+        for data_param in e.parameters:
             for p in self.participants:
                 pexpr = ParticipantExperimentRelationship.objects.get(participant=p, experiment=e)
                 dv = ParticipantDataValue(parameter=data_param, value=pexpr.sequential_participant_identifier * 2, experiment=e, participant=p, round_configuration=rc)
@@ -88,8 +91,8 @@ class ForestryParametersTest(BaseVcwebTest):
     def test_data_values(self):
         self.create_participant_data_values()
         e = self.experiment
-        self.failUnlessEqual(e.participants.count() * e.data_parameters.count(), len(ParticipantDataValue.objects.filter(experiment=e)),
-                             'There should be %s participants * %s total data parameters = %s' % (e.participants.count(), e.data_parameters.count(), e.participants.count() * e.data_parameters.count()))
+        self.failUnlessEqual(e.participants.count() * e.parameters.count(), len(ParticipantDataValue.objects.filter(experiment=e)),
+                             'There should be %s participants * %s total data parameters = %s' % (e.participants.count(), e.parameters.count(), e.participants.count() * e.parameters.count()))
 
     def test_data_value_conversion(self):
         self.create_participant_data_values()

@@ -439,8 +439,17 @@ class Experiment(models.Model):
         return "%s.%s" % (self.experiment_metadata.namespace, self.id)
 
     @property
-    def data_parameters(self):
+    def parameters(self):
         return Parameter.objects.filter(experiment_metadata=self.experiment_metadata)
+
+    def get_round_parameter(self, name=None):
+        return RoundParameter.objects.get(experiment=self)
+
+    def get_group_data_parameters(self, group=None):
+        return Parameter.objects.filter(experiment_metadata=self.experiment_metadata, scope=Parameter.GROUP_SCOPE)
+
+
+
 
     def start(self):
         if not self.is_running():
@@ -634,12 +643,17 @@ class Parameter(models.Model):
                   'boolean': lambda x: x or x == 'True'
                   }
 
-    PARAMETER_SCOPES = (('round', 'parameter applies just for this round'),
-                        ('experiment', 'parameter applies to this entire experiment'),
-                        ('group', 'Group wide parameter'),
-                        ('participant', 'Participant parameter'))
+    GROUP_SCOPE = 'group'
+    PARTICIPANT_SCOPE = 'participant'
+    ROUND_SCOPE = 'round'
+    EXPERIMENT_SCOPE = 'experiment'
 
-    scope = models.CharField(max_length=32, choices=PARAMETER_SCOPES, default='round')
+    SCOPE_CHOICES = ((ROUND_SCOPE, 'This parameter applies just for this round'),
+                     (EXPERIMENT_SCOPE, 'This parameter applies to this entire experiment'),
+                     (GROUP_SCOPE, 'Group data parameter'),
+                     (PARTICIPANT_SCOPE, 'Participant data parameter'))
+
+    scope = models.CharField(max_length=32, choices=SCOPE_CHOICES, default='round')
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -653,10 +667,29 @@ class Parameter(models.Model):
     def value_field(self):
         return '%s_value' % (self.type)
 
+    def is_integer_type(self):
+        return self.type == 'int'
+
+    def is_boolean_type(self):
+        return self.type == 'boolean'
+
+    def is_float_type(self):
+        return self.type == 'float'
+
+    def is_string_type(self):
+        return self.type == 'string'
 
     def convert(self, value=None):
         converter = Parameter.CONVERTERS[self.type]
-        return converter(value) if converter else value
+        try:
+            return converter(value) if converter else value
+        except ValueError:
+            if self.is_integer_type():
+                # last-ditch effort, try converting to float first
+                return int(float(value))
+            # FIXME: add more checks for other type conversion failures
+            pass
+        return value
 
     def __unicode__(self):
         return u"%s: %s (%s)" % (self.experiment_metadata.namespace, self.name, self.type)
@@ -680,14 +713,7 @@ class ParameterizedValue(models.Model):
 
     @value.setter
     def value(self, obj):
-        try:
-            converted_value = self.parameter.convert(obj)
-        except ValueError:
-            # currently only checking int/float conversions
-            if self.parameter.type == 'int':
-                # last-ditch effort, try converting to float first
-                converted_value = int(float(obj))
-            pass
+        converted_value = self.parameter.convert(obj)
         setattr(self, self.parameter.value_field, converted_value)
 
     class Meta:
@@ -726,6 +752,31 @@ class Group(models.Model):
     @property
     def size(self):
         return self.participants.count()
+
+    @property
+    def current_round(self):
+        return self.experiment.current_round
+
+    def get_current_round_data(self):
+        key = { 'group': self, 'round': self.current_round }
+        try:
+            group_round_data = GroupRoundData.objects.get(**key)
+            return group_round_data.data_values
+        except GroupRoundData.DoesNotExist:
+            group_round_data = GroupRoundData(**key)
+            data_parameters = self.experiment.get_group_data_parameters()
+            group_round_data.save()
+            for group_data_parameter in data_parameters:
+                # create a fresh GroupRoundDataValue for each data parameter
+                data_value = GroupRoundDataValue(parameter=group_data_parameter, group_round_data=group_round_data)
+                data_value.save()
+            return group_round_data.data_values
+
+
+
+
+
+
 
     def is_full(self):
         return self.size >= self.max_size
