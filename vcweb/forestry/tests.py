@@ -31,19 +31,48 @@ FIXME: several of these can and should be lifted to core/tests.py
 '''
 class ForestryParametersTest(BaseVcwebTest):
 
-    def test_get_harvest_decision(self):
+    def test_get_harvest_decisions(self):
+        from vcweb.forestry.models import get_harvest_decisions, get_harvest_decision_parameter
+        e = self.experiment
+        e.start()
+        # generate harvest decisions
+        current_round = e.current_round
+        harvest_decision_parameter = Parameter.objects.get(name='harvest_decision')
+        for group in e.groups.all():
+            ds = get_harvest_decisions(group)
+            self.failIf(ds)
+            for p in group.participants.all():
+                pdv = ParticipantDataValue.objects.create(
+                        participant=p,
+                        round_configuration=current_round,
+                        parameter=harvest_decision_parameter,
+                        experiment=e
+                        )
+                self.failUnless(pdv.pk > 0)
+                self.failIf(pdv.value)
+                pdv.value = 3
+                pdv.save()
+            ds = get_harvest_decisions(group)
+            self.failUnless(ds)
+            for hd in ds.all():
+                self.failUnlessEqual(hd.value, 3)
+
+
+
+    def test_get_resource_level(self):
         from vcweb.forestry.models import get_resource_level
         e = self.experiment
-        for group in e.allocate_groups().all():
-            hd = get_resource_level(group)
-            self.failUnless(hd.pk > 0)
-            self.failIf(hd.value)
-            hd.value = 3
-            hd.save()
+        e.start()
+        for group in e.groups.all():
+            resource_level = get_resource_level(group)
+            self.failUnless(resource_level.pk > 0)
+            self.failIf(resource_level.value)
+            resource_level.value = 3
+            resource_level.save()
 
         for group in e.groups.all():
-            hd = get_resource_level(group)
-            self.failUnlessEqual(hd.value, 3)
+            resource_level = get_resource_level(group)
+            self.failUnlessEqual(resource_level.value, 3)
 
 
 

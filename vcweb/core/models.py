@@ -456,6 +456,7 @@ class Experiment(models.Model):
             logger.debug("About to send round started signal")
             # notify game handlers...
             signals.round_started.send_robust(None, experiment_id=self.id, time=datetime.datetime.now(), round_configuration_id=self.current_round.id)
+        return self
 
 
     def allocate_groups(self, randomize=True):
@@ -767,16 +768,20 @@ class Group(models.Model):
     def initialize(self):
         self.get_current_round_data()
 
-    def get_data_values_by_name(self, name=None, *names):
+    def get_group_data_values(self, name=None, *names):
         group_round_data = self.get_current_round_data()
         if names:
-            names.append(name)
+            if name: names.append(name)
             return GroupRoundDataValue.objects.filter(group_round_data=group_round_data, parameter__name__in=names)
         elif name:
             return GroupRoundDataValue.objects.get(group_round_data=group_round_data, parameter__name=name)
         else:
             logger.warning("Trying to retrieve data value by name with no args")
         return None
+
+    def get_participant_data_values(self, name=None, *names):
+        return ParticipantDataValue.objects.filter(round_configuration=self.current_round, participant__in=self.participants.all())
+        
 
     @property
     def data_parameters(self):
