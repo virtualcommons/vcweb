@@ -459,19 +459,27 @@ class Experiment(models.Model):
 
 
     def allocate_groups(self, randomize=True):
-        current_group = Group(number=1, max_size=self.experiment_configuration.max_group_size, experiment=self)
-        current_group.save()
+        # seed the initial group.
+        current_group = Group.objects.create(number=1, max_size=self.experiment_configuration.max_group_size, experiment=self)
+        # FIXME: replace with post_save hook
+        current_group.initialize()
         if randomize:
             participants = list(self.participants.all())
             random.shuffle(participants)
         else:
             participants = self.participants.all()
 
-        """
-        group.add_participant returns a new group or the existing group depending on whether or not the group is full. 
-        """
+
         for p in participants:
+            """
+            group.add_participant returns a new group or the existing group depending on whether or not the group is full. 
+            """
             current_group = current_group.add_participant(p)
+
+        # XXX: if there a performance hit here, should probably do a void return instead
+        # or collect the groups as they are added
+        return self.groups
+
 
 
     def is_running(self):
@@ -482,6 +490,8 @@ class Experiment(models.Model):
         self.current_round_elapsed_time = 0
         self.current_round_sequence_number = models.F('current_round_sequence_number') + 1
         self.save()
+        # would return self work as well?
+        # return self
         return Experiment.objects.get(pk=self.pk)
 
     def start_round(self):
@@ -754,22 +764,33 @@ class Group(models.Model):
     def current_round(self):
         return self.experiment.current_round
 
+    def initialize(self):
+        self.get_current_round_data()
+
+    def get_data_values_by_name(self, name=None, *names):
+        group_round_data = self.get_current_round_data()
+        if names:
+            names.append(name)
+            return GroupRoundDataValue.objects.filter(group_round_data=group_round_data, parameter__name__in=names)
+        elif name:
+            return GroupRoundDataValue.objects.get(group_round_data=group_round_data, parameter__name=name)
+        else:
+            logger.warning("Trying to retrieve data value by name with no args")
+        return None
+
+    @property
+    def data_parameters(self):
+        return Parameter.objects.filter(experiment_metadata=self.experiment.experiment_metadata, scope=Parameter.GROUP_SCOPE)
+
     def get_current_round_data(self):
-        group_round_dict = { 'group': self, 'round': self.current_round }
-        try:
-            group_round_data = GroupRoundData.objects.get(**group_round_dict)
-            logger.debug("group round data (%s) found with group_round_dict %s" % (group_round_data, group_round_dict))
-            return group_round_data.data_values
-        except GroupRoundData.DoesNotExist:
-            group_round_data = GroupRoundData(**group_round_dict)
-            group_round_data.save()
-            data_parameters = self.experiment.get_group_data_parameters()
-            for group_data_parameter in data_parameters:
-                # create a fresh GroupRoundDataValue for each data parameter
-                logger.debug("Creating parameter %s" % group_data_parameter)
-                data_value = GroupRoundDataValue(parameter=group_data_parameter, group_round_data=group_round_data, experiment=self.experiment)
-                data_value.save()
-            return group_round_data.data_values
+        group_round_data, just_created = GroupRoundData.objects.get_or_create(group=self, round=self.current_round)
+        if just_created:
+            group_round_data.initialize_data_parameters()
+        return group_round_data
+
+    @property
+    def current_round_data_values(self, **kwargs):
+        return self.get_current_round_data().data_values
 
     def is_full(self):
         return self.size >= self.max_size
@@ -777,10 +798,13 @@ class Group(models.Model):
     def is_open(self):
         return self.size < self.max_size
 
-    def create_next_group(self, size=0):
-        g = Group(number=self.number + 1, max_size=self.max_size, experiment=self.experiment)
-        g.save()
-        return g
+    def create_next_group(self):
+        group = Group.objects.create(number=self.number + 1, max_size=self.max_size, experiment=self.experiment)
+        # FIXME: connect this to post save
+        group.initialize()
+        return group
+
+
     """
     Adds the given participant to this group or a new group if this group is full.
     Returns the group the participant was added to.
@@ -791,16 +815,13 @@ class Group(models.Model):
             logger.warning("Trying to add invalid participant %s to group %s" % (participant, self))
             return self
 
-        group = self
-        if not group.is_open():
-            logger.warning("Group is full: ({0} of {1})".format(self.size, self.max_size))
-            group = self.create_next_group()
+        ''' add the participant to this group if there is room, otherwise create and add to a fresh group '''
+        group = self if self.is_open() else self.create_next_group()
 
-        participant_group_rel = ParticipantGroupRelationship(participant=participant,
-                                                             group=group,
-                                                             round_joined=self.experiment.current_round,
-                                                             participant_number=group.size + 1)
-        participant_group_rel.save()
+        ParticipantGroupRelationship.objects.create(participant=participant,
+                                                    group=group,
+                                                    round_joined=self.experiment.current_round,
+                                                    participant_number=group.size + 1)
         return group
 
     def __unicode__(self):
@@ -821,6 +842,12 @@ class GroupRoundData (models.Model):
     """ show debriefing after the round ends? """
     show_debriefing = models.BooleanField(default=False)
     elapsed_time = models.PositiveIntegerField(default=0)
+
+    def initialize_data_parameters(self):
+        for group_data_parameter in self.group.data_parameters:
+            # create a fresh GroupRoundDataValue for each data parameter
+            logger.debug("Creating parameter %s" % group_data_parameter)
+            GroupRoundDataValue.objects.create(parameter=group_data_parameter, group_round_data=self, experiment=self.group.experiment)
 
     def __unicode__(self):
         return u"Round Data for {0} in {1}".format(self.group, self.round)

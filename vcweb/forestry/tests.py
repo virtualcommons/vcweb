@@ -5,9 +5,7 @@ unittest). These will both pass when you run "manage.py test".
 Replace these with more appropriate tests for your application.
 """
 
-from vcweb.core.models import RoundConfiguration, DataValue, \
-    ParticipantDataValue, ParticipantExperimentRelationship, Participant, \
-    RoundParameter, Parameter, GroupRoundData, GroupRoundDataValue
+from vcweb.core.models import *
 from vcweb.core.tests import BaseVcwebTest
 import logging
 
@@ -28,7 +26,26 @@ class ForestryViewsTest(BaseVcwebTest):
         self.failUnlessEqual(e.current_round_template, 'forestry/quiz.html', 'should return default quiz.html')
 
 
+'''
+FIXME: several of these can and should be lifted to core/tests.py
+'''
 class ForestryParametersTest(BaseVcwebTest):
+
+    def test_get_harvest_decision(self):
+        from vcweb.forestry.models import get_resource_level
+        e = self.experiment
+        for group in e.allocate_groups().all():
+            hd = get_resource_level(group)
+            self.failUnless(hd.pk > 0)
+            self.failIf(hd.value)
+            hd.value = 3
+            hd.save()
+
+        for group in e.groups.all():
+            hd = get_resource_level(group)
+            self.failUnlessEqual(hd.value, 3)
+
+
 
     def test_parameterized_value(self):
         e = self.experiment
@@ -70,7 +87,7 @@ class ForestryParametersTest(BaseVcwebTest):
         e = self.experiment
         e.allocate_groups()
         for g in e.groups.all():
-            for data_value in g.get_current_round_data().all():
+            for data_value in g.current_round_data_values.all():
                 # test string conversion
                 logger.debug("current round data: %s" % data_value)
                 self.failUnless(data_value.pk > 0)
@@ -87,7 +104,7 @@ class ForestryParametersTest(BaseVcwebTest):
 
         e.advance_to_next_round()
         for g in e.groups.all():
-            for data_value in g.get_current_round_data().all():
+            for data_value in g.current_round_data_values.all():
                 # test string conversion
                 logger.debug("current round data: %s" % data_value)
                 self.failUnless(data_value.pk > 0)
