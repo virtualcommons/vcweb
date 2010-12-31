@@ -774,6 +774,17 @@ class Group(models.Model):
     def initialize(self):
         self.get_current_round_data()
 
+    def set_data_value(self, parameter=None, value=None):
+        if parameter and value:
+            data_value = GroupRoundDataValue.objects.get(parameter=parameter,
+                    experiment=self.experiment, group_round_data=self.get_current_round_data())
+            data_value.value = value
+            data_value.save()
+        else:
+            logger.warning("Unable to set data value %s on group %s for %s" % (value, self, parameter))
+
+
+
     def get_group_data_values(self, name=None, *names):
         group_round_data = self.get_current_round_data()
         if names:
@@ -883,8 +894,7 @@ class Participant(CommonsUser):
     def set_data_value(self, experiment=None, parameter=None, value=None):
         if experiment and parameter and value:
             participant_data_value = ParticipantDataValue.objects.get(parameter=parameter,
-                    experiment=experiment, participant=self,
-                    round_configuration=experiment.current_round)
+                    experiment=experiment, participant=self, round_configuration=experiment.current_round)
             participant_data_value.value = value
             participant_data_value.save()
         else:

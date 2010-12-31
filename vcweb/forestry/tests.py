@@ -63,8 +63,8 @@ class ForestryParametersTest(BaseVcwebTest):
 
 
 
-    def test_get_resource_level(self):
-        from vcweb.forestry.models import get_resource_level
+    def test_get_set_resource_level(self):
+        from vcweb.forestry.models import get_resource_level, set_resource_level
         e = self.experiment
         e.start()
         for group in e.groups.all():
@@ -78,6 +78,13 @@ class ForestryParametersTest(BaseVcwebTest):
             resource_level = get_resource_level(group)
             self.failUnlessEqual(resource_level.value, 3)
 
+        for group in e.groups.all():
+            set_resource_level(group, 100)
+            self.failUnlessEqual(get_resource_level(group).value, 100)
+
+        for group in e.groups.all():
+            resource_level = get_resource_level(group)
+            self.failUnlessEqual(resource_level.value, 100)
 
 
     def test_parameterized_value(self):
