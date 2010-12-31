@@ -29,8 +29,8 @@ FIXME: several of these can and should be lifted to core/tests.py
 '''
 class ForestryParametersTest(BaseVcwebTest):
 
-    def test_get_harvest_decisions(self):
-        from vcweb.forestry.models import get_harvest_decisions, get_harvest_decision_parameter
+    def test_get_set_harvest_decisions(self):
+        from vcweb.forestry.models import get_harvest_decisions, get_harvest_decision_parameter, set_harvest_decision
         e = self.experiment
         e.start()
         # generate harvest decisions
@@ -54,6 +54,12 @@ class ForestryParametersTest(BaseVcwebTest):
             self.failUnless(ds)
             for hd in ds.all():
                 self.failUnlessEqual(hd.value, 3)
+
+            for p in group.participants.all():
+                set_harvest_decision(participant=p, experiment=e, value=5)
+
+            for hd in ds.all():
+                self.failUnlessEqual(hd.value, 5)
 
 
 

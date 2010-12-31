@@ -442,8 +442,8 @@ class Experiment(models.Model):
     def parameters(self):
         return Parameter.objects.filter(experiment_metadata=self.experiment_metadata)
 
-    def get_round_parameter(self, name=None):
-        return RoundParameter.objects.get(experiment=self)
+    def get_round_parameters(self, name=None):
+        return RoundParameter.objects.filter(experiment=self)
 
     def get_group_data_parameters(self, group=None):
         return Parameter.objects.filter(experiment_metadata=self.experiment_metadata, scope=Parameter.GROUP_SCOPE)
@@ -785,9 +785,12 @@ class Group(models.Model):
             logger.warning("Trying to retrieve data value by name with no args")
         return None
 
+    def get_participant_data_value(self, participant, parameter):
+        return ParticipantDataValue.objects.get(participant=participant, parameter=parameter, round_configuration=self.current_round)
+
+
     def get_participant_data_values(self, name=None, *names):
         return ParticipantDataValue.objects.filter(round_configuration=self.current_round, participant__in=self.participants.all())
-        
 
     @property
     def data_parameters(self):
@@ -876,6 +879,17 @@ class Participant(CommonsUser):
     can_receive_invitations = models.BooleanField(default=False)
     groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participants')
     experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participants')
+
+    def set_data_value(self, experiment=None, parameter=None, value=None):
+        if experiment and parameter and value:
+            participant_data_value = ParticipantDataValue.objects.get(parameter=parameter,
+                    experiment=experiment, participant=self,
+                    round_configuration=experiment.current_round)
+            participant_data_value.value = value
+            participant_data_value.save()
+        else:
+            logger.warning("Unable to set data value %s on experiment %s for %s" % (value, experiment, parameter))
+
 
     def get_participant_experiment_relationship(self, experiment):
         return ParticipantExperimentRelationship.objects.get(participant=self, experiment=experiment)

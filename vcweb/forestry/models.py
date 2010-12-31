@@ -1,6 +1,3 @@
-from django.db import models
-from vcweb.core import signals
-
 from vcweb.core.models import ExperimentMetadata, Parameter
 
 
@@ -24,3 +21,6 @@ def get_harvest_decision_parameter():
             name='harvest_decision',
             scope=Parameter.PARTICIPANT_SCOPE,
             experiment_metadata=experiment_metadata)
+
+def set_harvest_decision(participant=None, experiment=None, value=None):
+    participant.set_data_value(experiment=experiment, parameter=get_harvest_decision_parameter(), value=value)
