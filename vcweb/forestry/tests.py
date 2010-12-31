@@ -5,11 +5,9 @@ unittest). These will both pass when you run "manage.py test".
 Replace these with more appropriate tests for your application.
 """
 
-from vcweb.core.models import *
+from vcweb.core.models import Parameter,RoundParameter,RoundConfiguration,ParticipantDataValue,ParticipantExperimentRelationship,GroupRoundDataValue
 from vcweb.core.tests import BaseVcwebTest
 import logging
-
-
 
 logger = logging.getLogger('vcweb.forestry.tests')
 
@@ -37,10 +35,10 @@ class ForestryParametersTest(BaseVcwebTest):
         e.start()
         # generate harvest decisions
         current_round = e.current_round
-        harvest_decision_parameter = Parameter.objects.get(name='harvest_decision')
+        harvest_decision_parameter = get_harvest_decision_parameter()
         for group in e.groups.all():
             ds = get_harvest_decisions(group)
-            self.failIf(ds)
+            self.failIf(ds, 'there should not be any harvest decisions.')
             for p in group.participants.all():
                 pdv = ParticipantDataValue.objects.create(
                         participant=p,
@@ -90,7 +88,7 @@ class ForestryParametersTest(BaseVcwebTest):
         p = Parameter(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
         p.save()
         self.failUnless(p.pk > 0)
-        self.failUnlessEqual(p.value_field, 'int_value')
+        self.failUnlessEqual(p.value_field_name, 'int_value')
 
         for val in (14, '14', 14.0, '14.0'):
             rp = RoundParameter(parameter=p, round_configuration=e.current_round, value=val)
@@ -99,14 +97,14 @@ class ForestryParametersTest(BaseVcwebTest):
             self.failUnlessEqual(rp.value, 14)
 
         '''
-        The type field in Parameter generates the value_field property by concatenating the name of the type with _value.     
+        The type field in Parameter generates the value_field_name property by concatenating the name of the type with _value.
         '''
         sample_values_for_type = {'int':3, 'float':3.0, 'string':'ich bin ein mublumubla', 'boolean':True}
         for type in ('int', 'float', 'string', 'boolean'):
             p = Parameter(scope='round', name='test_nonunique_round_parameter', type=type, creator=e.experimenter, experiment_metadata=e.experiment_metadata)
             p.save()
             self.failUnless(p.pk > 0)
-            self.failUnlessEqual(p.value_field, '%s_value' % type)
+            self.failUnlessEqual(p.value_field_name, '%s_value' % type)
             rp = RoundParameter(parameter=p, round_configuration=e.current_round, value=sample_values_for_type[type])
             rp.save()
             self.failUnlessEqual(rp.value, sample_values_for_type[type])

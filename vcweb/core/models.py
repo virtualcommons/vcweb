@@ -644,6 +644,12 @@ class Parameter(models.Model):
                        ('float', 'Float value'),
                        ('boolean', (('True', True), ('False', False))),
                        ('enum', 'Enumeration'))
+    '''
+    all converters are one-arg functions that convert string input into
+    the appropriate data type.
+    NOTE: they expect already validated string data and will throw ValueErrors
+    on invalid input.
+    '''
     CONVERTERS = {
                   'int': int,
                   'string':str,
@@ -672,7 +678,7 @@ class Parameter(models.Model):
     is_required = models.BooleanField(default=False)
 
     @property
-    def value_field(self):
+    def value_field_name(self):
         return '%s_value' % (self.type)
 
     def is_integer_type(self):
@@ -717,12 +723,12 @@ class ParameterizedValue(models.Model):
 
     @property
     def value(self):
-        return getattr(self, self.parameter.value_field)
+        return getattr(self, self.parameter.value_field_name)
 
     @value.setter
     def value(self, obj):
         converted_value = self.parameter.convert(obj)
-        setattr(self, self.parameter.value_field, converted_value)
+        setattr(self, self.parameter.value_field_name, converted_value)
 
     class Meta:
         abstract = True
