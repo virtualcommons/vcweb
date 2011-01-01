@@ -39,7 +39,7 @@ def set_resource_level(group=None, value=None):
 def round_ended(experiment):
     ''' calculate new resource levels '''
     resource_level_parameter = get_resource_level_parameter()
-    for group in experiment.groups:
+    for group in experiment.groups.all():
         total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
         group.subtract(resource_level_parameter, total_harvest)
 

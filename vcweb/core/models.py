@@ -786,13 +786,19 @@ class Group(models.Model):
         data_value.value = value
         data_value.save()
 
+    def subtract(self, parameter=None, amount=0):
+        self.add(parameter, -amount)
+
+    def add(self, parameter=None, amount=0):
+# could be a float or an int..
+        update_dict = { parameter.value_field_name : models.F(parameter.value_field_name) + amount }
+        GroupRoundDataValue.objects.filter(group_round_data=self.get_current_round_data(), parameter=parameter).update(**update_dict)
+
     def get_data_value(self, parameter_name=None, parameter=None):
         criteria = dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name)],
-                experiment=self.experiment,
                 group_round_data=self.get_current_round_data())
 
         return GroupRoundDataValue.objects.get(**criteria)
-
 
     def get_group_data_values(self, name=None, *names):
         group_round_data = self.get_current_round_data()

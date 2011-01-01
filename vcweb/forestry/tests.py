@@ -11,6 +11,18 @@ import logging
 
 logger = logging.getLogger('vcweb.forestry.tests')
 
+class ForestryGameLogicTest(BaseVcwebTest):
+    def test_round_setup(self):
+        e = self.experiment
+        from vcweb.forestry.models import round_ended
+        e.start()
+        round_ended(e)
+# resource level should be updated.
+
+
+    def test_round_ended(self):
+        pass
+
 class ForestryViewsTest(BaseVcwebTest):
 
     def test_get_template(self):
