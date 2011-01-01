@@ -10,7 +10,7 @@ def forestry_second_tick(self):
 
 
 def get_resource_level(group=None):
-    return group.get_group_data_values(name='resource_level') if group else []
+    return group.get_data_value(parameter_name='resource_level') if group else []
 
 def get_harvest_decisions(group=None):
     return group.get_participant_data_values(name='harvest_decision') if group else []
