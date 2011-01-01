@@ -776,34 +776,23 @@ class Group(models.Model):
             group_round_data = self.group_round_data.create(round=self.current_round)
         group_round_data.initialize_data_parameters()
 
-    def set_data_value(self, parameter=None, value=None):
-        if parameter and value:
-            data_value = GroupRoundDataValue.objects.get(parameter=parameter,
-                    experiment=self.experiment, group_round_data=self.get_current_round_data())
-            data_value.value = value
-            data_value.save()
-        else:
-            logger.warning("Unable to set data value %s on group %s for %s" % (value, self, parameter))
+    '''
+    Not as efficient as a simple SQL update because we need to do some type
+    conversion / processing to put the value into the appropriate field.
+    '''
+    def set_data_value(self, parameter_name=None, parameter=None, value=None):
+        data_value = self.get_data_value(parameter_name=parameter_name,
+                parameter=parameter)
+        data_value.value = value
+        data_value.save()
 
     def get_data_value(self, parameter_name=None, parameter=None):
         criteria = dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name)],
                 experiment=self.experiment,
                 group_round_data=self.get_current_round_data())
+
         return GroupRoundDataValue.objects.get(**criteria)
 
-        '''
-        return GroupRoundDataValue.objects.get(parameter=parameter,
-                experiment=self.experiment,
-                group_round_data=self.get_current_round_data())
-        if parameter:
-            return GroupRoundDataValue.objects.get(parameter=parameter,
-                    experiment=self.experiment,
-                    group_round_data=self.get_current_round_data())
-        else:
-            return GroupRoundDataValue.objects.get(parameter__name=parameter_name,
-                    experiment=self.experiment, group_round_data =
-                    self.get_current_round_data())
-        '''
 
     def get_group_data_values(self, name=None, *names):
         group_round_data = self.get_current_round_data()

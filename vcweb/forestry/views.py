@@ -25,7 +25,6 @@ def experimenter(request, experiment_id=None):
     if experiment_id is None:
         logger.debug("No experiment id specified")
         return redirect('index')
-
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
         return render_to_response('forestry/experimenter.html',

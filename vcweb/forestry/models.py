@@ -2,7 +2,7 @@ from vcweb.core.models import ExperimentMetadata, Parameter
 
 
 # Create your models here.
-def forestry_second_tick(self):
+def forestry_second_tick():
     print "Monitoring Forestry Experiments."
     '''
     check all forestry experiments.
@@ -35,3 +35,17 @@ def set_harvest_decision(participant=None, experiment=None, value=None):
 
 def set_resource_level(group=None, value=None):
     group.set_data_value(parameter=get_resource_level_parameter(), value=value)
+
+def round_ended(experiment):
+    ''' calculate new resource levels '''
+    resource_level_parameter = get_resource_level_parameter()
+    for group in experiment.groups:
+        total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
+        group.subtract(resource_level_parameter, total_harvest)
+
+
+
+def round_setup():
+    ''' get previous round harvest decisions initialize new group round data for all groups '''
+
+
