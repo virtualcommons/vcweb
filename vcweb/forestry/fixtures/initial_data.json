@@ -88,10 +88,53 @@
     },
     {
         "fields": {
+        	"name":"reset.resource_level",
+        	"experiment_metadata": 1,
+        	"creator": 1,
+        	"type": "boolean",
+        	"scope": "round",
+                "default_value": "true"
+        }, 
+        "model": "core.parameter", 
+        "pk": 3
+    },
+    {
+        "fields": {
+        	"name":"initial.resource_level",
+        	"experiment_metadata": 1,
+        	"creator": 1,
+        	"type": "int",
+        	"scope": "round",
+                "default_value": 100
+        }, 
+        "model": "core.parameter", 
+        "pk": 4
+    },
+    {
+        "fields": {
+        	"round_configuration": 1,
+                "parameter": [ "reset.resource_level" ],
+                "boolean_value": "True"
+        }, 
+        "model": "core.roundparameter", 
+        "pk": 1
+    },
+    {
+        "fields": {
+        	"round_configuration": 1,
+                "parameter": [ "initial.resource_level" ],
+                "int_value": 100
+        }, 
+        "model": "core.roundparameter", 
+        "pk": 2
+    },
+    {
+        "fields": {
         	"name":"harvest_decision",
         	"experiment_metadata": 1,
         	"creator": 1,
         	"type": "int",
+                "date_created": "2011-01-01 15:13:03", 
         	"scope": "participant"
         }, 
         "model": "core.parameter", 
@@ -103,6 +146,7 @@
         	"experiment_metadata": 1,
         	"creator": 1,
         	"type": "int",
+                "date_created": "2011-01-01 15:13:07", 
         	"scope": "group"
         }, 
         "model": "core.parameter", 

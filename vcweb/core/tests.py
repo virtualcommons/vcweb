@@ -35,27 +35,21 @@ class BaseVcwebTest(TestCase):
         self.experiment_configuration = ExperimentConfiguration.objects.get(pk=1)
 
     def create_new_round_configuration(self, round_type='PLAY', template_name=None):
-        rc = RoundConfiguration(experiment_configuration=self.experiment_configuration,
-                                sequence_number=(self.experiment_configuration.last_round_sequence_number + 1),
-                                round_type=round_type,
-                                template_name=template_name
-                                )
-        rc.save()
-        return rc
+        return RoundConfiguration.objects.create(experiment_configuration=self.experiment_configuration,
+                sequence_number=(self.experiment_configuration.last_round_sequence_number + 1),
+                round_type=round_type,
+                template_name=template_name
+                )
 
     def create_new_experiment(self):
-        e = Experiment(experimenter=self.experimenter,
-                       experiment_configuration=self.experiment_configuration,
-                       experiment_metadata=self.experiment_metadata)
-        e.save()
-        return e
+        return Experiment.objects.create(experimenter=self.experimenter,
+                experiment_configuration=self.experiment_configuration,
+                experiment_metadata=self.experiment_metadata)
 
     def create_new_group(self, max_size=10, experiment=None):
         if not experiment:
             experiment = self.experiment
-        g = Group(number=1, max_size=max_size, experiment=experiment)
-        g.save()
-        return g
+        return Group.objects.create(number=1, max_size=max_size, experiment=experiment)
     class Meta:
         abstract = True
 
@@ -170,11 +164,8 @@ class ParticipantExperimentRelationshipTest(BaseVcwebTest):
         """ exercises the generation of participant_identifier """
         e = self.create_new_experiment()
         for p in self.participants:
-            per = ParticipantExperimentRelationship(participant=p,
-                                                    experiment=e,
-                                                    created_by=self.experimenter.user)
-            per.full_clean()
-            per.save()
+            per = ParticipantExperimentRelationship.objects.create(participant=p,
+                    experiment=e, created_by=self.experimenter.user)
             self.failUnless(per.id > 0)
             logger.debug("Participant identifier is %s - sequential id is %i"
                          % (per.participant_identifier, per.sequential_participant_identifier))
@@ -199,23 +190,19 @@ class RoundConfigurationTest(BaseVcwebTest):
 
     def test_parameterized_value(self):
         e = self.experiment
-        p = Parameter(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
-        p.save()
-        rp = RoundParameter(parameter=p, round_configuration=e.current_round, value='14')
-        rp.save()
+        p = Parameter.objects.create(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
+        rp = RoundParameter.objects.create(parameter=p, round_configuration=e.current_round, value='14')
         self.failUnlessEqual(14, rp.int_value)
 
 
     def test_round_parameters(self):
         e = self.experiment
-        p = Parameter(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
-        p.save()
+        p = Parameter.objects.create(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
         self.failUnless(p.pk > 0)
         self.failUnlessEqual(p.value_field_name, 'int_value')
 
         for val in (14, '14', 14.0, '14.0'):
-            rp = RoundParameter(parameter=p, round_configuration=e.current_round, value=val)
-            rp.save()
+            rp = RoundParameter.objects.create(parameter=p, round_configuration=e.current_round, value=val)
             self.failUnless(rp.pk > 0)
             self.failUnlessEqual(rp.value, 14)
 
@@ -224,12 +211,11 @@ class RoundConfigurationTest(BaseVcwebTest):
         '''
         sample_values_for_type = {'int':3, 'float':3.0, 'string':'ich bin ein mublumubla', 'boolean':True}
         for type in ('int', 'float', 'string', 'boolean'):
-            p = Parameter(scope='round', name='test_nonunique_round_parameter', type=type, creator=e.experimenter, experiment_metadata=e.experiment_metadata)
-            p.save()
+
+            p = Parameter.objects.create(scope='round', name="test_nonunique_round_parameter_%s" % type, type=type, creator=e.experimenter, experiment_metadata=e.experiment_metadata)
             self.failUnless(p.pk > 0)
             self.failUnlessEqual(p.value_field_name, '%s_value' % type)
-            rp = RoundParameter(parameter=p, round_configuration=e.current_round, value=sample_values_for_type[type])
-            rp.save()
+            rp = RoundParameter.objects.create(parameter=p, round_configuration=e.current_round, value=sample_values_for_type[type])
             self.failUnlessEqual(rp.value, sample_values_for_type[type])
 
 

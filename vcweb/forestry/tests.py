@@ -5,23 +5,46 @@ unittest). These will both pass when you run "manage.py test".
 Replace these with more appropriate tests for your application.
 """
 
-from vcweb.core.models import RoundConfiguration,ParticipantDataValue,ParticipantExperimentRelationship,GroupRoundDataValue
+from vcweb.core.models import RoundConfiguration,Parameter,ParticipantDataValue,ParticipantExperimentRelationship,GroupRoundDataValue
 from vcweb.core.tests import BaseVcwebTest
 import logging
 
 logger = logging.getLogger('vcweb.forestry.tests')
 
 class ForestryGameLogicTest(BaseVcwebTest):
+
     def test_round_setup(self):
         e = self.experiment
-        from vcweb.forestry.models import round_ended
+        from vcweb.forestry.models import round_setup, get_resource_level
         e.start()
-        round_ended(e)
-# resource level should be updated.
-
+# set up some harvest decisions
+        round_setup(e)
+        for group in e.groups.all():
+            self.failUnlessEqual(get_resource_level(group).value, 100)
 
     def test_round_ended(self):
-        pass
+        e = self.experiment
+        e.start()
+        from vcweb.forestry.models import round_setup, round_ended, get_resource_level, get_harvest_decision_parameter, get_harvest_decisions
+        round_setup(e)
+        current_round = e.current_round
+        harvest_decision_parameter = get_harvest_decision_parameter()
+        for group in e.groups.all():
+            ds = get_harvest_decisions(group)
+            self.failIf(ds, 'there should not be any harvest decisions.')
+            for p in group.participants.all():
+                pdv = ParticipantDataValue.objects.create(
+                        participant=p,
+                        round_configuration=current_round,
+                        parameter=harvest_decision_parameter,
+                        experiment=e
+                        )
+                self.failUnless(pdv.pk > 0)
+                self.failIf(pdv.value)
+                pdv.value = 3
+                pdv.save()
+        round_ended(e)
+
 
 class ForestryViewsTest(BaseVcwebTest):
 
@@ -137,8 +160,8 @@ class ForestryParametersTest(BaseVcwebTest):
 
     def test_data_parameters(self):
         e = self.experiment
-        self.failUnlessEqual(2, len(e.parameters), 'Currently 2 data parameters')
-        for data_param in e.parameters:
+        self.failUnlessEqual(4, e.parameters().count(), 'Currently 4 group parameters')
+        for data_param in e.parameters(scope=Parameter.GROUP_SCOPE).all():
             logger.debug("inspecting data param %s" % data_param)
             self.failUnlessEqual(data_param.type, 'int', 'Currently all data parameters for the forestry experiment are ints.')
 
@@ -146,7 +169,7 @@ class ForestryParametersTest(BaseVcwebTest):
     def create_participant_data_values(self):
         e = self.experiment
         rc = e.current_round
-        for data_param in e.parameters:
+        for data_param in e.parameters(scope=Parameter.PARTICIPANT_SCOPE).all():
             for p in self.participants:
                 pexpr = ParticipantExperimentRelationship.objects.get(participant=p, experiment=e)
                 dv = ParticipantDataValue(parameter=data_param, value=pexpr.sequential_participant_identifier * 2, experiment=e, participant=p, round_configuration=rc)
@@ -157,14 +180,15 @@ class ForestryParametersTest(BaseVcwebTest):
     def test_data_values(self):
         self.create_participant_data_values()
         e = self.experiment
-        self.failUnlessEqual(e.participants.count() * e.parameters.count(), len(ParticipantDataValue.objects.filter(experiment=e)),
-                             'There should be %s participants * %s total data parameters = %s' % (e.participants.count(), e.parameters.count(), e.participants.count() * e.parameters.count()))
+        num_participant_parameters = e.parameters(scope=Parameter.PARTICIPANT_SCOPE).count()
+        self.failUnlessEqual(e.participants.count() * num_participant_parameters, len(ParticipantDataValue.objects.filter(experiment=e)),
+                             'There should be %s participants * %s total data parameters = %s' % (e.participants.count(), num_participant_parameters, e.participants.count() * num_participant_parameters))
 
     def test_data_value_conversion(self):
         self.create_participant_data_values()
         e = self.experiment
         for p in self.participants:
-            self.failUnlessEqual(p.data_values.count(), 2)
+            self.failUnlessEqual(p.data_values.count(), 1)
             pexpr = p.get_participant_experiment_relationship(e)
             logger.debug("relationship %s" % pexpr)
             for dv in p.data_values.all():

@@ -39,13 +39,24 @@ def set_resource_level(group=None, value=None):
 def round_ended(experiment):
     ''' calculate new resource levels '''
     resource_level_parameter = get_resource_level_parameter()
+
     for group in experiment.groups.all():
         total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
         group.subtract(resource_level_parameter, total_harvest)
+        if experiment.has_next_round:
+            ''' set group round data resource_level for each group '''
+            group.transfer_to_next_round(resource_level_parameter)
+
+def round_setup(experiment):
+    round_configuration = experiment.current_round
+    if round_configuration.get_parameter('reset.resource_level'):
+        for group in experiment.groups.all():
+            ''' set resource level to default '''
+            set_resource_level(group, round_configuration.get_parameter_value('initial.resource_level'))
 
 
 
-def round_setup():
-    ''' get previous round harvest decisions initialize new group round data for all groups '''
+    
+    
 
 

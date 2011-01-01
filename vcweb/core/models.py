@@ -438,9 +438,9 @@ class Experiment(models.Model):
     def channel_name(self):
         return "%s.%s" % (self.experiment_metadata.namespace, self.id)
 
-    @property
-    def parameters(self):
-        return Parameter.objects.filter(experiment_metadata=self.experiment_metadata)
+    def parameters(self, scope=None):
+        return Parameter.objects.filter(experiment_metadata=self.experiment_metadata, scope=scope) if scope else Parameter.objects.filter(experiment_metadata=self.experiment_metadata) 
+
 
     def get_round_parameters(self, name=None):
         return RoundParameter.objects.filter(experiment=self)
@@ -481,11 +481,35 @@ class Experiment(models.Model):
         # or collect the groups as they are added
         return self.groups
 
-
-
     def is_running(self):
         return self.status != 'INACTIVE'
 
+    def get_round_configuration(self, sequence_number):
+        return RoundConfiguration.objects.get(experiment_configuration=self.experiment_configuration, sequence_number=sequence_number)
+
+    @property
+    def current_round_template(self):
+        return "%s/%s" % (self.namespace, self.current_round.custom_template_name)
+
+    @property
+    def current_round(self):
+        return self.get_round_configuration(self.current_round_sequence_number)
+
+    @property
+    def next_round(self):
+        return self.get_round_configuration(self.current_round_sequence_number + 1)
+
+    @property
+    def previous_round(self):
+        return self.get_round_configuration(self.current_round_sequence_number - 1)
+
+    @property
+    def has_next_round(self):
+        return self.current_round_sequence_number < self.experiment_configuration.last_round_sequence_number
+
+    @property
+    def is_last_round(self):
+        return self.current_round_sequence_number == self.experiment_configuration.last_round_sequence_number
 
     def advance_to_next_round(self):
         self.current_round_elapsed_time = 0
@@ -510,15 +534,6 @@ class Experiment(models.Model):
                           tick_duration=self.tick_duration,
                           is_experimenter_driven=self.is_experimenter_driven
                           )
-
-    @property
-    def current_round_template(self):
-        return "%s/%s" % (self.namespace, self.current_round.custom_template_name)
-
-    @property
-    def current_round(self):
-        return RoundConfiguration.objects.get(experiment_configuration=self.experiment_configuration,
-                                              sequence_number=self.current_round_sequence_number)
 
     @property
     def url(self, request):
@@ -610,6 +625,12 @@ class RoundConfiguration(models.Model):
     def round_number(self):
         return self.sequence_number if self.display_number == 0 else self.display_number
 
+    def get_parameter(self, name):
+        return self.parameters.get(parameter__name=name)
+
+    def get_parameter_value(self, name):
+        return self.parameters.get(parameter__name=name).value
+
     def get_debriefing(self, participant_id=None, **kwargs):
         return self.templatize(self.debriefing, participant_id, kwargs)
 
@@ -637,6 +658,10 @@ class RoundConfiguration(models.Model):
     class Meta:
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]
 
+
+class ParameterManager(models.Manager):
+    def get_by_natural_key(self, key):
+        return self.get(name=key)
 
 class Parameter(models.Model):
     PARAMETER_TYPES = (('int', 'Integer value'),
@@ -668,14 +693,17 @@ class Parameter(models.Model):
                      (PARTICIPANT_SCOPE, 'Participant data parameter'))
 
     scope = models.CharField(max_length=32, choices=SCOPE_CHOICES, default='round')
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
+    default_value = models.CharField(max_length=255, null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     creator = models.ForeignKey(Experimenter)
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
     enum_choices = models.TextField(null=True, blank=True)
     is_required = models.BooleanField(default=False)
+
+    objects = ParameterManager()
 
     @property
     def value_field_name(self):
@@ -704,6 +732,10 @@ class Parameter(models.Model):
             # FIXME: add more checks for other type conversion failures
             pass
         return value
+
+    @property
+    def default(self):
+        return self.convert(self.default_value)
 
     def __unicode__(self):
         return u"%s: %s (%s)" % (self.experiment_metadata.namespace, self.name, self.type)
@@ -810,6 +842,25 @@ class Group(models.Model):
         else:
             logger.warning("Trying to retrieve data value by name with no args")
         return None
+
+    def transfer_to_next_round(self, parameter=None, value=None):
+        if not parameter:
+            for p in self.parameters:
+                self.transfer_parameter(p, value)
+        else:
+            self.transfer_parameter(parameter, value)
+
+    def transfer_parameter(self, parameter, value):
+        group_data = self.group_round_data.create(round=self.experiment.next_round)
+        group_data_value = group_data.data_values.create(parameter=parameter,
+                experiment=self.experiment)
+        if value:
+            group_data_value.value = value
+        else:
+            group_data_value.value = self.get_data_value(parameter=parameter).value
+        group_data_value.save()
+
+
 
     def get_participant_data_value(self, participant, parameter):
         return ParticipantDataValue.objects.get(participant=participant, parameter=parameter, round_configuration=self.current_round)
