@@ -461,7 +461,7 @@ class Experiment(models.Model):
 
     def allocate_groups(self, randomize=True):
         # seed the initial group.
-        current_group = Group.objects.create(number=1, max_size=self.experiment_configuration.max_group_size, experiment=self)
+        current_group = self.groups.create(number=1, max_size=self.experiment_configuration.max_group_size)
         # FIXME: replace with post_save hook
         current_group.initialize()
         if randomize:
@@ -472,10 +472,10 @@ class Experiment(models.Model):
 
 
         for p in participants:
-            """
-            group.add_participant returns a new group or the existing group depending on whether or not the group is full. 
-            """
-            current_group = current_group.add_participant(p)
+            if current_group.full:
+                current_group = self.groups.create(number=current_group.number + 1,
+                        max_size=current_group.max_size)
+            current_group.add_participant(p)
 
         # XXX: if there a performance hit here, should probably do a void return instead
         # or collect the groups as they are added
@@ -771,8 +771,10 @@ class Group(models.Model):
     def current_round(self):
         return self.experiment.current_round
 
-    def initialize(self):
-        self.get_current_round_data()
+    def initialize(self, group_round_data=None):
+        if not group_round_data:
+            group_round_data = self.group_round_data.create(round=self.current_round)
+        group_round_data.initialize_data_parameters()
 
     def set_data_value(self, parameter=None, value=None):
         if parameter and value:
@@ -828,17 +830,19 @@ class Group(models.Model):
     def get_current_round_data(self):
         group_round_data, just_created = GroupRoundData.objects.get_or_create(group=self, round=self.current_round)
         if just_created:
-            group_round_data.initialize_data_parameters()
+            self.initialize(group_round_data)
         return group_round_data
 
     @property
     def current_round_data_values(self, **kwargs):
         return self.get_current_round_data().data_values
 
-    def is_full(self):
+    @property
+    def full(self):
         return self.size >= self.max_size
 
-    def is_open(self):
+    @property
+    def open(self):
         return self.size < self.max_size
 
     def create_next_group(self):
@@ -859,7 +863,7 @@ class Group(models.Model):
             return self
 
         ''' add the participant to this group if there is room, otherwise create and add to a fresh group '''
-        group = self if self.is_open() else self.create_next_group()
+        group = self if self.open else self.create_next_group()
 
         ParticipantGroupRelationship.objects.create(participant=participant,
                                                     group=group,
