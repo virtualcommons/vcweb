@@ -765,6 +765,7 @@ class RoundParameterValue(ParameterizedValue):
     def __unicode__(self):
         return u"{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.value)
 
+
 class DataValue(ParameterizedValue):
     experiment = models.ForeignKey(Experiment)
 
@@ -1060,16 +1061,16 @@ class ParticipantDataValue(DataValue):
     class Meta:
         ordering = [ 'parameter' ]
 
-class SessionTracker(models.Model):
+class SessionData(models.Model):
     login_time = models.DateTimeField(auto_now_add=True)
     logout_time = models.DateTimeField()
-    # hook into logout signal?
+    experimenter_id = models.ForeignKey(Experimenter, related_name='sessions')
+    participant_id = models.ForeignKey(Participant, related_name='sessions')
+    group_id = models.ForeignKey(Group, related_name='sessions')
 
-class ExperimenterSession(SessionTracker):
-    experimenter_id = models.ForeignKey(Experimenter)
-
-class ParticipantSession(SessionTracker):
-    participant_id = models.ForeignKey(Participant)
+class ActivityLog(models.Model):
+    session_data = models.ForeignKey(SessionData)
+    log_message = models.TextField()
 
 def is_experimenter(user):
     try:

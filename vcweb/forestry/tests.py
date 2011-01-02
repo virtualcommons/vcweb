@@ -41,9 +41,12 @@ class ForestryGameLogicTest(BaseVcwebTest):
                         )
                 self.failUnless(pdv.pk > 0)
                 self.failIf(pdv.value)
-                pdv.value = 3
+                pdv.value = 5
                 pdv.save()
         round_ended(e)
+        for group in e.groups.all():
+            self.failUnlessEqual(get_resource_level(group).value, 75)
+
 
 
 class ForestryViewsTest(BaseVcwebTest):
