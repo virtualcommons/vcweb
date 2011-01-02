@@ -1,11 +1,3 @@
-"""
-This file demonstrates two different styles of tests (one doctest and one
-unittest). These will both pass when you run "manage.py test".
-
-Replace these with more appropriate tests for your application.
-
-"""
-
 from django.test import TestCase
 from vcweb.core import signals
 from vcweb.core.models import Experiment, Experimenter, ExperimentConfiguration, \
@@ -15,10 +7,10 @@ import logging
 
 logger = logging.getLogger('vcweb.core.tests')
 
-""" 
-base class for vcweb.core tests, sets up test fixtures for participants, 
-forestry_test_data, and a number of participants, experiments, etc., 
-based on the forestry experiment 
+"""
+base class for vcweb.core tests, sets up test fixtures for participants,
+forestry_test_data, and a number of participants, experiments, etc.,
+based on the forestry experiment
 """
 class BaseVcwebTest(TestCase):
     fixtures = ['test_users_participants', 'forestry_test_data']
@@ -50,6 +42,7 @@ class BaseVcwebTest(TestCase):
         if not experiment:
             experiment = self.experiment
         return Group.objects.create(number=1, max_size=max_size, experiment=experiment)
+
     class Meta:
         abstract = True
 
@@ -197,6 +190,12 @@ class RoundConfigurationTest(BaseVcwebTest):
         for pair in choices:
             self.failUnless(pair[0] in RoundConfiguration.ROUND_TYPES.keys())
             self.failIf(pair[1].isupper())
+
+    def test_get_set_parameter(self):
+        e = self.experiment
+        round_configuration = e.current_round
+        round_configuration.set_parameter(name='initial.resource_level', value=500)
+        self.failUnlessEqual(round_configuration.get_parameter_value('initial.resource_level'), 500)
 
     def test_parameterized_value(self):
         e = self.experiment

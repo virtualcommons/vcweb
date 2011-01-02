@@ -31,6 +31,7 @@ def prod():
     deploy()
 
 def deploy():
+    test()
     push()
     if confirm("Deploy to %s ?" % (dev.hosts or prod.hosts)):
         with cd('/opt/webapps/virtualcommons/'):
