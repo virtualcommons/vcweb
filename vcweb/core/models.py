@@ -439,14 +439,8 @@ class Experiment(models.Model):
         return "%s.%s" % (self.experiment_metadata.namespace, self.id)
 
     def parameters(self, scope=None):
-        return Parameter.objects.filter(experiment_metadata=self.experiment_metadata, scope=scope) if scope else Parameter.objects.filter(experiment_metadata=self.experiment_metadata) 
-
-
-    def get_round_parameters(self, name=None):
-        return RoundParameter.objects.filter(experiment=self)
-
-    def get_group_data_parameters(self, group=None):
-        return Parameter.objects.filter(experiment_metadata=self.experiment_metadata, scope=Parameter.GROUP_SCOPE)
+        ps = self.experiment_metadata.parameters
+        return ps.filter(scope=scope) if scope else ps
 
     def start(self):
         if not self.is_running():
@@ -472,7 +466,7 @@ class Experiment(models.Model):
 
 
         for p in participants:
-            if current_group.full:
+            if current_group.is_full:
                 current_group = self.groups.create(number=current_group.number + 1,
                         max_size=current_group.max_size)
             current_group.add_participant(p)
@@ -699,7 +693,7 @@ class Parameter(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     creator = models.ForeignKey(Experimenter)
-    experiment_metadata = models.ForeignKey(ExperimentMetadata)
+    experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='parameters')
     enum_choices = models.TextField(null=True, blank=True)
     is_required = models.BooleanField(default=False)
 
@@ -765,7 +759,7 @@ class ParameterizedValue(models.Model):
     class Meta:
         abstract = True
 
-class RoundParameter(ParameterizedValue):
+class RoundParameterValue(ParameterizedValue):
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='parameters')
 
     def __unicode__(self):
@@ -854,17 +848,11 @@ class Group(models.Model):
         group_data = self.group_round_data.create(round=self.experiment.next_round)
         group_data_value = group_data.data_values.create(parameter=parameter,
                 experiment=self.experiment)
-        if value:
-            group_data_value.value = value
-        else:
-            group_data_value.value = self.get_data_value(parameter=parameter).value
+        group_data_value.value = value if value else self.get_data_value(parameter=parameter).value
         group_data_value.save()
-
-
 
     def get_participant_data_value(self, participant, parameter):
         return ParticipantDataValue.objects.get(participant=participant, parameter=parameter, round_configuration=self.current_round)
-
 
     def get_participant_data_values(self, name=None, *names):
         return ParticipantDataValue.objects.filter(round_configuration=self.current_round, participant__in=self.participants.all())
@@ -884,11 +872,11 @@ class Group(models.Model):
         return self.get_current_round_data().data_values
 
     @property
-    def full(self):
+    def is_full(self):
         return self.size >= self.max_size
 
     @property
-    def open(self):
+    def is_open(self):
         return self.size < self.max_size
 
     def create_next_group(self):
@@ -899,7 +887,7 @@ class Group(models.Model):
 
 
     """
-    Adds the given participant to this group or a new group if this group is full.
+    Adds the given participant to this group or a new group if this group is is_full.
     Returns the group the participant was added to.
     If participant is invalid, returns this group as a no-op.
     """
@@ -909,7 +897,7 @@ class Group(models.Model):
             return self
 
         ''' add the participant to this group if there is room, otherwise create and add to a fresh group '''
-        group = self if self.open else self.create_next_group()
+        group = self if self.is_open else self.create_next_group()
 
         ParticipantGroupRelationship.objects.create(participant=participant,
                                                     group=group,
@@ -967,7 +955,6 @@ class Participant(CommonsUser):
             participant_data_value.save()
         else:
             logger.warning("Unable to set data value %s on experiment %s for %s" % (value, experiment, parameter))
-
 
     def get_participant_experiment_relationship(self, experiment):
         return ParticipantExperimentRelationship.objects.get(participant=self, experiment=experiment)

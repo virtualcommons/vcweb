@@ -156,7 +156,7 @@ class ForestryParametersTest(BaseVcwebTest):
                 self.failUnlessEqual(50, data_value.value)
 
         self.failUnlessEqual(GroupRoundDataValue.objects.filter(experiment=e).count(), 4)
-        self.failUnlessEqual(e.get_group_data_parameters().count(), 1)
+        self.failUnlessEqual(e.parameters(scope=Parameter.GROUP_SCOPE).count(), 1)
 
     def test_data_parameters(self):
         e = self.experiment

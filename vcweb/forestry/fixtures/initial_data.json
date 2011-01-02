@@ -116,7 +116,7 @@
                 "parameter": [ "reset.resource_level" ],
                 "boolean_value": "True"
         }, 
-        "model": "core.roundparameter", 
+        "model": "core.roundparametervalue", 
         "pk": 1
     },
     {
@@ -125,7 +125,7 @@
                 "parameter": [ "initial.resource_level" ],
                 "int_value": 100
         }, 
-        "model": "core.roundparameter", 
+        "model": "core.roundparametervalue", 
         "pk": 2
     },
     {

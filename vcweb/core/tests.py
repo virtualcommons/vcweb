@@ -10,7 +10,7 @@ from django.test import TestCase
 from vcweb.core import signals
 from vcweb.core.models import Experiment, Experimenter, ExperimentConfiguration, \
     Participant, ParticipantExperimentRelationship, Group, ExperimentMetadata, \
-    RoundConfiguration, Parameter, RoundParameter
+    RoundConfiguration, Parameter, RoundParameterValue
 import logging
 
 logger = logging.getLogger('vcweb.core.tests')
@@ -191,7 +191,7 @@ class RoundConfigurationTest(BaseVcwebTest):
     def test_parameterized_value(self):
         e = self.experiment
         p = Parameter.objects.create(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
-        rp = RoundParameter.objects.create(parameter=p, round_configuration=e.current_round, value='14')
+        rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round, value='14')
         self.failUnlessEqual(14, rp.int_value)
 
 
@@ -202,7 +202,7 @@ class RoundConfigurationTest(BaseVcwebTest):
         self.failUnlessEqual(p.value_field_name, 'int_value')
 
         for val in (14, '14', 14.0, '14.0'):
-            rp = RoundParameter.objects.create(parameter=p, round_configuration=e.current_round, value=val)
+            rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round, value=val)
             self.failUnless(rp.pk > 0)
             self.failUnlessEqual(rp.value, 14)
 
@@ -215,7 +215,7 @@ class RoundConfigurationTest(BaseVcwebTest):
             p = Parameter.objects.create(scope='round', name="test_nonunique_round_parameter_%s" % type, type=type, creator=e.experimenter, experiment_metadata=e.experiment_metadata)
             self.failUnless(p.pk > 0)
             self.failUnlessEqual(p.value_field_name, '%s_value' % type)
-            rp = RoundParameter.objects.create(parameter=p, round_configuration=e.current_round, value=sample_values_for_type[type])
+            rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round, value=sample_values_for_type[type])
             self.failUnlessEqual(rp.value, sample_values_for_type[type])
 
 
