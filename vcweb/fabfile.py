@@ -43,3 +43,4 @@ def deploy():
             sudo('chmod -R ug+rw .', pty=True)
             sudo('find . -type d -exec chmod ug+x {} \;', pty=True)
             sudo('chown -R alllee:commons .', pty=True)
+            sudo('service httpd restart', pty=True)
