@@ -1,5 +1,8 @@
 from vcweb.core.models import ExperimentMetadata, Parameter
 
+import logging
+
+logger = logging.getLogger('vcweb.forestry.models')
 
 # Create your models here.
 def forestry_second_tick():
@@ -10,7 +13,7 @@ def forestry_second_tick():
 
 
 def get_resource_level(group=None):
-    return group.get_data_value(parameter_name='resource_level') if group else []
+    return group.get_data_value(parameter_name='resource_level') if group else None
 
 def get_harvest_decisions(group=None):
     return group.get_participant_data_values(name='harvest_decision') if group else []
@@ -45,6 +48,8 @@ def round_ended(experiment):
         group.subtract(resource_level_parameter, total_harvest)
         if experiment.has_next_round:
             ''' set group round data resource_level for each group '''
+            logger.debug("Transferring resource level %s to next round" %
+                    get_resource_level(group))
             group.transfer_to_next_round(resource_level_parameter)
 
 def round_setup(experiment):
@@ -53,10 +58,4 @@ def round_setup(experiment):
         for group in experiment.groups.all():
             ''' set resource level to default '''
             set_resource_level(group, round_configuration.get_parameter_value('initial.resource_level'))
-
-
-
-    
-    
-
 

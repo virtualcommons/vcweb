@@ -87,6 +87,15 @@ class ExperimentMetadataTest(BaseVcwebTest):
         logger.debug("unicode is %s" % em.__unicode__())
 
 
+class ExperimentConfigurationTest(BaseVcwebTest):
+
+    def test_final_sequence_number(self):
+        e = self.experiment
+        ec = e.experiment_configuration
+        self.failUnlessEqual(ec.final_sequence_number, 3)
+        self.failUnlessEqual(ec.final_sequence_number,
+                ec.last_round_sequence_number)
+
 class ExperimentTest(BaseVcwebTest):
 
     def round_started_test_handler(self, experiment_id=None, time=None, round_configuration_id=None, **kwargs):
@@ -120,6 +129,7 @@ class ExperimentTest(BaseVcwebTest):
         experiment = self.experiment
         round_number = experiment.current_round_sequence_number
         self.failUnless(round_number >= 0)
+        self.failUnless(experiment.has_next_round)
         experiment = experiment.advance_to_next_round()
         self.failUnless(experiment.current_round_sequence_number == (round_number + 1))
 

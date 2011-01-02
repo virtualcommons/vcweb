@@ -356,7 +356,7 @@ class Experimenter(CommonsUser):
         ordering = ['user']
 
 class ExperimentConfiguration(models.Model):
-    experiment_metadata = models.ForeignKey(ExperimentMetadata)
+    experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='configurations')
     creator = models.ForeignKey(Experimenter)
     name = models.CharField(max_length=255)
     max_number_of_participants = models.PositiveIntegerField(default=0)
@@ -366,8 +366,12 @@ class ExperimentConfiguration(models.Model):
     max_group_size = models.PositiveIntegerField(default=5)
 
     @property
+    def final_sequence_number(self):
+        return self.round_configurations.count()
+
+    @property
     def last_round_sequence_number(self):
-        return RoundConfiguration.objects.filter(experiment_configuration=self).aggregate(max_sequence_number=Max('sequence_number'))['max_sequence_number']
+        return self.round_configurations.aggregate(sequence_number=Max('sequence_number'))['sequence_number']
 
     @property
     def namespace(self):
@@ -499,11 +503,11 @@ class Experiment(models.Model):
 
     @property
     def has_next_round(self):
-        return self.current_round_sequence_number < self.experiment_configuration.last_round_sequence_number
+        return self.current_round_sequence_number < self.experiment_configuration.final_sequence_number
 
     @property
     def is_last_round(self):
-        return self.current_round_sequence_number == self.experiment_configuration.last_round_sequence_number
+        return self.current_round_sequence_number == self.experiment_configuration.final_sequence_number
 
     def advance_to_next_round(self):
         self.current_round_elapsed_time = 0
@@ -620,10 +624,15 @@ class RoundConfiguration(models.Model):
         return self.sequence_number if self.display_number == 0 else self.display_number
 
     def get_parameter(self, name):
-        return self.parameters.get(parameter__name=name)
+        return self.round_parameter_values.get(parameter__name=name)
+
+    def set_parameter(self, name=None, value=None):
+        parameter_value = self.round_parameter_values.get(parameter__name=name)
+        parameter_value.value = value
+        parameter_value.save()
 
     def get_parameter_value(self, name):
-        return self.parameters.get(parameter__name=name).value
+        return self.round_parameter_values.get(parameter__name=name).value
 
     def get_debriefing(self, participant_id=None, **kwargs):
         return self.templatize(self.debriefing, participant_id, kwargs)
@@ -760,7 +769,7 @@ class ParameterizedValue(models.Model):
         abstract = True
 
 class RoundParameterValue(ParameterizedValue):
-    round_configuration = models.ForeignKey(RoundConfiguration, related_name='parameters')
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_parameter_values')
 
     def __unicode__(self):
         return u"{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.value)

@@ -47,7 +47,11 @@ class ForestryGameLogicTest(BaseVcwebTest):
         for group in e.groups.all():
             self.failUnlessEqual(get_resource_level(group).value, 75)
 
-
+        e.advance_to_next_round()
+        for group in e.groups.all():
+            resource_level = get_resource_level(group)
+            self.failUnlessEqual(resource_level.value, 75)
+            self.failUnlessEqual(GroupRoundDataValue.objects.count(), 4)
 
 class ForestryViewsTest(BaseVcwebTest):
 
