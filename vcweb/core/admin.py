@@ -7,7 +7,7 @@ from django.contrib.auth.models import Permission
 from vcweb.core.models import Parameter, RoundParameterValue, \
     ExperimentConfiguration, RoundConfiguration, \
     Experimenter, Participant, Group, Experiment, ParticipantExperimentRelationship, \
-    ParticipantGroupRelationship
+    ParticipantGroupRelationship, GroupRoundDataValue, GroupActivityLog
 
 
 admin.site.register(Parameter)
@@ -21,3 +21,5 @@ admin.site.register(Experiment)
 admin.site.register(ParticipantExperimentRelationship)
 admin.site.register(ParticipantGroupRelationship)
 admin.site.register(Permission)
+admin.site.register(GroupRoundDataValue)
+admin.site.register(GroupActivityLog)

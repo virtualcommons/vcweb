@@ -820,6 +820,8 @@ class Group(models.Model):
         data_value = self.get_data_value(parameter_name=parameter_name,
                 parameter=parameter)
         data_value.value = value
+        self.activity_log.create(round_configuration=self.current_round,
+                log_message="setting parameter %s = %s" % (parameter, value))
         data_value.save()
 
     def subtract(self, parameter=None, amount=0):
@@ -828,6 +830,8 @@ class Group(models.Model):
     def add(self, parameter=None, amount=0):
 # could be a float or an int..
         update_dict = { parameter.value_field_name : models.F(parameter.value_field_name) + amount }
+        self.activity_log.create(round_configuration=self.current_round,
+                log_message="adding %s to this group's %s parameter" % (amount, parameter))
         GroupRoundDataValue.objects.filter(group_round_data=self.get_current_round_data(), parameter=parameter).update(**update_dict)
 
     def get_data_value(self, parameter_name=None, parameter=None):
@@ -1073,13 +1077,17 @@ class ParticipantDataValue(DataValue):
 class SessionData(models.Model):
     login_time = models.DateTimeField(auto_now_add=True)
     logout_time = models.DateTimeField()
-    experimenter_id = models.ForeignKey(Experimenter, related_name='sessions')
-    participant_id = models.ForeignKey(Participant, related_name='sessions')
-    group_id = models.ForeignKey(Group, related_name='sessions')
+    experimenter = models.ForeignKey(Experimenter, related_name='sessions')
+    participant = models.ForeignKey(Participant, related_name='sessions')
+    group = models.ForeignKey(Group, related_name='sessions')
 
 class ActivityLog(models.Model):
-    session_data = models.ForeignKey(SessionData)
     log_message = models.TextField()
+    date_created = models.DateTimeField(auto_now_add=True)
+
+class GroupActivityLog(ActivityLog):
+    group = models.ForeignKey(Group, related_name='activity_log')
+    round_configuration = models.ForeignKey(RoundConfiguration)
 
 def is_experimenter(user):
     try:

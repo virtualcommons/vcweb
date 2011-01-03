@@ -58,4 +58,5 @@ def round_setup(experiment):
         for group in experiment.groups.all():
             ''' set resource level to default '''
             set_resource_level(group, round_configuration.get_parameter_value('initial.resource_level'))
+            ''' initialize all participant data values '''
 

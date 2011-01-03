@@ -88,6 +88,30 @@
     },
     {
         "fields": {
+        	"name":"harvest_decision",
+        	"experiment_metadata": 1,
+        	"creator": 1,
+        	"type": "int",
+                "date_created": "2011-01-01 15:13:03", 
+        	"scope": "participant"
+        }, 
+        "model": "core.parameter", 
+        "pk": 1
+    },
+    {
+        "fields": {
+        	"name":"resource_level",
+        	"experiment_metadata": 1,
+        	"creator": 1,
+        	"type": "int",
+                "date_created": "2011-01-01 15:13:07", 
+        	"scope": "group"
+        }, 
+        "model": "core.parameter", 
+        "pk": 2
+    },
+    {
+        "fields": {
         	"name":"reset.resource_level",
         	"experiment_metadata": 1,
         	"creator": 1,
@@ -126,30 +150,6 @@
                 "int_value": 100
         }, 
         "model": "core.roundparametervalue", 
-        "pk": 2
-    },
-    {
-        "fields": {
-        	"name":"harvest_decision",
-        	"experiment_metadata": 1,
-        	"creator": 1,
-        	"type": "int",
-                "date_created": "2011-01-01 15:13:03", 
-        	"scope": "participant"
-        }, 
-        "model": "core.parameter", 
-        "pk": 1
-    },
-    {
-        "fields": {
-        	"name":"resource_level",
-        	"experiment_metadata": 1,
-        	"creator": 1,
-        	"type": "int",
-                "date_created": "2011-01-01 15:13:07", 
-        	"scope": "group"
-        }, 
-        "model": "core.parameter", 
         "pk": 2
     }
 ]

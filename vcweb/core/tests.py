@@ -194,8 +194,10 @@ class RoundConfigurationTest(BaseVcwebTest):
     def test_get_set_parameter(self):
         e = self.experiment
         round_configuration = e.current_round
-        round_configuration.set_parameter(name='initial.resource_level', value=500)
-        self.failUnlessEqual(round_configuration.get_parameter_value('initial.resource_level'), 500)
+        name = 'initial.resource_level'
+        round_configuration.set_parameter(name=name, value=501)
+        self.failUnlessEqual(round_configuration.get_parameter_value(name), 501)
+        self.failUnlessEqual(round_configuration.get_parameter(name).value, round_configuration.get_parameter_value(name))
 
     def test_parameterized_value(self):
         e = self.experiment
@@ -235,9 +237,3 @@ class RoundConfigurationTest(BaseVcwebTest):
             rc = self.create_new_round_configuration(round_type=round_type)
             e.current_round_sequence_number = rc.sequence_number
             self.failUnlessEqual(e.current_round_template, "%s/%s" % (e.namespace, data[1]), 'should have returned template for ' + data[0])
-
-
-
-
-
-
