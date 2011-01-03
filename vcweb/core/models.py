@@ -808,8 +808,8 @@ class Group(models.Model):
         return self.experiment.current_round
 
     def initialize(self, group_round_data=None):
-        if not (group_round_data and self.group_round_data.filter(round=self.current_round)):
-            group_round_data = self.group_round_data.create(round=self.current_round)
+        if not (group_round_data and self.round_data.filter(round=self.current_round)):
+            group_round_data = self.round_data.create(round=self.current_round)
         group_round_data.initialize_data_parameters()
 
     '''
@@ -867,9 +867,10 @@ class Group(models.Model):
             self.transfer_parameter(parameter, value)
 
     def transfer_parameter(self, parameter, value):
-        group_data = self.group_round_data.create(round=self.experiment.next_round)
+        next_round_data = self.round_data.create(round=self.experiment.next_round)
+# if value is set, use it, otherwise use the current round parameter value
         parameter_value = value if value else self.get_data_value(parameter=parameter).value
-        return group_data.data_values.create(parameter=parameter, experiment=self.experiment, value=parameter_value)
+        return next_round_data.data_values.create(parameter=parameter, experiment=self.experiment, value=parameter_value)
 
     def get_participant_data_value(self, participant, parameter):
         return ParticipantDataValue.objects.get(participant=participant, parameter=parameter, round_configuration=self.current_round)
@@ -936,8 +937,8 @@ class Group(models.Model):
 Data values stored for a particular group in a particular round.
 """
 class GroupRoundData (models.Model):
-    group = models.ForeignKey(Group, related_name='group_round_data')
-    round = models.ForeignKey(RoundConfiguration, related_name='group_round_data')
+    group = models.ForeignKey(Group, related_name='round_data')
+    round = models.ForeignKey(RoundConfiguration, related_name='group_data')
     """ show instructions before the round begins? """
     show_instructions = models.BooleanField(default=True)
     """ show debriefing after the round ends? """
@@ -948,7 +949,7 @@ class GroupRoundData (models.Model):
         for group_data_parameter in self.group.data_parameters:
             # create a fresh GroupRoundDataValue for each data parameter
             logger.debug("Creating parameter %s" % group_data_parameter)
-            GroupRoundDataValue.objects.create(parameter=group_data_parameter, group_round_data=self, experiment=self.group.experiment)
+            self.data_values.create(parameter=group_data_parameter, experiment=self.group.experiment)
 
     def __unicode__(self):
         return u"Round Data for {0} in {1}".format(self.group, self.round)
