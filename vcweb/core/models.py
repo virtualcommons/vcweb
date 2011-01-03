@@ -832,16 +832,29 @@ class Group(models.Model):
         update_dict = { parameter.value_field_name : models.F(parameter.value_field_name) + amount }
         self.activity_log.create(round_configuration=self.current_round,
                 log_message="adding %s to this group's %s parameter" % (amount, parameter))
-        GroupRoundDataValue.objects.filter(group_round_data=self.get_current_round_data(), parameter=parameter).update(**update_dict)
+        ''' 
+        vs
+        GroupRoundDataValue.objects.filter(group_round_data=self.current_round_data, parameter=parameter).update(**update_dict)
+        '''
+        updated_rows = self.current_round_data.data_values.filter(parameter=parameter).update(**update_dict)
+        if updated_rows != 1:
+            logger.error("Updated %s rows, should have been only one..." % updated_rows)
+        '''
+        data_value = self.current_round_data.data_values.get(parameter=parameter)
+        data_value.value += amount
+        data_value.save() 
+        '''
+
+
 
     def get_data_value(self, parameter_name=None, parameter=None):
         criteria = dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name)],
-                group_round_data=self.get_current_round_data())
+                group_round_data=self.current_round_data)
 
         return GroupRoundDataValue.objects.get(**criteria)
 
     def get_group_data_values(self, name=None, *names):
-        group_round_data = self.get_current_round_data()
+        group_round_data = self.current_round_data
         if names:
             if name: names.append(name)
             return GroupRoundDataValue.objects.filter(group_round_data=group_round_data, parameter__name__in=names)
@@ -882,7 +895,8 @@ class Group(models.Model):
     def data_parameters(self):
         return Parameter.objects.filter(experiment_metadata=self.experiment.experiment_metadata, scope=Parameter.GROUP_SCOPE)
 
-    def get_current_round_data(self):
+    @property
+    def current_round_data(self):
         group_round_data, just_created = GroupRoundData.objects.get_or_create(group=self, round=self.current_round)
         if just_created:
             self.initialize(group_round_data)
@@ -890,7 +904,7 @@ class Group(models.Model):
 
     @property
     def current_round_data_values(self, **kwargs):
-        return self.get_current_round_data().data_values
+        return self.current_round_data.data_values
 
     @property
     def is_full(self):
@@ -919,7 +933,6 @@ class Group(models.Model):
 
         ''' add the participant to this group if there is room, otherwise create and add to a fresh group '''
         group = self if self.is_open else self.create_next_group()
-
         ParticipantGroupRelationship.objects.create(participant=participant,
                                                     group=group,
                                                     round_joined=self.experiment.current_round,
@@ -1097,15 +1110,7 @@ class GroupActivityLog(ActivityLog):
     round_configuration = models.ForeignKey(RoundConfiguration)
 
 def is_experimenter(user):
-    try:
-        return user.experimenter
-    except Experimenter.DoesNotExist:
-        return None
+    return hasattr(user, 'experimenter') and isinstance(user.experimenter, Experimenter)
 
 def is_participant(user):
-    try:
-        return user.participant
-    except Participant.DoesNotExist:
-        return None
-
-
+    return hasattr(user, 'participant') and isinstance(user.participant, Participant)
