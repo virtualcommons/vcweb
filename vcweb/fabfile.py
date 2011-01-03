@@ -3,13 +3,6 @@ from fabric.decorators import hosts
 from fabric.contrib.console import confirm
 
 
-@hosts('dev.commons.asu.edu', 'localhost')
-def host_type():
-    run('uname -a')
-
-def test():
-    local('./manage.py test', capture=False)
-
 syncdb_commands = ['(test -f vcweb.db && rm vcweb.db) || true', 
         './manage.py syncdb --noinput', 
         './manage.py loaddata test_users_participants', 
@@ -18,6 +11,18 @@ syncdb_commands = ['(test -f vcweb.db && rm vcweb.db) || true',
 def syncdb():
     for command in syncdb_commands:
         local(command, capture=False)
+
+@hosts('dev.commons.asu.edu', 'localhost')
+def host_type():
+    run('uname -a')
+
+def test():
+    local('./manage.py test', capture=False)
+
+
+def server():
+    test()
+    local('./manage.py runserver 149.169.203.115:8080', capture=False)
 
 def push():
     local('hg push')

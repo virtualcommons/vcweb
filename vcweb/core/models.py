@@ -483,7 +483,7 @@ class Experiment(models.Model):
         return self.status != 'INACTIVE'
 
     def get_round_configuration(self, sequence_number):
-        return RoundConfiguration.objects.get(experiment_configuration=self.experiment_configuration, sequence_number=sequence_number)
+        return self.experiment_configuration.round_configurations.get(sequence_number=sequence_number)
 
     @property
     def current_round_template(self):
@@ -511,7 +511,7 @@ class Experiment(models.Model):
 
     def advance_to_next_round(self):
         self.current_round_elapsed_time = 0
-        self.current_round_sequence_number = models.F('current_round_sequence_number') + 1
+        self.current_round_sequence_number += 1
         self.save()
         # would return self work as well?
         # return self
@@ -808,7 +808,7 @@ class Group(models.Model):
         return self.experiment.current_round
 
     def initialize(self, group_round_data=None):
-        if not group_round_data:
+        if not (group_round_data and self.group_round_data.filter(round=self.current_round)):
             group_round_data = self.group_round_data.create(round=self.current_round)
         group_round_data.initialize_data_parameters()
 
@@ -860,10 +860,8 @@ class Group(models.Model):
 
     def transfer_parameter(self, parameter, value):
         group_data = self.group_round_data.create(round=self.experiment.next_round)
-        group_data_value = group_data.data_values.create(parameter=parameter,
-                experiment=self.experiment)
-        group_data_value.value = value if value else self.get_data_value(parameter=parameter).value
-        group_data_value.save()
+        parameter_value = value if value else self.get_data_value(parameter=parameter).value
+        return group_data.data_values.create(parameter=parameter, experiment=self.experiment, value=parameter_value)
 
     def get_participant_data_value(self, participant, parameter):
         return ParticipantDataValue.objects.get(participant=participant, parameter=parameter, round_configuration=self.current_round)

@@ -2,7 +2,7 @@ from django.test import TestCase
 from vcweb.core import signals
 from vcweb.core.models import Experiment, Experimenter, ExperimentConfiguration, \
     Participant, ParticipantExperimentRelationship, Group, ExperimentMetadata, \
-    RoundConfiguration, Parameter, RoundParameterValue
+    RoundConfiguration, Parameter, RoundParameterValue, GroupActivityLog
 import logging
 
 logger = logging.getLogger('vcweb.core.tests')
@@ -123,8 +123,10 @@ class ExperimentTest(BaseVcwebTest):
         round_number = experiment.current_round_sequence_number
         self.failUnless(round_number >= 0)
         self.failUnless(experiment.has_next_round)
-        experiment = experiment.advance_to_next_round()
-        self.failUnless(experiment.current_round_sequence_number == (round_number + 1))
+        while (experiment.has_next_round):
+            round_number += 1
+            experiment.advance_to_next_round()
+            self.failUnless(experiment.current_round_sequence_number == round_number)
 
     def test_increment_elapsed_time(self):
         experiment = self.experiment
@@ -147,6 +149,34 @@ class ExperimentTest(BaseVcwebTest):
             logger.debug("participant number %i (id: %i)" % (participant_number, p.pk))
 
 class GroupTest(BaseVcwebTest):
+    def test_set_data_value_activity_log(self):
+        e = self.experiment
+        for g in e.groups.all():
+            activity_log_counter = GroupActivityLog.objects.filter(group=g).count()
+            for data_value in g.data_values.all():
+                # XXX: pathological use of set_data_value, no point in doing it
+                # this way since typical usage would do a lookup by name.
+                g.set_data_value(parameter=data_value.parameter, value=10)
+                activity_log_counter += 1
+                self.failUnlessEquals(activity_log_counter, GroupActivityLog.objects.filter(group=g).count())
+
+    def test_transfer_to_next_round(self):
+        e = self.experiment
+        parameter = e.experiment_metadata.parameters.create(scope=Parameter.GROUP_SCOPE,
+                name='test_group_parameter', type='int',
+                creator=e.experimenter)
+        for g in e.groups.all():
+            g.initialize()
+            g.set_data_value(parameter=parameter, value=15)
+            self.failUnlessEqual(g.get_data_value(parameter=parameter), 15)
+            g.transfer_to_next_round(parameter)
+
+        e.advance_to_next_round()
+        for g in e.groups.all():
+            self.failUnlessEqual(g.get_data_value(parameter=parameter), 15)
+
+
+
     def test_group_add(self):
         """
         Tests get_participant_number after groups have been assigned
