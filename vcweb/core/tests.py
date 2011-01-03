@@ -127,6 +127,8 @@ class ExperimentTest(BaseVcwebTest):
             round_number += 1
             experiment.advance_to_next_round()
             self.failUnless(experiment.current_round_sequence_number == round_number)
+            logger.debug("experiment successfully advanced to next round: %s" %
+                    experiment.current_round)
 
     def test_increment_elapsed_time(self):
         experiment = self.experiment

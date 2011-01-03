@@ -851,7 +851,15 @@ class Group(models.Model):
             logger.warning("Trying to retrieve data value by name with no args")
         return None
 
+    ''' 
+    Transfers the given parameter to the next round.  If parameter isn't set,
+    transfer all parameters to the next round.  If this isn't desired behavior for
+    common use cases, revisit and remove.
+    '''
     def transfer_to_next_round(self, parameter=None, value=None):
+        if self.experiment.is_last_round:
+            logger.warning("Trying to transfer parameter %s to next round but this is the last round" % parameter)
+            return
         if not parameter:
             for p in self.parameters:
                 self.transfer_parameter(p, value)

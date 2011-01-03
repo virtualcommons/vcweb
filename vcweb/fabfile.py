@@ -20,9 +20,8 @@ def test():
     local('./manage.py test', capture=False)
 
 
-def server():
-    test()
-    local('./manage.py runserver 149.169.203.115:8080', capture=False)
+def server(ip="149.169.203.115", port=8080):
+    local("./manage.py runserver {ip}:{port}".format(**locals()), capture=False)
 
 def push():
     local('hg push')
