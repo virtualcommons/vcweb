@@ -2,6 +2,5 @@ Django
 celery
 django-celery
 tornado
-gevent
+SocketTornad.IO
 psycopg2
-orbited

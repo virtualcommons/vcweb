@@ -12,6 +12,8 @@ env.project_path = env.deploy_path + env.project_name
 env.hosts = ['localhost']
 env.hg_url = 'http://virtualcommons.hg.sourceforge.net:8000/hgroot/virtualcommons/virtualcommons'
 
+env.apache = 'httpd'
+
 """ 
 currently only works for sqlite3 development database.  Need to do it by hand with postgres a
 few times to figure out what to automate.
@@ -59,6 +61,8 @@ def prod():
     env.hosts = ['vcweb.asu.edu']
 
 def loc():
+    env.deploy_user = 'alllee'
+    env.apache = 'apache2'
     env.hosts = ['localhost']
 
 def setup():
@@ -79,4 +83,4 @@ def deploy():
             sudo('chmod -R ug+rw .', pty=True)
             sudo('find . -type d -exec chmod ug+x {} \;', pty=True)
             sudo('chown -R %(deploy_user)s:%(deploy_group)s .' % env, pty=True)
-            sudo('service httpd restart', pty=True)
+            sudo('service %(apache)s restart' % env, pty=True)
