@@ -1,13 +1,16 @@
-from fabric.api import run, local, sudo, cd, env, require
-from fabric.decorators import hosts
+from fabric.api import run, local, sudo, cd, env
 from fabric.contrib.console import confirm
 
 """ Default Configuration """
 env.python = 'python2.6'
 env.project_name = 'vcweb'
+env.deploy_user = 'vcweb'
+env.deploy_group = 'commons'
 env.virtualenv_path = '/opt/virtualenvs/%(project_name)s' % env
 env.deploy_path = '/opt/webapps/virtualcommons/'
 env.project_path = env.deploy_path + env.project_name
+env.hosts = ['localhost']
+env.hg_url = 'http://virtualcommons.hg.sourceforge.net:8000/hgroot/virtualcommons/virtualcommons'
 
 """ 
 currently only works for sqlite3 development database.  Need to do it by hand with postgres a
@@ -34,14 +37,12 @@ def _virtualenv(command, use_django_path=False):
     run('source %(virtualenv_path)s/bin/activate && %(command)s' % env)
 
 def pip():
-    with cd(env.project_path):
-        _virtualenv('pip install -E %(virtualenv_path)s -r %(project_path)s/requirements.pip' % env)
+    _virtualenv('pip install -E %(virtualenv_path)s -r %(project_path)s/requirements.pip' % env)
 
 def host_type():
     run('uname -a')
 
 def test():
-    env.hosts = ['localhost']
     with cd(env.project_path):
         _virtualenv('%(python)s manage.py test' % env)
 
@@ -51,24 +52,31 @@ def server(ip="149.169.203.115", port=8080):
 def push():
     local('hg push')
 
-@hosts('dev.commons.asu.edu')
 def dev():
-    pass
+    env.hosts =['dev.commons.asu.edu']
 
-@hosts('vcweb.asu.edu')
 def prod():
-    pass
+    env.hosts = ['vcweb.asu.edu']
 
-@hosts('localhost')
 def loc():
-    pass
+    env.hosts = ['localhost']
+
+def setup():
+    virtualenv()
+    sudo('hg clone %(hg_url)s %(deploy_path)s' % env, pty=True, user=env.deploy_user)
+    sudo('chown -R %(deploy_user)s:%(deploy_group)s %(deploy_path)s' % env, pty=True)
+    sudo('chmod -R ug+rw %(deploy_path)s' % env, pty=True)
+    sudo('find %(deploy_path)s -type d -exec chmod ug+x {} \;' % env, pty=True)
+    pip()
 
 def deploy():
+    """ deploys to an already setup environment """
     push()
-    if confirm("Deploy to %s ?" % (loc.hosts or dev.hosts or prod.hosts)):
+    if confirm("Deploy to %(hosts)s ?" % env):
         with cd(env.project_path):
-            run('hg pull')
-            run('hg up')
+            sudo('hg pull', user=env.deploy_user, pty=True)
+            sudo('hg up', user=env.deploy_user, pty=True)
             sudo('chmod -R ug+rw .', pty=True)
             sudo('find . -type d -exec chmod ug+x {} \;', pty=True)
+            sudo('chown -R %(deploy_user)s:%(deploy_group)s .' % env, pty=True)
             sudo('service httpd restart', pty=True)
