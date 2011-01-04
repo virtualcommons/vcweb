@@ -1,0 +1,7 @@
+Django
+celery
+django-celery
+tornado
+gevent
+psycopg2
+orbited

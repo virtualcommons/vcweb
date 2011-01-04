@@ -623,6 +623,22 @@ class RoundConfiguration(models.Model):
     def round_number(self):
         return self.sequence_number if self.display_number == 0 else self.display_number
 
+    @property
+    def is_debriefing_round(self):
+        return self.round_type == 'DEBRIEFING'
+
+    @property
+    def is_chat_round(self):
+        return self.round_type == 'CHAT'
+
+    @property
+    def is_instructions_round(self):
+        return self.round_type == 'INSTRUCTIONS'
+
+    @property
+    def is_quiz_round(self):
+        return self.round_type == 'QUIZ'
+
     def get_parameter(self, name):
         return self.round_parameter_values.get(parameter__name=name)
 
@@ -640,17 +656,6 @@ class RoundConfiguration(models.Model):
     def get_instructions(self, participant_id=None, **kwargs):
         return self.templatize(self.instructions, participant_id, kwargs)
 
-    def is_debriefing_round(self):
-        return self.round_type == 'DEBRIEFING'
-
-    def is_chat_round(self):
-        return self.round_type == 'CHAT'
-
-    def is_instructions_round(self):
-        return self.round_type == 'INSTRUCTIONS'
-
-    def is_quiz_round(self):
-        return self.round_type == 'QUIZ'
 
     def templatize(self, template_string, participant_id=None, **kwargs):
         return Template(template_string).substitute(kwargs, round_number=self.display_number, participant_id=participant_id)
