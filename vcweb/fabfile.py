@@ -1,4 +1,5 @@
-from fabric.api import *
+from fabric.api import local, run, sudo, cd, settings, env, abort
+from fabric.contrib.console import confirm
 
 """ Default Configuration """
 env.python = 'python2.6'
@@ -10,6 +11,7 @@ env.deploy_path = '/opt/webapps/virtualcommons/'
 env.project_path = env.deploy_path + env.project_name
 env.hosts = ['localhost']
 env.hg_url = 'http://virtualcommons.hg.sourceforge.net:8000/hgroot/virtualcommons/virtualcommons'
+env.shell = '/bin/bash -l -c'
 
 env.apache = 'httpd'
 
@@ -31,10 +33,13 @@ def virtualenv():
     """ Setup a fresh virtualenv """
     run('virtualenv -p %(python)s --no-site-packages %(virtualenv_path)s;' % env)
 
-def _virtualenv(command, **kwargs):
+def _virtualenv(command, run_locally=False, **kwargs):
     """ source the virtualenv before executing this command """
     env.command = command
-    run('source %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
+    if run_locally:
+        return local('workon %(project_name)s && %(command)s' % env, **kwargs)
+    else:
+        return run('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
 
 def pip():
     ''' looks for requirements.pip in the django project directory '''
@@ -43,14 +48,21 @@ def pip():
 def host_type():
     run('uname -a')
 
-def test():
+def local_test():
+    #print(green('Running tests on %(host)s' % env))
     with cd(env.project_path):
         ''' 
-        database creation messages -> stdout, test output -> stderr.  Hide the
-        db messages 
+        database creation messages -> stdout, test output -> stderr.
         '''
-        with hide('stdout'):
-            _virtualenv('%(python)s manage.py test' % env)
+        result = _virtualenv('python manage.py test' % env, run_locally=True, capture=False)
+
+def test():
+    #print(green('Running tests on %(host)s' % env))
+    with cd(env.project_path):
+        ''' 
+        database creation messages -> stdout, test output -> stderr.
+        '''
+        result = _virtualenv('%(python)s manage.py test' % env)
 
 def server(ip="149.169.203.115", port=8080):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)

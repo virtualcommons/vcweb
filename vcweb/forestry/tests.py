@@ -48,15 +48,20 @@ class ForestryGameLogicTest(BaseVcwebTest):
         at round end all harvest decisions are tallied and subtracted from
         the final resource_level
         '''
+        expected_resource_level = lambda group: 100 - ((group.number % 5) * group.size)
         round_ended(e)
         for group in e.groups.all():
-            expected_reduction = (group.number % 5) * 5
-            self.failUnlessEqual(get_resource_level(group).value, 100 - expected_reduction)
+            self.failUnlessEqual(get_resource_level(group).value,
+                    expected_resource_level(group))
 
         e.advance_to_next_round()
         for group in e.groups.all():
             resource_level = get_resource_level(group)
-            self.failUnlessEqual(resource_level.value, 75)
+            self.failUnlessEqual(resource_level.value, expected_resource_level(group))
+            '''
+            2 groups, 2 rounds of data = 4 total group round data value
+            objects.
+            '''
             self.failUnlessEqual(GroupRoundDataValue.objects.count(), 4)
 
 class ForestryViewsTest(BaseVcwebTest):

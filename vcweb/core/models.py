@@ -874,10 +874,11 @@ class Group(models.Model):
     transfer all parameters to the next round.  If this isn't desired behavior for
     common use cases, revisit and remove.
     '''
-    def transfer_to_next_round(self, parameter=None, value=None):
+    def transfer_to_next_round(self, parameter=None, value=None, transfer_existing_value=True):
         if self.experiment.is_last_round:
             logger.warning("Trying to transfer parameter %s to next round but this is the last round" % parameter)
             return
+        value = self.get_data_value(parameter=parameter) if transfer_existing_value else value
         if not parameter:
             for p in self.parameters:
                 self.transfer_parameter(p, value)
@@ -887,8 +888,7 @@ class Group(models.Model):
     def transfer_parameter(self, parameter, value):
         next_round_data = self.round_data.create(round=self.experiment.next_round)
 # if value is set, use it, otherwise use the current round parameter value
-        parameter_value = value if value else self.get_data_value(parameter=parameter).value
-        return next_round_data.data_values.create(parameter=parameter, experiment=self.experiment, value=parameter_value)
+        return next_round_data.data_values.create(parameter=parameter, experiment=self.experiment, value=value)
 
     def get_participant_data_value(self, participant, parameter):
         return ParticipantDataValue.objects.get(participant=participant, parameter=parameter, round_configuration=self.current_round)
