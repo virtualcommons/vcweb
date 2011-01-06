@@ -11,8 +11,6 @@ env.deploy_path = '/opt/webapps/virtualcommons/'
 env.project_path = env.deploy_path + env.project_name
 env.hosts = ['localhost']
 env.hg_url = 'http://virtualcommons.hg.sourceforge.net:8000/hgroot/virtualcommons/virtualcommons'
-env.shell = '/bin/bash -l -c'
-
 env.apache = 'httpd'
 
 """ 
