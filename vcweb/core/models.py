@@ -851,6 +851,8 @@ class Group(models.Model):
         '''
 
 
+    def get_scalar_data_value(self, parameter_name=None, parameter=None):
+        return self.get_data_value(parameter_name, parameter).value
 
     def get_data_value(self, parameter_name=None, parameter=None):
         criteria = dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name)],
@@ -878,7 +880,7 @@ class Group(models.Model):
         if self.experiment.is_last_round:
             logger.warning("Trying to transfer parameter %s to next round but this is the last round" % parameter)
             return
-        value = self.get_data_value(parameter=parameter) if transfer_existing_value else value
+        value = self.get_scalar_data_value(parameter=parameter) if transfer_existing_value else value
         if not parameter:
             for p in self.parameters:
                 self.transfer_parameter(p, value)
