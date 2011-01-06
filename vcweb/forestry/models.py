@@ -11,7 +11,6 @@ def forestry_second_tick():
     check all forestry experiments.
     '''
 
-
 def get_resource_level(group=None):
     return group.get_data_value(parameter_name='resource_level') if group else None
 
@@ -59,4 +58,11 @@ def round_setup(experiment):
             ''' set resource level to default '''
             set_resource_level(group, round_configuration.get_parameter_value('initial.resource_level'))
             ''' initialize all participant data values '''
+            for p in group.participants.all():
+                harvest_decision, just_created = p.data_values.get_or_create(round_configuration=round_configuration, 
+                        parameter=get_harvest_decision_parameter(),
+                        experiment=experiment)
+                logger.debug("initialized harvest decision %s (%s) for %s" 
+                        % (harvest_decision, just_created, p))
+
 

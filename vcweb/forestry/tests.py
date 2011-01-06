@@ -31,9 +31,10 @@ class ForestryGameLogicTest(BaseVcwebTest):
         harvest_decision_parameter = get_harvest_decision_parameter()
         for group in e.groups.all():
             ds = get_harvest_decisions(group)
-            self.failIf(ds, 'there should not be any harvest decisions.')
+            self.failUnlessEqual(get_resource_level(group).value, 100)
+            self.failUnlessEqual(len(ds), group.participants.count())
             for p in group.participants.all():
-                pdv = ParticipantDataValue.objects.create(
+                pdv = ParticipantDataValue.objects.get(
                         participant=p,
                         round_configuration=current_round,
                         parameter=harvest_decision_parameter,
