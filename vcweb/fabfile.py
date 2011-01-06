@@ -49,7 +49,7 @@ def test():
         _virtualenv('%(python)s manage.py test' % env)
 
 def server(ip="149.169.203.115", port=8080):
-    local("./manage.py runserver {ip}:{port}".format(**locals()), capture=False)
+    local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
 
 def push():
     local('hg push')

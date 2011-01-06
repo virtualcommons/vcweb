@@ -1,8 +1,10 @@
 <VirtualHost *:80>
-    WSGIDaemonProcess vcweb-production user=vcweb group=commons threads=10 python-path=/opt/virtualenvs/vcweb/lib/python2.6/site-packages
+    Alias /static "/opt/webapps/virtualcommons/vcweb/static" 
+
+    WSGIDaemonProcess vcweb-production user=apache group=commons threads=25 python-path=/opt/virtualenvs/vcweb/lib/python2.6/site-packages
     WSGIProcessGroup vcweb-production
     WSGIScriptAlias / /opt/virtualcommons/vcweb/vcweb.wsgi
-    <Directory /opt/virtualcommons/vcweb/vcweb/> 
+    <Directory /opt/virtualcommons/vcweb/> 
         Order deny,allow
         Allow from all
     </Directory>
