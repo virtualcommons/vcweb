@@ -42,11 +42,16 @@ class ForestryGameLogicTest(BaseVcwebTest):
                         )
                 self.failUnless(pdv.pk > 0)
                 self.failIf(pdv.value)
-                pdv.value = 5
+                pdv.value = group.number % 5
                 pdv.save()
+        '''
+        at round end all harvest decisions are tallied and subtracted from
+        the final resource_level
+        '''
         round_ended(e)
         for group in e.groups.all():
-            self.failUnlessEqual(get_resource_level(group).value, 75)
+            expected_reduction = (group.number % 5) * 5
+            self.failUnlessEqual(get_resource_level(group).value, 100 - expected_reduction)
 
         e.advance_to_next_round()
         for group in e.groups.all():

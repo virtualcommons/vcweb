@@ -1,5 +1,4 @@
-from fabric.api import run, local, sudo, cd, env
-from fabric.contrib.console import confirm
+from fabric.api import *
 
 """ Default Configuration """
 env.python = 'python2.6'
@@ -32,13 +31,13 @@ def virtualenv():
     """ Setup a fresh virtualenv """
     run('virtualenv -p %(python)s --no-site-packages %(virtualenv_path)s;' % env)
 
-def _virtualenv(command, use_django_path=False):
+def _virtualenv(command, **kwargs):
     """ source the virtualenv before executing this command """
-    #env.command = '%s/%s' % (env.project_path, command) if use_django_path else command
     env.command = command
-    run('source %(virtualenv_path)s/bin/activate && %(command)s' % env)
+    run('source %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
 
 def pip():
+    ''' looks for requirements.pip in the django project directory '''
     _virtualenv('pip install -E %(virtualenv_path)s -r %(project_path)s/requirements.pip' % env)
 
 def host_type():
@@ -46,7 +45,12 @@ def host_type():
 
 def test():
     with cd(env.project_path):
-        _virtualenv('%(python)s manage.py test' % env)
+        ''' 
+        database creation messages -> stdout, test output -> stderr.  Hide the
+        db messages 
+        '''
+        with hide('stdout'):
+            _virtualenv('%(python)s manage.py test' % env)
 
 def server(ip="149.169.203.115", port=8080):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
