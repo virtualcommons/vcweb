@@ -1,5 +1,7 @@
-from fabric.api import local, run, sudo, cd, settings, env, abort
+from fabric.api import local, run, sudo, cd, env, hide
 from fabric.contrib.console import confirm
+
+import os
 
 """ Default Configuration """
 env.python = 'python2.6'
@@ -34,10 +36,10 @@ def virtualenv():
 def _virtualenv(command, run_locally=False, **kwargs):
     """ source the virtualenv before executing this command """
     env.command = command
-    if run_locally:
-        return local('workon %(project_name)s && %(command)s' % env, **kwargs)
-    else:
-        return run('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
+    return run('source %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
+   # if run_locally:
+   #     return local('source %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
+   # else:
 
 def pip():
     ''' looks for requirements.pip in the django project directory '''
@@ -46,21 +48,11 @@ def pip():
 def host_type():
     run('uname -a')
 
-def local_test():
-    #print(green('Running tests on %(host)s' % env))
-    with cd(env.project_path):
-        ''' 
-        database creation messages -> stdout, test output -> stderr.
-        '''
-        result = _virtualenv('python manage.py test' % env, run_locally=True, capture=False)
-
 def test():
-    #print(green('Running tests on %(host)s' % env))
-    with cd(env.project_path):
-        ''' 
-        database creation messages -> stdout, test output -> stderr.
-        '''
-        result = _virtualenv('%(python)s manage.py test' % env)
+    ''' runs tests on this local codebase, not the deployed codebase '''
+    with cd(os.getcwd()):
+        with hide('stdout'):
+            _virtualenv('python manage.py test' % env)
 
 def server(ip="149.169.203.115", port=8080):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)

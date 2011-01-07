@@ -871,9 +871,10 @@ class Group(models.Model):
             logger.warning("Trying to retrieve data value by name with no args")
         return None
 
-    ''' 
+    '''
     Transfers the given parameter to the next round.  If parameter isn't set,
-    transfer all parameters to the next round.  If this isn't desired behavior for
+    transfer all parameters to the next round.
+    FIXME: If this ends up being surprising or isn't desired behavior for
     common use cases, revisit and remove.
     '''
     def transfer_to_next_round(self, parameter=None, value=None, transfer_existing_value=True):

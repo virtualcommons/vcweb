@@ -64,6 +64,9 @@ class ForestryGameLogicTest(BaseVcwebTest):
             '''
             self.failUnlessEqual(GroupRoundDataValue.objects.count(), 4)
 
+    def test_fail(self):
+        self.failIf(True)
+
 class ForestryViewsTest(BaseVcwebTest):
 
     def test_get_template(self):
