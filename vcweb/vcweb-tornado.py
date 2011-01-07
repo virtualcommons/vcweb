@@ -20,7 +20,7 @@ logger = logging.getLogger('vcweb.tornad.io')
 
 participants = set()
 
-''' 
+'''
 currently unused, would it be useful to dangle some handlers on specific
 tornado-handled URLs to return JSON objs, i.e., handled outside of Django?
 '''
@@ -37,8 +37,8 @@ class ChatHandler(SocketIOHandler):
         to route this guy to
         '''
 
-        logger.debug("args are: %s" % args)
-        logger.debug("kwargs are: %s" % kwargs)
+        logger.debug("args are: %s" % str(args))
+        logger.debug("kwargs are: %s" % str(kwargs))
 
         self.send("Welcome!")
         participants.add(self)
@@ -58,7 +58,7 @@ defaultRoute = ChatHandler.routes("socket.io/*")
 
 #configure the Tornado application
 application = tornado.web.Application(
-    [defaultRoute], 
+    [(r'/', IndexHandler), defaultRoute], 
     enabled_protocols = ['websocket', 'flashsocket', 'xhr-multipart', 'xhr-polling', 'jsonp-polling'],
     flash_policy_port = 8043,
     socket_io_port = 8888

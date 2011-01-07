@@ -4,7 +4,7 @@
 <script src="http://cdn.socket.io/stable/socket.io.js"></script>
 <script>
     $(document).ready(function() {
-        var s = new io.Socket("localhost", {port: 8888});
+        var s = new io.Socket("libai.la.asu.edu", {port: 8888});
         s.connect();
         
         s.addEvent('connect', function() {
