@@ -9,13 +9,21 @@ import sys
 
 sys.path.append(os.path.abspath('..'))
 
-
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
-
 from vcweb.core.models import *
+
+import logging
+
+logger = logging.getLogger('vcweb.tornad.io')
+
+
 
 participants = set()
 
+''' 
+currently unused, would it be useful to dangle some handlers on specific
+tornado-handled URLs to return JSON objs, i.e., handled outside of Django?
+'''
 class IndexHandler(tornado.web.RequestHandler):
     """Regular HTTP handler to serve the chatroom page"""
     def get(self):
@@ -28,10 +36,15 @@ class ChatHandler(SocketIOHandler):
         ''' parse args / kwargs for participant session info so we know which group
         to route this guy to
         '''
+
+        logger.debug("args are: %s" % args)
+        logger.debug("kwargs are: %s" % kwargs)
+
         self.send("Welcome!")
         participants.add(self)
 
     def on_message(self, message):
+        ''' message should be a fully parsed Python object from the incoming JSON '''
         for p in participants:
             p.send(message)
 
@@ -41,14 +54,13 @@ class ChatHandler(SocketIOHandler):
             p.send("A user has left.")
 
 #use the routes classmethod to build the correct resource
-chatRoute = ChatHandler.routes("socket.io/*")
+defaultRoute = ChatHandler.routes("socket.io/*")
 
 #configure the Tornado application
 application = tornado.web.Application(
-    [(r"/", IndexHandler), chatRoute], 
-    enabled_protocols = ['websocket', 'flashsocket', 'xhr-multipart', 'xhr-polling'],
+    [defaultRoute], 
+    enabled_protocols = ['websocket', 'flashsocket', 'xhr-multipart', 'xhr-polling', 'jsonp-polling'],
     flash_policy_port = 8043,
-    flash_policy_file = '/etc/lighttpd/flashpolicy.xml',
     socket_io_port = 8888
 )
 
