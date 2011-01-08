@@ -2,17 +2,19 @@
 <head>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 <script src="http://cdn.socket.io/stable/socket.io.js"></script>
-<!-- 
-  TODO: embed participant id, experiment id, and group id in each page,
-  - and then embed them in each send
-   -->
 <script>
     $(document).ready(function() {
         var s = new io.Socket("libai.la.asu.edu", {port: 8888});
         s.connect();
         
         s.on('connect', function() {
-            s.send('New participant joined');
+            var connectJsonEvent = [{
+                "type": "connect",
+                "participant_id": 1,
+                "experiment_id": 1,
+                "group_id": 1
+            }];
+            s.send(connectJsonEvent);
         });
         
         s.on('message', function(data) {
@@ -38,7 +40,7 @@
 </head>
 <body>
 <h3>Chat!</h3>
-<p>(Only works on Firefox currently)</p>
+<p>(Only tested in Chrome)</p>
 <div id="chat" style="width: 60em; height: 20em; overflow:auto; border: 1px solid black">
 </div>
 <form id="chatform">

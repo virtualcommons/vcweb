@@ -16,9 +16,9 @@ import logging
 
 logger = logging.getLogger('vcweb.tornad.io')
 
-handlers = set()
-participants = []
 
+handlerDict = {}
+handlers = set()
 
 '''
 need something to listen on one amqp exchange/channel for server-bound
@@ -47,20 +47,25 @@ class ChatHandler(SocketIOHandler):
         logger.debug("args are: %s" % str(args))
         logger.debug("kwargs are: %s" % str(kwargs))
 
-        number_of_participants = len(participants) + 1
-        self.send("Welcome!  There are currently %s members logged in." % number_of_participants)
         handlers.add(self)
-        participants.append(Participant.objects.get(pk=number_of_participants))
+        number_of_participants = len(handlers) 
+        self.send("Welcome!  There are currently %s members logged in." % number_of_participants)
 
     def on_message(self, message):
         ''' message should be a fully parsed Python object from the incoming JSON '''
-        logger.debug("sending message %s from %s" % (message, self))
-        for (handler, participant) in zip(handlers, participants):
-            handler.send('Participant %s says %s' % (participant, message))
+        logger.debug("received message %s" % message)
+        if message['type'] == 'connect':
+            handlerDict[self] = ParticipantGroupRelationship.objects.get(participant__pk=message['participant_id'],
+                    group__pk=message['group_id'])
+
+        
+        for handler, participant in handlerDict.items():
+            handler.send('Participant %s says %s' % (Participant.objects.get(pk=message['participant_id']), message))
 
     def on_close(self):
         logger.debug("removing %s" % self)
         handlers.remove(self)
+        del handlerDict[self]
         for handler in handlers:
             handler.send("A user has left.")
 
