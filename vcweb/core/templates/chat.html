@@ -2,36 +2,47 @@
 <head>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 <script src="http://cdn.socket.io/stable/socket.io.js"></script>
+<!-- 
+  TODO: embed participant id, experiment id, and group id in each page,
+  - and then embed them in each send
+   -->
 <script>
     $(document).ready(function() {
         var s = new io.Socket("libai.la.asu.edu", {port: 8888});
         s.connect();
         
-        s.addEvent('connect', function() {
+        s.on('connect', function() {
             s.send('New participant joined');
         });
         
-        s.addEvent('message', function(data) {
+        s.on('message', function(data) {
             $("#chat").append("<div>" + data + "</div>");
+        });
+
+        s.on('disconnect', function(data) {
+            console.log("Disconnected with " + data);
+            s.connect();
         });
 
         //send the message when submit is clicked
         $('#chatform').submit(function (evt) {
             var line = $('#chatform [type=text]').val()
             $('#chatform [type=text]').val('')
+            console.log("sending line: " + line);
             s.send(line);
             return false;
         });
+        $('#chattext').focus();
     });
 </script>
 </head>
 <body>
 <h3>Chat!</h3>
-<p>(Only tested in Chrome)</p>
+<p>(Only works on Firefox currently)</p>
 <div id="chat" style="width: 60em; height: 20em; overflow:auto; border: 1px solid black">
 </div>
 <form id="chatform">
-<input type="text" />
+<input id='chattext' type="text" />
 <input type="submit" />
 </form>
 </body>

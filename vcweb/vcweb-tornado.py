@@ -16,9 +16,16 @@ import logging
 
 logger = logging.getLogger('vcweb.tornad.io')
 
+handlers = set()
+participants = []
 
 
-participants = set()
+'''
+need something to listen on one amqp exchange/channel for server-bound
+messages, and another to listen on another amqp exchange/channel for
+client-bound messages
+'''
+
 
 '''
 currently unused, would it be useful to dangle some handlers on specific
@@ -27,7 +34,7 @@ tornado-handled URLs to return JSON objs, i.e., handled outside of Django?
 class IndexHandler(tornado.web.RequestHandler):
     """Regular HTTP handler to serve the chatroom page"""
     def get(self):
-        self.render("index.html")
+        self.render("chat.html")
 
 class ChatHandler(SocketIOHandler):
     """Socket.IO handler"""
@@ -40,29 +47,33 @@ class ChatHandler(SocketIOHandler):
         logger.debug("args are: %s" % str(args))
         logger.debug("kwargs are: %s" % str(kwargs))
 
-        self.send("Welcome!")
-        participants.add(self)
+        number_of_participants = len(participants) + 1
+        self.send("Welcome!  There are currently %s members logged in." % number_of_participants)
+        handlers.add(self)
+        participants.append(Participant.objects.get(pk=number_of_participants))
 
     def on_message(self, message):
         ''' message should be a fully parsed Python object from the incoming JSON '''
-        for p in participants:
-            p.send(message)
+        logger.debug("sending message %s from %s" % (message, self))
+        for (handler, participant) in zip(handlers, participants):
+            handler.send('Participant %s says %s' % (participant, message))
 
     def on_close(self):
-        participants.remove(self)
-        for p in participants:
-            p.send("A user has left.")
+        logger.debug("removing %s" % self)
+        handlers.remove(self)
+        for handler in handlers:
+            handler.send("A user has left.")
 
-#use the routes classmethod to build the correct resource
+# use the routes classmethod to build the correct resource
 defaultRoute = ChatHandler.routes("socket.io/*")
 
 #configure the Tornado application
 application = tornado.web.Application(
-    [(r'/', IndexHandler), defaultRoute], 
-    enabled_protocols = ['websocket', 'flashsocket', 'xhr-multipart', 'xhr-polling', 'jsonp-polling'],
+    [(r'/', IndexHandler), defaultRoute],
+    enabled_protocols = ['websocket', 'flashsocket', 'xhr-multipart', 'xhr-polling'],
     flash_policy_port = 8043,
     socket_io_port = 8888
 )
 
 if __name__ == "__main__":
-    socketio_server = SocketIOServer(application) #spin up the server
+    socketio_server = SocketIOServer(application)

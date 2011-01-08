@@ -4,3 +4,4 @@ django-celery
 tornado
 SocketTornad.IO
 psycopg2
+orbited
