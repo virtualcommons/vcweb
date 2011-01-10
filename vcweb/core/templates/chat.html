@@ -1,19 +1,19 @@
 <html>
 <head>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
-<script src="http://cdn.socket.io/stable/socket.io.js"></script>
+<script src="/static/js/socket.io.js"></script>
 <script>
     $(document).ready(function() {
         var s = new io.Socket("libai.la.asu.edu", {port: 8888});
         s.connect();
         
         s.on('connect', function() {
-            var connectJsonEvent = [{
+            var connectJsonEvent = {
                 "type": "connect",
                 "participant_id": 1,
                 "experiment_id": 1,
                 "group_id": 1
-            }];
+            };
             s.send(connectJsonEvent);
         });
         
@@ -31,7 +31,14 @@
             var line = $('#chatform [type=text]').val()
             $('#chatform [type=text]').val('')
             console.log("sending line: " + line);
-            s.send(line);
+            var messageJsonEvent = {
+                "type": "message",
+                "participant_id": 1,
+                "experiment_id": 1,
+                "group_id": 1,
+                "message": line
+            };
+            s.send(messageJsonEvent);
             return false;
         });
         $('#chattext').focus();

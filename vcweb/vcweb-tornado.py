@@ -17,8 +17,16 @@ import logging
 logger = logging.getLogger('vcweb.tornad.io')
 
 
-handlerDict = {}
-handlers = set()
+'''
+mapping of participant_group_relationship pks to tuples (socket.io handler, participant_group_relationship)
+Map<Integer, (SocketIOHandler, ParticipantGroupRelationship)
+'''
+participantsToHandlers = {}
+handlersToParticipants = {}
+
+def convert(message_dict, **kwargs):
+    pass
+
 
 '''
 need something to listen on one amqp exchange/channel for server-bound
@@ -36,6 +44,10 @@ class IndexHandler(tornado.web.RequestHandler):
     def get(self):
         self.render("chat.html")
 
+class JsHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.render("static/js/socket.io.js")
+
 class ChatHandler(SocketIOHandler):
     """Socket.IO handler"""
 
@@ -46,35 +58,38 @@ class ChatHandler(SocketIOHandler):
 
         logger.debug("args are: %s" % str(args))
         logger.debug("kwargs are: %s" % str(kwargs))
-
-        handlers.add(self)
-        number_of_participants = len(handlers) 
+        number_of_participants = len(participantsToHandlers) + 1
         self.send("Welcome!  There are currently %s members logged in." % number_of_participants)
 
     def on_message(self, message):
-        ''' message should be a fully parsed Python object from the incoming JSON '''
+        ''' message is a Python dict converted via simplejson from the incoming JSON '''
         logger.debug("received message %s" % message)
         if message['type'] == 'connect':
-            handlerDict[self] = ParticipantGroupRelationship.objects.get(participant__pk=message['participant_id'],
+            participant_group_rel = ParticipantGroupRelationship.objects.get(participant__pk=message['participant_id'],
                     group__pk=message['group_id'])
+            if participant_group_rel.pk in participantsToHandlers:
+                existing_handler = participantsToHandlers[participant_group_rel.pk]
+                logger.debug("removing existing participant handler %s" %
+                        existing_handler)
+                existing_handler.on_close()
+            participantsToHandlers[participant_group_rel.pk] = self
+            handlersToParticipants[self] = participant_group_rel
+            message['message'] = "Participant %s joined group %s." % (participant_group_rel.participant, participant_group_rel.group)
 
         
-        for handler, participant in handlerDict.items():
-            handler.send('Participant %s says %s' % (Participant.objects.get(pk=message['participant_id']), message))
+        for participant_group_rel_pk, handler in participantsToHandlers.items():
+            handler.send('Participant %s: %s' % (Participant.objects.get(pk=message['participant_id']), message['message']))
 
     def on_close(self):
         logger.debug("removing %s" % self)
-        handlers.remove(self)
-        del handlerDict[self]
-        for handler in handlers:
-            handler.send("A user has left.")
+        del handlersToParticipants[self]
 
 # use the routes classmethod to build the correct resource
 defaultRoute = ChatHandler.routes("socket.io/*")
 
 #configure the Tornado application
 application = tornado.web.Application(
-    [(r'/', IndexHandler), defaultRoute],
+    [(r'/', IndexHandler), (r'/static/js/socket.io.js', JsHandler), defaultRoute],
     enabled_protocols = ['websocket', 'flashsocket', 'xhr-multipart', 'xhr-polling'],
     flash_policy_port = 8043,
     socket_io_port = 8888
