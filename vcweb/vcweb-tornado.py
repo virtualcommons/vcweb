@@ -21,13 +21,15 @@ logger = logging.getLogger('vcweb.tornad.io')
 mapping of participant_group_relationship pks to tuples (socket.io handler, participant_group_relationship)
 Map<Integer, (SocketIOHandler, ParticipantGroupRelationship)
 '''
-participantsToHandlers = {}
-handlersToParticipants = {}
+participant_id_to_handler = {}
+handler_to_participant_group_relationship = {}
 
-def convert(message_dict, **kwargs):
-    pass
+class Struct:
+    def __init__(self, **attributes):
+        self.__dict__.update(attributes)
 
-
+def to_event(message):
+    return Struct(**message)
 '''
 need something to listen on one amqp exchange/channel for server-bound
 messages, and another to listen on another amqp exchange/channel for
@@ -50,31 +52,37 @@ class ChatHandler(SocketIOHandler):
 
         logger.debug("args are: %s" % str(args))
         logger.debug("kwargs are: %s" % str(kwargs))
-        number_of_participants = len(participantsToHandlers) + 1
+        number_of_participants = len(participant_id_to_handler) + 1
         self.send("Welcome!  There are currently %s members logged in." % number_of_participants)
 
     def on_message(self, message):
-        ''' message is a Python dict converted via simplejson from the incoming JSON '''
+        ''' message is a Python dict via simplejson '''
         logger.debug("received message %s" % message)
-        if message['type'] == 'connect':
-            participant_group_rel = ParticipantGroupRelationship.objects.get(participant__pk=message['participant_id'],
-                    group__pk=message['group_id'])
-            if participant_group_rel.pk in participantsToHandlers:
-                existing_handler = participantsToHandlers[participant_group_rel.pk]
+        event = to_event(message)
+        if event.type == 'connect':
+            participant_group_rel = ParticipantGroupRelationship.objects.get(participant__pk=event.participant_id,
+                    group__pk=event.group_id)
+            if participant_group_rel.pk in participant_id_to_handler:
+                existing_handler = participant_id_to_handler[participant_group_rel.pk]
                 logger.debug("removing existing participant handler %s" %
                         existing_handler)
                 existing_handler.on_close()
-            participantsToHandlers[participant_group_rel.pk] = self
-            handlersToParticipants[self] = participant_group_rel
-            message['message'] = "Participant %s joined group %s." % (participant_group_rel.participant, participant_group_rel.group)
+            participant_id_to_handler[participant_group_rel.pk] = self
+            handler_to_participant_group_relationship[self] = participant_group_rel
+            event.message = "Participant %s joined group %s." % (participant_group_rel.participant, participant_group_rel.group)
 
         
-        for participant_group_rel_pk, handler in participantsToHandlers.items():
-            handler.send('Participant %s: %s' % (Participant.objects.get(pk=message['participant_id']), message['message']))
+        for participant_group_rel_pk, handler in participant_id_to_handler.items():
+            handler.send('Participant %s: %s' % (Participant.objects.get(pk=event.participant_id), event.message))
 
     def on_close(self):
-        logger.debug("removing %s" % self)
-        del handlersToParticipants[self]
+        logger.debug("closing %s" % self)
+        participant = handler_to_participant_group_relationship[self]
+        try:
+            del participant_id_to_handler[participant.pk] 
+            del handler_to_participant_group_relationship[self]
+        except KeyError as e:
+            logger.error("Couldn't fully remove self %s - key: %s" % (self, e))
 
 # use the routes classmethod to build the correct resource
 defaultRoute = ChatHandler.routes("socket.io/*")
