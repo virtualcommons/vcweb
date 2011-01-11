@@ -90,7 +90,7 @@ defaultRoute = ChatHandler.routes("socket.io/*")
 #configure the Tornado application
 application = tornado.web.Application(
     [(r'/', IndexHandler), (r'/static/js/socket.io.js', JsHandler), defaultRoute],
-    enabled_protocols = ['websocket', 'flashsocket', 'xhr-multipart', 'xhr-polling'],
+    enabled_protocols = ['websocket', 'xhr-multipart', 'xhr-polling'],
     flash_policy_port = 8043,
     socket_io_port = 8888
 )
