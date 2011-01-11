@@ -35,18 +35,10 @@ client-bound messages
 '''
 
 
-'''
-currently unused, would it be useful to dangle some handlers on specific
-tornado-handled URLs to return JSON objs, i.e., handled outside of Django?
-'''
 class IndexHandler(tornado.web.RequestHandler):
     """Regular HTTP handler to serve the chatroom page"""
     def get(self):
         self.render("chat.html")
-
-class JsHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.render("static/js/socket.io.js")
 
 class ChatHandler(SocketIOHandler):
     """Socket.IO handler"""
@@ -89,10 +81,12 @@ defaultRoute = ChatHandler.routes("socket.io/*")
 
 #configure the Tornado application
 application = tornado.web.Application(
-    [(r'/', IndexHandler), (r'/static/js/socket.io.js', JsHandler), defaultRoute],
+    [(r'/', IndexHandler), defaultRoute],
     enabled_protocols = ['websocket', 'xhr-multipart', 'xhr-polling'],
     flash_policy_port = 8043,
-    socket_io_port = 8888
+    socket_io_port = 8888,
+# only needed for standalone testing
+    static_path = os.path.join(os.path.dirname(__file__), "static"),
 )
 
 if __name__ == "__main__":
