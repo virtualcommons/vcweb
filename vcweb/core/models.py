@@ -43,25 +43,23 @@ signals.second_tick.connect(second_tick_handler, sender=None)
 class RegistrationManager(models.Manager):
     """
     Custom manager for the ``RegistrationProfile`` model.
-    
     The methods defined here provide shortcuts for account creation
     and activation (including generation and emailing of activation
     keys), and for cleaning out expired inactive accounts.
-    
     """
     def activate_user(self, activation_key):
         """
         Validate an activation key and activate the corresponding
         ``User`` if valid.
-        
+
         If the key is valid and has not expired, return the ``User``
         after activating.
-        
+
         If the key is not valid or has expired, return ``False``.
-        
+
         If the key is valid but the ``User`` is already active,
         return ``False``.
-        
+
         To prevent reactivation of an account which has been
         deactivated by site administrators, the activation key is
         reset to the string constant ``RegistrationProfile.ACTIVATED``
@@ -94,7 +92,7 @@ class RegistrationManager(models.Manager):
 
         By default, an activation email will be sent to the new
         user. To disable this, pass ``send_email=False``.
-        
+
         """
         new_user = User.objects.create_user(username, email, password)
         new_user.is_active = False
@@ -112,11 +110,11 @@ class RegistrationManager(models.Manager):
         """
         Create a ``RegistrationProfile`` for a given
         ``User``, and return the ``RegistrationProfile``.
-        
+
         The activation key for the ``RegistrationProfile`` will be a
         SHA1 hash, generated from a combination of the ``User``'s
         username and a random salt.
-        
+
         """
 
         salt = hashlib.sha1(str(random.random())).hexdigest()[:5]
@@ -128,41 +126,41 @@ class RegistrationManager(models.Manager):
         """
         Remove expired instances of ``RegistrationProfile`` and their
         associated ``User``s.
-        
+
         Accounts to be deleted are identified by searching for
         instances of ``RegistrationProfile`` with expired activation
         keys, and then checking to see if their associated ``User``
         instances have the field ``is_active`` set to ``False``; any
         ``User`` who is both inactive and has an expired activation
         key will be deleted.
-        
+
         It is recommended that this method be executed regularly as
         part of your routine site maintenance; this application
         provides a custom management command which will call this
         method, accessible as ``manage.py cleanupregistration``.
-        
+
         Regularly clearing out accounts which have never been
         activated serves two useful purposes:
-        
+
         1. It alleviates the ocasional need to reset a
            ``RegistrationProfile`` and/or re-send an activation email
            when a user does not receive or does not act upon the
            initial activation email; since the account will be
            deleted, the user will be able to simply re-register and
            receive a new activation key.
-        
+
         2. It prevents the possibility of a malicious user registering
            one or more accounts and never activating them (thus
            denying the use of those usernames to anyone else); since
            those accounts will be deleted, the usernames will become
            available for use again.
-        
+
         If you have a troublesome ``User`` and wish to disable their
         account while keeping it in the database, simply delete the
         associated ``RegistrationProfile``; an inactive ``User`` which
         does not have an associated ``RegistrationProfile`` will not
         be deleted.
-        
+
         """
         for profile in self.all():
             if profile.activation_key_expired():
@@ -175,17 +173,17 @@ class RegistrationProfile(models.Model):
     """
     A simple profile which stores an activation key for use during
     user account registration.
-    
+
     Generally, you will not want to interact directly with instances
     of this model; the provided manager includes methods
     for creating and activating new accounts, as well as for cleaning
     out accounts which have never been activated.
-    
+
     While it is possible to use this model as the value of the
     ``AUTH_PROFILE_MODULE`` setting, it's not recommended that you do
     so. This model's sole purpose is to store data temporarily during
     account registration and activation.
-    
+
     """
     ACTIVATED = u"ALREADY_ACTIVATED"
 
@@ -285,8 +283,9 @@ class ExperimentMetadataManager(models.Manager):
         return self.get(namespace=key)
 
 """
-ExperimentMetadata contains records for each type of supported and implement experiment.  A single app could add multiple experiment metadata records 
-but they should be closely related.  
+ExperimentMetadata contains records for each type of supported and implement
+experiment.  A single app could add multiple experiment metadata records but
+they should be closely related.
 """
 class ExperimentMetadata(models.Model):
     title = models.CharField(max_length=255)
@@ -420,17 +419,18 @@ class Experiment(models.Model):
     """ how often the experiment_metadata server should tick. """
     tick_duration = models.CharField(max_length=32, null=True, blank=True)
 
-    """ total elapsed time in seconds since this experiment_metadata was started, 
-    incremented by the heartbeat monitor. """
+    """
+    total elapsed time in seconds since this experiment_metadata was
+    started, incremented by the heartbeat monitor.
+    """
     total_elapsed_time = models.PositiveIntegerField(default=0)
     """ current round start time """
     current_round_start_time = models.DateTimeField(null=True, blank=True)
     """ elapsed time in seconds for the current round. """
     current_round_elapsed_time = models.PositiveIntegerField(default=0)
     """
-    Experimenter driven experiments have checkpoints where the experimenter needs to
-     explicitly signal the system to 
-    move to the next round or stage.
+    Experimenter driven experiments have checkpoints where the experimenter
+    needs to explicitly signal the system to move to the next round or stage.
     """
     is_experimenter_driven = models.BooleanField(default=True)
     """ name of the AMQP exchange hosting this experiment """
@@ -589,7 +589,7 @@ class RoundConfiguration(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     """
-    How long should this round execute before advancing to the next?  
+    How long should this round execute before advancing to the next?
     Interpreted as whole seconds.
     """
     duration = models.PositiveIntegerField(default=0,
@@ -602,13 +602,13 @@ class RoundConfiguration(models.Model):
                                   choices=ROUND_TYPE_CHOICES,
                                   default=BASIC)
     """
-    name of a custom template to be used this round.  
-    e.g., if set to quiz_2.html in the forestry experiment app, this would be loaded 
-    from forestry/templates/forestry/quiz_2.html 
+    name of a custom template to be used this round.  e.g., if set to
+    quiz_2.html in the forestry experiment app, this would be loaded from
+    forestry/templates/forestry/quiz_2.html
     """
     template_name = models.CharField(max_length=64, null=True, blank=True,
-                                            help_text='''The name of the template to use to render when executing this round.  
-                                            This file should exist in your templates directory as your-experiment-namespace/template-name.html, 
+                                            help_text='''The name of the template to use to render when executing this round.
+                                            This file should exist in your templates directory as your-experiment-namespace/template-name.html,
                                             e.g., if set to foo.html, vcweb will look for templates/forestry/foo.html''')
 
     @property
@@ -837,7 +837,7 @@ class Group(models.Model):
         update_dict = { parameter.value_field_name : models.F(parameter.value_field_name) + amount }
         self.activity_log.create(round_configuration=self.current_round,
                 log_message="adding %s to this group's %s parameter" % (amount, parameter))
-        ''' 
+        '''
         vs
         GroupRoundDataValue.objects.filter(group_round_data=self.current_round_data, parameter=parameter).update(**update_dict)
         '''
@@ -847,7 +847,7 @@ class Group(models.Model):
         '''
         data_value = self.current_round_data.data_values.get(parameter=parameter)
         data_value.value += amount
-        data_value.save() 
+        data_value.save()
         '''
 
 
@@ -1039,20 +1039,7 @@ class ParticipantExperimentRelationship(models.Model):
     def __unicode__(self):
         return u"Experiment {0} - participant {1} (created {2})".format(self.experiment, self.participant, self.date_created)
 
-class ChatMessage(models.Model):
-    participant = models.ForeignKey(Participant, related_name='chat_messages')
-    message = models.CharField(max_length=512)
-    """ if set, this is a targeted message.  If null, this is a broadcast message to the entire group """
-    target_participant = models.ForeignKey(Participant, null=True, blank=True, related_name='targets')
-    target_group = models.ForeignKey(Group, null=True, blank=True)
-    date_created = models.DateTimeField(auto_now_add=True)
-    round_configuration = models.ForeignKey(RoundConfiguration, related_name='chat_messages')
-    experiment = models.ForeignKey(Experiment, related_name='chat_messages')
 
-    def __unicode__(self):
-        """ return this participant's sequence number combined with the message """
-        participant_number = self.participant.get_participant_number(self.experiment)
-        return u"{0}: {1}".format(participant_number, self.message)
 
 
 class ParticipantGroupRelationshipManager(models.Manager):
@@ -1092,6 +1079,21 @@ class ParticipantGroupRelationship(models.Model):
     class Meta:
         ordering = ['participant_number', 'participant']
 
+class ChatMessage(models.Model):
+    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='chat_messages')
+    message = models.CharField(max_length=512)
+    """ if set, this is a targeted message to the other participant in this group.  If null, this is a broadcast message to the entire group """
+    target_participant = models.ForeignKey(ParticipantGroupRelationship, null=True, blank=True, related_name='targets')
+    date_created = models.DateTimeField(auto_now_add=True)
+    ''' the round in which this message was sent '''
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='chat_messages')
+    ''' the experiment in which this message was sent, not strictly necessary '''
+    experiment = models.ForeignKey(Experiment, related_name='chat_messages')
+
+    def __unicode__(self):
+        """ return this participant's sequence number combined with the message """
+        participant_number = self.participant_group_relationship.participant_number
+        return u"{0}: {1}".format(participant_number, self.message)
 """
 The particular participant data value for a given ParticipantRoundData (round + participant entity)
 """

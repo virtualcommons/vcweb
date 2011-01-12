@@ -10,7 +10,8 @@ env.deploy_user = 'vcweb'
 env.deploy_group = 'commons'
 env.virtualenv_path = '/opt/virtualenvs/%(project_name)s' % env
 env.deploy_path = '/opt/webapps/virtualcommons/'
-env.project_path = env.deploy_path + env.project_name
+''' default to current working directory '''
+env.project_path = os.path.dirname(__file__)
 env.hosts = ['localhost']
 env.hg_url = 'http://virtualcommons.hg.sourceforge.net:8000/hgroot/virtualcommons/virtualcommons'
 env.apache = 'httpd'
@@ -29,7 +30,7 @@ def syncdb():
         for command in syncdb_commands:
             _virtualenv(command)
 
-def virtualenv():
+def setup_virtualenv():
     """ Setup a fresh virtualenv """
     run('virtualenv -p %(python)s --no-site-packages %(virtualenv_path)s;' % env)
 
@@ -62,9 +63,11 @@ def push():
 
 def dev():
     env.hosts =['dev.commons.asu.edu']
+    env.project_path = env.deploy_path + env.project_name
 
 def prod():
     env.hosts = ['vcweb.asu.edu']
+    env.project_path = env.deploy_path + env.project_name
 
 def loc():
     env.deploy_user = 'alllee'
@@ -72,7 +75,7 @@ def loc():
     env.hosts = ['localhost']
 
 def setup():
-    virtualenv()
+    setup_virtualenv()
     sudo('hg clone %(hg_url)s %(deploy_path)s' % env, pty=True, user=env.deploy_user)
     sudo('chown -R %(deploy_user)s:%(deploy_group)s %(deploy_path)s' % env, pty=True)
     sudo('chmod -R ug+rw %(deploy_path)s' % env, pty=True)
