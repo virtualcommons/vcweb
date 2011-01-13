@@ -53,7 +53,7 @@ def test():
     ''' runs tests on this local codebase, not the deployed codebase '''
     with cd(os.getcwd()):
         with hide('stdout'):
-            _virtualenv('python manage.py test' % env)
+            _virtualenv('%(python)s manage.py test' % env)
 
 def server(ip="149.169.203.115", port=8080):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
@@ -63,11 +63,9 @@ def push():
 
 def dev():
     env.hosts =['dev.commons.asu.edu']
-    env.project_path = env.deploy_path + env.project_name
 
 def prod():
     env.hosts = ['vcweb.asu.edu']
-    env.project_path = env.deploy_path + env.project_name
 
 def loc():
     env.deploy_user = 'alllee'
@@ -84,6 +82,7 @@ def setup():
 
 def deploy():
     """ deploys to an already setup environment """
+    env.project_path = env.deploy_path + env.project_name
     push()
     if confirm("Deploy to %(hosts)s ?" % env):
         with cd(env.project_path):

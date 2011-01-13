@@ -1066,7 +1066,7 @@ round in which they joined the group, and the datetime that they joined the grou
 class ParticipantGroupRelationship(models.Model):
     participant_number = models.PositiveIntegerField()
     participant = models.ForeignKey(Participant)
-    group = models.ForeignKey(Group)
+    group = models.ForeignKey(Group, related_name = 'participant_group_relationships')
     round_joined = models.ForeignKey(RoundConfiguration)
     date_joined = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
