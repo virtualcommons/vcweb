@@ -1,5 +1,5 @@
 """
-vcweb.core views 
+vcweb.core views
 """
 
 from django.contrib import auth
@@ -11,7 +11,7 @@ from vcweb.core.forms import RegistrationForm, LoginForm
 from vcweb.core.models import Participant, Experiment, Experimenter, Institution
 import logging
 
-logger = logging.getLogger("core-views")
+logger = logging.getLogger(__name__)
 
 """ account registration / login / logout / profile views """
 

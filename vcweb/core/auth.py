@@ -1,8 +1,7 @@
 '''
 
-General VCWEB Authentication backend.  There are a few use cases needed:
-
-1. Users can login as Experimenters or Participants.  
+General VCWEB authentication backend to allow users to login with their email
+as their username.
 
 code adapted from http://djangosnippets.org/snippets/74/
 and http://scottbarnham.com/blog/2008/08/21/extending-the-django-user-model-with-inheritance/
@@ -15,7 +14,7 @@ from django.contrib.auth.models import User
 from django.core.validators import email_re
 import logging
 
-logger = logging.getLogger('vcweb.core.auth')
+logger = logging.getLogger(__name__)
 
 # FIXME: check for and handle Participant experiment auth codes.
 class AuthenticationBackend(ModelBackend):

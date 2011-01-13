@@ -1,15 +1,8 @@
-"""
-This file demonstrates two different styles of tests (one doctest and one
-unittest). These will both pass when you run "manage.py test".
-
-Replace these with more appropriate tests for your application.
-"""
-
 from vcweb.core.models import RoundConfiguration,Parameter,ParticipantDataValue,ParticipantExperimentRelationship,GroupRoundDataValue
 from vcweb.core.tests import BaseVcwebTest
 import logging
 
-logger = logging.getLogger('vcweb.forestry.tests')
+logger = logging.getLogger(__name__)
 
 class ForestryGameLogicTest(BaseVcwebTest):
 

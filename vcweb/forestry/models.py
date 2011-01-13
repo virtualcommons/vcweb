@@ -2,7 +2,7 @@ from vcweb.core.models import ExperimentMetadata, Parameter
 
 import logging
 
-logger = logging.getLogger('vcweb.forestry.models')
+logger = logging.getLogger(__name__)
 
 # Create your models here.
 def forestry_second_tick():

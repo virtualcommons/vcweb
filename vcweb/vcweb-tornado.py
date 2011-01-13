@@ -7,7 +7,8 @@ from tornad_io import SocketIOServer
 import os
 import sys
 import logging
-logger = logging.getLogger('vcweb.tornado')
+
+logger = logging.getLogger('vcweb.sockettornad.io')
 
 sys.path.append(os.path.abspath('..'))
 
@@ -18,28 +19,31 @@ from vcweb.core.models import *
 store mappings between beaker session ids and ParticipantGroupRelationship pks
 '''
 class SessionManager:
+    ''' associates beaker session ids with ParticipantGroupRelationship.pks '''
     session_id_to_participant = {}
-    participant_to_session = {}
+    ''' the reverse mapping, associates ParticipantGroupRelationship.pks with the beaker session '''
+    pgr_to_session = {}
 
     def get_participant(self, session):
         logger.debug("trying to retrieve participant group relationship for session id %s" % session)
-        logger.debug("maps are %s and %s" % (self.session_id_to_participant, self.participant_to_session))
+        logger.debug("maps are %s and %s" % (self.session_id_to_participant, self.pgr_to_session))
         return ParticipantGroupRelationship.objects.get(pk=self.session_id_to_participant[session.id])
 
     def add(self, session, participant_group_relationship):
         self.session_id_to_participant[session.id] = participant_group_relationship.pk
-        self.participant_to_session[participant_group_relationship.pk] = session
+        self.pgr_to_session[participant_group_relationship.pk] = session
 
     def remove(self, session):
         participant_group_pk = self.session_id_to_participant[session.id]
-        del self.participant_to_session[participant_group_pk]
+        del self.pgr_to_session[participant_group_pk]
         del self.session_id_to_participant[session.id]
 
     def sessions(self, group):
-        participant_ids = [ pgr.pk for pgr in group.participant_group_relationships.all() ]
-        for pgr_id in participant_ids:
-            if pgr_id in self.participant_to_session:
-                yield (pgr_id, self.participant_to_session[pgr_id])
+        pgr_ids = [ pgr.pk for pgr in group.participant_group_relationships.all() ]
+        for pgr_id in pgr_ids:
+            ''' only return currently connected sessions in this group '''
+            if pgr_id in self.pgr_to_session:
+                yield (pgr_id, self.pgr_to_session[pgr_id])
             pass
 
 class Struct:

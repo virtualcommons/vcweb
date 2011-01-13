@@ -16,10 +16,10 @@ import re
 
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
-logger = logging.getLogger('vcweb.core.models')
+logger = logging.getLogger(__name__)
 
 """
-Contains all data models used in the core as well as a number of helper functions.  
+Contains all data models used in the core as well as a number of helper functions.
 
 Is getting big / unwieldy.  Should try to refactor into smaller parts, but creating models directory has
 been painful due to circular imports.
@@ -28,7 +28,7 @@ been painful due to circular imports.
 """
 tick handlers.
 
-handles each second tick.  Might rethink this and use timed / delayed tasks in celery execute at the end of each round for 
+handles each second tick.  Might rethink this and use timed / delayed tasks in celery execute at the end of each round for
 controlled experiments and for longer-scale experiments use 1 minute granularity for performance sake.
 """
 def second_tick_handler(sender, time=None, **kwargs):

@@ -7,7 +7,7 @@ from vcweb.core.models import is_participant, Experiment, RoundConfiguration
 import logging
 
 
-logger = logging.getLogger('forestry.views')
+logger = logging.getLogger(__name__)
 
 @login_required
 def index(request):

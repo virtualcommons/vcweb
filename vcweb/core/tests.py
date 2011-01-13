@@ -5,7 +5,7 @@ from vcweb.core.models import Experiment, Experimenter, ExperimentConfiguration,
     RoundConfiguration, Parameter, RoundParameterValue, GroupActivityLog
 import logging
 
-logger = logging.getLogger('vcweb.core.tests')
+logger = logging.getLogger(__name__)
 
 """
 base class for vcweb.core tests, sets up test fixtures for participants,
