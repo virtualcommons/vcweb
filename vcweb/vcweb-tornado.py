@@ -18,22 +18,22 @@ from vcweb.core.models import *
 store mappings between beaker session ids and ParticipantGroupRelationship pks
 '''
 class SessionManager:
-    session_to_participant = {}
+    session_id_to_participant = {}
     participant_to_session = {}
 
     def get_participant(self, session):
         logger.debug("trying to retrieve participant group relationship for session id %s" % session)
-        logger.debug("maps are %s and %s" % (self.session_to_participant, self.participant_to_session))
-        return ParticipantGroupRelationship.objects.get(pk=self.session_to_participant[session.id])
+        logger.debug("maps are %s and %s" % (self.session_id_to_participant, self.participant_to_session))
+        return ParticipantGroupRelationship.objects.get(pk=self.session_id_to_participant[session.id])
 
     def add(self, session, participant_group_relationship):
-        self.session_to_participant[session.id] = participant_group_relationship.pk
+        self.session_id_to_participant[session.id] = participant_group_relationship.pk
         self.participant_to_session[participant_group_relationship.pk] = session
 
     def remove(self, session):
-        participant_group_pk = self.session_to_participant[session]
+        participant_group_pk = self.session_id_to_participant[session.id]
         del self.participant_to_session[participant_group_pk]
-        del self.session_to_participant[session.id]
+        del self.session_id_to_participant[session.id]
 
     def sessions(self, group):
         participant_ids = [ pgr.pk for pgr in group.participant_group_relationships.all() ]
@@ -99,7 +99,7 @@ class MessageHandler(SocketIOHandler):
 
     def on_close(self):
         logger.debug("closing %s" % self)
-        vcweb_session.remove(self.session.id)
+        session_manager.remove(self.session)
 
 def main():
     # use the routes classmethod to build the correct resource
