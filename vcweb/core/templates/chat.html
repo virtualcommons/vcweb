@@ -2,8 +2,12 @@
 <head>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 <script src="/static/js/socket.io.js"></script>
+<script type="text/javascript">
+    WEB_SOCKET_SWF_LOCATION="/static/flash/WebSocketMain.swf"
+</script>
 <script>
     $(document).ready(function() {
+
         var s = new io.Socket("libai.la.asu.edu", {port: 8888});
         s.connect();
         
@@ -46,8 +50,7 @@
 </script>
 </head>
 <body>
-<h3>Chat!</h3>
-<p>(Only tested in Chrome)</p>
+<h3>Chat Test</h3>
 <div id="chat" style="width: 60em; height: 20em; overflow:auto; border: 1px solid black">
 </div>
 <form id="chatform">

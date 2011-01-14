@@ -65,6 +65,11 @@ class IndexHandler(tornado.web.RequestHandler):
         self.render("chat.html")
 
 
+
+''' 
+FIXME: make this a class / instance var on MessageHandler? But then it forces us to
+type MessageHandler.session_manager instead of just session_manager...
+'''
 session_manager = SessionManager()
 
 class MessageHandler(SocketIOHandler):
@@ -111,8 +116,9 @@ def main():
     #configure the Tornado application
     application = tornado.web.Application(
             [(r'/', IndexHandler), messageRoute],
-            enabled_protocols=['websocket', 'xhr-multipart', 'xhr-polling'],
+            enabled_protocols=['websocket', 'flashsocket', 'xhr-multipart', 'xhr-polling'],
             flash_policy_port=8043,
+            flash_policy_file='/etc/nginx/flashpolicy.xml',
             socket_io_port=8888,
             # only needed for standalone testing
             static_path=os.path.join(os.path.dirname(__file__), "static"),
