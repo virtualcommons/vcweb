@@ -30,13 +30,21 @@ class SessionManager:
         return ParticipantGroupRelationship.objects.get(pk=self.session_id_to_participant[session.id])
 
     def add(self, session, participant_group_relationship):
+        if participant_group_relationship.pk in self.pgr_to_session:
+            logger.debug("participant already has a session, removing previous mappings.")
+            self.remove(self.pgr_to_session[participant_group_relationship.pk])
+
         self.session_id_to_participant[session.id] = participant_group_relationship.pk
         self.pgr_to_session[participant_group_relationship.pk] = session
 
     def remove(self, session):
-        participant_group_pk = self.session_id_to_participant[session.id]
-        del self.pgr_to_session[participant_group_pk]
-        del self.session_id_to_participant[session.id]
+        try:
+            participant_group_pk = self.session_id_to_participant[session.id]
+            del self.pgr_to_session[participant_group_pk]
+            del self.session_id_to_participant[session.id]
+        except KeyError, k:
+            logger.warn( "caught key error %s while trying to remove session %s" % (session, k) )
+            pass
 
     def sessions(self, group):
         pgr_ids = [ pgr.pk for pgr in group.participant_group_relationships.all() ]
