@@ -1,63 +1,36 @@
-<html>
-<head>
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
-<script src="/static/js/socket.io.js"></script>
-<script type="text/javascript">
-    WEB_SOCKET_SWF_LOCATION="/static/flash/WebSocketMain.swf"
-</script>
-<script>
-    $(document).ready(function() {
+{% extends "base-vcweb.html" %}
+{% include "includes/participant-nav-menu.inc" %}
 
-        var s = new io.Socket("libai.la.asu.edu", {port: 8888});
-        s.connect();
-        
-        s.on('connect', function() {
-            var connectJsonEvent = {
-                "type": "connect",
-                "participant_id": 1,
-                "experiment_id": 1,
-                "group_id": 1
-            };
-            s.send(connectJsonEvent);
-        });
-        
+{% block head %}
+{% include "includes/socket.io.inc" %}
+<script type="text/javascript">
+    $(function() {
+        var s = connect("libai.la.asu.edu", 8888);
         s.on('message', function(data) {
             $("#chat").append("<div>" + data + "</div>");
         });
 
-        s.on('disconnect', function(data) {
-            console.log("Disconnected with " + data);
-            s.connect();
-        });
-
         //send the message when submit is clicked
         $('#chatform').submit(function (evt) {
-            var line = $('#chatform [type=text]').val()
-            $('#chatform [type=text]').val('')
+            var line = $('#chattext').val()
+            $('#chattext').val('')
             console.log("sending line: " + line);
-            var messageJsonEvent = {
-                "type": "message",
-                "participant_id": 1,
-                "experiment_id": 1,
-                "group_id": 1,
-                "message": line
-            };
-            s.send(messageJsonEvent);
+            s.send(createMessageEvent(line));
             return false;
         });
         $('#chattext').focus();
     });
 </script>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
 <h3>Chat Test</h3>
-<div id="chat" style="width: 60em; height: 20em; overflow:auto; border: 1px solid black">
+<div id="chat" style="width: 60em; height: 20em; overflow:auto; border: 1px dashed black">
 </div>
 <form id="chatform">
 <input id='chattext' type="text" />
 <input type="submit" />
 </form>
-</body>
-</html>
+{% endblock %}
 
 

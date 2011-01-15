@@ -4,9 +4,8 @@ from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb.core.models import is_participant, Experiment, RoundConfiguration
+
 import logging
-
-
 logger = logging.getLogger(__name__)
 
 @login_required
