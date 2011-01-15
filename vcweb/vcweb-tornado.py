@@ -122,12 +122,15 @@ def main():
     # use the routes classmethod to build the correct resource
     messageRoute = MessageHandler.routes("socket.io/*")
     #configure the Tornado application
+    # currently only allow one command-line argument, the port to run on.
+    port = int(sys.argv[1]) if (len(sys.argv) > 1) else 8888
+
     application = tornado.web.Application(
             [(r'/', IndexHandler), messageRoute],
             enabled_protocols=['websocket', 'flashsocket', 'xhr-multipart', 'xhr-polling'],
             flash_policy_port=8043,
             flash_policy_file='/etc/nginx/flashpolicy.xml',
-            socket_io_port=8888,
+            socket_io_port=port,
             # only needed for standalone testing
             static_path=os.path.join(os.path.dirname(__file__), "static"),
             )

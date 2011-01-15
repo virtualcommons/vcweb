@@ -55,6 +55,9 @@ def test():
         with hide('stdout'):
             _virtualenv('%(python)s manage.py test' % env)
 
+def tornado(ip="149.169.203.115", port=8888):
+    local("{python} vcweb-tornado.py {port}".format(python=env.python, **locals()), capture=False)
+
 def server(ip="149.169.203.115", port=8080):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
 
