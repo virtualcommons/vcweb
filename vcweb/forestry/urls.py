@@ -9,5 +9,5 @@ urlpatterns = patterns('vcweb.forestry.views',
     url(r'configure/(?P<experiment_id>\d+)$', 'configure', name='configure'),
     url(r'(?P<experiment_id>\d+)/experimenter$', 'experimenter', name='experimenter'),
     url(r'(?P<experiment_id>\d+)', 'participate', name='participate'),
-
+    url(r'(?P<experiment_id>\d+)/instructions', 'instructions', name='instructions')
 )

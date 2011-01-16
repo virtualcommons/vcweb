@@ -53,8 +53,8 @@ def register(request):
             user.first_name = first_name
             user.last_name = last_name
             user.save()
-            participant = Participant(user=user)
-            participant.save()
+            participant = Participant.objects.create(user=user, institution=institution)
+            logger.debug("Creating new participant: %s" % participant)
             auth.login(request, auth.authenticate(username=email, password=password))
             return redirect('core:participant-index')
         else:
@@ -69,8 +69,8 @@ def account_profile(request):
     return render_to_response('registration/profile.html', RequestContext(request))
 
 
-""" 
-experimenter views 
+"""
+experimenter views
 FIXME: add has_perms authorization to ensure that only experimenters can access
 these.
 """

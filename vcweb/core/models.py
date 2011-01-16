@@ -487,7 +487,7 @@ class Experiment(models.Model):
 
     @property
     def current_round_template(self):
-        return "%s/%s" % (self.namespace, self.current_round.custom_template_name)
+        return self.current_round.template_path
 
     @property
     def current_round(self):

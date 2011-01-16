@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
-from vcweb.core.models import is_participant, Experiment, RoundConfiguration
+from vcweb.core.models import is_participant, is_experimenter, Experiment, RoundConfiguration
 
 import logging
 logger = logging.getLogger(__name__)
@@ -12,8 +12,12 @@ logger = logging.getLogger(__name__)
 def index(request):
     if is_participant(request.user):
         return render_to_response('forestry/index.html', RequestContext(request))
-    """ FIXME: should redirect to forestry-specific experimenter dashboard instead """
-    return redirect('core:experimenter-index')
+    elif is_experimenter(request.user):
+        ''' FIXME: should redirect to forestry-specific experimenter dashboard instead '''
+        return redirect('core:experimenter-index')
+    else:
+        logger.warn("user %s isn't an experimenter or participant" % request.user)
+        return redirect('core:index')
 
 @login_required
 def configure(request):
@@ -23,7 +27,7 @@ def configure(request):
 def experimenter(request, experiment_id=None):
     if experiment_id is None:
         logger.debug("No experiment id specified")
-        return redirect('index')
+        return redirect('forestry:index')
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
         return render_to_response('forestry/experimenter.html',
@@ -38,7 +42,7 @@ def experimenter(request, experiment_id=None):
 def participate(request, experiment_id=None):
     if experiment_id is None:
         logger.debug("No experiment id specified, redirecting to forestry index page.")
-        return redirect('index')
+        return redirect('forestry:index')
     try:
         participant = request.user.participant
     except AttributeError:
@@ -52,4 +56,4 @@ def participate(request, experiment_id=None):
                 context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
         logger.warning("No experiment with id [%s]" % experiment_id)
-        return redirect('index')
+        return redirect('forestry:index')
