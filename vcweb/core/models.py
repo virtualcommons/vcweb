@@ -1004,9 +1004,12 @@ class Participant(CommonsUser):
     def get_participant_number(self, experiment):
         return ParticipantGroupRelationship.objects.get_participant_number(experiment, self)
 
+    def get_participant_group_relationship(self, experiment):
+        return ParticipantGroupRelationship.objects.get_participant_group(experiment, self)
+
     def get_group(self, experiment):
         return ParticipantGroupRelationship.objects.get_group(experiment, self)
-#    objects = ParticipantManager()
+
     class Meta:
         ordering = ['user']
 

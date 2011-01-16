@@ -46,17 +46,10 @@ def participate(request, experiment_id=None):
         return redirect('index')
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
+        participant_group_relationship = participant.get_participant_group_relationship(experiment)
         return render_to_response(experiment.current_round_template,
-                                  { 'participant': participant, 'experiment' : experiment },
-                                  context_instance=RequestContext(request))
+                { 'experiment': experiment, 'participant_group': participant_group_relationship },
+                context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
         logger.warning("No experiment with id [%s]" % experiment_id)
         return redirect('index')
-
-def template_generator(default_template):
-    return lambda round_configuration: round_configuration.template_name if round_configuration.template_name else default_template
-
-
-
-
-
