@@ -485,6 +485,9 @@ class Experiment(models.Model):
     def get_round_configuration(self, sequence_number):
         return self.experiment_configuration.round_configurations.get(sequence_number=sequence_number)
 
+    def get_template_path(self, name):
+        return "%s/%s" % (self.namespace, name)
+
     @property
     def current_round_template(self):
         return self.current_round.template_path

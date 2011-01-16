@@ -80,7 +80,7 @@ def experimenter_index(request):
     try:
         experimenter = user.experimenter
         experiments = Experiment.objects.filter(experimenter=experimenter)
-        return render_to_response('experimenter-index.html', RequestContext(request, locals()))
+        return render_to_response('experimenter-index.html', locals(), RequestContext(request))
     except Experimenter.DoesNotExist:
         return redirect('home')
 
@@ -89,7 +89,7 @@ def configure(request, experiment_id=None):
     if experiment_id:
         experiment = Experiment.objects.get(pk=experiment_id)
     # lookup game instance id (or create a new one?)
-        return render_to_response('configure.html', RequestContext(request, locals()))
+        return render_to_response('configure.html', locals(), RequestContext(request))
     else:
         return redirect('home')
 
@@ -99,7 +99,7 @@ def start_experiment(request, experiment_id=None):
         try:
             experiment = Experiment.objects.get(pk=experiment_id)
             experiment.start()
-            return redirect('core:manage-experiment', experiment_id=experiment_id)
+            return redirect('core:manage-experiment')
         except Experiment.DoesNotExist:
             pass
     logger.warn("tried to start an experiment that doesn't exist (id: %s)" % experiment_id)
@@ -113,10 +113,20 @@ def participant_index(request):
     try:
         participant = user.participant
         experiments = participant.experiments.all()
-        return render_to_response('participant-index.html', RequestContext(request, locals()))
+        return render_to_response('participant-index.html', locals(), RequestContext(request))
     except Participant.DoesNotExist:
         # add error message
         return redirect('home')
 
 
+def instructions(request, experiment_id=None, experiment_namespace=None):
+    if experiment_id:
+        experiment = Experiment.objects.get(pk=experiment_id)
+    elif experiment_namespace:
+        experiment = Experiment.objects.get(experiment_metadata__namespace=experiment_namespace)
 
+    if not experiment:
+        logger.warn("Tried to request instructions for id %s or namespace %s" % (experiment_id, experiment_namespace))
+        return redirect('home')
+
+    return render_to_response(experiment.get_template_path('instructions.html'), locals(), RequestContext(request))
