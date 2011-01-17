@@ -324,7 +324,7 @@ class Experiment(models.Model):
 
     @property
     def participant_url(self):
-        return "/%s" % (self.url_id)
+        return "/%s/participate" % (self.url_id)
 
     @property
     def management_url(self):
@@ -790,6 +790,17 @@ class Participant(CommonsUser):
     def get_group(self, experiment):
         return ParticipantGroupRelationship.objects.get_group(experiment, self)
 
+    @property
+    def active_experiments(self):
+        return [experiment_relationship.experiment for experiment_relationship in self.experiment_relationships.filter(experiment__status='ACTIVE')]
+
+    @property
+    def inactive_experiments(self):
+        return [experiment_relationship.experiment for experiment_relationship in self.experiment_relationships.exclude(experiment__status='ACTIVE')]
+
+    def experiments_with_status(self, status):
+        return self.experiment_relationships.filter(experiment__status=status)
+
     class Meta:
         ordering = ['user']
 
@@ -797,10 +808,10 @@ class Participant(CommonsUser):
 Many-to-many relationship entity storing a participant and the experiment they are participating in.
 """
 class ParticipantExperimentRelationship(models.Model):
-    participant = models.ForeignKey(Participant)
+    participant = models.ForeignKey(Participant, related_name='experiment_relationships')
     participant_identifier = models.CharField(max_length=32)
     sequential_participant_identifier = models.PositiveIntegerField()
-    experiment = models.ForeignKey(Experiment)
+    experiment = models.ForeignKey(Experiment, related_name='participant_relationships')
     date_created = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User)
 

@@ -9,7 +9,8 @@
 <div id='menu'>
 <ul>
 	<li class='{% active request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
-	<li class='{% active request profile %}'><a href='{{ profile }}'>Account</a>
+        <li class='{% active_re request "participate$" %}'><a href='{{ current }}'>Participate</a></li>
+	<li class='{% active request profile %}'><a href='{{ profile }}'>Profile</a></li>
 	<li><a href='{{ logout }}'>Logout</a></li>
 </ul>
 </div>

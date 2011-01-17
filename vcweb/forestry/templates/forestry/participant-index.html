@@ -1,0 +1,34 @@
+{% extends "base-participant.html" %}
+
+{% block title %}Forestry{% endblock %}
+
+{% block header %}
+{% include "includes/participant-nav-menu.inc" %}
+{% endblock header %}
+
+{% block content %}
+<div id='post'>
+    <h2 class='title'>Forestry Experiment</h2>
+    <div class='entry'>
+        Welcome back, {{ user.participant }}.
+
+        <fieldset>
+            <legend>Active experiments</legend>
+            <ul>
+                {% for experiment in user.participant.active_experiments %}
+                <li> <a href='{{ experiment.participant_url }}'>{{ experiment }}</a></li>
+                {% endfor %}
+            </ul>
+        </fieldset>
+        <fieldset>
+            <legend>Other experiments</legend>
+            <ul>
+                {% for experiment in user.participant.inactive_experiments %}
+                <li> <a href='{{ experiment.participant_url }}'>{{ experiment }}</a></li>
+                {% endfor %}
+            </ul>
+        </fieldset>
+    </div>
+</div>
+{% endblock content %}
+

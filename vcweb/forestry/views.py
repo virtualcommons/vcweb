@@ -11,10 +11,13 @@ logger = logging.getLogger(__name__)
 @login_required
 def index(request):
     if is_participant(request.user):
-        return render_to_response('forestry/index.html', RequestContext(request))
+        logger.debug("redirecting to participant index")
+        return redirect('forestry:participant_index')
+        #return render_to_response('forestry/participant-index.html', RequestContext(request))
     elif is_experimenter(request.user):
         ''' FIXME: should redirect to forestry-specific experimenter dashboard instead '''
-        return redirect('core:experimenter-index')
+        #return render_to_response('forestry/experimenter-index.html')
+        return redirect('forestry:experimenter_index')
     else:
         logger.warn("user %s isn't an experimenter or participant" % request.user)
         return redirect('core:index')
