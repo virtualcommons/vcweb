@@ -19,7 +19,7 @@ def index(request):
         return redirect('forestry:experimenter_index')
     else:
         logger.warn("user %s isn't an experimenter or participant" % request.user)
-        return redirect('core:index')
+        return redirect('home')
 
 
 @login_required
@@ -36,7 +36,7 @@ def manage_experiment(request, experiment_id=None):
             logger.warning("No experiment available with id [%s]" % experiment_id)
             return redirect('core:experimenter_index')
     else:
-        return redirect('core:index')
+        return redirect('home')
 
 
 @login_required

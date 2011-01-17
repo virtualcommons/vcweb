@@ -20,7 +20,7 @@ urlpatterns = patterns('',
     url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete', {'template_name':'password_reset_complete.html'}),
     url(r'^forestry/', include('vcweb.forestry.urls', namespace='forestry', app_name='forestry')),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'', include('vcweb.core.urls', namespace='core', app_name='vcweb')),
+    url(r'', include('vcweb.core.urls', namespace='core', app_name='core')),
     # make sure this is last
 
 

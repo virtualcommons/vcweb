@@ -8,13 +8,25 @@ from django.contrib.auth.models import User
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb.core.forms import RegistrationForm, LoginForm
-from vcweb.core.models import Participant, Experiment, Experimenter, Institution
+from vcweb.core.models import Participant, Experiment, Experimenter, Institution, is_participant, is_experimenter
+from vcweb.core.decorators import anonymous_required
 import logging
 
 logger = logging.getLogger(__name__)
 
 """ account registration / login / logout / profile views """
 
+@login_required
+def dashboard(request):
+    if is_participant(request.user):
+        return participant_index(request)
+    elif is_experimenter(request.user):
+        return redirect('core:experimenter_index')
+    else:
+        logger.warn("user %s isn't an experimenter or participant" % request.user)
+        return redirect('home')
+
+@anonymous_required()
 def login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -30,7 +42,7 @@ def login(request):
             else:
                 auth.login(request, user)
                 # check if user is an experimenter
-                return redirect('core:experimenter-index' if hasattr(user, 'experimenter') else 'core:participant-index')
+                return redirect('core:experimenter_index' if hasattr(user, 'experimenter') else 'core:participant_index')
     else:
         form = LoginForm()
         return render_to_response('registration/login.html', locals(), context_instance=RequestContext(request))
@@ -56,7 +68,7 @@ def register(request):
             participant = Participant.objects.create(user=user, institution=institution)
             logger.debug("Creating new participant: %s" % participant)
             auth.login(request, auth.authenticate(username=email, password=password))
-            return redirect('core:participant-index')
+            return redirect('core:participant_index')
         else:
             logger.debug("form had errors: %s", form.errors)
     else:
@@ -103,7 +115,7 @@ def start_experiment(request, experiment_id=None):
         except Experiment.DoesNotExist:
             pass
     logger.warn("tried to start an experiment that doesn't exist (id: %s)" % experiment_id)
-    return redirect('core:experimenter-index')
+    return redirect('core:experimenter_index')
 
 
 """ participant home page """
