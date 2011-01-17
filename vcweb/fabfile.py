@@ -1,9 +1,11 @@
 from fabric.api import local, run, sudo, cd, env, hide
 from fabric.contrib.console import confirm
+from fabric.contrib import django
 
 import os
 
 """ Default Configuration """
+''' env defaults '''
 env.python = 'python2.6'
 env.project_name = 'vcweb'
 env.deploy_user = 'vcweb'
@@ -16,13 +18,16 @@ env.hosts = ['localhost']
 env.hg_url = 'http://virtualcommons.hg.sourceforge.net:8000/hgroot/virtualcommons/virtualcommons'
 env.apache = 'httpd'
 
-""" 
+''' django integration '''
+django.project(env.project_name)
+
+"""
 currently only works for sqlite3 development database.  Need to do it by hand with postgres a
 few times to figure out what to automate.
 """
-syncdb_commands = ['(test -f vcweb.db && rm vcweb.db) || true', 
-        '%(python)s manage.py syncdb --noinput' % env, 
-        '%(python)s manage.py loaddata test_users_participants' % env, 
+syncdb_commands = ['(test -f vcweb.db && rm vcweb.db) || true',
+        '%(python)s manage.py syncdb --noinput' % env,
+        '%(python)s manage.py loaddata test_users_participants' % env,
         '%(python)s manage.py loaddata forestry_test_data' % env]
 
 def syncdb():
@@ -50,8 +55,10 @@ def host_type():
     run('uname -a')
 
 def test():
-    ''' runs tests on this local codebase, not the deployed codebase '''
-    with cd(os.getcwd()):
+    '''
+    runs tests on this local codebase, not the deployed codebase
+    '''
+    with cd(env.project_path):
         with hide('stdout'):
             _virtualenv('%(python)s manage.py test' % env)
 

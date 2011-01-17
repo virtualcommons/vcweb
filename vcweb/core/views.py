@@ -118,15 +118,15 @@ def participant_index(request):
         # add error message
         return redirect('home')
 
-
-def instructions(request, experiment_id=None, experiment_namespace=None):
+@login_required
+def instructions(request, experiment_id=None, namespace=None):
     if experiment_id:
         experiment = Experiment.objects.get(pk=experiment_id)
-    elif experiment_namespace:
-        experiment = Experiment.objects.get(experiment_metadata__namespace=experiment_namespace)
+    elif namespace:
+        experiment = Experiment.objects.get(experiment_metadata__namespace=namespace)
 
     if not experiment:
-        logger.warn("Tried to request instructions for id %s or namespace %s" % (experiment_id, experiment_namespace))
+        logger.warn("Tried to request instructions for id %s or namespace %s" % (experiment_id, namespace))
         return redirect('home')
 
-    return render_to_response(experiment.get_template_path('instructions.html'), locals(), RequestContext(request))
+    return render_to_response(experiment.get_template_path('welcome-instructions.html'), locals(), RequestContext(request))

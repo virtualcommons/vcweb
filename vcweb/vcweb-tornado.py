@@ -118,12 +118,14 @@ class MessageHandler(SocketIOHandler):
         logger.debug("closing %s" % self)
         session_manager.remove(self.session)
 
-def main():
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
     # use the routes classmethod to build the correct resource
     messageRoute = MessageHandler.routes("socket.io/*")
     #configure the Tornado application
     # currently only allow one command-line argument, the port to run on.
-    port = int(sys.argv[1]) if (len(sys.argv) > 1) else 8888
+    port = int(argv[1]) if (len(argv) > 1) else 8888
 
     application = tornado.web.Application(
             [(r'/', IndexHandler), messageRoute],
@@ -134,7 +136,7 @@ def main():
             # only needed for standalone testing
             static_path=os.path.join(os.path.dirname(__file__), "static"),
             )
-    socketio_server = SocketIOServer(application)
+    return SocketIOServer(application)
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -14,7 +14,3 @@ second_tick = Signal(providing_args=['time'])
 
 post_login = Signal(providing_args=['user'])
 post_logout = Signal(providing_args=['user'])
-
-
-
-
