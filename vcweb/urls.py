@@ -16,7 +16,6 @@ urlpatterns = patterns('',
     url(r'^accounts/password_reset/done/$', 'django.contrib.auth.views.password_reset_done', {'template_name':'password_reset_done.html'}),
     url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$', 'django.contrib.auth.views.password_reset_confirm', {'template_name':'password_reset_confirm.html'}),
     url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete', {'template_name':'password_reset_complete.html'}),
-
     url(r'^forestry/', include('vcweb.forestry.urls', namespace='forestry', app_name='forestry')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'', include('vcweb.core.urls', namespace='core', app_name='vcweb')),

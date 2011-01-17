@@ -792,11 +792,11 @@ class Participant(CommonsUser):
 
     @property
     def active_experiments(self):
-        return [experiment_relationship.experiment for experiment_relationship in self.experiment_relationships.filter(experiment__status='ACTIVE')]
+        return self.experiment_relationships.filter(experiment__status='ACTIVE')
 
     @property
     def inactive_experiments(self):
-        return [experiment_relationship.experiment for experiment_relationship in self.experiment_relationships.exclude(experiment__status='ACTIVE')]
+        return self.experiment_relationships.exclude(experiment__status='ACTIVE')
 
     def experiments_with_status(self, status):
         return self.experiment_relationships.filter(experiment__status=status)

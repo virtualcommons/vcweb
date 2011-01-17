@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 @login_required
 def index(request):
     if is_participant(request.user):
-        logger.debug("redirecting to participant index")
         return redirect('forestry:participant_index')
         #return render_to_response('forestry/participant-index.html', RequestContext(request))
     elif is_experimenter(request.user):
