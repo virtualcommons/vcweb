@@ -10,29 +10,37 @@
 <div id='post'>
     <h2 class='title'>Forestry Experiment</h2>
     <div class='entry'>
-        Welcome back, {{ user.participant }}.
-        <br/>
-        <br/>
+        <p>
+            Welcome back, {{ user.participant }}.
+        </p>
 
         <fieldset>
             <legend>Active experiments</legend>
-            {% if user.participant.active_experiments %}
-            <ul>
-                {% for experiment_relationship in user.participant.active_experiments %}
-                <li> <a href='{{ experiment_relationship.experiment.participant_url }}'>{{ experiment_relationship.experiment }}</a></li>
-                {% endfor %}
-            </ul>
-            {% else %}
-                <div class='info'>No active experiments.</div>
-            {% endif %}
+            <div class='info'>
+                {% if user.participant.active_experiments %}
+                <ul>
+                    {% for experiment_relationship in user.participant.active_experiments %}
+                    <li> <a href='{{ experiment_relationship.experiment.participant_url }}'>{{ experiment_relationship.experiment }}</a></li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                No active experiments.
+                {% endif %}
+            </div>
         </fieldset>
         <fieldset>
             <legend>Other experiments</legend>
-            <ul>
-                {% for experiment_relationship in user.participant.inactive_experiments %}
-                <li> <a href='{{ experiment_relationship.experiment.participant_url }}'>{{ experiment_relationship.experiment }}</a></li>
-                {% endfor %}
-            </ul>
+            <div class='info'>
+                {% if user.participant.inactive_experiments %}
+                <ul>
+                    {% for experiment_relationship in user.participant.inactive_experiments %}
+                    <li> <a href='{{ experiment_relationship.experiment.participant_url }}'>{{ experiment_relationship.experiment }}</a></li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                No other experiments.
+                {% endif %}
+            </div>
         </fieldset>
     </div>
 </div>

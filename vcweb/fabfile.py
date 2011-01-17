@@ -68,6 +68,12 @@ def tornado(ip="149.169.203.115", port=8888):
 def server(ip="149.169.203.115", port=8080):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
 
+def celeryd():
+    local("%(python)s manage.py celeryd" % env)
+
+def celerybeat():
+    local("%(python)s manage.py celerybeat" % env)
+
 def push():
     local('hg push')
 
