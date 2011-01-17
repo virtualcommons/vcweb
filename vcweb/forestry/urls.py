@@ -5,6 +5,7 @@ urlpatterns = patterns('vcweb.forestry.views',
     url(r'^participate$', direct_to_template, { 'template':'forestry/participant-index.html' }, name='participant_index'),
     url(r'^experiment$', direct_to_template, { 'template':'forestry/experimenter-index.html' }, name='experimenter_index'),
     url(r'configure/(?P<experiment_id>\d+)$', 'configure', name='configure'),
-    url(r'experiment/(?P<experiment_id>\d+)$', 'experimenter', name='experimenter-index'),
+    url(r'experiment/(?P<experiment_id>\d+)$', 'manage_experiment', name='manage_experiment'),
+    url(r'(?P<experiment_id>\d+)/next-round$', 'next_round', name='next_round'),
     url(r'(?P<experiment_id>\d+)', 'participate', name='participate'),
 )

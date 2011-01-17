@@ -2,6 +2,8 @@ from django.conf.urls.defaults import *
 from django.contrib import admin
 import settings
 
+from django.views.generic.simple import direct_to_template
+
 
 # FIXME: needed?
 #import settings (r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.BASE_DIR+'/core/static/', 'show_indexes': True})
@@ -9,8 +11,8 @@ import settings
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'^$', 'django.views.generic.simple.direct_to_template', {'template':'index.html'}, name='home'),
-    url(r'^about/$', 'django.views.generic.simple.direct_to_template', {'template':'about.html'}, name='about'),
+    url(r'^$', direct_to_template, {'template':'index.html'}, name='home'),
+    url(r'^about/$', direct_to_template, {'template':'about.html'}, name='about'),
     url(r'^accounts/password/reset/$', 'django.contrib.auth.views.password_reset', name='password-reset'),
     url(r'^accounts/password_reset/$', 'django.contrib.auth.views.password_reset', {'template_name':'password_reset_form.html', 'email_template_name':'userpanel/password_reset_email.html'}),
     url(r'^accounts/password_reset/done/$', 'django.contrib.auth.views.password_reset_done', {'template_name':'password_reset_done.html'}),

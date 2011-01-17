@@ -216,6 +216,11 @@ class Experiment(models.Model):
         return self.current_round_elapsed_time > self.current_round.duration
 
     @property
+    def time_remaining(self):
+        return 100
+        #return self.current_round_duration - self.current_round_elapsed_time
+
+    @property
     def channel_name(self):
         return "%s.%s" % (self.experiment_metadata.namespace, self.id)
 

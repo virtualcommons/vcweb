@@ -1,0 +1,35 @@
+{% extends "base-participant.html" %}
+
+{% block head %}
+{{ block.super }}
+<script type="text/javascript">
+    var intervalId = 0;
+    function checkTimeRemaining() {
+        var timeRemaining = $('#timeRemaining').html()
+        if (timeRemaining > 0) {
+            timeRemaining = timeRemaining - 1;
+            $('#timeRemaining').html(timeRemaining);
+        }
+        else {
+            window.clearInterval(intervalId);
+        }
+
+    }
+
+    $(function() {
+        intervalId = setInterval( "checkTimeRemaining()", 1000 );
+    });
+</script>
+{% endblock %}
+{% block title %} Forestry Experiment Round {% endblock %}
+
+{% block content %}
+<h3>Forestry Round</h3>
+<p>
+    <div class='alert'>
+        The next round will begin in <span id='timeRemaining'>{{ experiment.time_remaining }}</span> second(s).
+        <br/>
+        <small><a href='{{experiment.participant_url}}'>return to the current round</a> | <a href='participate'>view your other experiments</a></small>
+    </div>
+</p>
+{% endblock content %}

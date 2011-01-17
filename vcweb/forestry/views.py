@@ -21,41 +21,48 @@ def index(request):
         logger.warn("user %s isn't an experimenter or participant" % request.user)
         return redirect('core:index')
 
+
 @login_required
 def configure(request):
     return Http404()
 
 @login_required
-def experimenter(request, experiment_id=None):
-    if experiment_id is None:
-        logger.debug("No experiment id specified")
-        return redirect('forestry:index')
-    try:
-        experiment = Experiment.objects.get(pk=experiment_id)
-        return render_to_response('forestry/experimenter.html',
-                                  { 'experiment' : experiment },
-                                  context_instance=RequestContext(request))
-    except Experiment.DoesNotExist:
-        logger.warning("No experiment available with id [%s]" % experiment_id)
-        return redirect('core:experimenter-index')
+def manage_experiment(request, experiment_id=None):
+    if is_experimenter(request.user):
+        try:
+            experiment = Experiment.objects.get(pk=experiment_id)
+            return render_to_response('forestry/experimenter.html', locals(), context_instance=RequestContext(request))
+        except Experiment.DoesNotExist:
+            logger.warning("No experiment available with id [%s]" % experiment_id)
+            return redirect('core:experimenter_index')
+    else:
+        return redirect('core:index')
+
+
+@login_required
+def next_round(request, experiment_id=None):
+    if is_participant(request.user):
+        try:
+            experiment = Experiment.objects.get(pk=experiment_id)
+            return render_to_response('forestry/wait.html',
+                    locals(),
+                    context_instance=RequestContext(request))
+        except Experiment.DoesNotExist:
+            logger.warn("No experiment found with id %s" % experiment_id)
+    return redirect('forestry:participant_index')
 
 
 @login_required
 def participate(request, experiment_id=None):
-    if experiment_id is None:
-        logger.debug("No experiment id specified, redirecting to forestry index page.")
-        return redirect('forestry:index')
     try:
         participant = request.user.participant
-    except AttributeError:
-        logger.debug("logged in user %s wasn't a participant" % request.user)
-        return redirect('index')
-    try:
         experiment = Experiment.objects.get(pk=experiment_id)
         participant_group_relationship = participant.get_participant_group_relationship(experiment)
         return render_to_response(experiment.current_round_template,
-                { 'experiment': experiment, 'participant_group': participant_group_relationship },
+                locals(),
                 context_instance=RequestContext(request))
+    except AttributeError:
+        logger.warning("user %s wasn't a participant" % request.user)
     except Experiment.DoesNotExist:
         logger.warning("No experiment with id [%s]" % experiment_id)
         return redirect('forestry:index')
