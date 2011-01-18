@@ -1,10 +1,15 @@
+WSGISocketPrefix run/wsgi
 <VirtualHost *:80>
-    Alias /static "/opt/webapps/virtualcommons/vcweb/static" 
+    ServerAdmin allen.lee@asu.edu
+    DocumentRoot /var/www/vcweb
+    ServerName vcweb.asu.edu
+
+    Alias /static "/opt/webapps/virtualcommons/vcweb/static"
 
     WSGIDaemonProcess vcweb-production user=apache group=commons threads=25 python-path=/opt/virtualenvs/vcweb/lib/python2.6/site-packages
     WSGIProcessGroup vcweb-production
-    WSGIScriptAlias / /opt/virtualcommons/vcweb/vcweb.wsgi
-    <Directory /opt/virtualcommons/vcweb/> 
+    WSGIScriptAlias / /opt/webapps/virtualcommons/vcweb/vcweb.wsgi
+    <Directory /opt/webapps/virtualcommons/vcweb/vcweb/>
         Order deny,allow
         Allow from all
     </Directory>
@@ -12,3 +17,4 @@
     LogLevel warn
     CustomLog /var/log/apache2/vcweb/access.log combined
 </VirtualHost>
+

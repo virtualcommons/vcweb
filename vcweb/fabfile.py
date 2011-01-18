@@ -8,7 +8,7 @@ import os
 ''' env defaults '''
 env.python = 'python2.6'
 env.project_name = 'vcweb'
-env.deploy_user = 'vcweb'
+env.deploy_user = 'apache'
 env.deploy_group = 'commons'
 env.virtualenv_path = '/opt/virtualenvs/%(project_name)s' % env
 env.deploy_path = '/opt/webapps/virtualcommons/'
@@ -52,6 +52,10 @@ def _virtualenv(command, run_locally=False, **kwargs):
 def pip():
     ''' looks for requirements.pip in the django project directory '''
     _virtualenv('pip install -E %(virtualenv_path)s -r %(project_path)s/requirements.pip' % env)
+    with cd(env.virtualenv_path):
+        sudo('chgrp -R %(deploy_group)s .' % env, pty=True)
+        sudo('chmod -R g+rw .' % env, pty=True)
+
 
 def host_type():
     run('uname -a')
