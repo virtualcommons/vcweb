@@ -1,17 +1,6 @@
 [
     {
         "fields": {
-            "about_url": "http://commons.asu.edu", 
-            "description": "Web-based version of the forestry field experiments.", 
-            "namespace": "forestry", 
-            "title": "Forestry Web Experiment",
-            "date_created": "2011-01-01"
-        }, 
-        "model": "core.experimentmetadata", 
-        "pk": 1
-    }, 
-    {
-        "fields": {
             "creator": 1, 
             "experiment_metadata": [
                 "forestry"
