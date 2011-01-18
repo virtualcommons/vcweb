@@ -80,9 +80,11 @@ def push():
     local('hg push')
 
 def dev():
+    env.project_path = env.deploy_path + env.project_name
     env.hosts =['dev.commons.asu.edu']
 
 def prod():
+    env.project_path = env.deploy_path + env.project_name
     env.hosts = ['vcweb.asu.edu']
 
 def loc():
@@ -98,6 +100,9 @@ def setup():
     sudo('find %(deploy_path)s -type d -exec chmod ug+x {} \;' % env, pty=True)
     pip()
 
+def restart():
+    sudo('service %(apache)s restart' % env, pty=True)
+
 def deploy():
     """ deploys to an already setup environment """
     env.project_path = env.deploy_path + env.project_name
@@ -109,4 +114,4 @@ def deploy():
             sudo('chmod -R ug+rw .', pty=True)
             sudo('find . -type d -exec chmod ug+x {} \;', pty=True)
             sudo('chown -R %(deploy_user)s:%(deploy_group)s .' % env, pty=True)
-            sudo('service %(apache)s restart' % env, pty=True)
+            restart()
