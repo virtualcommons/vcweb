@@ -9,7 +9,7 @@ from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb.core.forms import RegistrationForm, LoginForm
 from vcweb.core.models import Participant, Experiment, Experimenter, Institution, is_participant, is_experimenter
-from vcweb.core.decorators import anonymous_required
+from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ def dashboard(request):
     if is_participant(request.user):
         return participant_index(request)
     elif is_experimenter(request.user):
-        return redirect('core:experimenter_index')
+        return experimenter_index(request)
     else:
         logger.warn("user %s isn't an experimenter or participant" % request.user)
         return redirect('home')
@@ -80,46 +80,9 @@ def register(request):
 def account_profile(request):
     return render_to_response('registration/profile.html', RequestContext(request))
 
-
-"""
-experimenter views
-FIXME: add has_perms authorization to ensure that only experimenters can access
-these.
-"""
-@login_required
-def experimenter_index(request):
-    user = request.user
-    try:
-        experimenter = user.experimenter
-        experiments = Experiment.objects.filter(experimenter=experimenter)
-        return render_to_response('experimenter-index.html', locals(), RequestContext(request))
-    except Experimenter.DoesNotExist:
-        return redirect('home')
-
-@login_required
-def configure(request, experiment_id=None):
-    if experiment_id:
-        experiment = Experiment.objects.get(pk=experiment_id)
-    # lookup game instance id (or create a new one?)
-        return render_to_response('configure.html', locals(), RequestContext(request))
-    else:
-        return redirect('home')
-
-@login_required
-def start_experiment(request, experiment_id=None):
-    if experiment_id:
-        try:
-            experiment = Experiment.objects.get(pk=experiment_id)
-            experiment.start()
-            return redirect('core:manage-experiment')
-        except Experiment.DoesNotExist:
-            pass
-    logger.warn("tried to start an experiment that doesn't exist (id: %s)" % experiment_id)
-    return redirect('core:experimenter_index')
-
-
+''' participant views '''
 """ participant home page """
-@login_required
+@participant_required
 def participant_index(request):
     user = request.user
     try:
@@ -142,3 +105,45 @@ def instructions(request, experiment_id=None, namespace=None):
         return redirect('home')
 
     return render_to_response(experiment.get_template_path('welcome-instructions.html'), locals(), RequestContext(request))
+
+
+
+"""
+experimenter views
+FIXME: add has_perms authorization to ensure that only experimenters can access
+these.
+"""
+@experimenter_required
+def experimenter_index(request):
+    experimenter = request.user.experimenter
+    experiments = Experiment.objects.filter(experimenter=experimenter)
+    return render_to_response('experimenter-index.html', locals(), RequestContext(request))
+
+@experimenter_required
+def configure(request, experiment_id=None):
+    # lookup game instance id (or create a new one?)
+    experiment = Experiment.objects.get(pk=experiment_id)
+    return render_to_response('configure.html', locals(), RequestContext(request))
+
+@experimenter_required
+def monitor(request, experiment_id=None):
+    if is_experimenter(request.user):
+        experiment = Experiment.objects.get(pk=experiment_id)
+    # lookup game instance id (or create a new one?)
+        return render_to_response('configure.html', locals(), RequestContext(request))
+    else:
+        return redirect('home')
+
+
+@experimenter_required
+def start_experiment(request, experiment_id=None):
+    try:
+        experiment = Experiment.objects.get(pk=experiment_id)
+        experiment.start()
+        return redirect('core:manage_experiment')
+    except Experiment.DoesNotExist:
+        pass
+        logger.warn("tried to start an experiment that doesn't exist (id: %s)" % experiment_id)
+        return redirect('core:experimenter_index')
+
+

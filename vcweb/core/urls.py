@@ -12,5 +12,6 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'participate/$', 'participant_index', name='participant_index'),
     url(r'(?P<experiment_id>\d+)/instructions', 'instructions', name='instructions'),
     url(r'(?P<namespace>\w+)/instructions', 'instructions', name='namespace_instructions'),
-    url(r'experiment/configure/(?P<experiment_id>\d+)$', 'configure', name='configure_experiment'),
+    url(r'experiment/(?P<experiment_id>\d+)/monitor$', 'monitor', name='monitor_experiment'),
+    url(r'experiment/(?P<experiment_id>\d+)/configure$', 'configure', name='configure_experiment'),
 )
