@@ -94,7 +94,11 @@ INSTALLED_APPS = (
     'vcweb.core',
     'vcweb.forestry',
     'djcelery',
+    'ghettoq',
 )
+
+CARROT_BACKEND = 'ghettoq.taproot.Database'
+
 BROKER_HOST = "149.169.203.115"
 BROKER_PORT = 5672
 BROKER_USER = "vcweb-celery"

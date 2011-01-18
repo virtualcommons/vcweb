@@ -17,6 +17,8 @@ env.project_path = os.path.dirname(__file__)
 env.hosts = ['localhost']
 env.hg_url = 'http://virtualcommons.hg.sourceforge.net:8000/hgroot/virtualcommons/virtualcommons'
 env.apache = 'httpd'
+env.applist = ['core', 'forestry']
+env.apps = ' '.join(env.applist)
 
 ''' django integration '''
 django.project(env.project_name)
@@ -60,7 +62,7 @@ def test():
     '''
     with cd(env.project_path):
         with hide('stdout'):
-            _virtualenv('%(python)s manage.py test' % env)
+            _virtualenv('%(python)s manage.py test %(apps)s' % env)
 
 def tornado(ip="149.169.203.115", port=8888):
     local("{python} vcweb-tornado.py {port}".format(python=env.python, **locals()), capture=False)

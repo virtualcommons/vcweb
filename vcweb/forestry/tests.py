@@ -1,13 +1,9 @@
 from vcweb.core.models import RoundConfiguration,Parameter,ParticipantDataValue,ParticipantExperimentRelationship,GroupRoundDataValue
 from vcweb.core.tests import BaseVcwebTest
-from vcweb.forestry.models import round_setup, round_ended, get_resource_level, get_harvest_decision_parameter, get_harvest_decisions, round_started_handler, round_ended_handler
-from vcweb.core import signals
+from vcweb.forestry.models import round_setup, round_ended, get_resource_level, get_harvest_decision_parameter, get_harvest_decisions
 import logging
 
 logger = logging.getLogger(__name__)
-
-signals.round_ended.connect(round_ended_handler, sender='forestry')
-signals.round_started.connect(round_started_handler, sender='forestry')
 
 class ForestryRoundSignalTest(BaseVcwebTest):
 

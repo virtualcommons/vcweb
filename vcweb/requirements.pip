@@ -5,3 +5,10 @@ tornado
 SocketTornad.IO
 psycopg2
 ghettoq
+# needed to run tests with ghettoq for some reason..
+#django-unittest-depth
+#redis
+#beanstalkc
+#couchdb
+#pyyaml
+#pymongo
