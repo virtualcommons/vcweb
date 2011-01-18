@@ -46,6 +46,17 @@ class BaseVcwebTest(TestCase):
     class Meta:
         abstract = True
 
+class QueueTest(BaseVcwebTest):
+    def test_ghettoq(self):
+        from ghettoq.simple import Connection
+        conn = Connection("database")
+        queue = conn.Queue(name="chat_messages")
+        for test_string in ('testing', '1-2-3', 'good gravy'):
+            queue.put(test_string)
+            self.failUnlessEqual(test_string, queue.get())
+
+
+
 class ExperimentMetadataTest(BaseVcwebTest):
     namespace_regex = ExperimentMetadata.namespace_regex
 
@@ -94,8 +105,8 @@ class ExperimentTest(BaseVcwebTest):
     def round_started_test_handler(self, experiment_id=None, time=None, round_configuration_id=None, **kwargs):
         logger.debug("invoking round started test handler with args experiment_id:%i time:%s round_configuration_id:%s"
                      % (experiment_id, time, round_configuration_id))
-        self.failUnlessEquals(experiment_id, self.experiment.pk)
-        self.failUnlessEquals(round_configuration_id, self.experiment.current_round.id)
+        self.failUnlessEqual(experiment_id, self.experiment.pk)
+        self.failUnlessEqual(round_configuration_id, self.experiment.current_round.id)
         self.failUnless(time, "time should be set")
         raise Exception
 
@@ -160,7 +171,7 @@ class GroupTest(BaseVcwebTest):
                 # this way since typical usage would do a lookup by name.
                 g.set_data_value(parameter=data_value.parameter, value=10)
                 activity_log_counter += 1
-                self.failUnlessEquals(activity_log_counter, GroupActivityLog.objects.filter(group=g).count())
+                self.failUnlessEqual(activity_log_counter, GroupActivityLog.objects.filter(group=g).count())
 
     def test_transfer_to_next_round(self):
         e = self.experiment
