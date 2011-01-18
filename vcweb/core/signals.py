@@ -1,9 +1,3 @@
-'''
-Created on Aug 19, 2010
-
-@author: alllee
-'''
-
 from django.dispatch import Signal
 
 

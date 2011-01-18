@@ -61,10 +61,6 @@ class ExperimentMetadata(models.Model):
 
     objects = ExperimentMetadataManager()
 
-    @property
-    def name(self):
-        return self.title
-
     def natural_key(self):
         return [self.namespace]
 
@@ -153,9 +149,7 @@ class ExperimentManager(models.Manager):
             # check each experiment's total_elapsed_time against the total allotted time and
             # issue round_stopped signals to experiments that need to be stopped.
             for experiment in es.all():
-                if experiment.is_time_expired:
-                    signals.round_ended.send(experiment_id=experiment.pk, sender=experiment)
-
+                experiment.check_elapsed_time()
 
 
 
@@ -222,20 +216,17 @@ class Experiment(models.Model):
 
     @property
     def channel_name(self):
-        return "%s.%s" % (self.experiment_metadata.namespace, self.id)
+        return "%s.%s" % (self.namespace, self.id)
 
     def parameters(self, scope=None):
         ps = self.experiment_metadata.parameters
         return ps.filter(scope=scope) if scope else ps
 
-    def start(self):
+    def activate(self):
         if not self.is_running():
             self.allocate_groups()
             self.status = 'ACTIVE'
             self.save()
-            logger.debug("About to send round started signal")
-            # notify game handlers...
-            signals.round_started.send_robust(None, experiment_id=self.id, time=datetime.datetime.now(), round_configuration_id=self.current_round.id)
         return self
 
 
@@ -302,8 +293,25 @@ class Experiment(models.Model):
         # return self
         return Experiment.objects.get(pk=self.pk)
 
-    def start_round(self):
+    def start_round(self, sender=None):
         self.status = 'ROUND_IN_PROGRESS'
+        self.save()
+        sender = self.experiment_metadata.pk if sender is None else sender
+        # notify registered game handlers
+        logger.debug("About to send round started signal with sender %s" % sender)
+        return signals.round_started.send(sender, experiment_id=self.id, time=datetime.datetime.now(), round_configuration_id=self.current_round.id)
+
+    def end_round(self, sender=None):
+        self.status = 'ACTIVE'
+        self.save()
+        sender = self.experiment_metadata.pk if sender is None else sender
+        logger.debug("about to send round ended signal with sender %s" % sender)
+        return signals.round_ended.send(sender, experiment_id=self.pk)
+
+    def check_elapsed_time(self):
+        if self.is_time_expired:
+            self.end_round()
+
 
     """ returns a fresh copy of this experiment with configuration / metadata intact """
     def clone(self, experimenter=None):
@@ -344,7 +352,7 @@ class Experiment(models.Model):
         return "%s/%s" % (self.experiment_metadata.namespace, self.id)
 
     def __unicode__(self):
-        return u"%s (status: %s, last updated on %s)" % (self.experiment_metadata.name, self.status, self.last_modified)
+        return u"%s (status: %s, last updated on %s)" % (self.experiment_metadata.title, self.status, self.last_modified)
 
     def ___eq___(self, other):
         return self.id == other.id

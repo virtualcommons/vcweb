@@ -1,30 +1,46 @@
 from vcweb.core.models import RoundConfiguration,Parameter,ParticipantDataValue,ParticipantExperimentRelationship,GroupRoundDataValue
 from vcweb.core.tests import BaseVcwebTest
+from vcweb.forestry.models import round_setup, round_ended, get_resource_level, get_harvest_decision_parameter, get_harvest_decisions, round_started_handler, round_ended_handler
+from vcweb.core import signals
 import logging
 
 logger = logging.getLogger(__name__)
 
-class ForestryGameLogicTest(BaseVcwebTest):
+signals.round_ended.connect(round_ended_handler, sender='forestry')
+signals.round_started.connect(round_started_handler, sender='forestry')
+
+class ForestryRoundSignalTest(BaseVcwebTest):
+
+
+    def verify_resource_level(self, group):
+        self.failUnlessEqual(get_resource_level(group).value, 100)
+
+    def test_round_ended_signal(self):
+        e = self.test_round_started_signal()
+        self.verify_round_ended_semantics(e, lambda e: e.end_round())
+
+    def test_round_started_signal(self):
+        e = self.experiment
+        logger.debug("what is: %s" % e.activate().start_round())
+        for group in e.groups.all():
+            self.verify_resource_level(group)
+        return e
 
     def test_round_setup(self):
         e = self.experiment
-        from vcweb.forestry.models import round_setup, get_resource_level
-        e.start()
+        e.allocate_groups()
 # set up some harvest decisions
         round_setup(e)
         for group in e.groups.all():
-            self.failUnlessEqual(get_resource_level(group).value, 100)
+            self.verify_resource_level(group)
+        return e
 
-    def test_round_ended(self):
-        e = self.experiment
-        e.start()
-        from vcweb.forestry.models import round_setup, round_ended, get_resource_level, get_harvest_decision_parameter, get_harvest_decisions
-        round_setup(e)
+    def verify_round_ended_semantics(self, e, end_round_func):
         current_round = e.current_round
         harvest_decision_parameter = get_harvest_decision_parameter()
         for group in e.groups.all():
             ds = get_harvest_decisions(group)
-            self.failUnlessEqual(get_resource_level(group).value, 100)
+            self.verify_resource_level(group)
             self.failUnlessEqual(len(ds), group.participants.count())
             for p in group.participants.all():
                 pdv = ParticipantDataValue.objects.get(
@@ -37,12 +53,13 @@ class ForestryGameLogicTest(BaseVcwebTest):
                 self.failIf(pdv.value)
                 pdv.value = group.number % 5
                 pdv.save()
+
+        end_round_func(e)
         '''
         at round end all harvest decisions are tallied and subtracted from
         the final resource_level
         '''
         expected_resource_level = lambda group: 100 - ((group.number % 5) * group.size)
-        round_ended(e)
         for group in e.groups.all():
             self.failUnlessEqual(get_resource_level(group).value,
                     expected_resource_level(group))
@@ -56,6 +73,11 @@ class ForestryGameLogicTest(BaseVcwebTest):
             objects.
             '''
             self.failUnlessEqual(GroupRoundDataValue.objects.count(), 4)
+
+
+    def test_round_ended(self):
+        e = self.test_round_setup()
+        self.verify_round_ended_semantics(e, lambda experiment: round_ended(experiment))
 
 class ForestryViewsTest(BaseVcwebTest):
 
@@ -78,7 +100,7 @@ class ForestryParametersTest(BaseVcwebTest):
     def test_get_set_harvest_decisions(self):
         from vcweb.forestry.models import get_harvest_decisions, get_harvest_decision_parameter, set_harvest_decision
         e = self.experiment
-        e.start()
+        e.activate()
         # generate harvest decisions
         current_round = e.current_round
         harvest_decision_parameter = get_harvest_decision_parameter()
@@ -112,7 +134,7 @@ class ForestryParametersTest(BaseVcwebTest):
     def test_get_set_resource_level(self):
         from vcweb.forestry.models import get_resource_level, set_resource_level
         e = self.experiment
-        e.start()
+        e.activate()
         for group in e.groups.all():
             resource_level = get_resource_level(group)
             self.failUnless(resource_level.pk > 0)

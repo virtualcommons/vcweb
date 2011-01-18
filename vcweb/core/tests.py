@@ -99,10 +99,10 @@ class ExperimentTest(BaseVcwebTest):
         self.failUnless(time, "time should be set")
         raise Exception
 
-    def test_start(self):
-        signals.round_started.connect(self.round_started_test_handler, sender=None)
+    def test_start_round(self):
+        signals.round_started.connect(self.round_started_test_handler, sender=self)
         try:
-            self.experiment.start()
+            self.experiment.start_round(sender=self)
             self.fail("Should have raised an exception.")
         except Exception, e:
             logger.debug("expected exception raised: %s" % e)

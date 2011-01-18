@@ -1,10 +1,26 @@
-from vcweb.core.models import ExperimentMetadata, Parameter
+from vcweb.core.models import Experiment, ExperimentMetadata, Parameter
+#from django.dispatch import receiver
+
+from vcweb.core import signals
 
 import logging
 
 logger = logging.getLogger(__name__)
 
-# Create your models here.
+#@receiver(signals.round_started, sender='forestry')
+def round_started_handler(sender, experiment_id=None, **kwargs):
+    logger.debug("forestry handling round started signal")
+    round_setup( Experiment.objects.get(pk=experiment_id) )
+
+#@receiver(signals.round_ended, sender='forestry')
+def round_ended_handler(sender, experiment_id=None, **kwargs):
+    logger.debug("forestry handling round ended signal")
+    round_ended(Experiment.objects.get(pk=experiment_id))
+
+forestry, created = ExperimentMetadata.objects.get_or_create(namespace='forestry')
+signals.round_started.connect(round_started_handler, sender=forestry.pk)
+signals.round_ended.connect(round_ended_handler, sender=forestry.pk)
+
 def forestry_second_tick():
     print "Monitoring Forestry Experiments."
     '''
