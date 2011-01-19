@@ -9,12 +9,12 @@ $(document).ready(function() {
 	$('#id_password').rules("add", {
 		minlength: 3
 	});
-	$('#id_confirm_password').rules("add", { 
-		equalTo: "#id_password", 
+	$('#id_confirm_password').rules("add", {
+		equalTo: "#id_password",
 		minlength: 3,
 		messages: {
 			equalTo: "Please make sure your passwords match."
-		} 
+		}
 	});
 });
 </script>
@@ -26,8 +26,7 @@ $(document).ready(function() {
 {% block content %}
 
 <form id='registrationForm' action='' method='post'>
-<fieldset>
-<legend>New User</legend>
+    <h3>New User</h3>
 <p>
 Returning users can <a href='{% url core:login %}'>login here</a> or <a href='{% url password-reset %}'>retrieve your password</a>.
 </p>
@@ -76,7 +75,6 @@ Returning users can <a href='{% url core:login %}'>login here</a> or <a href='{%
 <div class='submit'>
 <input type='submit' value='Register' />
 </div>
-</fieldset>
 
 </form>
 

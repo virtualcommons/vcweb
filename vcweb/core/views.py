@@ -60,7 +60,7 @@ def register(request):
             first_name = form.cleaned_data['first_name']
             last_name = form.cleaned_data['last_name']
             institution_string = form.cleaned_data['institution']
-            institution = Institution.objects.get_or_create(name=institution_string)
+            institution, created = Institution.objects.get_or_create(name=institution_string)
             user = User.objects.create_user(email, email, password)
             user.first_name = first_name
             user.last_name = last_name
