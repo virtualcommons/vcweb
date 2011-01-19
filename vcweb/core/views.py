@@ -42,7 +42,7 @@ def login(request):
             else:
                 auth.login(request, user)
                 # check if user is an experimenter
-                return redirect('core:experimenter_index' if hasattr(user, 'experimenter') else 'core:participant_index')
+                return redirect('core:dashboard')
     else:
         form = LoginForm()
         return render_to_response('registration/login.html', locals(), context_instance=RequestContext(request))
@@ -68,7 +68,7 @@ def register(request):
             participant = Participant.objects.create(user=user, institution=institution)
             logger.debug("Creating new participant: %s" % participant)
             auth.login(request, auth.authenticate(username=email, password=password))
-            return redirect('core:participant_index')
+            return redirect('core:dashboard')
         else:
             logger.debug("form had errors: %s", form.errors)
     else:
@@ -84,14 +84,9 @@ def account_profile(request):
 """ participant home page """
 @participant_required
 def participant_index(request):
-    user = request.user
-    try:
-        participant = user.participant
-        experiments = participant.experiments.all()
-        return render_to_response('participant-index.html', locals(), RequestContext(request))
-    except Participant.DoesNotExist:
-        # add error message
-        return redirect('home')
+    participant = request.user.participant
+    experiments = participant.experiments.all()
+    return render_to_response('participant-index.html', locals(), RequestContext(request))
 
 @login_required
 def instructions(request, experiment_id=None, namespace=None):
@@ -115,8 +110,7 @@ these.
 """
 @experimenter_required
 def experimenter_index(request):
-    experimenter = request.user.experimenter
-    experiments = Experiment.objects.filter(experimenter=experimenter)
+    experiments = Experiment.objects.filter(experimenter=request.user.experimenter)
     return render_to_response('experimenter-index.html', locals(), RequestContext(request))
 
 @experimenter_required
