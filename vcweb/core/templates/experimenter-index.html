@@ -8,7 +8,7 @@
 
 {% block page %}
 <div class='notice'>
-Welcome to the experimenter interface.  You are logged in as {{experimenter}}.
+Welcome to the experimenter interface.  You are logged in as {{request.user.experimenter}}.
 <br/>
 <br/>
 <a href='/admin'>add / configure an experiment</a> | 

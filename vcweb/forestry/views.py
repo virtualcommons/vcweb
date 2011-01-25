@@ -4,6 +4,7 @@ from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb.core.models import is_participant, is_experimenter, Experiment, RoundConfiguration
+from vcweb.core.decorators import participant_required, experimenter_required
 
 import logging
 logger = logging.getLogger(__name__)
@@ -22,24 +23,20 @@ def index(request):
         return redirect('home')
 
 
-@login_required
+@experimenter_required
 def configure(request):
     return Http404()
 
-@login_required
+@experimenter_required
 def manage_experiment(request, experiment_id=None):
-    if is_experimenter(request.user):
-        try:
-            experiment = Experiment.objects.get(pk=experiment_id)
-            return render_to_response('forestry/experimenter.html', locals(), context_instance=RequestContext(request))
-        except Experiment.DoesNotExist:
-            logger.warning("No experiment available with id [%s]" % experiment_id)
-            return redirect('core:experimenter_index')
-    else:
-        return redirect('home')
+    try:
+        experiment = Experiment.objects.get(pk=experiment_id)
+        return render_to_response('forestry/experimenter.html', locals(), context_instance=RequestContext(request))
+    except Experiment.DoesNotExist:
+        logger.warning("No experiment available with id [%s]" % experiment_id)
+        return redirect('core:experimenter_index')
 
-
-@login_required
+@participant_required
 def next_round(request, experiment_id=None):
     if is_participant(request.user):
         try:
@@ -52,7 +49,7 @@ def next_round(request, experiment_id=None):
     return redirect('forestry:participant_index')
 
 
-@login_required
+@participant_required
 def participate(request, experiment_id=None):
     try:
         participant = request.user.participant
@@ -61,8 +58,6 @@ def participate(request, experiment_id=None):
         return render_to_response(experiment.current_round_template,
                 locals(),
                 context_instance=RequestContext(request))
-    except AttributeError:
-        logger.warning("user %s wasn't a participant" % request.user)
     except Experiment.DoesNotExist:
         logger.warning("No experiment with id [%s]" % experiment_id)
         return redirect('forestry:index')
