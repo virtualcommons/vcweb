@@ -1,5 +1,4 @@
 from django.contrib.auth.models import User
-from django.core import serializers
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.aggregates import Max
@@ -16,51 +15,10 @@ SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
 logger = logging.getLogger(__name__)
 
-from kombu.connection import BrokerConnection
-from kombu.messaging import Exchange, Queue, Consumer, Producer
-
-from vcweb import settings
-
-message_exchange = Exchange("message", "direct", durable=True)
-chat_queue = Queue("chat", exchange=message_exchange, key="chat")
-experimenter_queue = Queue("experimenter", exchange=message_exchange, key="experimenter")
-server_queue = Queue("server", exchange=message_exchange, key="server")
-connection = BrokerConnection(settings.BROKER_HOST, settings.BROKER_USER, settings.BROKER_PASSWORD, settings.BROKER_VHOST)
-
-channel = connection.channel()
-server_consumer = Consumer(channel, server_queue)
-# specify routing_key when you invoke producer.publish
-producer = Producer(channel, exchange=message_exchange, serializer="json")
-
-def get_channel():
-    logger.debug("Trying to connect to %s vhost %s as %s with %s" %
-            (settings.BROKER_HOST, settings.BROKER_VHOST, settings.BROKER_USER, settings.BROKER_PASSWORD))
-    return channel
-
-def get_chat_queue():
-    return chat_queue
-
-def get_server_queue():
-    return server_queue
-
-def get_server_consumer():
-    return server_consumer
-
-def publish(message, routing_key="server"):
-    producer.publish(message, routing_key=routing_key)
-
-def publish_chat(chat_message):
-    publish(chat_message, "chat")
-
-def broadcast_chat(experiment, message):
-    publish(serializers.serialize("json",
-        ChatMessage.objects.message(experiment, message)), routing_key="chat")
-
-
 """
 Contains all data models used in the core as well as a number of helper functions.
 
-Is getting big / unwieldy.  Should try to refactor into smaller parts, but creating models directory has
+Is getting monolithically unwieldy.  Should try to refactor into smaller parts, but creating models directory has
 been painful due to circular imports.
 """
 

@@ -14,7 +14,9 @@ sys.path.append(os.path.abspath('..'))
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
-from vcweb.core.models import ParticipantGroupRelationship, ChatMessage, Experiment, get_server_consumer
+from vcweb.core.models import ParticipantGroupRelationship, ChatMessage, Experiment
+
+from vcweb.core.queue import get_server_consumer
 
 ''' we will only consume stuff from this channel... '''
 
