@@ -1,7 +1,7 @@
 <script type="text/javascript">
 
 function createConnectionEvent() {
-   return createMessageEvent("Initial connection", "connect");
+   return createMessageEvent("Initial connection");
 }
 
 function createReconnectionEvent() {

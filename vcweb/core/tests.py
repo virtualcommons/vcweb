@@ -1,5 +1,6 @@
 from django.test import TestCase
 from vcweb.core import signals
+from vcweb.core import queue
 from vcweb.core.models import Experiment, Experimenter, ExperimentConfiguration, \
     Participant, ParticipantExperimentRelationship, Group, ExperimentMetadata, \
     RoundConfiguration, Parameter, RoundParameterValue, GroupActivityLog
@@ -47,13 +48,17 @@ class BaseVcwebTest(TestCase):
         abstract = True
 
 class QueueTest(BaseVcwebTest):
-    def test_ghettoq(self):
-        from ghettoq.simple import Connection
-        conn = Connection("database")
-        queue = conn.Queue(name="chat_messages")
+    def test_simple(self):
+        from kombu.connection import BrokerConnection
+        connection = BrokerConnection(transport="djkombu.transport.DatabaseTransport")
+        q = connection.SimpleQueue("chat")
         for test_string in ('testing', '1-2-3', 'good gravy'):
-            queue.put(test_string)
-            self.failUnlessEqual(test_string, queue.get())
+            q.put(test_string)
+            self.failUnlessEqual(test_string, q.get().body)
+
+    def test_publish(self):
+        pass
+
 
 class ExperimentMetadataTest(BaseVcwebTest):
     namespace_regex = ExperimentMetadata.namespace_regex

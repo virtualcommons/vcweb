@@ -16,9 +16,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
 from vcweb.core.models import ParticipantGroupRelationship, ChatMessage, Experiment
 
-from vcweb.core.queue import get_server_consumer
-
-''' we will only consume stuff from this channel... '''
+from vcweb.core import queue
 
 '''
 store mappings between beaker session ids and ParticipantGroupRelationship pks
@@ -113,7 +111,6 @@ class MessageHandler(SocketIOHandler):
             # TODO: should add a second handler just for experimenters..
             logger.debug("sending message %s to all participants" %
                   event.message)
-
             for g in experiment.groups.all():
                for participant_group_pk, session in session_manager.sessions(g):
                   session['output_handle'].send(event.message)
@@ -138,7 +135,7 @@ class MessageHandler(SocketIOHandler):
 
 
 def vcweb_tornado_message_handler(body, message):
-    logger.debug("received body %s from message %s" % (body, message))
+    logger.debug("XXX: received body %s from message %s" % (body, message))
 
 def main(argv=None):
     if argv is None:
@@ -150,7 +147,7 @@ def main(argv=None):
     port = int(argv[1]) if (len(argv) > 1) else 8888
 
     # set up queue listeners
-    consumer = get_server_consumer()
+    consumer = queue.chat_consumer
     consumer.register_callback(vcweb_tornado_message_handler)
     consumer.consume()
 
