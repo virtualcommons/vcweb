@@ -3,18 +3,18 @@ import os.path
 import logging
 
 logging.basicConfig(
-                    level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)s %(message)s',
-                    )
+        level=logging.DEBUG,
+        format='%(asctime)s %(levelname)s %(message)s',
+        )
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 LOCAL_DEVELOPMENT = True
 
 ADMINS = (
-          ('Allen Lee', 'allen.lee@asu.edu')
-    # ('Your Name', 'your_email@domain.com'),
-)
+        ('Allen Lee', 'allen.lee@asu.edu')
+        # ('Your Name', 'your_email@domain.com'),
+        )
 
 MANAGERS = ADMINS
 
@@ -61,49 +61,47 @@ SECRET_KEY = '2km^iq&48&6uv*x$ew@56d0#w9zqth@)_4tby(85+ac2wf4r-u'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.load_template_source',
-    'django.template.loaders.app_directories.load_template_source',
-#     'django.template.loaders.eggs.load_template_source',
-)
+        'django.template.loaders.filesystem.load_template_source',
+        'django.template.loaders.app_directories.load_template_source',
+        #     'django.template.loaders.eggs.load_template_source',
+        )
 
 TEMPLATE_CONTEXT_PROCESSORS = ('django.core.context_processors.request',
-                               'django.contrib.auth.context_processors.auth')
+        'django.contrib.auth.context_processors.auth')
 
 MIDDLEWARE_CLASSES = (
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-)
+        'django.middleware.common.CommonMiddleware',
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        )
 ROOT_URLCONF = 'vcweb.urls'
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
+        # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+        # Always use forward slashes, even on Windows.
+        # Don't forget to use absolute paths, not relative paths.
 
-    os.path.join(os.path.dirname(__file__), 'templates').replace('\\', '/'),
+        os.path.join(os.path.dirname(__file__), 'templates').replace('\\', '/'),
 
-)
+        )
 
 INSTALLED_APPS = (
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sites',
-    'django.contrib.admin',
-    'vcweb.core',
-    'vcweb.forestry',
-    'djcelery',
-    'ghettoq',
-)
-
-CARROT_BACKEND = 'ghettoq.taproot.Database'
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.sessions',
+        'django.contrib.sites',
+        'django.contrib.admin',
+        'vcweb.core',
+        'vcweb.forestry',
+        'djcelery',
+        'djkombu',
+        )
 
 BROKER_HOST = "149.169.203.115"
 BROKER_PORT = 5672
-BROKER_USER = "vcweb-celery"
+BROKER_USER = "vcweb"
 BROKER_PASSWORD = 'override this in settings_local.py'
-BROKER_VHOST = "vcweb.rabbitmq.vhost"
+BROKER_VHOST = "vcweb.vhost"
 
 # celerybeat configuration
 CELERYBEAT_MAX_LOOP_INTERVAL = 5
@@ -129,7 +127,6 @@ except ImportError:
     pass
 
 import djcelery
-
 djcelery.setup_loader()
 
 

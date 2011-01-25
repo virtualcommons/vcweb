@@ -55,8 +55,6 @@ class QueueTest(BaseVcwebTest):
             queue.put(test_string)
             self.failUnlessEqual(test_string, queue.get())
 
-
-
 class ExperimentMetadataTest(BaseVcwebTest):
     namespace_regex = ExperimentMetadata.namespace_regex
 

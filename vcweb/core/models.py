@@ -15,6 +15,32 @@ SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
 logger = logging.getLogger(__name__)
 
+from kombu.connection import BrokerConnection
+from kombu.messaging import Exchange, Queue, Consumer
+
+from vcweb import settings
+
+message_exchange = Exchange("message", "direct", durable=True)
+chat_queue = Queue("chat", exchange=message_exchange, key="chat")
+experimenter_queue = Queue("experimenter", exchange=message_exchange, key="experimenter")
+server_queue = Queue("server", exchange=message_exchange, key="server")
+
+def get_channel():
+    logger.debug("Trying to connect to %s vhost %s as %s with %s" %
+        (settings.BROKER_HOST, settings.BROKER_VHOST, settings.BROKER_USER, settings.BROKER_PASSWORD))
+    connection = BrokerConnection(settings.BROKER_HOST, settings.BROKER_USER,
+            settings.BROKER_PASSWORD, settings.BROKER_VHOST)
+    return connection.channel()
+
+def get_chat_queue():
+    return chat_queue
+
+def get_server_queue():
+    return server_queue
+
+def get_server_consumer():
+    return Consumer(get_channel(), server_queue)
+
 """
 Contains all data models used in the core as well as a number of helper functions.
 
@@ -931,3 +957,5 @@ def is_experimenter(user):
 
 def is_participant(user):
     return hasattr(user, 'participant') and isinstance(user.participant, Participant)
+
+

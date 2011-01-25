@@ -2,7 +2,9 @@ from fabric.api import local, run, sudo, cd, env, hide
 from fabric.contrib.console import confirm
 from fabric.contrib import django
 
-import os
+import os, sys
+
+sys.path.append(os.path.abspath('..'))
 
 """ Default Configuration """
 ''' env defaults '''
@@ -23,6 +25,10 @@ env.apps = ' '.join(env.applist)
 ''' django integration '''
 django.project(env.project_name)
 
+from vcweb import settings
+
+from fabric.context_managers import settings as fab_settings
+
 """
 currently only works for sqlite3 development database.  Need to do it by hand with postgres a
 few times to figure out what to automate.
@@ -40,6 +46,21 @@ def syncdb():
 def setup_virtualenv():
     """ Setup a fresh virtualenv """
     run('virtualenv -p %(python)s --no-site-packages %(virtualenv_path)s;' % env)
+
+def clear_rabbitmq_db():
+    with fab_settings(warn_only=True):
+        for cmd in ['stop_app', 'reset', 'start_app']:
+            sudo("rabbitmqctl %s" % cmd)
+
+def setup_rabbitmq():
+    clear_rabbitmq_db()
+    with fab_settings(warn_only=True):
+        sudo("rabbitmqctl delete_user %s" % settings.BROKER_USER)
+    sudo("rabbitmqctl add_user %s %s" % (settings.BROKER_USER, settings.BROKER_PASSWORD))
+    with fab_settings(warn_only=True):
+        sudo("rabbitmqctl delete_vhost %s" % settings.BROKER_VHOST)
+    sudo("rabbitmqctl add_vhost %s" % settings.BROKER_VHOST)
+    sudo('rabbitmqctl set_permissions -p %s %s ".*" ".*" ".*"' % (settings.BROKER_VHOST, settings.BROKER_USER))
 
 def _virtualenv(command, run_locally=False, **kwargs):
     """ source the virtualenv before executing this command """

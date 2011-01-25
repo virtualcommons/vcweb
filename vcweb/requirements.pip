@@ -4,7 +4,8 @@ django-celery
 tornado
 SocketTornad.IO
 psycopg2
-ghettoq
+kombu
+django-kombu
 # needed to run tests with ghettoq for some reason..
 #django-unittest-depth
 #redis

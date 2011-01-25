@@ -1,6 +1,6 @@
 from django.conf.urls.defaults import *
 from django.contrib import admin
-import settings
+from vcweb import settings
 
 from django.views.generic.simple import direct_to_template
 

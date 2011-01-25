@@ -23,7 +23,7 @@ def dashboard(request):
     elif is_experimenter(request.user):
         return experimenter_index(request)
     else:
-        logger.warn("user %s isn't an experimenter or participant" % request.user)
+        logger.warning("user %s isn't an experimenter or participant" % request.user)
         return redirect('home')
 
 @anonymous_required()
@@ -96,7 +96,7 @@ def instructions(request, experiment_id=None, namespace=None):
         experiment = Experiment.objects.get(experiment_metadata__namespace=namespace)
 
     if not experiment:
-        logger.warn("Tried to request instructions for id %s or namespace %s" % (experiment_id, namespace))
+        logger.warning("Tried to request instructions for id %s or namespace %s" % (experiment_id, namespace))
         return redirect('home')
 
     return render_to_response(experiment.get_template_path('welcome-instructions.html'), locals(), RequestContext(request))
@@ -137,7 +137,7 @@ def start_experiment(request, experiment_id=None):
         return redirect('core:manage_experiment')
     except Experiment.DoesNotExist:
         pass
-        logger.warn("tried to start an experiment that doesn't exist (id: %s)" % experiment_id)
+        logger.warning("tried to start an experiment that doesn't exist (id: %s)" % experiment_id)
         return redirect('core:experimenter_index')
 
 

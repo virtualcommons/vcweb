@@ -13,7 +13,10 @@ logger = logging.getLogger('vcweb.sockettornad.io')
 sys.path.append(os.path.abspath('..'))
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
-from vcweb.core.models import *
+
+from vcweb.core.models import ParticipantGroupRelationship, ChatMessage, get_server_consumer
+
+''' we will only consume stuff from this channel... '''
 
 '''
 store mappings between beaker session ids and ParticipantGroupRelationship pks
@@ -43,9 +46,13 @@ class SessionManager:
             del self.pgr_to_session[participant_group_pk]
             del self.session_id_to_participant[session.id]
         except KeyError, k:
-            logger.warn( "caught key error %s while trying to remove session %s" % (session, k) )
+            logger.warning( "caught key error %s while trying to remove session %s" % (session, k) )
             pass
 
+    '''
+    Generator function that yields (participant_group_relationship_id, beaker session object) tuples
+    for the given group
+    '''
     def sessions(self, group):
         pgr_ids = [ pgr.pk for pgr in group.participant_group_relationships.all() ]
         for pgr_id in pgr_ids:
@@ -118,6 +125,10 @@ class MessageHandler(SocketIOHandler):
         logger.debug("closing %s" % self)
         session_manager.remove(self.session)
 
+
+def vcweb_tornado_message_handler(body, message):
+    logger.debug("received body %s from message %s" % (body, message))
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
@@ -126,6 +137,11 @@ def main(argv=None):
     #configure the Tornado application
     # currently only allow one command-line argument, the port to run on.
     port = int(argv[1]) if (len(argv) > 1) else 8888
+
+    # set up queue listeners
+    consumer = get_server_consumer()
+    consumer.register_callback(vcweb_tornado_message_handler)
+    consumer.consume()
 
     application = tornado.web.Application(
             [(r'/', IndexHandler), messageRoute],

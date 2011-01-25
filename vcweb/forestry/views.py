@@ -18,7 +18,7 @@ def index(request):
         #return render_to_response('forestry/experimenter-index.html')
         return redirect('forestry:experimenter_index')
     else:
-        logger.warn("user %s isn't an experimenter or participant" % request.user)
+        logger.warning("user %s isn't an experimenter or participant" % request.user)
         return redirect('home')
 
 
@@ -48,7 +48,7 @@ def next_round(request, experiment_id=None):
                     locals(),
                     context_instance=RequestContext(request))
         except Experiment.DoesNotExist:
-            logger.warn("No experiment found with id %s" % experiment_id)
+            logger.warning("No experiment found with id %s" % experiment_id)
     return redirect('forestry:participant_index')
 
 
