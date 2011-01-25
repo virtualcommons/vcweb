@@ -16,7 +16,7 @@ SHA1_RE = re.compile('^[a-f0-9]{40}$')
 logger = logging.getLogger(__name__)
 
 from kombu.connection import BrokerConnection
-from kombu.messaging import Exchange, Queue, Consumer
+from kombu.messaging import Exchange, Queue, Consumer, Producer
 
 from vcweb import settings
 
@@ -24,13 +24,17 @@ message_exchange = Exchange("message", "direct", durable=True)
 chat_queue = Queue("chat", exchange=message_exchange, key="chat")
 experimenter_queue = Queue("experimenter", exchange=message_exchange, key="experimenter")
 server_queue = Queue("server", exchange=message_exchange, key="server")
+connection = BrokerConnection(settings.BROKER_HOST, settings.BROKER_USER, settings.BROKER_PASSWORD, settings.BROKER_VHOST)
+
+channel = connection.channel()
+server_consumer = Consumer(channel, server_queue)
+# specify routing_key when you invoke producer.publish
+producer = Producer(channel, exchange=message_exchange, serializer="json")
 
 def get_channel():
     logger.debug("Trying to connect to %s vhost %s as %s with %s" %
-        (settings.BROKER_HOST, settings.BROKER_VHOST, settings.BROKER_USER, settings.BROKER_PASSWORD))
-    connection = BrokerConnection(settings.BROKER_HOST, settings.BROKER_USER,
-            settings.BROKER_PASSWORD, settings.BROKER_VHOST)
-    return connection.channel()
+            (settings.BROKER_HOST, settings.BROKER_VHOST, settings.BROKER_USER, settings.BROKER_PASSWORD))
+    return channel
 
 def get_chat_queue():
     return chat_queue
@@ -39,7 +43,13 @@ def get_server_queue():
     return server_queue
 
 def get_server_consumer():
-    return Consumer(get_channel(), server_queue)
+    return server_consumer
+
+def publish(message, routing_key="server"):
+    producer.publish(message, routing_key=routing_key)
+
+def publish_chat(message):
+    publish(message, "chat")
 
 """
 Contains all data models used in the core as well as a number of helper functions.
@@ -911,6 +921,15 @@ class ParticipantGroupRelationship(models.Model):
 
     class Meta:
         ordering = ['participant_number', 'participant']
+
+class ChatMessageManager(models.Manager):
+    def message(self, experiment, message):
+        current_round = experiment.current_round
+        for participant in experiment.participants.all():
+            yield ChatMessage.objects.create(participant_group_relationship=participant.get_participant_group_relationship(experiment),
+                    message=message,
+                    round_configuration=current_round,
+                    experiment=experiment)
 
 class ChatMessage(models.Model):
     participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='chat_messages')

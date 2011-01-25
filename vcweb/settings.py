@@ -66,8 +66,11 @@ TEMPLATE_LOADERS = (
         #     'django.template.loaders.eggs.load_template_source',
         )
 
-TEMPLATE_CONTEXT_PROCESSORS = ('django.core.context_processors.request',
-        'django.contrib.auth.context_processors.auth')
+TEMPLATE_CONTEXT_PROCESSORS = (
+        'django.core.context_processors.request',
+        'django.contrib.auth.context_processors.auth',
+        'vcweb.core.context_processors.socket_io',
+        )
 
 MIDDLEWARE_CLASSES = (
         'django.middleware.common.CommonMiddleware',
@@ -96,6 +99,8 @@ INSTALLED_APPS = (
         'djcelery',
         'djkombu',
         )
+
+SOCKET_IO_HOST = "vcweb.asu.edu"
 
 BROKER_HOST = "149.169.203.115"
 BROKER_PORT = 5672
