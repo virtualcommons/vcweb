@@ -48,8 +48,13 @@ def get_server_consumer():
 def publish(message, routing_key="server"):
     producer.publish(message, routing_key=routing_key)
 
-def publish_chat(message):
-    publish(message, "chat")
+def publish_chat(chat_message):
+    publish(chat_message, "chat")
+
+def broadcast_chat(experiment, message):
+    for chat_message in ChatMessage.objects.message(experiment, message):
+        publish_chat(chat_message)
+
 
 """
 Contains all data models used in the core as well as a number of helper functions.
@@ -941,6 +946,8 @@ class ChatMessage(models.Model):
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='chat_messages')
     ''' the experiment in which this message was sent, not strictly necessary '''
     experiment = models.ForeignKey(Experiment, related_name='chat_messages')
+
+    objects = ChatMessageManager()
 
     def __unicode__(self):
         """ return this participant's sequence number combined with the message """

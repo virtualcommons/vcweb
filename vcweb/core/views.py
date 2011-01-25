@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb.core.forms import RegistrationForm, LoginForm
-from vcweb.core.models import Participant, Experiment, Experimenter, Institution, is_participant, is_experimenter, publish_chat
+from vcweb.core.models import Participant, Experiment, Experimenter, Institution, is_participant, is_experimenter, publish_chat, broadcast_chat
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 import logging
 
@@ -123,8 +123,7 @@ def configure(request, experiment_id=None):
 def monitor(request, experiment_id=None):
     try :
         experiment = Experiment.objects.get(pk=experiment_id)
-        for message in ChatMessage.objects.message(experiment, 'You are being monitored by %s' % request.user.experimenter):
-            publish_chat(message)
+        broadcast_chat(experiment, 'You are being monitored by %s' % request.user.experimenter)
         return render_to_response('monitor.html', locals(), RequestContext(request))
     except Experiment.DoesNotExist:
         logger.warning("Tried to monitor non-existent experiment with id %s" %
