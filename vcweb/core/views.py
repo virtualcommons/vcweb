@@ -123,6 +123,7 @@ def configure(request, experiment_id=None):
 def monitor(request, experiment_id=None):
     try :
         experiment = Experiment.objects.get(pk=experiment_id)
+# test server push
         broadcast_chat(experiment, 'You are being monitored by %s' % request.user.experimenter)
         return render_to_response('monitor.html', locals(), RequestContext(request))
     except Experiment.DoesNotExist:

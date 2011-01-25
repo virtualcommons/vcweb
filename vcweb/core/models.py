@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core import serializers
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.aggregates import Max
@@ -52,8 +53,8 @@ def publish_chat(chat_message):
     publish(chat_message, "chat")
 
 def broadcast_chat(experiment, message):
-    for chat_message in ChatMessage.objects.message(experiment, message):
-        publish_chat(chat_message)
+    publish(serializers.serialize("json",
+        ChatMessage.objects.message(experiment, message)), routing_key="chat")
 
 
 """
@@ -270,8 +271,9 @@ class Experiment(models.Model):
             self.save()
         return self
 
-
     def allocate_groups(self, randomize=True):
+        # clear out all existing groups
+        self.groups.all().delete()
         # seed the initial group.
         current_group = self.groups.create(number=1, max_size=self.experiment_configuration.max_group_size)
         # FIXME: replace with post_save hook
@@ -803,7 +805,7 @@ class GroupRoundData (models.Model):
     def initialize_data_parameters(self):
         for group_data_parameter in self.group.data_parameters:
             # create a fresh GroupRoundDataValue for each data parameter
-            logger.debug("Creating parameter %s" % group_data_parameter)
+            logger.debug("Creating parameter %s for group %s" % (group_data_parameter, self.group))
             self.data_values.create(parameter=group_data_parameter, experiment=self.group.experiment)
 
     def __unicode__(self):
