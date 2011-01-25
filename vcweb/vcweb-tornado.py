@@ -14,7 +14,7 @@ sys.path.append(os.path.abspath('..'))
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
-from vcweb.core.models import ParticipantGroupRelationship, ChatMessage, get_server_consumer
+from vcweb.core.models import ParticipantGroupRelationship, ChatMessage, Experiment, get_server_consumer
 
 ''' we will only consume stuff from this channel... '''
 
@@ -105,8 +105,17 @@ class MessageHandler(SocketIOHandler):
             participant_group_rel = ParticipantGroupRelationship.objects.get(participant__pk=event.participant_id,
                     group__pk=event.group_id)
             event.message = "Participant %s joined group %s." % (participant_group_rel.participant, participant_group_rel.group)
-# FIXME: add cleanup
             session_manager.add(self.session, participant_group_rel)
+        elif event.type == 'experimenter':
+            experiment = Experiment.objects.get(pk=event.experiment_id)
+            # TODO: should add a second handler just for experimenters..
+            logger.debug("sending message %s to all participants" %
+                  event.message)
+
+            for g in experiment.groups.all():
+               for participant_group_pk, session in session_manager.sessions(g):
+                  session['output_handle'].send(event.message)
+            return
         else:
             # check session id..
             participant_group_rel = session_manager.get_participant(self.session)

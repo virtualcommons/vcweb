@@ -1,11 +1,12 @@
 {% extends "base-vcweb.html" %}
-{% include "includes/experimenter-nav-menu.inc" %}
 
 {% block head %}
+{{ block.super }}
+{% include "includes/experimenter.events.inc" %}
 {% include "includes/socket.io.inc" %}
 <script type="text/javascript">
     $(function() {
-        var s = connect({{ socket_io_host }}, 8888);
+        var s = connect("{{ socket_io_host }}", 8888);
         s.on('message', function(data) {
             $("#chat").append("<div>" + data + "</div>");
         });
@@ -23,6 +24,10 @@
 </script>
 {% endblock %}
 
+
+{% block header %}
+{% include "includes/experimenter-nav-menu.inc" %}
+{% endblock %}
 
 {% block content %}
 <h3>Chat Test</h3>

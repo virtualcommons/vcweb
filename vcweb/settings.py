@@ -100,7 +100,7 @@ INSTALLED_APPS = (
         'djkombu',
         )
 
-SOCKET_IO_HOST = "vcweb.asu.edu"
+SOCKET_IO_HOST = "libai.la.asu.edu"
 
 BROKER_HOST = "149.169.203.115"
 BROKER_PORT = 5672
