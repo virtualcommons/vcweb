@@ -6,6 +6,7 @@ SocketTornad.IO
 psycopg2
 kombu
 django-kombu
+django-dajaxice
 # needed to run tests with ghettoq for some reason..
 #django-unittest-depth
 #redis

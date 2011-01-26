@@ -1,14 +1,14 @@
 {% load tags %}
 
 {% url home as home %}
-{% url core:experimenter_index as dashboard %}
+{% url core:dashboard as dashboard %}
 {% url core:login as login %}
 {% url core:logout as logout %}
 {% url core:profile as profile %}
 
 <div id='menu'>
 <ul>
-	<li class='{% active request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a>
+	<li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a>
         {% if "experiment" in request.path %}
         <li class='{% active_re request "experiment" %}'><a href='{{ current }}'>Experiment</a></li>
         {% endif %}

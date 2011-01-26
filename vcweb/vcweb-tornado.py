@@ -75,7 +75,7 @@ client-bound messages
 
 
 class IndexHandler(tornado.web.RequestHandler):
-    """Regular HTTP handler to serve the chatroom page"""
+    """Test HTTP handler to serve the chatroom page if we hit host:8888 manually"""
     def get(self):
         self.render("chat.html")
 

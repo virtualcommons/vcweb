@@ -124,14 +124,10 @@ def configure(request, experiment_id=None):
 def monitor(request, experiment_id=None):
     try :
         experiment = Experiment.objects.get(pk=experiment_id)
-# test server push
-        broadcast_chat(experiment, 'You are being monitored by %s' % request.user.experimenter)
         return render_to_response('monitor.html', locals(), RequestContext(request))
     except Experiment.DoesNotExist:
         logger.warning("Tried to monitor non-existent experiment with id %s" %
                 experiment_id)
-
-
 
 @experimenter_required
 def start_experiment(request, experiment_id=None):

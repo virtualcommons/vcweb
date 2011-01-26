@@ -63,7 +63,7 @@ SECRET_KEY = '2km^iq&48&6uv*x$ew@56d0#w9zqth@)_4tby(85+ac2wf4r-u'
 TEMPLATE_LOADERS = (
         'django.template.loaders.filesystem.load_template_source',
         'django.template.loaders.app_directories.load_template_source',
-        #     'django.template.loaders.eggs.load_template_source',
+        'django.template.loaders.eggs.load_template_source',
         )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
@@ -98,10 +98,14 @@ INSTALLED_APPS = (
         'vcweb.forestry',
         'djcelery',
         'djkombu',
+        'dajaxice',
         )
+
+DAJAXICE_MEDIA_PREFIX = "dajaxice"
 
 SOCKET_IO_HOST = "libai.la.asu.edu"
 
+# celery rabbitmq/amqp configuration
 BROKER_HOST = "149.169.203.115"
 BROKER_PORT = 5672
 BROKER_USER = "vcweb"
