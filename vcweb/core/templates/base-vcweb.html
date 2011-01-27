@@ -1,6 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
+{% load dajaxice_templatetags %}
+
 <head>
 {% block head %}
 <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
@@ -10,6 +12,7 @@
 <!--[if lt IE 8]><link rel="stylesheet" href="/static/media/css/blueprint/ie.css" type="text/css" media="screen, projection" /><![endif]-->
 <link href="/static/css/guarantee/style.css" rel="stylesheet" type="text/css" media="screen" />
 <script type='text/javascript' src='/static/js/jquery-1.4.2.min.js'></script>
+{% dajaxice_js_import %}
 {% endblock %}
 </head>
 

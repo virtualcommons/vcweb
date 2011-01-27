@@ -5,7 +5,12 @@
 {% block content %}
 <h3>Manage your experiments</h3>
 <p>
-Your experiments: {{ experiments }}
+<ul>
+{% for experiment in experiments %}
+    <li class='experiment'><a href='{{ experiment.management_url }}'>{{ experiment }}</a></li>
+{% endfor %}
+</ul>
+
 </p>
 
 

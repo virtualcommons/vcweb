@@ -3,15 +3,41 @@
 {% block title %} Forestry Experiment Management Interface {% endblock %}
 
 {% block content %}
-<h3>Managing {{ experiment }}</h3>
-<p>
-    show experiment status
-    |
-    advance to next round
-    |
-    (re)allocate groups
-    |
-    stop experiment
+
+<fieldset>
+    <legend>{{experiment}} (id: {{ experiment.pk }})</legend>
+        <li>Status: <span id='experiment-status'>{{ experiment.status }}</span></li>
+        <li><span class='highlight' id='experiment-round'> {{ experiment.current_round }}</span> of <b>{{ experiment.experiment_configuration.final_sequence_number }}</b></li>
+    </ul>
+    <div class='info'>
+        <a href='allocate-groups'>allocate groups</a> | 
+        <a href='#'>view data</a> |
+        <a href='#'>download data</a>
+    </div>
+    {% if experiment.groups.count > 0 %}
+    {% for group in experiment.groups.all %}
+    <h3> {{ group }} </h3>
+    <div class='participants'>
+        Participants:
+        <ul>
+            {% for participant in group.participants.all %}
+            <li> {{participant}}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class='data'>
+        Group round data:
+        <ul>
+            {% for data_value in g.current_round_data.values.all %}
+            <li> {{ data_value }} </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class='info'>Groups have not been allocated yet.</div>
+    {% endif %}
+</fieldset>
 </p>
 
 

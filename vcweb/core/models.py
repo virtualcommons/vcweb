@@ -105,7 +105,7 @@ class Experimenter(CommonsUser):
 
 class ExperimentConfiguration(models.Model):
     experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='configurations')
-    creator = models.ForeignKey(Experimenter)
+    creator = models.ForeignKey(Experimenter, related_name='experiment_configurations')
     name = models.CharField(max_length=255)
     max_number_of_participants = models.PositiveIntegerField(default=0)
     date_created = models.DateField(auto_now_add=True)
@@ -159,7 +159,7 @@ class Experiment(models.Model):
                       ('COMPLETED', 'Completed'))
     authentication_code = models.CharField(max_length=32, default="vcweb.auth.code")
     current_round_sequence_number = models.PositiveIntegerField(default=0)
-    experimenter = models.ForeignKey(Experimenter)
+    experimenter = models.ForeignKey(Experimenter, related_name='experiments')
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
     experiment_configuration = models.ForeignKey(ExperimentConfiguration,
                                                  related_name='experiments')
@@ -213,6 +213,61 @@ class Experiment(models.Model):
     def channel_name(self):
         return "%s.%s" % (self.namespace, self.id)
 
+    @property
+    def url(self, request):
+        user = request.user
+        if user.is_authenticated():
+            return "/{0}/{1}".format("participant" if is_participant(user) else "experimenter", self.url_id)
+        else:
+            return self.namespace
+
+
+    @property
+    def participant_url(self):
+        return "/%s/participate" % (self.url_id)
+
+    @property
+    def management_url(self):
+        return "/%s/experimenter" % (self.url_id)
+
+    @property
+    def status_line(self):
+        return "(id %s, status: %s, round %s of %s)" % (self.pk, self.status.lower(),
+                self.current_round.sequence_number,
+                self.experiment_configuration.final_sequence_number)
+
+    @property
+    def namespace(self):
+        return self.experiment_metadata.namespace
+
+    @property
+    def url_id(self):
+        return "%s/%s" % (self.experiment_metadata.namespace, self.id)
+
+    @property
+    def current_round_template(self):
+        return self.current_round.template_path
+
+    @property
+    def current_round(self):
+        return self.get_round_configuration(self.current_round_sequence_number)
+
+    @property
+    def next_round(self):
+        return self.get_round_configuration(self.current_round_sequence_number + 1)
+
+    @property
+    def previous_round(self):
+        return self.get_round_configuration(self.current_round_sequence_number - 1)
+
+    @property
+    def has_next_round(self):
+        return self.current_round_sequence_number < self.experiment_configuration.final_sequence_number
+
+    @property
+    def is_last_round(self):
+        return self.current_round_sequence_number == self.experiment_configuration.final_sequence_number
+
     def parameters(self, scope=None):
         ps = self.experiment_metadata.parameters
         return ps.filter(scope=scope) if scope else ps
@@ -257,30 +312,6 @@ class Experiment(models.Model):
     def get_template_path(self, name):
         return "%s/%s" % (self.namespace, name)
 
-    @property
-    def current_round_template(self):
-        return self.current_round.template_path
-
-    @property
-    def current_round(self):
-        return self.get_round_configuration(self.current_round_sequence_number)
-
-    @property
-    def next_round(self):
-        return self.get_round_configuration(self.current_round_sequence_number + 1)
-
-    @property
-    def previous_round(self):
-        return self.get_round_configuration(self.current_round_sequence_number - 1)
-
-    @property
-    def has_next_round(self):
-        return self.current_round_sequence_number < self.experiment_configuration.final_sequence_number
-
-    @property
-    def is_last_round(self):
-        return self.current_round_sequence_number == self.experiment_configuration.final_sequence_number
-
     def advance_to_next_round(self):
         self.current_round_elapsed_time = 0
         self.current_round_sequence_number += 1
@@ -322,33 +353,9 @@ class Experiment(models.Model):
                           is_experimenter_driven=self.is_experimenter_driven
                           )
 
-    @property
-    def url(self, request):
-        user = request.user
-        if user.is_authenticated():
-            return "/{0}/{1}".format("participant" if is_participant(user) else "experimenter", self.url_id)
-        else:
-            return self.namespace
-
-
-    @property
-    def participant_url(self):
-        return "/%s/participate" % (self.url_id)
-
-    @property
-    def management_url(self):
-        return "/%s/experimenter" % (self.url_id)
-
-    @property
-    def namespace(self):
-        return self.experiment_metadata.namespace
-
-    @property
-    def url_id(self):
-        return "%s/%s" % (self.experiment_metadata.namespace, self.id)
 
     def __unicode__(self):
-        return u"%s (status: %s, last updated on %s)" % (self.experiment_metadata.title, self.status, self.last_modified)
+        return u"%s" % self.experiment_metadata.title
 
     def ___eq___(self, other):
         return self.id == other.id
@@ -450,7 +457,7 @@ class RoundConfiguration(models.Model):
         return Template(template_string).substitute(kwargs, round_number=self.display_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return u"Round %d (displayed as: %d) for %s" % (self.sequence_number, self.round_number, self.experiment_configuration)
+        return u"Round %d (display: %d)" % (self.sequence_number, self.round_number)
 
     class Meta:
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]
@@ -737,7 +744,7 @@ class Group(models.Model):
         return group
 
     def __unicode__(self):
-        return u"Group #{0} in {1}".format(self.number, self.experiment)
+        return u"Group #{0}".format(self.number)
 
     class Meta:
         ordering = ['experiment', 'number']

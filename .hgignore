@@ -7,3 +7,4 @@ vcweb.db
 tags
 .settings
 *.log
+.idea
