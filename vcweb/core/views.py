@@ -41,9 +41,9 @@ def login(request):
                 form.errors['password'] = form.error_class(['Your password is incorrect.'])
                 return render_to_response('registration/login.html', locals(), context_instance=RequestContext(request))
             else:
+                return_url = request.GET.get('next')
                 auth.login(request, user)
-                # check if user is an experimenter
-                return redirect('core:dashboard')
+                return redirect( return_url if return_url else 'core:dashboard')
     else:
         form = LoginForm()
         return render_to_response('registration/login.html', locals(), context_instance=RequestContext(request))
@@ -124,7 +124,8 @@ def configure(request, experiment_id=None):
 def monitor(request, experiment_id=None):
     try :
         experiment = Experiment.objects.get(pk=experiment_id)
-        return render_to_response('monitor.html', locals(), RequestContext(request))
+# redirect to experiment specific management page?
+        return redirect(experiment.management_url)
     except Experiment.DoesNotExist:
         logger.warning("Tried to monitor non-existent experiment with id %s" %
                 experiment_id)
