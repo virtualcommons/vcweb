@@ -55,12 +55,12 @@ def clear_rabbitmq_db():
 def setup_rabbitmq():
     clear_rabbitmq_db()
     with fab_settings(warn_only=True):
-        sudo("rabbitmqctl delete_user %s" % settings.BROKER_USER)
-    sudo("rabbitmqctl add_user %s %s" % (settings.BROKER_USER, settings.BROKER_PASSWORD))
+        sudo("rabbitmqctl delete_user %s" % settings.BROKER_USER, pty=True)
+    sudo("rabbitmqctl add_user %s %s" % (settings.BROKER_USER, settings.BROKER_PASSWORD), pty=True)
     with fab_settings(warn_only=True):
-        sudo("rabbitmqctl delete_vhost %s" % settings.BROKER_VHOST)
-    sudo("rabbitmqctl add_vhost %s" % settings.BROKER_VHOST)
-    sudo('rabbitmqctl set_permissions -p %s %s ".*" ".*" ".*"' % (settings.BROKER_VHOST, settings.BROKER_USER))
+        sudo("rabbitmqctl delete_vhost %s" % settings.BROKER_VHOST, pty=True)
+    sudo("rabbitmqctl add_vhost %s" % settings.BROKER_VHOST, pty=True)
+    sudo('rabbitmqctl set_permissions -p %s %s ".*" ".*" ".*"' % (settings.BROKER_VHOST, settings.BROKER_USER), pty=True)
 
 def _virtualenv(command, run_locally=False, **kwargs):
     """ source the virtualenv before executing this command """
