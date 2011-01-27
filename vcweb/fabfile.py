@@ -25,9 +25,6 @@ env.apps = ' '.join(env.applist)
 ''' django integration '''
 django.project(env.project_name)
 
-from vcweb import settings
-
-from fabric.context_managers import settings as fab_settings
 
 """
 currently only works for sqlite3 development database.  Need to do it by hand with postgres a
@@ -48,11 +45,14 @@ def setup_virtualenv():
     run('virtualenv -p %(python)s --no-site-packages %(virtualenv_path)s;' % env)
 
 def clear_rabbitmq_db():
-    with fab_settings(warn_only=True):
+    from fabric.context_managers import settings
+    with settings(warn_only=True):
         for cmd in ['stop_app', 'reset', 'start_app']:
             sudo("rabbitmqctl %s" % cmd)
 
 def setup_rabbitmq():
+    from vcweb import settings
+    from fabric.context_managers import settings as fab_settings
     clear_rabbitmq_db()
     with fab_settings(warn_only=True):
         sudo("rabbitmqctl delete_user %s" % settings.BROKER_USER, pty=True)
@@ -60,6 +60,7 @@ def setup_rabbitmq():
     with fab_settings(warn_only=True):
         sudo("rabbitmqctl delete_vhost %s" % settings.BROKER_VHOST, pty=True)
     sudo("rabbitmqctl add_vhost %s" % settings.BROKER_VHOST, pty=True)
+# figure out what the appropriate rabbitmq perms are here.
     sudo('rabbitmqctl set_permissions -p %s %s ".*" ".*" ".*"' % (settings.BROKER_VHOST, settings.BROKER_USER), pty=True)
 
 def _virtualenv(command, run_locally=False, **kwargs):
