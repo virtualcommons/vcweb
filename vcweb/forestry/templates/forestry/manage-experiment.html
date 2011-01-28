@@ -21,14 +21,14 @@
         Participants:
         <ul>
             {% for participant in group.participants.all %}
-            <li> {{participant}}</li>
+            <li>{{participant}}</li>
             {% endfor %}
         </ul>
     </div>
     <div class='data'>
         Group round data:
         <ul>
-            {% for data_value in g.current_round_data.values.all %}
+            {% for data_value in group.current_round_data_values.all %}
             <li> {{ data_value }} </li>
             {% endfor %}
         </ul>
