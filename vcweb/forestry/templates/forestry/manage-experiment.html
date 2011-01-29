@@ -2,7 +2,7 @@
 
 {% block title %} Forestry Experiment Management Interface {% endblock %}
 
-{% block content %}
+{% block page %}
 
 <fieldset>
     <legend>{{experiment}} (id: {{ experiment.pk }})</legend>
@@ -18,9 +18,17 @@
     {% for group in experiment.groups.all %}
     <h3> {{ group }} </h3>
     <div class='participants'>
-        Participants:
-        <ul>
+        <table>
+            <thead>
+                <th>Participant</th><th>Round</th><th>Parameter</th><th>Value</th>
+            </thead>
+            <tbody>
             {% for participant in group.participants.all %}
+            {% for data_value in participant.data_values.all %}
+                <tr>
+                    <td>
+
+
             <li>{{participant}}</li>
             {% endfor %}
         </ul>
@@ -41,4 +49,4 @@
 </p>
 
 
-{% endblock content %}
+{% endblock page %}

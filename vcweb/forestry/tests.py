@@ -1,4 +1,4 @@
-from vcweb.core.models import RoundConfiguration,Parameter,ParticipantDataValue,ParticipantExperimentRelationship,GroupRoundDataValue
+from vcweb.core.models import RoundConfiguration, Parameter, ParticipantRoundData, ParticipantRoundDataValue, ParticipantExperimentRelationship, GroupRoundDataValue
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.forestry.models import round_setup, round_ended, get_resource_level, get_harvest_decision_parameter, get_harvest_decisions
 import logging
@@ -39,11 +39,11 @@ class ForestryRoundSignalTest(BaseVcwebTest):
             self.verify_resource_level(group)
             self.failUnlessEqual(len(ds), group.participants.count())
             for p in group.participants.all():
-                pdv = ParticipantDataValue.objects.get(
-                        participant=p,
-                        round_configuration=current_round,
+                pdv = ParticipantRoundDataValue.objects.get(
                         parameter=harvest_decision_parameter,
-                        experiment=e
+                        participant_round_data__participant=p,
+                        participant_round_data__experiment=e,
+                        participant_round_data__round_configuration=current_round
                         )
                 self.failUnless(pdv.pk > 0)
                 self.failIf(pdv.value)
@@ -104,12 +104,11 @@ class ForestryParametersTest(BaseVcwebTest):
             ds = get_harvest_decisions(group)
             self.failIf(ds, 'there should not be any harvest decisions.')
             for p in group.participants.all():
-                pdv = ParticipantDataValue.objects.create(
+                prd = ParticipantRoundData.objects.create(
                         participant=p,
                         round_configuration=current_round,
-                        parameter=harvest_decision_parameter,
-                        experiment=e
-                        )
+                        experiment=e)
+                pdv = prd.data_values.create(parameter=harvest_decision_parameter)
                 self.failUnless(pdv.pk > 0)
                 self.failIf(pdv.value)
                 pdv.value = 3
@@ -201,26 +200,27 @@ class ForestryParametersTest(BaseVcwebTest):
         for data_param in e.parameters(scope=Parameter.PARTICIPANT_SCOPE).all():
             for p in self.participants:
                 pexpr = ParticipantExperimentRelationship.objects.get(participant=p, experiment=e)
-                dv = ParticipantDataValue(parameter=data_param, value=pexpr.sequential_participant_identifier * 2, experiment=e, participant=p, round_configuration=rc)
-                dv.save()
-
+                prd = ParticipantRoundData.objects.create(experiment=e, participant=p, round_configuration=rc)
+                dv = prd.data_values.create(parameter=data_param, value=pexpr.sequential_participant_identifier * 2)
         return e
 
     def test_data_values(self):
         self.create_participant_data_values()
         e = self.experiment
         num_participant_parameters = e.parameters(scope=Parameter.PARTICIPANT_SCOPE).count()
-        self.failUnlessEqual(e.participants.count() * num_participant_parameters, len(ParticipantDataValue.objects.filter(experiment=e)),
+        self.failUnlessEqual(e.participants.count() * num_participant_parameters, ParticipantRoundDataValue.objects.filter(experiment=e).count(),
                              'There should be %s participants * %s total data parameters = %s' % (e.participants.count(), num_participant_parameters, e.participants.count() * num_participant_parameters))
 
     def test_data_value_conversion(self):
         self.create_participant_data_values()
         e = self.experiment
         for p in self.participants:
-            self.failUnlessEqual(p.data_values.count(), 1)
+            prd = p.round_data.iterator().next()
+            self.failUnlessEqual(p.round_data.count(), 1)
+            self.failUnlessEqual(prd.data_values.count(), 1)
             pexpr = p.get_participant_experiment_relationship(e)
             logger.debug("relationship %s" % pexpr)
-            for dv in p.data_values.all():
+            for dv in prd.data_values.all():
                 logger.debug("verifying data value %s" % dv)
                 self.failUnlessEqual(pexpr.sequential_participant_identifier * 2, dv.value)
                 self.failUnless(dv.value)
@@ -229,4 +229,4 @@ class ForestryParametersTest(BaseVcwebTest):
                 self.failIf(dv.boolean_value)
                 self.failIf(dv.float_value)
         rc = e.advance_to_next_round().current_round
-        self.failUnlessEqual(0, len(ParticipantDataValue.objects.filter(experiment=e, round_configuration=rc)))
+        self.failUnlessEqual(0, ParticipantRoundDataValue.objects.filter(experiment=e, participant_round_data__round_configuration=rc).count())

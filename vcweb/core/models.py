@@ -569,6 +569,9 @@ class ParameterizedValue(models.Model):
     class Meta:
         abstract = True
 
+"""
+Used for specific round configuration data.
+"""
 class RoundParameterValue(ParameterizedValue):
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_parameter_values')
 
@@ -576,6 +579,9 @@ class RoundParameterValue(ParameterizedValue):
         return u"{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.value)
 
 
+"""
+A DataValue is used by Groups and Participants.  GroupRoundData
+"""
 class DataValue(ParameterizedValue):
     experiment = models.ForeignKey(Experiment)
 
@@ -690,10 +696,10 @@ class Group(models.Model):
         return next_round_data.data_values.create(parameter=parameter, experiment=self.experiment, value=value)
 
     def get_participant_data_value(self, participant, parameter):
-        return ParticipantDataValue.objects.get(participant=participant, parameter=parameter, round_configuration=self.current_round)
+        return ParticipantRoundDataValue.objects.get(participant_round_data__participant=participant, parameter=parameter, participant_round_data__round_configuration=self.current_round)
 
     def get_participant_data_values(self, name=None, *names):
-        return ParticipantDataValue.objects.filter(round_configuration=self.current_round, participant__in=self.participants.all())
+        return ParticipantRoundDataValue.objects.filter(participant_round_data__round_configuration=self.current_round, participant_round_data__participant__in=self.participants.all())
 
     @property
     def data_parameters(self):
@@ -751,7 +757,10 @@ class Group(models.Model):
 
 
 """
-Data values stored for a particular group in a particular round.
+Group-wide data values stored for a particular group in a particular round.
+These are values that apply to the group as a whole, such as a resource level
+shared by the entire group.  Participant-specific values are stored as
+ParticipantDataValues.
 """
 class GroupRoundData (models.Model):
     group = models.ForeignKey(Group, related_name='round_data')
@@ -771,10 +780,20 @@ class GroupRoundData (models.Model):
     def __unicode__(self):
         return u"Round Data for {0} in {1}".format(self.group, self.round)
 
-
-
+'''
+FIXME: duplication in structure with this and ParticipantRoundDataValue
+'''
 class GroupRoundDataValue(DataValue):
     group_round_data = models.ForeignKey(GroupRoundData, related_name='data_values')
+    
+    @property
+    def group(self):
+        return self.group_round_data.group
+
+    @property
+    def round_configuration(self):
+        return self.group_round_data.round_configuration
+
     def __unicode__(self):
         return u"data value {0}: {1} for group {2}".format(self.parameter, self.value, self.group_round_data.group)
     class Meta:
@@ -787,8 +806,9 @@ class Participant(CommonsUser):
 
     def set_data_value(self, experiment=None, parameter=None, value=None):
         if experiment and parameter and value:
-            participant_data_value = ParticipantDataValue.objects.get(parameter=parameter,
-                    experiment=experiment, participant=self, round_configuration=experiment.current_round)
+            participant_round_data, created =  ParticipantRoundData.objects.get_or_create(participant=self, experiment=experiment, 
+                    round_configuration=experiment.current_round)
+            participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(parameter=parameter, participant_round_data=participant_round_data)
             participant_data_value.value = value
             participant_data_value.save()
         else:
@@ -848,9 +868,6 @@ class ParticipantExperimentRelationship(models.Model):
 
     def __unicode__(self):
         return u"Experiment {0} - participant {1} (created {2})".format(self.experiment, self.participant, self.date_created)
-
-
-
 
 class ParticipantGroupRelationshipManager(models.Manager):
 
@@ -915,15 +932,41 @@ class ChatMessage(models.Model):
         """ return this participant's sequence number combined with the message """
         participant_number = self.participant_group_relationship.participant_number
         return u"{0}: {1}".format(participant_number, self.message)
-"""
-The particular participant data value for a given ParticipantRoundData (round + participant entity)
-"""
-class ParticipantDataValue(DataValue):
-    participant = models.ForeignKey(Participant, related_name='data_values')
+
+class ParticipantRoundData(models.Model):
+    participant = models.ForeignKey(Participant, related_name='round_data')
     round_configuration = models.ForeignKey(RoundConfiguration)
+    experiment = models.ForeignKey(Experiment, related_name='participant_round_data')
+
+    def __unicode__(self):
+        return u"Round data for {0} in {1}".format(self.participant, self.round_configuration)
+
+"""
+Stores participant-specific data value and associates a Participant, Experiment
+(from DataValue), the round in which the data value was associated.
+"""
+class ParticipantRoundDataValue(DataValue):
+    participant_round_data = models.ForeignKey(ParticipantRoundData, related_name='data_values')
+
+    def __init__(self, *args, **kwargs):
+        super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
+        if not hasattr(self, 'experiment'):
+            logger.debug("participant round data: %s" % self.participant_round_data)
+            self.experiment = self.participant_round_data.experiment
+
+    @property
+    def participant(self):
+        return self.participant_round_data.participant
+
+    @property
+    def round_configuration(self):
+        return self.participant_round_data.round_configuration
+
+    def __unicode__(self):
+        return u"data value {0}: {1} for participant {2}".format(self.parameter, self.value, self.participant)
 
     class Meta:
-        ordering = [ 'parameter' ]
+        ordering = [ 'participant_round_data__round_configuration', 'parameter' ]
 
 class SessionData(models.Model):
     login_time = models.DateTimeField(auto_now_add=True)

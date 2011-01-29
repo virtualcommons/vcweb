@@ -56,10 +56,8 @@ def round_setup(experiment):
             set_resource_level(group, round_configuration.get_parameter_value('initial.resource_level'))
             ''' initialize all participant data values '''
             for p in group.participants.all():
-                harvest_decision, just_created = p.data_values.get_or_create(round_configuration=round_configuration, 
-                        parameter=get_harvest_decision_parameter(),
-                        experiment=experiment)
-                logger.debug("initialized harvest decision %s (%s) for %s" 
-                        % (harvest_decision, just_created, p))
+                participant_round_data = p.round_data.create(round_configuration=round_configuration, experiment=experiment)
+                harvest_decision = participant_round_data.data_values.create(parameter=get_harvest_decision_parameter())
+                logger.debug("initialized harvest decision %s for %s" % (harvest_decision, p))
 
 
