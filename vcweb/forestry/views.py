@@ -36,7 +36,7 @@ def participant_index(request):
 
 
 
-experimenter_required
+@experimenter_required
 def configure(request):
     return Http404()
 
@@ -44,7 +44,6 @@ def configure(request):
 def manage_experiment(request, experiment_id=None):
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
-        participant_data_values =
         return render_to_response('forestry/manage-experiment.html', locals(), context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
         logger.warning("No experiment available with id [%s]" % experiment_id)

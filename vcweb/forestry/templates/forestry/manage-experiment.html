@@ -23,15 +23,11 @@
                 <th>Participant</th><th>Round</th><th>Parameter</th><th>Value</th>
             </thead>
             <tbody>
-            {% for participant in group.participants.all %}
-            {% for data_value in participant.data_values.all %}
-                <tr>
-                    <td>
+                {% for participant in group.participants.all %}
 
-
-            <li>{{participant}}</li>
-            {% endfor %}
-        </ul>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
     <div class='data'>
         Group round data:

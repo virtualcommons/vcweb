@@ -7,7 +7,6 @@ from django.views.generic.simple import direct_to_template
 # set up admin URLs
 admin.autodiscover()
 
-
 urlpatterns = patterns('',
     url(r'^$', direct_to_template, {'template':'index.html'}, name='home'),
     url(r'^about/$', direct_to_template, {'template':'about.html'}, name='about'),
@@ -16,21 +15,17 @@ urlpatterns = patterns('',
     url(r'^accounts/password_reset/done/$', 'django.contrib.auth.views.password_reset_done', {'template_name':'password_reset_done.html'}),
     url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$', 'django.contrib.auth.views.password_reset_confirm', {'template_name':'password_reset_confirm.html'}),
     url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete', {'template_name':'password_reset_complete.html'}),
+
+    # FIXME: figure out if we can dynamically include every custom app's
+    # urlconf
     url(r'^forestry/', include('vcweb.forestry.urls', namespace='forestry', app_name='forestry')),
     url(r'^admin/', include(admin.site.urls)),
+    # core catches everything else
     url(r'', include('vcweb.core.urls', namespace='core', app_name='core')),
-    # make sure this is last
 
-
-    # Example:
-    # (r'^vcweb/', include('vcweb.foo.urls')),
-
-    # Uncomment the admin/doc line below and add 'django.contrib.admindocs' 
+    # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
-    # Uncomment the next line to enable the admin:
-    # (r'^admin/', include(admin.site.urls)),
 )
 
 if settings.LOCAL_DEVELOPMENT:
