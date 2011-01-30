@@ -121,11 +121,25 @@ def configure(request, experiment_id=None):
     return render_to_response('configure.html', locals(), RequestContext(request))
 
 @experimenter_required
-def monitor(request, experiment_id=None):
+def manage(request, experiment_id=None):
     try :
         experiment = Experiment.objects.get(pk=experiment_id)
 # redirect to experiment specific management page?
         return redirect(experiment.management_url)
+    except Experiment.DoesNotExist:
+        logger.warning("Tried to monitor non-existent experiment with id %s" %
+                experiment_id)
+
+@experimenter_required
+def monitor(request, experiment_id=None):
+    try :
+        experiment = Experiment.objects.get(pk=experiment_id)
+        '''
+        returns a list of round data tuples
+        '''
+        round_data = experiment.get_all_round_data()
+        return render_to_response('monitor.html', locals(), context_instance=RequestContext(request))
+# redirect to experiment specific management page?
     except Experiment.DoesNotExist:
         logger.warning("Tried to monitor non-existent experiment with id %s" %
                 experiment_id)

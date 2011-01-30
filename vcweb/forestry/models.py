@@ -12,7 +12,7 @@ def get_resource_level(group=None):
     return group.get_data_value(parameter_name='resource_level') if group else None
 
 def get_harvest_decisions(group=None):
-    return group.get_participant_data_values(name='harvest_decision') if group else []
+    return group.get_participant_data_values(parameter_name='harvest_decision') if group else []
 
 def get_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace='forestry')
@@ -54,10 +54,11 @@ def round_setup(experiment):
         for group in experiment.groups.all():
             ''' set resource level to default '''
             set_resource_level(group, round_configuration.get_parameter_value('initial.resource_level'))
-            ''' initialize all participant data values '''
-            for p in group.participants.all():
-                participant_round_data = p.round_data.create(round_configuration=round_configuration, experiment=experiment)
-                harvest_decision = participant_round_data.data_values.create(parameter=get_harvest_decision_parameter())
-                logger.debug("initialized harvest decision %s for %s" % (harvest_decision, p))
+    ''' initialize all participant data values '''
+    current_round_data = experiment.current_round_data
+    harvest_decision_parameter = get_harvest_decision_parameter()
+    for p in experiment.participants.all():
+        harvest_decision = current_round_data.participant_data_values.create(participant=p, parameter=harvest_decision_parameter)
+        logger.debug("initialized harvest decision %s" % harvest_decision)
 
 

@@ -253,6 +253,11 @@ class Experiment(models.Model):
         return self.get_round_configuration(self.current_round_sequence_number)
 
     @property
+    def current_round_data(self):
+        round_data, created = self.round_data.get_or_create(round_configuration=self.current_round)
+        return round_data
+
+    @property
     def next_round(self):
         return self.get_round_configuration(self.current_round_sequence_number + 1)
 
@@ -284,19 +289,16 @@ class Experiment(models.Model):
         self.groups.all().delete()
         # seed the initial group.
         current_group = self.groups.create(number=1, max_size=self.experiment_configuration.max_group_size)
-        # FIXME: replace with post_save hook
+        # FIXME: make this initialization automatic for new groups
         current_group.initialize()
         if randomize:
             participants = list(self.participants.all())
             random.shuffle(participants)
         else:
             participants = self.participants.all()
-
-
         for p in participants:
             if current_group.is_full:
-                current_group = self.groups.create(number=current_group.number + 1,
-                        max_size=current_group.max_size)
+                current_group = current_group.create_next_group()
             current_group.add_participant(p)
 
         # XXX: if there a performance hit here, should probably do a void return instead
@@ -316,9 +318,9 @@ class Experiment(models.Model):
         self.current_round_elapsed_time = 0
         self.current_round_sequence_number += 1
         self.save()
-        # would return self work as well?
-        # return self
-        return Experiment.objects.get(pk=self.pk)
+        # initialize group and participant parameters
+        for g in self.groups.all():
+            g.initialize()
 
     def start_round(self, sender=None):
         self.status = 'ROUND_IN_PROGRESS'
@@ -338,7 +340,6 @@ class Experiment(models.Model):
     def check_elapsed_time(self):
         if self.is_time_expired:
             self.end_round()
-
 
     """ returns a fresh copy of this experiment with configuration / metadata intact """
     def clone(self, experimenter=None):
@@ -614,10 +615,14 @@ class Group(models.Model):
     def current_round(self):
         return self.experiment.current_round
 
-    def initialize(self, group_round_data=None):
-        if not (group_round_data and self.round_data.filter(round=self.current_round)):
-            group_round_data = self.round_data.create(round=self.current_round)
-        group_round_data.initialize_data_parameters()
+    def initialize(self):
+        round_data = self.current_round_data
+        if round_data.group_data_values.filter(group=self).count() == 0:
+            for group_data_parameter in self.data_parameters:
+                # create a fresh GroupRoundDataValue for each data parameter
+                logger.debug("Creating parameter %s for group %s" % (group_data_parameter, self))
+                self.data_values.create(round_data=round_data, parameter=group_data_parameter)
+
 
     '''
     Not as efficient as a simple SQL update because we need to do some type
@@ -643,7 +648,7 @@ class Group(models.Model):
         vs
         GroupRoundDataValue.objects.filter(group_round_data=self.current_round_data, parameter=parameter).update(**update_dict)
         '''
-        updated_rows = self.current_round_data.data_values.filter(parameter=parameter).update(**update_dict)
+        updated_rows = self.data_values.filter(round_data=self.current_round_data, parameter=parameter).update(**update_dict)
         if updated_rows != 1:
             logger.error("Updated %s rows, should have been only one..." % updated_rows)
         '''
@@ -658,17 +663,16 @@ class Group(models.Model):
 
     def get_data_value(self, parameter_name=None, parameter=None):
         criteria = dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name)],
-                group_round_data=self.current_round_data)
-
-        return GroupRoundDataValue.objects.get(**criteria)
+                round_data=self.current_round_data)
+        return self.data_values.get(**criteria)
 
     def get_group_data_values(self, name=None, *names):
-        group_round_data = self.current_round_data
+        round_data = self.current_round_data
         if names:
             if name: names.append(name)
-            return GroupRoundDataValue.objects.filter(group_round_data=group_round_data, parameter__name__in=names)
+            return self.data_values.filter(round_data=round_data, parameter__name__in=names)
         elif name:
-            return GroupRoundDataValue.objects.get(group_round_data=group_round_data, parameter__name=name)
+            return self.data_values.get(round_data=round_data, parameter__name=name)
         else:
             logger.warning("Trying to retrieve data value by name with no args")
         return None
@@ -691,30 +695,28 @@ class Group(models.Model):
             self.transfer_parameter(parameter, value)
 
     def transfer_parameter(self, parameter, value):
-        next_round_data = self.round_data.create(round=self.experiment.next_round)
+        next_round_data, created = self.experiment.round_data.get_or_create(round_configuration=self.experiment.next_round)
 # if value is set, use it, otherwise use the current round parameter value
-        return next_round_data.data_values.create(parameter=parameter, experiment=self.experiment, value=value)
+        return next_round_data.group_data_values.create(group=self, parameter=parameter, value=value)
 
     def get_participant_data_value(self, participant, parameter):
-        return ParticipantRoundDataValue.objects.get(participant_round_data__participant=participant, parameter=parameter, participant_round_data__round_configuration=self.current_round)
+        return ParticipantRoundDataValue.objects.get(round_data=self.current_round_data, participant=participant, parameter=parameter)
 
-    def get_participant_data_values(self, name=None, *names):
-        return ParticipantRoundDataValue.objects.filter(participant_round_data__round_configuration=self.current_round, participant_round_data__participant__in=self.participants.all())
+    def get_participant_data_values(self, parameter_name=None):
+        return ParticipantRoundDataValue.objects.filter(round_data=self.current_round_data, participant__in=self.participants.all(), parameter__name=parameter_name)
 
     @property
     def data_parameters(self):
         return Parameter.objects.filter(experiment_metadata=self.experiment.experiment_metadata, scope=Parameter.GROUP_SCOPE)
 
-    @property
-    def current_round_data(self):
-        group_round_data, just_created = GroupRoundData.objects.get_or_create(group=self, round=self.current_round)
-        if just_created:
-            self.initialize(group_round_data)
-        return group_round_data
 
     @property
-    def current_round_data_values(self, **kwargs):
-        return self.current_round_data.data_values
+    def current_round_data(self):
+        return self.experiment.current_round_data
+
+    @property
+    def current_round_data_values(self):
+        return self.current_round_data.group_data_values
 
     @property
     def is_full(self):
@@ -757,47 +759,38 @@ class Group(models.Model):
 
 
 """
-Group-wide data values stored for a particular group in a particular round.
-These are values that apply to the group as a whole, such as a resource level
-shared by the entire group.  Participant-specific values are stored as
-ParticipantDataValues.
+round-specific data for a given experiment.  Contains related sets to group_data
+(GroupRoundDataValue) and participant_data (ParticipantRoundDataValue)
 """
-class GroupRoundData (models.Model):
-    group = models.ForeignKey(Group, related_name='round_data')
-    round = models.ForeignKey(RoundConfiguration, related_name='group_data')
-    """ show instructions before the round begins? """
-    show_instructions = models.BooleanField(default=True)
-    """ show debriefing after the round ends? """
-    show_debriefing = models.BooleanField(default=False)
+class RoundData(models.Model):
+    experiment = models.ForeignKey(Experiment, related_name='round_data')
+    round_configuration = models.ForeignKey(RoundConfiguration)
     elapsed_time = models.PositiveIntegerField(default=0)
 
-    def initialize_data_parameters(self):
-        for group_data_parameter in self.group.data_parameters:
-            # create a fresh GroupRoundDataValue for each data parameter
-            logger.debug("Creating parameter %s for group %s" % (group_data_parameter, self.group))
-            self.data_values.create(parameter=group_data_parameter, experiment=self.group.experiment)
-
     def __unicode__(self):
-        return u"Round Data for {0} in {1}".format(self.group, self.round)
+        return u"Round data for {0} in {1}".format(self.experiment,
+                self.round_configuration)
+    class Meta:
+        ordering = [ 'round_configuration' ]
 
-'''
-FIXME: duplication in structure with this and ParticipantRoundDataValue
-'''
 class GroupRoundDataValue(DataValue):
-    group_round_data = models.ForeignKey(GroupRoundData, related_name='data_values')
-    
-    @property
-    def group(self):
-        return self.group_round_data.group
+    group = models.ForeignKey(Group, related_name='data_values')
+    round_data = models.ForeignKey(RoundData, related_name='group_data_values')
+
+    def __init__(self, *args, **kwargs):
+        super(GroupRoundDataValue, self).__init__(*args, **kwargs)
+        if not hasattr(self, 'experiment'):
+            self.experiment = self.round_data.experiment
+
 
     @property
     def round_configuration(self):
-        return self.group_round_data.round_configuration
+        return self.round_data.round_configuration
 
     def __unicode__(self):
-        return u"data value {0}: {1} for group {2}".format(self.parameter, self.value, self.group_round_data.group)
+        return u"data value {0}: {1} for group {2}".format(self.parameter, self.value, self.group)
     class Meta:
-        ordering = [ 'parameter' ]
+        ordering = [ 'round_data', 'group', 'parameter' ]
 
 class Participant(CommonsUser):
     can_receive_invitations = models.BooleanField(default=False)
@@ -806,9 +799,9 @@ class Participant(CommonsUser):
 
     def set_data_value(self, experiment=None, parameter=None, value=None):
         if experiment and parameter and value:
-            participant_round_data, created =  ParticipantRoundData.objects.get_or_create(participant=self, experiment=experiment, 
-                    round_configuration=experiment.current_round)
-            participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(parameter=parameter, participant_round_data=participant_round_data)
+            current_round_data = experiment.current_round_data
+            # FIXME: can we simplify?
+            participant_data_value, created = current_round_data.participant_data_values.get_or_create(parameter=parameter, participant=self)
             participant_data_value.value = value
             participant_data_value.save()
         else:
@@ -933,40 +926,28 @@ class ChatMessage(models.Model):
         participant_number = self.participant_group_relationship.participant_number
         return u"{0}: {1}".format(participant_number, self.message)
 
-class ParticipantRoundData(models.Model):
-    participant = models.ForeignKey(Participant, related_name='round_data')
-    round_configuration = models.ForeignKey(RoundConfiguration)
-    experiment = models.ForeignKey(Experiment, related_name='participant_round_data')
-
-    def __unicode__(self):
-        return u"Round data for {0} in {1}".format(self.participant, self.round_configuration)
-
 """
 Stores participant-specific data value and associates a Participant, Experiment
 (from DataValue), the round in which the data value was associated.
 """
 class ParticipantRoundDataValue(DataValue):
-    participant_round_data = models.ForeignKey(ParticipantRoundData, related_name='data_values')
+    round_data = models.ForeignKey(RoundData, related_name='participant_data_values')
+    participant = models.ForeignKey(Participant, related_name='round_data_values')
 
     def __init__(self, *args, **kwargs):
         super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
         if not hasattr(self, 'experiment'):
-            logger.debug("participant round data: %s" % self.participant_round_data)
-            self.experiment = self.participant_round_data.experiment
-
-    @property
-    def participant(self):
-        return self.participant_round_data.participant
+            self.experiment = self.round_data.experiment
 
     @property
     def round_configuration(self):
-        return self.participant_round_data.round_configuration
+        return self.round_data.round_configuration
 
     def __unicode__(self):
         return u"data value {0}: {1} for participant {2}".format(self.parameter, self.value, self.participant)
 
     class Meta:
-        ordering = [ 'participant_round_data__round_configuration', 'parameter' ]
+        ordering = [ 'round_data', 'participant', 'parameter' ]
 
 class SessionData(models.Model):
     login_time = models.DateTimeField(auto_now_add=True)
