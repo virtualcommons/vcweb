@@ -325,6 +325,8 @@ class Experiment(models.Model):
     def start_round(self, sender=None):
         self.status = 'ROUND_IN_PROGRESS'
         self.save()
+        # FIXME: would prefer using self.namespace but django utf-8 unicode
+        # strings are fubaring us.
         sender = self.experiment_metadata.pk if sender is None else sender
         # notify registered game handlers
         logger.debug("About to send round started signal with sender %s" % sender)
@@ -333,6 +335,8 @@ class Experiment(models.Model):
     def end_round(self, sender=None):
         self.status = 'ACTIVE'
         self.save()
+        # FIXME: would prefer using self.namespace but django utf-8 unicode
+        # strings are fubaring us.
         sender = self.experiment_metadata.pk if sender is None else sender
         logger.debug("about to send round ended signal with sender %s" % sender)
         return signals.round_ended.send(sender, experiment_id=self.pk)

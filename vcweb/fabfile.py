@@ -35,6 +35,9 @@ syncdb_commands = ['(test -f vcweb.db && rm vcweb.db) || true',
         '%(python)s manage.py loaddata test_users_participants' % env,
         '%(python)s manage.py loaddata forestry_test_data' % env]
 
+def shell():
+    local("{python} manage.py shell".format(python=env.python), capture=False)
+
 def syncdb():
     with cd(env.project_path):
         for command in syncdb_commands:

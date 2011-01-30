@@ -77,7 +77,17 @@ def round_ended_handler(sender, experiment_id=None, **kwargs):
     round_teardown(Experiment.objects.get(pk=experiment_id))
 
 
-signals.round_started.connect(round_started_handler, sender=get_forestry_experiment().pk)
-signals.round_ended.connect(round_ended_handler, sender=get_forestry_experiment().pk)
+# FIXME: figure out a better way to tie these signal handlers to a specific
+# ExperimentMetadata instance.  Using ExperimentMetadata.namespace is problematic
+# due to the python builtin id used by dispatcher.py and utf-8 strings...
+# for an example, try 
+# e = Experiment.objects.get(pk=1)
+# id(e.namespace)
+# id(u'forestry')
+# id(repr(u'forestry'))
+# id(repr(e.namespace))
+# even using django.util.encodings smart_unicode and smart_str functions don't help.
+signals.round_started.connect(round_started_handler, sender=1)
+signals.round_ended.connect(round_ended_handler, sender=1)
 
 
