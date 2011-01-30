@@ -1,4 +1,5 @@
-from vcweb.core.models import ExperimentMetadata, Parameter
+from vcweb.core.models import ExperimentMetadata, Parameter, Experiment
+from vcweb.core import signals
 import logging
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,9 @@ def get_resource_level(group=None):
 
 def get_harvest_decisions(group=None):
     return group.get_participant_data_values(parameter_name='harvest_decision') if group else []
+
+def get_forestry_experiment():
+    return ExperimentMetadata.objects.get(namespace='forestry')
 
 def get_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace='forestry')
@@ -35,7 +39,7 @@ def set_harvest_decision(participant=None, experiment=None, value=None):
 def set_resource_level(group=None, value=None):
     group.set_data_value(parameter=get_resource_level_parameter(), value=value)
 
-def round_ended(experiment):
+def round_teardown(experiment):
     ''' calculate new resource levels '''
     resource_level_parameter = get_resource_level_parameter()
 
@@ -60,5 +64,20 @@ def round_setup(experiment):
     for p in experiment.participants.all():
         harvest_decision = current_round_data.participant_data_values.create(participant=p, parameter=harvest_decision_parameter)
         logger.debug("initialized harvest decision %s" % harvest_decision)
+
+
+#@receiver(signals.round_started, sender='forestry')
+def round_started_handler(sender, experiment_id=None, **kwargs):
+    logger.debug("forestry handling round started signal")
+    round_setup( Experiment.objects.get(pk=experiment_id) )
+
+#@receiver(signals.round_ended, sender='forestry')
+def round_ended_handler(sender, experiment_id=None, **kwargs):
+    logger.debug("forestry handling round ended signal")
+    round_teardown(Experiment.objects.get(pk=experiment_id))
+
+
+signals.round_started.connect(round_started_handler, sender=get_forestry_experiment().pk)
+signals.round_ended.connect(round_ended_handler, sender=get_forestry_experiment().pk)
 
 
