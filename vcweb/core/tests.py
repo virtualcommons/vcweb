@@ -105,11 +105,11 @@ class ExperimentConfigurationTest(BaseVcwebTest):
 
 class ExperimentTest(BaseVcwebTest):
 
-    def round_started_test_handler(self, experiment_id=None, time=None, round_configuration_id=None, **kwargs):
+    def round_started_test_handler(self, experiment=None, time=None, round_configuration=None, **kwargs):
         logger.debug("invoking round started test handler with args experiment_id:%i time:%s round_configuration_id:%s"
-                     % (experiment_id, time, round_configuration_id))
-        self.failUnlessEqual(experiment_id, self.experiment.pk)
-        self.failUnlessEqual(round_configuration_id, self.experiment.current_round.id)
+                     % (experiment, time, round_configuration))
+        self.failUnlessEqual(experiment, self.experiment)
+        self.failUnlessEqual(round_configuration, self.experiment.current_round)
         self.failUnless(time, "time should be set")
         raise Exception
 
@@ -120,7 +120,7 @@ class ExperimentTest(BaseVcwebTest):
             self.fail("Should have raised an exception.")
         except Exception, e:
             logger.debug("expected exception raised: %s" % e)
-            self.failUnless(self.experiment.is_running())
+            self.failUnless(self.experiment.is_active())
 
     def test_allocate_groups(self):
         self.experiment.allocate_groups(randomize=False)
@@ -239,6 +239,7 @@ class RoundConfigurationTest(BaseVcwebTest):
 
     def test_get_set_parameter(self):
         e = self.experiment
+# current_round is instructions, with no available parameters.
         round_configuration = e.current_round
         name = 'initial.resource_level'
         round_configuration.set_parameter(name=name, value=501)

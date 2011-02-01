@@ -122,7 +122,7 @@
     },
     {
         "fields": {
-        	"round_configuration": 1,
+        	"round_configuration": 2,
                 "parameter": [ "reset.resource_level" ],
                 "boolean_value": "True"
         }, 
@@ -131,7 +131,7 @@
     },
     {
         "fields": {
-        	"round_configuration": 1,
+        	"round_configuration": 2,
                 "parameter": [ "initial.resource_level" ],
                 "int_value": 100
         }, 

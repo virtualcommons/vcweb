@@ -57,7 +57,6 @@ def next_round(request, experiment_id=None):
     except Experiment.DoesNotExist:
         logger.warning("No experiment found with id %s" % experiment_id)
 
-
 @participant_required
 def participate(request, experiment_id=None):
     try:

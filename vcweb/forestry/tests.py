@@ -16,7 +16,9 @@ class ForestryRoundSignalTest(BaseVcwebTest):
 
     def test_round_started_signal(self):
         e = self.experiment
-        e.activate().start_round(sender=forestry_sender)
+        e.activate()
+        e.advance_to_next_round()
+        e.start_round(sender=forestry_sender)
         for group in e.groups.all():
             self.verify_resource_level(group)
         return e
@@ -24,7 +26,9 @@ class ForestryRoundSignalTest(BaseVcwebTest):
     def test_round_setup(self):
         e = self.experiment
         e.allocate_groups()
+# skip the first instructions round
 # set up some harvest decisions
+        e.advance_to_next_round()
         round_setup(e)
         for group in e.groups.all():
             self.verify_resource_level(group)
@@ -66,8 +70,7 @@ class ForestryRoundSignalTest(BaseVcwebTest):
             2 groups, 2 rounds of data = 4 total group round data value
             objects.
             '''
-            self.failUnlessEqual(GroupRoundDataValue.objects.count(), 4)
-
+            self.failUnlessEqual(GroupRoundDataValue.objects.count(), 6)
 
     def test_round_ended(self):
         e = self.test_round_setup()

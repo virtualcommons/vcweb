@@ -277,7 +277,7 @@ class Experiment(models.Model):
         return ps.filter(scope=scope) if scope else ps
 
     def activate(self):
-        if not self.is_running():
+        if not self.is_active():
             self.allocate_groups()
             self.status = 'ACTIVE'
             self.save()
@@ -304,7 +304,7 @@ class Experiment(models.Model):
         # or collect the groups as they are added
         return self.groups
 
-    def is_running(self):
+    def is_active(self):
         return self.status != 'INACTIVE'
 
     def get_round_configuration(self, sequence_number):
@@ -324,23 +324,21 @@ class Experiment(models.Model):
     def start_round(self, sender=None):
         self.status = 'ROUND_IN_PROGRESS'
         self.save()
-        # FIXME: would prefer using self.namespace but django utf-8 unicode
-        # strings are fubaring us.
+        # FIXME: would prefer using self.namespace as a default but django's
+        # managed unicode strings don't work as senders
         sender = self.experiment_metadata.pk if sender is None else sender
         #sender = self.namespace.encode('utf-8')
         # notify registered game handlers
         logger.debug("About to send round started signal with sender %s" % sender)
-        return signals.round_started.send(sender, experiment_id=self.id, time=datetime.datetime.now(), round_configuration_id=self.current_round.id)
+        return signals.round_started.send(sender, experiment=self, time=datetime.datetime.now(), round_configuration=self.current_round)
 
     def end_round(self, sender=None):
         self.status = 'ACTIVE'
         self.save()
-        # FIXME: would prefer using self.namespace but django utf-8 unicode
-        # strings are fubaring us.
         sender = self.experiment_metadata.pk if sender is None else sender
         #sender = self.namespace.encode('utf-8')
         logger.debug("about to send round ended signal with sender %s" % sender)
-        return signals.round_ended.send(sender, experiment_id=self.pk)
+        return signals.round_ended.send(sender, experiment=self, round_configuration=self.current_round)
 
     def check_elapsed_time(self):
         if self.is_time_expired:
@@ -442,10 +440,15 @@ class RoundConfiguration(models.Model):
         return self.round_type == 'QUIZ'
 
     def get_parameter(self, name):
-        return self.round_parameter_values.get(parameter__name=name)
+        parameter = Parameter.objects.get(name=name, scope=Parameter.ROUND_SCOPE)
+        round_parameter, created = self.round_parameter_values.get_or_create(parameter=parameter)
+        if created:
+            logger.debug("created new parameter %s for %s" % (parameter, self))
+        return round_parameter
 
     def set_parameter(self, name=None, value=None):
-        parameter_value = self.round_parameter_values.get(parameter__name=name)
+        parameter = Parameter.objects.get(name=name, scope=Parameter.ROUND_SCOPE)
+        parameter_value, created = self.round_parameter_values.get_or_create(parameter=parameter)
         parameter_value.value = value
         parameter_value.save()
 

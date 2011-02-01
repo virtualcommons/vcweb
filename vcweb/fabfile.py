@@ -43,6 +43,7 @@ def syncdb():
         for command in syncdb_commands:
             _virtualenv(command)
 
+
 def setup_virtualenv():
     """ Setup a fresh virtualenv """
     run('virtualenv -p %(python)s --no-site-packages %(virtualenv_path)s;' % env)
@@ -141,6 +142,8 @@ def deploy():
             sudo('hg pull', user=env.deploy_user, pty=True)
             sudo('hg up', user=env.deploy_user, pty=True)
             sudo('chmod -R ug+rw .', pty=True)
+            if confirm("syncdb?"):
+                syncdb()
             sudo('find . -type d -exec chmod ug+x {} \;', pty=True)
             sudo('chown -R %(deploy_user)s:%(deploy_group)s .' % env, pty=True)
             restart()
