@@ -206,8 +206,7 @@ class Experiment(models.Model):
 
     @property
     def time_remaining(self):
-        return 100
-        #return self.current_round_duration - self.current_round_elapsed_time
+        return self.current_round.duration - self.current_round_elapsed_time
 
     @property
     def channel_name(self):

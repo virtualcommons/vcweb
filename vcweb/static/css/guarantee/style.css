@@ -35,16 +35,25 @@ span.label {
 
 h1, h2, h3 {
     margin: 0;
-    text-transform: uppercase;
     font-weight: normal;
     color: #549900;
+    font-family: Georgia, serif;
+    border-bottom:1px solid #333;
+    line-height: 1.2;
+    padding-bottom:.2em;
+    margin-top:1em;
+    margin-bottom:.7em;
+
 }
 
 h1 { font-size: 1.8em; }
 
 h2 { font-size: 1.4em; }
 
-h3 { font-size: 1.2em}
+h3 { 
+    font-size: 1.2em; 
+
+}
 
 p, ul, ol {
     margin-top: 0;
@@ -129,7 +138,6 @@ hr { display: none; }
 #menu a:hover {
     font-size: 0.88em;
     text-decoration: underline; 
-
 }
 
 #menu .active a {

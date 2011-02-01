@@ -36,8 +36,7 @@
     {
         "fields": {
             "date_created": "2010-09-07 15:13:03", 
-            "debriefing": "Initial debriefing for the forestry experiment.", 
-            "duration": 0, 
+            "duration": 60, 
             "experiment_configuration": 1, 
             "instructions": "Initial instructions for the forestry experiment.", 
             "last_modified": "2010-09-07 15:13:03", 
@@ -50,10 +49,9 @@
     {
         "fields": {
             "date_created": "2010-09-07 15:13:03", 
-            "debriefing": "Initial debriefing for the forestry experiment.", 
-            "duration": 0, 
+            "duration": 60, 
             "experiment_configuration": 1, 
-            "instructions": "Initial instructions for the forestry experiment.", 
+            "instructions": "This is a practice round.", 
             "last_modified": "2010-09-07 15:13:03", 
             "round_type": "PRACTICE", 
             "sequence_number": 2
@@ -64,13 +62,11 @@
     {
         "fields": {
             "date_created": "2010-09-07 15:13:03", 
-            "debriefing": "Initial debriefing for the forestry experiment.", 
-            "display_number": 1, 
-            "duration": 0, 
+            "duration": 60, 
             "experiment_configuration": 1, 
-            "instructions": "Initial instructions for the forestry experiment.", 
+            "instructions": "This is a practice round.", 
             "last_modified": "2010-09-07 15:13:03", 
-            "round_type": "PLAY", 
+            "round_type": "PRACTICE", 
             "sequence_number": 3
         }, 
         "model": "core.roundconfiguration", 
