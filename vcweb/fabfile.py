@@ -30,7 +30,7 @@ django.project(env.project_name)
 currently only works for sqlite3 development database.  Need to do it by hand with postgres a
 few times to figure out what to automate.
 """
-syncdb_commands = ['(test -f vcweb.db && rm vcweb.db) || true',
+syncdb_commands = ['(test -f vcweb.db && rm -f vcweb.db) || true',
         '%(python)s manage.py syncdb --noinput' % env,
         '%(python)s manage.py loaddata test_users_participants' % env,
         '%(python)s manage.py loaddata forestry_test_data' % env]
@@ -96,7 +96,7 @@ def test():
 def tornado(ip="149.169.203.115", port=8888):
     local("{python} vcweb-tornado.py {port}".format(python=env.python, **locals()), capture=False)
 
-def server(ip="149.169.203.115", port=8080):
+def server(ip="149.169.203.115", port=8000):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
 
 def celeryd():

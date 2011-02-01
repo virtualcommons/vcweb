@@ -286,16 +286,16 @@ class Experiment(models.Model):
 
     def allocate_groups(self, randomize=True):
         # clear out all existing groups
+        # FIXME: should we preserve previous group mappings?
         self.groups.all().delete()
         # seed the initial group.
         current_group = self.groups.create(number=1, max_size=self.experiment_configuration.max_group_size)
         # FIXME: make this initialization automatic for new groups
         current_group.initialize()
+        participants = list(self.participants.all())
         if randomize:
-            participants = list(self.participants.all())
             random.shuffle(participants)
-        else:
-            participants = self.participants.all()
+
         for p in participants:
             if current_group.is_full:
                 current_group = current_group.create_next_group()
@@ -328,6 +328,7 @@ class Experiment(models.Model):
         # FIXME: would prefer using self.namespace but django utf-8 unicode
         # strings are fubaring us.
         sender = self.experiment_metadata.pk if sender is None else sender
+        #sender = self.namespace.encode('utf-8')
         # notify registered game handlers
         logger.debug("About to send round started signal with sender %s" % sender)
         return signals.round_started.send(sender, experiment_id=self.id, time=datetime.datetime.now(), round_configuration_id=self.current_round.id)
@@ -338,6 +339,7 @@ class Experiment(models.Model):
         # FIXME: would prefer using self.namespace but django utf-8 unicode
         # strings are fubaring us.
         sender = self.experiment_metadata.pk if sender is None else sender
+        #sender = self.namespace.encode('utf-8')
         logger.debug("about to send round ended signal with sender %s" % sender)
         return signals.round_ended.send(sender, experiment_id=self.pk)
 
@@ -462,7 +464,7 @@ class RoundConfiguration(models.Model):
         return Template(template_string).substitute(kwargs, round_number=self.display_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return u"Round %d (display: %d)" % (self.sequence_number, self.round_number)
+        return u"Round %d (%d)" % (self.sequence_number, self.round_number)
 
     class Meta:
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]
@@ -503,8 +505,9 @@ class Parameter(models.Model):
 
     scope = models.CharField(max_length=32, choices=SCOPE_CHOICES, default='round')
     name = models.CharField(max_length=255, unique=True)
+    display_name = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
-    default_value = models.CharField(max_length=255, null=True, blank=True)
+    default_value_string = models.CharField(max_length=255, null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     creator = models.ForeignKey(Experimenter)
@@ -517,6 +520,16 @@ class Parameter(models.Model):
     @property
     def value_field_name(self):
         return '%s_value' % (self.type)
+
+    @property
+    def default_value(self):
+        return self.convert(self.default_value_string)
+
+    @property
+    def label(self):
+        if self.display_name:
+            return self.display_name
+        return self.name.replace('_', ' ').title()
 
     def is_integer_type(self):
         return self.type == 'int'
@@ -541,10 +554,6 @@ class Parameter(models.Model):
             # FIXME: add more checks for other type conversion failures
             pass
         return value
-
-    @property
-    def default(self):
-        return self.convert(self.default_value)
 
     def __unicode__(self):
         return u"%s: %s (%s)" % (self.experiment_metadata.namespace, self.name, self.type)
@@ -661,7 +670,6 @@ class Group(models.Model):
         data_value.save()
         '''
 
-
     def get_scalar_data_value(self, parameter_name=None, parameter=None):
         return self.get_data_value(parameter_name, parameter).value
 
@@ -772,8 +780,8 @@ class RoundData(models.Model):
     elapsed_time = models.PositiveIntegerField(default=0)
 
     def __unicode__(self):
-        return u"Round data for {0} in {1}".format(self.experiment,
-                self.round_configuration)
+        return u"Data for %s" % self.round_configuration
+
     class Meta:
         ordering = [ 'round_configuration' ]
 
@@ -973,5 +981,4 @@ def is_experimenter(user):
 
 def is_participant(user):
     return hasattr(user, 'participant') and isinstance(user.participant, Participant)
-
 

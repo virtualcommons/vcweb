@@ -25,7 +25,7 @@ def index(request):
 @experimenter_required
 def experimenter_index(request):
     experimenter = request.user.experimenter
-    experiments = experimenter.experiments
+    experiments = experimenter.experiments.all()
     return render_to_response('forestry/experimenter-index.html', locals(), context_instance=RequestContext(request))
 
 @participant_required
@@ -33,8 +33,6 @@ def participant_index(request):
     participant = request.user.participant
     experiments = participant.experiments
     return render_to_response('forestry/participant-index.html', locals(), context_instance=RequestContext(request))
-
-
 
 @experimenter_required
 def configure(request):
@@ -51,15 +49,13 @@ def manage_experiment(request, experiment_id=None):
 
 @participant_required
 def next_round(request, experiment_id=None):
-    if is_participant(request.user):
-        try:
-            experiment = Experiment.objects.get(pk=experiment_id)
-            return render_to_response('forestry/wait.html',
-                    locals(),
-                    context_instance=RequestContext(request))
-        except Experiment.DoesNotExist:
-            logger.warning("No experiment found with id %s" % experiment_id)
-    return redirect('forestry:participant_index')
+    try:
+        experiment = Experiment.objects.get(pk=experiment_id)
+        return render_to_response('forestry/wait.html',
+                locals(),
+                context_instance=RequestContext(request))
+    except Experiment.DoesNotExist:
+        logger.warning("No experiment found with id %s" % experiment_id)
 
 
 @participant_required

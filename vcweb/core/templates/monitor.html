@@ -6,6 +6,7 @@
 
 <fieldset>
     <legend>{{experiment}} (id: {{ experiment.pk }})</legend>
+    <ul>
         <li>Status: <span id='experiment-status'>{{ experiment.status }}</span></li>
         <li><span class='highlight' id='experiment-round'> {{ experiment.current_round }}</span> of <b>{{ experiment.experiment_configuration.final_sequence_number }}</b></li>
     </ul>
@@ -14,35 +15,54 @@
         <a href='#'>view data</a> |
         <a href='#'>download data</a>
     </div>
-    {% if experiment.groups.count > 0 %}
-    {% for group in experiment.groups.all %}
-    <h3> {{ group }} </h3>
-    <div class='participants'>
+    {% if experiment.round_data.count > 0 %}
+    {% for round_data in experiment.round_data.all %}
+    <h3> {{ round_data }} </h3>
+    <div class='group-data'>
+        Group data:
         <table>
             <thead>
-                <th>Participant</th><th>Round</th><th>Parameter</th><th>Value</th>
+                <tr><th>Group</th><th>Parameter Name</th><th>Value</th><th>Type</th></tr>
             </thead>
             <tbody>
-                {% for participant in group.participants.all %}
-
+                {% for group_data_value in round_data.group_data_values.all %}
+                <tr>
+                    <td>{{ group_data_value.group }}</td>
+                    <td>{{ group_data_value.parameter.label}}</td>
+                    <td>{{ group_data_value.parameter.value}}</td>
+                    <td>{{ group_data_value.parameter.type}}</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    <div class='data'>
-        Group round data:
-        <ul>
-            {% for data_value in group.current_round_data_values.all %}
-            <li> {{ data_value }} </li>
-            {% endfor %}
-        </ul>
+    <div class='participant-data'>
+        Participant data:
+        {% if round_data.participant_data_values.count > 0 %}
+        <table>
+            <thead>
+                <tr><th>Participant</th><th>Parameter name</th><th>Value</th><th>Type</th></tr>
+            </thead>
+            <tbody>
+                {% for participant_data_value in round_data.participant_data_values.all %}
+                <tr>
+                    <td>{{ participant_data_value.participant }}</td>
+                    <td>{{ participant_data_value.parameter.label }}</td>
+                    <td>{{ participant_data_value.parameter.value }}</td>
+                    <td>{{ participant_data_value.parameter.type }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class='alert'>There is no participant data for this round yet.</div>
+        {% endif %}
     </div>
     {% endfor %}
     {% else %}
-    <div class='info'>Groups have not been allocated yet.</div>
+    <div class='alert'>Round data is not yet available.</div>
     {% endif %}
 </fieldset>
-</p>
 
 
 {% endblock page %}

@@ -107,7 +107,7 @@
         	"creator": 1,
         	"type": "boolean",
         	"scope": "round",
-                "default_value": "true"
+                "default_value_string": "true"
         }, 
         "model": "core.parameter", 
         "pk": 3
@@ -119,7 +119,7 @@
         	"creator": 1,
         	"type": "int",
         	"scope": "round",
-                "default_value": 100
+                "default_value_string": 100
         }, 
         "model": "core.parameter", 
         "pk": 4

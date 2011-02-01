@@ -21,9 +21,7 @@ def post_syncdb_handler(sender, **kwargs):
             "title": "Forestry Web Experiment",
             "date_created": "2011-01-01"
             }
-    forestry, created = ExperimentMetadata.objects.get_or_create(**forestry_dict)
-    if not created:
-        logger.debug("existing forestry ExperimentMetadata experiment")
+    logger.debug("forestry: %s (%s)" % ExperimentMetadata.objects.get_or_create(**forestry_dict))
 
 post_syncdb.connect(post_syncdb_handler, sender=vcweb.core.models,
         dispatch_uid='forestry_metadata_creator')
