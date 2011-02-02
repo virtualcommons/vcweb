@@ -1,40 +1,45 @@
 {% extends "base-experimenter.html" %}
 
-{% block title %} Virtual Commons Web Experimenter Interface {% endblock %} 
+{% block title %} 
+    Virtual Commons Web Experimenter Interface 
+{% endblock %} 
 
 {% block header %}
-{% include "includes/experimenter-nav-menu.inc" %}
+    {% include "includes/experimenter-nav-menu.inc" %}
 {% endblock header %}
 
 {% block page %}
-{{ block.super }}
+    {{ block.super }}
 
-<div class='notice'>
-Welcome to the experimenter interface.  You are logged in as {{request.user.experimenter}}.
-<br/>
-<br/>
-<a href='/admin'>add / configure an experiment</a> | 
-<a href='/admin'>download data</a> |
-<a href='http://commons.asu.edu/contact'>report a bug</a>
-</div>
+    <div class='notice'>
+        Welcome to the experimenter interface.  You are logged in as {{request.user.experimenter}}.
+        <br/>
+        <br/>
+        {% comment%}
+            FIXME: replace with horizontal ul+li iconified nav menu
+        {% endcomment %}
+        <a href='/admin'>add / configure an experiment</a> | 
+        <a href='/admin'>download data</a> |
+        <a href='http://commons.asu.edu/contact'>report a bug</a>
+    </div>
 
-<div id="post">
-<fieldset>
-<legend>Your experiments</legend>
-{% if experiments %}
-<ul>
-{% for e in experiments %}
-<li>
-    {{e}} {{e.status_line}}<br/> <small><a href='{{e.monitor_url}}'>monitor</a> | <a href='{{e.management_url}}'>manage</a></small>
-</li>
-{% endfor %}
-</ul>
-{% else %}
-<div class='info'>
-You are not currently running any experiments.
-</div>
-{% endif %}
-</fieldset>
-</div>
+    <div id="post">
+        <fieldset>
+            <legend>Your experiments</legend>
+            {% if experiments %}
+                <ul>
+                    {% for e in experiments %}
+                        <li>
+                        {{e}} {{e.status_line}}<br/> <small><a href='{{e.monitor_url}}'>monitor</a> | <a href='{{e.management_url}}'>manage</a></small>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class='info'>
+                    You are not currently running any experiments.
+                </div>
+            {% endif %}
+        </fieldset>
+    </div>
 {% endblock page %}
 

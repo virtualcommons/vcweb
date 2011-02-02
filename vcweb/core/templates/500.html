@@ -1,20 +1,20 @@
 {% extends "base-vcweb.html" %}
 
-{% block title %}I'm going back to 500{% endblock %}
+{% block title %}
+    HTTP 500 Server Error
+{% endblock %}
 
 {% block page %}
-<div id='post'>
-	<h2 class='title'>Uh oh, internal server error</h2>
-	<div class='entry'>
-    There has been an internal server error that has been logged and sent to
-    our technical team.  Sorry for the inconvenience!
+    <div id='post'>
+        <h2 class='title'>Unhandled server error</h2>
+        <div class='entry'>
+            Our apologies, we just encountered an unforeseen error. It has
+            been logged and sent to our development team.  If you'd like to
+            report this error to us manually as well, please feel free to 
+            <a href='/contact'>contact us</a> and let us know what you were
+            doing at the time of the error and any other salient details
+            (browser version, OS, etc.).
+        </div>
     </div>
-	<br/>
-	<div class='entry'>
-	The project is funded by the <a class='external' href='http://nsf.gov'>National Science Foundation</a> 
-	(BCS 0625354 and SES 0748632) and <a class='external' href='http://www.asu.edu'>Arizona State University</a> 
-	and is affiliated with the <a class='external' href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a>.
-	</div>
-</div>
 {% endblock page %}
 

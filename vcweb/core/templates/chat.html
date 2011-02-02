@@ -1,37 +1,36 @@
-{% extends "base-vcweb.html" %}
-{% include "includes/participant-nav-menu.inc" %}
+{% extends "base-participant.html" %}
 
 {% block head %}
-{% include "includes/socket.io.inc" %}
-<script type="text/javascript">
-    $(function() {
-        var s = connect("libai.la.asu.edu", 8888);
-        s.on('message', function(data) {
-            $("#chat").append("<div>" + data + "</div>");
-        });
+    {{ block.super }}
+    {% include "includes/socket.io.inc" %}
+    <script type="text/javascript">
+        $(function() {
+                var s = connect("libai.la.asu.edu", 8888);
+                s.on('message', function(data) {
+                    $("#chat").append("<div>" + data + "</div>");
+                    });
 
-        //send the message when submit is clicked
-        $('#chatform').submit(function (evt) {
-            var line = $('#chattext').val()
-            $('#chattext').val('')
-            console.log("sending line: " + line);
-            s.send(createMessageEvent(line));
-            return false;
-        });
-        $('#chattext').focus();
-    });
-</script>
+                //send the message when submit is clicked
+                $('#chatform').submit(function (evt) {
+                    var line = $('#chattext').val()
+                    $('#chattext').val('')
+                    console.log("sending line: " + line);
+                    s.send(createMessageEvent(line));
+                    return false;
+                    });
+                $('#chattext').focus();
+                });
+    </script>
 {% endblock %}
 
-
 {% block content %}
-<h3>Chat Test</h3>
-<div id="chat" style="width: 60em; height: 20em; overflow:auto; border: 1px dashed black">
-</div>
-<form id="chatform">
-<input id='chattext' type="text" />
-<input type="submit" />
-</form>
+    <h3>Chat</h3>
+    <div id="chat" style="width: 60em; height: 20em; overflow:auto; border: 1px dashed black">
+    </div>
+    <form id="chatform">
+        <input id='chattext' type="text" />
+        <input type="submit" />
+    </form>
 {% endblock %}
 
 

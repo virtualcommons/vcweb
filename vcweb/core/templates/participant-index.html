@@ -1,25 +1,27 @@
 {% extends "base-participant.html" %}
 
-{% block title %}Virtual Commons Web Participant Interface{% endblock %}
+{% block title %}
+    Virtual Commons Web Participant Interface
+{% endblock %}
 
 {% block page %}
-<div class='notice'>
-Welcome back, {{participant}}.  Experiments you are currently participating in are listed below.
-</div>
+    <div class='notice'>
+        Welcome back, {{participant}}.  Experiments you are currently participating in are listed below.
+    </div>
 
-<fieldset>
-<legend>Your experiments</legend>
-{% if experiments %}
-<ul>
-	{% for e in experiments %}
-	<li><a href='{{ e.participant_url }}'>{{ e }}</a></li>
-	{% endfor %}
-</ul>
-{% else %}
-<div class='info'>
-You are not participating in any active experiments.	
-</div>
-{% endif %}
+    <fieldset>
+        <legend>Your experiments</legend>
+        {% if experiments %}
+            <ul>
+                {% for e in experiments %}
+                    <li><a href='{{ e.participant_url }}'>{{ e }} {{e.status_line}}</a></li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class='info'>
+                You are not participating in any active experiments.	
+            </div>
+        {% endif %}
 
-</fieldset>
+    </fieldset>
 {% endblock page %}
