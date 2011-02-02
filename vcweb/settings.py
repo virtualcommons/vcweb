@@ -69,6 +69,7 @@ TEMPLATE_LOADERS = (
 TEMPLATE_CONTEXT_PROCESSORS = (
         'django.core.context_processors.request',
         'django.contrib.auth.context_processors.auth',
+        'django.contrib.messages.context_processors.messages',
         'vcweb.core.context_processors.socket_io',
         )
 
@@ -76,8 +77,14 @@ MIDDLEWARE_CLASSES = (
         'django.middleware.common.CommonMiddleware',
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.contrib.messages.middleware.MessageMiddleware',
         )
+
 ROOT_URLCONF = 'vcweb.urls'
+
+# cookie storage vs session storage of django messages
+#MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 TEMPLATE_DIRS = (
         # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -94,6 +101,7 @@ INSTALLED_APPS = (
         'django.contrib.sessions',
         'django.contrib.sites',
         'django.contrib.admin',
+        'django.contrib.messages',
         'vcweb.core',
         'vcweb.forestry',
         'djcelery',

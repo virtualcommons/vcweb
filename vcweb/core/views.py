@@ -2,7 +2,7 @@
 vcweb.core views
 """
 
-from django.contrib import auth
+from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.shortcuts import render_to_response, redirect
@@ -102,8 +102,6 @@ def instructions(request, experiment_id=None, namespace=None):
 
     return render_to_response(experiment.get_template_path('welcome-instructions.html'), locals(), RequestContext(request))
 
-
-
 """
 experimenter views
 FIXME: add has_perms authorization to ensure that only experimenters can access
@@ -127,7 +125,7 @@ def manage(request, experiment_id=None):
 # redirect to experiment specific management page?
         return redirect(experiment.management_url)
     except Experiment.DoesNotExist:
-        logger.warning("Tried to monitor non-existent experiment with id %s" %
+        logger.warning("Tried to manage non-existent experiment with id %s" %
                 experiment_id)
 
 @experimenter_required
@@ -139,16 +137,41 @@ def monitor(request, experiment_id=None):
     except Experiment.DoesNotExist:
         logger.warning("Tried to monitor non-existent experiment with id %s" %
                 experiment_id)
+        return redirect('core:dashboard')
+
 
 @experimenter_required
-def start_experiment(request, experiment_id=None):
+def experiment_controller(request, experiment_id=None, experiment_action=None):
     try:
+        experimenter = request.user.experimenter
         experiment = Experiment.objects.get(pk=experiment_id)
-        experiment.start()
-        return redirect('core:manage_experiment')
+# TODO: provide experimenter access to other users besides the creator of the
+# experiment?
+        if experimenter.pk == experiment.experimenter.pk:
+            experiment_func = getattr(experiment, experiment_action.replace('-', '_'), None)
+            if experiment_func:
+                experiment_func()
+                return redirect('core:monitor_experiment', experiment_id=experiment_id)
+            else:
+                error_message = "Invalid action: {experimenter} tried to invoke {experiment_action} on {experiment}".format(
+                      experimenter=experimenter, experiment_action=experiment_action, experiment=experiment)
+        else:
+            error_message = "Access denied for {experimenter}: You do not have permission to invoke {experiment_action} on {experiment}".format(
+                  experimenter=experimenter, experiment_action=experiment_action, experiment=experiment)
+
     except Experiment.DoesNotExist:
-        pass
-        logger.warning("tried to start an experiment that doesn't exist (id: %s)" % experiment_id)
-        return redirect('core:experimenter_index')
+       error_message = 'Could not invoke {experiment_action} on a non-existent experiment (id: {experiment_id}, experimenter: {experimenter})'.format(
+             experimenter=experimenter, experiment_action=experiment_action, experiment_id=experiment_id) 
+
+    logger.warning(error_message)
+    messages.warning(request, error_message)
+    return redirect('core:dashboard')
+
+
+
+
+
+
+
 
 

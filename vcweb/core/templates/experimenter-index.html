@@ -1,4 +1,4 @@
-{% extends "base-vcweb.html" %}
+{% extends "base-experimenter.html" %}
 
 {% block title %} Virtual Commons Web Experimenter Interface {% endblock %} 
 
@@ -7,6 +7,8 @@
 {% endblock header %}
 
 {% block page %}
+{{ block.super }}
+
 <div class='notice'>
 Welcome to the experimenter interface.  You are logged in as {{request.user.experimenter}}.
 <br/>
@@ -14,9 +16,8 @@ Welcome to the experimenter interface.  You are logged in as {{request.user.expe
 <a href='/admin'>add / configure an experiment</a> | 
 <a href='/admin'>download data</a> |
 <a href='http://commons.asu.edu/contact'>report a bug</a>
-
 </div>
- 
+
 <div id="post">
 <fieldset>
 <legend>Your experiments</legend>
@@ -24,13 +25,13 @@ Welcome to the experimenter interface.  You are logged in as {{request.user.expe
 <ul>
 {% for e in experiments %}
 <li>
-    <a href='{{e.management_url}}'>{{ e }} {{e.status_line}}</a>
+    {{e}} {{e.status_line}}<br/> <small><a href='{{e.monitor_url}}'>monitor</a> | <a href='{{e.management_url}}'>manage</a></small>
 </li>
 {% endfor %}
 </ul>
 {% else %}
 <div class='info'>
-You are not currently running any experiments.     	
+You are not currently running any experiments.
 </div>
 {% endif %}
 </fieldset>

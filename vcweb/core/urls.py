@@ -22,5 +22,7 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^(?P<namespace>\w+)/instructions', 'instructions', name='namespace_instructions'),
     url(r'^experiment/(?P<experiment_id>\d+)/monitor$', 'monitor', name='monitor_experiment'),
     url(r'^experiment/(?P<experiment_id>\d+)/configure$', 'configure', name='configure_experiment'),
+# experiment controller actions
+    url(r'^experiment/(?P<experiment_id>\d+)/(?P<experiment_action>[\w-]+)$', 'experiment_controller', name='experiment_controller'),
     url(r'^%s/' % settings.DAJAXICE_MEDIA_PREFIX, include('dajaxice.urls')),
 )

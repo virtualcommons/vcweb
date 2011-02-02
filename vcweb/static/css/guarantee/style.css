@@ -57,8 +57,7 @@ h3 {
 
 p, ul, ol {
     margin-top: 0;
-    line-height: 240%;
-    text-align: justify;
+    text-align: left;
 }
 
 ul, ol { }
@@ -88,7 +87,28 @@ img.right {
     margin: 7px 0 0 30px;
 }
 
-hr { display: none; }
+ul.messages {
+    margin-left: 0;
+}
+
+li.warning {
+    font-size: 0.8em;
+}
+
+.errorIcon, .warningIcon, .alertIcon, .infoIcon {
+    background-repeat: no-repeat;
+    margin: 5px 0px;
+    padding: 15px 10px 15px 50px;
+    background-position: 5px center;
+}
+
+.errorIcon, .warningIcon, .alertIcon {
+    background-image:  url('/static/images/warning.png')
+}
+
+.infoIcon {
+    background-image: url('/static/images/info.png')
+}
 
 /* Header */
 

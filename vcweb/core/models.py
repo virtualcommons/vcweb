@@ -230,6 +230,10 @@ class Experiment(models.Model):
         return "/%s/experimenter" % (self.url_id)
 
     @property
+    def monitor_url(self):
+        return "/experiment/%s/monitor" % self.pk
+
+    @property
     def status_line(self):
         return "(id %s, status: %s, round %s of %s)" % (self.pk, self.status.lower(),
                 self.current_round.sequence_number,
@@ -314,12 +318,15 @@ class Experiment(models.Model):
         return "%s/%s" % (self.namespace, name)
 
     def advance_to_next_round(self):
-        self.current_round_elapsed_time = 0
-        self.current_round_sequence_number += 1
-        self.save()
-        # initialize group and participant parameters
-        for g in self.groups.all():
-            g.initialize()
+        if self.has_next_round:
+            self.current_round_elapsed_time = 0
+            self.current_round_sequence_number += 1
+            self.save()
+            # initialize group and participant parameters
+            for g in self.groups.all():
+                g.initialize()
+        else:
+            logger.warning("trying to advance past the last round - no-op")
 
     def start_round(self, sender=None):
         self.status = 'ROUND_IN_PROGRESS'
@@ -978,8 +985,10 @@ class GroupActivityLog(ActivityLog):
     group = models.ForeignKey(Group, related_name='activity_log')
     round_configuration = models.ForeignKey(RoundConfiguration)
 
-def is_experimenter(user):
-    return hasattr(user, 'experimenter') and isinstance(user.experimenter, Experimenter)
+def is_experimenter(user, experimenter=None):
+    if hasattr(user, 'experimenter') and isinstance(user.experimenter, Experimenter):
+        return True if experimenter is None else user.experimenter == experimenter
+    return False
 
 def is_participant(user):
     return hasattr(user, 'participant') and isinstance(user.participant, Participant)

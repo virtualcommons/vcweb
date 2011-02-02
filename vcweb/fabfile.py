@@ -141,9 +141,9 @@ def deploy():
         with cd(env.project_path):
             sudo('hg pull', user=env.deploy_user, pty=True)
             sudo('hg up', user=env.deploy_user, pty=True)
-            sudo('chmod -R ug+rw .', pty=True)
             if confirm("syncdb?"):
                 syncdb()
+            sudo('chmod -R ug+rw .', pty=True)
             sudo('find . -type d -exec chmod ug+x {} \;', pty=True)
             sudo('chown -R %(deploy_user)s:%(deploy_group)s .' % env, pty=True)
             restart()
