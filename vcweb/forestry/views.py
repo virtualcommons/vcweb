@@ -1,4 +1,5 @@
 # Create your views here.
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import render_to_response, redirect
@@ -63,14 +64,21 @@ def participate(request, experiment_id=None):
     try:
         participant = request.user.participant
         experiment = Experiment.objects.get(pk=experiment_id)
-        participant_group_relationship = participant.get_participant_group_relationship(experiment)
-        resource_level = get_resource_level(participant_group_relationship.group)
-        logger.debug("resource level is: %s" % resource_level)
-        max_harvest_decision = get_max_harvest_decision(resource_level.value)
-        logger.debug("max harvest decision: %s" % max_harvest_decision)
-        return render_to_response(experiment.current_round_template,
-                locals(),
-                context_instance=RequestContext(request))
+        if experiment.is_round_started:
+            participant_group_relationship = participant.get_participant_group_relationship(experiment)
+            resource_level = get_resource_level(participant_group_relationship.group)
+            logger.debug("resource level is: %s" % resource_level)
+            max_harvest_decision = get_max_harvest_decision(resource_level.value)
+            logger.debug("max harvest decision: %s" % max_harvest_decision)
+            return render_to_response(experiment.current_round_template,
+                    locals(),
+                    context_instance=RequestContext(request))
+        else:
+# the experiment hasn't started yet, just redirect to the instructions for now.. we
+# should redirect to a proper waiting page later.
+            messages.info(request, 'The experiment has not yet started.')
+            return redirect('core:instructions', experiment_id=experiment_id)
     except Experiment.DoesNotExist:
         logger.warning("No experiment with id [%s]" % experiment_id)
         return redirect('forestry:index')
+

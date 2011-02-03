@@ -8,7 +8,7 @@
 
 <div id='menu'>
    <ul>
-      <li class='{% active request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
+      <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
       {% if "participate" in request.path %}
       <li class='{% active_re request "participate$" %}'><a href='#'>Participate</a></li>
       {% else %}
