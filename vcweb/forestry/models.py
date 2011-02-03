@@ -1,4 +1,4 @@
-from vcweb.core.models import ExperimentMetadata, Parameter, Experiment
+from vcweb.core.models import ExperimentMetadata, Parameter
 from vcweb.core import signals
 import logging
 logger = logging.getLogger(__name__)
@@ -14,6 +14,20 @@ def get_resource_level(group=None):
 
 def get_harvest_decisions(group=None):
     return group.get_participant_data_values(parameter_name='harvest_decision') if group else []
+
+def get_max_harvest_decision(resource_level):
+    if resource_level >= 25:
+        return 5
+    elif resource_level >= 20:
+        return 4
+    elif resource_level >= 15:
+        return 3
+    elif resource_level >= 10:
+        return 2
+    elif resource_level >= 5:
+        return 1
+    else:
+        return 0
 
 def get_forestry_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace='forestry')
@@ -37,6 +51,7 @@ def set_resource_level(group=None, value=None):
     group.set_data_value(parameter=get_resource_level_parameter(), value=value)
 
 def round_setup(experiment, **kwargs):
+    logger.debug("forestry: round_setup for %s" % experiment)
     round_configuration = experiment.current_round
     '''
     FIXME: replace with dict-based dispatch on round_configuration.round_type?
@@ -67,6 +82,7 @@ def round_setup(experiment, **kwargs):
             logger.debug("initialized harvest decision %s" % harvest_decision)
 
 def round_teardown(experiment, **kwargs):
+    logger.debug("forestry: round_teardown for %s" % experiment)
     round_configuration = experiment.current_round
     ''' calculate new resource levels '''
     resource_level_parameter = get_resource_level_parameter()

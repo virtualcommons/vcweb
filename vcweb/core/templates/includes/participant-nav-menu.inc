@@ -7,13 +7,13 @@
 {% url core:profile as profile %}
 
 <div id='menu'>
-<ul>
-	<li class='{% active request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
-        {% if "participate" in request.path %}
-        <li class='{% active_re request "participate$" %}'><a href='{{ current }}'>Participate</a></li>
-        {% else %}
-	<li class='{% active request profile %}'><a href='{{ profile }}'>Account</a></li>
-        {% endif %}
-	<li><a href='{{ logout }}'>Logout</a></li>
-</ul>
+   <ul>
+      <li class='{% active request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
+      {% if "participate" in request.path %}
+      <li class='{% active_re request "participate$" %}'><a href='#'>Participate</a></li>
+      {% else %}
+      <li class='{% active request profile %}'><a href='{{ profile }}'>Account</a></li>
+      {% endif %}
+      <li><a href='{{ logout }}'>Logout</a></li>
+   </ul>
 </div>

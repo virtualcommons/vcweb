@@ -3,8 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
-from vcweb.core.models import is_participant, is_experimenter, Experiment, RoundConfiguration
+from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.decorators import participant_required, experimenter_required
+from vcweb.forestry.models import get_resource_level, get_max_harvest_decision
 
 import logging
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ def experimenter_index(request):
 @participant_required
 def participant_index(request):
     participant = request.user.participant
-    experiments = participant.experiments
+    experiments = participant.experiments.all()
     return render_to_response('forestry/participant-index.html', locals(), context_instance=RequestContext(request))
 
 @experimenter_required
@@ -63,6 +64,10 @@ def participate(request, experiment_id=None):
         participant = request.user.participant
         experiment = Experiment.objects.get(pk=experiment_id)
         participant_group_relationship = participant.get_participant_group_relationship(experiment)
+        resource_level = get_resource_level(participant_group_relationship.group)
+        logger.debug("resource level is: %s" % resource_level)
+        max_harvest_decision = get_max_harvest_decision(resource_level.value)
+        logger.debug("max harvest decision: %s" % max_harvest_decision)
         return render_to_response(experiment.current_round_template,
                 locals(),
                 context_instance=RequestContext(request))

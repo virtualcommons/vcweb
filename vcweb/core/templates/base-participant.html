@@ -1,8 +1,16 @@
 {% extends "base-vcweb.html" %}
 
-{% block title %}Virtual Commons Web Participant Interface{% endblock %}
+{% block head %}
+    {{block.super}}
+    <script type='text/javascript' src='/static/js/jquery.validate.min.js'></script>
+{% endblock %}
+
+{% block title %}
+    Virtual Commons Web Participant Interface
+{% endblock %}
+
 {% block header %}
-{% include "includes/participant-nav-menu.inc" %}
+    {% include "includes/participant-nav-menu.inc" %}
 {% endblock %}
 
 
