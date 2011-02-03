@@ -44,13 +44,18 @@
                 </div>
                 <div>
                     Round <span id='experiment-round'> {{ experiment.current_round.sequence_number }}</span> of <b>{{ experiment.experiment_configuration.final_sequence_number }}</b>
+                    {% if experiment.is_round_started %}
+                    <div>
+                        <a class='confirm-experiment-action' href='end-round'>end round</a>
+                    </div>
+                    {% else %}
+                    <div>
+                        <a class='confirm-experiment-action' href='start-round'>start round</a>
+                    </div>
+                    {% endif %}
                     <div>
                         <a class='confirm-experiment-action' href='advance-to-next-round'>next round</a>
                     </div>
-                    <div>
-                        <a class='confirm-experiment-action' href='stop-round'>stop round</a>
-                    </div>
-
                 </div>
                 <div>
                     Round type: <span id='round-type'>{{ experiment.current_round.round_type }}</span>

@@ -153,7 +153,7 @@ def experiment_controller(request, experiment_id=None, experiment_action=None):
                 experiment_func()
                 return redirect('core:monitor_experiment', experiment_id=experiment_id)
             else:
-                error_message = "Invalid action: {experimenter} tried to invoke {experiment_action} on {experiment}".format(
+                error_message = "Invalid experiment action: You ({experimenter}) tried to invoke {experiment_action} on {experiment}".format(
                       experimenter=experimenter, experiment_action=experiment_action, experiment=experiment)
         else:
             error_message = "Access denied for {experimenter}: You do not have permission to invoke {experiment_action} on {experiment}".format(

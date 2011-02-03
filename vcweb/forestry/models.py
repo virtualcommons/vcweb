@@ -35,8 +35,7 @@ def get_forestry_experiment_metadata():
 def get_resource_level_parameter():
     return Parameter.objects.get(name='resource_level',
             scope=Parameter.GROUP_SCOPE,
-            experiment_metadata=get_forestry_experiment_metadata()
-            )
+            experiment_metadata=get_forestry_experiment_metadata())
 
 def get_harvest_decision_parameter():
     return Parameter.objects.get(
@@ -119,7 +118,7 @@ id(repr(u'forestry'))
 id(repr(e.namespace))
 even using django.util.encodings smart_unicode and smart_str functions don't help.
 '''
-forestry_sender = 'forestry'
+forestry_sender = 1
 
 signals.round_started.connect(round_started_handler, sender=forestry_sender)
 signals.round_ended.connect(round_ended_handler, sender=forestry_sender)

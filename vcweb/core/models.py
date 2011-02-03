@@ -199,10 +199,13 @@ class Experiment(models.Model):
 
     objects = ExperimentManager()
 
-
     @property
     def is_time_expired(self):
-        return self.current_round_elapsed_time > self.current_round.duration
+        return self.current_round_elapsed_time >= self.current_round.duration
+
+    @property
+    def is_round_started(self):
+        return self.status == 'ROUND_IN_PROGRESS'
 
     @property
     def time_remaining(self):
@@ -341,6 +344,7 @@ class Experiment(models.Model):
 
     def end_round(self, sender=None):
         self.status = 'ACTIVE'
+        self.current_round_elapsed_time = self.current_round.duration
         self.save()
         sender = self.experiment_metadata.pk if sender is None else sender
         #sender = self.namespace.encode('utf-8')
