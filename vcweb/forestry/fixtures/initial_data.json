@@ -38,7 +38,7 @@
             "date_created": "2010-09-07 15:13:03", 
             "duration": 0, 
             "experiment_configuration": 1, 
-            "instructions": "Initial instructions for the forestry experiment.", 
+            "instructions": "Welcome to the forestry experiment.", 
             "last_modified": "2010-09-07 15:13:03", 
             "round_type": "INSTRUCTIONS", 
             "sequence_number": 1
@@ -51,7 +51,7 @@
             "date_created": "2010-09-07 15:13:03", 
             "duration": 0, 
             "experiment_configuration": 1, 
-            "instructions": "Forestry Experiment Quiz", 
+            "instructions": "The following quiz is designed to ensure you understand the dynamics of this experiment.", 
             "last_modified": "2010-09-07 15:13:03", 
             "round_type": "QUIZ", 
             "sequence_number": 2
@@ -77,9 +77,9 @@
             "date_created": "2010-09-07 15:13:03", 
             "duration": 60, 
             "experiment_configuration": 1, 
-            "instructions": "This is a practice round.", 
+            "instructions": "Chat round.", 
             "last_modified": "2010-09-07 15:13:03", 
-            "round_type": "PRACTICE", 
+            "round_type": "CHAT", 
             "sequence_number": 4
         }, 
         "model": "core.roundconfiguration", 
@@ -90,52 +90,81 @@
             "date_created": "2010-09-07 15:13:03", 
             "duration": 60, 
             "experiment_configuration": 1, 
-            "instructions": "Actual Forestry Round", 
+            "instructions": "This is a practice round.", 
+            "last_modified": "2010-09-07 15:13:03", 
+            "round_type": "PRACTICE", 
+            "sequence_number": 5
+        }, 
+        "model": "core.roundconfiguration", 
+        "pk": 5
+    },
+    {
+        "fields": {
+            "date_created": "2010-09-07 15:13:03", 
+            "duration": 60, 
+            "experiment_configuration": 1, 
+            "instructions": "An actual forestry round.", 
             "last_modified": "2010-09-07 15:13:03", 
             "round_type": "REGULAR", 
-            "sequence_number": 4
+            "display_number": 1,
+            "sequence_number": 6
         }, 
         "model": "core.roundconfiguration", 
-        "pk": 4
+        "pk": 6
     },
     {
         "fields": {
             "date_created": "2010-09-07 15:13:03", 
             "duration": 60, 
             "experiment_configuration": 1, 
-            "instructions": "This is a practice round.", 
+            "instructions": "Chat round.", 
             "last_modified": "2010-09-07 15:13:03", 
-            "round_type": "PRACTICE", 
-            "sequence_number": 4
+            "round_type": "CHAT", 
+            "sequence_number": 7
         }, 
         "model": "core.roundconfiguration", 
-        "pk": 4
+        "pk": 7
     },
     {
         "fields": {
             "date_created": "2010-09-07 15:13:03", 
             "duration": 60, 
             "experiment_configuration": 1, 
-            "instructions": "This is a practice round.", 
+            "instructions": "Forestry round", 
             "last_modified": "2010-09-07 15:13:03", 
-            "round_type": "PRACTICE", 
-            "sequence_number": 4
+            "round_type": "REGULAR", 
+            "display_number": 2,
+            "sequence_number": 8
         }, 
         "model": "core.roundconfiguration", 
-        "pk": 4
+        "pk": 8
     },
     {
         "fields": {
             "date_created": "2010-09-07 15:13:03", 
             "duration": 60, 
             "experiment_configuration": 1, 
-            "instructions": "This is a practice round.", 
+            "instructions": "Chat round.", 
             "last_modified": "2010-09-07 15:13:03", 
-            "round_type": "PRACTICE", 
-            "sequence_number": 4
+            "round_type": "CHAT", 
+            "sequence_number": 9
         }, 
         "model": "core.roundconfiguration", 
-        "pk": 4
+        "pk": 9
+    },
+    {
+        "fields": {
+            "date_created": "2010-09-07 15:13:03", 
+            "duration": 60, 
+            "experiment_configuration": 1, 
+            "instructions": "Forestry round", 
+            "last_modified": "2010-09-07 15:13:03", 
+            "round_type": "REGULAR", 
+            "display_number": 3,
+            "sequence_number": 10
+        }, 
+        "model": "core.roundconfiguration", 
+        "pk": 10
     },
     {
         "fields": {

@@ -135,8 +135,9 @@ def monitor(request, experiment_id=None):
         return render_to_response('monitor.html', locals(), context_instance=RequestContext(request))
 # redirect to experiment specific management page?
     except Experiment.DoesNotExist:
-        logger.warning("Tried to monitor non-existent experiment with id %s" %
-                experiment_id)
+        error_message = "Tried to monitor non-existent experiment (id %s)" % experiment_id
+        logger.warning(error_message)
+        messages.warning(request, error_message)
         return redirect('core:dashboard')
 
 
@@ -150,6 +151,7 @@ def experiment_controller(request, experiment_id=None, experiment_action=None):
         if experimenter.pk == experiment.experimenter.pk:
             experiment_func = getattr(experiment, experiment_action.replace('-', '_'), None)
             if experiment_func:
+                # pass params?  start_round() takes a sender for instance..
                 experiment_func()
                 return redirect('core:monitor_experiment', experiment_id=experiment_id)
             else:
@@ -161,17 +163,8 @@ def experiment_controller(request, experiment_id=None, experiment_action=None):
 
     except Experiment.DoesNotExist:
        error_message = 'Could not invoke {experiment_action} on a non-existent experiment (id: {experiment_id}, experimenter: {experimenter})'.format(
-             experimenter=experimenter, experiment_action=experiment_action, experiment_id=experiment_id) 
+             experimenter=experimenter, experiment_action=experiment_action, experiment_id=experiment_id)
 
     logger.warning(error_message)
     messages.warning(request, error_message)
     return redirect('core:dashboard')
-
-
-
-
-
-
-
-
-

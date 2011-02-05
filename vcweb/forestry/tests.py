@@ -14,24 +14,15 @@ class ForestryRoundSignalTest(BaseVcwebTest):
         e = self.test_round_started_signal()
         self.verify_round_ended(e, lambda e: e.end_round(sender=forestry_sender))
 
-    def advance_to_practice_round(self):
-        e = self.experiment
-        e.allocate_groups()
-        e.current_round_sequence_number = 2
-        e.advance_to_next_round()
-        self.failUnlessEqual(e.current_round_sequence_number, 3)
-        self.failUnlessEqual(e.current_round.round_type, 'PRACTICE')
-        return e
-
     def test_round_started_signal(self):
-        e = self.advance_to_practice_round()
+        e = self.advance_to_data_round()
         e.start_round(sender=forestry_sender)
         for group in e.groups.all():
             self.verify_resource_level(group)
         return e
 
     def test_round_setup(self):
-        e = self.advance_to_practice_round()
+        e = self.advance_to_data_round()
         # manually invoke round_setup, otherwise start_round should work as
         # well (but that's tested in the signal tests)
         round_setup(e)
@@ -75,7 +66,7 @@ class ForestryRoundSignalTest(BaseVcwebTest):
             2 groups, 2 rounds of data = 4 total group round data value
             objects.
             '''
-            self.failUnlessEqual(GroupRoundDataValue.objects.count(), 6)
+            self.failUnlessEqual(GroupRoundDataValue.objects.count(), 4)
 
     def test_round_ended(self):
         e = self.test_round_setup()
@@ -101,8 +92,7 @@ class ForestryParametersTest(BaseVcwebTest):
 
     def test_get_set_harvest_decisions(self):
         from vcweb.forestry.models import get_harvest_decisions, get_harvest_decision_parameter, set_harvest_decision
-        e = self.experiment
-        e.activate()
+        e = self.advance_to_data_round()
         # generate harvest decisions
         current_round_data = e.current_round_data
         harvest_decision_parameter = get_harvest_decision_parameter()
@@ -132,8 +122,8 @@ class ForestryParametersTest(BaseVcwebTest):
 
     def test_get_set_resource_level(self):
         from vcweb.forestry.models import get_resource_level, set_resource_level
-        e = self.experiment
-        e.activate()
+        e = self.advance_to_data_round()
+
         for group in e.groups.all():
             resource_level = get_resource_level(group)
             self.failUnless(resource_level.pk > 0)
@@ -154,44 +144,29 @@ class ForestryParametersTest(BaseVcwebTest):
             self.failUnlessEqual(resource_level.value, 100)
 
     def test_group_round_data(self):
-        e = self.experiment
-        e.allocate_groups()
-        current_round_data = e.current_round_data
-        for data_value in current_round_data.group_data_values.all():
-            # test string conversion
-            logger.debug("current round data: pk:%s value:%s unicode:%s" % (data_value.pk, data_value.value, data_value))
-            self.failUnless(data_value.pk > 0)
-            self.failIf(data_value.value)
-            data_value.value = 100
-            data_value.save()
-            self.failUnlessEqual(100, data_value.value)
-            self.failUnlessEqual('resource_level', data_value.parameter.name)
-            data_value.value = 50
-            data_value.save()
-            self.failUnlessEqual(50, data_value.value)
+        data_round_number = 1
+        current_round_data = None
+        for e in self.all_data_rounds():
+            self.failIfEqual(current_round_data, e.current_round_data)
+            current_round_data = e.current_round_data
+            for data_value in current_round_data.group_data_values.all():
+                # test string conversion
+                logger.debug("current round data: pk:%s value:%s unicode:%s" % (data_value.pk, data_value.value, data_value))
+                self.failUnless(data_value.pk > 0)
+                self.failIf(data_value.value)
+                data_value.value = 100
+                data_value.save()
+                self.failUnlessEqual(100, data_value.value)
+                self.failUnlessEqual('resource_level', data_value.parameter.name)
+                data_value.value = 50
+                data_value.save()
+                self.failUnlessEqual(50, data_value.value)
 
-        self.failUnlessEqual(GroupRoundDataValue.objects.filter(experiment=e).count(), 2)
-        self.failUnlessEqual(e.current_round_data.group_data_values.count(), GroupRoundDataValue.objects.filter(experiment=e).count())
-
-        e.advance_to_next_round()
-        self.failIfEqual(current_round_data, e.current_round_data)
-        current_round_data = e.current_round_data
-        for data_value in current_round_data.group_data_values.all():
-            # test string conversion
-            logger.debug("current round data: %s" % data_value)
-            self.failUnless(data_value.pk > 0)
-            self.failIf(data_value.value)
-            data_value.value = 100
-            data_value.save()
-            self.failUnlessEqual(100, data_value.value)
-            self.failUnlessEqual('resource_level', data_value.parameter.name)
-            data_value.value = 50
-            data_value.save()
-            self.failUnlessEqual(50, data_value.value)
-
-        self.failUnlessEqual(GroupRoundDataValue.objects.filter(experiment=e).count(), 4)
-        self.failUnlessEqual(current_round_data.group_data_values.count(), 2)
-        self.failUnlessEqual(e.parameters(scope=Parameter.GROUP_SCOPE).count(), 1)
+            self.failUnlessEqual(GroupRoundDataValue.objects.filter(experiment=e).count(), data_round_number * 2)
+            self.failUnlessEqual(e.current_round_data.group_data_values.count(), GroupRoundDataValue.objects.filter(experiment=e, round_data=current_round_data).count())
+            self.failUnlessEqual(e.parameters(scope=Parameter.GROUP_SCOPE).count(), 1)
+            self.failUnlessEqual(current_round_data.group_data_values.count(), 2)
+            data_round_number += 1
 
     def test_data_parameters(self):
         e = self.experiment

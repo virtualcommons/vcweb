@@ -27,6 +27,20 @@ class BaseVcwebTest(TestCase):
         self.experiment_metadata = ExperimentMetadata.objects.get(pk=1)
         self.experiment_configuration = ExperimentConfiguration.objects.get(pk=1)
 
+    def advance_to_data_round(self):
+        self.experiment.activate()
+        while self.experiment.has_next_round:
+            if self.experiment.current_round.has_data_parameters:
+                return self.experiment
+            self.experiment.advance_to_next_round()
+
+    def all_data_rounds(self):
+        self.experiment.activate()
+        while self.experiment.has_next_round:
+            if self.experiment.current_round.has_data_parameters:
+                yield self.experiment
+            self.experiment.advance_to_next_round()
+
     def create_new_round_configuration(self, round_type='PLAY', template_name=None):
         return RoundConfiguration.objects.create(experiment_configuration=self.experiment_configuration,
                 sequence_number=(self.experiment_configuration.last_round_sequence_number + 1),
@@ -38,6 +52,11 @@ class BaseVcwebTest(TestCase):
         return Experiment.objects.create(experimenter=self.experimenter,
                 experiment_configuration=self.experiment_configuration,
                 experiment_metadata=self.experiment_metadata)
+
+    def create_new_parameter(self, name='vcweb.test.parameter', scope='EXPERIMENT_SCOPE', parameter_type='string'):
+        return self.experiment_metadata.parameters.create(creator=self.experimenter, 
+                name=name, scope=scope, type=parameter_type)
+
 
     def create_new_group(self, max_size=10, experiment=None):
         if not experiment:
@@ -118,7 +137,7 @@ class ExperimentTest(BaseVcwebTest):
             self.fail("Should have raised an exception.")
         except Exception, e:
             logger.debug("expected exception raised: %s" % e)
-            self.failUnless(self.experiment.is_active())
+            self.failUnless(self.experiment.is_active)
 
     def test_allocate_groups(self):
         self.experiment.allocate_groups(randomize=False)
@@ -164,31 +183,37 @@ class ExperimentTest(BaseVcwebTest):
 
 class GroupTest(BaseVcwebTest):
     def test_set_data_value_activity_log(self):
-        e = self.experiment
+        e = self.advance_to_data_round()
+        test_data_value = 10
         for g in e.groups.all():
             activity_log_counter = GroupActivityLog.objects.filter(group=g).count()
             for data_value in g.data_values.all():
                 # XXX: pathological use of set_data_value, no point in doing it
                 # this way since typical usage would do a lookup by name.
-                g.set_data_value(parameter=data_value.parameter, value=10)
+                g.set_data_value(parameter=data_value.parameter, value=test_data_value)
                 activity_log_counter += 1
                 self.failUnlessEqual(activity_log_counter, GroupActivityLog.objects.filter(group=g).count())
+                self.failUnlessEqual(g.get_scalar_data_value(parameter=data_value.parameter), test_data_value)
 
     def test_transfer_to_next_round(self):
+        parameter = self.create_new_parameter(scope=Parameter.GROUP_SCOPE, name='test_group_parameter', parameter_type='int')
+        test_data_value = 37
         e = self.experiment
-        parameter = e.experiment_metadata.parameters.create(scope=Parameter.GROUP_SCOPE,
-                name='test_group_parameter', type='int',
-                creator=e.experimenter)
-        for g in e.groups.all():
-            g.initialize()
-            g.set_data_value(parameter=parameter, value=15)
-            self.failUnlessEqual(g.get_data_value(parameter=parameter), 15)
-            g.transfer_to_next_round(parameter)
-
-        e.advance_to_next_round()
-        for g in e.groups.all():
-            self.failUnlessEqual(g.get_data_value(parameter=parameter), 15)
-
+        first_pass = True
+        while e.has_next_round:
+            if first_pass:
+                for g in e.groups.all():
+                    g.set_data_value(parameter=parameter, value=test_data_value)
+                    self.failUnlessEqual(g.get_data_value(parameter=parameter).value, test_data_value)
+                    self.failUnlessEqual(g.get_scalar_data_value(parameter=parameter), test_data_value)
+                    g.transfer_to_next_round(parameter)
+                first_pass = False
+            else:
+                for g in e.groups.all():
+                    self.failUnlessEqual(g.get_data_value(parameter=parameter).value, test_data_value)
+                    self.failUnlessEqual(g.get_scalar_data_value(parameter=parameter), test_data_value)
+                    g.transfer_to_next_round(parameter)
+            e.advance_to_next_round()
 
 
     def test_group_add(self):

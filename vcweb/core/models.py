@@ -283,12 +283,16 @@ class Experiment(models.Model):
     def is_last_round(self):
         return self.current_round_sequence_number == self.experiment_configuration.final_sequence_number
 
+    @property
+    def is_active(self):
+        return self.status != 'INACTIVE'
+
     def parameters(self, scope=None):
         ps = self.experiment_metadata.parameters
         return ps.filter(scope=scope) if scope else ps
 
     def activate(self):
-        if not self.is_active():
+        if not self.is_active:
             self.allocate_groups()
             self.status = 'ACTIVE'
             self.save()
@@ -300,8 +304,7 @@ class Experiment(models.Model):
         self.groups.all().delete()
         # seed the initial group.
         current_group = self.groups.create(number=1, max_size=self.experiment_configuration.max_group_size)
-        # FIXME: make this initialization automatic for new groups
-        current_group.initialize()
+        current_group.initialize_data_parameters()
         participants = list(self.participants.all())
         if randomize:
             random.shuffle(participants)
@@ -309,14 +312,12 @@ class Experiment(models.Model):
         for p in participants:
             if current_group.is_full:
                 current_group = current_group.create_next_group()
+                current_group.initialize_data_parameters()
             current_group.add_participant(p)
 
         # XXX: if there a performance hit here, should probably do a void return instead
         # or collect the groups as they are added
         return self.groups
-
-    def is_active(self):
-        return self.status != 'INACTIVE'
 
     def get_round_configuration(self, sequence_number):
         return self.experiment_configuration.round_configurations.get(sequence_number=sequence_number)
@@ -331,7 +332,7 @@ class Experiment(models.Model):
             self.save()
             # initialize group and participant parameters
             for g in self.groups.all():
-                g.initialize()
+                g.initialize_data_parameters()
         else:
             logger.warning("trying to advance past the last round - no-op")
 
@@ -457,6 +458,10 @@ class RoundConfiguration(models.Model):
     @property
     def is_practice_round(self):
         return self.round_type == 'PRACTICE'
+
+    @property
+    def has_data_parameters(self):
+        return self.round_type in ('PRACTICE', 'REGULAR')
 
     def get_parameter(self, name):
         parameter = Parameter.objects.get(name=name, scope=Parameter.ROUND_SCOPE)
@@ -649,13 +654,14 @@ class Group(models.Model):
     def current_round(self):
         return self.experiment.current_round
 
-    def initialize(self):
-        round_data = self.current_round_data
-        if round_data.group_data_values.filter(group=self).count() == 0:
-            for group_data_parameter in self.data_parameters:
-                # create a fresh GroupRoundDataValue for each data parameter
-                logger.debug("Creating parameter %s for group %s" % (group_data_parameter, self))
-                self.data_values.create(round_data=round_data, parameter=group_data_parameter)
+    def initialize_data_parameters(self):
+        if self.current_round.has_data_parameters:
+            round_data = self.current_round_data
+            if not round_data.group_data_values.filter(group=self).count():
+                for group_data_parameter in self.data_parameters:
+                    # create a fresh GroupRoundDataValue for each data parameter
+                    logger.debug("Creating parameter %s for group %s" % (group_data_parameter, self))
+                    self.data_values.create(round_data=round_data, parameter=group_data_parameter)
 
 
     '''
@@ -663,8 +669,7 @@ class Group(models.Model):
     conversion / processing to put the value into the appropriate field.
     '''
     def set_data_value(self, parameter_name=None, parameter=None, value=None):
-        data_value = self.get_data_value(parameter_name=parameter_name,
-                parameter=parameter)
+        data_value = self.get_data_value(parameter_name=parameter_name, parameter=parameter)
         data_value.value = value
         self.activity_log.create(round_configuration=self.current_round,
                 log_message="setting parameter %s = %s" % (parameter, value))
@@ -692,12 +697,15 @@ class Group(models.Model):
         '''
 
     def get_scalar_data_value(self, parameter_name=None, parameter=None):
-        return self.get_data_value(parameter_name, parameter).value
+        if parameter:
+            return self.get_data_value(parameter=parameter).value
+        else:
+            return self.get_data_value(parameter_name=parameter_name).value
 
     def get_data_value(self, parameter_name=None, parameter=None):
         criteria = dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name)],
                 round_data=self.current_round_data)
-        return self.data_values.get(**criteria)
+        return self.data_values.get_or_create(**criteria)[0]
 
     def get_group_data_values(self, name=None, *names):
         round_data = self.current_round_data
@@ -722,14 +730,13 @@ class Group(models.Model):
             return
         value = self.get_scalar_data_value(parameter=parameter) if transfer_existing_value else value
         if not parameter:
-            for p in self.parameters:
+            for p in self.data_parameters:
                 self.transfer_parameter(p, value)
         else:
             self.transfer_parameter(parameter, value)
 
     def transfer_parameter(self, parameter, value):
         next_round_data, created = self.experiment.round_data.get_or_create(round_configuration=self.experiment.next_round)
-# if value is set, use it, otherwise use the current round parameter value
         return next_round_data.group_data_values.create(group=self, parameter=parameter, value=value)
 
     def get_participant_data_value(self, participant, parameter):
@@ -760,11 +767,7 @@ class Group(models.Model):
         return self.size < self.max_size
 
     def create_next_group(self):
-        group = Group.objects.create(number=self.number + 1, max_size=self.max_size, experiment=self.experiment)
-        # FIXME: connect this to post save
-        group.initialize()
-        return group
-
+        return Group.objects.create(number=self.number + 1, max_size=self.max_size, experiment=self.experiment)
 
     """
     Adds the given participant to this group or a new group if this group is is_full.
@@ -779,9 +782,9 @@ class Group(models.Model):
         ''' add the participant to this group if there is room, otherwise create and add to a fresh group '''
         group = self if self.is_open else self.create_next_group()
         ParticipantGroupRelationship.objects.create(participant=participant,
-                                                    group=group,
-                                                    round_joined=self.experiment.current_round,
-                                                    participant_number=group.size + 1)
+                group=group,
+                round_joined=self.experiment.current_round,
+                participant_number=group.size + 1)
         return group
 
     def __unicode__(self):

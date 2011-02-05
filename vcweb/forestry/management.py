@@ -9,8 +9,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 '''
-creates the forestry ExperimentMetadata record if not already created and
-registers round_started and round_ended signal handlers
+creates the forestry ExperimentMetadata record if not already created.
+
+is this any better than adding it to directly to initial_data.json?
 '''
 
 def post_syncdb_handler(sender, **kwargs):
