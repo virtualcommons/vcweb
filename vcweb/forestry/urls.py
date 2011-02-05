@@ -6,6 +6,6 @@ urlpatterns = patterns('vcweb.forestry.views',
     url(r'^experiment/?$', 'experimenter_index', name='experimenter_index'),
     url(r'^configure/(?P<experiment_id>\d+)$', 'configure', name='configure'),
     url(r'^(?P<experiment_id>\d+)/experimenter$', 'manage_experiment', name='manage_experiment'),
-    url(r'^(?P<experiment_id>\d+)/next-round$', 'next_round', name='next_round'),
+    url(r'^(?P<experiment_id>\d+)/wait$', 'wait', name='wait'),
     url(r'^(?P<experiment_id>\d+)/participate$', 'participate', name='participate'),
 )

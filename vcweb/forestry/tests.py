@@ -14,21 +14,26 @@ class ForestryRoundSignalTest(BaseVcwebTest):
         e = self.test_round_started_signal()
         self.verify_round_ended(e, lambda e: e.end_round(sender=forestry_sender))
 
-    def test_round_started_signal(self):
+    def advance_to_practice_round(self):
         e = self.experiment
-        e.activate()
+        e.allocate_groups()
+        e.current_round_sequence_number = 2
         e.advance_to_next_round()
+        self.failUnlessEqual(e.current_round_sequence_number, 3)
+        self.failUnlessEqual(e.current_round.round_type, 'PRACTICE')
+        return e
+
+    def test_round_started_signal(self):
+        e = self.advance_to_practice_round()
         e.start_round(sender=forestry_sender)
         for group in e.groups.all():
             self.verify_resource_level(group)
         return e
 
     def test_round_setup(self):
-        e = self.experiment
-        e.allocate_groups()
-# skip the first instructions round
-# set up some harvest decisions
-        e.advance_to_next_round()
+        e = self.advance_to_practice_round()
+        # manually invoke round_setup, otherwise start_round should work as
+        # well (but that's tested in the signal tests)
         round_setup(e)
         for group in e.groups.all():
             self.verify_resource_level(group)

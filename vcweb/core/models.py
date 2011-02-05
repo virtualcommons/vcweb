@@ -140,14 +140,11 @@ class ExperimentManager(models.Manager):
         if status:
             es = self.filter(status=status)
             es.update(current_round_elapsed_time=models.F('current_round_elapsed_time') + 1,
-                      total_elapsed_time=models.F('total_elapsed_time') + 1)
+                    total_elapsed_time=models.F('total_elapsed_time') + 1)
             # check each experiment's total_elapsed_time against the total allotted time and
             # issue round_stopped signals to experiments that need to be stopped.
             for experiment in es.all():
                 experiment.check_elapsed_time()
-
-
-
 
 # an actual instance of an experiment; represents a concrete
 # parameterization of this experiment.
@@ -212,6 +209,10 @@ class Experiment(models.Model):
         return self.current_round.duration - self.current_round_elapsed_time
 
     @property
+    def is_timed_round(self):
+        return self.current_round.duration > 0
+
+    @property
     def channel_name(self):
         return "%s.%s" % (self.namespace, self.id)
 
@@ -265,11 +266,14 @@ class Experiment(models.Model):
 
     @property
     def next_round(self):
-        return self.get_round_configuration(self.current_round_sequence_number + 1)
+       if self.has_next_round:
+          return self.get_round_configuration(self.current_round_sequence_number + 1)
+       else:
+          return self.current_round
 
     @property
     def previous_round(self):
-        return self.get_round_configuration(self.current_round_sequence_number - 1)
+        return self.get_round_configuration(max(self.current_round_sequence_number - 1, 0))
 
     @property
     def has_next_round(self):
@@ -344,7 +348,7 @@ class Experiment(models.Model):
 
     def end_round(self, sender=None):
         self.status = 'ACTIVE'
-        self.current_round_elapsed_time = self.current_round.duration
+        self.current_round_elapsed_time = max(self.current_round_elapsed_time, self.current_round.duration)
         self.save()
         sender = self.experiment_metadata.pk if sender is None else sender
         #sender = self.namespace.encode('utf-8')
@@ -352,7 +356,7 @@ class Experiment(models.Model):
         return signals.round_ended.send(sender, experiment=self, round_configuration=self.current_round)
 
     def check_elapsed_time(self):
-        if self.is_time_expired:
+        if self.is_timed_round and self.is_time_expired:
             self.end_round()
 
     """ returns a fresh copy of this experiment with configuration / metadata intact """
@@ -382,15 +386,15 @@ class Experiment(models.Model):
         return self.id.___hash___()
 
 class RoundConfiguration(models.Model):
-    ROUND_TYPES = dict(BASIC=('Regular interactive experiment round', 'participate.html'),
+    ROUND_TYPES_DICT = dict(REGULAR=('Regular interactive experiment round', 'participate.html'),
                        CHAT=('Chat round', 'chat.html'),
                        DEBRIEFING=('Debriefing round', 'debriefing.html'),
                        INSTRUCTIONS=('Instructions round', 'instructions.html'),
                        PRACTICE=('Practice round', 'practice.html'),
                        QUIZ=('Quiz round', 'quiz.html'))
-    (BASIC, CHAT, DEBRIEFING, INSTRUCTIONS, PRACTICE, QUIZ) = sorted(ROUND_TYPES.keys())
+    ROUND_TYPES = (CHAT, DEBRIEFING, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR) = sorted(ROUND_TYPES_DICT.keys())
 
-    ROUND_TYPE_CHOICES = [(round_type, ROUND_TYPES[round_type][0]) for round_type in sorted(ROUND_TYPES.keys())]
+    ROUND_TYPE_CHOICES = [(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES]
 
     experiment_configuration = models.ForeignKey(ExperimentConfiguration,
                                                  related_name='round_configurations')
@@ -411,7 +415,7 @@ class RoundConfiguration(models.Model):
     debriefing = models.TextField(null=True, blank=True)
     round_type = models.CharField(max_length=32,
                                   choices=ROUND_TYPE_CHOICES,
-                                  default=BASIC)
+                                  default=REGULAR)
     """
     name of a custom template to be used this round.  e.g., if set to
     quiz_2.html in the forestry experiment app, this would be loaded from
@@ -424,7 +428,7 @@ class RoundConfiguration(models.Model):
 
     @property
     def custom_template_name(self):
-        return self.template_name if self.template_name else RoundConfiguration.ROUND_TYPES[self.round_type][1]
+        return self.template_name if self.template_name else RoundConfiguration.ROUND_TYPES_DICT[self.round_type][1]
 
     @property
     def template_path(self):
@@ -449,6 +453,10 @@ class RoundConfiguration(models.Model):
     @property
     def is_quiz_round(self):
         return self.round_type == 'QUIZ'
+
+    @property
+    def is_practice_round(self):
+        return self.round_type == 'PRACTICE'
 
     def get_parameter(self, name):
         parameter = Parameter.objects.get(name=name, scope=Parameter.ROUND_SCOPE)

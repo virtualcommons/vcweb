@@ -50,7 +50,7 @@ def manage_experiment(request, experiment_id=None):
         return redirect('core:experimenter_index')
 
 @participant_required
-def next_round(request, experiment_id=None):
+def wait(request, experiment_id=None):
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
         return render_to_response('forestry/wait.html',
@@ -77,7 +77,7 @@ def participate(request, experiment_id=None):
 # the experiment hasn't started yet, just redirect to the instructions for now.. we
 # should redirect to a proper waiting page later.
             messages.info(request, 'The experiment has not yet started.')
-            return redirect('core:instructions', experiment_id=experiment_id)
+            return render_to_response(experiment.current_round_template, locals())
     except Experiment.DoesNotExist:
         logger.warning("No experiment with id [%s]" % experiment_id)
         return redirect('forestry:index')

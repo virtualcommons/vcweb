@@ -99,9 +99,7 @@ class ExperimentConfigurationTest(BaseVcwebTest):
     def test_final_sequence_number(self):
         e = self.experiment
         ec = e.experiment_configuration
-        self.failUnlessEqual(ec.final_sequence_number, 3)
-        self.failUnlessEqual(ec.final_sequence_number,
-                ec.last_round_sequence_number)
+        self.failUnlessEqual(ec.final_sequence_number, ec.last_round_sequence_number)
 
 class ExperimentTest(BaseVcwebTest):
 
@@ -150,7 +148,7 @@ class ExperimentTest(BaseVcwebTest):
         self.failUnless(current_round_elapsed_time == 0)
         total_elapsed_time = experiment.total_elapsed_time
         self.failUnless(total_elapsed_time == 0)
-        Experiment.objects.increment_elapsed_time(status='INACTIVE')
+        Experiment.objects.increment_elapsed_time(status=experiment.status)
         experiment = self.load_experiment()
         self.failUnlessEqual(experiment.current_round_elapsed_time, current_round_elapsed_time + 1)
         self.failUnlessEqual(experiment.total_elapsed_time, total_elapsed_time + 1)
@@ -227,14 +225,14 @@ class ParticipantExperimentRelationshipTest(BaseVcwebTest):
 class RoundConfigurationTest(BaseVcwebTest):
 
     def test_round_configuration_enums(self):
-        self.failUnlessEqual(len(RoundConfiguration.ROUND_TYPES), 6, 'Currently 6 round types are supported')
+        self.failUnlessEqual(len(RoundConfiguration.ROUND_TYPES), len(RoundConfiguration.ROUND_TYPES_DICT))
         self.failUnlessEqual(RoundConfiguration.PRACTICE, 'PRACTICE')
-        self.failUnlessEqual(RoundConfiguration.BASIC, 'BASIC')
+        self.failUnlessEqual(RoundConfiguration.REGULAR, 'REGULAR')
         choices = RoundConfiguration.ROUND_TYPE_CHOICES
-        logger.debug("choices are: %s" % choices)
-        self.failUnlessEqual(len(choices), 6)
+        self.failUnlessEqual(len(choices), len(RoundConfiguration.ROUND_TYPES_DICT))
         for pair in choices:
-            self.failUnless(pair[0] in RoundConfiguration.ROUND_TYPES.keys())
+            self.failUnless(pair[0] in RoundConfiguration.ROUND_TYPES_DICT.keys())
+            self.failUnless(pair[0] in RoundConfiguration.ROUND_TYPES)
             self.failIf(pair[1].isupper())
 
     def test_get_set_parameter(self):
@@ -279,7 +277,7 @@ class RoundConfigurationTest(BaseVcwebTest):
 
     def test_get_templates(self):
         e = self.experiment
-        for round_type, data in RoundConfiguration.ROUND_TYPES.items():
+        for round_type, data in RoundConfiguration.ROUND_TYPES_DICT.items():
             logger.debug("inspecting round type: %s with data %s" % (round_type, data))
             rc = self.create_new_round_configuration(round_type=round_type)
             e.current_round_sequence_number = rc.sequence_number

@@ -21,15 +21,18 @@
     });
 </script>
 {% endblock %}
-{% block title %} Forestry Experiment Round {% endblock %}
+{% block title %}
+Forestry Experiment Round {{ experiment.current_round.round_number }}
+{% endblock %}
 
-{% block content %}
-<h3>Forestry Round</h3>
-<p>
-    <div class='alert'>
-        The next round will begin in <span id='timeRemaining'>{{ experiment.time_remaining }}</span> second(s).
-        <br/>
-        <small><a href='{{experiment.participant_url}}'>return to the current round</a> | <a href='participate'>view your other experiments</a></small>
-    </div>
-</p>
-{% endblock content %}
+{% block page %}
+<h3>Waiting for the next round to start</h3>
+{% if experiment.is_timed_round > 0%}
+<div id='timeLeft' class='info infoIcon'>
+    Time remaining: <span id='timeRemaining'>{{ experiment.time_remaining }}</span>
+</div>
+{% endif %}    
+<div class='alert'>
+
+</div>
+{% endblock %}
