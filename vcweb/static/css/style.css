@@ -78,6 +78,24 @@ ul.experiments {
    padding: 0;
 }
 
+li.inactive {
+   margin: 0;
+   background: url('/static/images/famfamfam/stop.png') center left no-repeat;
+   padding-left: 20px;
+}
+
+li.active {
+   margin: 0;
+   background: url('/static/images/famfamfam/accept.png') center left no-repeat;
+   padding-left: 20px;
+}
+
+li.round_in_progress {
+   margin: 0;
+   background: url('/static/images/famfamfam/arrow_refresh.png') center left no-repeat;
+   padding-left: 20px;
+}
+
 
 li.rightArrow {
    margin: 0;

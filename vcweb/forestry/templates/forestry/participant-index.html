@@ -14,15 +14,13 @@
 <div class='notice'>
     {% for experiment_status, experiments in experiment_dict.items %}
     <h3> {{ experiment_status|title }} </h3>
-    <div class='info'>
-        <ul>
-            {% for experiment in experiments %}
-            <li> <a href='{{ experiment.participant_url }}'>{{ experiment.status_line }}</a></li>
-            {% empty %}
-            <li class='alert'> No {{ experiment_status }} experiments </li>
-            {% endfor %}
-        </ul>
-    </div>
+    <ul class='experiments'>
+        {% for experiment in experiments %}
+        <li class='{{experiment_status|lower}}'> <a href='{{ experiment.participant_url }}'>{{ experiment.status_line }}</a></li>
+        {% empty %}
+        <li class='alert'> No {{ experiment_status }} experiments </li>
+        {% endfor %}
+    </ul>
     {% endfor %}
 </div>
 {% endblock %}
