@@ -1,22 +1,27 @@
 {% extends "base-participant.html" %}
 
 {% block title %}
-    Virtual Commons Web Participant Interface
+Virtual Commons Web Participant Interface
 {% endblock %}
 
 {% block page %}
-    <div class='notice'>
-        Welcome back, {{participant}}. 
-    </div>
+<div class='notice'>
+    Welcome back, {{participant}}.
+</div>
 
-    <h3>Your experiments</h3>
-    <div class='info'>
-        <ul class='experiments'>
-            {% for e in experiments %}
-            <li class='rightArrow' ><a href='{{ e.participant_url }}'>{{e.status_line}}</a></li>
-            {% empty %}
-            You are not participating in any active experiments.
-            {% endfor %}
-        </ul>
-    </div>
+{% for experiment_metadata, experiment_status_dict in experiment_dict.items %}
+<h3> {{ experiment_metadata|title }} </h3>
+<div class='notice'>
+    {% for experiment_status, experiments in experiment_status_dict.items %}
+    <h3>{{experiment_status|title}}</h3>
+    <ul id='experiments'>
+        {% for experiment in experiments %}
+        <li class='{{experiment_status|lower}}'> <a href='{{ experiment.participant_url }}'>{{ experiment.status_line }}</a></li>
+        {% empty %}
+        <li class='alert'> No {{ experiment_status|lower }} experiments </li>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+</div>
+{% endfor %}
 {% endblock page %}

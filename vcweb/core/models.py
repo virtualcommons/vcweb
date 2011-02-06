@@ -61,7 +61,7 @@ class ExperimentMetadata(models.Model):
         return [self.namespace]
 
     def __unicode__(self):
-        return u"Experiment Type: %s (namespace: %s, created on %s)" % (self.title, self.namespace, self.date_created)
+        return u"%s (%s)" % (self.title, self.namespace)
 
     class Meta:
         ordering = ['namespace', 'date_created']
@@ -236,7 +236,8 @@ class Experiment(models.Model):
 
     @property
     def status_line(self):
-        return "%s (id %s, status: %s, round %s of %s)" % (self.experiment_metadata.title, self.pk, self.status.lower(),
+        return "%s (id %s, status: %s, round %s of %s)" % (self.experiment_metadata.title, self.pk,
+                self.get_status_display(),
                 self.current_round.sequence_number,
                 self.experiment_configuration.final_sequence_number)
 
