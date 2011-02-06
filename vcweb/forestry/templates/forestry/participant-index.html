@@ -14,7 +14,7 @@
 <div class='notice'>
     {% for experiment_status, experiments in experiment_dict.items %}
     <h3> {{ experiment_status|title }} </h3>
-    <ul class='experiments'>
+    <ul id='experiments'>
         {% for experiment in experiments %}
         <li class='{{experiment_status|lower}}'> <a href='{{ experiment.participant_url }}'>{{ experiment.status_line }}</a></li>
         {% empty %}
