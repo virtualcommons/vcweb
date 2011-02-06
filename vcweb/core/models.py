@@ -13,6 +13,7 @@ import re
 
 logger = logging.getLogger(__name__)
 
+
 """
 Contains all data models used in the core as well as a number of helper functions.
 
@@ -217,25 +218,20 @@ class Experiment(models.Model):
         return "%s.%s" % (self.namespace, self.id)
 
     @property
-    def url(self, request):
-        user = request.user
-        if user.is_authenticated():
-            return "/{0}/{1}".format("participant" if is_participant(user) else "experimenter", self.url_id)
-        else:
-            return self.namespace
-
-
-    @property
     def participant_url(self):
-        return "/%s/participate" % (self.url_id)
+        return "/%s/participate" % self.namespace_id
 
     @property
     def management_url(self):
-        return "/%s/experimenter" % (self.url_id)
+        return "/%s/experimenter" % self.namespace_id
+    
+    @property
+    def stop_url(self):
+        return "%s/stop" % self.controller_url
 
     @property
     def monitor_url(self):
-        return "/experiment/%s/monitor" % self.pk
+        return "%s/monitor" % self.controller_url
 
     @property
     def status_line(self):
@@ -248,7 +244,11 @@ class Experiment(models.Model):
         return self.experiment_metadata.namespace
 
     @property
-    def url_id(self):
+    def controller_url(self):
+        return "/experiment/%s" % self.pk
+
+    @property
+    def namespace_id(self):
         return "%s/%s" % (self.experiment_metadata.namespace, self.id)
 
     @property
@@ -355,6 +355,10 @@ class Experiment(models.Model):
         #sender = self.namespace.encode('utf-8')
         logger.debug("about to send round ended signal with sender %s" % sender)
         return signals.round_ended.send(sender, experiment=self, round_configuration=self.current_round)
+
+    def stop(self):
+        self.status = 'INACTIVE'
+        self.save()
 
     def check_elapsed_time(self):
         if self.is_timed_round and self.is_time_expired:

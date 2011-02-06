@@ -1,119 +1,93 @@
 {% extends "base-experimenter.html" %}
 
-{% block head %}
-{{ block.super }}
-<script type='text/javascript' src='/static/js/jquery.confirm.min.js'></script>
-<script type='text/javascript'>
-    $(function() {
-        $('.confirm-experiment-action').confirm({
-                timeout: 3000,
-                dialogShow: 'fadeIn',
-                dialogSpeed: 'fast',
-                buttons: {
-                    wrapper: '<button></button>',
-                    separator: ' '
-                },
-                msg: 'You are about to modify the experiment. Continue?'
-        });
-    });
-</script>
-{% endblock %}
-
 {% block title %} 
     VCWEB Experiment Monitoring 
 {% endblock %}
 
 {% block page %}
-    {{block.super}}
-    <fieldset>
-        <legend>{{experiment}} (id: {{ experiment.pk }})</legend>
-        <div class='experiment-dashboard'>
-            {% comment %}
-                FIXME: Improve this so that we can just inject a new round_configuration
-                JSON object in and everything auto-updates.
-            {% endcomment %}
-            <fieldset class='small'>
-                <legend>Round Status</legend>
-                <div class='status'>
-                    Round status: <span id='experiment-status'>{{ experiment.status }}</span> 
-                    <div>
-                        {% if not experiment.is_active %}
-                            <a class='confirm-experiment-action' href='activate'>activate</a>
-                        {% endif %}
-                    </div>
-                </div>
-                <div>
-                    Round <span id='experiment-round'> {{ experiment.current_round.sequence_number }}</span> of <b>{{ experiment.experiment_configuration.final_sequence_number }}</b>
-                    {% if experiment.is_round_started %}
-                    <div>
-                        <a class='confirm-experiment-action' href='end-round'>end round</a>
-                    </div>
-                    {% else %}
-                    <div>
-                        <a class='confirm-experiment-action' href='start-round'>start round</a>
-                    </div>
-                    {% endif %}
-                    <div>
-                        <a class='confirm-experiment-action' href='advance-to-next-round'>next round</a>
-                    </div>
-                </div>
-                <div>
-                    Round type: <span id='round-type'>{{ experiment.current_round.round_type }}</span>
-                </div>
-                <div>
-                    <label>Time remaining:</label><span class='highlight' id='time-left'>{{ experiment.time_remaining }} </span>s
-                </div>
-            </fieldset>
+{{block.super}}
+<h3>{{experiment}} (id: {{ experiment.pk }})</h3>
+<div class='experiment-dashboard'>
+    {% comment %}
+    FIXME: Improve this so that we can just inject a new round_configuration
+    JSON object in and everything auto-updates.
+    {% endcomment %}
+    <fieldset class='small'>
+        <legend>Round Status</legend>
+        <div class='status'>
+            Round status: <span id='experiment-status'>{{ experiment.status }}</span> 
+            {% if not experiment.is_active %}
+            <a class='confirm-experiment-action' href='activate'><img
+                src='/static/images/famfamfam/cog_go.png' alt=''> activate</a>
+            {% endif %}
         </div>
-
-        {% if experiment.round_data.count > 0 %}
-            {% for round_data in experiment.round_data.all %}
-                <h3> {{ round_data }} </h3>
-                <div class='group-data'>
-                    Group data:
-                    <table>
-                        <thead>
-                            <tr><th>Group</th><th>Parameter Name</th><th>Value</th><th>Type</th></tr>
-                        </thead>
-                        <tbody>
-                            {% for group_data_value in round_data.group_data_values.all %}
-                                <tr>
-                                    <td>{{ group_data_value.group }}</td>
-                                    <td>{{ group_data_value.parameter.label}}</td>
-                                    <td>{{ group_data_value.parameter.value}}</td>
-                                    <td>{{ group_data_value.parameter.type}}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <div class='participant-data'>
-                    Participant data:
-                    {% if round_data.participant_data_values.count > 0 %}
-                        <table>
-                            <thead>
-                                <tr><th>Participant</th><th>Parameter name</th><th>Value</th><th>Type</th></tr>
-                            </thead>
-                            <tbody>
-                                {% for participant_data_value in round_data.participant_data_values.all %}
-                                    <tr>
-                                        <td>{{ participant_data_value.participant }}</td>
-                                        <td>{{ participant_data_value.parameter.label }}</td>
-                                        <td>{{ participant_data_value.parameter.value }}</td>
-                                        <td>{{ participant_data_value.parameter.type }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <div class='alert'>There is no participant data for this round yet.</div>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        {% else %}
-            <div class='alert'>Round data is not yet available.</div>
-        {% endif %}
+        <div>
+            Round <span id='experiment-round'> {{ experiment.current_round.sequence_number }}</span> of <b>{{ experiment.experiment_configuration.final_sequence_number }}</b>
+            <span id='horizontal'>
+                {% if experiment.is_round_started %}
+                <a class='confirm-experiment-action' href='end-round'><img src='/static/images/famfamfam/stop.png' /> end round</a>
+                {% else %}
+                <a class='confirm-experiment-action' href='start-round'><img src='/static/images/famfamfam/control_play.png' alt='' /> start round</a>
+                {% endif %}
+                <a style='background-image: none;' class='confirm-experiment-action' href='advance-to-next-round'><img src='/static/images/famfamfam/control_fastforward.png' alt=''/> next round</a>
+            </span>
+        </div>
+        <div>
+            Round type: <span id='round-type'>{{ experiment.current_round.round_type }}</span>
+        </div>
+        <div>
+            <label>Time remaining:</label><span class='highlight' id='time-left'>{{ experiment.time_remaining }} </span>s
+        </div>
     </fieldset>
+</div>
+
+{% if experiment.round_data.count > 0 %}
+{% for round_data in experiment.round_data.all %}
+<h3> {{ round_data }} </h3>
+<div class='group-data'>
+    Group data:
+    <table>
+        <thead>
+            <tr><th>Group</th><th>Parameter Name</th><th>Value</th><th>Type</th></tr>
+        </thead>
+        <tbody>
+            {% for group_data_value in round_data.group_data_values.all %}
+            <tr>
+                <td>{{ group_data_value.group }}</td>
+                <td>{{ group_data_value.parameter.label}}</td>
+                <td>{{ group_data_value.parameter.value}}</td>
+                <td>{{ group_data_value.parameter.type}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class='participant-data'>
+    Participant data:
+    {% if round_data.participant_data_values.count > 0 %}
+    <table>
+        <thead>
+            <tr><th>Participant</th><th>Parameter name</th><th>Value</th><th>Type</th></tr>
+        </thead>
+        <tbody>
+            {% for participant_data_value in round_data.participant_data_values.all %}
+            <tr>
+                <td>{{ participant_data_value.participant }}</td>
+                <td>{{ participant_data_value.parameter.label }}</td>
+                <td>{{ participant_data_value.parameter.value }}</td>
+                <td>{{ participant_data_value.parameter.type }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class='alert'>There is no participant data for this round yet.</div>
+    {% endif %}
+</div>
+{% endfor %}
+{% else %}
+<div class='alert'>Round data is not yet available.</div>
+{% endif %}
 
 
 {% endblock page %}

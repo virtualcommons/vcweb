@@ -147,3 +147,9 @@ import djcelery
 djcelery.setup_loader()
 
 
+from django.contrib import messages
+MESSAGE_TAGS = {
+        messages.constants.INFO: 'info infoIcon',
+        messages.constants.WARNING: 'alert alertIcon',
+        messages.constants.ERROR: 'alert alertIcon'
+        }

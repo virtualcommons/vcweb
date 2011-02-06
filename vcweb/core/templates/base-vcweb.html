@@ -1,63 +1,74 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
-{% load dajaxice_templatetags %}
+    {% load dajaxice_templatetags %}
 
-<head>
-{% block head %}
-<title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<link rel="stylesheet" href="/static/css/blueprint/screen.css" type="text/css" media="screen, projection" />
-<link rel="stylesheet" href="/static/css/blueprint/print.css" type="text/css" media="print" />
-<!--[if lt IE 8]><link rel="stylesheet" href="/static/media/css/blueprint/ie.css" type="text/css" media="screen, projection" /><![endif]-->
-<link href="/static/css/guarantee/style.css" rel="stylesheet" type="text/css" media="screen" />
-<script type='text/javascript' src='/static/js/jquery-1.4.4.min.js'></script>
-{% dajaxice_js_import %}
-{% endblock %}
-</head>
+    <head>
+        {% block head %}
+        <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <link rel="stylesheet" href="/static/css/blueprint/screen.css" type="text/css" media="screen, projection" />
+        <link rel="stylesheet" href="/static/css/blueprint/print.css" type="text/css" media="print" />
+        <!--[if lt IE 8]><link rel="stylesheet" href="/static/media/css/blueprint/ie.css" type="text/css" media="screen, projection" /><![endif]-->
+        <link href="/static/css/guarantee/style.css" rel="stylesheet" type="text/css" media="screen" />
+        <link href="/static/css/style.css" rel="stylesheet" type="text/css" media="screen" />
+        <script type='text/javascript' src='/static/js/jquery-1.4.4.min.js'></script>
+        {% dajaxice_js_import %}
+        {% endblock %}
+    </head>
 
-<body>
-	<div id='logo'>
-		<h1>{% block logo %}The Virtual Commons Web Environment{% endblock %}</h1>
-	</div>
-	<div id='header'>
-		{% block header %}
-		{% include "includes/nav-menu.inc" %}
-		{% endblock %}
-	</div>
-	<div id='page'>
-		{% block page %}
-		<div id="content">
- 			{% block content %}
+    <body>
+        <div id='logo'>
+            <h1>{% block logo %}The Virtual Commons Web Environment{% endblock %}</h1>
+        </div>
+        <div id='header'>
+            {% block header %}
+            {% include "includes/nav-menu.inc" %}
+            {% endblock %}
+        </div>
+        <div id='page'>
+            {% if messages %}
+            <h3>Notifications</h3>
+            <div class='notice'>
+                <ul class="messages">
+                    {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% block page %}
+            <div id="content">
+                {% block content %}
 
- 			{% endblock content %}
-		</div>
-		<div id='sidebar'>
-			{% block sidebar %}
-			{% endblock sidebar %}
-		</div>
-		{% endblock page %}
-		<div style='clear: both;'>&nbsp;</div>
-	<!--  end #page -->
-	</div>
+                {% endblock content %}
+            </div>
+            <div id='sidebar'>
+                {% block sidebar %}
+                {% endblock sidebar %}
+            </div>
+            {% endblock page %}
+            <div style='clear: both;'>&nbsp;</div>
+            <!--  end #page -->
+        </div>
 
-	<div id="footer">
-		{% block footer %}
-		<p>
-		<a href='http://shesc.asu.edu'>School of Human Evolution and Social Change</a> <br />
-		<a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a>
-		</p>
-		<p class='legal'>
-		Copyright (c) 2010 Arizona Board of Regents.  Design adapted from <a href="http://www.freecsstemplates.org/">Free CSS Templates</a>.<br/>
-		This project is funded by the <a href='http://nsf.gov'>National Science Foundation</a> and <a href='http://www.asu.edu'>Arizona State University</a>.
-		<br />
-		</p>
-		{% endblock footer %}
-	</div>
-	<script type='text/javascript'>
-	<!-- sets all external links to open up in new windows -->
-		$('a.external').attr({ target: "_blank" });
-	</script>
-</body>
+        <div id="footer">
+            {% block footer %}
+            <p>
+            <a href='http://shesc.asu.edu'>School of Human Evolution and Social Change</a> <br />
+            <a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a>
+            </p>
+            <p class='legal'>
+            Copyright (c) 2010 Arizona Board of Regents.  Design adapted from <a href="http://www.freecsstemplates.org/">Free CSS Templates</a>.<br/>
+            This project is funded by the <a href='http://nsf.gov'>National Science Foundation</a> and <a href='http://www.asu.edu'>Arizona State University</a>.
+            <br />
+            </p>
+            {% endblock footer %}
+        </div>
+        <script type='text/javascript'>
+            <!-- sets all external links to open up in new windows -->
+            $('a.external').attr({ target: "_blank" });
+            </script>
+        </body>
 
-</html>
+    </html>

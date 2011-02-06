@@ -1,5 +1,24 @@
 {% extends "base-vcweb.html" %}
 
+{% block head %}
+{{ block.super}}
+<script type='text/javascript' src='/static/js/jquery.confirm.min.js'></script>
+<script type='text/javascript'>
+    $(function() {
+        $('.confirm-experiment-action').confirm({
+                timeout: 3000,
+                dialogShow: 'fadeIn',
+                dialogSpeed: 'fast',
+                buttons: {
+                    wrapper: '<button></button>',
+                    separator: ' '
+                },
+                msg: '&nbsp; You are about to modify the experiment. Continue?'
+        });
+    });
+</script>
+{% endblock %}
+
 {% block title %} 
     Virtual Commons Web Experimenter Interface 
 {% endblock %} 
@@ -7,17 +26,3 @@
 {% block header %}
     {% include "includes/experimenter-nav-menu.inc" %}
 {% endblock %}
-
-{% block page %}
-    {% if messages %}
-        <div class='alert alertIcon'>
-            We encountered some problems with your request:
-            <ul class="messages">
-                {% for message in messages %}
-                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-    {% endif %}
-{% endblock page %}
-

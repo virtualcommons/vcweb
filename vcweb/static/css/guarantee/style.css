@@ -18,42 +18,13 @@ body {
     margin-left: 12em;
 }
 
-input[type=text], input[type=password] {
-    width: 12em;
-}
 
-span.label {
-    float: left;
-    text-align: right;
-    width: 11em;
-    font-weight: bolder;
-    margin-top: 0.37em;
-    margin-right: 0.37em;
-    display:inline;
-    font-size: 0.8em;
-}
-
-h1, h2, h3 {
-    margin: 0;
-    font-weight: normal;
-    color: #549900;
-    font-family: Georgia, serif;
-    border-bottom:1px solid #333;
-    line-height: 1.2;
-    padding-bottom:.2em;
-    margin-top:1em;
-    margin-bottom:.7em;
-
-}
 
 h1 { font-size: 1.8em; }
 
 h2 { font-size: 1.4em; }
 
-h3 { 
-    font-size: 1.2em; 
-
-}
+h3 { font-size: 1.2em; }
 
 p, ul, ol {
     margin-top: 0;
@@ -72,11 +43,6 @@ a img {
     border: none;
 }
 
-a.external {
-    background: url(/static/images/external.png) center right no-repeat;
-    padding-right: 13px;
-}
-
 img.left {
     float: left;
     margin: 7px 30px 0 0;
@@ -86,40 +52,13 @@ img.right {
     float: right;
     margin: 7px 0 0 30px;
 }
-
-ul.messages {
-    margin-left: 0;
-}
-
-li.warning {
-    font-size: 0.8em;
-}
-
-.errorIcon, .warningIcon, .alertIcon, .infoIcon {
-    background-repeat: no-repeat;
-    margin: 5px 0px;
-    padding: 15px 10px 15px 50px;
-    background-position: 5px center;
-}
-
-.errorIcon, .warningIcon, .alertIcon {
-    background-image:  url('/static/images/warning.png')
-}
-
-.infoIcon {
-    background-image: url('/static/images/info.png')
-}
-
 /* Header */
-
 #header {
     width: 940px;
     height: 36px;
     margin: 0 auto;
 }
-
 /* Menu */
-
 #menu {
     float: left;
     width: 940px;
@@ -179,23 +118,6 @@ li.warning {
     padding: 4px 0px 0 0;
 }
 
-fieldset.small {
-    font: 0.8em "Helvetica Neue", helvetica, arial, sans-serif;
-    color: #666;
-    background-color: #efefef;                                                                                                                                                       
-    padding: 2px;
-    border: solid 1px #d3d3d3;
-    width: 350px;
-}
-
-legend {
-    color: #666;
-    font-weight: bold;
-    text-transform: lowercase;
-    background-color: #d3d3d3;
-    padding: 2px 6px;
-    margin-bottom: 8px;
-}
 
 #search fieldset {
     margin: 0;
