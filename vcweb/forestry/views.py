@@ -6,7 +6,7 @@ from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.decorators import participant_required, experimenter_required
-from vcweb.forestry.models import get_resource_level, get_max_harvest_decision
+from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata
 
 import logging
 logger = logging.getLogger(__name__)
@@ -33,7 +33,12 @@ def experimenter_index(request):
 @participant_required
 def participant_index(request):
     participant = request.user.participant
-    experiments = participant.experiments.all()
+    experiment_dict = {}
+    for experiment in participant.experiments.filter(experiment_metadata=get_forestry_experiment_metadata()):
+        if not experiment.status in experiment_dict:
+            experiment_dict[experiment.status] = list()
+        experiment_dict[experiment.status].append(experiment)
+
     return render_to_response('forestry/participant-index.html', locals(), context_instance=RequestContext(request))
 
 @experimenter_required

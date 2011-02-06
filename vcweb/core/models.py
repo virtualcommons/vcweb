@@ -155,6 +155,7 @@ class Experiment(models.Model):
                       ('PAUSED', 'Paused'),
                       ('ROUND_IN_PROGRESS', 'Round in progress'),
                       ('COMPLETED', 'Completed'))
+    (INACTIVE, ACTIVE, PAUSED, ROUND_IN_PROGRESS, COMPLETED) = [ choice[0] for choice in STATUS_CHOICES ]
     authentication_code = models.CharField(max_length=32, default="vcweb.auth.code")
     current_round_sequence_number = models.PositiveIntegerField(default=0)
     experimenter = models.ForeignKey(Experimenter, related_name='experiments')
@@ -224,7 +225,7 @@ class Experiment(models.Model):
     @property
     def management_url(self):
         return "/%s/experimenter" % self.namespace_id
-    
+
     @property
     def stop_url(self):
         return "%s/stop" % self.controller_url
@@ -235,7 +236,7 @@ class Experiment(models.Model):
 
     @property
     def status_line(self):
-        return "(id %s, status: %s, round %s of %s)" % (self.pk, self.status.lower(),
+        return "%s (id %s, status: %s, round %s of %s)" % (self.experiment_metadata.title, self.pk, self.status.lower(),
                 self.current_round.sequence_number,
                 self.experiment_configuration.final_sequence_number)
 
@@ -861,13 +862,17 @@ class Participant(CommonsUser):
 
     @property
     def active_experiments(self):
-        return self.experiment_relationships.filter(experiment__status='ACTIVE')
+        return self.experiment_relationships.filter(experiment__status=Experiment.ACTIVE)
 
     @property
     def inactive_experiments(self):
-        return self.experiment_relationships.exclude(experiment__status='ACTIVE')
+        return self.experiment_relationships.exclude(experiment__status=Experiment.ACTIVE)
 
-    def experiments_with_status(self, status):
+    @property
+    def completed_experiments(self):
+        return self.experiments_with_status(Experiment.COMPLETED)
+
+    def experiments_with_status(self, status=Experiment.ACTIVE):
         return self.experiment_relationships.filter(experiment__status=status)
 
     class Meta:

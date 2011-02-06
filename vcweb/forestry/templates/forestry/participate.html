@@ -13,7 +13,7 @@ $(function() {
                 messages: {
                     harvestDecisionId: {
                         required: "Please enter a harvest decision",
-                        range: "Please enter a harvest decision between ",
+                        range: "Please enter a harvest decision between 0 and {{ max_harvest_decision }}",
                     }
                 }
             });
@@ -21,7 +21,7 @@ $(function() {
 </script>
 {% endblock %}
 {% block title %}
-Participating in {{ experiment }} {{experiment.status_line}}
+Participating in {{experiment.status_line}}
 {% endblock %}
 
 {% block content %}

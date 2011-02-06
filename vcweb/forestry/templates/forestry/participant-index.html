@@ -6,47 +6,24 @@
 {% include "includes/participant-nav-menu.inc" %}
 {% endblock header %}
 
-{% block content %}
-<div id='post'>
-    <h2 class='title'>Forestry Experiment</h2>
-    <div class='entry'>
-        <p>
-            Welcome back, {{ user.participant }}.
-        </p>
-
-        <fieldset>
-            <legend>Active experiments</legend>
-            {% if user.participant.active_experiments %}
-            <div class='info'>
-                <ul>
-                    {% for experiment_relationship in user.participant.active_experiments %}
-                    <li> <a href='{{ experiment_relationship.experiment.participant_url }}'>{{ experiment_relationship.experiment }}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% else %}
-            <div class='alert'>
-                No active experiments.
-            </div>
-            {% endif %}
-        </fieldset>
-        <fieldset>
-            <legend>Other experiments</legend>
-            {% if user.participant.inactive_experiments %}
-            <div class='info'>
-                <ul>
-                    {% for experiment_relationship in user.participant.inactive_experiments %}
-                    <li> <a href='{{ experiment_relationship.experiment.participant_url }}'>{{ experiment_relationship.experiment }}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% else %}
-            <div class='alert'>
-                No other experiments.
-            </div>
-            {% endif %}
-        </fieldset>
-    </div>
+{% block page %}
+<div class='info'>
+    Welcome back, {{ user.participant }}.
 </div>
-{% endblock content %}
+<h3>{{experiment.namespace|title}} Experiments</h3>
+<div class='notice'>
+    {% for experiment_status, experiments in experiment_dict.items %}
+    <h3> {{ experiment_status|title }} </h3>
+    <div class='info'>
+        <ul>
+            {% for experiment in experiments %}
+            <li> <a href='{{ experiment.participant_url }}'>{{ experiment.status_line }}</a></li>
+            {% empty %}
+            <li class='alert'> No {{ experiment_status }} experiments </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
 

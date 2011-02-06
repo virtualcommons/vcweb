@@ -6,22 +6,17 @@
 
 {% block page %}
     <div class='notice'>
-        Welcome back, {{participant}}.  Experiments you are currently participating in are listed below.
+        Welcome back, {{participant}}. 
     </div>
 
-    <fieldset>
-        <legend>Your experiments</legend>
-        {% if experiments %}
-            <ul>
-                {% for e in experiments %}
-                    <li><a href='{{ e.participant_url }}'>{{ e }} {{e.status_line}}</a></li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <div class='info'>
-                You are not participating in any active experiments.	
-            </div>
-        {% endif %}
-
-    </fieldset>
+    <h3>Your experiments</h3>
+    <div class='info'>
+        <ul class='experiments'>
+            {% for e in experiments %}
+            <li class='rightArrow' ><a href='{{ e.participant_url }}'>{{e.status_line}}</a></li>
+            {% empty %}
+            You are not participating in any active experiments.
+            {% endfor %}
+        </ul>
+    </div>
 {% endblock page %}
