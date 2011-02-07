@@ -42,8 +42,8 @@ li.warning {
 .errorIcon, .warningIcon, .alertIcon, .infoIcon, .smallInfoIcon, .contactIcon, .crossIcon {
     background-repeat: no-repeat;
     margin: 5px 0px;
-    padding: 15px 10px 15px 30px;
-    background-position: 5px center;
+    padding: 15px 10px 15px 35px;
+    background-position: 3px center;
 }
 
 .errorIcon, .warningIcon, .alertIcon {
@@ -84,6 +84,17 @@ legend {
     padding: 2px 6px;
     margin-bottom: 8px;
 }
+
+#experiments a {
+   text-decoration: none;
+   color: #06C;
+}
+
+#experiments a:hover {
+   text-decoration: underline;
+   color: #36241B;
+}
+
 
 #experiments ul {
     list-style: none;

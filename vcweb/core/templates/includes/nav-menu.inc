@@ -2,6 +2,7 @@
 
 {% url home as home %}
 {% url about as about %}
+{% url contact as contact %}
 {% url core:login as login %}
 {% url core:logout as logout %}
 {% url core:register as register %}
@@ -10,7 +11,7 @@
 <ul>
 	<li class='{% active request home %}' ><a href='{{ home }}' class='first'>Home</a></li>
 	<li class='{% active request about %}'><a href='{{ about }}'>About</a></li>
-	<li><a class='external' href='http://commons.asu.edu/contact/'>Contact us</a></li>
+	<li class='{% active request contact %}'><a href='{{ contact }}'>Contact us</a></li>
 	{% if request.is_authenticated %}
 	<li class='{% active request logout %}'><a href='{{ logout }}'>Logout</a></li>
 	{% else %}

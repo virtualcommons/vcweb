@@ -35,9 +35,11 @@ ul, ol { }
 
 blockquote { }
 
-a { color: #961A06; }
+a { color: #961A06; text-decoration: underline;}
 
-a:hover { text-decoration: none; }
+a:hover {
+
+}
 
 a img {
     border: none;
@@ -448,5 +450,5 @@ label.error {
 }
 
 #footer a {
-    color: #961A06;
+    color: #36241B;
 }
