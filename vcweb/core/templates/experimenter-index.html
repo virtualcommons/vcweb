@@ -23,21 +23,18 @@
 
 <h3>Your experiments</h3>
 <div id="post">
-    {% if experiments %}
     {% for e in experiments %}
-    <div class='info'>
+    <div class='notice'>
     {{e}} {{e.status_line}}<br/>
     <ul class='horizontal' id='horizontal'>
         <li><a href='{{e.monitor_url}}'><img src='/static/images/famfamfam/zoom.png' alt=''/> monitor</a></li>
         <li><a class='confirm-experiment-action' style='background-image:none;' href='{{e.stop_url}}'><img src='/static/images/famfamfam/stop.png' alt=''/> stop</a></small></li>
     </ul>
-    {% endfor %}
-    </ul>
-    {% else %}
-    <div class='info'>
+    {% empty %}
+    <div class='info infoIcon'>
         You are not currently running any experiments.
     </div>
-    {% endif %}
+    {% endfor %}
 </div>
 {% endblock page %}
 

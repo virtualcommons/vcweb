@@ -18,7 +18,7 @@ Virtual Commons Web Participant Interface
         {% for experiment in experiments %}
         <li class='{{experiment_status|lower}}'> <a href='{{ experiment.participant_url }}'>{{ experiment.status_line }}, created {{experiment.date_created|date:"SHORT_DATETIME_FORMAT"}}</a></li>
         {% empty %}
-        <li class='alert'> No {{ experiment_status|lower }} experiments </li>
+        <li class='alert crossIcon'> No {{ experiment_status|lower }} experiments </li>
         {% endfor %}
     </ul>
     {% endfor %}

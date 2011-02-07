@@ -39,7 +39,7 @@ li.warning {
     font-size: 0.8em;
 }
 
-.errorIcon, .warningIcon, .alertIcon, .infoIcon, .smallInfoIcon, .contactIcon {
+.errorIcon, .warningIcon, .alertIcon, .infoIcon, .smallInfoIcon, .contactIcon, .crossIcon {
     background-repeat: no-repeat;
     margin: 5px 0px;
     padding: 15px 10px 15px 30px;
@@ -48,6 +48,10 @@ li.warning {
 
 .errorIcon, .warningIcon, .alertIcon {
     background-image:  url('/static/images/warning.png')
+}
+
+.crossIcon {
+   background-image: url('/static/images/famfamfam/cross.png');
 }
 
 .contactIcon {
@@ -83,14 +87,14 @@ legend {
 
 #experiments ul {
     list-style: none;
-    margin: 0;
-    padding: 0;
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
 }
 
 #experiments li {
     list-style-type: none;
     margin: 0;
-    padding-left: 20px;
+    padding-left: 25px;
 }
 
 
