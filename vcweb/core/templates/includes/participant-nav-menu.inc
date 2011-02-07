@@ -9,8 +9,8 @@
 <div id='menu'>
    <ul>
       <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
-      {% if "participate" in request.path %}
-      <li class='{% active_re request "participate" %}'><a href='#'>Participate</a></li>
+      {% if "participate" in request.path or "wait" in request.path %}
+      <li class='{% active_re request "participate" %} {% active_re request "wait" %}'><a href='#'>Participate</a></li>
       {% else %}
       <li class='{% active request profile %}'><a href='{{ profile }}'>Account</a></li>
       {% endif %}
