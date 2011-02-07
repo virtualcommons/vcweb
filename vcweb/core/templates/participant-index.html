@@ -11,17 +11,22 @@ Virtual Commons Web Participant Interface
 
 {% for experiment_metadata, experiment_status_dict in experiment_dict.items %}
 <h3> {{ experiment_metadata|title }} </h3>
-<div class='notice'>
+<div id='experiments' class='notice'>
     {% for experiment_status, experiments in experiment_status_dict.items %}
     <h3>{{experiment_status|title}}</h3>
-    <ul id='experiments'>
-        {% for experiment in experiments %}
-        <li class='{{experiment_status|lower}}'> <a href='{{ experiment.participant_url }}'>{{ experiment.status_line }}, created {{experiment.date_created|date:"SHORT_DATETIME_FORMAT"}}</a></li>
-        {% empty %}
-        <li class='alert crossIcon'> No {{ experiment_status|lower }} experiments </li>
-        {% endfor %}
-    </ul>
+    {% for experiment in experiments %}
+    <div class='ui-state-highlight ui-corner-all'>
+        <a href='{{ experiment.participant_url }}'>
+            <span class='ui-icon {{experiment_status|lower}}'></span> 
+            {{ experiment.status_line }}, created {{experiment.date_created|date:"SHORT_DATETIME_FORMAT"}}
+        </a>
+    </div>
+    {% empty %}
+    <div class='ui-state-error ui-corner-all'><span class='ui-icon ui-icon-alert'></span>No <b>{{ experiment_status|lower }}</b> experiments</div>
+    {% endfor %}
     {% endfor %}
 </div>
+{% empty %}
+
 {% endfor %}
 {% endblock page %}

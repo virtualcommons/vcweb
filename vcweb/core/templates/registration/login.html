@@ -6,30 +6,26 @@
 {{ block.super }}
 
 <script type='text/javascript'>
-$(document).ready(function() {
+$(function() {
     $(':input').addClass('required');
     $('#loginForm').validate();
     $('#id_email').focus();
 });
 </script>
-
 {% endblock head %}
 
 {% block page %}
 
 <form id='loginForm' name='loginForm' action='' method='post'>
-<fieldset>
-<legend>Returning User</legend>
-<p>
-Don&#39;t have an account or a first-time user?  Please <a href='{% url core:register %}'>register first</a>.
-</p>
+    <h3>Returning User</h3>
+    <p>
+    Don&#39;t have an account or a first-time user?  Please <a href='{% url core:register %}'>register first</a>.
+    </p>
 
-{% include "includes/form-as-div.inc" %}
-<div class='submit'>
-<input type='submit' value='Login' />
-</div>
-</fieldset>
-
+    {% include "includes/form-as-div.inc" %}
+    <div class='submit'>
+        <input type='submit' value='Login' />
+    </div>
 </form>
 
 {% endblock page %}

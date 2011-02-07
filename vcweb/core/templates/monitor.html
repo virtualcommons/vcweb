@@ -1,7 +1,7 @@
 {% extends "base-experimenter.html" %}
 
 {% block title %} 
-    VCWEB Experiment Monitoring 
+VCWEB: Monitoring {{ experiment.status_line }}
 {% endblock %}
 
 {% block page %}
@@ -41,11 +41,11 @@
     </fieldset>
 </div>
 
-{% if experiment.round_data.count > 0 %}
 {% for round_data in experiment.round_data.all %}
-<h3> {{ round_data }} </h3>
+<h4> {{ round_data }} </h4>
+{% if round_data.group_data_values.count > 0 %}
 <div class='group-data'>
-    Group data:
+    <h4>Group data</h4>
     <table>
         <thead>
             <tr><th>Group</th><th>Parameter Name</th><th>Value</th><th>Type</th></tr>
@@ -62,9 +62,14 @@
         </tbody>
     </table>
 </div>
+{% else %}
+<div class='info ui-corner-all'>
+    <span class='ui-icon ui-icon-info'></span>No group data for this round.
+</div>
+{% endif %}
+{% if round_data.participant_data_values.count > 0 %}
 <div class='participant-data'>
-    Participant data:
-    {% if round_data.participant_data_values.count > 0 %}
+    <h4>Participant data</h4>
     <table>
         <thead>
             <tr><th>Participant</th><th>Parameter name</th><th>Value</th><th>Type</th></tr>
@@ -80,14 +85,13 @@
             {% endfor %}
         </tbody>
     </table>
-    {% else %}
-    <div class='alert'>There is no participant data for this round yet.</div>
-    {% endif %}
 </div>
-{% endfor %}
 {% else %}
-<div class='alert'>Round data is not yet available.</div>
+<div class='info ui-corner-all'><span class='ui-icon ui-icon-info'></span>No participant data for this round.</div>
 {% endif %}
+{% empty %}
+<div class='alert ui-corner-all'><span class='ui-icon ui-icon-alert'></span>Round data is not yet available.</div>
+{% endfor %}
 
 
 {% endblock page %}
