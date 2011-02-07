@@ -149,7 +149,7 @@ djcelery.setup_loader()
 
 from django.contrib import messages
 MESSAGE_TAGS = {
-        messages.constants.INFO: 'notice smallInfoIcon',
-        messages.constants.WARNING: 'alert alertIcon',
-        messages.constants.ERROR: 'alert alertIcon'
+        messages.constants.INFO : 'ui-state-highlight ui-corner-all',
+        messages.constants.WARNING: 'ui-state-error ui-corner-all',
+        messages.constants.ERROR: 'ui-state-error ui-corner-all'
         }

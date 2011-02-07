@@ -12,7 +12,7 @@ VCWEB: Monitoring {{ experiment.status_line }}
     FIXME: Improve this so that we can just inject a new round_configuration
     JSON object in and everything auto-updates.
     {% endcomment %}
-    <fieldset class='small'>
+    <fieldset class='small ui-corner-all'>
         <legend>Round Status</legend>
         <div class='status'>
             Round status: <span id='experiment-status'>{{ experiment.status }}</span> 
@@ -35,8 +35,8 @@ VCWEB: Monitoring {{ experiment.status_line }}
         <div>
             Round type: <span id='round-type'>{{ experiment.current_round.round_type }}</span>
         </div>
-        <div>
-            <label>Time remaining:</label><span class='highlight' id='time-left'>{{ experiment.time_remaining }} </span>s
+        <div >
+            Time remaining: <span id='time-left'> {{ experiment.time_remaining }} </span>
         </div>
     </fieldset>
 </div>

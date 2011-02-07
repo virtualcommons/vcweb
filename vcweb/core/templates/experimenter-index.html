@@ -12,14 +12,13 @@
     <a href='/admin'>download data</a> 
     <a href='http://commons.asu.edu/contact'>report a bug</a>
 </div>
-<hr/>
-<div class='notice'>
+<div class='ui-state-highlight ui-corner-all'>
+    <span class='ui-icon ui-icon-info'></span>
     Welcome to the experimenter interface.  You are logged in as {{request.user.experimenter}}.
-    <br/>
+</div>
     {% comment%}
     FIXME: replace with horizontal ul+li iconified nav menu
     {% endcomment %}
-</div>
 
 <h3>Your experiments</h3>
 <div id="post">
