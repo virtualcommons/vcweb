@@ -203,7 +203,7 @@ class Experiment(models.Model):
         return self.current_round_elapsed_time >= self.current_round.duration
 
     @property
-    def is_round_started(self):
+    def is_round_in_progress(self):
         return self.status == 'ROUND_IN_PROGRESS'
 
     @property
@@ -236,7 +236,9 @@ class Experiment(models.Model):
 
     @property
     def status_line(self):
-        return "%s (id %s, status: %s, round %s of %s)" % (self.experiment_metadata.title, self.pk,
+        return "%s: id %s, status: %s, round %s of %s" % (
+                self.experiment_metadata.title,
+                self.pk,
                 self.get_status_display(),
                 self.current_round.sequence_number,
                 self.experiment_configuration.final_sequence_number)
@@ -328,6 +330,8 @@ class Experiment(models.Model):
         return "%s/%s" % (self.namespace, name)
 
     def advance_to_next_round(self):
+        if self.is_round_in_progress:
+            self.end_round()
         if self.has_next_round:
             self.current_round_elapsed_time = 0
             self.current_round_sequence_number += 1
@@ -932,7 +936,7 @@ round in which they joined the group, and the datetime that they joined the grou
 """
 class ParticipantGroupRelationship(models.Model):
     participant_number = models.PositiveIntegerField()
-    participant = models.ForeignKey(Participant)
+    participant = models.ForeignKey(Participant, related_name='participant_group_relationships')
     group = models.ForeignKey(Group, related_name = 'participant_group_relationships')
     round_joined = models.ForeignKey(RoundConfiguration)
     date_joined = models.DateTimeField(auto_now_add=True)

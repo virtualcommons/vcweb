@@ -69,7 +69,7 @@ def participate(request, experiment_id=None):
     try:
         participant = request.user.participant
         experiment = Experiment.objects.get(pk=experiment_id)
-        if experiment.is_round_started:
+        if experiment.is_round_in_progress and experiment.current_round.has_data_parameters:
             participant_group_relationship = participant.get_participant_group_relationship(experiment)
             resource_level = get_resource_level(participant_group_relationship.group)
             logger.debug("resource level is: %s" % resource_level)

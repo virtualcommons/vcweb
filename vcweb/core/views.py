@@ -91,7 +91,9 @@ def participant_index(request):
         if not experiment.experiment_metadata in experiment_dict:
             experiment_dict[experiment.experiment_metadata] = dict([(choice[0], list()) for choice in Experiment.STATUS_CHOICES])
         experiment_dict[experiment.experiment_metadata][experiment.status].append(experiment)
+
     logger.debug("experiment_dict %s" % experiment_dict)
+
     return render_to_response('participant-index.html', locals(), RequestContext(request))
 
 @login_required

@@ -39,15 +39,24 @@ li.warning {
     font-size: 0.8em;
 }
 
-.errorIcon, .warningIcon, .alertIcon, .infoIcon {
+.errorIcon, .warningIcon, .alertIcon, .infoIcon, .smallInfoIcon, .contactIcon {
     background-repeat: no-repeat;
     margin: 5px 0px;
-    padding: 15px 10px 15px 50px;
+    padding: 15px 10px 15px 30px;
     background-position: 5px center;
 }
 
 .errorIcon, .warningIcon, .alertIcon {
     background-image:  url('/static/images/warning.png')
+}
+
+.contactIcon {
+   background-image: url('/static/images/famfamfam/comment_add.png');
+}
+
+
+.smallInfoIcon {
+   background-image: url('/static/images/famfamfam/information.png');
 }
 
 .infoIcon {
@@ -86,7 +95,7 @@ legend {
 
 
 #experiments li.inactive {
-    background: url('/static/images/famfamfam/stop.png') center left no-repeat;
+    background: url('/static/images/famfamfam/clock_stop.png') center left no-repeat;
 }
 
 #experiments li.active {
@@ -144,7 +153,7 @@ ul.horizontal {
     padding: 0;
 }
 #navmenu a {
-    background: #333 url("images/separator.gif") bottom right no-repeat;
+    background: #333 url("/static/images/separator.gif") bottom right no-repeat;
     color: #ccc;
     display: block;
     float: left;
@@ -154,7 +163,13 @@ ul.horizontal {
     font-weight:normal;
 }
 #navmenu a:hover {
-    background: #2580a2 url("images/hover.gif") bottom center no-repeat;
+    background: #2580a2 url("/static/images/hover.gif") bottom center no-repeat;
     color: #fff;
     padding-bottom: 8px;
+}
+
+#timeRemaining span {
+   background: url('/static/images/clock.png') bottom center no-repeat;
+   margin-left: 8px;
+   margin-right: 8px;
 }

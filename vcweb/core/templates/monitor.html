@@ -24,7 +24,7 @@
         <div>
             Round <span id='experiment-round'> {{ experiment.current_round.sequence_number }}</span> of <b>{{ experiment.experiment_configuration.final_sequence_number }}</b>
             <span id='horizontal'>
-                {% if experiment.is_round_started %}
+                {% if experiment.is_round_in_progress %}
                 <a class='confirm-experiment-action' href='end-round'><img src='/static/images/famfamfam/stop.png' /> end round</a>
                 {% else %}
                 <a class='confirm-experiment-action' href='start-round'><img src='/static/images/famfamfam/control_play.png' alt='' /> start round</a>
