@@ -398,12 +398,13 @@ class Experiment(models.Model):
         return self.id.___hash___()
 
 class RoundConfiguration(models.Model):
+# maps round type name to (description, default_template_name)
     ROUND_TYPES_DICT = dict(REGULAR=('Regular interactive experiment round', 'participate.html'),
-                       CHAT=('Chat round', 'chat.html'),
-                       DEBRIEFING=('Debriefing round', 'debriefing.html'),
-                       INSTRUCTIONS=('Instructions round', 'instructions.html'),
-                       PRACTICE=('Practice round', 'practice.html'),
-                       QUIZ=('Quiz round', 'quiz.html'))
+            CHAT=('Chat round', 'chat.html'),
+            DEBRIEFING=('Debriefing round', 'debriefing.html'),
+            INSTRUCTIONS=('Instructions round', 'instructions.html'),
+            PRACTICE=('Practice round', 'practice.html'),
+            QUIZ=('Quiz round', 'quiz.html'))
     ROUND_TYPES = (CHAT, DEBRIEFING, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR) = sorted(ROUND_TYPES_DICT.keys())
 
     ROUND_TYPE_CHOICES = [(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES]
@@ -440,7 +441,11 @@ class RoundConfiguration(models.Model):
 
     @property
     def custom_template_name(self):
-        return self.template_name if self.template_name else RoundConfiguration.ROUND_TYPES_DICT[self.round_type][1]
+        return self.template_name if self.template_name else self.default_template_name
+
+    @property
+    def default_template_name(self):
+        return RoundConfiguration.ROUND_TYPES_DICT[self.round_type][1]
 
     @property
     def template_path(self):
