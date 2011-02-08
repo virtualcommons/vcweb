@@ -14,28 +14,28 @@ VCWEB: Monitoring {{ experiment.status_line }}
     {% endcomment %}
     <fieldset class='small ui-corner-all'>
         <legend>Round Status</legend>
+        <div>
+            Round <span id='experiment-round'> {{ experiment.current_round.sequence_number }}</span> of <b>{{ experiment.experiment_configuration.final_sequence_number }}</b>
+            <span id='horizontal'>
+                {% if experiment.is_round_in_progress %}
+                <a class='confirm-experiment-action' href='end-round'><img src='/static/images/famfamfam/control_stop_blue.png' /> end round</a>
+                {% else %}
+                <a class='confirm-experiment-action' href='start-round'><img src='/static/images/famfamfam/control_play_blue.png' alt='' /> start round</a>
+                {% endif %}
+                <a style='background-image: none;' class='confirm-experiment-action' href='advance-to-next-round'><img src='/static/images/famfamfam/control_fastforward_blue.png' alt=''/> next round</a>
+            </span>
+        </div>
         <div class='status'>
-            Round status: <span id='experiment-status'>{{ experiment.status }}</span> 
+            Status: <span id='experiment-status'>{{ experiment.get_status_display }}</span> 
             {% if not experiment.is_active %}
             <a class='confirm-experiment-action' href='activate'><img
                 src='/static/images/famfamfam/cog_go.png' alt=''> activate</a>
             {% endif %}
         </div>
         <div>
-            Round <span id='experiment-round'> {{ experiment.current_round.sequence_number }}</span> of <b>{{ experiment.experiment_configuration.final_sequence_number }}</b>
-            <span id='horizontal'>
-                {% if experiment.is_round_in_progress %}
-                <a class='confirm-experiment-action' href='end-round'><img src='/static/images/famfamfam/stop.png' /> end round</a>
-                {% else %}
-                <a class='confirm-experiment-action' href='start-round'><img src='/static/images/famfamfam/control_play.png' alt='' /> start round</a>
-                {% endif %}
-                <a style='background-image: none;' class='confirm-experiment-action' href='advance-to-next-round'><img src='/static/images/famfamfam/control_fastforward.png' alt=''/> next round</a>
-            </span>
+            Type: <span id='round-type'>{{ experiment.current_round.get_round_type_display }}</span>
         </div>
         <div>
-            Round type: <span id='round-type'>{{ experiment.current_round.round_type }}</span>
-        </div>
-        <div >
             Time remaining: <span id='time-left'> {{ experiment.time_remaining }} </span>
         </div>
     </fieldset>

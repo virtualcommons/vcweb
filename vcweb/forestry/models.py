@@ -64,9 +64,8 @@ def round_setup(experiment, **kwargs):
         logger.debug("set up chat round")
     elif round_configuration.is_debriefing_round:
         logger.debug("set up debriefing round")
-    else:
         '''
-        practice or basic round, set up resource levels and participant
+        practice or regular round, set up resource levels and participant
         harvest decision parameters
         '''
         if round_configuration.get_parameter('reset.resource_level'):
@@ -83,17 +82,16 @@ def round_setup(experiment, **kwargs):
 def round_teardown(experiment, **kwargs):
     logger.debug("forestry: round_teardown for %s" % experiment)
     round_configuration = experiment.current_round
-    ''' calculate new resource levels '''
-    resource_level_parameter = get_resource_level_parameter()
-
-    for group in experiment.groups.all():
-        total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
-        group.subtract(resource_level_parameter, total_harvest)
-        if experiment.has_next_round:
-            ''' set group round data resource_level for each group '''
-            logger.debug("Transferring resource level %s to next round" %
-                    get_resource_level(group))
-            group.transfer_to_next_round(resource_level_parameter)
+    if round_configuration.has_data_parameters:
+        ''' only calculate new resource levels for practice or regular rounds '''
+        resource_level_parameter = get_resource_level_parameter()
+        for group in experiment.groups.all():
+            total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
+            group.subtract(resource_level_parameter, total_harvest)
+            if experiment.has_next_round:
+                ''' set group round data resource_level for each group '''
+                logger.debug("Transferring resource level %s to next round" % get_resource_level(group))
+                group.transfer_to_next_round(resource_level_parameter)
 
 #@receiver(signals.round_started, sender='forestry')
 def round_started_handler(sender, experiment=None, **kwargs):
