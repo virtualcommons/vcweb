@@ -38,10 +38,9 @@ syncdb_commands = ['(test -f vcweb.db && rm -f vcweb.db) || true',
 def shell():
     local("{python} manage.py shell".format(python=env.python), capture=False)
 
-def syncdb():
+def syncdb(**kwargs):
     with cd(env.project_path):
-        for command in syncdb_commands:
-            _virtualenv(command)
+        _virtualenv(*syncdb_commands, **kwargs)
 
 
 def setup_virtualenv():
@@ -67,13 +66,10 @@ def setup_rabbitmq():
 # figure out what the appropriate rabbitmq perms are here.
     sudo('rabbitmqctl set_permissions -p %s %s ".*" ".*" ".*"' % (settings.BROKER_VHOST, settings.BROKER_USER), pty=True)
 
-def _virtualenv(command, run_locally=False, **kwargs):
+def _virtualenv(*commands, **kwargs):
     """ source the virtualenv before executing this command """
-    env.command = command
+    env.command = ' && '.join(commands)
     return run('source %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
-   # if run_locally:
-   #     return local('source %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
-   # else:
 
 def pip():
     ''' looks for requirements.pip in the django project directory '''
@@ -130,8 +126,14 @@ def setup():
     sudo('find %(deploy_path)s -type d -exec chmod ug+x {} \;' % env, pty=True)
     pip()
 
+def _restart_command():
+    return 'service %(apache)s restart' % env
+
 def restart():
-    sudo('service %(apache)s restart' % env, pty=True)
+    sudo(_restart_command(), pty=True)
+
+def sudo_chain(*commands, **kwargs):
+    sudo(' && '.join(commands), **kwargs)
 
 def deploy():
     """ deploys to an already setup environment """
@@ -139,11 +141,12 @@ def deploy():
     push()
     if confirm("Deploy to %(hosts)s ?" % env):
         with cd(env.project_path):
-            sudo('hg pull', user=env.deploy_user, pty=True)
-            sudo('hg up', user=env.deploy_user, pty=True)
+            sudo('hg pull && hg up', user=env.deploy_user, pty=True)
             if confirm("syncdb?"):
                 syncdb()
-            sudo('chmod -R ug+rw .', pty=True)
-            sudo('find . -type d -exec chmod ug+x {} \;', pty=True)
-            sudo('chown -R %(deploy_user)s:%(deploy_group)s .' % env, pty=True)
-            restart()
+            sudo_chain(
+                    'chmod -R ug+rw .',
+                    'find . -type d -exec chmod ug+x {} \;',
+                    'chown -R %(deploy_user)s:%(deploy_group)s .' % env,
+                    _restart_command(),
+                    pty=True)

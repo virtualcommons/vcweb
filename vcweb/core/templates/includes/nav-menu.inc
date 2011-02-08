@@ -12,6 +12,7 @@
 <div id='menu'>
 <ul>
 	{% if request.user.is_authenticated %}
+	<li class='{% active request home %}' ><a href='{{ home }}' class='first'>Home</a></li>
 	<li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
         <li class='{% active request profile %}'><a href='{{ profile }}'>Your Account</a></li>
 	<li class='{% active request logout %}'><a href='{{ logout }}'>Logout</a></li>
