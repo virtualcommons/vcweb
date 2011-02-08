@@ -111,12 +111,12 @@ INSTALLED_APPS = (
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
 
+SOCKET_IO_HOST = "vcweb.asu.edu"
+
 EMAIL_HOST = "smtp.asu.edu"
 
-SOCKET_IO_HOST = "libai.la.asu.edu"
-
 # celery rabbitmq/amqp configuration
-BROKER_HOST = "149.169.203.115"
+BROKER_HOST = "localhost"
 BROKER_PORT = 5672
 BROKER_USER = "vcweb"
 BROKER_PASSWORD = 'override this in settings_local.py'

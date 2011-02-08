@@ -49,7 +49,16 @@ MEDIA_URL = ''
 ADMIN_MEDIA_PREFIX = '/static/'
 
 # django celery integration
+# celery rabbitmq/amqp configuration
+BROKER_HOST = "localhost"
+BROKER_PORT = 5672
+BROKER_USER = "vcweb"
+BROKER_VHOST = "vcweb.vhost"
 BROKER_PASSWORD = 'CUSTOMIZE_ME'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'CUSTOMIZE_ME'
+
+SOCKET_IO_HOST = "vcweb.asu.edu"
+EMAIL_HOST = "smtp.asu.edu"
+
