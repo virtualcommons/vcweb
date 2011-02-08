@@ -64,6 +64,8 @@ def round_setup(experiment, **kwargs):
         logger.debug("set up chat round")
     elif round_configuration.is_debriefing_round:
         logger.debug("set up debriefing round")
+
+    if round_configuration.has_data_parameters:
         '''
         practice or regular round, set up resource levels and participant
         harvest decision parameters
