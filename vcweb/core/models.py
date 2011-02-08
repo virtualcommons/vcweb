@@ -80,14 +80,29 @@ class CommonsUser(models.Model):
     """
     for docs on related_name see
         http://docs.djangoproject.com/en/dev/topics/db/models/#be-careful-with-related-name
-    this related name makes user.experimenter and user.participant resolvable.  
+    this related name makes user.experimenter and user.participant resolvable.
     FIXME: should revisit to see if this is recommended practice.
     (either one or the other)
     """
     user = models.OneToOneField(User, related_name='%(class)s', verbose_name=u'Django User', unique=True)
     failed_password_attempts = models.PositiveIntegerField(default=0)
     institution = models.ForeignKey(Institution, null=True, blank=True)
-    # opt in or opt out for ability to receive invitations 
+
+    @property
+    def full_name(self):
+        return self.user.get_full_name()
+
+    @property
+    def last_name(self):
+        return self.user.last_name
+
+    @property
+    def first_name(self):
+        return self.user.first_name
+
+    @property
+    def email(self):
+        return self.user.email
 
     def is_authenticated(self):
         return self.user.is_authenticated()
@@ -220,11 +235,11 @@ class Experiment(models.Model):
 
     @property
     def participant_url(self):
-        return "/%s/participate" % self.namespace_id
+        return "/%s/participate" % self.get_absolute_url()
 
     @property
     def management_url(self):
-        return "/%s/experimenter" % self.namespace_id
+        return "/%s/experimenter" % self.get_absolute_url()
 
     @property
     def stop_url(self):
@@ -251,9 +266,8 @@ class Experiment(models.Model):
     def controller_url(self):
         return "/experiment/%s" % self.pk
 
-    @property
-    def namespace_id(self):
-        return "%s/%s" % (self.experiment_metadata.namespace, self.id)
+    def get_absolute_url(self):
+        return "%s/%s" % (self.experiment_metadata.namespace, self.pk)
 
     @property
     def current_round_template(self):
@@ -389,13 +403,13 @@ class Experiment(models.Model):
         return u"%s" % self.experiment_metadata.title
 
     def ___eq___(self, other):
-        return self.id == other.id
+        return self.pk == other.pk
 
     def ___cmp___(self, other):
-        return self.id.___cmp___(other.id)
+        return self.pk.___cmp___(other.pk)
 
     def ___hash___(self):
-        return self.id.___hash___()
+        return self.pk.___hash___()
 
 class RoundConfiguration(models.Model):
 # maps round type name to (description, default_template_name)
@@ -569,7 +583,7 @@ class Parameter(models.Model):
 
     @property
     def none_value(self):
-        return NONE_VALUES_DICT[self.round_type]
+        return Parameter.NONE_VALUES_DICT[self.type]
 
     @property
     def default_value(self):
@@ -855,6 +869,19 @@ class Participant(CommonsUser):
     groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participants')
     experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participants')
 
+    @property
+    def active_experiments(self):
+        return self.experiment_relationships.filter(experiment__status=Experiment.ACTIVE)
+
+    @property
+    def inactive_experiments(self):
+        return self.experiment_relationships.exclude(experiment__status=Experiment.ACTIVE)
+
+    @property
+    def completed_experiments(self):
+        return self.experiments_with_status(Experiment.COMPLETED)
+
+
     def set_data_value(self, experiment=None, parameter=None, value=None):
         if experiment and parameter and value:
             current_round_data = experiment.current_round_data
@@ -876,18 +903,6 @@ class Participant(CommonsUser):
 
     def get_group(self, experiment):
         return ParticipantGroupRelationship.objects.get_group(experiment, self)
-
-    @property
-    def active_experiments(self):
-        return self.experiment_relationships.filter(experiment__status=Experiment.ACTIVE)
-
-    @property
-    def inactive_experiments(self):
-        return self.experiment_relationships.exclude(experiment__status=Experiment.ACTIVE)
-
-    @property
-    def completed_experiments(self):
-        return self.experiments_with_status(Experiment.COMPLETED)
 
     def experiments_with_status(self, status=Experiment.ACTIVE):
         return self.experiment_relationships.filter(experiment__status=status)

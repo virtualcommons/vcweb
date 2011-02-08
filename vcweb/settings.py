@@ -111,6 +111,8 @@ INSTALLED_APPS = (
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
 
+EMAIL_HOST = "smtp.asu.edu"
+
 SOCKET_IO_HOST = "libai.la.asu.edu"
 
 # celery rabbitmq/amqp configuration

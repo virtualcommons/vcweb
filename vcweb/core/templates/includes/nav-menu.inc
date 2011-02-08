@@ -6,15 +6,19 @@
 {% url core:login as login %}
 {% url core:logout as logout %}
 {% url core:register as register %}
+{% url core:profile as profile %}
+{% url core:dashboard as dashboard %}
 
 <div id='menu'>
 <ul>
+	{% if request.user.is_authenticated %}
+	<li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
+        <li class='{% active request profile %}'><a href='{{ profile }}'>Your Account</a></li>
+	<li class='{% active request logout %}'><a href='{{ logout }}'>Logout</a></li>
+	{% else %}
 	<li class='{% active request home %}' ><a href='{{ home }}' class='first'>Home</a></li>
 	<li class='{% active request about %}'><a href='{{ about }}'>About</a></li>
 	<li class='{% active request contact %}'><a href='{{ contact }}'>Contact us</a></li>
-	{% if request.is_authenticated %}
-	<li class='{% active request logout %}'><a href='{{ logout }}'>Logout</a></li>
-	{% else %}
 	<li class='{% active request login %} {% active request register %}'><a href='{{ login }}'>Login/Register</a></li>
 	{% endif %}
 </ul>

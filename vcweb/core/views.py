@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
-from vcweb.core.forms import RegistrationForm, LoginForm
+from vcweb.core.forms import RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm
 from vcweb.core.models import Participant, Experiment, Experimenter, Institution, is_participant, is_experimenter
 from vcweb.core.queue import broadcast_chat
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
@@ -39,14 +39,13 @@ def login(request):
             if user is None:
                 logger.debug("user " + email + " failed to authenticate.")
                 form.errors['password'] = form.error_class(['Your password is incorrect.'])
-                return render_to_response('registration/login.html', locals(), context_instance=RequestContext(request))
             else:
                 return_url = request.GET.get('next')
                 auth.login(request, user)
                 return redirect( return_url if return_url else 'core:dashboard')
     else:
         form = LoginForm()
-        return render_to_response('registration/login.html', locals(), context_instance=RequestContext(request))
+    return render_to_response('registration/login.html', locals(), context_instance=RequestContext(request))
 
 def logout(request):
     auth.logout(request)
@@ -70,16 +69,17 @@ def register(request):
             logger.debug("Creating new participant: %s" % participant)
             auth.login(request, auth.authenticate(username=email, password=password))
             return redirect('core:dashboard')
-        else:
-            logger.debug("form had errors: %s", form.errors)
     else:
         form = RegistrationForm()
-
-    return render_to_response('registration/register.html', locals(), context_instance=RequestContext(request))
+    return render_to_response('registration/register.html', { 'form': form }, context_instance=RequestContext(request))
 
 @login_required
 def account_profile(request):
-    return render_to_response('registration/profile.html', RequestContext(request))
+    if is_participant(request.user):
+        form = ParticipantAccountForm(instance=request.user.participant)
+    else:
+        form = ExperimenterAccountForm(instance=request.user.experimenter)
+    return render_to_response('registration/profile.html', { 'form': form }, context_instance=RequestContext(request))
 
 ''' participant views '''
 """ participant home page """
@@ -94,7 +94,7 @@ def participant_index(request):
 
     logger.debug("experiment_dict %s" % experiment_dict)
 
-    return render_to_response('participant-index.html', locals(), RequestContext(request))
+    return render_to_response('participant-index.html', locals(), context_instance=RequestContext(request))
 
 @login_required
 def instructions(request, experiment_id=None, namespace=None):
@@ -107,7 +107,7 @@ def instructions(request, experiment_id=None, namespace=None):
         logger.warning("Tried to request instructions for id %s or namespace %s" % (experiment_id, namespace))
         return redirect('home')
 
-    return render_to_response(experiment.get_template_path('instructions.html'), locals(), RequestContext(request))
+    return render_to_response(experiment.get_template_path('instructions.html'), locals(), context_instance=RequestContext(request))
 
 """
 experimenter views
@@ -117,13 +117,13 @@ these.
 @experimenter_required
 def experimenter_index(request):
     experiments = Experiment.objects.filter(experimenter=request.user.experimenter)
-    return render_to_response('experimenter-index.html', locals(), RequestContext(request))
+    return render_to_response('experimenter-index.html', locals(), context_instance=RequestContext(request))
 
 @experimenter_required
 def configure(request, experiment_id=None):
     # lookup game instance id (or create a new one?)
     experiment = Experiment.objects.get(pk=experiment_id)
-    return render_to_response('configure.html', locals(), RequestContext(request))
+    return render_to_response('configure.html', locals(), context_instance=RequestContext(request))
 
 @experimenter_required
 def manage(request, experiment_id=None):
