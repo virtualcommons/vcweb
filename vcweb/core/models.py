@@ -517,6 +517,9 @@ class Parameter(models.Model):
                        ('float', 'Float value'),
                        ('boolean', (('True', True), ('False', False))),
                        ('enum', 'Enumeration'))
+
+    NONE_VALUES_DICT = dict(zip([parameter_type[0] for parameter_type in PARAMETER_TYPES], [0, '', 0.0, False, None]))
+
     '''
     all converters are one-arg functions that convert string input into
     the appropriate data type.
@@ -524,11 +527,11 @@ class Parameter(models.Model):
     on invalid input.
     '''
     CONVERTERS = {
-                  'int': int,
-                  'string':str,
-                  'float': float,
-                  'boolean': lambda x: x or x == 'True'
-                  }
+            'int': int,
+            'string':str,
+            'float': float,
+            'boolean': lambda x: x or x == 'True'
+            }
 
     GROUP_SCOPE = 'group'
     PARTICIPANT_SCOPE = 'participant'
@@ -540,7 +543,7 @@ class Parameter(models.Model):
                      (GROUP_SCOPE, 'Group data parameter'),
                      (PARTICIPANT_SCOPE, 'Participant data parameter'))
 
-    scope = models.CharField(max_length=32, choices=SCOPE_CHOICES, default='round')
+    scope = models.CharField(max_length=32, choices=SCOPE_CHOICES, default=ROUND_SCOPE)
     name = models.CharField(max_length=255, unique=True)
     display_name = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
@@ -557,6 +560,10 @@ class Parameter(models.Model):
     @property
     def value_field_name(self):
         return '%s_value' % (self.type)
+
+    @property
+    def none_value(self):
+        return NONE_VALUES_DICT[self.round_type]
 
     @property
     def default_value(self):
@@ -593,12 +600,10 @@ class Parameter(models.Model):
         return value
 
     def __unicode__(self):
-        return u"%s: %s (%s)" % (self.experiment_metadata.namespace, self.name, self.type)
+        return u"%s parameter: %s (%s)" % (self.experiment_metadata.namespace, self.name, self.type)
 
     class Meta:
         ordering = ['name']
-
-
 
 class ParameterizedValue(models.Model):
     parameter = models.ForeignKey(Parameter)
@@ -610,7 +615,7 @@ class ParameterizedValue(models.Model):
 
     @property
     def value(self):
-        return getattr(self, self.parameter.value_field_name)
+        return getattr(self, self.parameter.value_field_name, self.parameter.none_value)
 
     @value.setter
     def value(self, obj):
