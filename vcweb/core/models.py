@@ -523,7 +523,8 @@ class Parameter(models.Model):
                        ('boolean', (('True', True), ('False', False))),
                        ('enum', 'Enumeration'))
 
-    NONE_VALUES_DICT = dict(zip([parameter_type[0] for parameter_type in PARAMETER_TYPES], [0, '', 0.0, False, None]))
+    NONE_VALUES_DICT = dict(map(lambda x,y: (x[0], y), PARAMETER_TYPES, [0, '', 0.0, False, None]))
+    #dict(zip([parameter_type[0] for parameter_type in PARAMETER_TYPES], [0, '', 0.0, False, None]))
 
     '''
     all converters are one-arg functions that convert string input into
@@ -535,7 +536,7 @@ class Parameter(models.Model):
             'int': int,
             'string':str,
             'float': float,
-            'boolean': lambda x: x or x == 'True'
+            'boolean': lambda x: bool(x) and str(x).lower() != 'false'
             }
 
     GROUP_SCOPE = 'group'
@@ -543,10 +544,10 @@ class Parameter(models.Model):
     ROUND_SCOPE = 'round'
     EXPERIMENT_SCOPE = 'experiment'
 
-    SCOPE_CHOICES = ((ROUND_SCOPE, 'This parameter applies just for this round'),
-                     (EXPERIMENT_SCOPE, 'This parameter applies to this entire experiment'),
-                     (GROUP_SCOPE, 'Group data parameter'),
-                     (PARTICIPANT_SCOPE, 'Participant data parameter'))
+    SCOPE_CHOICES = ((ROUND_SCOPE, 'Parameter applies just for this round'),
+                     (EXPERIMENT_SCOPE, 'Parameter applies to this entire experiment'),
+                     (GROUP_SCOPE, 'Parameter applies to the entire group'),
+                     (PARTICIPANT_SCOPE, 'Parameter is for a single participant'))
 
     scope = models.CharField(max_length=32, choices=SCOPE_CHOICES, default=ROUND_SCOPE)
     name = models.CharField(max_length=255, unique=True)
