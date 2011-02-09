@@ -28,7 +28,7 @@ Forestry Experiment Round {{ experiment.current_round.round_number }}
 {% block page %}
 <h3>Waiting for the next round to start</h3>
 {% if experiment.is_timed_round > 0%}
-<div id='timeLeft' class='info infoIcon'>
+<div id='timeLeft' class='info infoIcon ui-corner-all'>
     Time remaining: <span id='timeRemaining'>{{ experiment.time_remaining }}</span>
 </div>
 {% else %}
