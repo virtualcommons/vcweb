@@ -222,6 +222,10 @@ class Experiment(models.Model):
         return self.status == 'ROUND_IN_PROGRESS'
 
     @property
+    def is_data_round_in_progress(self):
+        return self.is_round_in_progress and self.current_round.has_data_parameters
+
+    @property
     def time_remaining(self):
         return self.current_round.duration - self.current_round_elapsed_time
 
@@ -733,13 +737,10 @@ class Group(models.Model):
         data_value.save()
         '''
 
-    def get_scalar_data_value(self, parameter_name=None, parameter=None):
-        if parameter:
-            return self.get_data_value(parameter=parameter).value
-        else:
-            return self.get_data_value(parameter_name=parameter_name).value
+    def get_scalar_data_value(self, parameter=None, parameter_name=None):
+        return self.get_data_value(parameter=parameter, parameter_name=parameter_name).value
 
-    def get_data_value(self, parameter_name=None, parameter=None):
+    def get_data_value(self, parameter=None, parameter_name=None):
         criteria = dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name)],
                 round_data=self.current_round_data)
         return self.data_values.get_or_create(**criteria)[0]

@@ -1,4 +1,3 @@
-# Create your views here.
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
@@ -6,7 +5,8 @@ from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.decorators import participant_required, experimenter_required
-from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata
+from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision
+from vcweb.forestry.forms import HarvestDecisionForm
 
 import logging
 logger = logging.getLogger(__name__)
@@ -66,25 +66,37 @@ def wait(request, experiment_id=None):
 
 @participant_required
 def participate(request, experiment_id=None):
+    participant = request.user.participant
     try:
-        participant = request.user.participant
         experiment = Experiment.objects.get(pk=experiment_id)
-        if experiment.is_round_in_progress and experiment.current_round.has_data_parameters:
-            participant_group_relationship = participant.get_participant_group_relationship(experiment)
-            resource_level = get_resource_level(participant_group_relationship.group)
-            logger.debug("resource level is: %s" % resource_level)
-            max_harvest_decision = get_max_harvest_decision(resource_level.value)
-            logger.debug("max harvest decision: %s" % max_harvest_decision)
-            num_display_trees = range(resource_level.value / 10)
-            return render_to_response(experiment.current_round_template,
-                    locals(),
-                    context_instance=RequestContext(request))
-        else:
-# the experiment hasn't started yet, just redirect to the instructions for now.. we
-# should redirect to a proper waiting page later.
-            messages.info(request, 'The experiment has not yet started.')
-            return render_to_response(experiment.current_round_template, locals())
-    except Experiment.DoesNotExist:
-        logger.warning("No experiment with id [%s]" % experiment_id)
-        return redirect('forestry:index')
+        if request.method == 'POST':
+            # process harvest decision
 
+            form = HarvestDecisionForm(request.POST)
+            if form.is_valid():
+                harvest_decision = form.cleaned_data['harvest_decision']
+                resource_level = get_resource_level(participant.get_group(experiment))
+                max_harvest_decision = get_max_harvest_decision(resource_level.value)
+                if harvest_decision <= max_harvest_decision:
+                    set_harvest_decision(participant=participant, experiment=experiment, value=harvest_decision)
+                    return redirect('forestry:wait', experiment_id=experiment.pk)
+                else:
+                    raise forms.ValidationError("invalid harvest decision %s > max %s" % (harvest_decision, max_harvest_decision))
+        else:
+            form = HarvestDecisionForm()
+            if experiment.is_data_round_in_progress:
+                participant_group_relationship = participant.get_participant_group_relationship(experiment)
+                resource_level = get_resource_level(participant_group_relationship.group)
+                logger.debug("resource level is: %s" % resource_level)
+                max_harvest_decision = get_max_harvest_decision(resource_level.value)
+                logger.debug("max harvest decision: %s" % max_harvest_decision)
+                num_display_trees = range(resource_level.value / 10)
+
+        return render_to_response(experiment.current_round_template,
+                locals(),
+                context_instance=RequestContext(request))
+    except Experiment.DoesNotExist:
+        error_message = "No experiment with id %s" % experiment_id
+        logger.warning(error_message)
+        messages.warning(request, error_message)
+        return redirect('forestry:index')

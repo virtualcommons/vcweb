@@ -6,13 +6,13 @@
 $(function() {
         $("#forestryForm").validate({ 
                 rules: {
-                    harvestDecision: {
+                    harvest_decision: {
                         required: true,
                         range: [0, {{max_harvest_decision}}]
                     }
                 },
                 messages: {
-                    harvestDecision: {
+                    harvest_decision: {
                         required: "Please enter a harvest decision",
                         range: "Please enter a number between 0 and {{ max_harvest_decision }}"
                     }
@@ -21,6 +21,7 @@ $(function() {
         $('#harvestDecisionId').focus(function() {
             this.select();
         });
+        $('#harvestDecisionId').focus();
 });
 </script>
 {% endblock %}
@@ -45,10 +46,10 @@ Participating in {{experiment.status_line}}
 
 </div>
 {% if max_harvest_decision > 0 %}
-<form id='forestryForm' action='submit-harvest-decision' method='post'>
+<form id='forestryForm' action='' method='post'>
     <div class='field'>
         <label for='harvestDecisionId'>How many trees will you harvest this round? <br/><small>(<b>Choose a number between 0 and {{ max_harvest_decision }})</small></b>:</label>
-        <input id='harvestDecisionId' type="text" name='harvestDecision' class='required digits upToTwoDigits' />
+        <input id='harvestDecisionId' type="text" name='harvest_decision' class='required digits upToTwoDigits' />
     </div>
     <div class='field'>
         <input type='submit' value='Submit' />

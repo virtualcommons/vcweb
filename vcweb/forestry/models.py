@@ -9,7 +9,7 @@ def forestry_second_tick():
     check all forestry experiments.
     '''
 
-def get_resource_level(group=None):
+def get_resource_level(group=None, participant=None):
     return group.get_data_value(parameter_name='resource_level') if group else None
 
 def get_harvest_decisions(group=None):
