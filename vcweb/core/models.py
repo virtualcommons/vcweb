@@ -10,6 +10,7 @@ import hashlib
 import logging
 import random
 import re
+import simplejson
 
 logger = logging.getLogger(__name__)
 
@@ -387,6 +388,15 @@ class Experiment(models.Model):
     def check_elapsed_time(self):
         if self.is_timed_round and self.is_time_expired:
             self.end_round()
+
+    def to_json(self, *args):
+        return simplejson.dumps({
+            'experiment': {
+                'pk': experiment.pk,
+                'is_active': experiment.is_active,
+                'is_round_in_progress': experiment.is_round_in_progress,
+                },
+            })
 
     """ returns a fresh copy of this experiment with configuration / metadata intact """
     def clone(self, experimenter=None):

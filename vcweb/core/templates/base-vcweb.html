@@ -13,8 +13,8 @@
         <link href="/static/css/guarantee/style.css" rel="stylesheet" type="text/css" media="screen" />
         <link href="/static/css/style.css" rel="stylesheet" type="text/css" media="screen" />
         <script type='text/javascript' src='/static/js/jquery-1.4.4.min.js'></script>
-        {% include "includes/jquery.ui.inc" %}
-        {% dajaxice_js_import %}
+        {% include "includes/jquery.ui.html" %}
+        <script type='/text/javascript' src='/static/js/dajaxice.core.js'></script>
         {% endblock %}
     </head>
 
@@ -24,7 +24,7 @@
         </div>
         <div id='header'>
             {% block header %}
-            {% include "includes/nav-menu.inc" %}
+            {% include "includes/nav-menu.html" %}
             {% endblock %}
         </div>
         <div id='page'>

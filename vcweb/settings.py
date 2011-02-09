@@ -70,6 +70,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
         'django.core.context_processors.request',
         'django.contrib.auth.context_processors.auth',
         'django.contrib.messages.context_processors.messages',
+#        'django.core.context_processors.static',
         'vcweb.core.context_processors.socket_io',
         )
 
@@ -102,12 +103,15 @@ INSTALLED_APPS = (
         'django.contrib.sites',
         'django.contrib.admin',
         'django.contrib.messages',
+#        'django.contrib.staticfiles',
         'vcweb.core',
         'vcweb.forestry',
         'djcelery',
         'djkombu',
         'dajaxice',
         )
+
+STATIC_ROOT = "/var/www/vcweb/static"
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
 

@@ -45,8 +45,10 @@ MEDIA_URL = ''
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
-# Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/static/'
+# this typically stored somewhere like
+# $VIRTUALENV/lib/python2.6/site-packages/django/contrib/admin/media
+# FIXME: this will get adjusted once we switch to django 1.3 and use the django.contrib.staticfiles app
+ADMIN_MEDIA_PREFIX = '/media/'
 
 # django celery integration
 # celery rabbitmq/amqp configuration

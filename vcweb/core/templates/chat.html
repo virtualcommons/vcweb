@@ -2,7 +2,7 @@
 
 {% block head %}
     {{ block.super }}
-    {% include "includes/socket.io.inc" %}
+    {% include "includes/socket.io.html" %}
     <script type="text/javascript">
         $(function() {
                 var s = connect("libai.la.asu.edu", 8888);
