@@ -635,7 +635,8 @@ class ParameterizedValue(models.Model):
 
     @property
     def value(self):
-        return getattr(self, self.parameter.value_field_name, self.parameter.none_value)
+        value = getattr(self, self.parameter.value_field_name, self.parameter.none_value)
+        return value if value is not None else self.parameter.none_value
 
     @value.setter
     def value(self, obj):

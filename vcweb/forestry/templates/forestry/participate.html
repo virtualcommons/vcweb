@@ -1,23 +1,27 @@
 {% extends "base-participant.html" %}
 {% block head %}
 {{ block.super }}
+
 <script type="text/javascript">
 $(function() {
-        $('#forestryForm').validate({ 
+        $("#forestryForm").validate({ 
                 rules: {
-                    harvestDecisionId: {
+                    harvestDecision: {
                         required: true,
-                        range: [0, {{ max_harvest_decision }}]
+                        range: [0, {{max_harvest_decision}}]
                     }
                 },
                 messages: {
-                    harvestDecisionId: {
+                    harvestDecision: {
                         required: "Please enter a harvest decision",
-                        range: "Please enter a harvest decision between 0 and {{ max_harvest_decision }}",
+                        range: "Please enter a number between 0 and {{ max_harvest_decision }}"
                     }
-                }
-            });
+                },
         });
+        $('#harvestDecisionId').focus(function() {
+            this.select();
+        });
+});
 </script>
 {% endblock %}
 {% block title %}
@@ -27,19 +31,34 @@ Participating in {{experiment.status_line}}
 {% block content %}
 <h3>Forestry round number {{ experiment.current_round.round_number }}</h3>
 <div class='forestry-resource'>
-    <img src='/static/images/forestry/pine-tree.jpg' alt='tree' />
+    {% comment %}
+    FIXME: naive way to show 10 trees.  Do image manip on the server side or enerate
+    10-trees, 9-trees, 8-trees, etc., files?
+    {% endcomment %}
+    {% for i in num_display_trees %}
+    <img src='/static/images/forestry/pine-tree.jpg' alt='Each tree image corresponds to ten trees in your forest.' />
+    {% endfor %}
 </div>
-<p>
-The resource size is <b>{{ resource_level.value }}</b>.
-</p>
-<form id='forestryForm' action='submit-harvest-decision' method='post'>
+<div class='ui-state-highlight ui-corner-all'>
+    <span class='ui-icon ui-icon-info'></span>
+    The resource size is <b>{{ resource_level.value }}</b>. 
 
-    <div class='input'>
-        <label for='harvestDecisionId'>Enter a number between <b>0 and {{ max_harvest_decision }}</b>:</label>
-        <input id='harvestDecisionId' type="text" name='harvestDecision' class='required digits' />
+</div>
+{% if max_harvest_decision > 0 %}
+<form id='forestryForm' action='submit-harvest-decision' method='post'>
+    <div class='field'>
+        <label for='harvestDecisionId'>How many trees will you harvest this round? <br/><small>(<b>Choose a number between 0 and {{ max_harvest_decision }})</small></b>:</label>
+        <input id='harvestDecisionId' type="text" name='harvestDecision' class='required digits upToTwoDigits' />
     </div>
-    <div class='input'>
+    <div class='field'>
         <input type='submit' value='Submit' />
     </div>
 </form>
+{% else %}
+<div class='ui-state-highlight ui-corner-all'>
+    <span class='ui-icon ui-icon-alert'></span>
+    The resource has been depleted to the point where no one can harvest from
+    it.
+</div>
+{% endif %}
 {% endblock content %}

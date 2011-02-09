@@ -294,22 +294,6 @@ img.right {
     line-height: normal;
 }
 
-input.error {
-    padding:0.1em;
-    border: 0.06em solid;
-}
-
-label.error {
-    background: url('/static/images/unchecked.gif') no-repeat left center #FBE3E4;
-    line-height: normal;
-    font-size: .8em;
-    margin:0.3em;
-    padding:0.3em;
-    padding-left: 1.1em;
-    margin-left: 0.3em;
-}
-
-
 #sidebar li {
     margin-bottom: 1.88em;
     padding: 0 0 0.63em 0;

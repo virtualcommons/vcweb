@@ -75,6 +75,7 @@ def participate(request, experiment_id=None):
             logger.debug("resource level is: %s" % resource_level)
             max_harvest_decision = get_max_harvest_decision(resource_level.value)
             logger.debug("max harvest decision: %s" % max_harvest_decision)
+            num_display_trees = range(resource_level.value / 10)
             return render_to_response(experiment.current_round_template,
                     locals(),
                     context_instance=RequestContext(request))
