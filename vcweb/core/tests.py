@@ -214,6 +214,43 @@ class GroupTest(BaseVcwebTest):
                     g.transfer_to_next_round(parameter)
             e.advance_to_next_round()
 
+    def test_initialize_data_parameters(self):
+        e = self.experiment
+        e.activate()
+        e.start_round()
+        # instructions round
+        for g in e.groups.all():
+            g.initialize_data_parameters()
+            self.failUnlessEqual(e.current_round_data.group_data_values.count(), 0)
+            self.failUnlessEqual(e.current_round_data.participant_data_values.count(), 0)
+        # quiz round
+        e.advance_to_next_round()
+        e.start_round()
+        for g in e.groups.all():
+            g.initialize_data_parameters()
+            self.failUnlessEqual(e.current_round_data.group_data_values.count(), 0)
+            self.failUnlessEqual(e.current_round_data.participant_data_values.count(), 0)
+        # first practice round
+        e.advance_to_next_round()
+        e.start_round()
+        for g in e.groups.all():
+            for i in xrange(10):
+                self.failUnlessEqual(e.current_round_data.group_data_values.count(), 2)
+                # multiple invocations to initialize_data_parameters should be harmless.
+                g.initialize_data_parameters()
+                self.failUnlessEqual(e.current_round_data.group_data_values.count(), 2)
+                g.initialize_data_parameters()
+                self.failUnlessEqual(e.current_round_data.group_data_values.count(), 2)
+                g.initialize_data_parameters()
+        # first chat round (practice)
+        e.advance_to_next_round()
+        e.start_round()
+        for g in e.groups.all():
+            g.initialize_data_parameters()
+            self.failUnlessEqual(e.current_round_data.group_data_values.count(), 2)
+            self.failUnlessEqual(e.current_round_data.participant_data_values.count(), 2)
+        # second practice round
+
 
     def test_group_add(self):
         """

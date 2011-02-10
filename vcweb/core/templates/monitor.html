@@ -35,8 +35,10 @@
         });
         $('#statusSpinner').hide('fast');
         $('#statusDiv').show('fast');
-        $('#experimentData').accordion();
-        alert("accordion werked");
+        $('#experimentData').accordion({
+                collapsible: true, active:
+                {{experiment.round_data.count|add:"-1"}}
+                });
         /*
         $('#statusDiv').ajaxStart(function() {
             }).ajaxComplete(function() {
@@ -97,58 +99,56 @@ VCWEB: Monitoring {{ experiment.status_line }}
 <div id='experimentData'>
     {% block data %}
     {% for round_data in experiment.round_data.all %}
-    <h4><a href='#'>{{ round_data }}</a></h4>
+    <h3><a href='#'>{{ round_data }}</a></h3>
     <div id='round_data_{{forloop.counter}}'>
+        {% comment %} group data values {% endcomment %}
         {% if round_data.group_data_values.count > 0 %}
-        <div class='group-data'>
-            <h4>Group data</h4>
-            <table>
-                <thead>
-                    <tr><th>Group</th><th>Parameter Name</th><th>Value</th><th>Type</th></tr>
-                </thead>
-                <tbody>
-                    {% for group_data_value in round_data.group_data_values.all %}
-                    <tr>
-                        <td>{{ group_data_value.group }}</td>
-                        <td>{{ group_data_value.parameter.label}}</td>
-                        <td>{{ group_data_value.value}}</td>
-                        <td>{{ group_data_value.parameter.type}}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <h4>Group data</h4>
+        <table>
+            <thead>
+                <tr><th>Group</th><th>Parameter Name</th><th>Value</th><th>Type</th></tr>
+            </thead>
+            <tbody>
+                {% for group_data_value in round_data.group_data_values.all %}
+                <tr>
+                    <td>{{ group_data_value.group }} ({{ group_data_value.round_data.round_configuration}})</td>
+                    <td>{{ group_data_value.parameter.label}}</td>
+                    <td>{{ group_data_value.value}}</td>
+                    <td>{{ group_data_value.parameter.type}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         {% else %}
         <div class='info ui-corner-all'>
             <span class='ui-icon ui-icon-info'></span>No group data for this round.
         </div>
         {% endif %}
+        {% comment %} participant data values {% endcomment %}
         {% if round_data.participant_data_values.count > 0 %}
-        <div class='participant-data'>
-            <h4>Participant data</h4>
-            <table>
-                <thead>
-                    <tr><th>Participant</th><th>Parameter name</th><th>Value</th><th>Type</th></tr>
-                </thead>
-                <tbody>
-                    {% for participant_data_value in round_data.participant_data_values.all %}
-                    <tr>
-                        <td>{{ participant_data_value.participant }}</td>
-                        <td>{{ participant_data_value.parameter.label }}</td>
-                        <td>{{ participant_data_value.value }}</td>
-                        <td>{{ participant_data_value.parameter.type }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <h4>Participant data</h4>
+        <table>
+            <thead>
+                <tr><th>Participant</th><th>Parameter name</th><th>Value</th><th>Type</th></tr>
+            </thead>
+            <tbody>
+                {% for participant_data_value in round_data.participant_data_values.all %}
+                <tr>
+                    <td>{{ participant_data_value.participant }}</td>
+                    <td>{{ participant_data_value.parameter.label }}</td>
+                    <td>{{ participant_data_value.value }}</td>
+                    <td>{{ participant_data_value.parameter.type }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         {% else %}
         <div class='info ui-corner-all'><span class='ui-icon ui-icon-info'></span>No participant data for this round.</div>
         {% endif %}
-        {% empty %}
-        <div class='alert ui-corner-all'><span class='ui-icon ui-icon-alert'></span>Round data is not yet available.</div>
-        {% endfor %}
     </div>
+    {% empty %}
+    <div class='alert ui-corner-all'><span class='ui-icon ui-icon-alert'></span>Round data is not yet available.</div>
+    {% endfor %}
     {% endblock data %}
 </div>
 {% endblock page %}

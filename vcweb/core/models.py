@@ -359,7 +359,9 @@ class Experiment(models.Model):
             self.current_round_elapsed_time = 0
             self.current_round_sequence_number += 1
             self.save()
-            # initialize group and participant parameters
+            # initialize group parameters if necessary 
+            # FIXME: need to reconcile this with transfer_to_next_round, or make
+            # sure that transfer_parameter
             for g in self.groups.all():
                 g.initialize_data_parameters()
         else:
@@ -367,6 +369,8 @@ class Experiment(models.Model):
 
     def start_round(self, sender=None):
         self.status = 'ROUND_IN_PROGRESS'
+        ''' get_or_create round_data for this round '''
+        self.current_round_data
         self.save()
         # FIXME: would prefer using self.namespace as a default but django's
         # managed unicode strings don't work as senders
@@ -638,7 +642,7 @@ class Parameter(models.Model):
         return value
 
     def __unicode__(self):
-        return u"%s parameter: %s (%s)" % (self.experiment_metadata.namespace, self.name, self.type)
+        return u"%s parameter: %s (%s, %s)" % (self.experiment_metadata.namespace, self.name, self.type, self.scope)
 
     class Meta:
         ordering = ['name']
@@ -709,14 +713,19 @@ class Group(models.Model):
     def current_round(self):
         return self.experiment.current_round
 
+    '''
+    Initializes data parameters for all groups in this round, as necessary. 
+    If this round already has data parameters, is a no-op.
+    '''
     def initialize_data_parameters(self):
         if self.current_round.has_data_parameters:
             round_data = self.current_round_data
             if not round_data.group_data_values.filter(group=self).count():
+                logger.debug("no group data values for the current round %s, creating new ones." % round_data)
                 for group_data_parameter in self.data_parameters:
                     # create a fresh GroupRoundDataValue for each data parameter
                     logger.debug("Creating parameter %s for group %s" % (group_data_parameter, self))
-                    self.data_values.create(round_data=round_data, parameter=group_data_parameter)
+                    self.data_values.get_or_create(round_data=round_data, parameter=group_data_parameter)
 
 
     '''
@@ -750,14 +759,25 @@ class Group(models.Model):
         data_value.value += amount
         data_value.save()
         '''
+    def has_data_parameter(self, **kwargs):
+        criteria = self._data_parameter_criteria(**kwargs)
+        try:
+            self.data_values.get(**criteria)
+            return True
+        except:
+            return False
 
     def get_scalar_data_value(self, parameter=None, parameter_name=None):
         return self.get_data_value(parameter=parameter, parameter_name=parameter_name).value
 
     def get_data_value(self, parameter=None, parameter_name=None):
-        criteria = dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name)],
-                round_data=self.current_round_data)
+        criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name)
         return self.data_values.get_or_create(**criteria)[0]
+
+    def _data_parameter_criteria(self, parameter=None, parameter_name=None):
+        return dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name)],
+                round_data=self.current_round_data)
+
 
     def get_group_data_values(self, name=None, *names):
         round_data = self.current_round_data
@@ -789,7 +809,12 @@ class Group(models.Model):
 
     def transfer_parameter(self, parameter, value):
         next_round_data, created = self.experiment.round_data.get_or_create(round_configuration=self.experiment.next_round)
-        return next_round_data.group_data_values.create(group=self, parameter=parameter, value=value)
+        logger.debug("next round data: %s (%s)" % (next_round_data, "created" if created else "retrieved"))
+        group_data_value, created = next_round_data.group_data_values.get_or_create(group=self, parameter=parameter, defaults={'value': value})
+        if not created:
+            group_data_value.value = value
+            group_data_value.save()
+        return group_data_value
 
     def get_participant_data_value(self, participant, parameter):
         return ParticipantRoundDataValue.objects.get(round_data=self.current_round_data, participant=participant, parameter=parameter)
@@ -876,7 +901,7 @@ class GroupRoundDataValue(DataValue):
         return self.round_data.round_configuration
 
     def __unicode__(self):
-        return u"data value {0}: {1} for group {2}".format(self.parameter, self.value, self.group)
+        return u"data value {0}: {1} (group {2}, round {3})".format(self.parameter, self.value, self.group, self.round_configuration)
     class Meta:
         ordering = [ 'round_data', 'group', 'parameter' ]
 

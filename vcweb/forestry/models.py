@@ -9,8 +9,11 @@ def forestry_second_tick():
     check all forestry experiments.
     '''
 
-def get_resource_level(group=None, participant=None):
+def get_resource_level(group=None):
     return group.get_data_value(parameter_name='resource_level') if group else None
+
+def has_resource_level(group=None):
+    return group.has_data_parameter(parameter=get_resource_level_parameter())
 
 def get_harvest_decisions(group=None):
     return group.get_participant_data_values(parameter_name='harvest_decision') if group else []
@@ -78,22 +81,23 @@ def round_setup(experiment, **kwargs):
         current_round_data = experiment.current_round_data
         harvest_decision_parameter = get_harvest_decision_parameter()
         for p in experiment.participants.all():
-            harvest_decision = current_round_data.participant_data_values.create(participant=p, parameter=harvest_decision_parameter)
-            logger.debug("initialized harvest decision %s" % harvest_decision)
+            harvest_decision, created = current_round_data.participant_data_values.get_or_create(participant=p, parameter=harvest_decision_parameter)
+            logger.debug("%s harvest decision %s" % ("created" if created else "retrieved", harvest_decision))
 
 def round_teardown(experiment, **kwargs):
     logger.debug("forestry: round_teardown for %s" % experiment)
-    round_configuration = experiment.current_round
-    if round_configuration.has_data_parameters:
-        ''' only calculate new resource levels for practice or regular rounds '''
-        resource_level_parameter = get_resource_level_parameter()
-        for group in experiment.groups.all():
-            total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
-            group.subtract(resource_level_parameter, total_harvest)
+    ''' only calculate new resource levels for practice or regular rounds '''
+    resource_level_parameter = get_resource_level_parameter()
+    for group in experiment.groups.all():
+        total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
+        if has_resource_level(group):
+            if get_resource_level(group) > 0 and total_harvest > 0:
+                group.subtract(resource_level_parameter, total_harvest)
             if experiment.has_next_round:
                 ''' set group round data resource_level for each group '''
                 logger.debug("Transferring resource level %s to next round" % get_resource_level(group))
                 group.transfer_to_next_round(resource_level_parameter)
+        group.save()
 
 #@receiver(signals.round_started, sender='forestry')
 def round_started_handler(sender, experiment=None, **kwargs):
