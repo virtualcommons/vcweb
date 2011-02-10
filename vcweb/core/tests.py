@@ -1,6 +1,5 @@
 from django.test import TestCase
 from vcweb.core import signals
-from vcweb.core import queue
 from vcweb.core.models import Experiment, Experimenter, ExperimentConfiguration, \
     Participant, ParticipantExperimentRelationship, Group, ExperimentMetadata, \
     RoundConfiguration, Parameter, RoundParameterValue, GroupActivityLog

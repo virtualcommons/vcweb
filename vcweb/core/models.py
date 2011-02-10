@@ -167,7 +167,7 @@ class ExperimentManager(models.Manager):
 # parameterization of this experiment.
 class Experiment(models.Model):
     STATUS_CHOICES = (('INACTIVE', 'Not active'),
-                      ('ACTIVE', 'Active'),
+                      ('ACTIVE', 'Active, no round in progress'),
                       ('PAUSED', 'Paused'),
                       ('ROUND_IN_PROGRESS', 'Round in progress'),
                       ('COMPLETED', 'Completed'))
@@ -253,6 +253,10 @@ class Experiment(models.Model):
     @property
     def monitor_url(self):
         return "%s/monitor" % self.controller_url
+
+    @property
+    def round_status_display(self):
+        return "Round %s of %s, %s" % (self.current_round.sequence_number, self.experiment_configuration.final_sequence_number, self.get_status_display())
 
     @property
     def status_line(self):
@@ -392,9 +396,9 @@ class Experiment(models.Model):
     def to_json(self, *args):
         return simplejson.dumps({
             'experiment': {
-                'pk': experiment.pk,
-                'is_active': experiment.is_active,
-                'is_round_in_progress': experiment.is_round_in_progress,
+                'pk': self.pk,
+                'is_active': self.is_active,
+                'is_round_in_progress': self.is_round_in_progress,
                 },
             })
 

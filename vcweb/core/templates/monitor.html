@@ -1,5 +1,55 @@
 {% extends "base-experimenter.html" %}
 
+{% block head %}
+{{ block.super }}
+<script type='text/javascript'>
+    function update(json) {
+        if (json == Dajaxice.EXCEPTION) {
+            console.debug("dajaxice error" + json);
+        }
+        else {
+            $('#statusDiv').html(json.status);
+            $('#experimentData').html(json.experimentData);
+            registerExperimentConfirmation();
+        }
+    }
+    $(function() {
+        registerExperimentConfirmation();
+    });
+    function registerExperimentConfirmation() {
+        $('.confirm-experiment-action').click(function() {
+            Dajaxice.vcweb.core.experiment_controller(update, {'experiment_id': {{experiment_id}}, 'action':this.name});
+            $('#statusDiv').hide('fast');
+            $('#statusSpinner').show('fast');
+            return false;
+        });
+        $('.confirm-experiment-action').confirm({
+                timeout: 3000,
+                dialogShow: 'fadeIn',
+                dialogSpeed: 'fast',
+                buttons: {
+                    wrapper: "<button></button>",
+                    separator: ' '
+                },
+                msg: '&nbsp; You are about to modify the experiment. Continue?'
+        });
+        $('#statusSpinner').hide('fast');
+        $('#statusDiv').show('fast');
+        $('#experimentData').accordion();
+        alert("accordion werked");
+        /*
+        $('#statusDiv').ajaxStart(function() {
+            }).ajaxComplete(function() {
+                alert("ajax completed");
+                $('#statusDiv').show();
+                $('#statusSpinner').show();
+                });
+                */
+    }
+
+</script>
+{% endblock %}
+
 {% block title %}
 VCWEB: Monitoring {{ experiment.status_line }}
 {% endblock %}
@@ -12,61 +62,93 @@ VCWEB: Monitoring {{ experiment.status_line }}
     FIXME: Improve this so that we can just inject a new round_configuration
     JSON object in and everything auto-updates.
     {% endcomment %}
-    {% include "includes/experiment-status.html" %}
-    {% include "includes/experiment-actions.html" %}
+    <div id='statusSpinner' style='display:none;'>
+        <img src='/static/images/squares-circle-ajax-loader.gif' alt='... working ...' />
+    </div>
+    <div id='statusDiv'>
+        {% block status %}
+        <fieldset class='small ui-corner-all'>
+            <legend>Actions</legend>
+            <ul id='actions' class='actions'>
+                {% if experiment.is_active %}
+                {% if experiment.is_round_in_progress %}
+                <li><a class='confirm-experiment-action' name='end_round' href='end-round'><img src='/static/images/famfamfam/control_stop_blue.png' alt='' /> end round</a></li>
+                {% else %}
+                <li><a class='confirm-experiment-action' name='start_round' href='start-round'><img src='/static/images/famfamfam/control_play_blue.png' alt='' /> start round</a></li>
+                {% endif %}
+                <li><a style='background-image: none;' name='advance_to_next_round' class='confirm-experiment-action' href='advance-to-next-round'><img src='/static/images/famfamfam/control_fastforward_blue.png' alt=''/> advance to next round</a></li>
+                {% else %}
+                <li><a class='confirm-experiment-action' name='activate' href='activate'><img src='/static/images/famfamfam/cog_go.png' alt='' /> activate</a></li>
+                {% endif %}
+            </ul>
+        </fieldset>
+        <fieldset class='small ui-corner-all'>
+            <legend>Round Status</legend>
+            <div id='status'>
+                <span id='experiment-round'> {{ experiment.round_status_display }} </span>
+                <br/>Type: <span id='round-type'>{{ experiment.current_round.get_round_type_display }}</span>
+                <br/>Time remaining: <span id='time-left'> {{ experiment.time_remaining }} </span>
+            </div>
+        </fieldset>
+        {% endblock status %}
+    </div>
 </div>
 
-{% for round_data in experiment.round_data.all %}
-<h4> {{ round_data }} </h4>
-{% if round_data.group_data_values.count > 0 %}
-<div class='group-data'>
-    <h4>Group data</h4>
-    <table>
-        <thead>
-            <tr><th>Group</th><th>Parameter Name</th><th>Value</th><th>Type</th></tr>
-        </thead>
-        <tbody>
-            {% for group_data_value in round_data.group_data_values.all %}
-            <tr>
-                <td>{{ group_data_value.group }}</td>
-                <td>{{ group_data_value.parameter.label}}</td>
-                <td>{{ group_data_value.value}}</td>
-                <td>{{ group_data_value.parameter.type}}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div id='experimentData'>
+    {% block data %}
+    {% for round_data in experiment.round_data.all %}
+    <h4><a href='#'>{{ round_data }}</a></h4>
+    <div id='round_data_{{forloop.counter}}'>
+        {% if round_data.group_data_values.count > 0 %}
+        <div class='group-data'>
+            <h4>Group data</h4>
+            <table>
+                <thead>
+                    <tr><th>Group</th><th>Parameter Name</th><th>Value</th><th>Type</th></tr>
+                </thead>
+                <tbody>
+                    {% for group_data_value in round_data.group_data_values.all %}
+                    <tr>
+                        <td>{{ group_data_value.group }}</td>
+                        <td>{{ group_data_value.parameter.label}}</td>
+                        <td>{{ group_data_value.value}}</td>
+                        <td>{{ group_data_value.parameter.type}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class='info ui-corner-all'>
+            <span class='ui-icon ui-icon-info'></span>No group data for this round.
+        </div>
+        {% endif %}
+        {% if round_data.participant_data_values.count > 0 %}
+        <div class='participant-data'>
+            <h4>Participant data</h4>
+            <table>
+                <thead>
+                    <tr><th>Participant</th><th>Parameter name</th><th>Value</th><th>Type</th></tr>
+                </thead>
+                <tbody>
+                    {% for participant_data_value in round_data.participant_data_values.all %}
+                    <tr>
+                        <td>{{ participant_data_value.participant }}</td>
+                        <td>{{ participant_data_value.parameter.label }}</td>
+                        <td>{{ participant_data_value.value }}</td>
+                        <td>{{ participant_data_value.parameter.type }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class='info ui-corner-all'><span class='ui-icon ui-icon-info'></span>No participant data for this round.</div>
+        {% endif %}
+        {% empty %}
+        <div class='alert ui-corner-all'><span class='ui-icon ui-icon-alert'></span>Round data is not yet available.</div>
+        {% endfor %}
+    </div>
+    {% endblock data %}
 </div>
-{% else %}
-<div class='info ui-corner-all'>
-    <span class='ui-icon ui-icon-info'></span>No group data for this round.
-</div>
-{% endif %}
-{% if round_data.participant_data_values.count > 0 %}
-<div class='participant-data'>
-    <h4>Participant data</h4>
-    <table>
-        <thead>
-            <tr><th>Participant</th><th>Parameter name</th><th>Value</th><th>Type</th></tr>
-        </thead>
-        <tbody>
-            {% for participant_data_value in round_data.participant_data_values.all %}
-            <tr>
-                <td>{{ participant_data_value.participant }}</td>
-                <td>{{ participant_data_value.parameter.label }}</td>
-                <td>{{ participant_data_value.value }}</td>
-                <td>{{ participant_data_value.parameter.type }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% else %}
-<div class='info ui-corner-all'><span class='ui-icon ui-icon-info'></span>No participant data for this round.</div>
-{% endif %}
-{% empty %}
-<div class='alert ui-corner-all'><span class='ui-icon ui-icon-alert'></span>Round data is not yet available.</div>
-{% endfor %}
-
-
 {% endblock page %}

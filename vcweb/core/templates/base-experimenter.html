@@ -3,20 +3,6 @@
 {% block head %}
 {{ block.super}}
 <script type='text/javascript' src='/static/js/jquery.confirm.min.js'></script>
-<script type='text/javascript'>
-    $(function() {
-        $('.confirm-experiment-action').confirm({
-                timeout: 3000,
-                dialogShow: 'fadeIn',
-                dialogSpeed: 'fast',
-                buttons: {
-                    wrapper: "<button></button>",
-                    separator: ' '
-                },
-                msg: '&nbsp; You are about to modify the experiment. Continue?'
-        });
-    });
-</script>
 {% endblock %}
 
 {% block title %} 

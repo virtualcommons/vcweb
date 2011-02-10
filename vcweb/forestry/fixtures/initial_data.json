@@ -231,5 +231,14 @@
         }, 
         "model": "core.roundparametervalue", 
         "pk": 2
+    },
+    {
+        "fields": {
+        	"round_configuration": 5,
+                "parameter": [ "reset.resource_level" ],
+                "boolean_value": "False"
+        }, 
+        "model": "core.roundparametervalue", 
+        "pk": 3
     }
 ]

@@ -1,11 +1,4 @@
-from django.conf.urls.defaults import *
-
-from vcweb import settings
-
-from dajaxice.core import dajaxice_autodiscover
-# set up dajaxice URLs
-dajaxice_autodiscover()
-
+from django.conf.urls.defaults import patterns, url
 
 '''
 URLs defined by the core vcweb app.
@@ -24,5 +17,10 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^experiment/(?P<experiment_id>\d+)/configure$', 'configure', name='configure_experiment'),
 # experiment controller actions
     url(r'^experiment/(?P<experiment_id>\d+)/(?P<experiment_action>[\w-]+)$', 'experiment_controller', name='experiment_controller'),
-    url(r'^%s/' % settings.DAJAXICE_MEDIA_PREFIX, include('dajaxice.urls')),
-)
+    )
+# add ajax actions
+
+urlpatterns += patterns('vcweb.core.ajax',
+    url(r'^ajax/(?P<experiment_id>\d+)/(<?P<experiment_action[\w-]+)$', 'experiment_controller'),
+    )
+

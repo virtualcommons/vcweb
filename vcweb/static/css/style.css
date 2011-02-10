@@ -29,9 +29,9 @@ input[type=text], input[type=password] {
 }
 
 input.error {
-   padding: 0;
-   margin: 0;
-   border: solid red;
+    padding: 0;
+    margin: 0;
+    border: solid red;
 }
 
 label.error {
@@ -47,8 +47,8 @@ label.error {
 
 
 input.upToTwoDigits {
-   width: 2em;
-   text-align: right;
+    width: 2em;
+    text-align: right;
 }
 
 span.label {
@@ -67,6 +67,16 @@ ul.messages {
     list-style: none;
 }
 
+ul.actions {
+    margin: 0;
+    list-style: none;
+    padding: 0;
+}
+
+#actions li {
+    padding: 3px;
+}
+
 li.warning {
     font-size: 0.8em;
 }
@@ -83,16 +93,16 @@ li.warning {
 }
 
 .crossIcon {
-   background-image: url('/static/images/famfamfam/cross.png');
+    background-image: url('/static/images/famfamfam/cross.png');
 }
 
 .contactIcon {
-   background-image: url('/static/images/famfamfam/comment_add.png');
+    background-image: url('/static/images/famfamfam/comment_add.png');
 }
 
 
 .smallInfoIcon {
-   background-image: url('/static/images/famfamfam/information.png');
+    background-image: url('/static/images/famfamfam/information.png');
 }
 
 .infoIcon {
@@ -105,7 +115,7 @@ fieldset.small {
     background-color: #efefef;
     padding: 2px;
     border: solid 1px #d3d3d3;
-    width: 350px;
+    width: 500px;
 }
 
 legend {
@@ -114,14 +124,19 @@ legend {
     padding: 2px 6px;
 }
 
+#experimentData a {
+    text-decoration: none;
+    color: #549900;
+}
+
 #experiments a {
-   text-decoration: none;
-   color: #06C;
+    text-decoration: none;
+    color: #06C;
 }
 
 #experiments a:hover {
-   text-decoration: underline;
-   color: #36241B;
+    text-decoration: underline;
+    color: #36241B;
 }
 
 
@@ -138,9 +153,9 @@ legend {
 }
 
 span.ui-icon {
-   float: left;
-   /* top right bottom left */
-   margin: 6px 5px 0px 5px;
+    float: left;
+    /* top right bottom left */
+    margin: 6px 5px 0px 5px;
 }
 
 #experiments span.inactive {
@@ -218,7 +233,7 @@ ul.horizontal {
 }
 
 #timeRemaining span {
-   background: url('/static/images/clock.png') bottom center no-repeat;
-   margin-left: 8px;
-   margin-right: 8px;
+    background: url('/static/images/clock.png') bottom center no-repeat;
+    margin-left: 8px;
+    margin-right: 8px;
 }

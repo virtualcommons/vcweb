@@ -4,8 +4,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb.core.forms import RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm
-from vcweb.core.models import Participant, Experiment, Experimenter, Institution, is_participant, is_experimenter
-from vcweb.core.queue import broadcast_chat
+from vcweb.core.models import Participant, Experiment, Institution, is_participant, is_experimenter
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 import logging
 

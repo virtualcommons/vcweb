@@ -2,11 +2,16 @@ from django.shortcuts import redirect
 
 from django.contrib.auth.decorators import user_passes_test
 
+from dajaxice.core import dajaxice_functions
 
 from vcweb.core.models import is_experimenter, is_participant
 
 import logging
 logger = logging.getLogger(__name__)
+
+def dajaxice_register(wrapped_function):
+    dajaxice_functions.register(wrapped_function)
+    return wrapped_function
 
 def is_anonymous(user):
     return user is None or not user.is_authenticated()

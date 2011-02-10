@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+{% load dajaxice_templatetags %}
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
-    {% load dajaxice_templatetags %}
 
     <head>
         {% block head %}
@@ -14,7 +14,8 @@
         <link href="/static/css/style.css" rel="stylesheet" type="text/css" media="screen" />
         <script type='text/javascript' src='/static/js/jquery-1.4.4.min.js'></script>
         {% include "includes/jquery.ui.html" %}
-        <script type='/text/javascript' src='/static/js/dajaxice.core.js'></script>
+        {% dajaxice_js_import %}
+        <!-- <script type='/text/javascript' src='/static/js/dajaxice.core.js'></script> -->
         {% endblock %}
     </head>
 

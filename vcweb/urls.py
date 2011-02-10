@@ -4,6 +4,9 @@ from vcweb import settings
 
 from django.views.generic.simple import direct_to_template
 
+from dajaxice.core import dajaxice_autodiscover
+# set up dajaxice URLs
+dajaxice_autodiscover()
 # set up admin URLs
 admin.autodiscover()
 
@@ -16,6 +19,7 @@ urlpatterns = patterns('',
     url(r'^accounts/password_reset/done/$', 'django.contrib.auth.views.password_reset_done', {'template_name':'password_reset_done.html'}),
     url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$', 'django.contrib.auth.views.password_reset_confirm', {'template_name':'password_reset_confirm.html'}),
     url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete', {'template_name':'password_reset_complete.html'}),
+    url(r'^%s/' % settings.DAJAXICE_MEDIA_PREFIX, include('dajaxice.urls')),
 
     # FIXME: figure out if we can dynamically include every custom app's
     # urlconf
