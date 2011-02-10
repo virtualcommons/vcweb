@@ -361,7 +361,7 @@ class Experiment(models.Model):
             self.save()
             # initialize group parameters if necessary 
             # FIXME: need to reconcile this with transfer_to_next_round, or make
-            # sure that transfer_parameter
+            # sure that transfer_parameter doesn't create new parameters every time.
             for g in self.groups.all():
                 g.initialize_data_parameters()
         else:

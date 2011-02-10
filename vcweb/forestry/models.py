@@ -89,8 +89,8 @@ def round_teardown(experiment, **kwargs):
     ''' only calculate new resource levels for practice or regular rounds '''
     resource_level_parameter = get_resource_level_parameter()
     for group in experiment.groups.all():
-        total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
         if has_resource_level(group):
+            total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
             if get_resource_level(group) > 0 and total_harvest > 0:
                 group.subtract(resource_level_parameter, total_harvest)
             if experiment.has_next_round:

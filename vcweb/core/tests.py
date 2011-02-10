@@ -243,12 +243,13 @@ class GroupTest(BaseVcwebTest):
                 self.failUnlessEqual(e.current_round_data.group_data_values.count(), 2)
                 g.initialize_data_parameters()
         # first chat round (practice)
+        e.end_round()
         e.advance_to_next_round()
         e.start_round()
         for g in e.groups.all():
             g.initialize_data_parameters()
             self.failUnlessEqual(e.current_round_data.group_data_values.count(), 2)
-            self.failUnlessEqual(e.current_round_data.participant_data_values.count(), 2)
+            self.failUnlessEqual(e.current_round_data.participant_data_values.count(), 0)
         # second practice round
 
 
