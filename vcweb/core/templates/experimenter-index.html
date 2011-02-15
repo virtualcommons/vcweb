@@ -14,20 +14,21 @@
 </div>
 <div class='ui-state-highlight ui-corner-all'>
     <span class='ui-icon ui-icon-info'></span>
-    Welcome to the experimenter interface.  You are logged in as {{request.user.experimenter}}.
+    Welcome to the experimenter dashboard.  You are logged in as {{request.user.experimenter}}.
 </div>
     {% comment%}
     FIXME: replace with horizontal ul+li iconified nav menu
     {% endcomment %}
 
-<h3>Your experiments</h3>
+<h2>Your experiments</h3>
 <div id="post">
     {% for e in experiments %}
     <div class='notice ui-corner-all'>
         {{e}} {{e.status_line}}
         <br/>
         <ul class='horizontal' id='horizontal'>
-            <li><a href='{{e.monitor_url}}'><img src='/static/images/famfamfam/zoom.png' alt=''/> monitor</a></li>
+            <li><a href='{{e.monitor_url}}'><img src='/static/images/famfamfam/zoom.png' alt='General experiment monitoring interface'/> monitor</a></li>
+            <li><a href='{{e.management_url}}'<img src='/static/images/famfamfam/application_go.png' alt='Custom management interface'/> manage</a></li>
             <li><a class='confirm-experiment-action' style='background-image:none;' href='{{e.stop_url}}'><img src='/static/images/famfamfam/stop.png' alt=''/> stop</a></li>
         </ul>
     </div>

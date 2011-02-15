@@ -50,8 +50,7 @@ def setup_virtualenv():
 def clear_rabbitmq_db():
     from fabric.context_managers import settings
     with settings(warn_only=True):
-        for cmd in ['stop_app', 'reset', 'start_app']:
-            sudo("rabbitmqctl %s" % cmd)
+        sudo_chain(["rabbitmqctl %s" % cmd for cmd in ['stop_app', 'reset', 'start_app']])
 
 def setup_rabbitmq():
     from vcweb import settings
@@ -75,9 +74,8 @@ def pip():
     ''' looks for requirements.pip in the django project directory '''
     _virtualenv('pip install -E %(virtualenv_path)s -r %(project_path)s/requirements.pip' % env)
     with cd(env.virtualenv_path):
-        sudo('chgrp -R %(deploy_group)s .' % env, pty=True)
-        sudo('chmod -R g+rw .' % env, pty=True)
-
+        sudo_chain('chgrp -R %(deploy_group)s .' % env,
+                'chmod -R g+rw' % env, pty=True)
 
 def host_type():
     run('uname -a')

@@ -304,5 +304,25 @@
             "email": "tu10@example.com", 
             "date_joined": "2010-09-07 14:46:52"
         }
+    },
+    {
+        "pk": 12, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "test_experimenter", 
+            "first_name": "Test", 
+            "last_name": "Experimenter", 
+            "is_active": true, 
+            "is_superuser": false, 
+            "is_staff": false, 
+            "last_login": "2011-02-14 13:47:13", 
+            "groups": [
+                1
+            ], 
+            "user_permissions": [], 
+            "password": "sha1$2a896$c36d9b763c1fa61ae55754b4922d74848e82ec74", 
+            "email": "testexper@example.com", 
+            "date_joined": "2011-02-14 13:43:23"
+        }
     }
 ]

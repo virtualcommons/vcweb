@@ -5,7 +5,7 @@ from django.db.models.aggregates import Max
 from string import Template
 from vcweb.core import signals
 import base64
-import datetime
+from  datetime import datetime
 import hashlib
 import logging
 import random
@@ -371,19 +371,23 @@ class Experiment(models.Model):
         self.status = 'ROUND_IN_PROGRESS'
         ''' get_or_create round_data for this round '''
         self.current_round_data
+        self.current_round_elapsed_time = 0
+        self.current_round_start_time = datetime.now()
         self.save()
+        self.activity_log.create(log_message='Starting round.', round_configuration=self.current_round)
         # FIXME: would prefer using self.namespace as a default but django's
         # managed unicode strings don't work as senders
         sender = self.experiment_metadata.pk if sender is None else sender
         #sender = self.namespace.encode('utf-8')
         # notify registered game handlers
         logger.debug("About to send round started signal with sender %s" % sender)
-        return signals.round_started.send(sender, experiment=self, time=datetime.datetime.now(), round_configuration=self.current_round)
+        return signals.round_started.send(sender, experiment=self, time=datetime.now(), round_configuration=self.current_round)
 
     def end_round(self, sender=None):
         self.status = 'ACTIVE'
         self.current_round_elapsed_time = max(self.current_round_elapsed_time, self.current_round.duration)
         self.save()
+        self.activity_log.create(log_message='Ending round with elapsed time %s.' % self.current_round_elapsed_time, round_configuration=self.current_round)
         sender = self.experiment_metadata.pk if sender is None else sender
         #sender = self.namespace.encode('utf-8')
         logger.debug("about to send round ended signal with sender %s" % sender)
@@ -1078,8 +1082,15 @@ class ActivityLog(models.Model):
     log_message = models.TextField()
     date_created = models.DateTimeField(auto_now_add=True)
 
+    def __unicode__(self):
+        return u"%s: %s" % (self.date_created, self.log_message)
+
 class GroupActivityLog(ActivityLog):
     group = models.ForeignKey(Group, related_name='activity_log')
+    round_configuration = models.ForeignKey(RoundConfiguration)
+
+class ExperimentActivityLog(ActivityLog):
+    experiment = models.ForeignKey(Experiment, related_name='activity_log')
     round_configuration = models.ForeignKey(RoundConfiguration)
 
 def is_experimenter(user, experimenter=None):

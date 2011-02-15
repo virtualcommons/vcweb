@@ -3,6 +3,8 @@
 {% block head %}
 {{ block.super }}
 <script type='text/javascript'>
+    var round_data_count = {{ experiment.round_data.count }};
+
     function update(json) {
         if (json == Dajaxice.EXCEPTION) {
             console.debug("dajaxice error" + json);
@@ -11,6 +13,7 @@
             $('#statusDiv').html(json.status);
             $('#experimentData').html(json.experimentData);
             registerExperimentConfirmation();
+            round_data_count = json.round_data_count;
         }
     }
     $(function() {
@@ -35,10 +38,12 @@
         });
         $('#statusSpinner').hide('fast');
         $('#statusDiv').show('fast');
-        $('#experimentData').accordion({
+        if (round_data_count > 0) {
+            $('#experimentData').accordion({
                 collapsible: true, active:
                 {{experiment.round_data.count|add:"-1"}}
-                });
+            });
+        }
         /*
         $('#statusDiv').ajaxStart(function() {
             }).ajaxComplete(function() {
@@ -147,7 +152,7 @@ VCWEB: Monitoring {{ experiment.status_line }}
         {% endif %}
     </div>
     {% empty %}
-    <div class='alert ui-corner-all'><span class='ui-icon ui-icon-alert'></span>Round data is not yet available.</div>
+    <div class='alert ui-state-highlight ui-corner-all'><span class='ui-icon ui-icon-alert'></span>Round data is not yet available.</div>
     {% endfor %}
     {% endblock data %}
 </div>

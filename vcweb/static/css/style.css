@@ -203,7 +203,7 @@ ul.horizontal {
 }
 
 #navmenu {
-    background: #333;
+    background: #4A3226;
     float: left;
     list-style: none;
     margin: 0;
@@ -217,7 +217,7 @@ ul.horizontal {
     padding: 0;
 }
 #navmenu a {
-    background: #333 url("/static/images/separator.gif") bottom right no-repeat;
+    background: #4A3226 url("/static/images/separator.gif") bottom right no-repeat;
     color: #ccc;
     display: block;
     float: left;
