@@ -4,17 +4,17 @@ from fabric.contrib import django
 
 import os, sys
 
+# needed to push vcweb.settings onto the path.
 sys.path.append(os.path.abspath('..'))
 
-""" Default Configuration """
-''' env defaults '''
+# default env configuration
 env.python = 'python2.6'
 env.project_name = 'vcweb'
 env.deploy_user = 'apache'
 env.deploy_group = 'commons'
 env.virtualenv_path = '/opt/virtualenvs/%(project_name)s' % env
 env.deploy_path = '/opt/webapps/virtualcommons/'
-''' default to current working directory '''
+# default to current working directory 
 env.project_path = os.path.dirname(__file__)
 env.hosts = ['localhost']
 env.hg_url = 'http://virtualcommons.hg.sourceforge.net:8000/hgroot/virtualcommons/virtualcommons'
@@ -22,13 +22,12 @@ env.apache = 'httpd'
 env.applist = ['core', 'forestry']
 env.apps = ' '.join(env.applist)
 
-''' django integration '''
+# django integration for access to settings, etc.
 django.project(env.project_name)
 
-
 """
-currently only works for sqlite3 development database.  Need to do it by hand with postgres a
-few times to figure out what to automate.
+this currently only works for sqlite3 development database.  do it by hand with
+postgres a few times to figure out what to automate, probably with south?
 """
 syncdb_commands = ['(test -f vcweb.db && rm -f vcweb.db) || true',
         '%(python)s manage.py syncdb --noinput' % env,
@@ -74,8 +73,7 @@ def pip():
     ''' looks for requirements.pip in the django project directory '''
     _virtualenv('pip install -E %(virtualenv_path)s -r %(project_path)s/requirements.pip' % env)
     with cd(env.virtualenv_path):
-        sudo_chain('chgrp -R %(deploy_group)s .' % env,
-                'chmod -R g+rw' % env, pty=True)
+        sudo_chain('chgrp -R %(deploy_group)s .' % env, 'chmod -R g+rw' % env, pty=True)
 
 def host_type():
     run('uname -a')
@@ -119,9 +117,10 @@ def loc():
 def setup():
     setup_virtualenv()
     sudo('hg clone %(hg_url)s %(deploy_path)s' % env, pty=True, user=env.deploy_user)
-    sudo('chown -R %(deploy_user)s:%(deploy_group)s %(deploy_path)s' % env, pty=True)
-    sudo('chmod -R ug+rw %(deploy_path)s' % env, pty=True)
-    sudo('find %(deploy_path)s -type d -exec chmod ug+x {} \;' % env, pty=True)
+    sudo_chain('chown -R %(deploy_user)s:%(deploy_group)s %(deploy_path)s' % env,  
+            'chmod -R ug+rw %(deploy_path)s' % env, 
+            'find %(deploy_path)s -type d -exec chmod ug+x {} \;' % env,
+            pty=True)
     pip()
 
 def _restart_command():
@@ -142,8 +141,7 @@ def deploy():
             sudo('hg pull && hg up', user=env.deploy_user, pty=True)
             if confirm("syncdb?"):
                 syncdb()
-            sudo_chain(
-                    'chmod -R ug+rw .',
+            sudo_chain('chmod -R ug+rw .',
                     'find . -type d -exec chmod ug+x {} \;',
                     'chown -R %(deploy_user)s:%(deploy_group)s .' % env,
                     _restart_command(),
