@@ -1,5 +1,6 @@
 from vcweb.core.models import ExperimentMetadata, Parameter
 from vcweb.core import signals
+from celery.decorators import task
 import logging
 logger = logging.getLogger(__name__)
 
@@ -84,15 +85,22 @@ def round_setup(experiment, **kwargs):
             harvest_decision, created = current_round_data.participant_data_values.get_or_create(participant=p, parameter=harvest_decision_parameter)
             logger.debug("%s harvest decision %s" % ("created" if created else "retrieved", harvest_decision))
 
+@task
+def stop_round_task():
+    pass
+
 def round_teardown(experiment, **kwargs):
     logger.debug("forestry: round_teardown for %s" % experiment)
     ''' only calculate new resource levels for practice or regular rounds '''
     resource_level_parameter = get_resource_level_parameter()
+    current_round_configuration = experiment.current_round
     for group in experiment.groups.all():
         if has_resource_level(group):
-            total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
-            if get_resource_level(group) > 0 and total_harvest > 0:
-                group.subtract(resource_level_parameter, total_harvest)
+            if current_round_configuration.has_data_parameters:
+                total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
+                if get_resource_level(group) > 0 and total_harvest > 0:
+                    group.subtract(resource_level_parameter, total_harvest)
+            ''' transfer resource levels across chat and quiz rounds if they exist '''
             if experiment.has_next_round:
                 ''' set group round data resource_level for each group '''
                 logger.debug("Transferring resource level %s to next round" % get_resource_level(group))

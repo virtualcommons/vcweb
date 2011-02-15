@@ -96,6 +96,11 @@ def experiment_controller(request, experiment_id, action=''):
             logger.warning("tried to invoke nonexistent action %s on experiment %s", action, experiment.status_line)
         status_block = _render_experiment_monitor_block('status', experiment, request)
         data_block = _render_experiment_monitor_block('data', experiment, request)
-        return simplejson.dumps({'status': status_block, 'experimentData': data_block, 'active_round_number': experiment.current_round.sequence_number, 'round_data_count': experiment.round_data.count() })
+        return simplejson.dumps({
+            'status': status_block,
+            'experimentData': data_block,
+            'active_round_number': experiment.current_round.sequence_number,
+            'round_data_count': experiment.round_data.count(),
+            })
     except Experiment.DoesNotExist, error:
         return HttpResponse(error)

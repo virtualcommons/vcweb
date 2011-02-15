@@ -359,9 +359,7 @@ class Experiment(models.Model):
             self.current_round_elapsed_time = 0
             self.current_round_sequence_number += 1
             self.save()
-            # initialize group parameters if necessary 
-            # FIXME: need to reconcile this with transfer_to_next_round, or make
-            # sure that transfer_parameter doesn't create new parameters every time.
+            # initialize group parameters if necessary
             for g in self.groups.all():
                 g.initialize_data_parameters()
         else:
@@ -497,27 +495,31 @@ class RoundConfiguration(models.Model):
 
     @property
     def is_debriefing_round(self):
-        return self.round_type == 'DEBRIEFING'
+        return self.round_type == RoundConfiguration.DEBRIEFING
 
     @property
     def is_chat_round(self):
-        return self.round_type == 'CHAT'
+        return self.round_type == RoundConfiguration.CHAT
 
     @property
     def is_instructions_round(self):
-        return self.round_type == 'INSTRUCTIONS'
+        return self.round_type == RoundConfiguration.INSTRUCTIONS
 
     @property
     def is_quiz_round(self):
-        return self.round_type == 'QUIZ'
+        return self.round_type == RoundConfiguration.QUIZ
 
     @property
     def is_practice_round(self):
-        return self.round_type == 'PRACTICE'
+        return self.round_type == RoundConfiguration.PRACTICE
+
+    @property
+    def is_regular_round(self):
+        return self.round_type == RoundConfiguration.REGULAR
 
     @property
     def has_data_parameters(self):
-        return self.round_type in ('PRACTICE', 'REGULAR')
+        return self.round_type in (RoundConfiguration.PRACTICE, RoundConfiguration.REGULAR)
 
     def get_parameter(self, name):
         parameter = Parameter.objects.get(name=name, scope=Parameter.ROUND_SCOPE)
@@ -546,7 +548,13 @@ class RoundConfiguration(models.Model):
         return Template(template_string).substitute(kwargs, round_number=self.display_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return u"Round %d (%d)" % (self.sequence_number, self.round_number)
+        return u"Round %d, sequence: %d" % (self.round_number, self.sequence_number)
+
+    @property
+    def display_label(self):
+        if self.is_regular_round:
+            return u"Round %d" % self.round_number
+        return u"%s (%s)" % (self.get_round_type_display(), self.round_number)
 
     class Meta:
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]
@@ -724,12 +732,12 @@ class Group(models.Model):
     def initialize_data_parameters(self):
         if self.current_round.has_data_parameters:
             round_data = self.current_round_data
-            if not round_data.group_data_values.filter(group=self).count():
+            if round_data.group_data_values.filter(group=self).count() == 0:
                 logger.debug("no group data values for the current round %s, creating new ones." % round_data)
+                self.activity_log.create(round_configuration=self.current_round,
+                        log_message="Initializing data parameters for group %s in round %s" % (self, round_data))
                 for group_data_parameter in self.data_parameters:
-                    # create a fresh GroupRoundDataValue for each data parameter
-                    logger.debug("Creating parameter %s for group %s" % (group_data_parameter, self))
-                    self.data_values.get_or_create(round_data=round_data, parameter=group_data_parameter)
+                    self.data_values.create(round_data=round_data, parameter=group_data_parameter)
 
 
     '''
@@ -928,7 +936,7 @@ class Participant(CommonsUser):
 
 
     def set_data_value(self, experiment=None, parameter=None, value=None):
-        if experiment and parameter and value:
+        if experiment and parameter and value is not None:
             current_round_data = experiment.current_round_data
             # FIXME: can we simplify?
             participant_data_value, created = current_round_data.participant_data_values.get_or_create(parameter=parameter, participant=self)

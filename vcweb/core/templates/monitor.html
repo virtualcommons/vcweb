@@ -22,7 +22,7 @@
             return false;
         });
         $('.confirm-experiment-action').confirm({
-                timeout: 3000,
+                timeout: 5000,
                 dialogShow: 'fadeIn',
                 dialogSpeed: 'fast',
                 buttons: {
@@ -101,15 +101,15 @@ VCWEB: Monitoring {{ experiment.status_line }}
         <h4>Group data</h4>
         <table>
             <thead>
-                <tr><th>Group</th><th>Parameter Name</th><th>Value</th><th>Type</th></tr>
+                <tr><th>Group</th><th>Parameter Name</th><th>Value</th><th>Members</th></tr>
             </thead>
             <tbody>
                 {% for group_data_value in round_data.group_data_values.all %}
                 <tr>
-                    <td>{{ group_data_value.group }} ({{ group_data_value.round_data.round_configuration}})</td>
+                    <td>{{ group_data_value.group }}</td>
                     <td>{{ group_data_value.parameter.label}}</td>
                     <td>{{ group_data_value.value}}</td>
-                    <td>{{ group_data_value.parameter.type}}</td>
+                    <td><font size="-1">{{ group_data_value.group.participants.all|join:",<br/> "}}</font></td>
                 </tr>
                 {% endfor %}
             </tbody>
