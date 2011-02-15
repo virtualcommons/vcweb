@@ -885,7 +885,7 @@ class RoundData(models.Model):
     elapsed_time = models.PositiveIntegerField(default=0)
 
     def __unicode__(self):
-        return u"Data for %s" % self.round_configuration
+        return u"Data for Round %s (%s)" % (self.round_configuration.sequence_number, self.round_configuration.get_round_type_display())
 
     class Meta:
         ordering = [ 'round_configuration' ]

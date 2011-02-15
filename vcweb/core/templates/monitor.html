@@ -3,23 +3,18 @@
 {% block head %}
 {{ block.super }}
 <script type='text/javascript'>
-    var round_data_count = {{ experiment.round_data.count }};
-
     function update(json) {
         if (json == Dajaxice.EXCEPTION) {
             console.debug("dajaxice error" + json);
         }
         else {
             $('#statusDiv').html(json.status);
+            $('#experimentData').accordion("destroy");
             $('#experimentData').html(json.experimentData);
-            registerExperimentConfirmation();
-            round_data_count = json.round_data_count;
+            registerCallbacks(json.round_data_count, json.active_round_number);
         }
     }
-    $(function() {
-        registerExperimentConfirmation();
-    });
-    function registerExperimentConfirmation() {
+    function registerCallbacks(round_data_count, active_round_number) {
         $('.confirm-experiment-action').click(function() {
             Dajaxice.vcweb.core.experiment_controller(update, {'experiment_id': {{experiment_id}}, 'action':this.name});
             $('#statusDiv').hide('fast');
@@ -40,19 +35,15 @@
         $('#statusDiv').show('fast');
         if (round_data_count > 0) {
             $('#experimentData').accordion({
-                collapsible: true, active:
-                {{experiment.round_data.count|add:"-1"}}
+                collapsible: true,
+                active: active_round_number - 1,
+                autoHeight: false
             });
         }
-        /*
-        $('#statusDiv').ajaxStart(function() {
-            }).ajaxComplete(function() {
-                alert("ajax completed");
-                $('#statusDiv').show();
-                $('#statusSpinner').show();
-                });
-                */
     }
+    $(function() {
+            registerCallbacks({{ experiment.round_data.count }}, {{ experiment.current_round.sequence_number }});
+    });
 
 </script>
 {% endblock %}
@@ -106,7 +97,6 @@ VCWEB: Monitoring {{ experiment.status_line }}
     {% for round_data in experiment.round_data.all %}
     <h3><a href='#'>{{ round_data }}</a></h3>
     <div id='round_data_{{forloop.counter}}'>
-        {% comment %} group data values {% endcomment %}
         {% if round_data.group_data_values.count > 0 %}
         <h4>Group data</h4>
         <table>
