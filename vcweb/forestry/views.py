@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
@@ -35,9 +36,11 @@ def participant_index(request):
     participant = request.user.participant
     experiment_dict = {}
     for experiment in participant.experiments.filter(experiment_metadata=get_forestry_experiment_metadata()):
-        if not experiment.status in experiment_dict:
-            experiment_dict[experiment.status] = list()
-        experiment_dict[experiment.status].append(experiment)
+        status = experiment.get_status_display()
+        logger.debug("status is %s" % status)
+        if not status in experiment_dict:
+            experiment_dict[status] = list()
+        experiment_dict[status].append(experiment)
 
     return render_to_response('forestry/participant-index.html', locals(), context_instance=RequestContext(request))
 
@@ -90,7 +93,11 @@ def participate(request, experiment_id=None):
                 logger.debug("resource level is: %s" % resource_level)
                 max_harvest_decision = get_max_harvest_decision(resource_level.value)
                 logger.debug("max harvest decision: %s" % max_harvest_decision)
-                num_display_trees = range(resource_level.value / 10)
+                resource_width = (resource_level.value / 10) * 30
+            else:
+                messages.info(request, "The next round has not started yet.  Please wait until the experimenter starts the round.")
+                return redirect('forestry:wait', experiment_id=experiment.pk)
+
 
         return render_to_response(experiment.current_round_template,
                 locals(),

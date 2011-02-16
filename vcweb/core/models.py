@@ -236,7 +236,7 @@ class Experiment(models.Model):
 
     @property
     def channel_name(self):
-        return "%s.%s" % (self.namespace, self.id)
+        return "%s.%s" % (self.namespace, self.pk)
 
     @property
     def participant_url(self):
@@ -973,6 +973,7 @@ class ParticipantExperimentRelationship(models.Model):
     experiment = models.ForeignKey(Experiment, related_name='participant_relationships')
     date_created = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User)
+    last_completed_round_sequence_number = models.PositiveIntegerField(default=0)
 
     def __init__(self, *args, **kwargs):
         super(ParticipantExperimentRelationship, self).__init__(*args, **kwargs)
@@ -983,7 +984,7 @@ class ParticipantExperimentRelationship(models.Model):
         """ set participant_identifier if it hasn't been set already.  """
         if not self.participant_identifier:
             sha1 = hashlib.sha1()
-            sha1.update("%s%i%s" % (self.participant.user.email, self.experiment.id, self.date_created))
+            sha1.update("%s%i%s" % (self.participant.user.email, self.experiment.pk, self.date_created))
             self.participant_identifier = base64.urlsafe_b64encode(sha1.digest())
             self.sequential_participant_identifier = ParticipantExperimentRelationship.objects.filter(experiment=self.experiment).count() + 1
         return self.participant_identifier

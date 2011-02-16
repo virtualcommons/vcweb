@@ -3,8 +3,15 @@
 {{ block.super }}
 
 <script type="text/javascript">
-$(function() {
-        $("#forestryForm").validate({ 
+    function range(begin, end){
+        var array = []
+        for (var i = begin; i <= end; ++i) {
+            array.push(i);
+        }
+        return array;
+    }
+    $(function() {
+        $("#forestryForm").validate({
                 rules: {
                     harvest_decision: {
                         required: true,
@@ -22,7 +29,7 @@ $(function() {
             this.select();
         });
         $('#harvestDecisionId').focus();
-});
+    });
 </script>
 {% endblock %}
 {% block title %}
@@ -31,25 +38,21 @@ Participating in {{experiment.status_line}}
 
 {% block content %}
 <h3>Forestry round number {{ experiment.current_round.round_number }}</h3>
-<div class='forestry-resource'>
-    {% comment %}
-    FIXME: naive way to show 10 trees.  Do image manip on the server side or enerate
-    10-trees, 9-trees, 8-trees, etc., files?
-    {% endcomment %}
-    {% for i in num_display_trees %}
-    <img src='/static/images/forestry/pine-tree.jpg' alt='Each tree image corresponds to ten trees in your forest.' />
-    {% endfor %}
+<div style="background-image: url('/static/images/forestry/plain-tree-no-border.gif'); background-repeat: repeat-x; width:{{resource_width}}px; height: 35px;">
+    &nbsp;
 </div>
 <div class='ui-state-highlight ui-corner-all'>
     <span class='ui-icon ui-icon-info'></span>
     The resource size is <b>{{ resource_level.value }}</b>. 
+    <span class='small-font'>(each tree image represents 10 trees)</span>
 
 </div>
 {% if max_harvest_decision > 0 %}
 <form id='forestryForm' action='' method='post'>
     <div class='field'>
-        <label for='harvestDecisionId'>How many trees will you harvest this round? <br/><small>(<b>Choose a number between 0 and {{ max_harvest_decision }})</small></b>:</label>
-        <input id='harvestDecisionId' type="text" name='harvest_decision' class='required digits upToTwoDigits' />
+        <br/>
+        <label for='harvestDecisionId'>How many trees will you harvest this round? <br/><small><b>Choose a number between 0 and {{ max_harvest_decision }}</small></b>:</label>
+        <input id='harvestDecisionId' type="text" name='harvest_decision' class='required digits two-digits' maxlength='1'/>
     </div>
     <div class='field'>
         <input type='submit' value='Submit' />

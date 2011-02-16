@@ -1,12 +1,4 @@
-'''
-Core Forms
-
-@author: alllee
-'''
 from django import forms
-
-#from django.forms import ModelForm
-#from vcweb.core.models import Experimenter
 
 REQUIRED_ATTRIBUTES = { 'class' : 'required' }
 

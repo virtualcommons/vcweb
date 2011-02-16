@@ -49,9 +49,7 @@ label.error {
     margin-left: 0.3em;
 }
 
-
-
-input.upToTwoDigits {
+input.two-digits {
     width: 2em;
     text-align: right;
 }
