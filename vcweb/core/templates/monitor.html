@@ -109,7 +109,7 @@ VCWEB: Monitoring {{ experiment.status_line }}
                     <td>{{ group_data_value.group }}</td>
                     <td>{{ group_data_value.parameter.label}}</td>
                     <td>{{ group_data_value.value}}</td>
-                    <td><font size="-1">{{ group_data_value.group.participants.all|join:",<br/> "}}</font></td>
+                    <td class='small-font'>{{ group_data_value.group.participants.all|join:"<br/> "}}</td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -1,3 +1,8 @@
+body {
+    font-family: /*"Lucida Grande", "Trebuchet MS",*/ Arial, Helvetica, Tahoma, Verdana, sans-serif;
+    font-size: 1.1em;
+
+}
 a.external {
     background: url(/static/images/external.png) center right no-repeat;
     padding-right: 13px;
@@ -109,6 +114,10 @@ li.warning {
     background-image: url('/static/images/info.png')
 }
 
+.small-font {
+    font-size: 0.8em;
+}
+
 fieldset.small {
     font: 0.8em "Helvetica Neue", helvetica, arial, sans-serif;
     color: #666;
@@ -198,7 +207,7 @@ ul.horizontal {
 
 #horizontal li {
     float: left;
-    margin: 0;
+    margin: 6px 0px 0px 0px;
     padding: 0;
 }
 
