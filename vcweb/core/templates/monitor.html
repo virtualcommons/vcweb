@@ -49,12 +49,13 @@
 {% endblock %}
 
 {% block title %}
-VCWEB: Monitoring {{ experiment.status_line }}
+{{ experiment.status_line }}
 {% endblock %}
 
 {% block page %}
 {{block.super}}
-<h3>{{experiment}} (id: {{ experiment.pk }})</h3>
+<h3>{{experiment}}</h3>
+<p>You are logged in as {{request.user.experimenter}}.</p>
 <div class='experiment-dashboard'>
     {% comment %}
     FIXME: Improve this so that we can just inject a new round_configuration
@@ -66,7 +67,7 @@ VCWEB: Monitoring {{ experiment.status_line }}
     <div id='statusDiv'>
         {% block status %}
         <fieldset class='small ui-corner-all'>
-            <legend>Actions</legend>
+            <legend>round status</legend>
             <ul id='actions' class='actions'>
                 {% if experiment.is_active %}
                 {% if experiment.is_round_in_progress %}
@@ -79,9 +80,6 @@ VCWEB: Monitoring {{ experiment.status_line }}
                 <li><a class='confirm-experiment-action' name='activate' href='activate'><img src='/static/images/famfamfam/cog_go.png' alt='' /> activate</a></li>
                 {% endif %}
             </ul>
-        </fieldset>
-        <fieldset class='small ui-corner-all'>
-            <legend>Round Status</legend>
             <div id='status'>
                 <span id='experiment-round'> {{ experiment.round_status_display }} </span>
                 <br/>Type: <span id='round-type'>{{ experiment.current_round.get_round_type_display }}</span>

@@ -20,8 +20,15 @@
     </head>
 
     <body>
+        <div style='float:left; padding-top: 5px;'>
+            <img src='/static/images/vcweb-logo.png' alt='vcweb logo'/>
+        </div>
         <div id='logo'>
-            <h1>{% block logo %}The Virtual Commons Web Environment{% endblock %}</h1>
+            <h1>
+                {% block logo %}
+                The Virtual Commons Web Environment
+                {% endblock %}
+            </h1>
         </div>
         <div id='header'>
             {% block header %}

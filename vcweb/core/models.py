@@ -424,7 +424,7 @@ class Experiment(models.Model):
 
 
     def __unicode__(self):
-        return u"%s" % self.experiment_metadata.title
+        return u"%s | #%s" % (self.experiment_metadata.title, self.pk)
 
     def ___eq___(self, other):
         return self.pk == other.pk

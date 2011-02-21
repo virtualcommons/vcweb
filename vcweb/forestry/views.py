@@ -72,38 +72,45 @@ def participate(request, experiment_id=None):
     participant = request.user.participant
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
-        if request.method == 'POST':
-            # process harvest decision
-
-            form = HarvestDecisionForm(request.POST)
-            if form.is_valid():
-                harvest_decision = form.cleaned_data['harvest_decision']
-                resource_level = get_resource_level(participant.get_group(experiment))
-                max_harvest_decision = get_max_harvest_decision(resource_level.value)
-                if harvest_decision <= max_harvest_decision:
-                    set_harvest_decision(participant=participant, experiment=experiment, value=harvest_decision)
-                    return redirect('forestry:wait', experiment_id=experiment.pk)
-                else:
-                    raise forms.ValidationError("invalid harvest decision %s > max %s" % (harvest_decision, max_harvest_decision))
-        else:
-            form = HarvestDecisionForm()
-            if experiment.is_data_round_in_progress:
-                participant_group_relationship = participant.get_participant_group_relationship(experiment)
-                resource_level = get_resource_level(participant_group_relationship.group)
-                logger.debug("resource level is: %s" % resource_level)
-                max_harvest_decision = get_max_harvest_decision(resource_level.value)
-                logger.debug("max harvest decision: %s" % max_harvest_decision)
-                resource_width = (resource_level.value / 10) * 30
+        if experiment.is_round_in_progress:
+            if experiment.current_round.has_data_parameters:
+                return play(request, experiment, participant)
             else:
-                messages.info(request, "The next round has not started yet.  Please wait until the experimenter starts the round.")
-                return redirect('forestry:wait', experiment_id=experiment.pk)
-
-
-        return render_to_response(experiment.current_round_template,
-                locals(),
-                context_instance=RequestContext(request))
+                # instructions, chat or quiz round
+                return render_to_response(experiment.current_round_template,
+                        locals(),
+                        context_instance=RequestContext(request))
+        else:
+# round is not currently active, redirect to waiting page.
+            return redirect('forestry:wait', experiment_id=experiment.pk)
     except Experiment.DoesNotExist:
         error_message = "No experiment with id %s" % experiment_id
         logger.warning(error_message)
         messages.warning(request, error_message)
         return redirect('forestry:index')
+
+def play(request, experiment, participant):
+    if request.method == 'POST':
+        # process harvest decision
+        form = HarvestDecisionForm(request.POST)
+        if form.is_valid():
+            harvest_decision = form.cleaned_data['harvest_decision']
+            resource_level = get_resource_level(participant.get_group(experiment))
+            max_harvest_decision = get_max_harvest_decision(resource_level.value)
+            if harvest_decision <= max_harvest_decision:
+                set_harvest_decision(participant=participant, experiment=experiment, value=harvest_decision)
+                return redirect('forestry:wait', experiment_id=experiment.pk)
+            else:
+                raise forms.ValidationError("invalid harvest decision %s > max %s" % (harvest_decision, max_harvest_decision))
+    else:
+        form = HarvestDecisionForm()
+        group = participant.groups.get(experiment=experiment)
+        resource_level = get_resource_level(group)
+        logger.debug("resource level is: %s" % resource_level)
+        max_harvest_decision = get_max_harvest_decision(resource_level.value)
+        logger.debug("max harvest decision: %s" % max_harvest_decision)
+        resource_width = (resource_level.value / 10) * 30
+    return render_to_response(experiment.current_round_template,
+            locals(),
+            context_instance=RequestContext(request))
+
