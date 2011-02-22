@@ -55,7 +55,6 @@ img.right {
 /* Menu */
 #menu {
     float: left;
-    width: 940px;
     height: 36px;
     background: url(/static/images/guarantee/img02.gif) no-repeat left top;
 }
