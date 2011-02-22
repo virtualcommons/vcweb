@@ -252,6 +252,5 @@ ul.horizontal {
 #chat {
     width: 800px;
     height: 20em;
-    overflow:auto;
-    border: 1px dashed black;
+    overflow: auto;
 }

@@ -94,8 +94,11 @@ class ChatHandler(SocketIOHandler):
         if event.type == 'connect':
             participant_group_rel = ParticipantGroupRelationship.objects.get(participant__pk=event.participant_id,
                     group__pk=event.group_id)
-            event.message = "Participant %s joined chat group %s." % (participant_group_rel.participant, participant_group_rel.group)
+            event.message = "<div>Participant %s joined group %s chat.</div>" % (participant_group_rel.participant, participant_group_rel.group)
             session_manager.add(self.session, participant_group_rel)
+            for participant_group_pk, session in session_manager.sessions(participant_group_rel.group):
+                session['output_handle'].send(event.message)
+            return
         elif event.type == 'experimenter':
             experiment = Experiment.objects.get(pk=event.experiment_id)
             # TODO: should add a second handler just for experimenters with 
@@ -109,15 +112,13 @@ class ChatHandler(SocketIOHandler):
         else:
             # check session id..
             participant_group_rel = session_manager.get_participant(self.session)
-
-        chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_rel,
-                                   message=event.message,
-                                   round_configuration=participant_group_rel.group.current_round,
-                                   experiment=participant_group_rel.group.experiment
-                                   )
-
-        for participant_group_pk, session in session_manager.sessions(participant_group_rel.group):
-            session['output_handle'].send(str(chat_message))
+            chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_rel,
+                    message=event.message,
+                    round_configuration=participant_group_rel.group.current_round,
+                    experiment=participant_group_rel.group.experiment
+                    )
+            for participant_group_pk, session in session_manager.sessions(participant_group_rel.group):
+                session['output_handle'].send(chat_message.as_html)
 
     def on_close(self):
         logger.debug("closing %s" % self)

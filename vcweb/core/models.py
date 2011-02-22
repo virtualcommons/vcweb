@@ -1057,6 +1057,13 @@ class ChatMessage(models.Model):
         participant_number = self.participant_group_relationship.participant_number
         return u"{0}: {1}".format(participant_number, self.message)
 
+    @property
+    def as_html(self):
+        return "<a name='%s'></a>%s" % (self.pk, self.__unicode__())
+
+    class Meta:
+        ordering = ['date_created', 'round_configuration']
+
 """
 Stores participant-specific data value and associates a Participant, Experiment
 (from DataValue), the round in which the data value was associated.

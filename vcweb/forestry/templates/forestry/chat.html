@@ -6,11 +6,10 @@
     {% include "includes/socket.io.html" %}
     <script type="text/javascript">
         $(function() {
-                var s = connect("{{ SOCKET_IO_HOST }}", 8888);
+                var s = connect(window.location.hostname, 8888);
                 s.on('message', function(data) {
-                    $("#chat").append("<div>" + data + "</div>");
-                    });
-
+                    $("#chat").append($("<div/>").append(data))
+                });
                 //send the message when submit is clicked
                 $('#chatform').submit(function (evt) {
                     var line = $('#chatText').val()
@@ -18,9 +17,9 @@
                     console.log("sending line: " + line);
                     s.send(createMessageEvent(line));
                     return false;
-                    });
-                $('#chatText').focus();
                 });
+                $('#chatText').focus();
+        });
     </script>
 {% endblock %}
 
@@ -30,7 +29,17 @@ Forestry Chat Round
 
 {% block content %}
     <h3>Chat</h3>
-    <div id="chat" >
+    <div id="chat" class='notice ui-corner-all'>
+        {% for chat_message in chat_messages %}
+        {% autoescape off %}
+        <div>
+            {{ chat_message.date_created|date:"h:s | " }}
+            <span class='ui-state-highlight ui-icon-info'>
+                {{ chat_message.as_html }}
+            </span>
+        </div>
+        {% endautoescape %}
+        {% endfor %}
     </div>
     <form id="chatform">
         <input id='chatText' type="text" />
