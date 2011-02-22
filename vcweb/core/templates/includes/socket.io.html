@@ -6,22 +6,23 @@
 <script type="text/javascript">
 function connect(host, port, resource) {
    if ( !host ) {
-      console.debug("Tried to connect to invalid host, connecting to vcweb.asu.edu instead.");
-      host = "vcweb.asu.edu";
+       console.log("Tried to connect to invalid host, connecting to vcweb.asu.edu instead.");
+       host = "vcweb.asu.edu";
    }
    if ( !port ) {
-      console.debug("using default port 8888");
-      port = 8888;
+       console.log("using default port 8888");
+       port = 8888;
    }
    var s = new io.Socket(host, {"port": port,  "resource": resource});
    s.connect();
    s.on("connect", function() {
-         s.send(createConnectionEvent());
+           console.log("Connecting.");
+           s.send(createConnectionEvent());
    });
    s.on('disconnect', function(data) {
-         console.debug("received disconnect, reconnecting.");
-         s.connect();
-         s.send(createReconnectionEvent());
+           console.log("received disconnect, reconnecting.");
+           s.connect();
+           s.send(createReconnectionEvent());
    });
    return s;
 }

@@ -7,7 +7,7 @@
     <script type="text/javascript">
         $(function() {
                 var chatDiv = document.getElementById('chat');
-                var s = connect(window.location.hostname, 8888, 'chat');
+                var s = connect(window.location.hostname, 8888, 'chat/{{participant_group_relationship.pk}}');
                 s.on('message', function(data) {
                     $("#chat").append($("<div class='ui-state-highlight' />").append(data))
                     // scroll to bottom
@@ -44,7 +44,7 @@ Forestry Chat Round
     </div>
     <form id="chatform">
         <input id='chatText' type="text" />
-        <input type="submit" />
+        <input type="submit" value='Send' />
     </form>
 {% endblock %}
 

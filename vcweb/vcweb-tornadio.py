@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import tornado.web
-from tornad_io import SocketIOHandler
-from tornad_io import SocketIOServer
+import tornadio
+from tornadio import server
 
 import os
 import sys
@@ -28,21 +28,21 @@ class SessionManager:
     def get_participant(self, session):
         logger.debug("trying to retrieve participant group relationship for session id %s" % session)
         logger.debug("maps are %s and %s" % (self.session_id_to_participant, self.pgr_to_session))
-        return ParticipantGroupRelationship.objects.get(pk=self.session_id_to_participant[session.id])
+        return ParticipantGroupRelationship.objects.get(pk=self.session_id_to_participant[session])
 
-    def add(self, session, participant_group_relationship):
+    def add(self, auth_token, session, participant_group_relationship):
         if participant_group_relationship.pk in self.pgr_to_session:
             logger.debug("participant already has a session, removing previous mappings.")
             self.remove(self.pgr_to_session[participant_group_relationship.pk])
 
-        self.session_id_to_participant[session.id] = participant_group_relationship.pk
+        self.session_id_to_participant[session] = participant_group_relationship.pk
         self.pgr_to_session[participant_group_relationship.pk] = session
 
     def remove(self, session):
         try:
-            participant_group_pk = self.session_id_to_participant[session.id]
+            participant_group_pk = self.session_id_to_participant[session]
             del self.pgr_to_session[participant_group_pk]
-            del self.session_id_to_participant[session.id]
+            del self.session_id_to_participant[session]
         except KeyError, k:
             logger.warning( "caught key error %s while trying to remove session %s" % (session, k) )
             pass
@@ -77,73 +77,92 @@ type ChatHandler.session_manager instead of just session_manager...
 '''
 session_manager = SessionManager()
 
-class ChatHandler(SocketIOHandler):
+class ChatHandler(tornadio.SocketConnection):
     def on_open(self, *args, **kwargs):
-        ''' parse args / kwargs for participant session info so we know which group
-        to route this guy to
-        '''
+        try:
+            # FIXME: verify user auth tokens
+            extra = kwargs['extra']
+            logger.debug("extra stuff on self %s is %s" % (self, extra))
+            #(auth_token, dot, participant_group_relationship_id) = extra.partition('.')
+            #logger.debug("auth token: %s, id %s" % (auth_token, participant_group_relationship_id))
+            participant_group_relationship_id = extra
+            participant_group_rel = ParticipantGroupRelationship.objects.get(pk=participant_group_relationship_id)
+            session_manager.add(extra, self, participant_group_rel)
+            group = participant_group_rel.group
+            self.send("<div>Participant %s joined group %s chat.</div>" % (participant_group_rel.participant_number, group))
+            logger.debug("sent stuff to self")
+            for participant_group_pk, session in session_manager.sessions(group):
+                session.send("<div>Participant %s joined group %s chat.</div>" % (participant_group_rel.participant_number, group))
+        except KeyError, e:
+            logger.debug("no participant group relationship id %s" % e)
+            pass
+        except ParticipantGroupRelationship.DoesNotExist, e:
+            logger.debug("no participant group relationship with id %s (%s)" %
+                    (participant_group_relationship_id, e))
+            pass
+        logger.debug("args are: %s" % str(args))
         logger.debug("kwargs are: %s" % str(kwargs))
-        logger.debug("session is %s" % self.session)
 
-    def on_message(self, message):
+    def on_message(self, message, *args, **kwargs):
         ''' incoming JSON message gets converted to a Python dict via simplejson '''
         logger.debug("received message %s from handler %s" % (message, self))
-        logger.debug("handler session is %s" % self.session)
         event = to_event(message)
         if event.type == 'connect':
-            participant_group_rel = ParticipantGroupRelationship.objects.get(participant__pk=event.participant_id,
-                    group__pk=event.group_id)
-            logger.debug("%s joined %s" % (participant_group_rel.participant, participant_group_rel.group))
-            event.message = "<div>Participant %s joined group %s chat.</div>" % (participant_group_rel.participant_number, participant_group_rel.group)
-            session_manager.add(self.session, participant_group_rel)
-            for participant_group_pk, session in session_manager.sessions(participant_group_rel.group):
-                session['output_handle'].send(event.message)
             return
-        elif event.type == 'experimenter':
+        '''
+        if event.type == 'connect':
+            participant_group_rel = ParticipantGroupRelationship.objects.get(participant__pk=event.participant_id, group__pk=event.group_id)
+            group = participant_group_rel.group
+            logger.debug("%s joined %s" % (participant_group_rel.participant, group))
+            event.message = "<div>Participant %s joined group %s chat.</div>" % (participant_group_rel.participant_number, group)
+            session_manager.add(self, participant_group_rel)
+            for participant_group_pk, session in session_manager.sessions(group):
+                session.send(event.message)
+            return
+        '''
+        if event.type == 'experimenter':
             experiment = Experiment.objects.get(pk=event.experiment_id)
-            # TODO: should add a second handler just for experimenters with 
+            # TODO: should add a second handler just for experimenters with
             # auth handling
-            logger.debug("sending message %s to all participants" %
-                  event.message)
+            logger.debug("sending message %s to all participants" % event.message)
             for g in experiment.groups.all():
                for participant_group_pk, session in session_manager.sessions(g):
-                  session['output_handle'].send(event.message)
+                  session.send(event.message)
             return
         else:
             # check session id..
-            participant_group_rel = session_manager.get_participant(self.session)
+            participant_group_rel = session_manager.get_participant(self)
             chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_rel,
                     message=event.message,
                     round_configuration=participant_group_rel.group.current_round,
                     experiment=participant_group_rel.group.experiment
                     )
             for participant_group_pk, session in session_manager.sessions(participant_group_rel.group):
-                logger.debug("sending message %s to participant %s" % (chat_message, participant_group_rel.participant))
-                session['output_handle'].send(chat_message.as_html)
+                session.send(chat_message.as_html)
 
     def on_close(self):
         logger.debug("closing %s" % self)
-        session_manager.remove(self.session)
+        session_manager.remove(self)
 
 def main(argv=None):
     if argv is None:
         argv = sys.argv
     # use the routes classmethod to build the correct resource
-    chatRoute = ChatHandler.routes("chat", extraRE=r'[\w._=]+', extraSep='/')
-    # configure the Tornado application
+    chatRouter = tornadio.get_router(ChatHandler, resource="chat", extra_re=r'\d+', extra_sep='/')
+    #chatRouter = tornadio.get_router(ChatHandler, resource="chat", extra_re=r'[\w._=]+', extra_sep='/')
+    #configure the Tornado application
     # currently only allow one command-line argument, the port to run on.
     port = int(argv[1]) if (len(argv) > 1) else 8888
 
     application = tornado.web.Application(
-            [(r'/', IndexHandler), chatRoute],
-            enabled_protocols=['websocket', 'flashsocket', 'xhr-multipart', 'xhr-polling'],
+            [(r'/', IndexHandler), chatRouter.route(), ],
             flash_policy_port=8043,
             flash_policy_file='/etc/nginx/flashpolicy.xml',
             socket_io_port=port,
             # only needed for standalone testing
             static_path=os.path.join(os.path.dirname(__file__), "static"),
             )
-    return SocketIOServer(application)
+    return server.SocketServer(application)
 
 if __name__ == "__main__":
     sys.exit(main())

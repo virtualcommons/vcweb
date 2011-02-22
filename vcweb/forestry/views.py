@@ -77,18 +77,7 @@ def participate(request, experiment_id=None):
             if current_round.has_data_parameters:
                 return play(request, experiment, participant)
             elif current_round.is_chat_round:
-                participant_group_rel = participant.get_participant_group_relationship(experiment)
-                chat_messages = experiment.chat_messages.filter(participant_group_relationship__group=participant_group_rel.group)
-                from vcweb import settings
-                return render_to_response(experiment.current_round_template, {
-                    'group': participant_group_rel.group,
-                    'participant': participant,
-                    'experiment': experiment,
-                    'SOCKET_IO_HOST': settings.SOCKET_IO_HOST,
-                    'chat_messages': chat_messages,
-
-                    },
-                    context_instance=RequestContext(request))
+                return chat(request, experiment, participant)
             else:
                 # instructions or quiz round
                 return render_to_response(experiment.current_round_template,
@@ -102,6 +91,21 @@ def participate(request, experiment_id=None):
         logger.warning(error_message)
         messages.warning(request, error_message)
         return redirect('forestry:index')
+
+def chat(request, experiment, participant):
+    participant_group_rel = participant.get_participant_group_relationship(experiment)
+    chat_messages = experiment.chat_messages.filter(participant_group_relationship__group=participant_group_rel.group)
+    from vcweb import settings
+    return render_to_response(experiment.current_round_template, {
+        'participant_group_relationship': participant_group_rel,
+        'group': participant_group_rel.group,
+        'participant': participant,
+        'experiment': experiment,
+        'SOCKET_IO_HOST': settings.SOCKET_IO_HOST,
+        'chat_messages': chat_messages,
+        },
+        context_instance=RequestContext(request))
+
 
 def play(request, experiment, participant):
     if request.method == 'POST':

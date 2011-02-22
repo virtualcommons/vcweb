@@ -921,6 +921,7 @@ class Participant(CommonsUser):
     can_receive_invitations = models.BooleanField(default=False)
     groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participants')
     experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participants')
+#    authentication_token = models.CharField(max_length=64, null=True, blank=True)
 
     @property
     def active_experiments(self):
@@ -1088,13 +1089,6 @@ class ParticipantRoundDataValue(DataValue):
 
     class Meta:
         ordering = [ 'round_data', 'participant', 'parameter' ]
-
-class SessionData(models.Model):
-    login_time = models.DateTimeField(auto_now_add=True)
-    logout_time = models.DateTimeField()
-    experimenter = models.ForeignKey(Experimenter, related_name='sessions')
-    participant = models.ForeignKey(Participant, related_name='sessions')
-    group = models.ForeignKey(Group, related_name='sessions')
 
 class ActivityLog(models.Model):
     log_message = models.TextField()

@@ -89,6 +89,9 @@ def test():
 def tornado(ip="149.169.203.115", port=8888):
     local("{python} vcweb-tornado.py {port}".format(python=env.python, **locals()), capture=False)
 
+def tornadio(ip="149.169.203.115", port=8888):
+    local("{python} vcweb-tornadio.py {port}".format(python=env.python, **locals()), capture=False)
+
 def server(ip="149.169.203.115", port=8000):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
 

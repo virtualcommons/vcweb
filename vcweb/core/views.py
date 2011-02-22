@@ -6,8 +6,10 @@ from django.template.context import RequestContext
 from vcweb.core.forms import RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm
 from vcweb.core.models import Participant, Experiment, Institution, is_participant, is_experimenter
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
+import hashlib
+import base64
+from datetime import datetime
 import logging
-
 logger = logging.getLogger(__name__)
 
 """ account registration / login / logout / profile views """
@@ -37,6 +39,9 @@ def login(request):
             else:
                 return_url = request.GET.get('next')
                 auth.login(request, user)
+                sha1 = hashlib.sha1()
+                sha1.update("%s%i%s" % (email, user.pk, datetime.now()))
+                request.session['authentication_token'] = base64.urlsafe_b64encode(sha1.digest())
                 return redirect( return_url if return_url else 'core:dashboard')
     else:
         form = LoginForm()
@@ -44,6 +49,7 @@ def login(request):
 
 def logout(request):
     auth.logout(request)
+    request.session['authentication_token'] = None
     return redirect('home')
 
 def register(request):
@@ -141,7 +147,6 @@ def monitor(request, experiment_id=None):
         logger.warning(error_message)
         messages.warning(request, error_message)
         return redirect('core:dashboard')
-
 
 @experimenter_required
 def experiment_controller(request, experiment_id=None, experiment_action=None):
