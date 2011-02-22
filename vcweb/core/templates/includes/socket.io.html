@@ -13,7 +13,6 @@ function connect(host, port) {
       console.debug("using default port 8888");
       port = 8888;
    }
-   console.debug("connecting to " + host + " on port " + port);
    var s = new io.Socket(host, {"port": port});
    s.connect();
    s.on("connect", function() {

@@ -16,8 +16,6 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
 from vcweb.core.models import ParticipantGroupRelationship, ChatMessage, Experiment
 
-from vcweb.core import queue
-
 '''
 store mappings between beaker session ids and ParticipantGroupRelationship pks
 '''
@@ -67,27 +65,19 @@ class Struct:
 
 def to_event(message):
     return Struct(**message)
-'''
-need something to listen on one amqp exchange/channel for server-bound
-messages, and another to listen on another amqp exchange/channel for
-client-bound messages
-'''
-
 
 class IndexHandler(tornado.web.RequestHandler):
     """Test HTTP handler to serve the chatroom page if we hit host:8888 manually"""
     def get(self):
         self.render("chat.html")
 
-
-
 ''' 
-FIXME: make this a class / instance var on MessageHandler? But then it forces us to
-type MessageHandler.session_manager instead of just session_manager...
+FIXME: make this a class / instance var on ChatHandler? But then it forces us to
+type ChatHandler.session_manager instead of just session_manager...
 '''
 session_manager = SessionManager()
 
-class MessageHandler(SocketIOHandler):
+class ChatHandler(SocketIOHandler):
     def on_open(self, *args, **kwargs):
         ''' parse args / kwargs for participant session info so we know which group
         to route this guy to
@@ -104,11 +94,12 @@ class MessageHandler(SocketIOHandler):
         if event.type == 'connect':
             participant_group_rel = ParticipantGroupRelationship.objects.get(participant__pk=event.participant_id,
                     group__pk=event.group_id)
-            event.message = "Participant %s joined group %s." % (participant_group_rel.participant, participant_group_rel.group)
+            event.message = "Participant %s joined chat group %s." % (participant_group_rel.participant, participant_group_rel.group)
             session_manager.add(self.session, participant_group_rel)
         elif event.type == 'experimenter':
             experiment = Experiment.objects.get(pk=event.experiment_id)
-            # TODO: should add a second handler just for experimenters..
+            # TODO: should add a second handler just for experimenters with 
+            # auth handling
             logger.debug("sending message %s to all participants" %
                   event.message)
             for g in experiment.groups.all():
@@ -118,7 +109,6 @@ class MessageHandler(SocketIOHandler):
         else:
             # check session id..
             participant_group_rel = session_manager.get_participant(self.session)
-
 
         chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_rel,
                                    message=event.message,
@@ -133,26 +123,17 @@ class MessageHandler(SocketIOHandler):
         logger.debug("closing %s" % self)
         session_manager.remove(self.session)
 
-
-def vcweb_tornado_message_handler(body, message):
-    logger.debug("XXX: received body %s from message %s" % (body, message))
-
 def main(argv=None):
     if argv is None:
         argv = sys.argv
     # use the routes classmethod to build the correct resource
-    messageRoute = MessageHandler.routes("socket.io/*")
+    chatRoute = ChatHandler.routes("socket.io/*")
     #configure the Tornado application
     # currently only allow one command-line argument, the port to run on.
     port = int(argv[1]) if (len(argv) > 1) else 8888
 
-    # set up queue listeners
-    consumer = queue.chat_consumer
-    consumer.register_callback(vcweb_tornado_message_handler)
-    consumer.consume()
-
     application = tornado.web.Application(
-            [(r'/', IndexHandler), messageRoute],
+            [(r'/', IndexHandler), chatRoute],
             enabled_protocols=['websocket', 'flashsocket', 'xhr-multipart', 'xhr-polling'],
             flash_policy_port=8043,
             flash_policy_file='/etc/nginx/flashpolicy.xml',

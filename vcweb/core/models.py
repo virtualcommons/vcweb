@@ -327,7 +327,7 @@ class Experiment(models.Model):
 
     def allocate_groups(self, randomize=True):
         # clear out all existing groups
-        # FIXME: should we preserve previous group mappings?
+        # FIXME: record previous mappings in activity log.
         self.groups.all().delete()
         # seed the initial group.
         current_group = self.groups.create(number=1, max_size=self.experiment_configuration.max_group_size)

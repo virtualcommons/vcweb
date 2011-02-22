@@ -73,10 +73,17 @@ def participate(request, experiment_id=None):
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
         if experiment.is_round_in_progress:
-            if experiment.current_round.has_data_parameters:
+            current_round = experiment.current_round
+            if current_round.has_data_parameters:
                 return play(request, experiment, participant)
+            elif current_round.is_chat_round:
+                group = participant.groups.get(experiment=experiment)
+                from vcweb import settings
+                return render_to_response(experiment.current_round_template,
+                        {'group': group, 'participant': participant, 'experiment': experiment, 'SOCKET_IO_HOST': settings.SOCKET_IO_HOST},
+                        context_instance=RequestContext(request))
             else:
-                # instructions, chat or quiz round
+                # instructions or quiz round
                 return render_to_response(experiment.current_round_template,
                         locals(),
                         context_instance=RequestContext(request))

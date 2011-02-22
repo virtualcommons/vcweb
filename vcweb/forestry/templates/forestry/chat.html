@@ -1,0 +1,41 @@
+{% extends "base-participant.html" %}
+
+{% block head %}
+    {{ block.super }}
+    {% include "includes/participant.events.html" %}
+    {% include "includes/socket.io.html" %}
+    <script type="text/javascript">
+        $(function() {
+                var s = connect("{{ SOCKET_IO_HOST }}", 8888);
+                s.on('message', function(data) {
+                    $("#chat").append("<div>" + data + "</div>");
+                    });
+
+                //send the message when submit is clicked
+                $('#chatform').submit(function (evt) {
+                    var line = $('#chatText').val()
+                    $('#chatText').val('')
+                    console.log("sending line: " + line);
+                    s.send(createMessageEvent(line));
+                    return false;
+                    });
+                $('#chatText').focus();
+                });
+    </script>
+{% endblock %}
+
+{% block title %}
+Forestry Chat Round
+{% endblock %}
+
+{% block content %}
+    <h3>Chat</h3>
+    <div id="chat" >
+    </div>
+    <form id="chatform">
+        <input id='chatText' type="text" />
+        <input type="submit" />
+    </form>
+{% endblock %}
+
+

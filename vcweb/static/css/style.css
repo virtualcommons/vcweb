@@ -248,3 +248,10 @@ ul.horizontal {
     margin-left: 8px;
     margin-right: 8px;
 }
+
+#chat {
+    width: 800px;
+    height: 20em;
+    overflow:auto;
+    border: 1px dashed black;
+}

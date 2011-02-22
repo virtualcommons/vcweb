@@ -2,7 +2,7 @@ Django
 celery
 django-celery
 tornado
-SocketTornad.IO
+tornadio
 psycopg2
 kombu
 django-kombu
