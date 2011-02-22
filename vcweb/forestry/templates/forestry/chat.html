@@ -7,7 +7,7 @@
     <script type="text/javascript">
         $(function() {
                 var chatDiv = document.getElementById('chat');
-                var s = connect(window.location.hostname, 8888);
+                var s = connect(window.location.hostname, 8888, 'chat');
                 s.on('message', function(data) {
                     $("#chat").append($("<div class='ui-state-highlight' />").append(data))
                     // scroll to bottom

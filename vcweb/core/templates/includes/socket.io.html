@@ -4,7 +4,7 @@
 </script>
 
 <script type="text/javascript">
-function connect(host, port) {
+function connect(host, port, resource) {
    if ( !host ) {
       console.debug("Tried to connect to invalid host, connecting to vcweb.asu.edu instead.");
       host = "vcweb.asu.edu";
@@ -13,7 +13,7 @@ function connect(host, port) {
       console.debug("using default port 8888");
       port = 8888;
    }
-   var s = new io.Socket(host, {"port": port});
+   var s = new io.Socket(host, {"port": port,  "resource": resource});
    s.connect();
    s.on("connect", function() {
          s.send(createConnectionEvent());
