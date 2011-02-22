@@ -1059,7 +1059,9 @@ class ChatMessage(models.Model):
 
     @property
     def as_html(self):
-        return "<a name='%s'></a>%s" % (self.pk, self.__unicode__())
+        return "<a name='{0}'>{1}</a> | {2}".format(self.pk,
+                self.date_created.strftime("%H:%S"), 
+                self.__unicode__())
 
     class Meta:
         ordering = ['date_created', 'round_configuration']

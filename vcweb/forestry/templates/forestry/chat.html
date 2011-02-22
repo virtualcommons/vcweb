@@ -6,9 +6,12 @@
     {% include "includes/socket.io.html" %}
     <script type="text/javascript">
         $(function() {
+                var chatDiv = document.getElementById('chat');
                 var s = connect(window.location.hostname, 8888);
                 s.on('message', function(data) {
-                    $("#chat").append($("<div/>").append(data))
+                    $("#chat").append($("<div class='ui-state-highlight' />").append(data))
+                    // scroll to bottom
+                    chatDiv.scrollTop = chatDiv.scrollHeight;
                 });
                 //send the message when submit is clicked
                 $('#chatform').submit(function (evt) {
@@ -19,6 +22,7 @@
                     return false;
                 });
                 $('#chatText').focus();
+                chatDiv.scrollTop = chatDiv.scrollHeight;
         });
     </script>
 {% endblock %}
@@ -31,14 +35,11 @@ Forestry Chat Round
     <h3>Chat</h3>
     <div id="chat" class='notice ui-corner-all'>
         {% for chat_message in chat_messages %}
-        {% autoescape off %}
-        <div>
-            {{ chat_message.date_created|date:"h:s | " }}
-            <span class='ui-state-highlight ui-icon-info'>
-                {{ chat_message.as_html }}
-            </span>
+        <div class='ui-state-highlight'>
+            {% autoescape off %}
+            {{ chat_message.as_html }}
+            {% endautoescape %}
         </div>
-        {% endautoescape %}
         {% endfor %}
     </div>
     <form id="chatform">
