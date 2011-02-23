@@ -885,7 +885,7 @@ class Group(models.Model):
 
 """
 round-specific data for a given experiment.  Contains related sets to group_data
-(GroupRoundDataValue) and participant_data (ParticipantRoundDataValue)
+(GroupRoundDataValue), participant_data (ParticipantRoundDataValue), and chat_messages (ChatMessage)
 """
 class RoundData(models.Model):
     experiment = models.ForeignKey(Experiment, related_name='round_data')
@@ -1046,10 +1046,7 @@ class ChatMessage(models.Model):
     """ if set, this is a targeted message to the other participant in this group.  If null, this is a broadcast message to the entire group """
     target_participant = models.ForeignKey(ParticipantGroupRelationship, null=True, blank=True, related_name='targets')
     date_created = models.DateTimeField(auto_now_add=True)
-    ''' the round in which this message was sent '''
-    round_configuration = models.ForeignKey(RoundConfiguration, related_name='chat_messages')
-    ''' the experiment in which this message was sent, not strictly necessary '''
-    experiment = models.ForeignKey(Experiment, related_name='chat_messages')
+    round_data = models.ForeignKey(RoundData, related_name='chat_messages')
 
     objects = ChatMessageManager()
 
@@ -1065,7 +1062,7 @@ class ChatMessage(models.Model):
                 self.__unicode__())
 
     class Meta:
-        ordering = ['date_created', 'round_configuration']
+        ordering = ['date_created', 'round_data']
 
 """
 Stores participant-specific data value and associates a Participant, Experiment
