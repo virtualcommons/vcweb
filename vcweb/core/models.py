@@ -1033,12 +1033,11 @@ class ParticipantGroupRelationship(models.Model):
 
 class ChatMessageManager(models.Manager):
     def message(self, experiment, message):
-        current_round = experiment.current_round
+        current_round_data = experiment.current_round_data
         for participant in experiment.participants.all():
             yield ChatMessage.objects.create(participant_group_relationship=participant.get_participant_group_relationship(experiment),
                     message=message,
-                    round_configuration=current_round,
-                    experiment=experiment)
+                    round_data=current_round_data)
 
 class ChatMessage(models.Model):
     participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='chat_messages')

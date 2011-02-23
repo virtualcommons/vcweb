@@ -132,10 +132,10 @@ class ChatHandler(tornadio.SocketConnection):
         else:
             # check session id..
             participant_group_rel = session_manager.get_participant(self)
+            current_round_data = participant_group_rel.group.experiment.current_round_data
             chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_rel,
                     message=event.message,
-                    round_configuration=participant_group_rel.group.current_round,
-                    experiment=participant_group_rel.group.experiment
+                    round_data=current_round_data
                     )
             for participant_group_pk, session in session_manager.sessions(participant_group_rel.group):
                 session.send(chat_message.as_html)
