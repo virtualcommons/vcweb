@@ -295,6 +295,17 @@ class Experiment(models.Model):
         return round_data
 
     @property
+    def all_quiz_questions(self):
+        # FIXME: use generator expression?
+        quiz_questions = list(self.default_quiz_questions.all())
+        quiz_questions.extend(self.current_round.quiz_questions.all())
+        return quiz_questions
+
+    @property
+    def current_round_quiz_questions(self):
+        return self.current_round.quiz_questions
+
+    @property
     def next_round(self):
        if self.has_next_round:
           return self.get_round_configuration(self.current_round_sequence_number + 1)
@@ -568,7 +579,9 @@ class QuizQuestion(models.Model):
     label = models.CharField(max_length=512)
     answer = models.CharField(max_length=64)
     input_type = models.CharField(max_length=32)
+    explanation = models.CharField(max_length=512)
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='quiz_questions')
+    experiment = models.ForeignKey(Experiment, related_name='default_quiz_questions', null=True, blank=True)
 
     def is_correct(self, candidate):
         return self.answer == candidate

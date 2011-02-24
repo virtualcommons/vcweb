@@ -51,12 +51,12 @@ class ExperimenterAccountForm(forms.ModelForm):
 class QuizForm(forms.Form):
     name_question = forms.CharField(max_length=64, label="What is your name?")
     def __init__(self, *args, **kwargs):
-        extra_questions = {}
+        quiz_questions = []
         try:
-            extra_questions = kwargs.pop('extra_questions')
+            quiz_questions = kwargs.pop('quiz_questions')
         finally:
             super(QuizForm, self).__init__(*args, **kwargs)
-            for quiz_question in extra_questions:
+            for quiz_question in quiz_questions:
                 self.fields['quiz_question_%d' % quiz_question.pk] = forms.CharField(label=quiz_question.label)
 
     def extra_questions(self):

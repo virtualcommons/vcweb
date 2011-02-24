@@ -115,8 +115,7 @@ def quiz(request, experiment, participant):
                                 % (answer, quiz_question.answer,
                                     quiz_question.explanation))
     else:
-        extra_questions = experiment.current_round.quiz_questions.all()
-        form = QuizForm(extra_questions=extra_questions)
+        form = QuizForm(quiz_questions=experiment.quiz_questions)
     return render_to_response(experiment.current_round_template,
             locals(),
             context_instance=RequestContext(request))
