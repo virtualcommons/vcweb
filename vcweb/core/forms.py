@@ -47,3 +47,20 @@ class ParticipantAccountForm(forms.ModelForm):
 class ExperimenterAccountForm(forms.ModelForm):
     class Meta:
         model = Experimenter
+
+class QuizForm(forms.Form):
+    name_question = forms.CharField(max_length=64, label="What is your name?")
+    def __init__(self, *args, **kwargs):
+        extra_questions = {}
+        try:
+            extra_questions = kwargs.pop('extra_questions')
+        finally:
+            super(QuizForm, self).__init__(*args, **kwargs)
+            for quiz_question in extra_questions:
+                self.fields['quiz_question_%d' % quiz_question.pk] = forms.CharField(label=quiz_question.label)
+
+    def extra_questions(self):
+        for name, value in self.cleaned_data.items():
+            if name.startswith('quiz_question_'):
+                yield (self.fields[name].label, value)
+

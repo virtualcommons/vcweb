@@ -12,5 +12,3 @@ class HarvestDecisionForm(forms.Form):
         if 0 <= harvest_decision <= 5:
             return self.cleaned_data
         raise forms.ValidationError("Invalid harvest decision %s" % harvest_decision)
-
-

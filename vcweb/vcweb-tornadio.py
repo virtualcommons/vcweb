@@ -104,41 +104,19 @@ class ChatHandler(tornadio.SocketConnection):
         logger.debug("kwargs are: %s" % str(kwargs))
 
     def on_message(self, message, *args, **kwargs):
-        ''' incoming JSON message gets converted to a Python dict via simplejson '''
         logger.debug("received message %s from handler %s" % (message, self))
         event = to_event(message)
         if event.type == 'connect':
             return
-        '''
-        if event.type == 'connect':
-            participant_group_rel = ParticipantGroupRelationship.objects.get(participant__pk=event.participant_id, group__pk=event.group_id)
-            group = participant_group_rel.group
-            logger.debug("%s joined %s" % (participant_group_rel.participant, group))
-            event.message = "<div>Participant %s joined group %s chat.</div>" % (participant_group_rel.participant_number, group)
-            session_manager.add(self, participant_group_rel)
-            for participant_group_pk, session in session_manager.sessions(group):
-                session.send(event.message)
-            return
-        '''
-        if event.type == 'experimenter':
-            experiment = Experiment.objects.get(pk=event.experiment_id)
-            # TODO: should add a second handler just for experimenters with
-            # auth handling
-            logger.debug("sending message %s to all participants" % event.message)
-            for g in experiment.groups.all():
-               for participant_group_pk, session in session_manager.sessions(g):
-                  session.send(event.message)
-            return
-        else:
-            # check session id..
-            participant_group_rel = session_manager.get_participant(self)
-            current_round_data = participant_group_rel.group.experiment.current_round_data
-            chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_rel,
-                    message=event.message,
-                    round_data=current_round_data
-                    )
-            for participant_group_pk, session in session_manager.sessions(participant_group_rel.group):
-                session.send(chat_message.as_html)
+        # FIXME: add authentication
+        participant_group_rel = session_manager.get_participant(self)
+        current_round_data = participant_group_rel.group.experiment.current_round_data
+        chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_rel,
+                message=event.message,
+                round_data=current_round_data
+                )
+        for participant_group_pk, session in session_manager.sessions(participant_group_rel.group):
+            session.send(chat_message.as_html)
 
     def on_close(self):
         logger.debug("closing %s" % self)

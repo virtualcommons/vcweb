@@ -7,7 +7,7 @@ from django.template.context import RequestContext
 from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.decorators import participant_required, experimenter_required
 from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision
-from vcweb.forestry.forms import HarvestDecisionForm
+from vcweb.forestry.forms import HarvestDecisionForm, QuizForm
 
 import logging
 logger = logging.getLogger(__name__)
@@ -78,6 +78,8 @@ def participate(request, experiment_id=None):
                 return play(request, experiment, participant)
             elif current_round.is_chat_round:
                 return chat(request, experiment, participant)
+            elif current_round.is_quiz_round:
+                return quiz(request, experiment, participant)
             else:
                 # instructions or quiz round
                 return render_to_response(experiment.current_round_template,
@@ -91,6 +93,34 @@ def participate(request, experiment_id=None):
         logger.warning(error_message)
         messages.warning(request, error_message)
         return redirect('forestry:index')
+
+
+import re
+quiz_question_re = re.compile(r'^quiz_question_(\d+)$')
+def quiz(request, experiment, participant):
+    if request.method == 'POST':
+        form = QuizForm(request.POST)
+        if form.is_valid():
+# check against quiz answers (should be stored as data parameters)
+            current_round = experiment.current_round
+            incorrect_answers = []
+            for name, answer in form.cleaned_data.items():
+                match_object = quiz_question_re.match(name)
+                if match_object:
+                    quiz_question_id = match_object.group
+                    quiz_question = current_round.quiz_questions.get(pk=quiz_question_id)
+                    if not quiz_question.is_correct(answer):
+# add to wrong answers list
+                        incorrect_answers.append("Your answer %s was incorrect.  The correct answer is %s. %s" 
+                                % (answer, quiz_question.answer,
+                                    quiz_question.explanation))
+    else:
+        extra_questions = experiment.current_round.quiz_questions.all()
+        form = QuizForm(extra_questions=extra_questions)
+    return render_to_response(experiment.current_round_template,
+            locals(),
+            context_instance=RequestContext(request))
+
 
 def chat(request, experiment, participant):
     participant_group_rel = participant.get_participant_group_relationship(experiment)
@@ -108,27 +138,22 @@ def chat(request, experiment, participant):
 
 
 def play(request, experiment, participant):
-    if request.method == 'POST':
-        # process harvest decision
-        form = HarvestDecisionForm(request.POST)
-        if form.is_valid():
-            harvest_decision = form.cleaned_data['harvest_decision']
-            resource_level = get_resource_level(participant.get_group(experiment))
-            max_harvest_decision = get_max_harvest_decision(resource_level.value)
-            if harvest_decision <= max_harvest_decision:
-                set_harvest_decision(participant=participant, experiment=experiment, value=harvest_decision)
-                return redirect('forestry:wait', experiment_id=experiment.pk)
-            else:
-                raise forms.ValidationError("invalid harvest decision %s > max %s" % (harvest_decision, max_harvest_decision))
+    form = HarvestDecisionForm(request.POST or None)
+    if form.is_valid():
+        harvest_decision = form.cleaned_data['harvest_decision']
+        resource_level = get_resource_level(participant.get_group(experiment))
+        max_harvest_decision = get_max_harvest_decision(resource_level.value)
+        if harvest_decision <= max_harvest_decision:
+            set_harvest_decision(participant=participant, experiment=experiment, value=harvest_decision)
+            return redirect('forestry:wait', experiment_id=experiment.pk)
+        else:
+            raise forms.ValidationError("invalid harvest decision %s > max %s" % (harvest_decision, max_harvest_decision))
     else:
-        form = HarvestDecisionForm()
         group = participant.groups.get(experiment=experiment)
         resource_level = get_resource_level(group)
-        logger.debug("resource level is: %s" % resource_level)
         max_harvest_decision = get_max_harvest_decision(resource_level.value)
-        logger.debug("max harvest decision: %s" % max_harvest_decision)
         resource_width = (resource_level.value / 10) * 30
-    return render_to_response(experiment.current_round_template,
-            locals(),
-            context_instance=RequestContext(request))
+        return render_to_response(experiment.current_round_template,
+                locals(),
+                context_instance=RequestContext(request))
 

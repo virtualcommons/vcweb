@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.aggregates import Max
+from django import forms
+
 from string import Template
 from vcweb.core import signals
 import base64
@@ -88,6 +90,7 @@ class CommonsUser(models.Model):
     user = models.OneToOneField(User, related_name='%(class)s', verbose_name=u'Django User', unique=True)
     failed_password_attempts = models.PositiveIntegerField(default=0)
     institution = models.ForeignKey(Institution, null=True, blank=True)
+#    authentication_token = models.CharField(max_length=64, null=True, blank=True)
 
     @property
     def full_name(self):
@@ -435,6 +438,8 @@ class Experiment(models.Model):
     def ___hash___(self):
         return self.pk.___hash___()
 
+
+
 class RoundConfiguration(models.Model):
 # maps round type name to (description, default_template_name)
     ROUND_TYPES_DICT = dict(REGULAR=('Regular interactive experiment round', 'participate.html'),
@@ -559,6 +564,17 @@ class RoundConfiguration(models.Model):
     class Meta:
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]
 
+class QuizQuestion(models.Model):
+    label = models.CharField(max_length=512)
+    answer = models.CharField(max_length=64)
+    input_type = models.CharField(max_length=32)
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='quiz_questions')
+
+    def is_correct(self, candidate):
+        return self.answer == candidate
+
+    def __unicode__(self):
+        return u'%s' % self.label
 
 class ParameterManager(models.Manager):
     def get_by_natural_key(self, key):
