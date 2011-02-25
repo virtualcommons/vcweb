@@ -1,6 +1,7 @@
 {% extends "base-participant.html" %}
 
 {% block head %}
+<meta http-equiv='refresh' content='10' />
 {{ block.super }}
 <script type="text/javascript">
     var intervalId = 0;
@@ -12,6 +13,7 @@
         }
         else {
             window.clearInterval(intervalId);
+            location.reload(true);
         }
 
     }

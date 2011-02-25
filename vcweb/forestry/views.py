@@ -4,10 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
+from vcweb import settings
+from vcweb.core.forms import QuizForm
 from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.decorators import participant_required, experimenter_required
 from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision
-from vcweb.forestry.forms import HarvestDecisionForm, QuizForm
+from vcweb.forestry.forms import HarvestDecisionForm
 
 import logging
 logger = logging.getLogger(__name__)
@@ -52,7 +54,9 @@ def configure(request):
 def manage_experiment(request, experiment_id=None):
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
-        return render_to_response('forestry/manage-experiment.html', locals(), context_instance=RequestContext(request))
+        return render_to_response('forestry/manage-experiment.html',
+                { 'experiment': experiment },
+                context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
         logger.warning("No experiment available with id [%s]" % experiment_id)
         return redirect('core:experimenter_index')
@@ -61,9 +65,12 @@ def manage_experiment(request, experiment_id=None):
 def wait(request, experiment_id=None):
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
-        return render_to_response('forestry/wait.html',
-                locals(),
-                context_instance=RequestContext(request))
+        if experiment.is_round_in_progress:
+            return redirect('forestry:participate', experiment_id=experiment.pk)
+        else:
+            return render_to_response('forestry/wait.html',
+                    {'experiment': experiment},
+                    context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
         logger.warning("No experiment found with id %s" % experiment_id)
 
@@ -123,8 +130,7 @@ def quiz(request, experiment, participant):
 
 def chat(request, experiment, participant):
     participant_group_rel = participant.get_participant_group_relationship(experiment)
-    chat_messages = experiment.chat_messages.filter(participant_group_relationship__group=participant_group_rel.group)
-    from vcweb import settings
+    chat_messages = experiment.current_round_data.chat_messages.filter(participant_group_relationship__group=participant_group_rel.group)
     return render_to_response(experiment.current_round_template, {
         'participant_group_relationship': participant_group_rel,
         'group': participant_group_rel.group,
