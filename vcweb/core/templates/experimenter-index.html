@@ -1,12 +1,14 @@
 {% extends "base-experimenter.html" %}
 
-{% block title %}Virtual Commons Web Experimenter Interface{% endblock %}
+{% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
 
 {% block header %} {% include "includes/experimenter-nav-menu.html" %} {% endblock header %}
 
 {% block page %}
 {{ block.super }}
-<h3>Experimenter Dashboard</h3>
+{% comment%}
+FIXME: replace these links eventually.
+{% endcomment %}
 <div id='navmenu'>
     <a href='/admin'>add / configure an experiment</a>
     <a href='/admin'>download data</a> 
@@ -16,20 +18,15 @@
     <span class='ui-icon ui-icon-info'></span>
     Welcome to the experimenter dashboard.  You are logged in as {{request.user.experimenter}}.
 </div>
-    {% comment%}
-    FIXME: replace with horizontal ul+li iconified nav menu
-    {% endcomment %}
-
-<h2>Your experiments</h3>
+<h3>Your experiments</h3>
 <div id="post">
     {% for e in experiments %}
     <div class='notice ui-corner-all'>
-        {{e}} {{e.status_line}}
-        <br/>
+        {{e.status_line}}
         <ul class='horizontal' id='horizontal'>
             <li><a href='{{e.monitor_url}}'><img src='/static/images/famfamfam/zoom.png' alt='General experiment monitoring interface'/> monitor</a></li>
-            <li><a href='{{e.management_url}}'<img src='/static/images/famfamfam/application_go.png' alt='Custom management interface'/> manage</a></li>
-            <li><a class='confirm-experiment-action' style='background-image:none;' href='{{e.stop_url}}'><img src='/static/images/famfamfam/stop.png' alt=''/> stop</a></li>
+            <li><a href='{{e.management_url}}'<img src='/static/images/famfamfam/application_go.png' alt='Custom management interface'/> manage (unfinished)</a></li>
+            <li><a href='{{e.stop_url}}' class='confirm-experiment-action' style='background-image:none;' ><img src='/static/images/famfamfam/stop.png' alt=''/> stop</a></li>
         </ul>
     </div>
     {% empty %}
