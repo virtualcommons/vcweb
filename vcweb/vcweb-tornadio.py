@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 import tornado.web
-import tornadio
-from tornadio import server
+from tornadio import SocketConnection, get_router, server
 
 import os
 import sys
@@ -14,7 +13,7 @@ sys.path.append(os.path.abspath('..'))
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
-from vcweb.core.models import ParticipantGroupRelationship, ChatMessage, Experiment
+from vcweb.core.models import ParticipantGroupRelationship, ChatMessage
 
 '''
 store mappings between beaker session ids and ParticipantGroupRelationship pks
@@ -77,7 +76,7 @@ type ChatHandler.session_manager instead of just session_manager...
 '''
 session_manager = SessionManager()
 
-class ChatHandler(tornadio.SocketConnection):
+class ChatHandler(SocketConnection):
     def on_open(self, *args, **kwargs):
         try:
             # FIXME: verify user auth tokens
@@ -126,7 +125,7 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
     # use the routes classmethod to build the correct resource
-    chatRouter = tornadio.get_router(ChatHandler, resource="chat", extra_re=r'\d+', extra_sep='/')
+    chatRouter = get_router(ChatHandler, resource="chat", extra_re=r'\d+', extra_sep='/')
     #chatRouter = tornadio.get_router(ChatHandler, resource="chat", extra_re=r'[\w._=]+', extra_sep='/')
     #configure the Tornado application
     # currently only allow one command-line argument, the port to run on.
