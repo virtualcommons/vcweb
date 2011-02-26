@@ -58,6 +58,10 @@ class SessionManager:
                 yield (pgr_id, self.pgr_to_session[pgr_id])
             pass
 
+    def send_to_group(self, group, message):
+        for participant_group_pk, session in self.sessions(group):
+            session.send(message)
+
 class Struct:
     def __init__(self, **attributes):
         self.__dict__.update(attributes)
@@ -77,21 +81,20 @@ type ChatHandler.session_manager instead of just session_manager...
 session_manager = SessionManager()
 
 class ChatHandler(SocketConnection):
+
     def on_open(self, *args, **kwargs):
         try:
             # FIXME: verify user auth tokens
             extra = kwargs['extra']
-            logger.debug("extra stuff on self %s is %s" % (self, extra))
+            logger.debug("extra: %s - self: %s" % (extra, self))
             #(auth_token, dot, participant_group_relationship_id) = extra.partition('.')
             #logger.debug("auth token: %s, id %s" % (auth_token, participant_group_relationship_id))
             participant_group_relationship_id = extra
             participant_group_rel = ParticipantGroupRelationship.objects.get(pk=participant_group_relationship_id)
             session_manager.add(extra, self, participant_group_rel)
             group = participant_group_rel.group
-            self.send("<div>Participant %s joined group %s chat.</div>" % (participant_group_rel.participant_number, group))
-            logger.debug("sent stuff to self")
-            for participant_group_pk, session in session_manager.sessions(group):
-                session.send("<div>Participant %s joined group %s chat.</div>" % (participant_group_rel.participant_number, group))
+            message = "<div>Participant %s joined group %s chat.</div>" % (participant_group_rel.participant_number, group)
+            session_manager.send_to_group(group, message)
         except KeyError, e:
             logger.debug("no participant group relationship id %s" % e)
             pass

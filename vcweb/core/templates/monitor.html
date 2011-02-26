@@ -2,10 +2,12 @@
 
 {% block head %}
 {{ block.super }}
+{% include "includes/experimenter.events.html" %}
+{% include "includes/socket.io.html" %}
 <script type='text/javascript'>
     function update(json) {
         if (json == Dajaxice.EXCEPTION) {
-            console.debug("dajaxice error" + json);
+            console.error("dajaxice error: " + json);
         }
         else {
             $('#statusDiv').html(json.status);
@@ -43,7 +45,14 @@
     }
     $(function() {
             registerCallbacks({{ experiment.round_data.count }}, {{ experiment.current_round.sequence_number }});
-    });
+            // FIXME: add auth
+            var s = connect(window.location.hostname, 8888, 'experimenter/{{experiment.pk}}');
+            s.on('message', function(data) {
+                $("#server-messages").append($("<div class='ui-state-highlight' />").append(data))
+                // scroll to bottom
+            });
+        });
+    </script>
 
 </script>
 {% endblock %}
@@ -80,11 +89,13 @@
                 <li><a class='confirm-experiment-action' name='activate' href='activate'><img src='/static/images/famfamfam/cog_go.png' alt='' /> activate</a></li>
                 {% endif %}
             </ul>
-            <div id='status'>
-                <span id='experiment-round'> {{ experiment.round_status_display }} </span>
-                <br/>Type: <span id='round-type'>{{ experiment.current_round.get_round_type_display }}</span>
-                <br/>Time remaining: <span id='time-left'> {{ experiment.time_remaining }} </span>
-            </div>
+            <br/>
+            <ul class='messages'>
+                <li>{{ experiment.round_status_display }}</li>
+                <li>Type: {{ experiment.current_round.get_round_type_display }}</li>
+                <li>Round started on {{ experiment.current_round_start_time }}</li>
+                <li>Time remaining: {{ experiment.time_remaining }}</li>
+            </ul>
         </fieldset>
         {% endblock status %}
     </div>
@@ -137,6 +148,19 @@
         </table>
         {% else %}
         <div class='info ui-corner-all'><span class='ui-icon ui-icon-info'></span>No participant data for this round.</div>
+        {% endif %}
+        {% comment %} participant chats {% endcomment %}
+        {% if round_data.chat_messages.count > 0 %}
+        <h4>Chat data</h4>
+        <div class='chat notice ui-corner-all'>
+            {% for chat_message in round_data.chat_messages.all %}
+            <div class='ui-state-highlight'>
+                {% autoescape off %}
+                {{ chat_message.as_html }}
+                {% endautoescape %}
+            </div>
+        </div>
+        {% endfor %}
         {% endif %}
     </div>
     {% empty %}

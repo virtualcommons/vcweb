@@ -6,19 +6,20 @@
     {% include "includes/socket.io.html" %}
     <script type="text/javascript">
         $(function() {
-                var chatDiv = document.getElementById('chat');
+                var chatDiv = document.getElementById('chat-div');
                 var s = connect(window.location.hostname, 8888, 'chat/{{participant_group_relationship.pk}}');
                 s.on('message', function(data) {
-                    $("#chat").append($("<div class='ui-state-highlight' />").append(data))
+                    $("#chat-div").append($("<div class='ui-state-highlight' />").append(data))
                     // scroll to bottom
                     chatDiv.scrollTop = chatDiv.scrollHeight;
                 });
                 //send the message when submit is clicked
                 $('#chatform').submit(function (evt) {
                     var line = $('#chatText').val()
-                    $('#chatText').val('')
-                    console.log("sending line: " + line);
-                    s.send(createMessageEvent(line));
+                    if (line) {
+                        $('#chatText').val('')
+                        s.send(createMessageEvent(line));
+                    }
                     return false;
                 });
                 $('#chatText').focus();
@@ -31,9 +32,13 @@
 Forestry Chat Round
 {% endblock %}
 
-{% block content %}
-    <h3>Chat</h3>
-    <div id="chat" class='notice ui-corner-all'>
+{% block page %}
+<h3>Chat</h3>
+    <div class='info ui-priority-primary ui-corner-all'>
+        <span class='ui-icon ui-icon-lightbulb'></span>
+        You are participant {{ participant_group_relationship.participant_number }}.
+    </div>
+    <div id='chat-div' class='chat notice ui-corner-all'>
         {% for chat_message in chat_messages %}
         <div class='ui-state-highlight'>
             {% autoescape off %}

@@ -249,8 +249,14 @@ ul.horizontal {
     margin-right: 8px;
 }
 
-#chat {
-    width: 800px;
+.chat {
     height: 20em;
     overflow: auto;
 }
+
+#chatText {
+    width: 100%;
+}
+
+
+
