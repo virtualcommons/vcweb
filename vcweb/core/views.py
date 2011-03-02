@@ -1,6 +1,7 @@
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb.core.forms import RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm
@@ -10,6 +11,7 @@ import hashlib
 import base64
 from datetime import datetime
 import logging
+from vcweb.core import unicodecsv
 logger = logging.getLogger(__name__)
 
 """ account registration / login / logout / profile views """
@@ -147,6 +149,79 @@ def monitor(request, experiment_id=None):
         logger.warning(error_message)
         messages.warning(request, error_message)
         return redirect('core:dashboard')
+
+@experimenter_required
+def download_data_csv(request, experiment_id=None):
+    try:
+        experiment = Experiment.objects.get(pk=experiment_id)
+        response = HttpResponse(mimetype='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
+        writer = unicodecsv.UnicodeWriter(response)
+        writer.writerow(['Group', 'Members'])
+        for group in experiment.groups.all():
+            writer.writerow([group, '::'.join(group.participants.all())])
+        for round_data in experiment.round_data.all():
+            round_configuration = round_data.round_configuration
+            # write out group-wide data values
+            writer.writerow(['Group', 'Round', 'Data Parameter', 'Data Parameter Value'])
+            for group_data_value in round_data.group_data_values.all():
+                writer.writerow([group_data_value.group, round_configuration,
+                    group_data_value.parameter.label, group_data_value.value])
+            # write out specific participant data values for this round
+            writer.writerow(['Participant', 'Round', 'Data Parameter', 'Data Parameter Value'])
+            for participant_data_value in round_data.participant_data_values.all():
+                writer.writerow([participant_data_value.full_participant_info, round_configuration,
+                    participant_data_value.parameter.label, participant_data_value.value])
+            if round_data.chat_messages.count() > 0:
+# sort by group first, then time
+                writer.writerow(['Group', 'Participant', 'Message', 'Time', 'Round'])
+                for chat_message in round_data.chat_messages.order_by('participant_group_relationship__group', 'date_created'):
+                    writer.writerow([chat_message.group, chat_message.participant, chat_message.message,
+                        chat_message.date_created, round_configuration])
+        return response
+    except Experiment.DoesNotExist as e:
+        error_message = "Tried to download non-existent experiment, id %s" % experiment_id
+        logger.warning(error_message)
+        messages.warning(request, error_message)
+        return redirect('core:dashboard')
+
+@experimenter_required
+def download_data_excel(request, experiment_id=None):
+    import xlwt
+    try:
+        experiment = Experiment.objects.get(pk=experiment_id)
+        response = HttpResponse(mimetype='application/vnd.ms-excel')
+        response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name('.xls')
+        workbook = xlwt.Workbook()
+        group_sheet = workbook.add_sheet('Group Data')
+        current_row = 0
+        group_sheet.write(0, 0, 'Group')
+        group_sheet.write(0, 1, 'Participant')
+        for group in experiment.groups.all():
+            for participant in group.participants.all():
+                group_sheet.write(current_row, 0, group)
+                group_sheet.write(current_row, 1, participant)
+            current_row += 1
+        group_sheet.write(current_row, 0, 'Group')
+        group_sheet.write(current_row, 1, 'Round')
+        group_sheet.write(current_row, 2, 'Data Parameter')
+        group_sheet.write(current_row, 3, 'Data Parameter Value')
+        for group in experiment.groups.all():
+            for data_value in group.data_values.all():
+                group_sheet.write(current_row, 0, group)
+                group_sheet.write(current_row, 1, data_value.round_configuration)
+                group_sheet.write(current_row, 2, data_value.parameter.label)
+                group_sheet.write(current_row, 3, data_value.value)
+            current_row += 1
+
+        participant_sheet = workbook.add_sheet('Participant Data')
+        current_row = 0
+        participant_sheet.write(0, 0, 'Participant')
+        participant_sheet.write(0, 1, 'Data Parameter')
+        participant_sheet.write(0, 2, 'Data Parameter Value')
+        raise NotImplementedError("Not finished")
+    except Experiment.DoesNotExist as e:
+        logger.warning(e)
 
 @experimenter_required
 def experiment_controller(request, experiment_id=None, experiment_action=None):

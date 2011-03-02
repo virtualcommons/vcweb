@@ -34,9 +34,12 @@ Forestry Chat Round
 
 {% block page %}
 <h3>Chat</h3>
-    <div class='info ui-priority-primary ui-corner-all'>
+    <div class='info ui-corner-all'>
         <span class='ui-icon ui-icon-info'></span>
-        You are participant {{ participant_group_relationship.participant_number }}.
+        <b>
+            Welcome back {{participant.get_full_name}}. 
+            You are participant {{ participant_group_relationship.participant_number }} in {{participant_group_relationship.group}}.
+        </b>
     </div>
     <div id='chat-div' class='chat notice ui-corner-all'>
         {% for chat_message in chat_messages %}

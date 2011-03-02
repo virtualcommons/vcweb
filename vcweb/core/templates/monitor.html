@@ -110,15 +110,20 @@
         <h4>Group data</h4>
         <table>
             <thead>
-                <tr><th>Group</th><th>Parameter Name</th><th>Value</th><th>Members</th></tr>
+                <tr><th>Group</th><th>Parameter Name</th><th>Value</th></tr>
             </thead>
             <tbody>
                 {% for group_data_value in round_data.group_data_values.all %}
                 <tr>
-                    <td>{{ group_data_value.group }}</td>
+                    <td>
+                        {% comment %}
+                        add a tooltip with group members
+                        <td class='small-font'>{{ group_data_value.group.participants.all|join:"<br/> "}}</td>
+                        {% endcomment %}
+                        {{ group_data_value.group }}
+                    </td>
                     <td>{{ group_data_value.parameter.label}}</td>
                     <td>{{ group_data_value.value}}</td>
-                    <td class='small-font'>{{ group_data_value.group.participants.all|join:"<br/> "}}</td>
                 </tr>
                 {% endfor %}
             </tbody>

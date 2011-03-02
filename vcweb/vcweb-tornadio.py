@@ -24,6 +24,14 @@ class SessionManager:
     ''' the reverse mapping, associates ParticipantGroupRelationship.pks with the beaker session '''
     pgr_to_session = {}
 
+    experimenter_connections = {}
+    connections_to_experimenters = {}
+
+    def add_experimenter(self, session, experimenter):
+        experimenter_connections[session] = experimenter.pk
+        connections_to_experimenters[experimenter.pk] = session
+
+
     def get_participant(self, session):
         logger.debug("trying to retrieve participant group relationship for session id %s" % session)
         logger.debug("maps are %s and %s" % (self.session_id_to_participant, self.pgr_to_session))
@@ -74,6 +82,27 @@ class IndexHandler(tornado.web.RequestHandler):
     def get(self):
         self.render("chat.html")
 
+
+class ExperimenterHandler(SocketConnection):
+    def on_open(self, *args, **kwargs):
+        try:
+            extra = kwargs['extra']
+            logger.debug('%s received extra: %s' % (self, extra))
+# FIXME: add authentication
+            experimenter_id = extra
+            session_manager.add_experimenter(self, Experimenter.objects.get(pk=experimenter_id))
+        except Experimenter.DoesNotExist as e:
+            logger.warning("Tried to establish connection but there isn't any experimenter with id %s" % experimenter_id)
+
+
+    def on_message(self, message):
+        event = to_event(message)
+        logger.debug("%s received message %s" % (self, message))
+
+    def on_close(self):
+        session_manager.remove_experimenter(self)
+
+                    
 '''
 FIXME: make this a class / instance var on ChatHandler? But then it forces us to
 type ChatHandler.session_manager instead of just session_manager...
@@ -86,7 +115,7 @@ class ChatHandler(SocketConnection):
         try:
             # FIXME: verify user auth tokens
             extra = kwargs['extra']
-            logger.debug("extra: %s - self: %s" % (extra, self))
+            logger.debug('%s received extra: %s' % (self, extra))
             #(auth_token, dot, participant_group_relationship_id) = extra.partition('.')
             #logger.debug("auth token: %s, id %s" % (auth_token, participant_group_relationship_id))
             participant_group_relationship_id = extra

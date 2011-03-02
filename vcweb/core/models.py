@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.aggregates import Max
-from django import forms
+from django.template.defaultfilters import slugify
 
 from string import Template
 from vcweb.core import signals
@@ -327,6 +327,9 @@ class Experiment(models.Model):
     @property
     def is_active(self):
         return self.status != 'INACTIVE'
+
+    def data_file_name(self, file_ext='.csv'):
+        return "%s_%s.%s" % (slugify(self.experiment_metadata.title), self.pk, file_ext)
 
     def parameters(self, scope=None):
         ps = self.experiment_metadata.parameters
@@ -1084,13 +1087,25 @@ class ChatMessage(models.Model):
         return u"{0}: {1}".format(participant_number, self.message)
 
     @property
+    def group(self):
+        return self.participant_group_relationship.group
+
+    @property
+    def participant(self):
+        return self.participant_group_relationship.participant
+
+    @property
+    def round_configuration(self):
+        return self.round_data.round_configuration
+
+    @property
     def as_html(self):
         return "<a name='{0}'>{1}</a> | {2}".format(self.pk,
                 self.date_created.strftime("%H:%S"), 
                 self.__unicode__())
 
     class Meta:
-        ordering = ['date_created', 'round_data']
+        ordering = ['date_created']
 
 """
 Stores participant-specific data value and associates a Participant, Experiment
