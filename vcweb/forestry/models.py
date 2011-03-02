@@ -1,4 +1,4 @@
-from vcweb.core.models import ExperimentMetadata, Parameter
+from vcweb.core.models import ExperimentMetadata, Parameter, ParticipantGroupRelationship
 from vcweb.core import signals
 from celery.decorators import task
 import logging
@@ -81,8 +81,8 @@ def round_setup(experiment, **kwargs):
         ''' initialize all participant data values '''
         current_round_data = experiment.current_round_data
         harvest_decision_parameter = get_harvest_decision_parameter()
-        for p in experiment.participants.all():
-            harvest_decision, created = current_round_data.participant_data_values.get_or_create(participant=p, parameter=harvest_decision_parameter)
+        for p in ParticipantGroupRelationship.objects.filter(group__experiment=experiment):
+            harvest_decision, created = current_round_data.participant_data_values.get_or_create(participant_group_relationship=p, parameter=harvest_decision_parameter)
             logger.debug("%s harvest decision %s" % ("created" if created else "retrieved", harvest_decision))
 
 @task

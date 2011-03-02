@@ -860,11 +860,8 @@ class Group(models.Model):
             group_data_value.save()
         return group_data_value
 
-    def get_participant_data_value(self, participant, parameter):
-        return ParticipantRoundDataValue.objects.get(round_data=self.current_round_data, participant=participant, parameter=parameter)
-
     def get_participant_data_values(self, parameter_name=None):
-        return ParticipantRoundDataValue.objects.filter(round_data=self.current_round_data, participant__in=self.participants.all(), parameter__name=parameter_name)
+        return ParticipantRoundDataValue.objects.filter(round_data=self.current_round_data, participant_group_relationship__group=self, parameter__name=parameter_name)
 
     @property
     def data_parameters(self):
@@ -970,9 +967,11 @@ class Participant(CommonsUser):
 
     def set_data_value(self, experiment=None, parameter=None, value=None):
         if experiment and parameter and value is not None:
+            # FIXME: simplify-able?
             current_round_data = experiment.current_round_data
-            # FIXME: can we simplify?
-            participant_data_value, created = current_round_data.participant_data_values.get_or_create(parameter=parameter, participant=self)
+            participant_group_relationship = ParticipantGroupRelationship.objects.get(group__experiment=experiment, participant=self)
+            participant_data_value, created = current_round_data.participant_data_values.get_or_create(parameter=parameter,
+                    participant_group_relationship=participant_group_relationship)
             participant_data_value.value = value
             participant_data_value.save()
         else:
@@ -1058,7 +1057,7 @@ class ParticipantGroupRelationship(models.Model):
     objects = ParticipantGroupRelationshipManager()
 
     def __unicode__(self):
-        return u"{0}: {1} (in {2})".format(self.participant, self.participant_number, self.group)
+        return u"{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)
 
     class Meta:
         ordering = ['participant_number', 'participant']
@@ -1113,7 +1112,7 @@ Stores participant-specific data value and associates a Participant, Experiment
 """
 class ParticipantRoundDataValue(DataValue):
     round_data = models.ForeignKey(RoundData, related_name='participant_data_values')
-    participant = models.ForeignKey(Participant, related_name='round_data_values')
+    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='round_data_values')
 
     def __init__(self, *args, **kwargs):
         super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
@@ -1125,10 +1124,10 @@ class ParticipantRoundDataValue(DataValue):
         return self.round_data.round_configuration
 
     def __unicode__(self):
-        return u"data value {0}: {1} for participant {2}".format(self.parameter, self.value, self.participant)
+        return u"data value {0}: {1} for participant {2}".format(self.parameter, self.value, self.participant_group_relationship)
 
     class Meta:
-        ordering = [ 'round_data', 'participant', 'parameter' ]
+        ordering = [ 'round_data', 'participant_group_relationship', 'parameter' ]
 
 class ActivityLog(models.Model):
     log_message = models.TextField()

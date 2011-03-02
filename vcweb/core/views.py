@@ -170,7 +170,7 @@ def download_data_csv(request, experiment_id=None):
             # write out specific participant data values for this round
             writer.writerow(['Participant', 'Round', 'Data Parameter', 'Data Parameter Value'])
             for participant_data_value in round_data.participant_data_values.all():
-                writer.writerow([participant_data_value.full_participant_info, round_configuration,
+                writer.writerow([participant_data_value.participant_group_relationship, round_configuration,
                     participant_data_value.parameter.label, participant_data_value.value])
             if round_data.chat_messages.count() > 0:
 # sort by group first, then time

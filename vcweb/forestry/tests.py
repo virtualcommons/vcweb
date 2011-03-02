@@ -1,4 +1,4 @@
-from vcweb.core.models import RoundConfiguration, Parameter, ParticipantRoundDataValue, ParticipantExperimentRelationship, GroupRoundDataValue
+from vcweb.core.models import RoundConfiguration, Parameter, ParticipantRoundDataValue, GroupRoundDataValue, ParticipantExperimentRelationship, ParticipantGroupRelationship
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.forestry.models import round_setup, round_teardown, get_resource_level, get_harvest_decision_parameter, get_harvest_decisions, forestry_sender
 import logging
@@ -38,9 +38,10 @@ class ForestryRoundSignalTest(BaseVcwebTest):
             self.verify_resource_level(group)
             self.failUnlessEqual(len(ds), group.participants.count())
             for p in group.participants.all():
+                pgr = ParticipantGroupRelationship.objects.get(group=group, participant=p)
                 pdv = ParticipantRoundDataValue.objects.get(
                         parameter=harvest_decision_parameter,
-                        participant=p,
+                        participant_group_relationship=pgr,
                         round_data=current_round_data
                         )
                 self.failUnless(pdv.pk > 0)
@@ -100,8 +101,9 @@ class ForestryParametersTest(BaseVcwebTest):
             ds = get_harvest_decisions(group)
             self.failIf(ds, 'there should not be any harvest decisions.')
             for p in group.participants.all():
+                pgr = ParticipantGroupRelationship.objects.get(participant=p, group=group)
                 pdv = current_round_data.participant_data_values.create(
-                        participant=p,
+                        participant_group_relationship=pgr,
                         parameter=harvest_decision_parameter)
                 self.failUnless(pdv.pk > 0)
                 self.failIf(pdv.value)
@@ -178,27 +180,27 @@ class ForestryParametersTest(BaseVcwebTest):
 
     def create_participant_data_values(self):
         e = self.experiment
+        e.activate()
         rc = e.current_round
         current_round_data = e.current_round_data
         for data_param in e.parameters(scope=Parameter.PARTICIPANT_SCOPE).all():
             for p in self.participants:
                 pexpr = ParticipantExperimentRelationship.objects.get(participant=p, experiment=e)
-                dv = current_round_data.participant_data_values.create(participant=p, parameter=data_param, value=pexpr.sequential_participant_identifier * 2)
+                pgroupr = ParticipantGroupRelationship.objects.get(group__experiment=e, participant=p)
+                dv = current_round_data.participant_data_values.create(participant_group_relationship=pgroupr, parameter=data_param, value=pexpr.sequential_participant_identifier * 2)
         return e
 
     def test_data_values(self):
-        self.create_participant_data_values()
-        e = self.experiment
+        e = self.create_participant_data_values()
         num_participant_parameters = e.parameters(scope=Parameter.PARTICIPANT_SCOPE).count()
         self.failUnlessEqual(e.participants.count() * num_participant_parameters, ParticipantRoundDataValue.objects.filter(experiment=e).count(),
                              'There should be %s participants * %s total data parameters = %s' % (e.participants.count(), num_participant_parameters, e.participants.count() * num_participant_parameters))
 
     def test_data_value_conversion(self):
-        self.create_participant_data_values()
-        e = self.experiment
+        e = self.create_participant_data_values()
         current_round_data = e.current_round_data
         for p in self.participants:
-            participant_data_values = current_round_data.participant_data_values.filter(participant=p)
+            participant_data_values = current_round_data.participant_data_values.filter(participant_group_relationship__participant=p)
             self.failUnlessEqual(participant_data_values.count(), 1)
             pexpr = p.get_participant_experiment_relationship(e)
             logger.debug("relationship %s" % pexpr)

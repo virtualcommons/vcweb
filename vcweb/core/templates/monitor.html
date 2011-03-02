@@ -51,6 +51,11 @@
                 $("#server-messages").append($("<div class='ui-state-highlight' />").append(data))
                 // scroll to bottom
             });
+            $('.collapsible').click(function() {
+                $(this).addClass('collapsed');
+                var next = $(this).next();
+                next.toggle('fast');
+            });
         });
     </script>
 
@@ -107,7 +112,7 @@
     <h3><a href='#'>{{ round_data }}</a></h3>
     <div id='round_data_{{forloop.counter}}'>
         {% if round_data.group_data_values.count > 0 %}
-        <h4>Group data</h4>
+        <h4 class='collapsible'>Group data</h4>
         <table>
             <thead>
                 <tr><th>Group</th><th>Parameter Name</th><th>Value</th></tr>
@@ -156,7 +161,7 @@
         {% endif %}
         {% comment %} participant chats {% endcomment %}
         {% if round_data.chat_messages.count > 0 %}
-        <h4>Chat data</h4>
+        <h4 class='collapsible'>Chat data (click to hide)</h4>
         <div class='chat notice ui-corner-all'>
             {% for chat_message in round_data.chat_messages.all %}
             <div class='ui-state-highlight'>
@@ -164,8 +169,8 @@
                 {{ chat_message.as_html }}
                 {% endautoescape %}
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
         {% endif %}
     </div>
     {% empty %}
