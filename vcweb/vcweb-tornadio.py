@@ -137,7 +137,7 @@ class ChatHandler(SocketConnection):
     def on_message(self, message, *args, **kwargs):
         logger.debug("received message %s from handler %s" % (message, self))
         event = to_event(message)
-        if event.type == 'connect':
+        if 'connect' in event.type:
             return
         # FIXME: add authentication
         participant_group_rel = session_manager.get_participant(self)
