@@ -1,8 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 {% load dajaxice_templatetags %}
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-
-
     <head>
         {% block head %}
         <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
@@ -15,12 +13,18 @@
         <!-- vcweb common js -->
         <script type='text/javascript' src='/static/js/common.js'></script>
         <script type='text/javascript' src='/static/js/jquery-1.4.4.min.js'></script>
+        <script type='text/javascript' src='/static/js/jquery.qtip-1.0.0-rc3.min.js'></script>
         {% include "includes/jquery.ui.html" %}
         {% dajaxice_js_import %}
         <!-- <script type='/text/javascript' src='/static/js/dajaxice.core.js'></script> -->
+        <script type='text/javascript'>
+            <!-- sets all external links to open up in new windows -->
+            $(function() {
+                $('a.external').attr({ target: "_blank" });
+            });
+        </script>
         {% endblock %}
     </head>
-
     <body>
         <div style='float:left; padding-top: 5px;'>
             <img src='/static/images/vcweb-logo.png' alt='vcweb logo'/>
@@ -61,7 +65,6 @@
             <div style='clear: both;'>&nbsp;</div>
             <!--  end #page -->
         </div>
-
         <div id="footer">
             {% block footer %}
             <p>
@@ -75,10 +78,5 @@
             </p>
             {% endblock footer %}
         </div>
-        <script type='text/javascript'>
-            <!-- sets all external links to open up in new windows -->
-            $('a.external').attr({ target: "_blank" });
-            </script>
-        </body>
-
-    </html>
+    </body>
+</html>

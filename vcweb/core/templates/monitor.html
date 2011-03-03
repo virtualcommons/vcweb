@@ -166,7 +166,7 @@
             {% for chat_message in round_data.chat_messages.all %}
             <div class='ui-state-highlight'>
                 {% autoescape off %}
-                {{ chat_message.as_html }}
+                {{ chat_message.as_html }} - <small>{{chat_message.participant}}</small>
                 {% endautoescape %}
             </div>
             {% endfor %}
