@@ -146,7 +146,11 @@
             <tbody>
                 {% for participant_data_value in round_data.participant_data_values.all %}
                 <tr>
-                    <td>{{ participant_data_value.participant }}</td>
+                    <td>
+                        <a class='tooltip' title='{{participant_data_value.participant}}'>
+                            {{ participant_data_value.participant_number }} ({{ participant_data_value.group }})
+                        </a>
+                    </td>
                     <td>{{ participant_data_value.parameter.label }}</td>
                     <td>{{ participant_data_value.value }}</td>
                     <td>{{ participant_data_value.parameter.type }}</td>

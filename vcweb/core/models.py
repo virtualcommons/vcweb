@@ -1071,7 +1071,7 @@ class ParticipantGroupRelationship(models.Model):
         return u"{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)
 
     class Meta:
-        ordering = ['participant_number', 'participant']
+        ordering = ['group', 'participant_number']
 
 class ChatMessageManager(models.Manager):
     def message(self, experiment, message):
