@@ -11,11 +11,11 @@ FIXME: replace these links eventually.
 {% endcomment %}
 <div id='navmenu'>
     <a href='/admin'>add / configure an experiment</a>
-    <a href='/admin'>download data</a> 
+    <a href='/experimenter/data'>download data</a>
     <a href='http://commons.asu.edu/contact'>report a bug</a>
 </div>
 <div class='ui-state-highlight ui-corner-all'>
-    <span class='ui-icon ui-icon-info'></span>
+    <span class='ui-icon ui-icon-info icon-left'></span>
     Welcome to the experimenter dashboard.  You are logged in as {{request.user.experimenter}}.
 </div>
 <h3>Your experiments</h3>
@@ -25,7 +25,7 @@ FIXME: replace these links eventually.
         {{e.status_line}}
         <ul class='horizontal' id='horizontal'>
             <li><a href='{{e.monitor_url}}'><img src='/static/images/famfamfam/zoom.png' alt='General experiment monitoring interface'/> monitor</a></li>
-            <li><a href='{{e.management_url}}'<img src='/static/images/famfamfam/application_go.png' alt='Custom management interface'/> manage (unfinished)</a></li>
+            <li><a href='{{e.management_url}}'><img src='/static/images/famfamfam/application_go.png' alt='Custom management interface'/> manage (unfinished)</a></li>
             <li><a href='{{e.stop_url}}' class='confirm-experiment-action' style='background-image:none;' ><img src='/static/images/famfamfam/stop.png' alt=''/> stop</a></li>
         </ul>
     </div>

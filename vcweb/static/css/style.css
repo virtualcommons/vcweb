@@ -137,7 +137,10 @@ legend {
 
 #experimentData a {
     text-decoration: none;
-    color: #549900;
+}
+
+a.tooltip {
+    background-color: #F9E275;
 }
 
 #experiments a {
@@ -163,10 +166,14 @@ legend {
     padding-left: 25px;
 }
 
-span.ui-icon {
-    float: left;
+.icon-left {
+    float:left;
     /* top right bottom left */
-    margin: 6px 5px 0px 5px;
+    margin: 0.25em;
+}
+
+.icon-right {
+    float: right;
 }
 
 #experiments span.inactive {
@@ -265,6 +272,3 @@ ul.horizontal {
 .collapsed {
 
 }
-
-
-

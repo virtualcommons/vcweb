@@ -764,6 +764,10 @@ class Group(models.Model):
     def current_round(self):
         return self.experiment.current_round
 
+    @property
+    def all_participants_str(self):
+        return ', '.join([participant.email for participant in self.participants.all()])
+
     '''
     Initializes data parameters for all groups in this round, as necessary. 
     If this round already has data parameters, is a no-op.

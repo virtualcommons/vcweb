@@ -37,7 +37,6 @@
         $('#statusDiv').show('fast');
         if (round_data_count > 0) {
             $('#experimentData').accordion({
-                collapsible: true,
                 active: active_round_number - 1,
                 autoHeight: false
             });
@@ -51,6 +50,7 @@
                 $("#server-messages").append($("<div class='ui-state-highlight' />").append(data))
                 // scroll to bottom
             });
+            $('a[title]').qtip({position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, style: { name: 'dark', tip: 'bottomLeft'} });
             $('.collapsible').click(function() {
                 $(this).addClass('collapsed');
                 var next = $(this).next();
@@ -121,11 +121,9 @@
                 {% for group_data_value in round_data.group_data_values.all %}
                 <tr>
                     <td>
-                        {% comment %}
-                        add a tooltip with group members
-                        <td class='small-font'>{{ group_data_value.group.participants.all|join:"<br/> "}}</td>
-                        {% endcomment %}
-                        {{ group_data_value.group }}
+                        <a class='tooltip' title='{{ group_data_value.group.all_participants_str }}'>
+                            {{ group_data_value.group }}
+                        </a>
                     </td>
                     <td>{{ group_data_value.parameter.label}}</td>
                     <td>{{ group_data_value.value}}</td>
@@ -135,7 +133,7 @@
         </table>
         {% else %}
         <div class='info ui-corner-all'>
-            <span class='ui-icon ui-icon-info'></span>No group data for this round.
+            <span class='ui-icon ui-icon-info icon-left'></span>No group data for this round.
         </div>
         {% endif %}
         {% comment %} participant data values {% endcomment %}
@@ -157,24 +155,24 @@
             </tbody>
         </table>
         {% else %}
-        <div class='info ui-corner-all'><span class='ui-icon ui-icon-info'></span>No participant data for this round.</div>
+        <div class='info ui-corner-all'><span class='ui-icon ui-icon-info icon-left'></span>No participant data for this round.</div>
         {% endif %}
         {% comment %} participant chats {% endcomment %}
         {% if round_data.chat_messages.count > 0 %}
         <h4 class='collapsible'>Chat data (click to hide)</h4>
-        <div class='chat notice ui-corner-all'>
+        <div id='chat_{{round_data.pk}}' class='chat notice ui-corner-all'>
             {% for chat_message in round_data.chat_messages.all %}
             <div class='ui-state-highlight'>
-                {% autoescape off %}
-                {{ chat_message.as_html }} - <small>{{chat_message.participant}}</small>
-                {% endautoescape %}
+                <a class='tooltip' name='{{chat_message.pk}}' title='{{chat_message.date_created}} {{chat_message.participant}}'>
+                    <span class='ui-icon ui-icon-comment icon-right'></span> {{chat_message.date_created|date:"H:s"}}</a> |
+                {{chat_message}}
             </div>
             {% endfor %}
         </div>
         {% endif %}
     </div>
     {% empty %}
-    <div class='alert ui-state-highlight ui-corner-all'><span class='ui-icon ui-icon-alert'></span>Round data is not yet available.</div>
+    <div class='alert ui-state-highlight ui-corner-all'><span class='ui-icon ui-icon-alert icon-left'></span>Round data is not yet available.</div>
     {% endfor %}
     {% endblock data %}
 </div>
