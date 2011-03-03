@@ -313,6 +313,13 @@ class Experiment(models.Model):
           return self.current_round
 
     @property
+    def next_round_instructions(self):
+        if self.has_next_round:
+            return self.next_round.instructions
+        else:
+            return u'This is the final round.'
+
+    @property
     def previous_round(self):
         return self.get_round_configuration(max(self.current_round_sequence_number - 1, 0))
 
@@ -1118,6 +1125,18 @@ class ParticipantRoundDataValue(DataValue):
         super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
         if not hasattr(self, 'experiment'):
             self.experiment = self.round_data.experiment
+
+    @property
+    def participant(self):
+        return self.participant_group_relationship.participant
+
+    @property
+    def group(self):
+        return self.participant_group_relationship.group
+
+    @property
+    def participant_number(self):
+        return self.participant_group_relationship.participant_number
 
     @property
     def round_configuration(self):

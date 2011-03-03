@@ -89,9 +89,11 @@ def participate(request, experiment_id=None):
                 return quiz(request, experiment, participant)
             else:
                 # instructions or quiz round
-                return render_to_response(experiment.current_round_template,
-                        locals(),
-                        context_instance=RequestContext(request))
+                return render_to_response(experiment.current_round_template, {
+                    'experiment': experiment,
+                    'next_round_instructions': experiment.next_round_instructions
+                    },
+                    context_instance=RequestContext(request))
         else:
 # round is not currently active, redirect to waiting page.
             return redirect('forestry:wait', experiment_id=experiment.pk)

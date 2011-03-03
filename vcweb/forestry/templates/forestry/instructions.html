@@ -19,12 +19,8 @@ decision about how many resource units you want to harvest.  At the start you
 can harvest a maximum of 5 units and a minimum of 0 units from the resource.
 </p>
 <p>
-We will first start with two practice rounds.
+{{ next_round_start_message|default:"The next round will start shortly." }}
 </p>
-
-<form action="wait" method="post">
-    <input type='submit' value='Continue'/>
-</form>
 {% endblock content %}
 
 {% block sidebar %}
