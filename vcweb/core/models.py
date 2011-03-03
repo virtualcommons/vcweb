@@ -335,7 +335,7 @@ class Experiment(models.Model):
     def is_active(self):
         return self.status != 'INACTIVE'
 
-    def data_file_name(self, file_ext='.csv'):
+    def data_file_name(self, file_ext='csv'):
         return "%s_%s.%s" % (slugify(self.experiment_metadata.title), self.pk, file_ext)
 
     def parameters(self, scope=None):

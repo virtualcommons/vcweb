@@ -12,6 +12,7 @@ import base64
 from datetime import datetime
 import logging
 from vcweb.core import unicodecsv
+import itertools
 logger = logging.getLogger(__name__)
 
 """ account registration / login / logout / profile views """
@@ -150,8 +151,9 @@ def monitor(request, experiment_id=None):
         messages.warning(request, error_message)
         return redirect('core:dashboard')
 
+# FIXME: add data converter objects to write to csv, excel, etc.
 @experimenter_required
-def download_data_csv(request, experiment_id=None):
+def download_data(request, experiment_id=None, file_type='csv'):
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
         response = HttpResponse(mimetype='text/csv')
@@ -159,7 +161,7 @@ def download_data_csv(request, experiment_id=None):
         writer = unicodecsv.UnicodeWriter(response)
         writer.writerow(['Group', 'Members'])
         for group in experiment.groups.all():
-            writer.writerow([group, '::'.join(group.participants.all())])
+            writer.writerow(itertools.chain.from_iterable([[group], group.participants.all()]))
         for round_data in experiment.round_data.all():
             round_configuration = round_data.round_configuration
             # write out group-wide data values
@@ -191,7 +193,7 @@ def download_data_excel(request, experiment_id=None):
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
         response = HttpResponse(mimetype='application/vnd.ms-excel')
-        response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name('.xls')
+        response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name(file_ext='xls')
         workbook = xlwt.Workbook()
         group_sheet = workbook.add_sheet('Group Data')
         current_row = 0

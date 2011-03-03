@@ -89,10 +89,11 @@
                 {% else %}
                 <li><a class='confirm-experiment-action' name='start_round' href='start-round'><img src='/static/images/famfamfam/control_play_blue.png' alt='' /> start round</a></li>
                 {% endif %}
-                <li><a style='background-image: none;' name='advance_to_next_round' class='confirm-experiment-action' href='advance-to-next-round'><img src='/static/images/famfamfam/control_fastforward_blue.png' alt=''/> advance to next round</a></li>
+                <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round'><img src='/static/images/famfamfam/control_fastforward_blue.png' alt=''/> advance to next round</a></li>
                 {% else %}
                 <li><a class='confirm-experiment-action' name='activate' href='activate'><img src='/static/images/famfamfam/cog_go.png' alt='' /> activate</a></li>
                 {% endif %}
+                <li><a href='download/csv'><img src='/static/images/download-icon.png' alt=''/> download data: csv</a> | <a href='download/xls'>xls</a></li>
             </ul>
             <br/>
             <ul class='messages'>
