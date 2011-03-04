@@ -50,7 +50,7 @@
                 $("#server-messages").append($("<div class='ui-state-highlight' />").append(data))
                 // scroll to bottom
             });
-            $('a[title]').qtip({position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, style: { name: 'dark', tip: 'bottomLeft'} });
+            $('.tooltip').qtip({position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, style: { name: 'dark', tip: 'bottomLeft'} });
             $('.collapsible').click(function() {
                 $(this).addClass('collapsed');
                 var next = $(this).next();
@@ -82,7 +82,7 @@
         {% block status %}
         <fieldset class='small ui-corner-all'>
             <legend>round status</legend>
-            <ul id='actions' class='actions'>
+            <ul id='actions' class='actions tooltip' title='Use the links to start/end a round, advance to the next round, or download data. '>
                 {% if experiment.is_active %}
                 {% if experiment.is_round_in_progress %}
                 <li><a class='confirm-experiment-action' name='end_round' href='end-round'><img src='/static/images/famfamfam/control_stop_blue.png' alt='' /> end round</a></li>
@@ -96,7 +96,7 @@
                 <li><a href='download/csv'><img src='/static/images/download-icon.png' alt=''/> download data: csv</a> | <a href='download/xls'>xls</a></li>
             </ul>
             <br/>
-            <ul class='messages'>
+            <ul class='messages tooltip' title='Round instructions: {{experiment.actions_help_text}}'>
                 <li>{{ experiment.round_status_display }}</li>
                 <li>Type: {{ experiment.current_round.get_round_type_display }}</li>
                 <li>Round started on {{ experiment.current_round_start_time }}</li>

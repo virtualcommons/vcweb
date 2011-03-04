@@ -335,6 +335,13 @@ class Experiment(models.Model):
     def is_active(self):
         return self.status != 'INACTIVE'
 
+    @property
+    def actions_help_text(self):
+        if hasattr(self, 'custom_help_text'):
+            return self.custom_help_text['actions']
+        # return dynamic text based on current_round?
+        return self.current_round.instructions
+
     def data_file_name(self, file_ext='csv'):
         return "%s_%s_%s.%s" % (slugify(self.experiment_metadata.title), self.pk, datetime.now().strftime("%d-%m-%y-%H%M"), file_ext)
 
