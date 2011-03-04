@@ -1,13 +1,14 @@
 <script type="text/javascript">
 
+function createRefreshEvent() {
+    return createMessageEvent("Refresh all clients", "refresh");
+}
 function createConnectionEvent() {
    return createMessageEvent("Initial connection");
 }
-
 function createReconnectionEvent() {
    return createMessageEvent("Reconnecting from disconnect", "reconnect");
 }
-
 function createMessageEvent(message, event_type) {
    if (! event_type) {
       event_type = "experimenter";
@@ -19,9 +20,7 @@ function createMessageEvent(message, event_type) {
       "message": message
    };
 }
-
 function createChatEvent(message) {
    return createMessageEvent(message);
 }
-
 </script>

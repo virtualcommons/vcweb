@@ -88,8 +88,10 @@ def participate(request, experiment_id=None):
             elif current_round.is_quiz_round:
                 return quiz(request, experiment, participant)
             else:
+                participant_group_rel = participant.get_participant_group_relationship(experiment)
                 # instructions or quiz round
                 return render_to_response(experiment.current_round_template, {
+                    'participant_group_relationship': participant_group_rel,
                     'experiment': experiment,
                     'next_round_instructions': experiment.next_round_instructions
                     },
@@ -107,12 +109,12 @@ def participate(request, experiment_id=None):
 import re
 quiz_question_re = re.compile(r'^quiz_question_(\d+)$')
 def quiz(request, experiment, participant):
+    incorrect_answers = []
     if request.method == 'POST':
         form = QuizForm(request.POST)
         if form.is_valid():
 # check against quiz answers (should be stored as data parameters)
             current_round = experiment.current_round
-            incorrect_answers = []
             for name, answer in form.cleaned_data.items():
                 match_object = quiz_question_re.match(name)
                 if match_object:
@@ -120,14 +122,19 @@ def quiz(request, experiment, participant):
                     quiz_question = current_round.quiz_questions.get(pk=quiz_question_id)
                     if not quiz_question.is_correct(answer):
 # add to wrong answers list
-                        incorrect_answers.append("Your answer %s was incorrect.  The correct answer is %s. %s" 
+                        incorrect_answers.append("Your answer %s was incorrect.  The correct answer is %s. %s"
                                 % (answer, quiz_question.answer,
                                     quiz_question.explanation))
     else:
         form = QuizForm(quiz_questions=experiment.quiz_questions)
-    return render_to_response(experiment.current_round_template,
-            locals(),
-            context_instance=RequestContext(request))
+
+    participant_group_rel = participant.get_participant_group_relationship(experiment)
+    return render_to_response(experiment.current_round_template, {
+        'participant_group_relationship': participant_group_rel,
+        'form': form,
+        'incorrect_answers': incorrect_answers
+        },
+        context_instance=RequestContext(request))
 
 
 def chat(request, experiment, participant):

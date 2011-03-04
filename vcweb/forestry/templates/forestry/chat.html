@@ -7,11 +7,18 @@
     <script type="text/javascript">
         $(function() {
                 var chatDiv = document.getElementById('chat-div');
-                var s = connect(window.location.hostname, 8888, 'chat/{{participant_group_relationship.pk}}');
-                s.on('message', function(data) {
-                    $("#chat-div").append($("<div class='ui-state-highlight' />").append(data))
-                    // scroll to bottom
-                    chatDiv.scrollTop = chatDiv.scrollHeight;
+                var s = connect(window.location.hostname, 8888, 'participant/{{participant_group_relationship.pk}}');
+                s.on('message', function(json) {
+                    switch (json.message_type) {
+                    case 'chat':
+                        $("#chat-div").append($("<div class='ui-state-highlight' />").append(json.message))
+                        // scroll to bottom
+                        chatDiv.scrollTop = chatDiv.scrollHeight;
+                        break;
+                    case 'refresh':
+                        location.reload(true);
+                        break;
+                    }
                 });
                 //send the message when submit is clicked
                 $('#chatform').submit(function (evt) {

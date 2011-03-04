@@ -1,6 +1,25 @@
 {% extends "base-participant.html" %}
 
-{% block title %} Forestry Instructions{% endblock %}
+
+{% block head %}
+    {{ block.super }}
+    {% include "includes/participant.events.html" %}
+    {% include "includes/socket.io.html" %}
+    <script type="text/javascript">
+        $(function() {
+                var s = connect(window.location.hostname, 8888, 'participant/{{participant_group_relationship.pk}}');
+                s.on('message', function(json) {
+                    switch (json.message_type) {
+                    case 'refresh':
+                        location.reload(true);
+                        break;
+                    }
+                });
+        });
+    </script>
+{% endblock %}
+
+{% block title %}Forestry Instructions{% endblock %}
 
 {% block content %}
 <h3>Forestry</h3>

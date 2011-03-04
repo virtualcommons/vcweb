@@ -44,17 +44,27 @@
     }
     $(function() {
             registerCallbacks({{ experiment.round_data.count }}, {{ experiment.current_round.sequence_number }});
+            // socket.io connection
             // FIXME: add auth
-            var s = connect(window.location.hostname, 8888, 'experimenter/{{experiment.pk}}');
-            s.on('message', function(data) {
-                $("#server-messages").append($("<div class='ui-state-highlight' />").append(data))
-                // scroll to bottom
+            var s = connect(window.location.hostname, 8888, 'experimenter/{{request.user.experimenter.pk}}');
+            s.on('message', function(json) {
+                switch (json.message_type) {
+                case 'chat':
+                    $("#server-messages").append($("<div class='ui-state-highlight' />").append(json.message));
+                    break;
+                }
             });
             $('.tooltip').qtip({position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, style: { name: 'dark', tip: 'bottomLeft'} });
+            $('a[title]').not('.tooltip').qtip({position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, style: { name: 'dark', tip: 'bottomLeft'} });
             $('.collapsible').click(function() {
                 $(this).addClass('collapsed');
                 var next = $(this).next();
                 next.toggle('fast');
+            });
+            $('#refreshAllParticipants').click(function(evt) {
+                s.send(createRefreshEvent());
+                alert("sending refresh event");
+                return false;
             });
         });
     </script>
@@ -69,7 +79,15 @@
 {% block page %}
 {{block.super}}
 <h3>{{experiment}}</h3>
-<p>You are logged in as {{request.user.experimenter}}.</p>
+<p>You are logged in as {{request.user.experimenter}}.
+<fieldset class='small'>
+    <legend>Experiment management</legend>
+    <ul class='actions'>
+        <li><a id='refreshAllParticipants' title='Sends a page refresh to all connected participants.' href='#'>Refresh all participants</a></li>
+        <li><a title='Download experiment data as a csv file.' href='download/csv'><img src='/static/images/download-icon.png' alt=''/> download data: csv</a> | <a href='download/xls'>xls</a></li>
+    </ul>
+</fieldset>
+</p>
 <div class='experiment-dashboard'>
     {% comment %}
     FIXME: Improve this so that we can just inject a new round_configuration
@@ -84,16 +102,15 @@
             <legend>round status</legend>
             <ul id='actions' class='actions tooltip' title='Use the links to start/end a round, advance to the next round, or download data. '>
                 {% if experiment.is_active %}
-                {% if experiment.is_round_in_progress %}
-                <li><a class='confirm-experiment-action' name='end_round' href='end-round'><img src='/static/images/famfamfam/control_stop_blue.png' alt='' /> end round</a></li>
+                    {% if experiment.is_round_in_progress %}
+                    <li><a class='confirm-experiment-action' name='end_round' href='end-round'><img src='/static/images/famfamfam/control_stop_blue.png' alt='' /> end round</a></li>
+                    {% else %}
+                    <li><a class='confirm-experiment-action' name='start_round' href='start-round'><img src='/static/images/famfamfam/control_play_blue.png' alt='' /> start round</a></li>
+                    {% endif %}
+                    <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round'><img src='/static/images/famfamfam/control_fastforward_blue.png' alt=''/> advance to next round</a></li>
                 {% else %}
-                <li><a class='confirm-experiment-action' name='start_round' href='start-round'><img src='/static/images/famfamfam/control_play_blue.png' alt='' /> start round</a></li>
+                    <li><a class='confirm-experiment-action' name='activate' href='activate'><img src='/static/images/famfamfam/cog_go.png' alt='' /> activate</a></li>
                 {% endif %}
-                <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round'><img src='/static/images/famfamfam/control_fastforward_blue.png' alt=''/> advance to next round</a></li>
-                {% else %}
-                <li><a class='confirm-experiment-action' name='activate' href='activate'><img src='/static/images/famfamfam/cog_go.png' alt='' /> activate</a></li>
-                {% endif %}
-                <li><a href='download/csv'><img src='/static/images/download-icon.png' alt=''/> download data: csv</a> | <a href='download/xls'>xls</a></li>
             </ul>
             <br/>
             <ul class='messages tooltip' title='Round instructions: {{experiment.actions_help_text}}'>
