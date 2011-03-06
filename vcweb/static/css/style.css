@@ -80,12 +80,35 @@ ul.actions {
     padding: 0;
 }
 
+span.actions {
+    cursor: pointer;
+
+}
+
 #actions li {
     padding: 3px;
 }
 
 li.warning {
     font-size: 0.8em;
+}
+
+.icon-left {
+    float:left;
+    /* top right bottom left */
+    margin: 0.25em;
+}
+
+.icon-right {
+    float: right;
+    margin: 0.25em;
+}
+
+.vcweb-icon {
+    display:inline;
+    background-repeat: no-repeat;
+    background-position: 3px center;
+    margin: 0 0.15em 0 0;
 }
 
 .errorIcon, .warningIcon, .alertIcon, .infoIcon, .smallInfoIcon, .contactIcon, .crossIcon {
@@ -164,16 +187,6 @@ a.tooltip {
     list-style-type: none;
     margin: 0;
     padding-left: 25px;
-}
-
-.icon-left {
-    float:left;
-    /* top right bottom left */
-    margin: 0.25em;
-}
-
-.icon-right {
-    float: right;
 }
 
 #experiments span.inactive {
