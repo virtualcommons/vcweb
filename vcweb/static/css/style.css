@@ -82,7 +82,8 @@ ul.actions {
 
 span.actions {
     cursor: pointer;
-
+    color: #961A06;
+    text-decoration: underline;
 }
 
 #actions li {
