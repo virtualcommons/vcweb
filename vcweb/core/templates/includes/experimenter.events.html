@@ -4,7 +4,7 @@ function createRefreshEvent() {
     return createMessageEvent("Refresh all clients", "refresh");
 }
 function createConnectionEvent() {
-   return createMessageEvent("Initial connection");
+   return createMessageEvent("Initial connection", "connect");
 }
 function createReconnectionEvent() {
    return createMessageEvent("Reconnecting from disconnect", "reconnect");
