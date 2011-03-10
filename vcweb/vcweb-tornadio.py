@@ -24,21 +24,26 @@ class SessionManager:
     ''' the reverse mapping, associates ParticipantGroupRelationship.pks with the beaker session '''
     pgr_to_session = {}
 
-    experimenter_connections = {}
     connections_to_experimenters = {}
+    experimenters_to_connections = {}
 
     refresh_json = simplejson.dumps({ 'message_type': 'refresh' })
 
-    def add_experimenter(self, session, experimenter_pk):
-        if session in self.experimenter_connections:
+    def add_experimenter(self, session, incoming_experimenter_pk):
+        experimenter_pk = int(incoming_experimenter_pk)
+        logger.debug("registering experimenter %s with session %s" %
+                (experimenter_pk, session))
+        if session in self.connections_to_experimenters:
             self.remove_experimenter(session)
-        self.experimenter_connections[session] = experimenter_pk
-        self.connections_to_experimenters[experimenter_pk] = session
+        self.connections_to_experimenters[session] = experimenter_pk
+        self.experimenters_to_connections[experimenter_pk] = session
+
     def remove_experimenter(self, session):
-        if session in self.experimenter_connections:
-            experimenter_pk = self.experimenter_connections[session]
-            del self.experimenter_connections[session]
-            del self.connections_to_experimenters[experimenter_pk]
+        if session in self.connections_to_experimenters:
+            experimenter_pk = self.connections_to_experimenters[session]
+            logger.debug("removing experimenter %s" % experimenter_pk)
+            del self.connections_to_experimenters[session]
+            del self.experimenters_to_connections[experimenter_pk]
 
     def get_participant(self, session):
         logger.debug("trying to retrieve participant group relationship for session id %s" % session)
@@ -78,14 +83,14 @@ class SessionManager:
     experimenter functions
     '''
     def send_refresh(self, experiment, experimenter_session, experimenter_id=None):
-        if experimenter_session in self.experimenter_connections:
-            experimenter_pk = self.experimenter_connections[experimenter_session]
+        if experimenter_session in self.connections_to_experimenters:
+            experimenter_pk = self.connections_to_experimenters[experimenter_session]
             experimenter = Experimenter.objects.get(pk=experimenter_pk)
             if experiment.experimenter == experimenter:
                 for group in experiment.groups.all():
                     for participant_group_pk, session in self.sessions(group):
-                        logger.debug("sending message to participant %s" %
-                                participant_group_pk)
+                        logger.debug("sending refresh message %s to participant %s" %
+                                (SessionManager.refresh_json, participant_group_pk))
                         session.send(SessionManager.refresh_json)
             else:
                 logger.warning("Experimenter %s tried to refresh experiment %s" %
@@ -94,9 +99,21 @@ class SessionManager:
             logger.warning("No experimenter available for session %s" %
                 experimenter_session)
 
+    def send_to_experimenter(self, experimenter_pk, json):
+        logger.debug("sending %s to experimenter %s" % (json, experimenter_pk))
+        if experimenter_pk in self.experimenters_to_connections:
+            self.experimenters_to_connections[experimenter_pk].send(json)
+        else:
+            logger.debug("no experimenter found with pk %s" % experimenter_pk)
+            logger.debug("all experimenters: %s" %
+                    self.experimenters_to_connections)
+
     def send_to_group(self, group, json):
         for participant_group_pk, session in self.sessions(group):
             session.send(json)
+        experimenter = group.experiment.experimenter
+        logger.debug("sending message to experimenter %s" % experimenter)
+        self.send_to_experimenter(experimenter.pk, json)
 
 class Struct:
     def __init__(self, **attributes):
@@ -145,11 +162,11 @@ class ParticipantHandler(SocketConnection):
             participant_group_rel = ParticipantGroupRelationship.objects.get(pk=participant_group_relationship_id)
             session_manager.add(extra, self, participant_group_rel)
             group = participant_group_rel.group
-            message = "<div>Participant %s joined group %s chat.</div>" % (participant_group_rel.participant_number, group)
+            message = "Participant %s connected to group %s." % (participant_group_rel.participant_number, group)
             session_manager.send_to_group(group,
                     simplejson.dumps({
                         'message' : message,
-                        'message_type': 'chat',
+                        'message_type': 'info',
                         }))
         except KeyError, e:
             logger.debug("no participant group relationship id %s" % e)

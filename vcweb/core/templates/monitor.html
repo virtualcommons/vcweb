@@ -1,5 +1,4 @@
 {% extends "base-experimenter.html" %}
-
 {% block head %}
 {{ block.super }}
 {% include "includes/experimenter.events.html" %}
@@ -48,9 +47,10 @@
             // FIXME: add auth
             var s = connect(window.location.hostname, 8888, 'experimenter/{{request.user.experimenter.pk}}');
             s.on('message', function(json) {
+                console.log("Received message: " + json);
                 switch (json.message_type) {
-                case 'chat':
-                    $("#server-messages").append($("<div class='ui-state-highlight' />").append(json.message));
+                case 'info':
+                    $("#experiment-messages").append($("<div class='ui-state-highlight' />").append(json.message));
                     break;
                 }
             });
@@ -70,26 +70,26 @@
 
 </script>
 {% endblock %}
-
 {% block title %}
 {{ experiment.status_line }}
 {% endblock %}
-
 {% block page %}
 {{block.super}}
 <h3>{{experiment}}</h3>
-<p>You are logged in as {{request.user.experimenter}}.
-<fieldset class='small'>
+<p>You are logged in as {{request.user.experimenter}}.</p>
+<div id='experiment-messages' class='experimenter-sidebar-messages notice ui-corner-all'>
+    <h5>Experiment messages</h5>
+</div>
+<fieldset class='small ui-corner-all'>
     <legend>Experiment management</legend>
     <ul class='actions'>
-        <li><span id='refreshAllParticipants' title='Sends a page refresh to all connected participants.' class='actions' >
+        <li><span id='refreshAllParticipants' title='Sends a page refresh to all connected participants.' class='clickable' >
             <span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/arrow_refresh.png);' alt=''></span>refresh all participants</a></li>
         <li>
         <a href='download/csv'><span class='vcweb-icon ui-icon icon-left' style='margin: 8px 0.15em 0px 0px; background:url(/static/images/download-icon.png);' alt=''></span>download data as <img src='/static/images/famfamfam/page_white_text.png' style='margin: 5px 0 0 0;' alt=''> csv</a> |
         <a href='download/xls'><img src='/static/images/famfamfam/page_white_excel.png' style='margin: 5px 0 0 0;' alt=''/> xls</a></li>
     </ul>
 </fieldset>
-</p>
 <div class='experiment-dashboard'>
     {% comment %}
     FIXME: Improve this so that we can just inject a new round_configuration
@@ -129,7 +129,6 @@
         {% endblock status %}
     </div>
 </div>
-
 <div id='experimentData'>
     {% block data %}
     {% for round_data in experiment.round_data.all %}

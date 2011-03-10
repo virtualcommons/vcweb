@@ -14,8 +14,7 @@ function createMessageEvent(payload, event_type) {
    }
    return {
       "type": event_type,
-      "participant_id": {{participant.pk}},
-      "group_id": {{group.pk}},
+      "participant_group_relationship_id": {{participant_group_relationship.pk}},
       "message": payload
    };
 }

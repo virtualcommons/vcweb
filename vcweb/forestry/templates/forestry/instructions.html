@@ -9,9 +9,11 @@
         $(function() {
                 var s = connect(window.location.hostname, 8888, 'participant/{{participant_group_relationship.pk}}');
                 s.on('message', function(json) {
+                    console.log("Received message: " + json);
                     switch (json.message_type) {
-                    case 'refresh':
-                        location.reload(true);
+                    case "refresh":
+                        console.log("refreshing..");
+                        window.location.reload(true);
                         break;
                     }
                 });

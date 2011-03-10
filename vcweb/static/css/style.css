@@ -80,7 +80,7 @@ ul.actions {
     padding: 0;
 }
 
-span.actions {
+span.clickable {
     cursor: pointer;
     color: #961A06;
     text-decoration: underline;
@@ -268,6 +268,14 @@ ul.horizontal {
     background: url('/static/images/clock.png') bottom center no-repeat;
     margin-left: 8px;
     margin-right: 8px;
+}
+
+.experimenter-sidebar-messages {
+    margin-top: 8px;
+    height: 13.1em;
+    width: 22em;
+    float: right;
+    overflow:auto;
 }
 
 .chat {
