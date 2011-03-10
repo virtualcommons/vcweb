@@ -8,8 +8,8 @@
     <script type="text/javascript">
         $(function() {
                 var s = connect(window.location.hostname, 8888, 'participant/{{participant_group_relationship.pk}}');
-                s.on('message', function(json) {
-                    console.log("Received message: " + json);
+                s.on('message', function(json_string) {
+                    var json = JSON.parse(json_string);
                     switch (json.message_type) {
                     case "refresh":
                         console.log("refreshing..");

@@ -46,13 +46,19 @@
             // socket.io connection
             // FIXME: add auth
             var s = connect(window.location.hostname, 8888, 'experimenter/{{request.user.experimenter.pk}}');
-            s.on('message', function(json) {
-                console.log("Received message: " + json);
+            s.on('message', function(json_message) {
+                console.log("Received message: " + json_message);
+                var json = JSON.parse(json_message);
                 switch (json.message_type) {
                 case 'info':
                     $("#experiment-messages").append($("<div class='ui-state-highlight' />").append(json.message));
                     break;
+                default:
+                    console.log("WTH? " + json.message);
+
                 }
+                console.log("message type: " + json.message_type);
+
             });
             $('.tooltip').qtip({position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, style: { name: 'dark', tip: 'bottomLeft'} });
             $('a[title]').not('.tooltip').qtip({position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, style: { name: 'dark', tip: 'bottomLeft'} });
