@@ -10,8 +10,8 @@ from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.decorators import participant_required, experimenter_required
 from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision
 from vcweb.forestry.forms import HarvestDecisionForm
-
 import logging
+
 logger = logging.getLogger(__name__)
 
 @login_required
@@ -74,6 +74,7 @@ def wait(request, experiment_id=None):
     except Experiment.DoesNotExist:
         logger.warning("No experiment found with id %s" % experiment_id)
 
+# FIXME: refactor this ugliness
 @participant_required
 def participate(request, experiment_id=None):
     participant = request.user.participant
@@ -88,8 +89,8 @@ def participate(request, experiment_id=None):
             elif current_round.is_quiz_round:
                 return quiz(request, experiment, participant)
             else:
-                participant_group_rel = participant.get_participant_group_relationship(experiment)
                 # instructions or quiz round
+                participant_group_rel = participant.get_participant_group_relationship(experiment)
                 return render_to_response(experiment.current_round_template, {
                     'participant_group_relationship': participant_group_rel,
                     'experiment': experiment,

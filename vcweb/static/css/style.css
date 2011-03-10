@@ -1,13 +1,11 @@
 body {
     font-family: /*"Lucida Grande", "Trebuchet MS",*/ Arial, Helvetica, Tahoma, Verdana, sans-serif;
     font-size: 1.1em;
-
 }
 a.external {
     background: url(/static/images/external.png) center right no-repeat;
     padding-right: 13px;
 }
-
 h1, h2, h3, h4, h5 {
     margin: 0;
     font-weight: normal;
@@ -18,31 +16,22 @@ h1, h2, h3, h4, h5 {
     margin-top:1em;
     margin-bottom:.7em;
 }
-
 h2, h3, h4, h5 {
     border-bottom:1px solid #333;
 }
-
-
 h1 { font-size: 1.8em; }
-
 h2 { font-size: 1.4em; }
-
 h3 { font-size: 1.2em; }
-
 h4 { font-size: 1.0em; }
-
-
+h5 { font-size: 0.9em; }
 input[type=text], input[type=password] {
     width: 12em;
 }
-
 input.error {
     padding: 0;
     margin: 0;
     border: solid red;
 }
-
 label.error {
     background: url('/static/images/unchecked.gif') no-repeat left center #FBE3E4;
     line-height: normal;
@@ -52,12 +41,10 @@ label.error {
     padding-left: 1.1em;
     margin-left: 0.3em;
 }
-
 input.two-digits {
     width: 2em;
     text-align: right;
 }
-
 span.label {
     float: left;
     text-align: right;
@@ -68,43 +55,41 @@ span.label {
     display:inline;
     font-size: 0.8em;
 }
-
 ul.messages {
     margin-left: 0;
     list-style: none;
 }
-
 ul.actions {
     margin: 0;
     list-style: none;
     padding: 0;
 }
-
 span.clickable {
     cursor: pointer;
     color: #961A06;
     text-decoration: underline;
 }
-
 #actions li {
     padding: 3px;
 }
-
 li.warning {
     font-size: 0.8em;
 }
-
 .icon-left {
     float:left;
     /* top right bottom left */
     margin: 0.25em;
 }
-
 .icon-right {
     float: right;
     margin: 0.25em;
 }
-
+.float-left {
+    float: left;
+}
+.float-right {
+    float:right;
+}
 .vcweb-icon {
     display:inline;
     background-repeat: no-repeat;
@@ -143,7 +128,6 @@ li.warning {
 .small-font {
     font-size: 0.8em;
 }
-
 fieldset.small {
     font: 0.8em "Helvetica Neue", helvetica, arial, sans-serif;
     color: #666;
@@ -152,13 +136,11 @@ fieldset.small {
     border: solid 1px #d3d3d3;
     width: 500px;
 }
-
-legend {
+fieldset.small>legend {
     font-weight: bold;
     text-transform: lowercase;
     padding: 2px 6px;
 }
-
 #experimentData a {
     text-decoration: none;
 }
@@ -263,34 +245,28 @@ ul.horizontal {
     color: #fff;
     padding-bottom: 8px;
 }
-
 #timeRemaining span {
     background: url('/static/images/clock.png') bottom center no-repeat;
     margin-left: 8px;
     margin-right: 8px;
 }
-
-.experimenter-sidebar-messages {
-    margin-top: 8px;
-    height: 13.1em;
-    width: 22em;
+#experimenter-sidebar {
     float: right;
-    overflow:auto;
 }
-
+#experimenter-sidebar h2,h3,h4,h5 {
+    padding: 0;
+    margin: -14px 0px 5px 0;
+}
+.experimenter-sidebar-messages {
+    height: 13em;
+    width: 22em;
+    overflow:auto;
+    float:right; 
+}
 .chat {
     height: 20em;
     overflow: auto;
 }
-
 #chatText {
     width: 100%;
-}
-
-.collapsible {
-
-}
-
-.collapsed {
-
 }

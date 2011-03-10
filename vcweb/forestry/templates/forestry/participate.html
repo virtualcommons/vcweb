@@ -1,15 +1,7 @@
 {% extends "base-participant.html" %}
 {% block head %}
 {{ block.super }}
-
 <script type="text/javascript">
-    function range(begin, end){
-        var array = []
-        for (var i = begin; i <= end; ++i) {
-            array.push(i);
-        }
-        return array;
-    }
     $(function() {
         $("#forestryForm").validate({
                 rules: {
@@ -35,7 +27,6 @@
 {% block title %}
 Participating in {{experiment.status_line}}
 {% endblock %}
-
 {% block content %}
 <h3>Forestry round number {{ experiment.current_round.round_number }}</h3>
 <div style="background-image: url('/static/images/forestry/plain-tree.gif'); background-repeat: repeat-x; width:{{resource_width}}px; height: 35px;">
@@ -59,10 +50,9 @@ Participating in {{experiment.status_line}}
     </div>
 </form>
 {% else %}
-<div class='ui-state-highlight ui-corner-all'>
+<div class='alert ui-corner-all'>
     <span class='ui-icon ui-icon-alert'></span>
-    The resource has been depleted to the point where no one can harvest from
-    it.
+    There aren't enough resources to harvest.
 </div>
 {% endif %}
 {% endblock content %}

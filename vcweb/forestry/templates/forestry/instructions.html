@@ -1,6 +1,4 @@
 {% extends "base-participant.html" %}
-
-
 {% block head %}
     {{ block.super }}
     {% include "includes/participant.events.html" %}
@@ -9,20 +7,22 @@
         $(function() {
                 var s = connect(window.location.hostname, 8888, 'participant/{{participant_group_relationship.pk}}');
                 s.on('message', function(json_string) {
-                    var json = JSON.parse(json_string);
+                    var json = jQuery.parseJSON(json_string);
                     switch (json.message_type) {
-                    case "refresh":
+                    case 'refresh':
                         console.log("refreshing..");
                         window.location.reload(true);
+                        break;
+                    case 'goto':
+                        console.log("going to " + json.url);
+                        window.location.href = json.url;
                         break;
                     }
                 });
         });
     </script>
 {% endblock %}
-
 {% block title %}Forestry Instructions{% endblock %}
-
 {% block content %}
 <h3>Forestry</h3>
 <p>

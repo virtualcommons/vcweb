@@ -41,32 +41,26 @@
             });
         }
     }
+    var qtipOptions = {position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, style: { name: 'dark', tip: 'bottomLeft'} };
     $(function() {
+            var experimentMessageDiv = document.getElementById('experiment-messages');
             registerCallbacks({{ experiment.round_data.count }}, {{ experiment.current_round.sequence_number }});
             // socket.io connection
             // FIXME: add auth
             var s = connect(window.location.hostname, 8888, 'experimenter/{{request.user.experimenter.pk}}');
-            s.on('message', function(json_message) {
-                console.log("Received message: " + json_message);
-                var json = JSON.parse(json_message);
+            s.on('message', function(json_string) {
+                console.log("Received message: " + json_string);
+                var json = jQuery.parseJSON(json_string);
                 switch (json.message_type) {
                 case 'info':
                     $("#experiment-messages").append($("<div class='ui-state-highlight' />").append(json.message));
                     break;
                 default:
-                    console.log("WTH? " + json.message);
-
                 }
-                console.log("message type: " + json.message_type);
-
+                experimentMessageDiv.scrollTop = experimentMessageDiv.scrollHeight;
             });
-            $('.tooltip').qtip({position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, style: { name: 'dark', tip: 'bottomLeft'} });
-            $('a[title]').not('.tooltip').qtip({position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, style: { name: 'dark', tip: 'bottomLeft'} });
-            $('.collapsible').click(function() {
-                $(this).addClass('collapsed');
-                var next = $(this).next();
-                next.toggle('fast');
-            });
+            $('.tooltip').qtip(qtipOptions);
+            $('a[title]').not('.tooltip').qtip(qtipOptions);
             $('#refreshAllParticipants').click(function(evt) {
                 console.log("sending refresh event");
                 s.send(createRefreshEvent());
@@ -83,9 +77,19 @@
 {% block page %}
 {{block.super}}
 <h3>{{experiment}}</h3>
-<p>You are logged in as {{request.user.experimenter}}.</p>
-<div id='experiment-messages' class='experimenter-sidebar-messages notice ui-corner-all'>
+<span>You are logged in as {{request.user.experimenter}}.</span>
+<hr/>
+<!--
+<fieldset class='experimenter-sidebar-messages notice ui-corner-all'>
+    <legend>Experiment messages</legend>
+    <div id='experiment-messages' style='overflow:auto;'>
+    </div>
+</fieldset>
+-->
+<div id='experimenter-sidebar'>
     <h5>Experiment messages</h5>
+    <div id='experiment-messages' class='experimenter-sidebar-messages notice ui-corner-all'>
+    </div>
 </div>
 <fieldset class='small ui-corner-all'>
     <legend>Experiment management</legend>

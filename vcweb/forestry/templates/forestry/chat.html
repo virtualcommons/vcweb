@@ -1,5 +1,4 @@
 {% extends "base-participant.html" %}
-
 {% block head %}
     {{ block.super }}
     {% include "includes/participant.events.html" %}
@@ -8,7 +7,8 @@
         $(function() {
                 var chatDiv = document.getElementById('chat-div');
                 var s = connect(window.location.hostname, 8888, 'participant/{{participant_group_relationship.pk}}');
-                s.on('message', function(json) {
+                s.on('message', function(json_string) {
+                    var json = jQuery.parseJSON(json_string);
                     switch (json.message_type) {
                     case 'chat':
                         $("#chat-div").append($("<div class='ui-state-highlight' />").append(json.message))
@@ -34,7 +34,6 @@
         });
     </script>
 {% endblock %}
-
 {% block title %}
 Forestry Chat Round
 {% endblock %}
