@@ -96,35 +96,27 @@ li.warning {
     background-position: 3px center;
     margin: 0 0.15em 0 0;
 }
-
 .errorIcon, .warningIcon, .alertIcon, .infoIcon, .smallInfoIcon, .contactIcon, .crossIcon {
     background-repeat: no-repeat;
     margin: 5px 0px;
     padding: 15px 10px 15px 35px;
     background-position: 3px center;
 }
-
 .errorIcon, .warningIcon, .alertIcon {
     background-image:  url('/static/images/warning.png')
 }
-
 .crossIcon {
     background-image: url('/static/images/famfamfam/cross.png');
 }
-
 .contactIcon {
     background-image: url('/static/images/famfamfam/comment_add.png');
 }
-
-
 .smallInfoIcon {
     background-image: url('/static/images/famfamfam/information.png');
 }
-
 .infoIcon {
     background-image: url('/static/images/info.png')
 }
-
 .small-font {
     font-size: 0.8em;
 }
@@ -144,78 +136,62 @@ fieldset.small>legend {
 #experimentData a {
     text-decoration: none;
 }
-
 a.tooltip {
     background-color: #F9E275;
 }
-
 #experiments a {
     text-decoration: none;
     color: #06C;
 }
-
 #experiments a:hover {
     text-decoration: underline;
     color: #36241B;
 }
-
-
 #experiments ul {
     list-style: none;
     margin: 0 0 0 0;
     padding: 0 0 0 0;
 }
-
 #experiments li {
     list-style-type: none;
     margin: 0;
     padding-left: 25px;
 }
-
 #experiments span.inactive {
     background: url('/static/images/famfamfam/clock_stop.png') center left no-repeat;
 }
-
 #experiments span.active {
     background: url('/static/images/famfamfam/accept.png') center left no-repeat;
 }
-
 #experiments span.round_in_progress {
     background: url('/static/images/famfamfam/arrow_refresh.png') center left no-repeat;
 }
-
-
 #experiments .rightArrow {
     margin: 0;
     background: url('/static/images/famfamfam/bullet_go.png') center left no-repeat;
     padding-left: 16px;
     padding-right: 8px;
 }
-
 ul.horizontal {
     list-style: none;
     display: block;
     text-decoration: none;
     font-size: 0.9em;
 }
-
 #horizontal a {
     background: url("/static/images/separator.gif") bottom right no-repeat;
     padding-left: 8px;
     padding-right: 8px;
     text-decoration: none;
 }
-
 #horizontal a:hover {
     text-decoration: underline;
 }
-
 #horizontal li {
     float: left;
     margin: 6px 0px 0px 0px;
     padding: 0;
 }
-
 #navmenu {
     background: #4A3226;
     float: left;
@@ -253,9 +229,9 @@ ul.horizontal {
 #experimenter-sidebar {
     float: right;
 }
-#experimenter-sidebar h2,h3,h4,h5 {
+#experimenter-sidebar h5 {
     padding: 0;
-    margin: -14px 0px 5px 0;
+    margin: -23px 0px 5px 0;
 }
 .experimenter-sidebar-messages {
     height: 13em;

@@ -66,6 +66,9 @@
                 s.send(createRefreshEvent());
                 return false;
             });
+            $('#clear-experiment-messages').click(function() {
+                    $('#experiment-messages').html('');
+                    });
         });
     </script>
 
@@ -87,7 +90,7 @@
 </fieldset>
 -->
 <div id='experimenter-sidebar'>
-    <h5>Experiment messages</h5>
+    <h5>Experiment messages <button id='clear-experiment-messages'>clear</button></h5>
     <div id='experiment-messages' class='experimenter-sidebar-messages notice ui-corner-all'>
     </div>
 </div>
