@@ -775,8 +775,28 @@ class Group(models.Model):
     def all_participants_str(self):
         return ', '.join([participant.email for participant in self.participants.all()])
 
+    @property
+    def data_parameters(self):
+        return Parameter.objects.filter(experiment_metadata=self.experiment.experiment_metadata, scope=Parameter.GROUP_SCOPE)
+
+    @property
+    def current_round_data(self):
+        return self.experiment.current_round_data
+
+    @property
+    def current_round_data_values(self):
+        return self.current_round_data.group_data_values
+
+    @property
+    def is_full(self):
+        return self.size >= self.max_size
+
+    @property
+    def is_open(self):
+        return self.size < self.max_size
+
     '''
-    Initializes data parameters for all groups in this round, as necessary. 
+    Initializes data parameters for all groups in this round, as necessary.
     If this round already has data parameters, is a no-op.
     '''
     def initialize_data_parameters(self):
@@ -881,26 +901,6 @@ class Group(models.Model):
     def get_participant_data_values(self, parameter_name=None):
         return ParticipantRoundDataValue.objects.filter(round_data=self.current_round_data, participant_group_relationship__group=self, parameter__name=parameter_name)
 
-    @property
-    def data_parameters(self):
-        return Parameter.objects.filter(experiment_metadata=self.experiment.experiment_metadata, scope=Parameter.GROUP_SCOPE)
-
-
-    @property
-    def current_round_data(self):
-        return self.experiment.current_round_data
-
-    @property
-    def current_round_data_values(self):
-        return self.current_round_data.group_data_values
-
-    @property
-    def is_full(self):
-        return self.size >= self.max_size
-
-    @property
-    def is_open(self):
-        return self.size < self.max_size
 
     def create_next_group(self):
         return Group.objects.create(number=self.number + 1, max_size=self.max_size, experiment=self.experiment)
@@ -982,10 +982,9 @@ class Participant(CommonsUser):
     def completed_experiments(self):
         return self.experiments_with_status(Experiment.COMPLETED)
 
-
     def set_data_value(self, experiment=None, parameter=None, value=None):
         if experiment and parameter and value is not None:
-            # FIXME: simplify-able?
+            # FIXME: shift to ParticipantGroupRelationship as data arbiter
             current_round_data = experiment.current_round_data
             participant_group_relationship = ParticipantGroupRelationship.objects.get(group__experiment=experiment, participant=self)
             participant_data_value, created = current_round_data.participant_data_values.get_or_create(parameter=parameter,
@@ -1002,7 +1001,7 @@ class Participant(CommonsUser):
         return ParticipantGroupRelationship.objects.get_participant_number(experiment, self)
 
     def get_participant_group_relationship(self, experiment):
-        return ParticipantGroupRelationship.objects.get_participant_group(experiment, self)
+        return ParticipantGroupRelationship.objects.get_participant_group(self, experiment)
 
     def get_group(self, experiment):
         return ParticipantGroupRelationship.objects.get_group(experiment, self)
@@ -1046,10 +1045,10 @@ class ParticipantExperimentRelationship(models.Model):
 class ParticipantGroupRelationshipManager(models.Manager):
 
     def get_group(self, experiment, participant):
-        participant_group = self.get_participant_group(experiment, participant)
+        participant_group = self.get_participant_group(participant, experiment)
         return participant_group.group if participant_group else None
 
-    def get_participant_group(self, experiment, participant):
+    def get_participant_group(self, participant, experiment):
         try:
             return self.get(group__experiment=experiment, participant=participant)
         except ParticipantGroupRelationship.DoesNotExist:
@@ -1057,7 +1056,7 @@ class ParticipantGroupRelationshipManager(models.Manager):
             return None
 
     def get_participant_number(self, experiment, participant):
-        participant_group = self.get_participant_group(experiment, participant)
+        participant_group = self.get_participant_group(participant, experiment)
         return participant_group.participant_number if participant_group else None
 
 """
@@ -1073,6 +1072,10 @@ class ParticipantGroupRelationship(models.Model):
     active = models.BooleanField(default=True)
 
     objects = ParticipantGroupRelationshipManager()
+
+    @property
+    def current_round_data(self):
+        return self.group.current_round_data
 
     def __unicode__(self):
         return u"{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)

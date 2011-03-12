@@ -78,11 +78,11 @@ li.warning {
 .icon-left {
     float:left;
     /* top right bottom left */
-    margin: 0.25em;
+    margin: 0.32em;
 }
 .icon-right {
     float: right;
-    margin: 0.25em;
+    margin: 0.32em;
 }
 .float-left {
     float: left;

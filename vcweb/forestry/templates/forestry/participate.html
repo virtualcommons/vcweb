@@ -32,12 +32,15 @@ Participating in {{experiment.status_line}}
 <div style="background-image: url('/static/images/forestry/plain-tree.gif'); background-repeat: repeat-x; width:{{resource_width}}px; height: 35px;">
     &nbsp;
 </div>
-<div class='ui-state-highlight ui-corner-all'>
-    <span class='ui-icon ui-icon-info'></span>
-    The resource size is <b>{{ resource_level.value }}</b>. 
+<div class='ui-state-highlight'>
+    <span class='icon-left ui-icon ui-icon-info'></span>
+    The resource size is <b>{{ resource_level.value }}</b>.
     <span class='small-font'>(each tree image represents 10 trees)</span>
-
 </div>
+    <div class='ui-state-error'>
+        <span class='icon-left ui-icon ui-icon-info'></span>
+        Your current harvest decision is <b>{{ harvest_decision.value }}</b>
+    </div>
 {% if max_harvest_decision > 0 %}
 <form id='forestryForm' action='' method='post'>
     <div class='field'>

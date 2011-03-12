@@ -6,9 +6,9 @@ from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb import settings
 from vcweb.core.forms import QuizForm
-from vcweb.core.models import is_participant, is_experimenter, Experiment
+from vcweb.core.models import is_participant, is_experimenter, Experiment, ParticipantGroupRelationship
 from vcweb.core.decorators import participant_required, experimenter_required
-from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision
+from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision, get_harvest_decision
 from vcweb.forestry.forms import HarvestDecisionForm
 import logging
 
@@ -65,12 +65,12 @@ def manage_experiment(request, experiment_id=None):
 def wait(request, experiment_id=None):
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
-        if experiment.is_round_in_progress:
-            return redirect('forestry:participate', experiment_id=experiment.pk)
-        else:
-            return render_to_response('forestry/wait.html',
-                    {'experiment': experiment},
-                    context_instance=RequestContext(request))
+        participant_group_relationship = request.user.participant.get_participant_group_relationship(experiment)
+        return render_to_response('forestry/wait.html', {
+            'experiment': experiment,
+            'participant_group_relationship':participant_group_relationship,
+            },
+            context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
         logger.warning("No experiment found with id %s" % experiment_id)
 
@@ -154,19 +154,22 @@ def chat(request, experiment, participant):
 
 def play(request, experiment, participant):
     form = HarvestDecisionForm(request.POST or None)
+    participant_group_relationship = participant.get_participant_group_relationship(experiment)
+    harvest_decision = get_harvest_decision(participant_group_relationship)
     if form.is_valid():
-        harvest_decision = form.cleaned_data['harvest_decision']
+        resources_harvested = form.cleaned_data['harvest_decision']
         resource_level = get_resource_level(participant.get_group(experiment))
         max_harvest_decision = get_max_harvest_decision(resource_level.value)
-        if harvest_decision <= max_harvest_decision:
-            set_harvest_decision(participant=participant, experiment=experiment, value=harvest_decision)
+        if resources_harvested <= max_harvest_decision:
+            set_harvest_decision(participant=participant, experiment=experiment, value=resources_harvested)
             return redirect('forestry:wait', experiment_id=experiment.pk)
         else:
             raise forms.ValidationError("invalid harvest decision %s > max %s" % (harvest_decision, max_harvest_decision))
     else:
-        group = participant.groups.get(experiment=experiment)
+        group = participant_group_relationship.group
         resource_level = get_resource_level(group)
         max_harvest_decision = get_max_harvest_decision(resource_level.value)
+# FIXME: UI crap logic in view to determine how wide to make the screen.
         resource_width = (resource_level.value / 10) * 30
         return render_to_response(experiment.current_round_template,
                 locals(),

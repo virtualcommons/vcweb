@@ -1,25 +1,20 @@
 {% extends "base-participant.html" %}
-
 {% block head %}
-<meta http-equiv='refresh' content='10' />
 {{ block.super }}
+{% include "includes/participant.events.html" %}
+{% include "includes/socket.io.html" %}
 <script type="text/javascript">
-    var intervalId = 0;
-    function checkTimeRemaining() {
-        var timeRemaining = $('#timeRemaining').html()
-        if (timeRemaining > 0) {
-            timeRemaining = timeRemaining - 1;
-            $('#timeRemaining').html(timeRemaining);
-        }
-        else {
-            window.clearInterval(intervalId);
-            location.reload(true);
-        }
-
-    }
-
     $(function() {
-        intervalId = setInterval( "checkTimeRemaining()", 1000 );
+        var s = connect(window.location.hostname, 8888, 'participant/{{participant_group_relationship.pk}}');
+        s.on('message', function(json_string) {
+            var json = jQuery.parseJSON(json_string);
+            switch (json.message_type) {
+            case 'goto':
+                console.log("going to " + json.url);
+                window.location.href = json.url;
+                break;
+            }
+        });
     });
 </script>
 {% endblock %}

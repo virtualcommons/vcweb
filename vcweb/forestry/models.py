@@ -1,4 +1,4 @@
-from vcweb.core.models import ExperimentMetadata, Parameter, ParticipantGroupRelationship
+from vcweb.core.models import ExperimentMetadata, Parameter, ParticipantGroupRelationship, ParticipantRoundDataValue
 from vcweb.core import signals
 from celery.decorators import task
 import logging
@@ -15,6 +15,10 @@ def get_resource_level(group=None):
 
 def has_resource_level(group=None):
     return group.has_data_parameter(parameter=get_resource_level_parameter())
+
+def get_harvest_decision(participant_group_relationship):
+    return ParticipantRoundDataValue.objects.get(participant_group_relationship=participant_group_relationship,
+            round_data=participant_group_relationship.current_round_data, parameter__name='harvest_decision')
 
 def get_harvest_decisions(group=None):
     return group.get_participant_data_values(parameter_name='harvest_decision') if group else []
