@@ -19,6 +19,11 @@ from vcweb.core.models import ParticipantGroupRelationship, ChatMessage, Experim
 Manages socket.io connections to tornadio.
 '''
 class ConnectionManager:
+    # FIXME: use (participant, experiment) tuples instead of
+    # ParticipantGroupRelationship?  The problem is that when the experiment is
+    # first started but groups haven't been allocated, socket.io won't work.  Using
+    # the ParticipantExperiment tuple would allow us to broadcast messages when we
+    # want to from the experimenter..
     connection_to_participant = {}
     participant_to_connection = {}
 
@@ -80,24 +85,37 @@ class ConnectionManager:
                 yield (pgr_id, self.participant_to_connection[pgr_id])
             pass
 
-    '''
-    experimenter functions
-    '''
-    def send_refresh(self, connection, experiment, experimenter_id=None):
+    def all_participants(self, connection, experiment):
         if connection in self.connection_to_experimenter:
             (experimenter_pk, experiment_pk) = self.connection_to_experimenter[connection]
             if experiment.pk == experiment_pk:
                 for group in experiment.groups.all():
                     for participant_group_pk, connection in self.connections(group):
-                        logger.debug("sending refresh message %s to participant %s" %
-                                (ConnectionManager.refresh_json, participant_group_pk))
-                        connection.send(ConnectionManager.refresh_json)
+                        yield (participant_group_pk, connection)
             else:
                 logger.warning("Experimenter %s tried to refresh experiment %s" %
                         (experimenter_pk, experiment))
         else:
             logger.warning("No experimenter available for connection %s" %
                 connection)
+
+    '''
+    experimenter functions
+    '''
+    def info(self, message):
+        return simplejson.dumps({'message_type': 'info', 'message': message})
+
+    def send_refresh(self, connection, experiment, experimenter_id=None):
+        for (participant_group_pk, connection) in self.all_participants(connection, experiment):
+            connection.send(ConnectionManager.refresh_json)
+
+    def send_goto(self, connection, experiment, url):
+        goto_json = simplejson.dumps({
+            'message_type': 'goto',
+            'url': url
+            })
+        for (participant_group_pk, connection) in self.all_participants(connection, experiment):
+            connection.send(goto_json)
 
     def send_to_experimenter(self, experimenter_tuple, json):
         (experimenter_pk, experiment_pk) = experimenter_tuple
@@ -150,7 +168,14 @@ class ExperimenterHandler(SocketConnection):
             experiment = Experiment.objects.get(pk=experiment_id)
             connection_manager.send_refresh(self, experiment, experimenter_id)
             logger.debug("pinging back to experimenter")
-            self.send(simplejson.dumps({'message':"Refreshed all participants", 'message_type':"info"}))
+            self.send(ConnectionManager.info("Refreshed all participants"))
+        elif event.type == 'goto':
+            experiment_id = event.experiment_id
+            experiment = Experiment.objects.get(pk=experiment_id)
+            url = event.url
+            connection_manager.send_goto(self, experiment, url)
+            self.send(ConnectionManager.info("Sent goto:%s to all participants" % url))
+
 
     def on_close(self):
         connection_manager.remove_experimenter(self)

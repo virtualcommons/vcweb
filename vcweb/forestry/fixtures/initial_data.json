@@ -61,7 +61,7 @@
             "experiment_configuration": 1, 
             "instructions": "The following quiz is designed to ensure you understand the dynamics of this experiment.", 
             "last_modified": "2010-09-07 15:13:03", 
-            "round_type": "QUIZ", 
+            "round_type": "PRACTICE", 
             "sequence_number": 2
         }, 
         "model": "core.roundconfiguration", 
@@ -221,6 +221,24 @@
         }, 
         "model": "core.parameter", 
         "pk": 4
+    },
+    {
+        "fields": {
+        	"round_configuration": 2,
+                "parameter": [ "reset.resource_level" ],
+                "boolean_value": "True"
+        }, 
+        "model": "core.roundparametervalue", 
+        "pk": 8
+    },
+    {
+        "fields": {
+        	"round_configuration": 2,
+                "parameter": [ "initial.resource_level" ],
+                "int_value": 100
+        }, 
+        "model": "core.roundparametervalue", 
+        "pk": 9
     },
     {
         "fields": {

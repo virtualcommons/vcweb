@@ -66,12 +66,16 @@
                 s.send(createRefreshEvent());
                 return false;
             });
+            $('#gotoUrl').click(function(evt) {
+                console.log("sending goto event");
+                s.send(createGotoEvent());
+                return false;
+            });
             $('#clear-experiment-messages').click(function() {
                     $('#experiment-messages').html('');
                     });
         });
     </script>
-
 </script>
 {% endblock %}
 {% block title %}
@@ -99,6 +103,8 @@
     <ul class='actions'>
         <li><span id='refreshAllParticipants' title='Sends a page refresh to all connected participants.' class='clickable' >
             <span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/arrow_refresh.png);' alt=''></span>refresh all participants</a></li>
+        <li><span id='gotoUrl' title='Moves all connected participants from waiting page to active page.' class='clickable' >
+            <span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/arrow_refresh.png);' alt=''></span>transition all participants to next round</a></li>
         <li>
         <a href='download/csv'><span class='vcweb-icon ui-icon icon-left' style='margin: 8px 0.15em 0px 0px; background:url(/static/images/download-icon.png);' alt=''></span>download data as <img src='/static/images/famfamfam/page_white_text.png' style='margin: 5px 0 0 0;' alt=''> csv</a> |
         <a href='download/xls'><img src='/static/images/famfamfam/page_white_excel.png' style='margin: 5px 0 0 0;' alt=''/> xls</a></li>

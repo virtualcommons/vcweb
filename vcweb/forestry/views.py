@@ -66,6 +66,7 @@ def wait(request, experiment_id=None):
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
         participant_group_relationship = request.user.participant.get_participant_group_relationship(experiment)
+        logger.debug("participant group relationship is: %s" % participant_group_relationship)
         return render_to_response('forestry/wait.html', {
             'experiment': experiment,
             'participant_group_relationship':participant_group_relationship,
