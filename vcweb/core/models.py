@@ -798,6 +798,10 @@ class Group(models.Model):
     def is_open(self):
         return self.size < self.max_size
 
+    @property
+    def current_round_activity_log(self):
+        return self.activity_log.filter(round_configuration=self.current_round)
+
     def log(self, log_message):
         self.activity_log.create(round_configuration=self.current_round,
                 log_message=log_message)
@@ -811,7 +815,7 @@ class Group(models.Model):
             round_data = self.current_round_data
             if round_data.group_data_values.filter(group=self).count() == 0:
                 logger.debug("no group data values for the current round %s, creating new ones." % round_data)
-                self.log("Initializing data parameters for group %s in round %s" % (self, round_data))
+                self.log("Initializing %s data parameters" % round_data)
                 for group_data_parameter in self.data_parameters:
                     self.data_values.create(round_data=round_data, parameter=group_data_parameter)
 
@@ -1169,13 +1173,15 @@ class ParticipantRoundDataValue(DataValue):
 class ActivityLog(models.Model):
     log_message = models.TextField()
     date_created = models.DateTimeField(auto_now_add=True)
-
     def __unicode__(self):
-        return u"%s: %s" % (self.date_created, self.log_message)
+        return u"%s - %s" % (self.date_created.strftime("%m-%d-%Y %H:%M"), self.log_message)
 
 class GroupActivityLog(ActivityLog):
     group = models.ForeignKey(Group, related_name='activity_log')
     round_configuration = models.ForeignKey(RoundConfiguration)
+
+    def __unicode__(self):
+        return u"%s %s" % (self.group, super(GroupActivityLog, self).__unicode__())
 
 class ExperimentActivityLog(ActivityLog):
     experiment = models.ForeignKey(Experiment, related_name='activity_log')

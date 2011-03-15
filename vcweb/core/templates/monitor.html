@@ -19,6 +19,7 @@
         $('.confirm-experiment-action').click(function() {
             Dajaxice.vcweb.core.experiment_controller(update, {'experiment_id': {{experiment_id}}, 'action':this.name});
             $('#statusDiv').hide('fast');
+            $('#experimentData').hide('fast');
             $('#statusSpinner').show('fast');
             return false;
         });
@@ -34,6 +35,8 @@
         });
         $('#statusSpinner').hide('fast');
         $('#statusDiv').show('fast');
+        $('#experimentData').show('fast');
+
         if (round_data_count > 0) {
             $('#experimentData').accordion({
                 active: active_round_number - 1,
@@ -57,7 +60,7 @@
                     break;
                 default:
                 }
-                experimentMessageDiv.scrollTop = experimentMessageDiv.scrollHeight;
+                scrollToBottom(experimentMessageDiv);
             });
             $('.tooltip').qtip(qtipOptions);
             $('a[title]').not('.tooltip').qtip(qtipOptions);
@@ -71,9 +74,7 @@
                 s.send(createGotoEvent());
                 return false;
             });
-            $('#clear-experiment-messages').click(function() {
-                    $('#experiment-messages').html('');
-                    });
+            scrollToBottom(experimentMessageDiv);
         });
     </script>
 </script>
@@ -86,16 +87,16 @@
 <h3>{{experiment}}</h3>
 <span>You are logged in as {{request.user.experimenter}}.</span>
 <hr/>
-<!--
-<fieldset class='experimenter-sidebar-messages notice ui-corner-all'>
-    <legend>Experiment messages</legend>
-    <div id='experiment-messages' style='overflow:auto;'>
-    </div>
-</fieldset>
--->
 <div id='experimenter-sidebar'>
-    <h5>Experiment messages <button id='clear-experiment-messages'>clear</button></h5>
+    <h5>Activity Log</h5>
     <div id='experiment-messages' class='experimenter-sidebar-messages notice ui-corner-all'>
+        {% for group in experiment.groups.all %}
+            {% for activity_log in group.current_round_activity_log %}
+            <div style='line-height: 0.9em;padding:3px;' class='ui-state-highlight'>
+                <small>{{activity_log}}</small>
+            </div>
+            {% endfor %}
+        {% endfor %}
     </div>
 </div>
 <fieldset class='small ui-corner-all'>

@@ -126,7 +126,7 @@ fieldset.small {
     background-color: #efefef;
     padding: 2px;
     border: solid 1px #d3d3d3;
-    width: 500px;
+    width: 350px;
 }
 fieldset.small>legend {
     font-weight: bold;
@@ -231,11 +231,12 @@ ul.horizontal {
 }
 #experimenter-sidebar h5 {
     padding: 0;
-    margin: -23px 0px 5px 0;
+    margin: -20px 0px 8px 0;
 }
 .experimenter-sidebar-messages {
-    height: 13em;
-    width: 22em;
+    display:block;
+    height: 14em;
+    width: 31em;
     overflow:auto;
     float:right; 
 }

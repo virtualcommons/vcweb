@@ -5,3 +5,6 @@ console.log = console.log || function(){};
 console.warn = console.warn || function(){};
 console.error = console.error || function(){};
 console.info = console.info || function(){};
+function scrollToBottom(element) {
+    element.scrollTop = element.scrollHeight;
+}
