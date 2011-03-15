@@ -13,7 +13,7 @@ sys.path.append(os.path.abspath('..'))
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
-from vcweb.core.models import ParticipantGroupRelationship, ChatMessage, Experimenter, Experiment
+from vcweb.core.models import ParticipantExperimentRelationship, ParticipantGroupRelationship, ChatMessage, Experimenter, Experiment
 
 '''
 Manages socket.io connections to tornadio.
@@ -24,11 +24,12 @@ class ConnectionManager:
     # first started but groups haven't been allocated, socket.io won't work.  Using
     # the ParticipantExperiment tuple would allow us to broadcast messages when we
     # want to from the experimenter..
+    # (participant.pk, experiment.pk) -> connection
     connection_to_participant = {}
     participant_to_connection = {}
 
     connection_to_experimenter = {}
-# (experimenter.pk, experiment.id) -> connection
+# (experimenter.pk, experiment.pk) -> connection
     experimenter_to_connection = {}
 
     refresh_json = simplejson.dumps({ 'message_type': 'refresh' })
@@ -50,24 +51,27 @@ class ConnectionManager:
             del self.connection_to_experimenter[connection]
             del self.experimenter_to_connection[(experimenter_pk, experiment_id)]
 
-    def get_participant(self, connection):
-        logger.debug("trying to retrieve participant group relationship for connection id %s" % connection)
-        logger.debug("maps are %s and %s" % (self.connection_to_participant,
-            self.participant_to_connection))
-        return ParticipantGroupRelationship.objects.get(pk=self.connection_to_participant[connection])
+    def get_participant_group_relationship(self, connection):
+        if connection in self.connection_to_participant:
+            (participant_pk, experiment_pk) = self.connection_to_participant[connection]
+            return ParticipantGroupRelationship.objects.get(participant__pk=participant_pk, group__experiment__pk = experiment_pk)
+        logger.debug("Didn't find connection %s in connection map %s." % (connection, self.connection_to_participant))
+        return None
 
-    def add(self, auth_token, connection, participant_group_relationship):
-        if participant_group_relationship.pk in self.participant_to_connection:
+    def add_participant(self, auth_token, connection, participant_experiment_relationship):
+        participant_tuple = (participant_experiment_relationship.participant.pk,
+                participant_experiment_relationship.experiment.pk)
+        if participant_tuple in self.participant_to_connection:
             logger.debug("participant already has a connection, removing previous mappings.")
-            self.remove(self.participant_to_connection[participant_group_relationship.pk])
+            self.remove(self.participant_to_connection[participant_tuple])
 
-        self.connection_to_participant[connection] = participant_group_relationship.pk
-        self.participant_to_connection[participant_group_relationship.pk] = connection
+        self.connection_to_participant[connection] = participant_tuple
+        self.participant_to_connection[participant_tuple] = connection
 
     def remove(self, connection):
         try:
-            participant_group_pk = self.connection_to_participant[connection]
-            del self.participant_to_connection[participant_group_pk]
+            participant_tuple = self.connection_to_participant[connection]
+            del self.participant_to_connection[participant_tuple]
             del self.connection_to_participant[connection]
         except KeyError, k:
             logger.warning( "caught key error %s while trying to remove connection %s" % (connection, k) )
@@ -102,7 +106,8 @@ class ConnectionManager:
     '''
     experimenter functions
     '''
-    def info(self, message):
+    @staticmethod
+    def info(message):
         return simplejson.dumps({'message_type': 'info', 'message': message})
 
     def send_refresh(self, connection, experiment, experimenter_id=None):
@@ -182,31 +187,39 @@ class ExperimenterHandler(SocketConnection):
 
 class ParticipantHandler(SocketConnection):
     def on_open(self, *args, **kwargs):
+        # FIXME: verify user auth tokens
+        extra = kwargs['extra']
+        logger.debug('%s received extra: %s' % (self, extra))
+        #(auth_token, dot, participant_group_relationship_id) = extra.partition('.')
+        #logger.debug("auth token: %s, id %s" % (auth_token, participant_group_relationship_id))
+        relationship_id = extra
         try:
-            # FIXME: verify user auth tokens
-            extra = kwargs['extra']
-            logger.debug('%s received extra: %s' % (self, extra))
-            #(auth_token, dot, participant_group_relationship_id) = extra.partition('.')
-            #logger.debug("auth token: %s, id %s" % (auth_token, participant_group_relationship_id))
-            participant_group_relationship_id = extra
-            participant_group_rel = ParticipantGroupRelationship.objects.get(pk=participant_group_relationship_id)
-            connection_manager.add(extra, self, participant_group_rel)
-            group = participant_group_rel.group
-            message = "Participant %s connected to group %s." % (participant_group_rel.participant_number, group)
-            connection_manager.send_to_group(group,
-                    simplejson.dumps({
-                        'message' : message,
-                        'message_type': 'info',
-                        }))
+            participant_experiment_relationship = ParticipantExperimentRelationship.objects.get(pk=relationship_id)
+            connection_manager.add_participant(extra, self, participant_experiment_relationship)
+            participant_group_rel = connection_manager.get_participant_group_relationship(self)
+            if participant_group_rel is not None:
+                group = participant_group_rel.group
+                message = "Participant %s connected to group %s." % (participant_group_rel.participant_number, group)
+                connection_manager.send_to_group(group,
+                        simplejson.dumps({
+                            'message' : message,
+                            'message_type': 'info',
+                            }))
+            else:
+                experimenter_tuple = (participant_experiment_relationship.experiment.experimenter.pk,
+                        participant_experiment_relationship.experiment.pk)
+                connection_manager.send_to_experimenter(experimenter_tuple,
+                        simplejson.dumps({
+                            'message': "Participant %s connected to experiment." % participant_experiment_relationship,
+                            'message_type': 'info',
+                            }))
         except KeyError, e:
             logger.debug("no participant group relationship id %s" % e)
             pass
-        except ParticipantGroupRelationship.DoesNotExist, e:
+        except ParticipantExperimentRelationship.DoesNotExist, e:
             logger.debug("no participant group relationship with id %s (%s)" %
-                    (participant_group_relationship_id, e))
+                    (participant_experiment_relationship_id, e))
             pass
-        logger.debug("args are: %s" % str(args))
-        logger.debug("kwargs are: %s" % str(kwargs))
 
     def on_message(self, message, *args, **kwargs):
         logger.debug("received message %s from handler %s" % (message, self))
@@ -214,13 +227,13 @@ class ParticipantHandler(SocketConnection):
         if 'connect' in event.type:
             return
         # FIXME: add authentication
-        participant_group_rel = connection_manager.get_participant(self)
-        current_round_data = participant_group_rel.group.experiment.current_round_data
-        chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_rel,
+        participant_group_relationship = connection_manager.get_participant_group_relationship(self)
+        current_round_data = participant_group_relationship.group.experiment.current_round_data
+        chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
                 message=event.message,
                 round_data=current_round_data
                 )
-        for participant_group_pk, connection in connection_manager.connections(participant_group_rel.group):
+        for participant_group_pk, connection in connection_manager.connections(participant_group_relationship.group):
             connection.send(simplejson.dumps({
                 "message" : chat_message.as_html,
                 "message_type": 'chat',

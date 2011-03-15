@@ -5,7 +5,7 @@
     {% include "includes/socket.io.html" %}
     <script type="text/javascript">
         $(function() {
-                var s = connect(window.location.hostname, 8888, 'participant/{{participant_group_relationship.pk}}');
+                var s = connect(window.location.hostname, 8888, 'participant/{{participant_experiment_relationship.pk}}');
                 s.on('message', function(json_string) {
                     var json = jQuery.parseJSON(json_string);
                     switch (json.message_type) {

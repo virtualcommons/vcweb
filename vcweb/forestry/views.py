@@ -6,7 +6,7 @@ from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from vcweb import settings
 from vcweb.core.forms import QuizForm
-from vcweb.core.models import is_participant, is_experimenter, Experiment, ParticipantGroupRelationship
+from vcweb.core.models import is_participant, is_experimenter, Experiment, ParticipantGroupRelationship, ParticipantExperimentRelationship
 from vcweb.core.decorators import participant_required, experimenter_required
 from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision, get_harvest_decision
 from vcweb.forestry.forms import HarvestDecisionForm
@@ -65,10 +65,12 @@ def manage_experiment(request, experiment_id=None):
 def wait(request, experiment_id=None):
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
-        participant_group_relationship = request.user.participant.get_participant_group_relationship(experiment)
+        participant = request.user.participant
+        participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
+        participant_group_relationship = participant.get_participant_group_relationship(experiment)
         logger.debug("participant group relationship is: %s" % participant_group_relationship)
         return render_to_response('forestry/wait.html', {
-            'experiment': experiment,
+            'participant_experiment_relationship': participant_experiment_relationship,
             'participant_group_relationship':participant_group_relationship,
             },
             context_instance=RequestContext(request))
@@ -81,8 +83,16 @@ def participate(request, experiment_id=None):
     participant = request.user.participant
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
+        current_round = experiment.current_round
+        participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
+        if current_round.is_instructions_round:
+            return render_to_response(experiment.current_round_template, {
+                'participant_experiment_relationship': participant_experiment_relationship,
+                'next_round_instructions': experiment.next_round_instructions
+                },
+                context_instance=RequestContext(request))
+
         if experiment.is_round_in_progress:
-            current_round = experiment.current_round
             if current_round.has_data_parameters:
                 return play(request, experiment, participant)
             elif current_round.is_chat_round:
@@ -98,7 +108,7 @@ def participate(request, experiment_id=None):
                     'next_round_instructions': experiment.next_round_instructions
                     },
                     context_instance=RequestContext(request))
-        else:
+        elif experiment.is_first_round:
 # round is not currently active, redirect to waiting page.
             return redirect('forestry:wait', experiment_id=experiment.pk)
     except Experiment.DoesNotExist:
@@ -170,8 +180,10 @@ def play(request, experiment, participant):
         group = participant_group_relationship.group
         resource_level = get_resource_level(group)
         max_harvest_decision = get_max_harvest_decision(resource_level.value)
-# FIXME: UI crap logic in view to determine how wide to make the screen.
-        resource_width = (resource_level.value / 10) * 30
+# FIXME: UI crap logic in view to determine how wide to make the tree div
+        number_of_trees_per_row = 20
+        number_of_resource_divs = range(0, resource_level.value / number_of_trees_per_row)
+        resource_width = (resource_level.value % number_of_trees_per_row) * 30
         return render_to_response(experiment.current_round_template,
                 locals(),
                 context_instance=RequestContext(request))

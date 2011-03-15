@@ -41,13 +41,19 @@ Participating in {{experiment.status_line}}
 {% endblock %}
 {% block content %}
 <h3>Forestry round number {{ experiment.current_round.round_number }}</h3>
-<div style="background-image: url('/static/images/forestry/plain-tree.gif'); background-repeat: repeat-x; width:{{resource_width}}px; height: 35px;">
+{% for i in number_of_resource_divs %}
+<div style="background: url('/static/images/forestry/pine-tree.png') repeat-x; width:600px; height: 79px;">
     &nbsp;
 </div>
+{% endfor %}
+{% if resource_width > 0 %}
+<div style="background: url('/static/images/forestry/pine-tree.png') repeat-x; width:{{resource_width}}px; height: 79px;">
+    &nbsp;
+</div>
+{% endif %}
 <div class='ui-state-highlight'>
     <span class='icon-left ui-icon ui-icon-info'></span>
-    The resource size is <b>{{ resource_level.value }}</b>.
-    <span class='small-font'>(each tree image represents 10 trees)</span>
+    There are <b>{{ resource_level.value }}</b> trees left.
 </div>
     <div class='ui-state-error'>
         <span class='icon-left ui-icon ui-icon-info'></span>
