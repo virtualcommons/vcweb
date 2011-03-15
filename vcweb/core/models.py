@@ -860,13 +860,13 @@ class Group(models.Model):
     def get_scalar_data_value(self, parameter=None, parameter_name=None):
         return self.get_data_value(parameter=parameter, parameter_name=parameter_name).value
 
-    def get_data_value(self, parameter=None, parameter_name=None):
-        criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name)
+    def get_data_value(self, parameter=None, parameter_name=None, round_data=None):
+        criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         return self.data_values.get_or_create(**criteria)[0]
 
-    def _data_parameter_criteria(self, parameter=None, parameter_name=None):
-        return dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name)],
-                round_data=self.current_round_data)
+    def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None):
+        return dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name),
+            ('round_data', self.current_round_data if round_data is None else round_data)])
 
 
     def get_group_data_values(self, name=None, *names):

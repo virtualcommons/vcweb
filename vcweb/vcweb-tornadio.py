@@ -88,11 +88,13 @@ class ConnectionManager:
     for the given group
     '''
     def connections(self, group):
-        pgr_ids = [ pgr.pk for pgr in group.participant_group_relationships.all() ]
-        for pgr_id in pgr_ids:
+        experiment = group.experiment
+        for participant_group_relationship in group.participant_group_relationships.all():
             ''' only return currently connected connections in this group '''
-            if pgr_id in self.participant_to_connection:
-                yield (pgr_id, self.participant_to_connection[pgr_id])
+            participant = participant_group_relationship.participant
+            participant_tuple = (participant.pk, experiment.pk)
+            if participant_tuple in self.participant_to_connection:
+                yield (participant_group_relationship.pk, self.participant_to_connection[participant_tuple])
             pass
 
     def all_participants(self, connection, experiment):

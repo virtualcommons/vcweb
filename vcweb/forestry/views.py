@@ -61,6 +61,9 @@ def manage_experiment(request, experiment_id=None):
         logger.warning("No experiment available with id [%s]" % experiment_id)
         return redirect('core:experimenter_index')
 
+class ParticipantHistory(object):
+    pass
+
 @participant_required
 def wait(request, experiment_id=None):
     try:
@@ -69,9 +72,23 @@ def wait(request, experiment_id=None):
         participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
         participant_group_relationship = participant.get_participant_group_relationship(experiment)
         logger.debug("participant group relationship is: %s" % participant_group_relationship)
+        all_harvest_round_data = []
+        group = participant_group_relationship.group
+        for round_data in experiment.round_data.all():
+            p = ParticipantHistory()
+            p.round_configuration = round_data.round_configuration
+            p.individual_harvest = get_harvest_decision(participant_group_relationship, round_data=round_data)
+            p.group_harvest = get_group_harvest(group, round_data=round_data)
+            p.regrowth = get_regrowth(group, round_data=round_data)
+            resource_level = get_resource_level(group, round_data=round_data)
+            p.original_number_of_trees = resource_level.value + p.group_harvest - p.regrowth
+            p.final_number_of_trees = resource_level.value
+            all_harvest_round_data.append(p)
+
         return render_to_response('forestry/wait.html', {
             'participant_experiment_relationship': participant_experiment_relationship,
             'participant_group_relationship':participant_group_relationship,
+            'all_harvest_round_data': all_harvest_round_data,
             },
             context_instance=RequestContext(request))
     except Experiment.DoesNotExist:

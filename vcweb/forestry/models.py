@@ -11,15 +11,17 @@ def forestry_second_tick():
     '''
 
 # returns a GroupRoundDataValue
-def get_resource_level(group=None):
-    return group.get_data_value(parameter_name='resource_level') if group else None
+def get_resource_level(group=None, round_data=None):
+    return group.get_data_value(parameter_name='resource_level', round_data=round_data) if group else None
 
 def has_resource_level(group=None):
     return group.has_data_parameter(parameter=get_resource_level_parameter())
 
-def get_harvest_decision(participant_group_relationship):
+def get_harvest_decision(participant_group_relationship, round_data=None):
+    if round_data is None:
+        round_data = participant_group_relationship.current_round_data
     return ParticipantRoundDataValue.objects.get(participant_group_relationship=participant_group_relationship,
-            round_data=participant_group_relationship.current_round_data, parameter__name='harvest_decision')
+            round_data=round_data, parameter__name='harvest_decision')
 
 def get_harvest_decisions(group=None):
     return group.get_participant_data_values(parameter_name='harvest_decision') if group else []

@@ -24,11 +24,36 @@ Forestry Experiment Round {{ experiment.current_round.round_number }}
 
 {% block page %}
 <h3>Waiting for the next round to start</h3>
+<p>
 The facilitator will start the next round when every participant is ready.
 <span class='ui-state-highlight ui-corner-all'>
     <small><a class='contactIcon' href="#">send a private message to the facilitator</a></small>
 </span>
+</p>
 
+<h3>History</h3>
+<div id='group-history'>
+    {% if participant_harvest_decisions %}
+    <table>
+        <thead>
+            <tr><th>Round</th><th>Individual harvest</th><th>Group harvest</th><th>Original number of trees</th><th>Regrowth</th><th>Number of trees left</th></tr>
+        </thead>
+        <tbody>
+            {% for harvest_round_data in all_harvest_round_data %}
+            <tr>
+                <td>{{harvest_round_data.round_configuration}}</td>
+                <td>{{harvest_round_data.individual_harvest}}</td>
+                <td>{{harvest_round_data.group_harvest}}</td>
+                <td>{{harvest_round_data.original_number_of_trees}}</td>
+                <td>{{harvest_round_data.regrowth}}</td>
+                <td>{{harvest_round_data.final_number_of_trees}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% endif %}
+</div>
 <h3>Instructions</h3>
 <div class='info ui-corner-all'>
     Please wait until the next round begins.
