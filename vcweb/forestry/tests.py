@@ -54,7 +54,11 @@ class ForestryRoundSignalTest(BaseVcwebTest):
         at round end all harvest decisions are tallied and subtracted from
         the final resource_level
         '''
-        expected_resource_level = lambda group: 100 - ((group.number % 5) * group.size)
+        def expected_resource_level(group):
+            after_harvests = 100 - ((group.number % 5) * group.size)
+            after_regrowth = after_harvests + (after_harvests / 10)
+            return after_regrowth
+
         for group in e.groups.all():
             self.failUnlessEqual(get_resource_level(group).value,
                     expected_resource_level(group))

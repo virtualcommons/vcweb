@@ -15,6 +15,12 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
 from vcweb.core.models import ParticipantExperimentRelationship, ParticipantGroupRelationship, ChatMessage, Experimenter, Experiment
 
+def info_json(message):
+    return simplejson.dumps({'message_type': 'info', 'message': message})
+
+def goto_json(url):
+    return simplejson.dumps({'message_type': 'goto', 'url': url})
+
 '''
 Manages socket.io connections to tornadio.
 '''
@@ -102,25 +108,17 @@ class ConnectionManager:
         else:
             logger.warning("No experimenter available for connection %s" %
                 connection)
-
     '''
     experimenter functions
     '''
-    @staticmethod
-    def info(message):
-        return simplejson.dumps({'message_type': 'info', 'message': message})
-
     def send_refresh(self, connection, experiment, experimenter_id=None):
         for (participant_group_pk, connection) in self.all_participants(connection, experiment):
             connection.send(ConnectionManager.refresh_json)
 
     def send_goto(self, connection, experiment, url):
-        goto_json = simplejson.dumps({
-            'message_type': 'goto',
-            'url': url
-            })
+        json = goto_json(url)
         for (participant_group_pk, connection) in self.all_participants(connection, experiment):
-            connection.send(goto_json)
+            connection.send(json)
 
     def send_to_experimenter(self, experimenter_tuple, json):
         (experimenter_pk, experiment_pk) = experimenter_tuple
@@ -161,7 +159,6 @@ class ExperimenterHandler(SocketConnection):
         except Experimenter.DoesNotExist as e:
             logger.warning("Tried to establish connection but there isn't any experimenter with id %s" % experimenter_id)
 
-
     def on_message(self, message):
         event = to_event(message)
         logger.debug("%s received message %s" % (self, message))
@@ -173,14 +170,13 @@ class ExperimenterHandler(SocketConnection):
             experiment = Experiment.objects.get(pk=experiment_id)
             connection_manager.send_refresh(self, experiment, experimenter_id)
             logger.debug("pinging back to experimenter")
-            self.send(ConnectionManager.info("Refreshed all participants"))
+            self.send(info_json("Refreshed all participants"))
         elif event.type == 'goto':
             experiment_id = event.experiment_id
             experiment = Experiment.objects.get(pk=experiment_id)
             url = event.url
             connection_manager.send_goto(self, experiment, url)
-            self.send(ConnectionManager.info("Sent goto:%s to all participants" % url))
-
+            self.send(info_json("Sent goto:%s to all participants" % url))
 
     def on_close(self):
         connection_manager.remove_experimenter(self)

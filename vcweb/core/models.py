@@ -227,7 +227,7 @@ class Experiment(models.Model):
 
     @property
     def is_data_round_in_progress(self):
-        return self.is_round_in_progress and self.current_round.has_data_parameters
+        return self.is_round_in_progress and self.current_round.is_playable_round
 
     @property
     def time_remaining(self):
@@ -342,6 +342,9 @@ class Experiment(models.Model):
         # return dynamic text based on current_round?
         return self.current_round.instructions
 
+    def log(self, log_message):
+        if log_message:
+            self.activity_log.create(round_configuration=self.current_round, log_message=log_message)
     def data_file_name(self, file_ext='csv'):
         return "%s_%s_%s.%s" % (slugify(self.experiment_metadata.title), self.pk, datetime.now().strftime("%d-%m-%y-%H%M"), file_ext)
 
@@ -403,7 +406,7 @@ class Experiment(models.Model):
         self.current_round_elapsed_time = 0
         self.current_round_start_time = datetime.now()
         self.save()
-        self.activity_log.create(log_message='Starting round.', round_configuration=self.current_round)
+        self.log('Starting round')
         # FIXME: would prefer using self.namespace as a default but django's
         # managed unicode strings don't work as senders
         sender = self.experiment_metadata.pk if sender is None else sender
@@ -416,7 +419,7 @@ class Experiment(models.Model):
         self.status = 'ACTIVE'
         self.current_round_elapsed_time = max(self.current_round_elapsed_time, self.current_round.duration)
         self.save()
-        self.activity_log.create(log_message='Ending round with elapsed time %s.' % self.current_round_elapsed_time, round_configuration=self.current_round)
+        self.log('Ending round with elapsed time %s' % self.current_round_elapsed_time)
         sender = self.experiment_metadata.pk if sender is None else sender
         #sender = self.namespace.encode('utf-8')
         logger.debug("about to send round ended signal with sender %s" % sender)
@@ -551,7 +554,7 @@ class RoundConfiguration(models.Model):
         return self.round_type == RoundConfiguration.REGULAR
 
     @property
-    def has_data_parameters(self):
+    def is_playable_round(self):
         return self.round_type in (RoundConfiguration.PRACTICE, RoundConfiguration.REGULAR)
 
     def get_parameter(self, name):
@@ -795,17 +798,20 @@ class Group(models.Model):
     def is_open(self):
         return self.size < self.max_size
 
+    def log(self, log_message):
+        self.activity_log.create(round_configuration=self.current_round,
+                log_message=log_message)
+
     '''
     Initializes data parameters for all groups in this round, as necessary.
     If this round already has data parameters, is a no-op.
     '''
     def initialize_data_parameters(self):
-        if self.current_round.has_data_parameters:
+        if self.current_round.is_playable_round:
             round_data = self.current_round_data
             if round_data.group_data_values.filter(group=self).count() == 0:
                 logger.debug("no group data values for the current round %s, creating new ones." % round_data)
-                self.activity_log.create(round_configuration=self.current_round,
-                        log_message="Initializing data parameters for group %s in round %s" % (self, round_data))
+                self.log("Initializing data parameters for group %s in round %s" % (self, round_data))
                 for group_data_parameter in self.data_parameters:
                     self.data_values.create(round_data=round_data, parameter=group_data_parameter)
 
@@ -817,8 +823,7 @@ class Group(models.Model):
     def set_data_value(self, parameter_name=None, parameter=None, value=None):
         data_value = self.get_data_value(parameter_name=parameter_name, parameter=parameter)
         data_value.value = value
-        self.activity_log.create(round_configuration=self.current_round,
-                log_message="setting parameter %s = %s" % (parameter, value))
+        self.log("setting parameter %s = %s" % (parameter, value))
         data_value.save()
 
     def subtract(self, parameter=None, amount=0):
@@ -827,8 +832,7 @@ class Group(models.Model):
     def add(self, parameter=None, amount=0):
 # could be a float or an int..
         update_dict = { parameter.value_field_name : models.F(parameter.value_field_name) + amount }
-        self.activity_log.create(round_configuration=self.current_round,
-                log_message="adding %s to this group's %s parameter" % (amount, parameter))
+        self.log("adding %s to this group's %s parameter" % (amount, parameter))
         '''
         vs
         GroupRoundDataValue.objects.filter(group_round_data=self.current_round_data, parameter=parameter).update(**update_dict)

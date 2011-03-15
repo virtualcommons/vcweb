@@ -76,6 +76,7 @@ def wait(request, experiment_id=None):
             context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
         logger.warning("No experiment found with id %s" % experiment_id)
+        return redirect('forestry:participant_index')
 
 # FIXME: refactor this ugliness
 @participant_required
@@ -93,22 +94,13 @@ def participate(request, experiment_id=None):
                 context_instance=RequestContext(request))
 
         if experiment.is_round_in_progress:
-            if current_round.has_data_parameters:
+            if current_round.is_playable_round:
                 return play(request, experiment, participant)
             elif current_round.is_chat_round:
                 return chat(request, experiment, participant)
             elif current_round.is_quiz_round:
                 return quiz(request, experiment, participant)
-            else:
-                # instructions or quiz round
-                participant_group_rel = participant.get_participant_group_relationship(experiment)
-                return render_to_response(experiment.current_round_template, {
-                    'participant_group_relationship': participant_group_rel,
-                    'experiment': experiment,
-                    'next_round_instructions': experiment.next_round_instructions
-                    },
-                    context_instance=RequestContext(request))
-        elif experiment.is_first_round:
+        else:
 # round is not currently active, redirect to waiting page.
             return redirect('forestry:wait', experiment_id=experiment.pk)
     except Experiment.DoesNotExist:
@@ -182,6 +174,7 @@ def play(request, experiment, participant):
         max_harvest_decision = get_max_harvest_decision(resource_level.value)
 # FIXME: UI crap logic in view to determine how wide to make the tree div
         number_of_trees_per_row = 20
+        max_width = number_of_trees_per_row * 30
         number_of_resource_divs = range(0, resource_level.value / number_of_trees_per_row)
         resource_width = (resource_level.value % number_of_trees_per_row) * 30
         return render_to_response(experiment.current_round_template,

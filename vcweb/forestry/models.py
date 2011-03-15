@@ -10,6 +10,7 @@ def forestry_second_tick():
     check all forestry experiments.
     '''
 
+# returns a GroupRoundDataValue
 def get_resource_level(group=None):
     return group.get_data_value(parameter_name='resource_level') if group else None
 
@@ -73,7 +74,7 @@ def round_setup(experiment, **kwargs):
     elif round_configuration.is_debriefing_round:
         logger.debug("set up debriefing round")
 
-    if round_configuration.has_data_parameters:
+    if round_configuration.is_playable_round:
         '''
         practice or regular round, set up resource levels and participant
         harvest decision parameters
@@ -99,17 +100,24 @@ def round_teardown(experiment, **kwargs):
     resource_level_parameter = get_resource_level_parameter()
     current_round_configuration = experiment.current_round
     for group in experiment.groups.all():
+# implements regrowth function inline
         if has_resource_level(group):
-            if current_round_configuration.has_data_parameters:
+            current_resource_level = get_resource_level(group)
+            if current_round_configuration.is_playable_round:
                 total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
-                if get_resource_level(group) > 0 and total_harvest > 0:
-                    group.subtract(resource_level_parameter, total_harvest)
+                if current_resource_level.value > 0 and total_harvest > 0:
+                    group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level.value))
+                    current_resource_level.value = max(current_resource_level.value - total_harvest, 0)
+                    #group.subtract(resource_level_parameter, total_harvest)
             ''' transfer resource levels across chat and quiz rounds if they exist '''
             if experiment.has_next_round:
-                ''' set group round data resource_level for each group '''
-                logger.debug("Transferring resource level %s to next round" % get_resource_level(group))
+                ''' set group round data resource_level for each group + regrowth '''
+                regrowth = current_resource_level.value / 10
+                group.log("Regrowth: adding %s to current resource level %s" % (regrowth, current_resource_level.value))
+                current_resource_level.value = current_resource_level.value + regrowth
+                current_resource_level.save()
+                group.log("Transferring resource level %s to next round" % get_resource_level(group))
                 group.transfer_to_next_round(resource_level_parameter)
-        group.save()
 
 #@receiver(signals.round_started, sender='forestry')
 def round_started_handler(sender, experiment=None, **kwargs):
