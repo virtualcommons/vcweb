@@ -130,6 +130,8 @@ def round_teardown(experiment, **kwargs):
     ''' only calculate new resource levels for practice or regular rounds '''
     resource_level_parameter = get_resource_level_parameter()
     current_round_configuration = experiment.current_round
+# FIXME: make a round parameter for this.
+    max_resource_level = 100
     for group in experiment.groups.all():
 # implements regrowth function inline
         if has_resource_level(group):
@@ -147,7 +149,7 @@ def round_teardown(experiment, **kwargs):
                 regrowth = current_resource_level.value / 10
                 group.log("Regrowth: adding %s to current resource level %s" % (regrowth, current_resource_level.value))
                 set_regrowth(group, regrowth)
-                current_resource_level.value = current_resource_level.value + regrowth
+                current_resource_level.value = min(current_resource_level.value + regrowth, max_resource_level)
                 current_resource_level.save()
                 group.log("Transferring resource level %s to next round" % get_resource_level(group))
                 group.transfer_to_next_round(resource_level_parameter)

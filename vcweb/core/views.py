@@ -141,15 +141,16 @@ def manage(request, experiment_id=None):
 
 @experimenter_required
 def monitor(request, experiment_id=None):
-    try :
+    try:
         experiment = Experiment.objects.get(pk=experiment_id)
-        return render_to_response('monitor.html', locals(), context_instance=RequestContext(request))
+        if request.user.experimenter.pk == experiment.experimenter.pk:
+            return render_to_response('monitor.html', locals(), context_instance=RequestContext(request))
 # redirect to experiment specific management page?
     except Experiment.DoesNotExist:
         error_message = "Tried to monitor non-existent experiment (id %s)" % experiment_id
         logger.warning(error_message)
         messages.warning(request, error_message)
-        return redirect('core:dashboard')
+    return redirect('core:dashboard')
 
 # FIXME: add data converter objects to write to csv, excel, etc.
 @experimenter_required

@@ -22,4 +22,7 @@ function createMessageEvent(payload, event_type) {
 function createChatEvent(message) {
    return createMessageEvent(message);
 }
+function createSubmitEvent(message) {
+    return createMessageEvent(message, "submit");
+}
 </script>

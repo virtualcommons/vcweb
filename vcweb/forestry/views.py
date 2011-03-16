@@ -64,6 +64,26 @@ def manage_experiment(request, experiment_id=None):
 class ParticipantHistory(object):
     pass
 
+def generate_participant_history(participant_group_relationship):
+    group = participant_group_relationship.group
+    experiment = group.experiment
+    all_harvest_round_data = []
+    for round_data in experiment.round_data.all():
+        p = ParticipantHistory()
+        p.round_configuration = round_data.round_configuration
+        p.individual_harvest = get_harvest_decision(participant_group_relationship, round_data=round_data)
+        p.group_harvest = get_group_harvest(group, round_data=round_data)
+        p.regrowth = get_regrowth(group, round_data=round_data)
+        resource_level = get_resource_level(group, round_data=round_data)
+        try:
+            p.original_number_of_trees = resource_level.value + p.group_harvest.value - p.regrowth.value
+        except AttributeError:
+            pass
+        p.final_number_of_trees = resource_level.value
+        all_harvest_round_data.append(p)
+    logger.debug("all harvest round data: %s" % all_harvest_round_data)
+    return all_harvest_round_data
+
 @participant_required
 def wait(request, experiment_id=None):
     try:
@@ -71,25 +91,7 @@ def wait(request, experiment_id=None):
         participant = request.user.participant
         participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
         participant_group_relationship = participant.get_participant_group_relationship(experiment)
-        logger.debug("participant group relationship is: %s" % participant_group_relationship)
-        all_harvest_round_data = []
-        group = participant_group_relationship.group
-        for round_data in experiment.round_data.all():
-            p = ParticipantHistory()
-            p.round_configuration = round_data.round_configuration
-            p.individual_harvest = get_harvest_decision(participant_group_relationship, round_data=round_data)
-            p.group_harvest = get_group_harvest(group, round_data=round_data)
-            p.regrowth = get_regrowth(group, round_data=round_data)
-            resource_level = get_resource_level(group, round_data=round_data)
-            try:
-                p.original_number_of_trees = resource_level.value + p.group_harvest.value - p.regrowth.value
-            except AttributeError:
-                pass
-            p.final_number_of_trees = resource_level.value
-            all_harvest_round_data.append(p)
-
-        logger.debug("all harvest round data: %s" % all_harvest_round_data)
-
+        all_harvest_round_data = generate_participant_history(participant_group_relationship)
         return render_to_response('forestry/wait.html', {
             'participant_experiment_relationship': participant_experiment_relationship,
             'participant_group_relationship':participant_group_relationship,
@@ -165,13 +167,14 @@ def quiz(request, experiment, participant):
 
 def chat(request, experiment, participant):
     participant_group_rel = participant.get_participant_group_relationship(experiment)
+    participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
     chat_messages = experiment.current_round_data.chat_messages.filter(participant_group_relationship__group=participant_group_rel.group)
     return render_to_response(experiment.current_round_template, {
         'participant_group_relationship': participant_group_rel,
+        'participant_experiment_relationship': participant_experiment_relationship,
         'group': participant_group_rel.group,
         'participant': participant,
         'experiment': experiment,
-        'SOCKET_IO_HOST': settings.SOCKET_IO_HOST,
         'chat_messages': chat_messages,
         },
         context_instance=RequestContext(request))

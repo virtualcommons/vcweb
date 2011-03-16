@@ -80,7 +80,7 @@ class ConnectionManager:
             del self.participant_to_connection[participant_tuple]
             del self.connection_to_participant[connection]
         except KeyError, k:
-            logger.warning( "caught key error %s while trying to remove connection %s" % (connection, k) )
+            logger.warning("caught key error %s while trying to remove connection %s" % (connection, k) )
             pass
 
     '''

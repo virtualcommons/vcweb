@@ -13,6 +13,9 @@
                 console.log("going to " + json.url);
                 window.location.href = json.url;
                 break;
+            case 'refresh':
+                window.location.reload(true);
+                break;
             }
         });
     });
@@ -34,14 +37,15 @@ The facilitator will start the next round when every participant is ready.
 <h3>History</h3>
 <div id='group-history'>
     {% if all_harvest_round_data %}
-    <table>
+    <table class='debriefing'>
         <thead>
-            <tr><th>Round</th><th>Individual harvest</th><th>Group harvest</th><th>Original number of trees</th><th>Regrowth</th><th>Number of trees left</th></tr>
+            <tr><th>Round</th><th>Original number of trees</th><th>Your harvest decisions</th><th>Your group's total harvest decisions</th><th>Regrowth</th><th>Number of trees left</th></tr>
         </thead>
         <tbody>
             {% for harvest_round_data in all_harvest_round_data %}
             <tr>
                 <td>{{harvest_round_data.round_configuration}}</td>
+                <td>{{harvest_round_data.original_number_of_trees}}</td>
                 <td>{% if harvest_round_data.individual_harvest %}
                     {{harvest_round_data.individual_harvest.value}}
                     {% else %}
@@ -49,7 +53,6 @@ The facilitator will start the next round when every participant is ready.
                     {%endif%}
                 </td>
                 <td>{{harvest_round_data.group_harvest.value}}</td>
-                <td>{{harvest_round_data.original_number_of_trees}}</td>
                 <td>{{harvest_round_data.regrowth.value}}</td>
                 <td>{{harvest_round_data.final_number_of_trees}}</td>
             </tr>

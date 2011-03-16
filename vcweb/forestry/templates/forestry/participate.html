@@ -33,6 +33,12 @@
                 break;
             }
         });
+        $('#submit-harvest-decision').click(function() {
+            $(this).attr('disabled', true);
+            harvestDecisionValue = $('#harvestDecisionId').val();
+            alert("harvest decision: " + harvestDecisionValue);
+            s.send(createSubmitEvent($('#harvestDecisionId').val()));
+        });
     });
 </script>
 {% endblock %}
@@ -67,7 +73,7 @@ Participating in {{experiment.status_line}}
         <input id='harvestDecisionId' type="text" name='harvest_decision' class='required digits two-digits' maxlength='1'/>
     </div>
     <div class='field'>
-        <input type='submit' value='Submit' />
+        <input id='submit-harvest-decision' type='submit' value='Submit' />
     </div>
 </form>
 {% else %}
