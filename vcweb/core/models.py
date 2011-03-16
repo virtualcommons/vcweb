@@ -637,13 +637,15 @@ class Parameter(models.Model):
             }
 
     GROUP_SCOPE = 'group'
+    GROUP_ROUND_SCOPE = 'group_round'
     PARTICIPANT_SCOPE = 'participant'
     ROUND_SCOPE = 'round'
     EXPERIMENT_SCOPE = 'experiment'
 
     SCOPE_CHOICES = ((ROUND_SCOPE, 'Parameter applies just for this round'),
                      (EXPERIMENT_SCOPE, 'Parameter applies to this entire experiment'),
-                     (GROUP_SCOPE, 'Parameter applies to the entire group'),
+                     (GROUP_SCOPE, 'Parameter applies to the entire group for the duration of the experiment'),
+                     (GROUP_ROUND_SCOPE, 'Parameter applies to the entire group for a given round'),
                      (PARTICIPANT_SCOPE, 'Parameter is for a single participant'))
 
     scope = models.CharField(max_length=32, choices=SCOPE_CHOICES, default=ROUND_SCOPE)
@@ -862,6 +864,7 @@ class Group(models.Model):
 
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None):
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
+        logger.debug("criteria: %s" % criteria)
         return self.data_values.get_or_create(**criteria)[0]
 
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None):

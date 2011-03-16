@@ -33,7 +33,7 @@ The facilitator will start the next round when every participant is ready.
 
 <h3>History</h3>
 <div id='group-history'>
-    {% if participant_harvest_decisions %}
+    {% if all_harvest_round_data %}
     <table>
         <thead>
             <tr><th>Round</th><th>Individual harvest</th><th>Group harvest</th><th>Original number of trees</th><th>Regrowth</th><th>Number of trees left</th></tr>
@@ -42,10 +42,15 @@ The facilitator will start the next round when every participant is ready.
             {% for harvest_round_data in all_harvest_round_data %}
             <tr>
                 <td>{{harvest_round_data.round_configuration}}</td>
-                <td>{{harvest_round_data.individual_harvest}}</td>
-                <td>{{harvest_round_data.group_harvest}}</td>
+                <td>{% if harvest_round_data.individual_harvest %}
+                    {{harvest_round_data.individual_harvest.value}}
+                    {% else %}
+                    0
+                    {%endif%}
+                </td>
+                <td>{{harvest_round_data.group_harvest.value}}</td>
                 <td>{{harvest_round_data.original_number_of_trees}}</td>
-                <td>{{harvest_round_data.regrowth}}</td>
+                <td>{{harvest_round_data.regrowth.value}}</td>
                 <td>{{harvest_round_data.final_number_of_trees}}</td>
             </tr>
             {% endfor %}

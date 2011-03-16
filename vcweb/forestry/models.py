@@ -10,21 +10,40 @@ def forestry_second_tick():
     check all forestry experiments.
     '''
 
-# returns a GroupRoundDataValue
+# returns a GroupRoundDataValue.  FIXME: duplication across get_group_harvest and get_regrowth
 def get_resource_level(group=None, round_data=None):
-    return group.get_data_value(parameter_name='resource_level', round_data=round_data) if group else None
+    return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data) if group else None
 
 def has_resource_level(group=None):
     return group.has_data_parameter(parameter=get_resource_level_parameter())
 
+def get_group_harvest(group, round_data=None):
+    if round_data is None:
+        round_data = group.current_round_data
+    return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data) if group else None
+
+def get_regrowth(group, round_data=None):
+    if round_data is None:
+        round_data = group.current_round_data
+    return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data) if group else None
+
 def get_harvest_decision(participant_group_relationship, round_data=None):
     if round_data is None:
         round_data = participant_group_relationship.current_round_data
-    return ParticipantRoundDataValue.objects.get(participant_group_relationship=participant_group_relationship,
-            round_data=round_data, parameter__name='harvest_decision')
+    try:
+        return ParticipantRoundDataValue.objects.get(participant_group_relationship=participant_group_relationship,
+                round_data=round_data, parameter__name='harvest_decision')
+    except ParticipantRoundDataValue.DoesNotExist:
+        return None
 
 def get_harvest_decisions(group=None):
     return group.get_participant_data_values(parameter_name='harvest_decision') if group else []
+
+def set_regrowth(group, value):
+    group.set_data_value(parameter=get_regrowth_parameter(), value=value)
+
+def set_group_harvest(group, value):
+    group.set_data_value(parameter=get_group_harvest_parameter(), value=value)
 
 def get_max_harvest_decision(resource_level):
     if resource_level >= 25:
@@ -45,6 +64,16 @@ def get_forestry_experiment_metadata():
 
 def get_resource_level_parameter():
     return Parameter.objects.get(name='resource_level',
+            scope=Parameter.GROUP_SCOPE,
+            experiment_metadata=get_forestry_experiment_metadata())
+
+def get_regrowth_parameter():
+    return Parameter.objects.get(name='regrowth',
+            scope=Parameter.GROUP_SCOPE,
+            experiment_metadata=get_forestry_experiment_metadata())
+
+def get_group_harvest_parameter():
+    return Parameter.objects.get(name='group_harvest',
             scope=Parameter.GROUP_SCOPE,
             experiment_metadata=get_forestry_experiment_metadata())
 
@@ -109,6 +138,7 @@ def round_teardown(experiment, **kwargs):
                 total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
                 if current_resource_level.value > 0 and total_harvest > 0:
                     group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level.value))
+                    set_group_harvest(group, total_harvest)
                     current_resource_level.value = max(current_resource_level.value - total_harvest, 0)
                     #group.subtract(resource_level_parameter, total_harvest)
             ''' transfer resource levels across chat and quiz rounds if they exist '''
@@ -116,6 +146,7 @@ def round_teardown(experiment, **kwargs):
                 ''' set group round data resource_level for each group + regrowth '''
                 regrowth = current_resource_level.value / 10
                 group.log("Regrowth: adding %s to current resource level %s" % (regrowth, current_resource_level.value))
+                set_regrowth(group, regrowth)
                 current_resource_level.value = current_resource_level.value + regrowth
                 current_resource_level.save()
                 group.log("Transferring resource level %s to next round" % get_resource_level(group))

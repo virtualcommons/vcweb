@@ -8,7 +8,7 @@ from vcweb import settings
 from vcweb.core.forms import QuizForm
 from vcweb.core.models import is_participant, is_experimenter, Experiment, ParticipantGroupRelationship, ParticipantExperimentRelationship
 from vcweb.core.decorators import participant_required, experimenter_required
-from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision, get_harvest_decision
+from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision, get_harvest_decision, get_group_harvest, get_regrowth
 from vcweb.forestry.forms import HarvestDecisionForm
 import logging
 
@@ -81,9 +81,14 @@ def wait(request, experiment_id=None):
             p.group_harvest = get_group_harvest(group, round_data=round_data)
             p.regrowth = get_regrowth(group, round_data=round_data)
             resource_level = get_resource_level(group, round_data=round_data)
-            p.original_number_of_trees = resource_level.value + p.group_harvest - p.regrowth
+            try:
+                p.original_number_of_trees = resource_level.value + p.group_harvest.value - p.regrowth.value
+            except AttributeError:
+                pass
             p.final_number_of_trees = resource_level.value
             all_harvest_round_data.append(p)
+
+        logger.debug("all harvest round data: %s" % all_harvest_round_data)
 
         return render_to_response('forestry/wait.html', {
             'participant_experiment_relationship': participant_experiment_relationship,
