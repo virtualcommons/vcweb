@@ -61,6 +61,4 @@ BROKER_PASSWORD = 'CUSTOMIZE_ME'
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'CUSTOMIZE_ME'
 
-SOCKET_IO_HOST = "vcweb.asu.edu"
 EMAIL_HOST = "smtp.asu.edu"
-

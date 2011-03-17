@@ -71,7 +71,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
         'django.contrib.auth.context_processors.auth',
         'django.contrib.messages.context_processors.messages',
 #        'django.core.context_processors.static',
-        'vcweb.core.context_processors.socket_io',
         )
 
 MIDDLEWARE_CLASSES = (
@@ -111,8 +110,6 @@ INSTALLED_APPS = (
 STATIC_ROOT = "/var/www/vcweb/static"
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
-
-SOCKET_IO_HOST = "vcweb.asu.edu"
 
 EMAIL_HOST = "smtp.asu.edu"
 

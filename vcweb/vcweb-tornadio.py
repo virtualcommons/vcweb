@@ -213,11 +213,8 @@ class ParticipantHandler(SocketConnection):
                             }))
         except KeyError, e:
             logger.debug("no participant group relationship id %s" % e)
-            pass
         except ParticipantExperimentRelationship.DoesNotExist, e:
-            logger.debug("no participant group relationship with id %s (%s)" %
-                    (participant_experiment_relationship_id, e))
-            pass
+            logger.debug("no participant experiment relationship with id %s (%s)" % (relationship_id, e))
 
     def on_message(self, message, *args, **kwargs):
         logger.debug("received message %s from handler %s" % (message, self))
@@ -233,7 +230,9 @@ class ParticipantHandler(SocketConnection):
                 )
         for participant_group_pk, connection in connection_manager.connections(participant_group_relationship.group):
             connection.send(simplejson.dumps({
-                "message" : chat_message.as_html,
+                "pk": chat_message.pk,
+                "date_created": chat_message.date_created.strftime("%H:%M:%S"),
+                "message" : chat_message.__unicode__(),
                 "message_type": 'chat',
                 }))
 

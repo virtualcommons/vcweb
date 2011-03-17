@@ -1112,11 +1112,6 @@ class ChatMessage(models.Model):
 
     objects = ChatMessageManager()
 
-    def __unicode__(self):
-        """ return this participant's sequence number combined with the message """
-        participant_number = self.participant_group_relationship.participant_number
-        return u"{0}: {1}".format(participant_number, self.message)
-
     @property
     def group(self):
         return self.participant_group_relationship.group
@@ -1132,8 +1127,14 @@ class ChatMessage(models.Model):
     @property
     def as_html(self):
         return "<a name='{0}'>{1}</a> | {2}".format(self.pk,
-                self.date_created.strftime("%H:%S"), 
+                self.date_created.strftime("%H:%M:%S"),
                 self.__unicode__())
+
+
+    def __unicode__(self):
+        """ return this participant's sequence number combined with the message """
+        participant_number = self.participant_group_relationship.participant_number
+        return u"{0}: {1}".format(participant_number, self.message)
 
     class Meta:
         ordering = ['date_created']
