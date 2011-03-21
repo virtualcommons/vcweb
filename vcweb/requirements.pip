@@ -1,13 +1,12 @@
 Django
-celery
-django-celery
-tornado
-tornadio
 psycopg2
+celery
+tornadio
+tornado
+django-celery
 kombu
 django-kombu
 django-dajaxice
-# needed to run tests with ghettoq for some reason..
 #django-unittest-depth
 #redis
 #beanstalkc

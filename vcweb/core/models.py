@@ -656,6 +656,7 @@ class Parameter(models.Model):
     scope = models.CharField(max_length=32, choices=SCOPE_CHOICES, default=ROUND_SCOPE)
     name = models.CharField(max_length=255, unique=True)
     display_name = models.CharField(max_length=255, null=True, blank=True)
+    description = models.CharField(max_length=512, null=True, blank=True)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
     default_value_string = models.CharField(max_length=255, null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -870,7 +871,10 @@ class Group(models.Model):
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None):
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         logger.debug("criteria: %s" % criteria)
-        return self.data_values.get_or_create(**criteria)[0]
+        data_value, created = self.data_values.get_or_create(**criteria)
+        if created:
+            logger.debug("Created new data value in get_data_value: %s" % data_value)
+        return data_value
 
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None):
         return dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name),

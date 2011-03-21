@@ -11,7 +11,10 @@ logger = logging.getLogger(__name__)
 '''
 creates the forestry ExperimentMetadata record if not already created.
 
-is this any better than adding it to directly to initial_data.json?
+XXX: also create forestry parameters here?
+
+FIXME: what are pros/cons for doing it this way vs adding it to initial_data.json
+pro: don't have to hard-code pks and pk references..
 '''
 
 def post_syncdb_handler(sender, **kwargs):
@@ -22,7 +25,8 @@ def post_syncdb_handler(sender, **kwargs):
             "title": "Forestry Web Experiment",
             "date_created": "2011-01-01"
             }
-    logger.debug("forestry: %s (%s)" % ExperimentMetadata.objects.get_or_create(**forestry_dict))
+    forestry_metadata, created = ExperimentMetadata.objects.get_or_create(**forestry_dict)
+    logger.debug("forestry: %s (%s)" % (forestry_metadata, created))
 
 post_syncdb.connect(post_syncdb_handler, sender=vcweb.core.models,
         dispatch_uid='forestry_metadata_creator')

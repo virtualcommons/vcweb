@@ -10,22 +10,19 @@ def forestry_second_tick():
     check all forestry experiments.
     '''
 
-# returns a GroupRoundDataValue.  FIXME: duplication across get_group_harvest and get_regrowth
+# returns GroupRoundDataValue.
 def get_resource_level(group=None, round_data=None):
-    return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data) if group else None
+    return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data)
+
+def get_group_harvest(group, round_data=None):
+    return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data)
+
+def get_regrowth(group, round_data=None):
+    return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data)
 
 def has_resource_level(group=None):
     return group.has_data_parameter(parameter=get_resource_level_parameter())
 
-def get_group_harvest(group, round_data=None):
-    if round_data is None:
-        round_data = group.current_round_data
-    return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data) if group else None
-
-def get_regrowth(group, round_data=None):
-    if round_data is None:
-        round_data = group.current_round_data
-    return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data) if group else None
 
 def get_harvest_decision(participant_group_relationship, round_data=None):
     if round_data is None:
@@ -68,7 +65,7 @@ def get_resource_level_parameter():
             experiment_metadata=get_forestry_experiment_metadata())
 
 def get_regrowth_parameter():
-    return Parameter.objects.get(name='regrowth',
+    return Parameter.objects.get(name='group_regrowth',
             scope=Parameter.GROUP_SCOPE,
             experiment_metadata=get_forestry_experiment_metadata())
 
