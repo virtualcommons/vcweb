@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.models import User
 from django.forms import widgets
 from django.utils.translation import ugettext_lazy as _
 
@@ -16,7 +17,7 @@ class RegistrationForm(forms.Form):
     institution = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
 
     def clean_email(self):
-        email = self.cleaned_data['email']
+        email = self.cleaned_data['email'].lower()
         try:
             User.objects.get(email=email)
         except User.DoesNotExist:

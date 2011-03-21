@@ -21,10 +21,10 @@ class AuthenticationBackend(ModelBackend):
     def authenticate(self, username=None, password=None):
         if email_re.search(username):
             try:
-                user = User.objects.get(email=username)
+                user = User.objects.get(email=username.lower())
                 if user.check_password(password):
                     return user
-                # check for and handle participants logging in with an auth?
+                # check for and handle participants logging in with an auth code?
             except User.DoesNotExist:
                 return None
         return None
