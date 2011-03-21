@@ -295,6 +295,10 @@ class Experiment(models.Model):
         return round_data
 
     @property
+    def playable_round_data(self):
+        return self.round_data.filter(round_configuration__round_type__in=RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS)
+
+    @property
     def all_quiz_questions(self):
         # FIXME: use generator expression?
         quiz_questions = list(self.default_quiz_questions.all())
@@ -482,6 +486,7 @@ class RoundConfiguration(models.Model):
     ROUND_TYPES = (CHAT, DEBRIEFING, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR) = sorted(ROUND_TYPES_DICT.keys())
 
     ROUND_TYPE_CHOICES = [(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES]
+    PLAYABLE_ROUND_CONFIGURATIONS = (PRACTICE, REGULAR)
 
     experiment_configuration = models.ForeignKey(ExperimentConfiguration,
                                                  related_name='round_configurations')
@@ -555,7 +560,7 @@ class RoundConfiguration(models.Model):
 
     @property
     def is_playable_round(self):
-        return self.round_type in (RoundConfiguration.PRACTICE, RoundConfiguration.REGULAR)
+        return self.round_type in RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS
 
     def get_parameter(self, name):
         parameter = Parameter.objects.get(name=name, scope=Parameter.ROUND_SCOPE)
