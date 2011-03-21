@@ -146,7 +146,7 @@ class ExperimentConfiguration(models.Model):
         return self.experiment_metadata.namespace
 
     def __unicode__(self):
-        return u"ExperimentConfiguration %s for %s" % (self.name, self.experiment_metadata)
+        return u"%s configuration for the %s" % (self.name, self.experiment_metadata)
 
     class Meta:
         ordering = ['experiment_metadata', 'creator', 'date_created']
@@ -213,7 +213,7 @@ class Experiment(models.Model):
     short slug to use instead of pk
     FIXME: still needs to be implemented
     '''
-    slug = models.SlugField(max_length=16, unique=True, null=True)
+    slug = models.SlugField(max_length=16, unique=True, null=True, blank=True)
 
     objects = ExperimentManager()
 
@@ -589,7 +589,7 @@ class RoundConfiguration(models.Model):
         return Template(template_string).substitute(kwargs, round_number=self.display_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return u"Round %d, sequence: %d" % (self.round_number, self.sequence_number)
+        return u"sequence %d, round %d,  (%s | %s)" % (self.sequence_number, self.round_number, self.round_type, self.experiment_configuration)
 
     @property
     def display_label(self):

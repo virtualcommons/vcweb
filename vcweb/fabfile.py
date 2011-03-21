@@ -14,7 +14,7 @@ env.deploy_user = 'apache'
 env.deploy_group = 'commons'
 env.virtualenv_path = '/opt/virtualenvs/%(project_name)s' % env
 env.deploy_path = '/opt/webapps/virtualcommons/'
-# default to current working directory 
+# default to current working directory
 env.project_path = os.path.dirname(__file__)
 env.hosts = ['localhost']
 env.hg_url = 'http://virtualcommons.hg.sourceforge.net:8000/hgroot/virtualcommons/virtualcommons'
@@ -120,8 +120,8 @@ def loc():
 def setup():
     setup_virtualenv()
     sudo('hg clone %(hg_url)s %(deploy_path)s' % env, pty=True, user=env.deploy_user)
-    sudo_chain('chown -R %(deploy_user)s:%(deploy_group)s %(deploy_path)s' % env,  
-            'chmod -R ug+rw %(deploy_path)s' % env, 
+    sudo_chain('chown -R %(deploy_user)s:%(deploy_group)s %(deploy_path)s' % env,
+            'chmod -R ug+rw %(deploy_path)s' % env,
             'find %(deploy_path)s -type d -exec chmod ug+x {} \;' % env,
             pty=True)
     pip()
