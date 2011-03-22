@@ -462,20 +462,8 @@ class Experiment(models.Model):
                           status=Experiment.INACTIVE
                           )
 
-
     def __unicode__(self):
-        return u"%s | #%s" % (self.experiment_metadata.title, self.pk)
-
-    def ___eq___(self, other):
-        return self.pk == other.pk
-
-    def ___cmp___(self, other):
-        return self.pk.___cmp___(other.pk)
-
-    def ___hash___(self):
-        return self.pk.___hash___()
-
-
+        return u"%s #%s | %s" % (self.experiment_metadata.title, self.pk, self.experimenter)
 
 class RoundConfiguration(models.Model):
 # maps round type name to (description, default_template_name)

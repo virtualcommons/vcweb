@@ -56,7 +56,7 @@ class ForestryRoundSignalTest(BaseVcwebTest):
         '''
         def expected_resource_level(group):
             after_harvests = 100 - ((group.number % 5) * group.size)
-            after_regrowth = after_harvests + (after_harvests / 10)
+            after_regrowth = min(after_harvests + (after_harvests / 10), 100)
             return after_regrowth
 
         for group in e.groups.all():
@@ -67,11 +67,6 @@ class ForestryRoundSignalTest(BaseVcwebTest):
         for group in e.groups.all():
             resource_level = get_resource_level(group)
             self.failUnlessEqual(resource_level.value, expected_resource_level(group))
-            '''
-            2 groups, 2 rounds of data = 4 total group round data value
-            objects.
-            '''
-            self.failUnlessEqual(GroupRoundDataValue.objects.count(), 4)
 
     def test_round_ended(self):
         e = self.test_round_setup()
@@ -155,7 +150,7 @@ class ForestryParametersTest(BaseVcwebTest):
         for e in self.all_data_rounds():
             self.failIfEqual(current_round_data, e.current_round_data)
             current_round_data = e.current_round_data
-            for data_value in current_round_data.group_data_values.all():
+            for data_value in current_round_data.group_data_values.filter(parameter__name='resource_level'):
                 # test string conversion
                 logger.debug("current round data: pk:%s value:%s unicode:%s" % (data_value.pk, data_value.value, data_value))
                 self.failUnless(data_value.pk > 0)
@@ -168,18 +163,17 @@ class ForestryParametersTest(BaseVcwebTest):
                 data_value.save()
                 self.failUnlessEqual(50, data_value.value)
 
-            self.failUnlessEqual(GroupRoundDataValue.objects.filter(experiment=e).count(), data_round_number * 2)
             self.failUnlessEqual(e.current_round_data.group_data_values.count(), GroupRoundDataValue.objects.filter(experiment=e, round_data=current_round_data).count())
-            self.failUnlessEqual(e.parameters(scope=Parameter.GROUP_SCOPE).count(), 1)
-            self.failUnlessEqual(current_round_data.group_data_values.count(), 2)
+            self.failUnlessEqual(e.parameters(scope=Parameter.GROUP_SCOPE).count(), 3)
             data_round_number += 1
 
     def test_data_parameters(self):
         e = self.experiment
-        self.failUnlessEqual(4, e.parameters().count(), 'Currently 4 group parameters')
+        # FIXME: horrible tests, improve
+        self.failUnlessEqual(6, e.parameters().count())
         for data_param in e.parameters(scope=Parameter.GROUP_SCOPE).all():
             logger.debug("inspecting data param %s" % data_param)
-            self.failUnlessEqual(data_param.type, 'int', 'Currently all data parameters for the forestry experiment are ints.')
+            self.failUnlessEqual(data_param.type, 'int', 'Currently all group data parameters for the forestry experiment are ints.')
 
 
     def create_participant_data_values(self):
