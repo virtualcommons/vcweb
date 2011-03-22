@@ -60,6 +60,8 @@ class ConnectionManager:
     def get_participant_group_relationship(self, connection):
         if connection in self.connection_to_participant:
             (participant_pk, experiment_pk) = self.connection_to_participant[connection]
+            logger.debug("Looking for ParticipantGroupRelationship with tuple (%s, %s)" %
+                    (participant_pk, experiment_pk))
             return ParticipantGroupRelationship.objects.get(participant__pk=participant_pk, group__experiment__pk = experiment_pk)
         logger.debug("Didn't find connection %s in connection map %s." % (connection, self.connection_to_participant))
         return None

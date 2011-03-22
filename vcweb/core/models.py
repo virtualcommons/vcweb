@@ -176,7 +176,7 @@ class Experiment(models.Model):
                       ('COMPLETED', 'Completed'))
     (INACTIVE, ACTIVE, PAUSED, ROUND_IN_PROGRESS, COMPLETED) = [ choice[0] for choice in STATUS_CHOICES ]
     authentication_code = models.CharField(max_length=32, default="vcweb.auth.code")
-    current_round_sequence_number = models.PositiveIntegerField(default=0)
+    current_round_sequence_number = models.PositiveIntegerField(default=1)
     experimenter = models.ForeignKey(Experimenter, related_name='experiments')
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
     experiment_configuration = models.ForeignKey(ExperimentConfiguration,
@@ -325,7 +325,8 @@ class Experiment(models.Model):
 
     @property
     def previous_round(self):
-        return self.get_round_configuration(max(self.current_round_sequence_number - 1, 0))
+        # FIXME: loop instead w/ mod?
+        return self.get_round_configuration(max(self.current_round_sequence_number - 1, 1))
 
     @property
     def has_next_round(self):
@@ -349,6 +350,7 @@ class Experiment(models.Model):
     def log(self, log_message):
         if log_message:
             self.activity_log.create(round_configuration=self.current_round, log_message=log_message)
+
     def data_file_name(self, file_ext='csv'):
         return "%s_%s_%s.%s" % (slugify(self.experiment_metadata.title), self.pk, datetime.now().strftime("%d-%m-%y-%H%M"), file_ext)
 
@@ -1017,11 +1019,11 @@ class Participant(CommonsUser):
     def get_participant_experiment_relationship(self, experiment):
         return ParticipantExperimentRelationship.objects.get(participant=self, experiment=experiment)
 
-    def get_participant_number(self, experiment):
-        return ParticipantGroupRelationship.objects.get_participant_number(experiment, self)
-
     def get_participant_group_relationship(self, experiment):
         return ParticipantGroupRelationship.objects.get_participant_group(self, experiment)
+
+    def get_participant_number(self, experiment):
+        return ParticipantGroupRelationship.objects.get_participant_number(experiment, self)
 
     def get_group(self, experiment):
         return ParticipantGroupRelationship.objects.get_group(experiment, self)

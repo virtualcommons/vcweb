@@ -1,47 +1,46 @@
 {% extends "base-participant.html" %}
 {% block head %}
-    {{ block.super }}
-    {% include "includes/participant.events.html" %}
-    {% include "includes/socket.io.html" %}
-    <script type="text/javascript">
-        $(function() {
-                var chatDiv = document.getElementById('chat-div');
-                var s = connect(window.location.hostname, 8888, 'participant/{{participant_experiment_relationship.pk}}');
-                s.on('message', function(json_string) {
-                    var json = jQuery.parseJSON(json_string);
-                    switch (json.message_type) {
-                    case 'chat':
-                        console.log("Received " + json.pk + " " + json.date_created + " " + json.message);
-                        $("#chat-div").append(
-                            $("<div class='ui-state-highlight' />")
-                                .append($("<a />").attr("name", "" + json.pk)
-                                    .text("" + json.date_created))
-                                .append(" | ")
-                                .append(json.message));
+{{ block.super }}
+<script type="text/javascript">
+    $(function() {
+        var chatDiv = document.getElementById('chat-div');
+        // var s = connect(window.location.hostname, 8888, 'participant/{{participant_experiment_relationship.pk}}');
+        var s = getCachedSocket();
+        s.on('message', function(json_string) {
+            var json = jQuery.parseJSON(json_string);
+            switch (json.message_type) {
+            case 'chat':
+                console.log("Received " + json.pk + " " + json.date_created + " " + json.message);
+                $("#chat-div").append(
+                    $("<div class='ui-state-highlight' />")
+                        .append($("<a />").attr("name", "" + json.pk)
+                            .text("" + json.date_created))
+                        .append(" | ")
+                        .append(json.message));
                         // scroll to bottom
-                        chatDiv.scrollTop = chatDiv.scrollHeight;
-                        break;
-                    case 'refresh':
-                        location.reload(true);
-                        break;
-                    case 'goto':
-                        location.href = json.url;
-                        break;
-                    }
-                });
-                //send the message when submit is clicked
-                $('#chatform').submit(function (evt) {
-                    var line = $('#chatText').val()
-                    if (line) {
-                        $('#chatText').val('')
-                        s.send(createMessageEvent(line));
-                    }
-                    return false;
-                });
-                $('#chatText').focus();
                 chatDiv.scrollTop = chatDiv.scrollHeight;
+                break;
+            case 'refresh':
+                location.reload(true);
+                break;
+            case 'goto':
+                location.href = json.url;
+                break;
+            }
         });
-    </script>
+        //send the message when submit is clicked
+        $('#chatform').submit(function (evt) {
+            var line = $('#chatText').val()
+            if (line) {
+                $('#chatText').val('')
+                s.send(createMessageEvent(line));
+            }
+            return false;
+        });
+        $('#chatText').focus();
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+    });
+</script>
 {% endblock %}
 {% block title %}
 Forestry Chat Round

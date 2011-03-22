@@ -3,6 +3,11 @@
 {% block head %}
     {{block.super}}
     <script type='text/javascript' src='/static/js/jquery.validate.min.js'></script>
+    {% include "includes/participant.events.html" %}
+    {% include "includes/socket.io.html" %}
+    <script type='text/javascript'>
+        connect(window.location.hostname, 8888, 'participant/{{participant_experiment_relationship.pk}}');
+    </script>
 {% endblock %}
 
 {% block title %}

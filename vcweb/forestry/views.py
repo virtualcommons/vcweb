@@ -183,6 +183,7 @@ def chat(request, experiment, participant):
 def play(request, experiment, participant):
     form = HarvestDecisionForm(request.POST or None)
     participant_group_relationship = participant.get_participant_group_relationship(experiment)
+    participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
     harvest_decision = get_harvest_decision(participant_group_relationship)
     if form.is_valid():
         resources_harvested = form.cleaned_data['harvest_decision']

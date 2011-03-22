@@ -4,26 +4,30 @@
 </script>
 
 <script type="text/javascript">
+var cachedSocket;
 function connect(host, port, resource) {
-   if ( !host ) {
-       console.log("Tried to connect to invalid host, connecting to vcweb.asu.edu instead.");
-       host = "vcweb.asu.edu";
-   }
-   if ( !port ) {
-       console.log("using default port 8888");
-       port = 8888;
-   }
-   var s = new io.Socket(host, {"port": port,  "resource": resource});
-   s.connect();
-   s.on("connect", function() {
-           console.log("Connecting.");
-           s.send(createConnectionEvent());
-   });
-   s.on('disconnect', function(data) {
-           console.log("received disconnect, reconnecting.");
-           s.connect();
-           s.send(createReconnectionEvent());
-   });
-   return s;
+    if ( !host ) {
+        console.log("Tried to connect to invalid host, connecting to vcweb.asu.edu instead.");
+        host = "vcweb.asu.edu";
+    }
+    if ( !port ) {
+        console.log("using default port 8888");
+        port = 8888;
+    }
+    cachedSocket = new io.Socket(host, {"port": port,  "resource": resource});
+    cachedSocket.connect();
+    cachedSocket.on('connect', function() {
+        console.log("Connecting to " + host + ":" + port + "/" + resource);
+        cachedSocket.send(createConnectionEvent());
+    });
+    cachedSocket.on('disconnect', function(data) {
+        console.log("received disconnect, reconnecting.");
+        cachedSocket.connect();
+        cachedSocket.send(createReconnectionEvent());
+    });
+    return cachedSocket;
+}
+function getCachedSocket() {
+    return cachedSocket;
 }
 </script>
