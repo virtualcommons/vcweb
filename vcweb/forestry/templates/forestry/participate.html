@@ -3,7 +3,7 @@
 {{ block.super }}
 <script type="text/javascript">
     $(function() {
-        $("#forestryForm").validate({
+        $("#forestry-form").validate({
                 rules: {
                     harvest_decision: {
                         required: true,
@@ -17,10 +17,10 @@
                     }
                 },
         });
-        $('#harvestDecisionId').focus(function() {
+        $('#harvest-decision-id').focus(function() {
             this.select();
         });
-        $('#harvestDecisionId').focus();
+        $('#harvest-decision-id').focus();
         var s = getCachedSocket();
         s.on('message', function(json_string) {
             var json = jQuery.parseJSON(json_string);
@@ -31,11 +31,11 @@
                 break;
             }
         });
-        $('#submit-harvest-decision').click(function() {
+        $('#forestry-form').submit(function() {
             $(this).attr('disabled', true);
-            harvestDecisionValue = $('#harvestDecisionId').val();
-            alert("harvest decision: " + harvestDecisionValue);
-            s.send(createSubmitEvent($('#harvestDecisionId').val()));
+            harvestDecisionValue = $('#harvest-decision-id').val();
+            s.send(createSubmitEvent($('#harvest-decision-id').val()));
+            return true;
         });
     });
 </script>
@@ -64,14 +64,14 @@ Participating in {{experiment.status_line}}
         Your current harvest decision is <b>{{ harvest_decision.value }}</b>
     </div>
 {% if max_harvest_decision > 0 %}
-<form id='forestryForm' action='' method='post'>
+<form id='forestry-form' action='' method='post'>
     <div class='field'>
         <br/>
-        <label for='harvestDecisionId'>How many trees will you harvest this round? <br/><small><b>Choose a number between 0 and {{ max_harvest_decision }}</small></b>:</label>
-        <input id='harvestDecisionId' type="text" name='harvest_decision' class='required digits two-digits' maxlength='1'/>
+        <label for='harvest-decision-id'>How many trees will you harvest this round? <br/><small><b>Choose a number between 0 and {{ max_harvest_decision }}</small></b>:</label>
+        <input id='harvest-decision-id' type="text" name='harvest_decision' class='required digits two-digits' maxlength='1'/>
     </div>
     <div class='field'>
-        <input id='submit-harvest-decision' type='submit' value='Submit' />
+        <input type='submit' value='Save' />
     </div>
 </form>
 {% else %}

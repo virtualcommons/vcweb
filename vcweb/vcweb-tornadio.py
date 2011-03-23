@@ -154,11 +154,11 @@ connection_manager = ConnectionManager()
 
 # FIXME: move to core tornado module?
 class ExperimenterHandler(SocketConnection):
+    # FIXME: add authentication
     def on_open(self, *args, **kwargs):
         try:
             extra = kwargs['extra']
             logger.debug('%s received extra: %s' % (self, extra))
-# FIXME: add authentication
             experimenter_id = extra
         except Experimenter.DoesNotExist as e:
             logger.warning("Tried to establish connection but there isn't any experimenter with id %s" % experimenter_id)
@@ -186,6 +186,7 @@ class ExperimenterHandler(SocketConnection):
         connection_manager.remove_experimenter(self)
 
 class ParticipantHandler(SocketConnection):
+    # FIXME: on_open authenticates or prepares the session
     def on_open(self, *args, **kwargs):
         # FIXME: verify user auth tokens
         extra = kwargs['extra']
@@ -221,9 +222,9 @@ class ParticipantHandler(SocketConnection):
     def on_message(self, message, *args, **kwargs):
         logger.debug("received message %s from handler %s" % (message, self))
         event = to_event(message)
+        # FIXME: on_message / connect should add them to the list of participants
         if 'connect' in event.type:
             return
-        # FIXME: add authentication
         participant_group_relationship = connection_manager.get_participant_group_relationship(self)
         current_round_data = participant_group_relationship.group.experiment.current_round_data
         chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,

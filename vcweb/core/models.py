@@ -392,6 +392,14 @@ class Experiment(models.Model):
     def get_template_path(self, name):
         return "%s/%s" % (self.namespace, name)
 
+    # XXX: decide whether or not to include this ability in the interface.
+    def move_to_previous_round(self):
+        if self.is_round_in_progress:
+            self.end_round()
+        self.current_round_elased_time = 0
+        self.current_round_sequence_number = max(self.current_round_sequence_number - 1, 1)
+        self.save()
+
     def advance_to_next_round(self):
         if self.is_round_in_progress:
             self.end_round()
@@ -1168,7 +1176,7 @@ class ParticipantRoundDataValue(DataValue):
         return self.round_data.round_configuration
 
     def __unicode__(self):
-        return u"data value {0}: {1} for participant {2}".format(self.parameter, self.value, self.participant_group_relationship)
+        return u"{0} : {1} for participant {2}".format(self.parameter, self.value, self.participant_group_relationship)
 
     class Meta:
         ordering = [ 'round_data', 'participant_group_relationship', 'parameter' ]
