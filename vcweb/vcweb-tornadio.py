@@ -230,19 +230,26 @@ class ParticipantHandler(SocketConnection):
         # FIXME: on_message / connect should add them to the list of participants
         if 'connect' in event.type:
             return
-        participant_group_relationship = connection_manager.get_participant_group_relationship(self)
-        current_round_data = participant_group_relationship.group.experiment.current_round_data
-        chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
-                message=event.message,
-                round_data=current_round_data
-                )
-        for participant_group_pk, connection in connection_manager.connections(participant_group_relationship.group):
-            connection.send(simplejson.dumps({
-                "pk": chat_message.pk,
-                "date_created": chat_message.date_created.strftime("%H:%M:%S"),
-                "message" : chat_message.__unicode__(),
-                "message_type": 'chat',
-                }))
+        elif event.type == 'submit':
+            # FIXME: need to set this up so that this forwards to the appropriate
+            # experiment handler...
+            payload = event.message
+            logger.debug("payload is: " % payload)
+
+        elif event.type == 'chat':
+            participant_group_relationship = connection_manager.get_participant_group_relationship(self)
+            current_round_data = participant_group_relationship.group.experiment.current_round_data
+            chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
+                    message=event.message,
+                    round_data=current_round_data
+                    )
+            for participant_group_pk, connection in connection_manager.connections(participant_group_relationship.group):
+                connection.send(simplejson.dumps({
+                    "pk": chat_message.pk,
+                    "date_created": chat_message.date_created.strftime("%H:%M:%S"),
+                    "message" : chat_message.__unicode__(),
+                    "message_type": 'chat',
+                    }))
 
     def on_close(self):
         logger.debug("closing %s" % self)
