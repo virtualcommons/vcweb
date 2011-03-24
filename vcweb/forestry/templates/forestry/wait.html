@@ -3,9 +3,11 @@
 {{ block.super }}
 {% include "includes/participant.events.html" %}
 {% include "includes/socket.io.html" %}
+{% include "includes/tablesorter.html" %}
 <script type="text/javascript">
     $(function() {
-        // var s = connect(window.location.hostname, 8888, 'participant/{{participant_experiment_relationship.pk}}');
+        $('#participant-history').tablesorter({widgets: ['zebra']});
+        $('.tooltip').qtip({position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'green', tip: 'bottomMiddle'} });
         var s = getCachedSocket();
         s.on('message', function(json_string) {
             var json = jQuery.parseJSON(json_string);
@@ -37,15 +39,24 @@ The facilitator will start the next round when every participant is ready.
 
 <h3>History</h3>
 <div id='group-history'>
-    {% if all_harvest_round_data %}
-    <table class='debriefing'>
+    {% if participant_history %}
+    <table id='participant-history' class='tablesorter'>
         <thead>
-            <tr><th>Round</th><th>Original number of trees</th><th>Your harvest decisions</th><th>Your group's total harvest decisions</th><th>Regrowth</th><th>Number of trees left</th></tr>
+            <tr>
+                <th>Round</th>
+                <th class='tooltip' title='The number of trees available to your group at the start of the round.'>Initial # trees (A)</th>
+                <th class='tooltip' title='The number of trees you harvested in this round.'>Your harvest decisions</th>
+                <th class='tooltip' title='The total number of trees harvested by your group in this round.'>
+                    Total group harvest decisions (B)
+                </th>
+                <th class='tooltip' title='The trees that regrew during this round.'>Trees regrown (C)</th>
+                <th class='tooltip' title='The number of trees available at the end of the round (A - B + C = D)'.>Final # trees (D)</th></tr>
         </thead>
         <tbody>
-            {% for harvest_round_data in all_harvest_round_data %}
+            {% for harvest_round_data in participant_history %}
             <tr>
-                <td>{{harvest_round_data.round_configuration}}</td>
+                <td>{{harvest_round_data.round_configuration.display_label}}
+                    <br/><small>{{harvest_round_data.round_configuration.sequence_label}}</small></td>
                 <td>{{harvest_round_data.original_number_of_trees}}</td>
                 <td>{% if harvest_round_data.individual_harvest %}
                     {{harvest_round_data.individual_harvest.value}}
@@ -54,7 +65,7 @@ The facilitator will start the next round when every participant is ready.
                     {%endif%}
                 </td>
                 <td>{{harvest_round_data.group_harvest.value}}</td>
-                <td>{{harvest_round_data.regrowth.value}}</td>
+                <td>{{harvest_round_data.group_regrowth.value}}</td>
                 <td>{{harvest_round_data.final_number_of_trees}}</td>
             </tr>
             {% endfor %}

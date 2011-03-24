@@ -4,9 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
-from vcweb import settings
 from vcweb.core.forms import QuizForm
-from vcweb.core.models import is_participant, is_experimenter, Experiment, ParticipantGroupRelationship, ParticipantExperimentRelationship
+from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.decorators import participant_required, experimenter_required
 from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision, get_harvest_decision, get_group_harvest, get_regrowth
 from vcweb.forestry.forms import HarvestDecisionForm
@@ -61,28 +60,32 @@ def manage_experiment(request, experiment_id=None):
         logger.warning("No experiment available with id [%s]" % experiment_id)
         return redirect('core:experimenter_index')
 
-class ParticipantHistory(object):
+class HarvestRoundData(object):
     pass
 
 def generate_participant_history(participant_group_relationship):
     group = participant_group_relationship.group
     experiment = group.experiment
-    all_harvest_round_data = []
+    participant_history = []
     for round_data in experiment.playable_round_data:
-        p = ParticipantHistory()
-        p.round_configuration = round_data.round_configuration
-        p.individual_harvest = get_harvest_decision(participant_group_relationship, round_data=round_data)
-        p.group_harvest = get_group_harvest(group, round_data=round_data)
-        p.regrowth = get_regrowth(group, round_data=round_data)
+        data = HarvestRoundData()
+        data.round_configuration = round_data.round_configuration
+        data.individual_harvest = get_harvest_decision(participant_group_relationship, round_data=round_data)
+        data.group_harvest = get_group_harvest(group, round_data=round_data)
+        data.group_regrowth = get_regrowth(group, round_data=round_data)
         resource_level = get_resource_level(group, round_data=round_data)
         try:
-            p.original_number_of_trees = resource_level.value + p.group_harvest.value - p.regrowth.value
+            data.original_number_of_trees = resource_level.value + data.group_harvest.value - data.group_regrowth.value
         except AttributeError:
             pass
-        p.final_number_of_trees = resource_level.value
-        all_harvest_round_data.append(p)
-    logger.debug("all harvest round data: %s" % all_harvest_round_data)
-    return all_harvest_round_data
+        data.final_number_of_trees = resource_level.value
+        participant_history.append(data)
+    logger.debug("participant history: %s" % participant_history)
+    if experiment.is_round_in_progress:
+        last_round_data = participant_history[-1]
+        if experiment.current_round.pk == last_round_data.round_configuration.pk:
+            last_round_data.round_in_progress = True
+    return participant_history
 
 @participant_required
 def wait(request, experiment_id=None):
@@ -91,11 +94,11 @@ def wait(request, experiment_id=None):
         participant = request.user.participant
         participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
         participant_group_relationship = participant.get_participant_group_relationship(experiment)
-        all_harvest_round_data = generate_participant_history(participant_group_relationship)
+        participant_history = generate_participant_history(participant_group_relationship)
         return render_to_response('forestry/wait.html', {
             'participant_experiment_relationship': participant_experiment_relationship,
             'participant_group_relationship':participant_group_relationship,
-            'all_harvest_round_data': all_harvest_round_data,
+            'participant_history': participant_history,
             },
             context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
