@@ -99,8 +99,9 @@ li.warning {
 .errorIcon, .warningIcon, .alertIcon, .infoIcon, .smallInfoIcon, .contactIcon, .crossIcon {
     background-repeat: no-repeat;
     margin: 5px 0px;
-    padding: 15px 10px 15px 35px;
+    padding: 15px 10px 15px 40px;
     background-position: 3px center;
+    line-height: 0.9em;
 }
 .errorIcon, .warningIcon, .alertIcon {
     background-image:  url('/static/images/warning.png')

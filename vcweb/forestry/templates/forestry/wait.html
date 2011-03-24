@@ -37,16 +37,16 @@ The facilitator will start the next round when every participant is ready.
 </span>
 </p>
 
-<h3>History</h3>
+<h3>Participant History</h3>
 <div id='group-history'>
     {% if participant_history %}
     <table id='participant-history' class='tablesorter'>
         <thead>
             <tr>
-                <th>Round</th>
-                <th class='tooltip' title='The number of trees available to your group at the start of the round.'>Initial # trees (A)</th>
-                <th class='tooltip' title='The number of trees you harvested in this round.'>Your harvest decisions</th>
-                <th class='tooltip' title='The total number of trees harvested by your group in this round.'>
+                <th style='width:9em;'>Round</th>
+                <th style='width:9em;' class='tooltip' title='The number of trees available to your group at the start of the round.'>Initial # trees (A)</th>
+                <th style='width:8em;' class='tooltip' title='The number of trees you harvested in this round.'>Your harvest decisions</th>
+                <th style='width:12em;' class='tooltip' title='The total number of trees harvested by your group in this round.'>
                     Total group harvest decisions (B)
                 </th>
                 <th class='tooltip' title='The trees that regrew during this round.'>Trees regrown (C)</th>
@@ -55,7 +55,13 @@ The facilitator will start the next round when every participant is ready.
         <tbody>
             {% for harvest_round_data in participant_history %}
             <tr>
-                <td>{{harvest_round_data.round_configuration.display_label}}
+                <td>
+                    {% if harvest_round_data.round_in_progress %}
+                    <div id='round-in-progress' class='alert alertIcon ui-corner-all tooltip' title='This round is still in progress so only your harvest decision for this round is being shown.'>
+                        <span style='font-size: 0.8em;'>Round in progress</span>
+                    </div>
+                    {% endif %}
+                    {{harvest_round_data.round_configuration.display_label}}
                     <br/><small>{{harvest_round_data.round_configuration.sequence_label}}</small></td>
                 <td>{{harvest_round_data.original_number_of_trees}}</td>
                 <td>{% if harvest_round_data.individual_harvest %}

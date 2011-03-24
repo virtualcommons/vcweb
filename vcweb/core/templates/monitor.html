@@ -44,7 +44,7 @@
             });
         }
     }
-    var qtipOptions = {position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, style: { name: 'dark', tip: 'bottomLeft'} };
+    var qtipOptions = {position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'dark', tip: 'bottomMiddle'} };
     $(function() {
             var experimentMessageDiv = document.getElementById('experiment-messages');
             registerCallbacks({{ experiment.round_data.count }}, {{ experiment.current_round.sequence_number }});
