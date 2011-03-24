@@ -587,13 +587,13 @@ class RoundConfiguration(models.Model):
         return Template(template_string).substitute(kwargs, round_number=self.display_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return u"sequence %d, round %d,  (%s | %s)" % (self.sequence_number, self.round_number, self.round_type, self.experiment_configuration)
+        return u"%s (%d of %d) > %s" % (self.display_label, self.sequence_number, self.experiment_configuration.final_sequence_number, self.experiment_configuration)
 
     @property
     def display_label(self):
         if self.is_regular_round:
             return u"Round %d" % self.round_number
-        return u"%s (%s)" % (self.get_round_type_display(), self.round_number)
+        return unicode(self.get_round_type_display())
 
     class Meta:
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]

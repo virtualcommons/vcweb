@@ -120,9 +120,13 @@ class ConnectionManager:
             connection.send(ConnectionManager.refresh_json)
 
     def send_goto(self, connection, experiment, url):
+        notified_participants = []
         json = goto_json(url)
         for (participant_group_pk, connection) in self.all_participants(connection, experiment):
             connection.send(json)
+            notified_participants.append(participant_group_pk)
+        return notified_participants
+
 
     def send_to_experimenter(self, experimenter_tuple, json):
         (experimenter_pk, experiment_pk) = experimenter_tuple
@@ -179,8 +183,9 @@ class ExperimenterHandler(SocketConnection):
             experiment_id = event.experiment_id
             experiment = Experiment.objects.get(pk=experiment_id)
             url = event.url
-            connection_manager.send_goto(self, experiment, url)
+            notified_participants = connection_manager.send_goto(self, experiment, url)
             self.send(info_json("Sent goto:%s to all participants" % url))
+            logger.debug("sending all connected participants %s to %s" % (notified_participants, url))
 
     def on_close(self):
         connection_manager.remove_experimenter(self)
