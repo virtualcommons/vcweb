@@ -593,7 +593,7 @@ class RoundConfiguration(models.Model):
     def display_label(self):
         if self.is_regular_round:
             return u"Round %d" % self.round_number
-        return unicode(self.get_round_type_display())
+        return self.get_round_type_display()
 
     class Meta:
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]
