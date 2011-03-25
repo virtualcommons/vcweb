@@ -262,12 +262,11 @@ class Experiment(models.Model):
 
     @property
     def status_line(self):
-        return "%s: id %s, status: %s, round %s of %s" % (
+        return "%s #%s, %s %s" % (
                 self.experiment_metadata.title,
                 self.pk,
                 self.get_status_display(),
-                self.current_round.sequence_number,
-                self.experiment_configuration.final_sequence_number)
+                self.current_round.sequence_label)
 
     @property
     def namespace(self):

@@ -2,6 +2,15 @@
 
 {% block participant_socket_io %}
 {% endblock %}
+{% block head %}
+{{block.super}}
+<script type='text/javascript'>
+    $(function() {
+        $('[title]').qtip({position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'green', tip: 'bottomMiddle'} });
+    });
+</script>
+
+{% endblock %}
 
 {% block title %}
 Virtual Commons Web Participant Dashboard
@@ -20,9 +29,7 @@ Virtual Commons Web Participant Dashboard
 <h4>{{experiments.0.get_status_display}}</h4>
 {% for experiment in experiments %}
 <div style='padding: 10px;' class='ui-state-highlight'>
-    <a href='{{ experiment.participant_url }}'>
-        <span class='icon-left ui-icon {{experiment_status|lower}}'></span>{{ experiment.status_line }}
-    </a>
+    <a title='This experiment is being run by {{experiment.experimenter}}' href='{{ experiment.participant_url }}'><span class='icon-left ui-icon {{experiment_status|lower}}'></span>{{ experiment.status_line }}, started {{experiment.current_round_start_time}}</a>
 </div>
 {% endfor %}
 {% endif %}
