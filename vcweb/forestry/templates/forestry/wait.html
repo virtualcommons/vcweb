@@ -6,7 +6,7 @@
 {% include "includes/tablesorter.html" %}
 <script type="text/javascript">
     $(function() {
-        $('#participant-history').tablesorter({widgets: ['zebra']});
+        $('#participant-history').tablesorter({widgets: ['zebra'], sortList: [[0, 0]] });
         $('.tooltip').qtip({position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'green', tip: 'bottomMiddle'} });
         var s = getCachedSocket();
         s.on('message', function(json_string) {
@@ -57,7 +57,7 @@ The facilitator will start the next round when every participant is ready.
             <tr>
                 <td>
                     {% if harvest_round_data.round_in_progress %}
-                    <div id='round-in-progress' class='alert alertIcon ui-corner-all tooltip' title='This round is still in progress so only your harvest decision for this round is being shown.'>
+                    <div id='round-in-progress' style='line-height: 0.9em;' class='alert alertIcon ui-corner-all tooltip' title='This round is still in progress so only your harvest decision for this round is being shown.'>
                         <span style='font-size: 0.8em;'>Round in progress</span>
                     </div>
                     {% endif %}

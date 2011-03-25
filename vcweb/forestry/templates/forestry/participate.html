@@ -59,10 +59,14 @@ Participating in {{experiment.status_line}}
     <span class='icon-left ui-icon ui-icon-info'></span>
     There are <b>{{ resource_level.value }}</b> trees left.
 </div>
-    <div class='ui-state-error'>
-        <span class='icon-left ui-icon ui-icon-info'></span>
-        Your current harvest decision is <b>{{ harvest_decision.value }}</b>
-    </div>
+
+{% if harvest_decision %}
+<div class='alert alertIcon ui-corner-all'>
+    You have already made a harvest decision of <b>{{ harvest_decision.value }}</b>.  You may change your decision until
+    the experimenter ends the round.
+</div>
+{% endif %}
+
 {% if max_harvest_decision > 0 %}
 <form id='forestry-form' action='' method='post'>
     <div class='field'>
@@ -71,7 +75,7 @@ Participating in {{experiment.status_line}}
         <input id='harvest-decision-id' type="text" name='harvest_decision' class='required digits two-digits' maxlength='1'/>
     </div>
     <div class='field'>
-        <input type='submit' value='Save' />
+        <input type='submit' value='Harvest' />
     </div>
 </form>
 {% else %}

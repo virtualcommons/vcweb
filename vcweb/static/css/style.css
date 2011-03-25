@@ -101,7 +101,6 @@ li.warning {
     margin: 5px 0px;
     padding: 15px 10px 15px 40px;
     background-position: 3px center;
-    line-height: 0.9em;
 }
 .errorIcon, .warningIcon, .alertIcon {
     background-image:  url('/static/images/warning.png')
@@ -165,7 +164,7 @@ a.tooltip {
     background: url('/static/images/famfamfam/accept.png') center left no-repeat;
 }
 #experiments span.round_in_progress {
-    background: url('/static/images/famfamfam/arrow_refresh.png') center left no-repeat;
+    background: url('/static/images/famfamfam/bullet_go.png') center left no-repeat;
 }
 #experiments .rightArrow {
     margin: 0;
