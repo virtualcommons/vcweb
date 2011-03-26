@@ -469,8 +469,12 @@ class Experiment(models.Model):
                           )
 
     def transfer_participants(self, experiment):
-        pass
-
+        if experiment.participants.count() == 0:
+            for participant in self.participants.all():
+                ParticipantExperimentRelationship.objects.create(participant=participant,
+                        experiment=experiment, created_by=self.experimenter.user)
+        else:
+            logger.warning("Tried to transfer participants to an experiment %s that already had participants %s" % (experiment, experiment.participants.all()))
 
     def __unicode__(self):
         return u"%s #%s | %s" % (self.experiment_metadata.title, self.pk, self.experimenter)
@@ -576,7 +580,10 @@ class RoundConfiguration(models.Model):
         parameter_value.save()
 
     def get_parameter_value(self, name):
-        return self.round_parameter_values.get(parameter__name=name).value
+        try:
+            return self.round_parameter_values.get(parameter__name=name).value
+        except RoundParameterValue.DoesNotExist:
+            return None
 
     def get_debriefing(self, participant_id=None, **kwargs):
         return self.templatize(self.debriefing, participant_id, kwargs)
