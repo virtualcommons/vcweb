@@ -10,12 +10,10 @@ Steps to install:
 2. easy_install pip
 3. pip install virtualenv (if you don't want to muck up your base python system)
 4. pip install fabric
-5. fab setup (change default settings in fabfile.py as necessary; eventually I
-should make this configurable)
+5. fab setup (change default settings in fabfile.py as necessary; eventually I should make this configurable)
 6. fab syncdb
 7. fab server (in one terminal)
-8. fab tornado (in another terminal) if you want to run vcweb w/ server push
-enabled.
+8. fab tornadio (in another terminal) if you want to run vcweb w/ server push enabled.
 
 To start up celeryd and celerybeat
 

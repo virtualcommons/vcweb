@@ -468,6 +468,10 @@ class Experiment(models.Model):
                           status=Experiment.INACTIVE
                           )
 
+    def transfer_participants(self, experiment):
+        pass
+
+
     def __unicode__(self):
         return u"%s #%s | %s" % (self.experiment_metadata.title, self.pk, self.experimenter)
 
