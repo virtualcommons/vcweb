@@ -120,6 +120,9 @@ li.warning {
 .small-font {
     font-size: 0.8em;
 }
+.bold {
+    font-weight: bold;
+}
 fieldset.small {
     font: 0.8em "Helvetica Neue", helvetica, arial, sans-serif;
     color: #666;
