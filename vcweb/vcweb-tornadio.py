@@ -224,7 +224,7 @@ class ParticipantHandler(SocketConnection):
             participant_group_rel = connection_manager.get_participant_group_relationship(self)
             if participant_group_rel is not None:
                 group = participant_group_rel.group
-                message = "Participant %s connected to group %s." % (participant_group_rel.participant_number, group)
+                message = "Participant %s (Group %s) connected." % (participant_group_rel.participant_number, group)
                 connection_manager.send_to_group(group,
                         simplejson.dumps({
                             'message' : message,
@@ -252,16 +252,21 @@ class ParticipantHandler(SocketConnection):
         elif event.message_type == 'submit':
             # FIXME: need to set this up so that this forwards to the appropriate
             # experiment handler...
-            logger.debug("simplejson dump of submit event: " %
-                    simplejson.dumps(event))
             (participant_pk, experiment_pk) = connection_manager.get_participant_experiment_tuple(self)
-            participant = Participant.objects.get(pk=participant_pk)
             experiment = Experiment.objects.get(pk=experiment_pk)
 # sanity check, make sure this is a data round.
             if experiment.is_data_round_in_progress:
-                event.participant = participant
                 experimenter_tuple = (experiment.experimenter.pk, experiment.pk)
-                connection_manager.send_to_experimenter(experimenter_tuple, event)
+                event.participant_pk = participant_pk
+                pgr_pk = event.participant_group_relationship_id
+                participant_group_relationship = ParticipantGroupRelationship.objects.get(pk=pgr_pk)
+                prdv = experiment.current_round_data.participant_data_values.get(participant_group_relationship__pk=pgr_pk)
+                event.participant_data_value_pk = prdv.pk
+                event.participant_number = participant_group_relationship.participant_number
+                event.participant_group = participant_group_relationship.group_number
+                json = simplejson.dumps(event.__dict__)
+                logger.debug("json is: %s" % json)
+                connection_manager.send_to_experimenter(experimenter_tuple, json)
                 if experiment.all_participants_have_submitted:
                     connection_manager.send_to_experimenter(
                             experimenter_tuple,

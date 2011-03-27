@@ -1041,6 +1041,8 @@ class Participant(CommonsUser):
             participant_data_value, created = current_round_data.participant_data_values.get_or_create(parameter=parameter,
                     participant_group_relationship=participant_group_relationship)
             participant_data_value.value = value
+            # FIXME: parameterize / make explicit?
+            participant_data_value.submitted = True
             participant_data_value.save()
         else:
             logger.warning("Unable to set data value %s on experiment %s for %s" % (value, experiment, parameter))
@@ -1127,6 +1129,10 @@ class ParticipantGroupRelationship(models.Model):
     @property
     def current_round_data(self):
         return self.group.current_round_data
+
+    @property
+    def group_number(self):
+        return self.group.number
 
     def __unicode__(self):
         return u"{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)

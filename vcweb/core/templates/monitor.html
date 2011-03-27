@@ -38,7 +38,6 @@
         $('#statusDiv').show('fast');
         $('#experimentData').show('fast');
         $('#statusDiv [title]').qtip(qtipOptions);
-
         if (round_data_count > 0) {
             $('#experimentData').accordion({
                 active: active_round_number - 1,
@@ -46,6 +45,11 @@
             });
         }
     }
+
+    function addExperimentMessage(message) {
+        $("#experiment-messages").append($("<div style='font-size: 0.8em;line-height:0.9em;padding:3px;' class='ui-state-highlight' />").append(message));
+    }
+
     $(function() {
             var experimentMessageDiv = document.getElementById('experiment-messages');
             registerCallbacks({{ experiment.round_data.count }}, {{ experiment.current_round.sequence_number }});
@@ -57,11 +61,14 @@
                 var json = jQuery.parseJSON(json_string);
                 switch (json.message_type) {
                 case 'info':
-                    $("#experiment-messages").append($("<div class='ui-state-highlight' />").append(json.message));
+                    addExperimentMessage(json.message);
                     break;
                 case 'chat':
                     break;
                 case 'submit':
+                    $('#participant_data_value_' + json.participant_round_data_value_pk).html(json.message).effect("highlight", {}, 5000);
+                    addExperimentMessage("Participant " + json.participant_number + " (Group #" + json.participant_group + 
+                        ") submit a harvest decision of " + json.message);
                     break;
                 default:
                 }
@@ -96,8 +103,8 @@
     <div id='experiment-messages' class='experimenter-sidebar-messages notice ui-corner-all'>
         {% for group in experiment.groups.all %}
             {% for activity_log in group.current_round_activity_log %}
-            <div style='line-height: 0.9em;padding:3px;' class='ui-state-highlight'>
-                <small>{{activity_log}}</small>
+            <div style='font-size: 0.75em; line-height: 1.0em;padding:3px;' class='ui-state-highlight'>
+                {{activity_log}}
             </div>
             {% endfor %}
         {% endfor %}
@@ -219,7 +226,7 @@
             <div class='ui-state-highlight'>
                 <a class='tooltip' name='{{chat_message.pk}}' title='{{chat_message.date_created}} {{chat_message.participant}}'>
                     {{chat_message.date_created|date:"H:s"}}</a> | {{chat_message}}
-                <span class='ui-icon ui-icon-comment icon-right'></span>            
+                <span class='ui-icon ui-icon-comment icon-right'></span>
             </div>
             {% endfor %}
         </div>
