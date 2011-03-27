@@ -14,16 +14,6 @@
         "pk": 1
     },
     {
-        "pk": 2,
-        "model": "core.experimenter",
-        "fields": {
-            "approved": true,
-            "user": 12,
-            "failed_password_attempts": 0,
-            "institution": 1
-        }
-    },
-    {
         "fields": {
             "authentication_code": "TEST_FORESTRY",
             "current_round_elapsed_time": 0,
@@ -31,7 +21,7 @@
             "duration": "1h",
             "experiment_configuration": 1,
             "experiment_metadata": 1,
-            "experimenter": 2,
+            "experimenter": 1,
             "is_experimenter_driven": true,
             "start_date_time": null,
             "status": "INACTIVE",

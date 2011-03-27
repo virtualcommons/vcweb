@@ -189,16 +189,16 @@ class ExperimenterHandler(SocketConnection):
     def on_message(self, message):
         event = to_event(message)
         logger.debug("%s received message %s" % (self, message))
-        if event.type == 'connect':
+        if event.message_type == 'connect':
             connection_manager.add_experimenter(self, event.experimenter_id, event.experiment_id)
-        elif event.type == 'refresh':
+        elif event.message_type == 'refresh':
             experiment_id = event.experiment_id
             experimenter_id = event.experimenter_id
             experiment = Experiment.objects.get(pk=experiment_id)
             connection_manager.send_refresh(self, experiment, experimenter_id)
             logger.debug("pinging back to experimenter")
             self.send(info_json("Refreshed all participants"))
-        elif event.type == 'goto':
+        elif event.message_type == 'goto':
             experiment_id = event.experiment_id
             experiment = Experiment.objects.get(pk=experiment_id)
             url = event.url
@@ -247,9 +247,9 @@ class ParticipantHandler(SocketConnection):
         logger.debug("received message %s from handler %s" % (message, self))
         event = to_event(message)
         # FIXME: on_message / connect should add them to the list of participants
-        if 'connect' in event.type:
+        if 'connect' in event.message_type:
             return
-        elif event.type == 'submit':
+        elif event.message_type == 'submit':
             # FIXME: need to set this up so that this forwards to the appropriate
             # experiment handler...
             logger.debug("simplejson dump of submit event: " %
@@ -266,7 +266,7 @@ class ParticipantHandler(SocketConnection):
 
             
 
-        elif event.type == 'chat':
+        elif event.message_type == 'chat':
             participant_group_relationship = connection_manager.get_participant_group_relationship(self)
             current_round_data = participant_group_relationship.group.experiment.current_round_data
             chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,

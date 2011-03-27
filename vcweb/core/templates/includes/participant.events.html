@@ -10,7 +10,7 @@ function createMessageEvent(payload, event_type) {
       event_type = "chat";
    }
    return {
-      "type": event_type,
+      "message_type": event_type,
 {% if participant_group_relationship %}
       "participant_group_relationship_id": {{participant_group_relationship.pk}},
 {% else %}

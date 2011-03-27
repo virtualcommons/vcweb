@@ -25,7 +25,7 @@ function createMessageEvent(message, event_type) {
       event_type = "experimenter";
    }
    return {
-      "type": event_type,
+      "message_type": event_type,
       "experimenter_id": {{request.user.experimenter.pk}},
       "experiment_id": {{experiment.pk}},
       "message": message

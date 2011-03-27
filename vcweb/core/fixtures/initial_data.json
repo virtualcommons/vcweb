@@ -8,6 +8,26 @@
             "description": null
         }
     }, 
+    {   
+        "pk": 1,
+        "model": "auth.user",
+        "fields": {
+            "username": "alee",
+            "first_name": "Allen",
+            "last_name": "Lee",
+            "is_active": true,
+            "is_superuser": true,
+            "is_staff": true,
+            "last_login": "2010-07-29 21:36:40",
+            "groups": [
+                1
+            ],
+            "user_permissions": [],
+            "password": "sha1$90c58$70c01e2b7ba1c997b04bafe03d99215c3205a9ee",
+            "email": "allen.lee@asu.edu",
+            "date_joined": "2010-07-29 21:36:40"
+        }
+    },
     {
         "pk": 1, 
         "model": "core.experimenter", 
@@ -33,26 +53,5 @@
             "name": "Participants",
             "permissions": []
         }
-    },
-    {   
-        "pk": 1,
-        "model": "auth.user",
-        "fields": {
-            "username": "alee",
-            "first_name": "Allen",
-            "last_name": "Lee",
-            "is_active": true,
-            "is_superuser": true,
-            "is_staff": true,
-            "last_login": "2010-07-29 21:36:40",
-            "groups": [
-                1
-            ],
-            "user_permissions": [],
-            "password": "sha1$90c58$70c01e2b7ba1c997b04bafe03d99215c3205a9ee",
-            "email": "allen.lee@asu.edu",
-            "date_joined": "2010-07-29 21:36:40"
-        }
     }
-
 ]
