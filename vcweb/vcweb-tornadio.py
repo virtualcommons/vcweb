@@ -7,11 +7,19 @@ import sys
 import logging
 import simplejson
 
+# FIXME: hack, configuring before django settings configures it so we can get things spit to the console.. vcweb.log
+# seems to be missing these logging statements.
+logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s %(levelname)s %(message)s',
+    )
+
 sys.path.append(os.path.abspath('..'))
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
-from vcweb.core.models import ParticipantExperimentRelationship, ParticipantGroupRelationship, ChatMessage, Experimenter, Experiment, Participant
+from vcweb.core.models import ParticipantExperimentRelationship, ParticipantGroupRelationship, ChatMessage, Experimenter, Experiment
+
 
 logger = logging.getLogger(__name__)
 
