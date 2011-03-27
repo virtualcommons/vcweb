@@ -60,7 +60,7 @@ Participating in {{experiment.status_line}}
     There are <b>{{ resource_level.value }}</b> trees left.
 </div>
 
-{% if harvest_decision %}
+{% if harvest_decision.submitted %}
 <div class='alert alertIcon ui-corner-all'>
     You have already made a harvest decision of <b>{{ harvest_decision.value }}</b>.  You may change your decision until
     the experimenter ends the round.

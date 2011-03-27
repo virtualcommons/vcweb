@@ -345,6 +345,27 @@ class Experiment(models.Model):
         # return dynamic text based on current_round?
         return self.current_round.instructions
 
+    @property
+    def all_participants_have_submitted(self):
+        pdvs = self.current_round_data.participant_data_values
+        return pdvs.filter(submitted=False).count() == 0
+
+    ''' hardcoded defaults for the slovakia pretest '''
+    def setup_test_participants(self, number_of_students=20, institution_name='Slovak Academy of Sciences', institution_url='http://www.sav.sk', email_suffix='sav.sk', test_password='test'):
+        if self.participants.count() > 0:
+            logger.debug("This experiment %s already has %d participants - aborting"
+                    % (self, self.participants.count()))
+            return
+        (institution, created) = Institution.objects.get_or_create(name=institution_name, url=institution_url)
+        for i in xrange(1, number_of_students+1):
+            email = 's%d@%s' % (i, email_suffix)
+            u = User.objects.create_user(email, email, test_password)
+            u.first_name = 'Student'
+            u.last_name = u"%d" % i
+            u.save()
+            p = Participant.objects.create(user=u, institution=institution)
+            ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=u)
+
     def log(self, log_message):
         if log_message:
             self.activity_log.create(round_configuration=self.current_round, log_message=log_message)
@@ -731,7 +752,8 @@ class ParameterizedValue(models.Model):
     int_value = models.IntegerField(null=True)
     float_value = models.FloatField(null=True)
     boolean_value = models.NullBooleanField(null=True)
-    time_recorded = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
 
     @property
     def value(self):
@@ -1097,7 +1119,7 @@ class ParticipantGroupRelationship(models.Model):
     participant = models.ForeignKey(Participant, related_name='participant_group_relationships')
     group = models.ForeignKey(Group, related_name = 'participant_group_relationships')
     round_joined = models.ForeignKey(RoundConfiguration)
-    date_joined = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
 
     objects = ParticipantGroupRelationshipManager()
@@ -1164,6 +1186,7 @@ Stores participant-specific data value and associates a Participant, Experiment
 class ParticipantRoundDataValue(DataValue):
     round_data = models.ForeignKey(RoundData, related_name='participant_data_values')
     participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='round_data_values')
+    submitted = models.BooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
         super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)

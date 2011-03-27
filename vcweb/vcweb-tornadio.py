@@ -255,16 +255,19 @@ class ParticipantHandler(SocketConnection):
             logger.debug("simplejson dump of submit event: " %
                     simplejson.dumps(event))
             (participant_pk, experiment_pk) = connection_manager.get_participant_experiment_tuple(self)
-            event.participant = Participant.objects.get(pk=participant_pk)
+            participant = Participant.objects.get(pk=participant_pk)
             experiment = Experiment.objects.get(pk=experiment_pk)
-            connection_manager.send_to_experimenter( 
-                    (experiment.experimenter.pk, experiment.pk), 
-                    simplejson.dumps(event))
-
-
-
-
-            
+# sanity check, make sure this is a data round.
+            if experiment.is_data_round_in_progress:
+                event.participant = participant
+                experimenter_tuple = (experiment.experimenter.pk, experiment.pk)
+                connection_manager.send_to_experimenter(experimenter_tuple, event)
+                if experiment.all_participants_have_submitted:
+                    connection_manager.send_to_experimenter(
+                            experimenter_tuple,
+                            info_json('All participants have submitted a harvest decision.'))
+            else:
+                logger.debug("No data round in progress, received late submit event: %s" % event)
 
         elif event.message_type == 'chat':
             participant_group_relationship = connection_manager.get_participant_group_relationship(self)

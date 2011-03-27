@@ -4,6 +4,7 @@
 {% include "includes/experimenter.events.html" %}
 {% include "includes/socket.io.html" %}
 <script type='text/javascript'>
+    var qtipOptions = {position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'dark', tip: 'bottomMiddle'} };
     function update(json) {
         if (json == Dajaxice.EXCEPTION) {
             console.error("dajaxice error: " + json);
@@ -36,6 +37,7 @@
         $('#statusSpinner').hide('fast');
         $('#statusDiv').show('fast');
         $('#experimentData').show('fast');
+        $('#statusDiv [title]').qtip(qtipOptions);
 
         if (round_data_count > 0) {
             $('#experimentData').accordion({
@@ -44,7 +46,6 @@
             });
         }
     }
-    var qtipOptions = {position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'dark', tip: 'bottomMiddle'} };
     $(function() {
             var experimentMessageDiv = document.getElementById('experiment-messages');
             registerCallbacks({{ experiment.round_data.count }}, {{ experiment.current_round.sequence_number }});
@@ -126,19 +127,21 @@
         {% block status %}
         <fieldset class='small ui-corner-all'>
             <legend>round status</legend>
-            <ul id='actions' class='actions tooltip' title='Use the links to start/end a round, advance to the next round, or download data. '>
+            <ul id='actions' class='actions'>
                 {% if experiment.is_active %}
                     {% if experiment.is_round_in_progress %}
-                    <li><a class='confirm-experiment-action' name='end_round' href='end-round'>
+                    <li><a class='confirm-experiment-action' name='end_round' href='end-round' title='Stops the current round.'>
                         <span class='vcweb-icon icon-left ui-icon' style='background: url(/static/images/famfamfam/control_stop_blue.png);' alt=''></span>end round</a></li>
                     {% else %}
-                    <li><a class='confirm-experiment-action' name='start_round' href='start-round'>
+                    <li><a class='confirm-experiment-action' name='start_round' href='start-round' title='Starts the round.'>
                         <span class='ui-icon vcweb-icon icon-left' style='background:url(/static/images/famfamfam/control_play_blue.png);' alt=''></span>start round</a></li>
                     {% endif %}
-                    <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round'>
+                    <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round' title='Stops the current round if necessary and advances to the next round.'>
                         <span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/control_fastforward_blue.png);' alt=''></span>advance to next round</a></li>
                 {% else %}
-                <li><a class='confirm-experiment-action' name='activate' href='activate'>
+                <li><a class='confirm-experiment-action' name='setup_test_participants'
+                    href='setup-test-participants/20' title='Set up 20 participants'>Activate experiment with 20 participants</a></li>
+                <li><a class='confirm-experiment-action' name='activate' href='activate' title='You must first activate an experiment before you can run it.'>
                     <span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/cog_go.png);' alt=''></span>activate</a></li>
                 {% endif %}
             </ul>
@@ -199,7 +202,7 @@
                         </a>
                     </td>
                     <td>{{ participant_data_value.parameter.label }}</td>
-                    <td>{{ participant_data_value.value }}</td>
+                    <td id='participant_data_value_{{participant_data_value.pk}}'>{{ participant_data_value.value }}</td>
                     <td>{{ participant_data_value.parameter.type }}</td>
                 </tr>
                 {% endfor %}
