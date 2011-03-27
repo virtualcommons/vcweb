@@ -7,19 +7,25 @@ import sys
 import logging
 import simplejson
 
-logger = logging.getLogger(__name__)
-
 sys.path.append(os.path.abspath('..'))
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
-from vcweb.core.models import ParticipantExperimentRelationship, ParticipantGroupRelationship, ChatMessage, Experimenter, Experiment
+from vcweb.core.models import ParticipantExperimentRelationship, ParticipantGroupRelationship, ChatMessage, Experimenter, Experiment, Participant
+
+logger = logging.getLogger(__name__)
+
 
 def info_json(message):
     return simplejson.dumps({'message_type': 'info', 'message': message})
 
 def goto_json(url):
     return simplejson.dumps({'message_type': 'goto', 'url': url})
+
+class Message(object):
+    def __init__(self, message_type='info', **kwargs):
+        self.message_type = message_type
+        self.__dict__.update(**kwargs)
 
 '''
 Manages socket.io connections to tornadio.
@@ -65,6 +71,19 @@ class ConnectionManager:
             return ParticipantGroupRelationship.objects.get(participant__pk=participant_pk, group__experiment__pk = experiment_pk)
         logger.debug("Didn't find connection %s in connection map %s." % (connection, self.connection_to_participant))
         return None
+
+    def get_experiment(self, connection):
+        if connection in self.connection_to_participant:
+            experiment_pk = self.connection_to_participant[connection][1]
+            return Experiment.objects.get(pk=experiment_pk)
+        else:
+            return None
+
+    def get_participant_experiment_tuple(self, connection):
+        if connection in self.connection_to_participant:
+            return self.connection_to_participant[connection]
+        else:
+            return None
 
     def add_participant(self, auth_token, connection, participant_experiment_relationship):
         participant_tuple = (participant_experiment_relationship.participant.pk,
@@ -233,8 +252,19 @@ class ParticipantHandler(SocketConnection):
         elif event.type == 'submit':
             # FIXME: need to set this up so that this forwards to the appropriate
             # experiment handler...
-            payload = event.message
-            logger.debug("payload is: " % payload)
+            logger.debug("simplejson dump of submit event: " %
+                    simplejson.dumps(event))
+            (participant_pk, experiment_pk) = connection_manager.get_participant_experiment_tuple(self)
+            event.participant = Participant.objects.get(pk=participant_pk)
+            experiment = Experiment.objects.get(pk=experiment_pk)
+            connection_manager.send_to_experimenter( 
+                    (experiment.experimenter.pk, experiment.pk), 
+                    simplejson.dumps(event))
+
+
+
+
+            
 
         elif event.type == 'chat':
             participant_group_relationship = connection_manager.get_participant_group_relationship(self)

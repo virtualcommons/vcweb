@@ -107,7 +107,7 @@ def round_setup(experiment, **kwargs):
         practice or regular round, set up resource levels and participant
         harvest decision parameters
         '''
-        if round_configuration.get_parameter_value('reset.resource_level'):
+        if round_configuration.get_parameter_value('reset.resource_level', default=False):
             for group in experiment.groups.all():
                 ''' set resource level to default '''
                 set_resource_level(group, round_configuration.get_parameter_value('initial.resource_level'))

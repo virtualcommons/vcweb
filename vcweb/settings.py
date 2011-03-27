@@ -2,9 +2,12 @@
 import os.path
 import logging
 
+LOG_FILENAME = 'vcweb.log'
+
 logging.basicConfig(
         level=logging.DEBUG,
         format='%(asctime)s %(levelname)s %(message)s',
+        filename=LOG_FILENAME,
         )
 
 DEBUG = True
@@ -60,8 +63,8 @@ SECRET_KEY = '2km^iq&48&6uv*x$ew@56d0#w9zqth@)_4tby(85+ac2wf4r-u'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
-        'django.template.loaders.filesystem.load_template_source',
-        'django.template.loaders.app_directories.load_template_source',
+        'django.template.loaders.filesystem.Loader',
+        'django.template.loaders.app_directories.Loader',
         'django.template.loaders.eggs.load_template_source',
         )
 

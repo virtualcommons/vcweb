@@ -12,6 +12,10 @@
         s.on('message', function(json_string) {
             var json = jQuery.parseJSON(json_string);
             switch (json.message_type) {
+            case 'update':
+                console.log("updating data");
+                $('#round_' + json.round_sequence_number);
+                break;
             case 'goto':
                 console.log("going to " + json.url);
                 window.location.href = json.url;
@@ -54,7 +58,7 @@ The facilitator will start the next round when every participant is ready.
         </thead>
         <tbody>
             {% for harvest_round_data in participant_history %}
-            <tr>
+            <tr id='round_{{harvest_round_data.round_configuration.sequence_number}}'>
                 <td>
                     {% if harvest_round_data.round_in_progress %}
                     <div id='round-in-progress' style='line-height: 0.9em;' class='alert alertIcon ui-corner-all tooltip' title='This round is still in progress so only your harvest decision for this round is being shown.'>

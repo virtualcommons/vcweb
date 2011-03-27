@@ -34,7 +34,7 @@
         $('#forestry-form').submit(function() {
             $(this).attr('disabled', true);
             harvestDecisionValue = $('#harvest-decision-id').val();
-            s.send(createSubmitEvent($('#harvest-decision-id').val()));
+            s.send(createSubmitEvent(harvestDecisionValue));
             return true;
         });
     });

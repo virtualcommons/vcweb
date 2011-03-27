@@ -58,12 +58,15 @@
                 case 'info':
                     $("#experiment-messages").append($("<div class='ui-state-highlight' />").append(json.message));
                     break;
+                case 'chat':
+                    break;
+                case 'submit':
+                    break;
                 default:
                 }
                 scrollToBottom(experimentMessageDiv);
             });
-            $('.tooltip').qtip(qtipOptions);
-            $('a[title]').not('.tooltip').qtip(qtipOptions);
+            $('[title]').qtip(qtipOptions);
             $('#refreshAllParticipants').click(function(evt) {
                 console.log("sending refresh event");
                 s.send(createRefreshEvent());
@@ -212,8 +215,8 @@
             {% for chat_message in round_data.chat_messages.all %}
             <div class='ui-state-highlight'>
                 <a class='tooltip' name='{{chat_message.pk}}' title='{{chat_message.date_created}} {{chat_message.participant}}'>
-                    <span class='ui-icon ui-icon-comment icon-right'></span> {{chat_message.date_created|date:"H:s"}}</a> |
-                {{chat_message}}
+                    {{chat_message.date_created|date:"H:s"}}</a> | {{chat_message}}
+                <span class='ui-icon ui-icon-comment icon-right'></span>            
             </div>
             {% endfor %}
         </div>

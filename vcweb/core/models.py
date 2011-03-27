@@ -579,11 +579,11 @@ class RoundConfiguration(models.Model):
         parameter_value.value = value
         parameter_value.save()
 
-    def get_parameter_value(self, name):
+    def get_parameter_value(self, name, default=None):
         try:
             return self.round_parameter_values.get(parameter__name=name).value
         except RoundParameterValue.DoesNotExist:
-            return None
+            return default
 
     def get_debriefing(self, participant_id=None, **kwargs):
         return self.templatize(self.debriefing, participant_id, kwargs)
