@@ -232,7 +232,7 @@ class ParticipantHandler(SocketConnection):
             participant_group_rel = connection_manager.get_participant_group_relationship(self)
             if participant_group_rel is not None:
                 group = participant_group_rel.group
-                message = "Participant %s (Group %s) connected." % (participant_group_rel.participant_number, group)
+                message = "Participant %s (%s) connected." % (participant_group_rel.participant_number, group)
                 connection_manager.send_to_group(group,
                         simplejson.dumps({
                             'message' : message,
