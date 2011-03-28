@@ -75,7 +75,11 @@ def generate_participant_history(participant_group_relationship):
         data.group_regrowth = get_regrowth(group, round_data=round_data)
         resource_level = get_resource_level(group, round_data=round_data)
         try:
-            data.original_number_of_trees = resource_level.value + data.group_harvest.value - data.group_regrowth.value
+            # FIXME: make sure this is accurate
+            if resource_level.value == 100:
+                data.original_number_of_trees = 100
+            else:
+                data.original_number_of_trees = resource_level.value + data.group_harvest.value - data.group_regrowth.value
         except AttributeError:
             pass
         data.final_number_of_trees = resource_level.value

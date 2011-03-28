@@ -7,12 +7,7 @@ function createGotoEvent(url) {
     if (! url) {
         url = "participate";
     }
-    return {
-        'type': 'goto',
-        'experimenter_id': {{ request.user.experimenter.pk }},
-        'experiment_id': {{ experiment.pk }},
-        'url': url
-    };
+    return createMessageEvent(url);
 }
 function createConnectionEvent() {
    return createMessageEvent("Initial connection", "connect");

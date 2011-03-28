@@ -209,7 +209,7 @@ class ExperimenterHandler(SocketConnection):
         elif event.message_type == 'goto':
             experiment_id = event.experiment_id
             experiment = Experiment.objects.get(pk=experiment_id)
-            url = event.url
+            url = event.message
             notified_participants = connection_manager.send_goto(self, experiment, url)
             self.send(info_json("Sent goto:%s to all participants" % url))
             logger.debug("sending all connected participants %s to %s" % (notified_participants, url))
