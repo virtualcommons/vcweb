@@ -4,7 +4,6 @@
 {% include "includes/experimenter.events.html" %}
 {% include "includes/socket.io.html" %}
 <script type='text/javascript'>
-    var qtipOptions = {position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'dark', tip: 'bottomMiddle'} };
     function update(json) {
         if (json == Dajaxice.EXCEPTION) {
             console.error("dajaxice error: " + json);
@@ -74,7 +73,6 @@
                 }
                 scrollToBottom(experimentMessageDiv);
             });
-            $('[title]').qtip(qtipOptions);
             $('#refreshAllParticipants').click(function(evt) {
                 console.log("sending refresh event");
                 s.send(createRefreshEvent());

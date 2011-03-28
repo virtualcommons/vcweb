@@ -241,22 +241,6 @@ class Experiment(models.Model):
         return "%s.%s" % (self.namespace, self.pk)
 
     @property
-    def participant_url(self):
-        return "/%s/participate" % self.get_absolute_url()
-
-    @property
-    def management_url(self):
-        return "/%s/experimenter" % self.get_absolute_url()
-
-    @property
-    def stop_url(self):
-        return "%s/stop" % self.controller_url
-
-    @property
-    def monitor_url(self):
-        return "%s/monitor" % self.controller_url
-
-    @property
     def round_status_display(self):
         return "Round %s of %s, %s" % (self.current_round.sequence_number, self.experiment_configuration.final_sequence_number, self.get_status_display())
 
@@ -273,8 +257,28 @@ class Experiment(models.Model):
         return self.experiment_metadata.namespace
 
     @property
+    def management_url(self):
+        return "/%s/experimenter" % self.get_absolute_url()
+
+    @property
+    def stop_url(self):
+        return "%s/stop" % self.controller_url
+
+    @property
+    def monitor_url(self):
+        return "%s/monitor" % self.controller_url
+
+    @property
+    def clone_url(self):
+        return "%s/clone" % self.controller_url
+
+    @property
     def controller_url(self):
         return "/experiment/%s" % self.pk
+
+    @property
+    def participant_url(self):
+        return "/%s/participate" % self.get_absolute_url()
 
     def get_absolute_url(self):
         return "%s/%s" % (self.experiment_metadata.namespace, self.pk)
@@ -351,19 +355,22 @@ class Experiment(models.Model):
         return pdvs.filter(submitted=False).count() == 0
 
     ''' hardcoded defaults for the slovakia pretest '''
-    def setup_test_participants(self, number_of_students=20, institution_name='Slovak Academy of Sciences', institution_url='http://www.sav.sk', email_suffix='sav.sk', test_password='test'):
+    def setup_test_participants(self, count=20, institution_name='Slovak Academy of Sciences', institution_url='http://www.sav.sk', email_suffix='sav.sk', test_password='test'):
         if self.participants.count() > 0:
             logger.debug("This experiment %s already has %d participants - aborting"
                     % (self, self.participants.count()))
             return
         (institution, created) = Institution.objects.get_or_create(name=institution_name, url=institution_url)
-        for i in xrange(1, number_of_students+1):
-            email = 's%d@%s' % (i, email_suffix)
-            u = User.objects.create_user(email, email, test_password)
-            u.first_name = 'Student'
-            u.last_name = u"%d" % i
-            u.save()
-            p = Participant.objects.create(user=u, institution=institution)
+        for i in xrange(1, count+1):
+            email = u's%d@%s' % (i, email_suffix)
+            try:
+                u = User.objects.get(username=email)
+            except User.DoesNotExist:
+                u = User.objects.create_user(username=email, email=email, password=test_password)
+                u.first_name = u'Student'
+                u.last_name = u"%d" % i
+                u.save()
+            (p, created) = Participant.objects.get_or_create(user=u, institution=institution)
             ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=u)
 
     def log(self, log_message):
@@ -459,6 +466,7 @@ class Experiment(models.Model):
         return signals.round_ended.send(sender, experiment=self, round_configuration=self.current_round)
 
     def stop(self):
+        self.log("Stopping experiment and flagging as inactive.")
         self.status = 'INACTIVE'
         self.save()
 

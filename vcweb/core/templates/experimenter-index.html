@@ -1,7 +1,29 @@
 {% extends "base-experimenter.html" %}
-
 {% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
-
+{% block head %}
+{{ block.super }}
+<script type='text/javascript'>
+    $(function() {
+        $('.confirm-experiment-action').each(function() {
+            var confirmable = $(this);
+            var description = confirmable.attr("title");
+            confirmable.click(function() {
+                confirmable.fastConfirm({
+                    questionText: description + " - continue?",
+                    onProceed: function(trigger) {
+                        $(trigger).fastConfirm('close');
+                        window.location = $(trigger).attr("href");
+                    },
+                    onCancel: function(trigger) {
+                        $(trigger).fastConfirm('close');
+                    }
+                });
+                return false;
+            });
+        });
+    });
+</script>
+{% endblock %}
 {% block page %}
 {{ block.super }}
 {% comment%}
@@ -9,8 +31,7 @@ FIXME: replace these links eventually.
 {% endcomment %}
 <div id='navmenu'>
     <a href='/admin'>add / configure an experiment</a>
-    <a href='/experimenter/data'>download data</a>
-    <a href='http://commons.asu.edu/contact'>report a bug</a>
+    <a href='/contact'>report a bug</a>
 </div>
 <div class='ui-state-highlight ui-corner-all'>
     <span class='ui-icon ui-icon-info icon-left'></span>
@@ -20,11 +41,18 @@ FIXME: replace these links eventually.
 <div id="post">
     {% for e in experiments %}
     <div class='notice ui-corner-all'>
-        {{e.status_line}}
-        <ul class='horizontal' id='horizontal'>
-            <li><a href='{{e.monitor_url}}'><img src='/static/images/famfamfam/zoom.png' alt='General experiment monitoring interface'/> monitor</a></li>
+        {{e.status_line}} <span style='padding: 3px;' class='ui-state-highlight'><b>{{e.participants.count}} registered participants</b></span>
+        <ul class='horizontal'>
+            <li><a title='Monitor and control this experiment' href='{{e.monitor_url}}'><img src='/static/images/famfamfam/zoom.png' alt='General experiment monitoring interface'/> monitor</a></li>
+            <li><a class='confirm-experiment-action' title='Clone this experiment.  This creates a new copy of this experiment with the exact same configuration but no registered participants.' href='{{e.clone_url}}'><img src='/static/images/famfamfam/page_copy.png' alt='Clone experiment'/> clone</a></li>
+            <li>
+            <a class='confirm-experiment-action' title='Register 15 participants for this experiment' href='{{e.controller_url}}/add-participants/15'><img src='/static/images/famfamfam/add.png' alt='add participants'/> add 15 students</a>
+            <a class='confirm-experiment-action' title='Register 20 participants for this experiment' href='{{e.controller_url}}/add-participants/20'>20 students</a>
+            <a class='confirm-experiment-action' title='Register 25 participants for this experiment' href='{{e.controller_url}}/add-participants/25'>25 students</a>
+            </li>
             <!-- <li><a href='{{e.management_url}}'><img src='/static/images/famfamfam/application_go.png' alt='Custom management interface'/> manage (unfinished)</a></li> -->
-            <li><a href='{{e.stop_url}}' class='confirm-experiment-action' style='background-image:none;' ><img src='/static/images/famfamfam/stop.png' alt=''/> stop</a></li>
+            <li><a title='clear all participants' href='{{e.controller_url}}/clear-participants' class='confirm-experiment-action'><img src='/static/images/famfamfam/delete.png' alt=''/> clear all participants</a></li>
+            <li><a title='stop this experiment' href='{{e.stop_url}}' class='confirm-experiment-action' style='background-image:none;' ><img src='/static/images/famfamfam/stop.png' alt=''/> stop</a></li>
         </ul>
     </div>
     {% empty %}

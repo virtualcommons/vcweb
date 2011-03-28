@@ -17,6 +17,12 @@ logger = logging.getLogger(__name__)
 
 """ account registration / login / logout / profile views """
 
+def _get_experiment(request, experiment_id):
+    experiment = Experiment.objects.get(pk=experiment_id)
+    if request.user.experimenter == experiment.experimenter:
+        return experiment
+    raise Experiment.DoesNotExist("Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter, experiment_id))
+
 @login_required
 def dashboard(request):
     if is_participant(request.user):
@@ -138,6 +144,46 @@ def manage(request, experiment_id=None):
     except Experiment.DoesNotExist:
         logger.warning("Tried to manage non-existent experiment with id %s" %
                 experiment_id)
+
+@experimenter_required
+def clone(request, experiment_id=None, count=0):
+    try:
+        experiment = _get_experiment(request, experiment_id)
+        cloned_experiment = experiment.clone()
+        if count > 0:
+            cloned_experiment.setup_test_participants(count=count)
+        logger.debug("cloned experiment: %s" % cloned_experiment)
+    except Experiment.DoesNotExist:
+        error_message = "Tried to monitor non-existent experiment (id %s)" % experiment_id
+        logger.warning(error_message)
+        messages.warning(request, error_message)
+    return redirect('core:dashboard')
+
+@experimenter_required
+def add_participants(request, experiment_id=None, count=0):
+    try:
+        experiment = _get_experiment(request, experiment_id)
+        count = int(count)
+        if count > 0:
+            experiment.setup_test_participants(count=count)
+    except Experiment.DoesNotExist:
+        error_message = "Tried to monitor non-existent experiment (id %s)" % experiment_id
+        logger.warning(error_message)
+        messages.warning(request, error_message)
+    return redirect('core:dashboard')
+
+@experimenter_required
+def clear_participants(request, experiment_id=None):
+    try:
+        experiment = _get_experiment(request, experiment_id)
+        if experiment.participants.count() > 0:
+            experiment.participants.all().delete()
+    except Experiment.DoesNotExist:
+        error_message = "Tried to monitor non-existent experiment (id %s)" % experiment_id
+        logger.warning(error_message)
+        messages.warning(request, error_message)
+    return redirect('core:dashboard')
+
 
 @experimenter_required
 def monitor(request, experiment_id=None):
