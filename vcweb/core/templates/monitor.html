@@ -16,24 +16,28 @@
         }
     }
     function registerCallbacks(round_data_count, active_round_number) {
-        $('.confirm-experiment-action').click(function() {
-            Dajaxice.vcweb.core.experiment_controller(update, {'experiment_id': {{experiment_id}}, 'action':this.name});
-            $('#statusDiv').hide('fast');
-            $('#experimentData').hide('fast');
-            $('#statusSpinner').show('fast');
-            return false;
+        $('.confirm-experiment-action').each(function() {
+            var confirmable = $(this);
+            var description = confirmable.attr("title");
+            var action= $(this).attr("name");
+            confirmable.click(function() {
+                confirmable.fastConfirm({
+                    questionText: description + " - continue?",
+                    onProceed: function(trigger) {
+                        Dajaxice.vcweb.core.experiment_controller(update, {'experiment_id': {{experiment_id}}, 'action':action});
+                        $('#statusDiv').hide('fast');
+                        $('#experimentData').hide('fast');
+                        $('#statusSpinner').show('fast');
+                        $(trigger).fastConfirm('close');
+                    },
+                    onCancel: function(trigger) {
+                        $(trigger).fastConfirm('close');
+                    }
+                });
+                return false;
+            });
         });
-        $('.confirm-experiment-action').confirm({
-                timeout: 5000,
-                dialogShow: 'fadeIn',
-                dialogSpeed: 'fast',
-                buttons: {
-                    wrapper: "<button></button>",
-                    separator: ' '
-                },
-                msg: '&nbsp; You are about to modify the experiment. Continue?'
-        });
-        $('#statusSpinner').hide('fast');
+        $('#statusSpinner').hide();
         $('#statusDiv').show('fast');
         $('#experimentData').show('fast');
         $('#statusDiv [title]').qtip(qtipOptions);
@@ -137,6 +141,7 @@
     </div>
     <div id='statusDiv'>
         {% block status %}
+        {% with participant_count=experiment.participants.count %}
         <fieldset class='small ui-corner-all'>
             <legend>round status</legend>
             <ul id='actions' class='actions'>
@@ -151,20 +156,28 @@
                     <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round' title='Stops the current round if necessary and advances to the next round.'>
                         <span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/control_fastforward_blue.png);' ></span>advance to next round</a></li>
                 {% else %}
-                <li><a class='confirm-experiment-action' name='setup_test_participants'
-                    href='setup-test-participants/20' title='Set up 20 participants'>Activate experiment with 20 participants</a></li>
-                <li><a class='confirm-experiment-action' name='activate' href='activate' title='You must first activate an experiment before you can run it.'>
-                    <span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/cog_go.png);' ></span>activate</a></li>
+                {% if participant_count == 0 %}
+                <div class='alert alertIcon ui-corner-all'>
+                    There are no registered participants.  Please <a href='{% url core:dashboard %}'>return to the dashboard to register participants.</a>
+                </div>
+                {% else %}
+                <li><a title='You must first activate an experiment before you can run it.' class='confirm-experiment-action' name='activate'
+                    href='activate'><span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/cog_go.png);' ></span>activate</a>
+                </li>
+                {%endif%}
                 {% endif %}
             </ul>
             <br/>
-            <ul class='messages tooltip' title='Round instructions: {{experiment.actions_help_text}}'>
-                <li>{{ experiment.round_status_display }}</li>
+            <ul class='messages'>
+                <li title='{{experiment.actions_help_text}}'>{{ experiment.round_status_display }}</li>
                 <li>Type: {{ experiment.current_round.get_round_type_display }}</li>
                 <li>Round started on {{ experiment.current_round_start_time }}</li>
                 <li>Time remaining: {{ experiment.time_remaining }}</li>
+                <li>Registered participants: <b>{{participant_count}}</b>
+                </li>
             </ul>
         </fieldset>
+        {% endwith %}
         {% endblock status %}
     </div>
 </div>

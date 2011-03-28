@@ -757,9 +757,9 @@ class Parameter(models.Model):
 class ParameterizedValue(models.Model):
     parameter = models.ForeignKey(Parameter)
     string_value = models.CharField(max_length=512, null=True, blank=True)
-    int_value = models.IntegerField(null=True)
-    float_value = models.FloatField(null=True)
-    boolean_value = models.NullBooleanField(null=True)
+    int_value = models.IntegerField(null=True, blank=True)
+    float_value = models.FloatField(null=True, blank=True)
+    boolean_value = models.NullBooleanField(null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
