@@ -55,6 +55,11 @@ Participating in {{experiment.status_line}}
     &nbsp;
 </div>
 {% endif %}
+{% if resource_level.value == 0 %}
+<div style='padding: 8px; margin: auto; border: solid 1px; background: #E8E8E8 url(/static/images/forestry/deforestation.jpg) no-repeat center; height: 282px; width:425px;'>
+    &nbsp;
+</div>
+{% endif %}
 <div style='padding: 5px; margin: 8px 0px;' class='ui-state-highlight'>
     <span class='icon-left ui-icon ui-icon-info'>&nbsp;</span>
     There are <b>{{ resource_level.value }}</b> trees left.
@@ -81,7 +86,7 @@ Participating in {{experiment.status_line}}
 {% else %}
 <div class='alert ui-corner-all'>
     <span class='ui-icon ui-icon-alert icon-left'></span>
-    There aren't enough resources to harvest.
+    There are no longer enough trees to harvest. Please wait until the next round begins.
 </div>
 {% endif %}
 {% endblock content %}
