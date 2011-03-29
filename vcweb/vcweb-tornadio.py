@@ -20,9 +20,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
 from vcweb.core.models import ParticipantExperimentRelationship, ParticipantGroupRelationship, ChatMessage, Experimenter, Experiment
 
-
 logger = logging.getLogger(__name__)
-
 
 def info_json(message):
     return simplejson.dumps({'message_type': 'info', 'message': message})
@@ -222,7 +220,6 @@ class ParticipantHandler(SocketConnection):
     def on_open(self, *args, **kwargs):
         # FIXME: verify user auth tokens
         extra = kwargs['extra']
-        logger.debug('%s received extra: %s' % (self, extra))
         #(auth_token, dot, participant_group_relationship_id) = extra.partition('.')
         #logger.debug("auth token: %s, id %s" % (auth_token, participant_group_relationship_id))
         relationship_id = extra

@@ -38,11 +38,9 @@ def participant_index(request):
     experiment_dict = {}
     for experiment in participant.experiments.filter(experiment_metadata=get_forestry_experiment_metadata()):
         status = experiment.get_status_display()
-        logger.debug("status is %s" % status)
         if not status in experiment_dict:
             experiment_dict[status] = list()
         experiment_dict[status].append(experiment)
-
     return render_to_response('forestry/participant-index.html', locals(), context_instance=RequestContext(request))
 
 @experimenter_required
@@ -84,7 +82,6 @@ def generate_participant_history(participant_group_relationship):
             pass
         data.final_number_of_trees = resource_level.value
         participant_history.append(data)
-    logger.debug("participant history: %s" % participant_history)
     if experiment.is_round_in_progress:
         last_round_data = participant_history[-1]
         if experiment.current_round.pk == last_round_data.round_configuration.pk:
@@ -140,7 +137,6 @@ def participate(request, experiment_id=None):
         messages.warning(request, error_message)
         return redirect('forestry:index')
 
-
 import re
 quiz_question_re = re.compile(r'^quiz_question_(\d+)$')
 def quiz(request, experiment, participant):
@@ -186,6 +182,11 @@ def chat(request, experiment, participant):
         },
         context_instance=RequestContext(request))
 
+trees = {
+        'deciduous': { 'name': 'deciduous-tree', 'height': 32 },
+        'pine': {'name': 'pine-tree', 'height': 79 },
+        }
+
 
 def play(request, experiment, participant):
     form = HarvestDecisionForm(request.POST or None)
@@ -210,6 +211,7 @@ def play(request, experiment, participant):
         max_width = number_of_trees_per_row * 30
         number_of_resource_divs = range(0, resource_level.value / number_of_trees_per_row)
         resource_width = (resource_level.value % number_of_trees_per_row) * 30
+        tree = trees['pine']
         return render_to_response(experiment.current_round_template,
                 locals(),
                 context_instance=RequestContext(request))
