@@ -4,6 +4,9 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
+from django.utils.decorators import method_decorator
+from django.views.generic import ListView, TemplateView, RedirectView 
+from django.views.generic.base import TemplateResponseMixin
 from vcweb.core.forms import RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm
 from vcweb.core.models import Participant, Experiment, Institution, is_participant, is_experimenter
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
@@ -23,12 +26,56 @@ def _get_experiment(request, experiment_id):
         return experiment
     raise Experiment.DoesNotExist("Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter, experiment_id))
 
+class ParticipantMixin(object):
+    @method_decorator(participant_required)
+    def dispatch(self, *args, **kwargs):
+        return super(ParticipantMixin, self).dispatch(*args, **kwargs)
+
+"""
+experimenter views
+FIXME: add has_perms authorization to ensure that only experimenters can access
+these.
+"""
+class ExperimenterMixin(object):
+    def _get_experiment(self, request, experiment_id):
+        experiment = Experiment.objects.get(pk=experiment_id)
+        if request.user.experimenter.pk == experiment.experimenter.pk:
+            return experiment
+        raise Experiment.DoesNotExist("Sorry, you do not appear to have access to %s" % experiment)
+
+    @method_decorator(experimenter_required)
+    def dispatch(self, *args, **kwargs):
+        return super(ExperimenterMixin, self).dispatch(*args, **kwargs)
+
+class Dashboard(ListView, TemplateResponseMixin):
+    context_object_name = 'experiments'
+    def get_template_names(self):
+        user = self.request.user
+        if is_experimenter(user):
+            return ['experimenter-dashboard.html']
+        else:
+            return ['participant-dashboard.html']
+
+    def get_queryset(self):
+        user = self.request.user
+        if is_experimenter(user):
+            return Experiment.objects.filter(experimenter__pk=self.request.user.experimenter.pk)
+        else:
+            participant = user.participant
+            experiment_dict = {}
+            for experiment in participant.experiments.all():
+                if not experiment.experiment_metadata in experiment_dict:
+                    experiment_dict[experiment.experiment_metadata] = dict([(choice[0], list()) for choice in Experiment.STATUS_CHOICES])
+                experiment_dict[experiment.experiment_metadata][experiment.status].append(experiment)
+                logger.debug("experiment_dict %s" % experiment_dict)
+            return experiment_dict
+
 @login_required
 def dashboard(request):
     if is_participant(request.user):
         return participant_index(request)
     elif is_experimenter(request.user):
-        return experimenter_index(request)
+        return ExperimenterDashboard.as_view()
     else:
         logger.warning("user %s isn't an experimenter or participant" % request.user)
         return redirect('home')
@@ -119,15 +166,6 @@ def instructions(request, experiment_id=None, namespace=None):
 
     return render_to_response(experiment.get_template_path('instructions.html'), locals(), context_instance=RequestContext(request))
 
-"""
-experimenter views
-FIXME: add has_perms authorization to ensure that only experimenters can access
-these.
-"""
-@experimenter_required
-def experimenter_index(request):
-    experiments = Experiment.objects.filter(experimenter=request.user.experimenter)
-    return render_to_response('experimenter-index.html', locals(), context_instance=RequestContext(request))
 
 @experimenter_required
 def configure(request, experiment_id=None):

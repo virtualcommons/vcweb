@@ -2,7 +2,7 @@ from django.conf.urls.defaults import *
 from django.contrib import admin
 from vcweb import settings
 
-from django.views.generic.simple import direct_to_template
+from django.views.generic.base import TemplateView
 
 from dajaxice.core import dajaxice_autodiscover
 # set up dajaxice URLs
@@ -11,9 +11,9 @@ dajaxice_autodiscover()
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'^$', direct_to_template, {'template':'index.html'}, name='home'),
-    url(r'^about/$', direct_to_template, {'template':'about.html'}, name='about'),
-    url(r'^contact/$', direct_to_template, {'template':'contact.html'}, name='contact'),
+    url(r'^$', TemplateView.as_view(template_name='index.html'), name='home'),
+    url(r'^about/$', TemplateView.as_view(template_name='about.html'), name='about'),
+    url(r'^contact/$', TemplateView.as_view(template_name='contact.html'), name='contact'),
     url(r'^accounts/password/reset/$', 'django.contrib.auth.views.password_reset', name='password-reset'),
     url(r'^accounts/password_reset/$', 'django.contrib.auth.views.password_reset', {'template_name':'password_reset_form.html', 'email_template_name':'userpanel/password_reset_email.html'}),
     url(r'^accounts/password_reset/done/$', 'django.contrib.auth.views.password_reset_done', {'template_name':'password_reset_done.html'}),

@@ -48,11 +48,9 @@
             });
         }
     }
-
     function addExperimentMessage(message) {
         $("#experiment-messages").append($("<div style='font-size: 0.8em;line-height:0.9em;padding:3px;' class='ui-state-highlight' />").append(message));
     }
-
     $(function() {
             var experimentMessageDiv = document.getElementById('experiment-messages');
             registerCallbacks({{ experiment.round_data.count }}, {{ experiment.current_round.sequence_number }});

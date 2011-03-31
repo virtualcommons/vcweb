@@ -45,16 +45,21 @@ FIXME: replace these links eventually.
         <ul class='horizontal'>
             <li><a title='Monitor and control this experiment' href='{{e.monitor_url}}'><img src='/static/images/famfamfam/zoom.png' alt='General experiment monitoring interface'/> monitor</a></li>
             <li><a class='confirm-experiment-action' title='Creates a new copy of this experiment with the exact same configuration but no registered participants.' href='{{e.clone_url}}'><img src='/static/images/famfamfam/page_copy.png' alt='Clone experiment'/> clone</a></li>
+            {% if e.participants.count == 0  %}
+            <li>
+            <a title='Configure this experiment' href='{{e.controller_url}}/configure'><img src='/static/images/famfamfam/database_gear.png' alt='configure'/> configure</a>
+            </li>
             <li>
             <a class='confirm-experiment-action' title='Register 15 participants for this experiment' href='{{e.controller_url}}/add-participants/15'><img src='/static/images/famfamfam/add.png' alt='add participants'/> register <b>15 students</b></a>
             <a class='confirm-experiment-action' title='Register 20 participants for this experiment' href='{{e.controller_url}}/add-participants/20'><b>20 students</b></a>
             </li>
-            <li>
-            <a title='Configure this experiment' href='{{e.controller_url}}/configure'><img src='/static/images/famfamfam/database_gear.png' alt='configure'/> configure</a>
-            </li>
-            <!-- <li><a href='{{e.management_url}}'><img src='/static/images/famfamfam/application_go.png' alt='Custom management interface'/> manage (unfinished)</a></li> -->
+            {% else %}
             <li><a title='clear all participants' href='{{e.controller_url}}/clear-participants' class='confirm-experiment-action'><img src='/static/images/famfamfam/delete.png' alt=''/> clear all participants</a></li>
+            {% endif %}
+            <!-- <li><a href='{{e.management_url}}'><img src='/static/images/famfamfam/application_go.png' alt='Custom management interface'/> manage (unfinished)</a></li> -->
+            {% if e.is_active %}
             <li><a title='stop this experiment' href='{{e.stop_url}}' class='confirm-experiment-action' style='background-image:none;' ><img src='/static/images/famfamfam/stop.png' alt=''/> stop</a></li>
+            {% endif %}
         </ul>
     </div>
     {% empty %}

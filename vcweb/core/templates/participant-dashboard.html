@@ -9,7 +9,6 @@
         $('[title]').qtip({position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'green', tip: 'bottomMiddle'} });
     });
 </script>
-
 {% endblock %}
 
 {% block title %}
@@ -18,11 +17,11 @@ Virtual Commons Web Participant Dashboard
 
 {% block page %}
 <div class='info infoIcon ui-corner-all'>
-    Welcome back, {{participant}}.  Experiments you're participating in are listed below.
+    Welcome back, {{request.user.participant}}.  Experiments you're participating in are listed below.
 </div>
 
 <div id='experiments'>
-{% for experiment_metadata, experiment_status_dict in experiment_dict.items %}
+{% for experiment_metadata, experiment_status_dict in experiments.items %}
 <h3> {{ experiment_metadata.title }} </h3>
 {% for experiment_status, experiments in experiment_status_dict.items %}
 {% if experiments %}
