@@ -1,11 +1,12 @@
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from django.utils.decorators import method_decorator
-from django.views.generic import ListView, TemplateView, RedirectView 
+from django.views.generic import ListView, FormView, TemplateView
 from django.views.generic.base import TemplateResponseMixin
 from vcweb.core.forms import RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm
 from vcweb.core.models import Participant, Experiment, Institution, is_participant, is_experimenter
@@ -26,26 +27,10 @@ def _get_experiment(request, experiment_id):
         return experiment
     raise Experiment.DoesNotExist("Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter, experiment_id))
 
-class ParticipantMixin(object):
-    @method_decorator(participant_required)
+class AnonymousMixin(object):
+    @method_decorator(anonymous_required)
     def dispatch(self, *args, **kwargs):
-        return super(ParticipantMixin, self).dispatch(*args, **kwargs)
-
-"""
-experimenter views
-FIXME: add has_perms authorization to ensure that only experimenters can access
-these.
-"""
-class ExperimenterMixin(object):
-    def _get_experiment(self, request, experiment_id):
-        experiment = Experiment.objects.get(pk=experiment_id)
-        if request.user.experimenter.pk == experiment.experimenter.pk:
-            return experiment
-        raise Experiment.DoesNotExist("Sorry, you do not appear to have access to %s" % experiment)
-
-    @method_decorator(experimenter_required)
-    def dispatch(self, *args, **kwargs):
-        return super(ExperimenterMixin, self).dispatch(*args, **kwargs)
+        return super(AnonymousMixin, self).dispatch(*args, **kwargs)
 
 class Dashboard(ListView, TemplateResponseMixin):
     context_object_name = 'experiments'
@@ -55,30 +40,35 @@ class Dashboard(ListView, TemplateResponseMixin):
             return ['experimenter-dashboard.html']
         else:
             return ['participant-dashboard.html']
-
     def get_queryset(self):
         user = self.request.user
         if is_experimenter(user):
             return Experiment.objects.filter(experimenter__pk=self.request.user.experimenter.pk)
         else:
-            participant = user.participant
             experiment_dict = {}
-            for experiment in participant.experiments.all():
+            for experiment in user.participant.experiments.exclude(status__in=(Experiment.INACTIVE, Experiment.PAUSED, Experiment.COMPLETED)):
                 if not experiment.experiment_metadata in experiment_dict:
                     experiment_dict[experiment.experiment_metadata] = dict([(choice[0], list()) for choice in Experiment.STATUS_CHOICES])
                 experiment_dict[experiment.experiment_metadata][experiment.status].append(experiment)
                 logger.debug("experiment_dict %s" % experiment_dict)
             return experiment_dict
 
-@login_required
-def dashboard(request):
-    if is_participant(request.user):
-        return participant_index(request)
-    elif is_experimenter(request.user):
-        return ExperimenterDashboard.as_view()
-    else:
-        logger.warning("user %s isn't an experimenter or participant" % request.user)
-        return redirect('home')
+class LoginView(FormView, AnonymousMixin):
+    form_class = LoginForm
+    template_name = 'registration/login.html'
+
+    def form_valid(self, form):
+        request = self.request
+        user = form.user_cache
+        auth.login(request, user)
+        sha1 = hashlib.sha1()
+        sha1.update("%s%i%s" % (user.email, user.pk, datetime.now()))
+        request.session['authentication_token'] = base64.urlsafe_b64encode(sha1.digest())
+        return super(LoginView, self).form_valid(form)
+
+    def get_success_url(self):
+        return_url = self.request.GET.get('next')
+        return return_url if return_url else reverse('core:dashboard')
 
 @anonymous_required()
 def login(request):
@@ -139,19 +129,10 @@ def account_profile(request):
     return render_to_response('registration/profile.html', { 'form': form }, context_instance=RequestContext(request))
 
 ''' participant views '''
-""" participant home page """
-@participant_required
-def participant_index(request):
-    participant = request.user.participant
-    experiment_dict = {}
-    for experiment in participant.experiments.all():
-        if not experiment.experiment_metadata in experiment_dict:
-            experiment_dict[experiment.experiment_metadata] = dict([(choice[0], list()) for choice in Experiment.STATUS_CHOICES])
-        experiment_dict[experiment.experiment_metadata][experiment.status].append(experiment)
-
-    logger.debug("experiment_dict %s" % experiment_dict)
-
-    return render_to_response('participant-index.html', locals(), context_instance=RequestContext(request))
+class ParticipantMixin(object):
+    @method_decorator(participant_required)
+    def dispatch(self, *args, **kwargs):
+        return super(ParticipantMixin, self).dispatch(*args, **kwargs)
 
 @login_required
 def instructions(request, experiment_id=None, namespace=None):
@@ -165,6 +146,23 @@ def instructions(request, experiment_id=None, namespace=None):
         return redirect('home')
 
     return render_to_response(experiment.get_template_path('instructions.html'), locals(), context_instance=RequestContext(request))
+
+
+"""
+experimenter views
+FIXME: add has_perms authorization to ensure that only experimenters can access
+these.
+"""
+class ExperimenterMixin(object):
+    def _get_experiment(self, request, experiment_id):
+        experiment = Experiment.objects.get(pk=experiment_id)
+        if request.user.experimenter.pk == experiment.experimenter.pk:
+            return experiment
+        raise Experiment.DoesNotExist("Sorry, you do not appear to have access to %s" % experiment)
+
+    @method_decorator(experimenter_required)
+    def dispatch(self, *args, **kwargs):
+        return super(ExperimenterMixin, self).dispatch(*args, **kwargs)
 
 
 @experimenter_required

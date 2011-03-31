@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.forms import widgets
 from django.utils.translation import ugettext_lazy as _
@@ -36,6 +37,17 @@ class RegistrationForm(forms.Form):
 class LoginForm(forms.Form):
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
+
+    def clean(self):
+        email = self.cleaned_data.get('email')
+        password = self.cleaned_data.get('password')
+        if email and password:
+            self.user_cache = authenticate(username=email, password=password)
+            if self.user_cache is None:
+                raise forms.ValidationError(_("Your combination of email and password was incorrect."))
+            elif not self.user_cache.is_active:
+                raise forms.ValidationError(_("This user has been deactivated. Please contact us if this is in error."))
+        return self.cleaned_data
 
 class ParticipantAccountForm(forms.ModelForm):
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
