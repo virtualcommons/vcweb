@@ -1,10 +1,14 @@
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from django.forms import widgets
+from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
 from vcweb.core.models import Participant, Experimenter
+
+from django.core.validators import email_re
+
+import re
 
 REQUIRED_EMAIL_ATTRIBUTES = { 'class' : 'required email' }
 REQUIRED_ATTRIBUTES = { 'class' : 'required' }
@@ -25,14 +29,12 @@ class RegistrationForm(forms.Form):
             return email
         raise forms.ValidationError(_("This email address is already in our system."))
 
-
     def clean_confirm_password(self):
         password = self.cleaned_data['password']
         confirm_password = self.cleaned_data['confirm_password']
         if password != confirm_password:
             raise forms.ValidationError(_("Please make sure your passwords match."))
         return self.confirm_password
-
 
 class LoginForm(forms.Form):
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
@@ -60,6 +62,23 @@ class ParticipantAccountForm(forms.ModelForm):
 class ExperimenterAccountForm(forms.ModelForm):
     class Meta:
         model = Experimenter
+
+email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
+class EmailListField(forms.CharField):
+    widget = forms.Textarea
+    def clean(self, value):
+        super(EmailListField, self).clean(value)
+        emails = email_separator_re.split(value)
+        if not emails:
+            raise ValidationError(_(u'You must enter at least one email address.'))
+        for email in emails:
+            if not email_re.match(email):
+                raise ValidationError(_(u'%s is not a valid email address.' % email))
+        return emails
+
+class ConfigureExperimentForm(forms.Form):
+    clone_experiment = forms.NullBooleanField(label="Clone this experiment?")
+    registered_participants = EmailListField(label="Registered participants")
 
 class QuizForm(forms.Form):
     name_question = forms.CharField(max_length=64, label="What is your name?")

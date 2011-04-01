@@ -74,11 +74,11 @@ def direct_block_to_template(request, template, block, extra_context=None, mimet
     t.render(c)
     return HttpResponse(render_template_block(t, block, c), mimetype=mimetype)
 
-def _get_experiment(request, experiment_id):
-    experiment = Experiment.objects.get(pk=experiment_id)
+def _get_experiment(request, pk):
+    experiment = Experiment.objects.get(pk=pk)
     if request.user.experimenter == experiment.experimenter:
         return experiment
-    raise Experiment.DoesNotExist("Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter, experiment_id))
+    raise Experiment.DoesNotExist("Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter, pk))
 
 def _render_experiment_monitor_block(block, experiment, request):
     return render_block_to_string('monitor.html', block, { 'experiment': experiment },
@@ -86,9 +86,9 @@ def _render_experiment_monitor_block(block, experiment, request):
 
 @experimenter_required
 @dajaxice_register
-def experiment_controller(request, experiment_id, action=''):
+def experiment_controller(request, pk, action=''):
     try:
-        experiment = _get_experiment(request, experiment_id)
+        experiment = _get_experiment(request, pk)
         experiment_func = getattr(experiment, action.replace('-', '_'), None)
         if experiment_func:
             experiment_func()

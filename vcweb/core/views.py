@@ -8,6 +8,7 @@ from django.template.context import RequestContext
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, FormView, TemplateView
 from django.views.generic.base import TemplateResponseMixin
+from django.views.generic.detail import SingleObjectMixin
 from vcweb.core.forms import RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm
 from vcweb.core.models import Participant, Experiment, Institution, is_participant, is_experimenter
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
@@ -20,12 +21,6 @@ import itertools
 logger = logging.getLogger(__name__)
 
 """ account registration / login / logout / profile views """
-
-def _get_experiment(request, experiment_id):
-    experiment = Experiment.objects.get(pk=experiment_id)
-    if request.user.experimenter == experiment.experimenter:
-        return experiment
-    raise Experiment.DoesNotExist("Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter, experiment_id))
 
 class AnonymousMixin(object):
     @method_decorator(anonymous_required)
@@ -117,14 +112,14 @@ class ParticipantMixin(object):
         return super(ParticipantMixin, self).dispatch(*args, **kwargs)
 
 @login_required
-def instructions(request, experiment_id=None, namespace=None):
-    if experiment_id:
-        experiment = Experiment.objects.get(pk=experiment_id)
+def instructions(request, pk=None, namespace=None):
+    if pk:
+        experiment = Experiment.objects.get(pk=pk)
     elif namespace:
         experiment = Experiment.objects.get(experiment_metadata__namespace=namespace)
 
     if not experiment:
-        logger.warning("Tried to request instructions for id %s or namespace %s" % (experiment_id, namespace))
+        logger.warning("Tried to request instructions for id %s or namespace %s" % (pk, namespace))
         return redirect('home')
 
     return render_to_response(experiment.get_template_path('instructions.html'), locals(), context_instance=RequestContext(request))
@@ -136,91 +131,105 @@ FIXME: add has_perms authorization to ensure that only experimenters can access
 these.
 """
 class ExperimenterMixin(object):
-    def _get_experiment(self, request, experiment_id):
-        experiment = Experiment.objects.get(pk=experiment_id)
-        if request.user.experimenter.pk == experiment.experimenter.pk:
-            return experiment
-        raise Experiment.DoesNotExist("Sorry, you do not appear to have access to %s" % experiment)
-
     @method_decorator(experimenter_required)
     def dispatch(self, *args, **kwargs):
         return super(ExperimenterMixin, self).dispatch(*args, **kwargs)
 
+class SingleExperimentMixin(SingleObjectMixin):
+    model = Experiment
+    context_object_name = 'experiment'
 
-@experimenter_required
-def configure(request, experiment_id=None):
-    # lookup game instance id (or create a new one?)
+    def process_experiment(self, experiment):
+        pass
+
+    def get(self, request, **kwargs):
+        try:
+            self.object = self.get_object()
+            self.process_experiment(self.object)
+            context = self.get_context_data(object=self.object)
+            return self.render_to_response(context)
+        except Experiment.DoesNotExist as e:
+            logger.warning(e)
+            messages.warning(request, e)
+            return redirect( reverse('core:dashboard') )
+
+    def get_object(self, queryset=None):
+        pk = self.kwargs.get('pk', None)
+        experiment = Experiment.objects.get(pk=pk)
+        if self.request.user.experimenter.pk == experiment.experimenter.pk:
+            return experiment
+        raise Experiment.DoesNotExist("You do not have access to %s" % experiment)
+
+class MonitorExperimentView(ExperimenterMixin, SingleExperimentMixin, TemplateView):
+    template_name = 'monitor.html'
+
+class ConfigureExperimentView(ExperimenterMixin, SingleExperimentMixin, FormView):
+    form_class = ConfigureExperimentForm
+    template_name = 'configure.html'
+    def form_valid(self, form):
+        request = self.request
+
+def _get_experiment(self, request, experiment_id):
     experiment = Experiment.objects.get(pk=experiment_id)
-    return render_to_response('configure.html', locals(), context_instance=RequestContext(request))
+    if request.user.experimenter.pk == experiment.experimenter.pk:
+        return experiment
+    raise Experiment.DoesNotExist("Sorry, you do not appear to have access to %s" % experiment)
 
 @experimenter_required
-def manage(request, experiment_id=None):
-    try :
-        experiment = Experiment.objects.get(pk=experiment_id)
-# redirect to experiment specific management page?
-        return redirect(experiment.management_url)
-    except Experiment.DoesNotExist:
-        logger.warning("Tried to manage non-existent experiment with id %s" %
-                experiment_id)
-
-@experimenter_required
-def clone(request, experiment_id=None, count=0):
+def clone(request, pk=None, count=0):
     try:
-        experiment = _get_experiment(request, experiment_id)
+        experiment = _get_experiment(request, pk)
         cloned_experiment = experiment.clone()
         if count > 0:
             cloned_experiment.setup_test_participants(count=count)
         logger.debug("cloned experiment: %s" % cloned_experiment)
     except Experiment.DoesNotExist:
-        error_message = "Tried to monitor non-existent experiment (id %s)" % experiment_id
+        error_message = "Tried to monitor non-existent experiment (id %s)" % pk
         logger.warning(error_message)
         messages.warning(request, error_message)
     return redirect('core:dashboard')
 
 @experimenter_required
-def add_participants(request, experiment_id=None, count=0):
+def manage(request, pk=None):
+    try :
+        experiment = Experiment.objects.get(pk=pk)
+# redirect to experiment specific management page?
+        return redirect(experiment.management_url)
+    except Experiment.DoesNotExist:
+        logger.warning("Tried to manage non-existent experiment with id %s" %
+                pk)
+
+@experimenter_required
+def add_participants(request, pk=None, count=0):
     try:
-        experiment = _get_experiment(request, experiment_id)
+        experiment = _get_experiment(request, pk)
         count = int(count)
         if count > 0:
             experiment.setup_test_participants(count=count)
     except Experiment.DoesNotExist:
-        error_message = "Tried to monitor non-existent experiment (id %s)" % experiment_id
+        error_message = "Tried to monitor non-existent experiment (id %s)" % pk
         logger.warning(error_message)
         messages.warning(request, error_message)
     return redirect('core:dashboard')
 
 @experimenter_required
-def clear_participants(request, experiment_id=None):
+def clear_participants(request, pk=None):
     try:
-        experiment = _get_experiment(request, experiment_id)
+        experiment = _get_experiment(request, pk)
         if experiment.participants.count() > 0:
             experiment.participants.all().delete()
     except Experiment.DoesNotExist:
-        error_message = "Tried to monitor non-existent experiment (id %s)" % experiment_id
+        error_message = "Tried to monitor non-existent experiment (id %s)" % pk
         logger.warning(error_message)
         messages.warning(request, error_message)
     return redirect('core:dashboard')
 
-
-@experimenter_required
-def monitor(request, experiment_id=None):
-    try:
-        experiment = Experiment.objects.get(pk=experiment_id)
-        if request.user.experimenter.pk == experiment.experimenter.pk:
-            return render_to_response('monitor.html', locals(), context_instance=RequestContext(request))
-# redirect to experiment specific management page?
-    except Experiment.DoesNotExist:
-        error_message = "Tried to monitor non-existent experiment (id %s)" % experiment_id
-        logger.warning(error_message)
-        messages.warning(request, error_message)
-    return redirect('core:dashboard')
 
 # FIXME: add data converter objects to write to csv, excel, etc.
 @experimenter_required
-def download_data(request, experiment_id=None, file_type='csv'):
+def download_data(request, pk=None, file_type='csv'):
     try:
-        experiment = Experiment.objects.get(pk=experiment_id)
+        experiment = Experiment.objects.get(pk=pk)
         response = HttpResponse(mimetype='text/csv')
         response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
         writer = unicodecsv.UnicodeWriter(response)
@@ -247,16 +256,16 @@ def download_data(request, experiment_id=None, file_type='csv'):
                         chat_message.date_created, round_configuration])
         return response
     except Experiment.DoesNotExist as e:
-        error_message = "Tried to download non-existent experiment, id %s" % experiment_id
+        error_message = "Tried to download non-existent experiment, id %s" % pk
         logger.warning(error_message)
         messages.warning(request, error_message)
         return redirect('core:dashboard')
 
 @experimenter_required
-def download_data_excel(request, experiment_id=None):
+def download_data_excel(request, pk=None):
     import xlwt
     try:
-        experiment = Experiment.objects.get(pk=experiment_id)
+        experiment = Experiment.objects.get(pk=pk)
         response = HttpResponse(mimetype='application/vnd.ms-excel')
         response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name(file_ext='xls')
         workbook = xlwt.Workbook()
@@ -291,10 +300,10 @@ def download_data_excel(request, experiment_id=None):
         logger.warning(e)
 
 @experimenter_required
-def experiment_controller(request, experiment_id=None, experiment_action=None):
+def experiment_controller(request, pk=None, experiment_action=None):
     try:
         experimenter = request.user.experimenter
-        experiment = Experiment.objects.get(pk=experiment_id)
+        experiment = Experiment.objects.get(pk=pk)
 # TODO: provide experimenter access to other users besides the creator of the
 # experiment?
         if experimenter.pk == experiment.experimenter.pk:
@@ -302,7 +311,7 @@ def experiment_controller(request, experiment_id=None, experiment_action=None):
             if experiment_func:
                 # pass params?  start_round() takes a sender for instance..
                 experiment_func()
-                return redirect('core:monitor_experiment', experiment_id=experiment_id)
+                return redirect('core:monitor_experiment', pk=pk)
             else:
                 error_message = "Invalid experiment action: You ({experimenter}) tried to invoke {experiment_action} on {experiment}".format(
                       experimenter=experimenter, experiment_action=experiment_action, experiment=experiment)
@@ -311,8 +320,8 @@ def experiment_controller(request, experiment_id=None, experiment_action=None):
                   experimenter=experimenter, experiment_action=experiment_action, experiment=experiment)
 
     except Experiment.DoesNotExist:
-       error_message = 'Could not invoke {experiment_action} on a non-existent experiment (id: {experiment_id}, experimenter: {experimenter})'.format(
-             experimenter=experimenter, experiment_action=experiment_action, experiment_id=experiment_id)
+       error_message = 'Could not invoke {experiment_action} on a non-existent experiment (id: {pk}, experimenter: {experimenter})'.format(
+             experimenter=experimenter, experiment_action=experiment_action, pk=pk)
 
     logger.warning(error_message)
     messages.warning(request, error_message)
