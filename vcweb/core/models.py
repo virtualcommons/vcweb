@@ -89,7 +89,7 @@ class CommonsUser(models.Model):
     user = models.OneToOneField(User, related_name='%(class)s', verbose_name=u'Django User', unique=True)
     failed_password_attempts = models.PositiveIntegerField(default=0)
     institution = models.ForeignKey(Institution, null=True, blank=True)
-#    authentication_token = models.CharField(max_length=64, null=True, blank=True)
+    authentication_token = models.CharField(max_length=64, null=True, blank=True)
 
     @property
     def full_name(self):

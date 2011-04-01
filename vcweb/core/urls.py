@@ -1,13 +1,13 @@
 from django.conf.urls.defaults import patterns, url
-from vcweb.core.views import Dashboard, LoginView
+from vcweb.core.views import Dashboard, LoginView, LogoutView, RegistrationView
 '''
 URLs defined by the core vcweb app.
 '''
 urlpatterns = patterns('vcweb.core.views',
     url(r'^dashboard/?$', Dashboard.as_view(), name='dashboard'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
-    url(r'^accounts/logout/$', 'logout', name='logout'),
-    url(r'^accounts/register/$', 'register', name='register'),
+    url(r'^accounts/logout/$', LogoutView.as_view(), name='logout'),
+    url(r'^accounts/register/$', RegistrationView.as_view(), name='register'),
     url(r'^accounts/profile/$', 'account_profile', name='profile'),
     url(r'^participate/(?P<experiment_id>\d+)/instructions', 'instructions', name='instructions'),
     url(r'^participate/(?P<namespace>\w+)/instructions', 'instructions', name='namespace_instructions'),

@@ -56,7 +56,6 @@ class Dashboard(ListView, TemplateResponseMixin):
 class LoginView(FormView, AnonymousMixin):
     form_class = LoginForm
     template_name = 'registration/login.html'
-
     def form_valid(self, form):
         request = self.request
         user = form.user_cache
@@ -65,60 +64,43 @@ class LoginView(FormView, AnonymousMixin):
         sha1.update("%s%i%s" % (user.email, user.pk, datetime.now()))
         request.session['authentication_token'] = base64.urlsafe_b64encode(sha1.digest())
         return super(LoginView, self).form_valid(form)
-
     def get_success_url(self):
         return_url = self.request.GET.get('next')
         return return_url if return_url else reverse('core:dashboard')
 
-@anonymous_required()
-def login(request):
-    if request.method == 'POST':
-        form = LoginForm(request.POST)
-        if form.is_valid():
-            cleaned_data = form.cleaned_data
-            email = cleaned_data['email']
-            password = cleaned_data['password']
-            user = auth.authenticate(username=email, password=password)
-            if user is None:
-                logger.debug("user " + email + " failed to authenticate.")
-                form.errors['password'] = form.error_class(['Your password is incorrect.'])
-            else:
-                return_url = request.GET.get('next')
-                auth.login(request, user)
-                sha1 = hashlib.sha1()
-                sha1.update("%s%i%s" % (email, user.pk, datetime.now()))
-                request.session['authentication_token'] = base64.urlsafe_b64encode(sha1.digest())
-                return redirect( return_url if return_url else 'core:dashboard')
-    else:
-        form = LoginForm()
-    return render_to_response('registration/login.html', locals(), context_instance=RequestContext(request))
+class LogoutView(TemplateView):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        commons_user = None
+        if is_participant(user):
+            commons_user = user.participant
+        elif is_experimenter(user):
+            commons_user = user.experimenter
+        commons_user.authentication_token = None
+        commons_user.save()
+        auth.logout(request)
+        return redirect('home')
 
-def logout(request):
-    auth.logout(request)
-    request.session['authentication_token'] = None
-    return redirect('home')
+class RegistrationView(FormView, AnonymousMixin):
+    form_class = RegistrationForm
+    template_name = 'registration/register.html'
+    def form_valid(self, form):
+        email = form.cleaned_data['email'].lower()
+        password = form.cleaned_data['password']
+        first_name = form.cleaned_data['first_name']
+        last_name = form.cleaned_data['last_name']
+        institution_string = form.cleaned_data['institution']
+        institution, created = Institution.objects.get_or_create(name=institution_string)
+        user = User.objects.create_user(email, email, password)
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
+        participant = Participant.objects.create(user=user, institution=institution)
+        logger.debug("Creating new participant: %s" % participant)
+        auth.login(self.request, auth.authenticate(username=email, password=password))
 
-def register(request):
-    if request.method == 'POST':
-        form = RegistrationForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data['email'].lower()
-            password = form.cleaned_data['password']
-            first_name = form.cleaned_data['first_name']
-            last_name = form.cleaned_data['last_name']
-            institution_string = form.cleaned_data['institution']
-            institution, created = Institution.objects.get_or_create(name=institution_string)
-            user = User.objects.create_user(email, email, password)
-            user.first_name = first_name
-            user.last_name = last_name
-            user.save()
-            participant = Participant.objects.create(user=user, institution=institution)
-            logger.debug("Creating new participant: %s" % participant)
-            auth.login(request, auth.authenticate(username=email, password=password))
-            return redirect('core:dashboard')
-    else:
-        form = RegistrationForm()
-    return render_to_response('registration/register.html', { 'form': form }, context_instance=RequestContext(request))
+    def get_success_url(self):
+        return reverse('core:dashboard')
 
 @login_required
 def account_profile(request):

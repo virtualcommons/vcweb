@@ -136,6 +136,10 @@ fieldset.small>legend {
     text-transform: lowercase;
     padding: 2px 6px;
 }
+.field > input {
+    width: 15em;
+
+}
 #experimentData a {
     text-decoration: none;
 }
