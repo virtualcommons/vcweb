@@ -1,10 +1,10 @@
-{% extends "base-participant.html" %}
+{% extends "participant/base.html" %}
 
-{% block title %}Forestry{% endblock %}
+{% block title %}VCWEB Forestry Experiment{% endblock %}
 
 {% block page %}
 <div class='info'>
-    Welcome back, {{ user.participant }}.
+    Welcome back, {{ request.user.participant }}.
 </div>
 <h3>{{experiment.namespace|title}} Experiments</h3>
 <div class='notice'>

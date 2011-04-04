@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import tornado.web
 from tornadio import SocketConnection, get_router, server
 import os
@@ -45,7 +44,7 @@ class ConnectionManager:
     # (participant.pk, experiment.pk) -> connection
     connection_to_participant = {}
     participant_to_connection = {}
-
+# experimenter maps
     connection_to_experimenter = {}
 # (experimenter.pk, experiment.pk) -> connection
     experimenter_to_connection = {}
@@ -55,8 +54,7 @@ class ConnectionManager:
     def add_experimenter(self, connection, incoming_experimenter_pk, incoming_experiment_pk):
         experimenter_pk = int(incoming_experimenter_pk)
         experiment_id = int(incoming_experiment_pk)
-        logger.debug("registering experimenter %s with connection %s" %
-                (experimenter_pk, connection))
+        logger.debug("registering experimenter %s with connection %s" % (experimenter_pk, connection))
         if connection in self.connection_to_experimenter:
             self.remove_experimenter(connection)
         self.connection_to_experimenter[connection] = (experimenter_pk, experiment_id)

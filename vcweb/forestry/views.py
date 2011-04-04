@@ -4,9 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
+from django.views.generic import View
+from django.views.generic.detail import SingleObjectTemplateResponseMixin, SingleObjectMixin
+from vcweb.core.decorators import participant_required, experimenter_required
 from vcweb.core.forms import QuizForm
 from vcweb.core.models import is_participant, is_experimenter, Experiment
-from vcweb.core.decorators import participant_required, experimenter_required
+from vcweb.core.views import ParticipantSingleExperimentMixin
 from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision, get_harvest_decision, get_group_harvest, get_regrowth
 from vcweb.forestry.forms import HarvestDecisionForm
 import logging
@@ -105,6 +108,10 @@ def wait(request, experiment_id=None):
     except Experiment.DoesNotExist:
         logger.warning("No experiment found with id %s" % experiment_id)
         return redirect('forestry:participant_index')
+
+
+class ParticipateView(SingleObjectTemplateResponseMixin, ParticipantSingleExperimentMixin, View):
+    template_name_field = 'current_round_template'
 
 # FIXME: refactor this ugliness
 @participant_required

@@ -9,7 +9,7 @@ from django.utils.decorators import method_decorator
 from django.views.generic import ListView, FormView, TemplateView
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin
-from vcweb.core.forms import RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm
+from vcweb.core.forms import RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm, ConfigureExperimentForm
 from vcweb.core.models import Participant, Experiment, Institution, is_participant, is_experimenter
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 import hashlib
@@ -32,9 +32,9 @@ class Dashboard(ListView, TemplateResponseMixin):
     def get_template_names(self):
         user = self.request.user
         if is_experimenter(user):
-            return ['experimenter-dashboard.html']
+            return ['experimenter/dashboard.html']
         else:
-            return ['participant-dashboard.html']
+            return ['participant/dashboard.html']
     def get_queryset(self):
         user = self.request.user
         if is_experimenter(user):
@@ -141,6 +141,8 @@ class SingleExperimentMixin(SingleObjectMixin):
 
     def process_experiment(self, experiment):
         pass
+    def check_user(self, user, experiment):
+        pass
 
     def get(self, request, **kwargs):
         try:
@@ -156,38 +158,60 @@ class SingleExperimentMixin(SingleObjectMixin):
     def get_object(self, queryset=None):
         pk = self.kwargs.get('pk', None)
         experiment = Experiment.objects.get(pk=pk)
+        user = self.request.user
+        return self.check_user(user, experiment)
+
+class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
+    def check_user(self, user, experiment):
+        # FIXME: should we do a user.participant in experiment.participants.all() check?
+        pass
+
+class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin):
+    def check_user(self, user, experiment):
         if self.request.user.experimenter.pk == experiment.experimenter.pk:
             return experiment
         raise Experiment.DoesNotExist("You do not have access to %s" % experiment)
 
-class MonitorExperimentView(ExperimenterMixin, SingleExperimentMixin, TemplateView):
-    template_name = 'monitor.html'
+class MonitorExperimentView(ExperimenterSingleExperimentMixin, TemplateView):
+    template_name = 'experimenter/monitor.html'
 
-class ConfigureExperimentView(ExperimenterMixin, SingleExperimentMixin, FormView):
+class ConfigureExperimentView(ExperimenterSingleExperimentMixin, FormView):
     form_class = ConfigureExperimentForm
-    template_name = 'configure.html'
+    template_name = 'experimenter/register-participants.html'
     def form_valid(self, form):
         request = self.request
 
-def _get_experiment(self, request, experiment_id):
-    experiment = Experiment.objects.get(pk=experiment_id)
-    if request.user.experimenter.pk == experiment.experimenter.pk:
-        return experiment
-    raise Experiment.DoesNotExist("Sorry, you do not appear to have access to %s" % experiment)
+    @experimenter_required
+    def add_participants(request, pk=None, count=0):
+        try:
+            experiment = _get_experiment(request, pk)
+            count = int(count)
+            if count > 0:
+                experiment.setup_test_participants(count=count)
+        except Experiment.DoesNotExist:
+            error_message = "Tried to monitor non-existent experiment (id %s)" % pk
+            logger.warning(error_message)
+            messages.warning(request, error_message)
+        return redirect('core:dashboard')
 
-@experimenter_required
-def clone(request, pk=None, count=0):
-    try:
-        experiment = _get_experiment(request, pk)
-        cloned_experiment = experiment.clone()
-        if count > 0:
-            cloned_experiment.setup_test_participants(count=count)
-        logger.debug("cloned experiment: %s" % cloned_experiment)
-    except Experiment.DoesNotExist:
-        error_message = "Tried to monitor non-existent experiment (id %s)" % pk
-        logger.warning(error_message)
-        messages.warning(request, error_message)
-    return redirect('core:dashboard')
+    @experimenter_required
+    def clear_participants(request, pk=None):
+        try:
+            experiment = _get_experiment(request, pk)
+            if experiment.participants.count() > 0:
+                experiment.participants.all().delete()
+        except Experiment.DoesNotExist:
+            error_message = "Tried to monitor non-existent experiment (id %s)" % pk
+            logger.warning(error_message)
+            messages.warning(request, error_message)
+        return redirect('core:dashboard')
+
+# FIXME: uses GET (which should be idempotent) to modify database state which makes HTTP sadful
+class CloneExperimentView(ExperimenterSingleExperimentMixin, TemplateView):
+    def process_experiment(self, experiment):
+        return experiment.clone()
+    def render_to_response(self, context):
+        return redirect('core:dashboard')
 
 @experimenter_required
 def manage(request, pk=None):
@@ -198,31 +222,6 @@ def manage(request, pk=None):
     except Experiment.DoesNotExist:
         logger.warning("Tried to manage non-existent experiment with id %s" %
                 pk)
-
-@experimenter_required
-def add_participants(request, pk=None, count=0):
-    try:
-        experiment = _get_experiment(request, pk)
-        count = int(count)
-        if count > 0:
-            experiment.setup_test_participants(count=count)
-    except Experiment.DoesNotExist:
-        error_message = "Tried to monitor non-existent experiment (id %s)" % pk
-        logger.warning(error_message)
-        messages.warning(request, error_message)
-    return redirect('core:dashboard')
-
-@experimenter_required
-def clear_participants(request, pk=None):
-    try:
-        experiment = _get_experiment(request, pk)
-        if experiment.participants.count() > 0:
-            experiment.participants.all().delete()
-    except Experiment.DoesNotExist:
-        error_message = "Tried to monitor non-existent experiment (id %s)" % pk
-        logger.warning(error_message)
-        messages.warning(request, error_message)
-    return redirect('core:dashboard')
 
 
 # FIXME: add data converter objects to write to csv, excel, etc.
