@@ -2,15 +2,19 @@ from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, FormView, TemplateView
 from django.views.generic.base import TemplateResponseMixin
-from django.views.generic.detail import SingleObjectMixin
-from vcweb.core.forms import RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm, ConfigureExperimentForm
-from vcweb.core.models import Participant, Experiment, Institution, is_participant, is_experimenter
+from django.views.generic.detail import SingleObjectMixin, DetailView
+from django.views.generic.edit import BaseUpdateView, UpdateView
+from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm, 
+        RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm)
+from vcweb.core.models import (Participant, Experiment, Institution, ParticipantExperimentRelationship, 
+        is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 import hashlib
 import base64
@@ -124,7 +128,6 @@ def instructions(request, pk=None, namespace=None):
 
     return render_to_response(experiment.get_template_path('instructions.html'), locals(), context_instance=RequestContext(request))
 
-
 """
 experimenter views
 FIXME: add has_perms authorization to ensure that only experimenters can access
@@ -142,18 +145,7 @@ class SingleExperimentMixin(SingleObjectMixin):
     def process_experiment(self, experiment):
         pass
     def check_user(self, user, experiment):
-        pass
-
-    def get(self, request, **kwargs):
-        try:
-            self.object = self.get_object()
-            self.process_experiment(self.object)
-            context = self.get_context_data(object=self.object)
-            return self.render_to_response(context)
-        except Experiment.DoesNotExist as e:
-            logger.warning(e)
-            messages.warning(request, e)
-            return redirect( reverse('core:dashboard') )
+        return experiment
 
     def get_object(self, queryset=None):
         pk = self.kwargs.get('pk', None)
@@ -164,47 +156,53 @@ class SingleExperimentMixin(SingleObjectMixin):
 class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
     def check_user(self, user, experiment):
         # FIXME: should we do a user.participant in experiment.participants.all() check?
-        pass
+        return experiment
 
 class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin):
     def check_user(self, user, experiment):
         if self.request.user.experimenter.pk == experiment.experimenter.pk:
             return experiment
-        raise Experiment.DoesNotExist("You do not have access to %s" % experiment)
+        raise PermissionDenied("You do not have access to %s" % experiment)
 
-class MonitorExperimentView(ExperimenterSingleExperimentMixin, TemplateView):
+class MonitorExperimentView(ExperimenterSingleExperimentMixin, DetailView):
     template_name = 'experimenter/monitor.html'
 
-class ConfigureExperimentView(ExperimenterSingleExperimentMixin, FormView):
-    form_class = ConfigureExperimentForm
-    template_name = 'experimenter/register-participants.html'
+class RegisterEmailListView(ExperimenterSingleExperimentMixin, UpdateView):
+    form_class = RegisterEmailListParticipantsForm
+    template_name = 'experimenter/register-email-participants.html'
     def form_valid(self, form):
-        request = self.request
+        emails = form['participant_emails']
+        experiment = self.object
+        logger.debug("registering participants %s for experiment: %s" % (emails, experiment))
+        experiment.authentication_code = form['experiment_passcode']
+        for email in emails:
+            try:
+                participant = Participant.objects.get(user__email=email)
+            except Participant.DoesNotExist:
+                user = User.objects.create_user(username=email, email=email,
+                        password=experiment.authentication_code)
+                participant = Participant.objects.create(user=user)
 
-    @experimenter_required
-    def add_participants(request, pk=None, count=0):
-        try:
-            experiment = _get_experiment(request, pk)
-            count = int(count)
-            if count > 0:
-                experiment.setup_test_participants(count=count)
-        except Experiment.DoesNotExist:
-            error_message = "Tried to monitor non-existent experiment (id %s)" % pk
-            logger.warning(error_message)
-            messages.warning(request, error_message)
-        return redirect('core:dashboard')
+            ParticipantExperimentRelationship.objects.create(participant=participant,
+                    experiment=experiment,
+                    created_by=experiment.experimenter.user)
 
-    @experimenter_required
-    def clear_participants(request, pk=None):
-        try:
-            experiment = _get_experiment(request, pk)
-            if experiment.participants.count() > 0:
-                experiment.participants.all().delete()
-        except Experiment.DoesNotExist:
-            error_message = "Tried to monitor non-existent experiment (id %s)" % pk
-            logger.warning(error_message)
-            messages.warning(request, error_message)
-        return redirect('core:dashboard')
+
+class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, BaseUpdateView, TemplateResponseMixin):
+    form_class = RegisterSimpleParticipantsForm
+    template_name = 'experimenter/register-simple-participants.html'
+    def form_valid(self, form):
+        number_of_participants = form['number_of_participants']
+        email_suffix = form['email_suffix']
+        experiment = self.object
+        experiment_passcode = form['experiment_passcode']
+        institution_name = form['institution_name']
+        institution_url = form['institution_url']
+        experiment.setup_test_participants(count=number_of_participants,
+                institution_name=institution_name, 
+                institution_url=institution_url,
+                email_suffix=email_suffix,
+                test_password=experiment_passcode)
 
 # FIXME: uses GET (which should be idempotent) to modify database state which makes HTTP sadful
 class CloneExperimentView(ExperimenterSingleExperimentMixin, TemplateView):

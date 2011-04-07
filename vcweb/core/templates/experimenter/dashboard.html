@@ -47,14 +47,14 @@ FIXME: replace these links eventually.
             <li><a class='confirm-experiment-action' title='Creates a new copy of this experiment with the exact same configuration but no registered participants.' href='{{e.clone_url}}'><img src='/static/images/famfamfam/page_copy.png' alt='Clone experiment'/> clone</a></li>
             {% if e.participants.count == 0  %}
             <li>
-            <a title='Configure this experiment' href='{{e.controller_url}}/configure'><img src='/static/images/famfamfam/database_gear.png' alt='configure'/> configure</a>
+            <a title='Register participants' href='{{e.controller_url}}/register-simple'><img src='/static/images/famfamfam/group_add.png' alt='register'/> register participants</a>
             </li>
             <li>
             <a class='confirm-experiment-action' title='Register 15 participants for this experiment' href='{{e.controller_url}}/add-participants/15'><img src='/static/images/famfamfam/add.png' alt='add participants'/> register <b>15 students</b></a>
             <a class='confirm-experiment-action' title='Register 20 participants for this experiment' href='{{e.controller_url}}/add-participants/20'><b>20 students</b></a>
             </li>
             {% else %}
-            <li><a title='clear all participants' href='{{e.controller_url}}/clear-participants' class='confirm-experiment-action'><img src='/static/images/famfamfam/delete.png' alt=''/> clear all participants</a></li>
+            <li><a title='clear all participants' href='{{e.controller_url}}/clear-participants' class='confirm-experiment-action'><img src='/static/images/famfamfam/group_del.png' alt=''/> clear all participants</a></li>
             {% endif %}
             <!-- <li><a href='{{e.management_url}}'><img src='/static/images/famfamfam/application_go.png' alt='Custom management interface'/> manage (unfinished)</a></li> -->
             {% if e.is_active %}
@@ -69,4 +69,3 @@ FIXME: replace these links eventually.
     {% endfor %}
 </div>
 {% endblock page %}
-

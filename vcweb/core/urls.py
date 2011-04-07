@@ -1,6 +1,7 @@
 from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.decorators import login_required
-from vcweb.core.views import Dashboard, LoginView, LogoutView, RegistrationView, MonitorExperimentView, ConfigureExperimentView, CloneExperimentView
+from vcweb.core.views import Dashboard, LoginView, LogoutView, RegistrationView, MonitorExperimentView, CloneExperimentView, \
+        RegisterEmailListView, RegisterSimpleParticipantsView
 '''
 URLs defined by the core vcweb app.
 '''
@@ -13,7 +14,8 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^participate/(?P<pk>\d+)/instructions', 'instructions', name='instructions'),
     url(r'^participate/(?P<namespace>\w+)/instructions', 'instructions', name='namespace_instructions'),
     url(r'^experiment/(?P<pk>\d+)/monitor$', MonitorExperimentView.as_view(), name='monitor_experiment'),
-    url(r'^experiment/(?P<pk>\d+)/configure$', ConfigureExperimentView.as_view(), name='configure_experiment'),
+    url(r'^experiment/(?P<pk>\d+)/register-by-emails$', RegisterEmailListView.as_view(), name='register_by_emails'),
+    url(r'^experiment/(?P<pk>\d+)/register-simple$', RegisterSimpleParticipantsView.as_view(), name='register_simple'),
     url(r'^experiment/(?P<pk>\d+)/clone$', CloneExperimentView.as_view(), name='clone'),
 #    url(r'^experiment/(?P<pk>\d+)/add-participants/(?P<count>[\d]+)$', 'add_participants', name='add_participants'),
 #    url(r'^experiment/(?P<pk>\d+)/clear-participants', 'clear_participants', name='clear_participants'),

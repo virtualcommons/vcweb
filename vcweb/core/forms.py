@@ -76,9 +76,18 @@ class EmailListField(forms.CharField):
                 raise ValidationError(_(u'%s is not a valid email address.' % email))
         return emails
 
-class ConfigureExperimentForm(forms.Form):
-    clone_experiment = forms.NullBooleanField(label="Clone this experiment?")
-    registered_participants = EmailListField(label="Registered participants")
+class RegisterParticipantsForm(forms.ModelForm):
+    experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
+    experiment_passcode = forms.CharField(min_length=3, label="Experiment passcode")
+    institution_name = forms.CharField(min_length=3,label="Institution name")
+    institution_url = forms.CharField(min_length=3,label='Institution URL')
+
+class RegisterSimpleParticipantsForm(RegisterParticipantsForm):
+    email_suffix = forms.CharField(min_length='3')
+    number_of_participants = forms.IntegerField(min_value=1)
+
+class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
+    participant_emails = EmailListField(label="Participant emails")
 
 class QuizForm(forms.Form):
     name_question = forms.CharField(max_length=64, label="What is your name?")

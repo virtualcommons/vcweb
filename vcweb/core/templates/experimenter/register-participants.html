@@ -1,0 +1,19 @@
+{% extends "experimenter/base.html" %}
+
+{% block title %}Register participants for {{ experiment }} {% endblock %}
+{% block head %}
+{{ block.super }}
+{% include "includes/jquery.forms.html" %}
+<script type='text/javascript'>
+    $(function() {
+
+    });
+</script>
+{% endblock %}
+{% block page %}
+<form id='register-participants-form' action='' method='post'>
+    <h3>Register participants</h3>
+    <p>Register participants for {{experiment}} below. <span style='padding: 3px;' class='ui-state-highlight'><b>There are currently {{experiment.participants.count}} registered participants.</b></span>
+    {% include "includes/form-as-div.html" %}
+</form>
+{% endblock page %}
