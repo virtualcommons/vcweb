@@ -44,10 +44,10 @@
         <div id='page'>
             {% if messages %}
             <h3>Notifications</h3>
-            <ul class="messages">
+            <ul id='messages' class="messages">
                 {% for message in messages %}
                 <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
-                <span class='ui-icon ui-icon-alert'></span>{{ message }}</li>
+                <span class='icon-left ui-icon ui-icon-alert'></span>{{ message }}</li>
                 {% endfor %}
             </ul>
             {% endif %}
