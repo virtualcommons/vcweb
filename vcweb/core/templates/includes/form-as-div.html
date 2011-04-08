@@ -5,7 +5,7 @@
 {% endif %}
 {{ field }}
 {% if field.errors %}
-<label class='error' for='id_{{ field.name }}' generated='true'>{{ field.errors|join:". " }}</label>
+<label class='error' for='id_{{ field.name }}' title='{{field.help_text}}'>{{ field.errors|join:". " }}</label>
 {% endif %}
 </div>
 {% endfor %}
