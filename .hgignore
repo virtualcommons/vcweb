@@ -8,3 +8,4 @@ tags
 .settings
 *.log
 .idea
+build

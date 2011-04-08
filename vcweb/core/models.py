@@ -38,12 +38,15 @@ class ExperimentMetadataManager(models.Manager):
     def get_by_natural_key(self, key):
         return self.get(namespace=key)
 
-"""
-ExperimentMetadata contains records for each type of supported and implement
-experiment.  A single app could add multiple experiment metadata records but
-they should be closely related.
-"""
 class ExperimentMetadata(models.Model):
+    """
+    An ExperimentMetadata record represents the *type* of a given implemented Experiment, e.g., **Forestry** or
+    **Irrigation**.  This shouldn't be confused with a **Forestry** or **Irrigation** Experiment instance, which
+    represents a concrete experiment run, with a specific configuration, experimenter, etc.  Each experiment app
+    should define and add a single ExperimentMetadata record for the experiment type that it represents.  You can
+    register an ExperimentMetadata object by creating a JSON/YAML/SQL representation of it in your app/fixtures
+    directory (e.g., irrigation/fixtures/irrigation.json) and then invoking ``python manage.py loaddata irrigation``.
+    """
     title = models.CharField(max_length=255)
     # the URL fragment that this experiment_metadata will occupy,
     namespace_regex = re.compile(r'^(?:[/]?[a-z0-9_]+\/?)+$')
@@ -80,11 +83,8 @@ class Institution(models.Model):
 
 class CommonsUser(models.Model):
     """
-    for docs on related_name see
-        http://docs.djangoproject.com/en/dev/topics/db/models/#be-careful-with-related-name
-    this related name makes user.experimenter and user.participant resolvable.
-    FIXME: should revisit to see if this is recommended practice.
-    (either one or the other)
+    Base class for both Participants and Experimenters.  The actual participant or experimenter can be resolved as
+    user.participant or user.experimenter due to the OneToOne with django.contrib.User.
     """
     user = models.OneToOneField(User, related_name='%(class)s', verbose_name=u'Django User', unique=True)
     failed_password_attempts = models.PositiveIntegerField(default=0)
@@ -123,6 +123,10 @@ class Experimenter(CommonsUser):
         ordering = ['user']
 
 class ExperimentConfiguration(models.Model):
+    """
+    The configuration for a given Experiment instance.  One ExperimentConfiguration can be applied to many Experiment
+    instances but can only be associated to a single ExperimentMetadata record.  
+    """
     experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='configurations')
     creator = models.ForeignKey(Experimenter, related_name='experiment_configurations')
     name = models.CharField(max_length=255)
@@ -165,9 +169,11 @@ class ExperimentManager(models.Manager):
             for experiment in es.all():
                 experiment.check_elapsed_time()
 
-# an actual instance of an experiment; represents a concrete
-# parameterization of this experiment.
 class Experiment(models.Model):
+    """
+    Experiment instances are a concrete parameterization of an ExperimentMetadata record, with associated
+    ExperimentConfiguration, Experimenter, etc.  In other words, they represent an actual experiment run.
+    """
     STATUS_CHOICES = (('INACTIVE', 'Not active'),
                       ('ACTIVE', 'Active, no round in progress'),
                       ('PAUSED', 'Paused'),
@@ -175,44 +181,51 @@ class Experiment(models.Model):
                       ('COMPLETED', 'Completed'))
     (INACTIVE, ACTIVE, PAUSED, ROUND_IN_PROGRESS, COMPLETED) = [ choice[0] for choice in STATUS_CHOICES ]
     authentication_code = models.CharField(max_length=32, default="vcweb.auth.code")
+    """
+    currently unused, but kept here in the event that we want to allow participants to authenticate with this
+    authentication_code either in lieu or in addition to their own user password.
+    """
     current_round_sequence_number = models.PositiveIntegerField(default=1)
+    """ Each round is assigned a sequential sequence number, ranging from 1 to N.  Used to identify which round the
+    experiment is currently running. """
     experimenter = models.ForeignKey(Experimenter, related_name='experiments')
+    """ the user running this experiment """
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
-    experiment_configuration = models.ForeignKey(ExperimentConfiguration,
-                                                 related_name='experiments')
+    """ the experiment metadata object that this experiment instance represents """
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='experiments')
+    """ the configuration parameters in use for this experiment run. """
     status = models.CharField(max_length=32, choices=STATUS_CHOICES,
                               default='INACTIVE')
+    """
+    the status of an experiment can be either INACTIVE, ACTIVE, PAUSED, ROUND_IN_PROGRESS, or COMPLETED
+    """
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     start_date_time = models.DateTimeField(null=True, blank=True)
     # how long this experiment should run in a date format
     # 1w2d = 1 week 2 days = 9d
     duration = models.CharField(max_length=32, null=True, blank=True)
-    """ how often the experiment_metadata server should tick. """
     tick_duration = models.CharField(max_length=32, null=True, blank=True)
+    """ how often the experiment_metadata server should tick. """
 
+    total_elapsed_time = models.PositiveIntegerField(default=0)
     """
     total elapsed time in seconds since this experiment_metadata was
     started, incremented by the heartbeat monitor.
     """
-    total_elapsed_time = models.PositiveIntegerField(default=0)
-    """ current round start time """
     current_round_start_time = models.DateTimeField(null=True, blank=True)
-    """ elapsed time in seconds for the current round. """
+    """ current round start time """
     current_round_elapsed_time = models.PositiveIntegerField(default=0)
+    """ elapsed time in seconds for the current round. """
+    is_experimenter_driven = models.BooleanField(default=True)
     """
     Experimenter driven experiments have checkpoints where the experimenter
     needs to explicitly signal the system to move to the next round or stage.
     """
-    is_experimenter_driven = models.BooleanField(default=True)
-    """ name of the AMQP exchange hosting this experiment """
     amqp_exchange_name = models.CharField(max_length=64, default="vcweb.default.exchange")
 
-    '''
-    short slug to use instead of pk
-    FIXME: still needs to be implemented
-    '''
     slug = models.SlugField(max_length=16, unique=True, null=True, blank=True)
+    ''' short slug to use instead of experiment pk, currently unimplemented '''
 
     objects = ExperimentManager()
 
@@ -1157,12 +1170,24 @@ class ChatMessageManager(models.Manager):
                     round_data=current_round_data)
 
 class ChatMessage(models.Model):
+    """
+    A chat message sent by a participant in a group to the rest of the members of the group or a target participant
+    if target_participant is set.
+    """
     participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='chat_messages')
+    """ the combination of participant and group that generated this chat message """
+
     message = models.CharField(max_length=512)
-    """ if set, this is a targeted message to the other participant in this group.  If null, this is a broadcast message to the entire group """
+    """ the chat message """
+
     target_participant = models.ForeignKey(ParticipantGroupRelationship, null=True, blank=True, related_name='targets')
+    """ if set, this is a targeted message to the other participant in this group.  If null, this is a broadcast message to the entire group """
+
     date_created = models.DateTimeField(auto_now_add=True)
+    """ the creation datetime of this chat message """
+
     round_data = models.ForeignKey(RoundData, related_name='chat_messages')
+    """ the round data associated with this chat message """
 
     objects = ChatMessageManager()
 

@@ -78,7 +78,7 @@ class EmailListField(forms.CharField):
 
 class RegisterParticipantsForm(forms.ModelForm):
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
-    experiment_passcode = forms.CharField(min_length=3, label="Experiment passcode", help_text='The password used to login to your experiment.')
+    experiment_passcode = forms.CharField(min_length=3, label="Experiment passcode", help_text='The password used to login to your experiment.', initial='test')
     institution_name = forms.CharField(min_length=3,label="Institution name",
             help_text='The name of the institution to be associated with these test participants')
     institution_url = forms.CharField(min_length=3,label='Institution URL',
