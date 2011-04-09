@@ -55,6 +55,10 @@ span.label {
     display:inline;
     font-size: 0.8em;
 }
+.submit input {
+    margin-left: 13em;
+}
+
 ul.messages {
     margin-left: 0;
     list-style: none;

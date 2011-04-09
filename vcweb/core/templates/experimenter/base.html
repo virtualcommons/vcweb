@@ -2,7 +2,13 @@
 {% block head %}
 {{ block.super}}
 <script type='text/javascript'>
-    var qtipOptions = {position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'dark', tip: 'bottomMiddle'} };
+    function getQtipOptions(style) {
+        if (! style) {
+            style = "dark";
+        }
+        return {position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: style, tip: 'bottomMiddle'} };
+    }
+    var qtipOptions = getQtipOptions();
     $(function() {
         $('[title]').qtip(qtipOptions);
     });

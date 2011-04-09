@@ -6,7 +6,16 @@
 {% include "includes/jquery.forms.html" %}
 <script type='text/javascript'>
     $(function() {
-
+            $('input:visible').each(function(i, val) {
+                var labelTitle = $(val).prev().attr("title");
+                $(val).qtip({ content: labelTitle, 
+                    position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, 
+                    style: { name: 'cream', tip: 'bottomLeft'},
+                    show: { when: { event: 'mouseover focus'} },
+                    hide: { when: { event: 'mouseout blur' } }
+                    }
+                );
+            });
     });
 </script>
 {% endblock %}
@@ -16,5 +25,8 @@
     <p>Please register participants for {{experiment}}. 
     <span style='padding: 3px;' class='ui-state-highlight'><b>There are currently {{experiment.participants.count}} registered participants.</b></span>
     {% include "includes/form-as-div.html" %}
+    <div class='submit'>
+        <input type='submit' value='Register' />
+    </div>
 </form>
 {% endblock page %}
