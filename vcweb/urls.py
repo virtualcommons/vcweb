@@ -3,6 +3,7 @@ from django.contrib import admin
 from vcweb import settings
 
 from django.views.generic.base import TemplateView
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from dajaxice.core import dajaxice_autodiscover
 # set up dajaxice URLs
@@ -34,10 +35,11 @@ urlpatterns = patterns('',
 )
 
 if settings.LOCAL_DEVELOPMENT:
+    '''
     urlpatterns += patterns('',
         (r'^static/(?P<path>.*)/$', 'django.views.static.serve',
          {'document_root': settings.STATIC_BASE_DIR, 'show_indexes': True}
-         ),
-
-        )
+         ),)
+    '''
+    urlpatterns += staticfiles_urlpatterns()
 

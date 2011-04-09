@@ -1,5 +1,5 @@
 # Django settings for vcweb project.
-import os.path
+from os import path
 import logging
 
 LOG_FILENAME = 'vcweb.log'
@@ -70,9 +70,9 @@ TEMPLATE_LOADERS = (
 
 TEMPLATE_CONTEXT_PROCESSORS = (
         'django.core.context_processors.request',
+        'django.core.context_processors.static',
         'django.contrib.auth.context_processors.auth',
         'django.contrib.messages.context_processors.messages',
-#        'django.core.context_processors.static',
         )
 
 MIDDLEWARE_CLASSES = (
@@ -102,7 +102,7 @@ INSTALLED_APPS = (
         'django.contrib.sites',
         'django.contrib.admin',
         'django.contrib.messages',
-#        'django.contrib.staticfiles',
+        'django.contrib.staticfiles',
         'vcweb.core',
         'vcweb.forestry',
         'djcelery',
@@ -138,7 +138,11 @@ DEFAULT_FROM_EMAIL = 'commons@asu.edu'
 AUTHENTICATION_BACKENDS = ("vcweb.core.auth.AuthenticationBackend", "django.contrib.auth.backends.ModelBackend",)
 
 # static base dir used in dev mode with a sanity check for windows paths
-STATIC_BASE_DIR = os.path.join(os.path.dirname(__file__), 'static').replace('\\', '/')
+STATIC_BASE_DIR = path.join(path.dirname(__file__), 'static').replace('\\', '/')
+STATIC_URL = "/static"
+STATICFILES_DIRS = (
+        path.join(path.abspath(path.dirname(__file__)), 'static').replace('\\', '/'),
+        )
 
 try:
     from settings_local import *
