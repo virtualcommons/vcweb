@@ -12,7 +12,6 @@ logging.basicConfig(
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
-LOCAL_DEVELOPMENT = True
 
 ADMINS = (
         ('Allen Lee', 'allen.lee@asu.edu')
@@ -42,21 +41,20 @@ SITE_ID = 1
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
-USE_I18N = True
+USE_I18N = False
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = ''
+#MEDIA_ROOT = ''
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = '/static/'
+#MEDIA_URL = '/static/'
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
-# trailing slash.
-# Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/media/'
+# trailing slash.  Default is '/static/admin/'
+# ADMIN_MEDIA_PREFIX = '/static/admin/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '2km^iq&48&6uv*x$ew@56d0#w9zqth@)_4tby(85+ac2wf4r-u'
@@ -110,7 +108,6 @@ INSTALLED_APPS = (
         'dajaxice',
         )
 
-STATIC_ROOT = "/var/www/vcweb/static"
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
 
@@ -137,18 +134,11 @@ DEFAULT_FROM_EMAIL = 'commons@asu.edu'
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = ("vcweb.core.auth.AuthenticationBackend", "django.contrib.auth.backends.ModelBackend",)
 
-# static base dir used in dev mode with a sanity check for windows paths
-STATIC_BASE_DIR = path.join(path.dirname(__file__), 'static').replace('\\', '/')
-STATIC_URL = "/static"
+STATIC_URL = '/static/'
+STATIC_ROOT = '/var/www/vcweb/static/'
 STATICFILES_DIRS = (
         path.join(path.abspath(path.dirname(__file__)), 'static').replace('\\', '/'),
         )
-
-try:
-    from settings_local import *
-except ImportError:
-    logging.debug("Couldn't load local settings")
-    pass
 
 import djcelery
 djcelery.setup_loader()
@@ -161,3 +151,10 @@ MESSAGE_TAGS = {
         messages.constants.WARNING: 'ui-state-error ui-corner-all',
         messages.constants.ERROR: 'ui-state-error ui-corner-all'
         }
+try:
+    from settings_local import *
+except ImportError:
+    logging.debug("Couldn't load local settings")
+    pass
+
+

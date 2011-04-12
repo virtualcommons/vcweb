@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns, url, include
 from django.contrib import admin
 from vcweb import settings
 
@@ -22,8 +22,9 @@ urlpatterns = patterns('',
     url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete', {'template_name':'password_reset_complete.html'}),
     url(r'^%s/' % settings.DAJAXICE_MEDIA_PREFIX, include('dajaxice.urls')),
 
-    # FIXME: figure out if we can dynamically include every custom app's
-    # urlconf
+    # FIXME: ideally this should be set up dynamically by iterating through each
+    # ExperimentMetadata instance and using their namespace (e.g., replace all
+    # instances of forestry with ExperimentMetadata.namespace)
     url(r'^forestry/', include('vcweb.forestry.urls', namespace='forestry', app_name='forestry')),
     url(r'^admin/', include(admin.site.urls)),
     # core catches everything else
@@ -34,12 +35,5 @@ urlpatterns = patterns('',
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
 )
 
-if settings.LOCAL_DEVELOPMENT:
-    '''
-    urlpatterns += patterns('',
-        (r'^static/(?P<path>.*)/$', 'django.views.static.serve',
-         {'document_root': settings.STATIC_BASE_DIR, 'show_indexes': True}
-         ),)
-    '''
+if settings.DEBUG:
     urlpatterns += staticfiles_urlpatterns()
-

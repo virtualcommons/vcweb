@@ -11,9 +11,9 @@ from django.views.generic import ListView, FormView, TemplateView
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin, DetailView
 from django.views.generic.edit import BaseUpdateView, UpdateView
-from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm, 
+from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
         RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm)
-from vcweb.core.models import (Participant, Experiment, Institution, ParticipantExperimentRelationship, 
+from vcweb.core.models import (Participant, Experiment, Institution, ParticipantExperimentRelationship,
         is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 import hashlib
@@ -199,7 +199,7 @@ class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, BaseUpda
         institution_name = form['institution_name']
         institution_url = form['institution_url']
         experiment.setup_test_participants(count=number_of_participants,
-                institution_name=institution_name, 
+                institution_name=institution_name,
                 institution_url=institution_url,
                 email_suffix=email_suffix,
                 test_password=experiment_passcode)
