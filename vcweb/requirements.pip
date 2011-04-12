@@ -7,6 +7,7 @@ django-celery
 kombu
 django-kombu
 django-dajaxice
+django-autocomplete
 #django-unittest-depth
 #redis
 #beanstalkc

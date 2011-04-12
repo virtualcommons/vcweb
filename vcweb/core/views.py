@@ -97,6 +97,7 @@ class RegistrationView(FormView, AnonymousMixin):
         participant = Participant.objects.create(user=user, institution=institution)
         logger.debug("Creating new participant: %s" % participant)
         auth.login(self.request, auth.authenticate(username=email, password=password))
+        return super(RegistrationView, self).form_valid(form)
 
     def get_success_url(self):
         return reverse('core:dashboard')
@@ -192,7 +193,7 @@ class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, BaseUpda
     form_class = RegisterSimpleParticipantsForm
     template_name = 'experimenter/register-simple-participants.html'
     def form_valid(self, form):
-        number_of_participants = form['number_of_participants']
+        number_of_participants = form.cleaned_data.get('number_of_participants')
         email_suffix = form['email_suffix']
         experiment = self.object
         experiment_passcode = form['experiment_passcode']
@@ -203,6 +204,10 @@ class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, BaseUpda
                 institution_url=institution_url,
                 email_suffix=email_suffix,
                 test_password=experiment_passcode)
+        return super(RegisterSimpleParticipantsView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('core:dashboard')
 
 # FIXME: uses GET (which should be idempotent) to modify database state which makes HTTP sadful
 class CloneExperimentView(ExperimenterSingleExperimentMixin, TemplateView):

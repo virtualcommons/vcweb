@@ -8,14 +8,15 @@
     $(function() {
             $('input:visible').each(function(i, val) {
                 var labelTitle = $(val).prev().attr("title");
-                $(val).qtip({ content: labelTitle, 
-                    position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}}, 
+                $(val).qtip({ content: labelTitle,
+                    position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}},
                     style: { name: 'cream', tip: 'bottomLeft'},
                     show: { when: { event: 'mouseover focus'} },
                     hide: { when: { event: 'mouseout blur' } }
                     }
                 );
             });
+            $('#id_experiment_pk').val({{experiment.pk}});
     });
 </script>
 {% endblock %}

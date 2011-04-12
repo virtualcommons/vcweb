@@ -6,7 +6,6 @@ TEMPLATE_DEBUG = DEBUG
 ADMINS = (
     ('Allen Lee', 'allen.lee@asu.edu'),
 )
-
 MANAGERS = ADMINS
 
 DATABASES = {
@@ -30,27 +29,10 @@ TIME_ZONE = 'America/Phoenix'
 LANGUAGE_CODE = 'en-us'
 
 SITE_ID = 1
-
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
 # XXX: no i18n for the time being
 USE_I18N = False
-
-# Absolute path to the directory that holds media.
-# Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = ''
-
-# URL that handles the media served from MEDIA_ROOT. Make sure to use a
-# trailing slash if there is a path component (optional in other cases).
-# Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = ''
-
-# URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
-# trailing slash.
-# this typically stored somewhere like
-# $VIRTUALENV/lib/python2.6/site-packages/django/contrib/admin/media
-# FIXME: this will get adjusted once we switch to django 1.3 and use the django.contrib.staticfiles app
-ADMIN_MEDIA_PREFIX = '/media/'
 
 # django celery integration
 # celery rabbitmq/amqp configuration

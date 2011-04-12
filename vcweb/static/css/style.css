@@ -56,7 +56,8 @@ span.label {
     font-size: 0.8em;
 }
 .submit input {
-    margin-left: 13em;
+    position: relative;
+    margin-left: 188px;
 }
 
 ul.messages {
