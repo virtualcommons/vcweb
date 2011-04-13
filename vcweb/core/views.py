@@ -165,6 +165,13 @@ class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin
             return experiment
         raise PermissionDenied("You do not have access to %s" % experiment)
 
+class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, TemplateView):
+    def get(self, request, **kwargs):
+        self.object = self.get_object()
+        self.process_experiment(self.object)
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
+
 class MonitorExperimentView(ExperimenterSingleExperimentMixin, DetailView):
     template_name = 'experimenter/monitor.html'
 
@@ -172,47 +179,48 @@ class RegisterEmailListView(ExperimenterSingleExperimentMixin, UpdateView):
     form_class = RegisterEmailListParticipantsForm
     template_name = 'experimenter/register-email-participants.html'
     def form_valid(self, form):
-        emails = form['participant_emails']
+        emails = form.cleaned_data.get('participant_emails')
         experiment = self.object
         logger.debug("registering participants %s for experiment: %s" % (emails, experiment))
-        experiment.authentication_code = form['experiment_passcode']
-        for email in emails:
-            try:
-                participant = Participant.objects.get(user__email=email)
-            except Participant.DoesNotExist:
-                user = User.objects.create_user(username=email, email=email,
-                        password=experiment.authentication_code)
-                participant = Participant.objects.create(user=user)
-
-            ParticipantExperimentRelationship.objects.create(participant=participant,
-                    experiment=experiment,
-                    created_by=experiment.experimenter.user)
+        experiment.authentication_code = form.cleaned_data.get('experiment_passcode')
+        institution_name = form.cleaned_data.get('institution_name')
+        institution_url = form.cleaned_data.get('institution_url')
+        institution = Institution.objects.get_or_create(name=institution_name, url=institution_url)
+        experiment.register_participants(emails=emails, institution=institution,
+                password=experiment.authentication_code)
 
 
-class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, BaseUpdateView, TemplateResponseMixin):
+class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, UpdateView):
     form_class = RegisterSimpleParticipantsForm
     template_name = 'experimenter/register-simple-participants.html'
     def form_valid(self, form):
         number_of_participants = form.cleaned_data.get('number_of_participants')
-        email_suffix = form['email_suffix']
+        email_suffix = form.cleaned_data.get('email_suffix')
         experiment = self.object
-        experiment_passcode = form['experiment_passcode']
-        institution_name = form['institution_name']
-        institution_url = form['institution_url']
+        experiment_passcode = form.cleaned_data.get('experiment_passcode')
+        institution_name = form.cleaned_data.get('institution_name')
+        institution_url = form.cleaned_data.get('institution_url')
         experiment.setup_test_participants(count=number_of_participants,
                 institution_name=institution_name,
                 institution_url=institution_url,
                 email_suffix=email_suffix,
-                test_password=experiment_passcode)
+                password=experiment_passcode)
         return super(RegisterSimpleParticipantsView, self).form_valid(form)
 
     def get_success_url(self):
         return reverse('core:dashboard')
 
 # FIXME: uses GET (which should be idempotent) to modify database state which makes HTTP sadful
-class CloneExperimentView(ExperimenterSingleExperimentMixin, TemplateView):
+class CloneExperimentView(ExperimenterSingleExperimentView):
     def process_experiment(self, experiment):
         return experiment.clone()
+    def render_to_response(self, context):
+        return redirect('core:dashboard')
+
+class ClearParticipantsExperimentView(ExperimenterSingleExperimentView):
+    def process_experiment(self, experiment):
+        experiment.participants.all().delete()
+        return experiment
     def render_to_response(self, context):
         return redirect('core:dashboard')
 
@@ -257,7 +265,7 @@ def download_data(request, pk=None, file_type='csv'):
                     writer.writerow([chat_message.group, chat_message.participant, chat_message.message,
                         chat_message.date_created, round_configuration])
         return response
-    except Experiment.DoesNotExist as e:
+    except Experiment.DoesNotExist:
         error_message = "Tried to download non-existent experiment, id %s" % pk
         logger.warning(error_message)
         messages.warning(request, error_message)

@@ -17,6 +17,7 @@
                 );
             });
             $('#id_experiment_pk').val({{experiment.pk}});
+            $('button').button();
     });
 </script>
 {% endblock %}
@@ -29,7 +30,7 @@
     <span style='padding: 3px;' class='ui-state-highlight'><b>There are currently {{experiment.participants.count}} registered participants.</b></span>
     {% include "includes/form-as-div.html" %}
     <div class='submit'>
-        <input type='submit' value='Register' />
+        <button type='submit'>Register</button>
     </div>
 </form>
 {% endblock page %}

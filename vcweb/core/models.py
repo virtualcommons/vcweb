@@ -367,24 +367,49 @@ class Experiment(models.Model):
         pdvs = self.current_round_data.participant_data_values
         return pdvs.filter(submitted=False).count() == 0
 
-    ''' hardcoded defaults for the slovakia pretest '''
-    def setup_test_participants(self, count=20, institution_name='Slovak Academy of Sciences', institution_url='http://www.sav.sk', email_suffix='sav.sk', test_password='test'):
+    def register_participants(self, users=None, emails=None, institution=None, password=None):
         if self.participants.count() > 0:
-            logger.debug("This experiment %s already has %d participants - aborting"
+            logger.warning("This experiment %s already has %d participants - aborting" % (self,
+                self.participants.count()))
+            return
+        if users is None:
+            users = []
+            if emails is None:
+                logger.warning("No users or emails supplied, aborting.")
+                return
+            if password is None:
+                password = self.authentication_code
+            for email in emails:
+                try:
+                    u = User.objects.get(username=email)
+                except User.DoesNotExist:
+                    u = User.objects.create_user(username=email, email=email, password=password)
+                users.append(u)
+        for user in users:
+            (p, created) = Participant.objects.get_or_create(user=user, institution=institution)
+            ParticipantExperimentRelationship.objects.create(participant=p, experiment=self,
+                    created_by=self.experimenter.user)
+
+
+    ''' hardcoded defaults for the slovakia pretest '''
+    def setup_test_participants(self, count=20, institution_name='Slovak Academy of Sciences', institution_url='http://www.sav.sk', email_suffix='sav.sk', password='test'):
+        if self.participants.count() > 0:
+            logger.warning("This experiment %s already has %d participants - aborting"
                     % (self, self.participants.count()))
             return
         (institution, created) = Institution.objects.get_or_create(name=institution_name, url=institution_url)
+        users = []
         for i in xrange(1, count+1):
             email = u's%d@%s' % (i, email_suffix)
             try:
-                u = User.objects.get(username=email)
+                user = User.objects.get(username=email)
             except User.DoesNotExist:
-                u = User.objects.create_user(username=email, email=email, password=test_password)
-                u.first_name = u'Student'
-                u.last_name = u"%d" % i
-                u.save()
-            (p, created) = Participant.objects.get_or_create(user=u, institution=institution)
-            ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=u)
+                user = User.objects.create_user(username=email, email=email, password=password)
+                user.first_name = u'Student'
+                user.last_name = u"%d" % i
+                user.save()
+            users.append(user)
+        self.register_participants(users=users, institution=institution)
 
     def log(self, log_message):
         if log_message:

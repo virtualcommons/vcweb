@@ -55,7 +55,7 @@ span.label {
     display:inline;
     font-size: 0.8em;
 }
-.submit input {
+.submit input,button {
     position: relative;
     margin-left: 188px;
 }
