@@ -37,6 +37,7 @@
             s.send(createSubmitEvent(harvestDecisionValue));
             return true;
         });
+        $('button').button();
     });
 </script>
 {% endblock %}
@@ -74,13 +75,14 @@ Participating in {{experiment.status_line}}
 {% if max_harvest_decision > 0 %}
 <form id='forestry-form' action='' method='post'>
     <div class='field'>
-        <br/>
-        <label for='harvest-decision-id'>How many trees will you harvest this round? <br/><span class='small-font bold'>Choose a number between 0 and {{ max_harvest_decision }}</span>:</label>
-        <input id='harvest-decision-id' type="text" name='harvest_decision' class='required digits two-digits' maxlength='1'/>
+        <label for='harvest-decision-id'>How many trees will you harvest this round? <br/>
+            <span>Enter a number between 0 and {{ max_harvest_decision }}</span>:
+        </label>
+        <input id='harvest-decision-id' style='width: 2em; text-align: right;' type="text" name='harvest_decision' class='required digits' maxlength='1'/>
     </div>
-    <div class='field'>
-        <input type='submit' value='Harvest' />
-    </div>
+    <button type='submit'>
+        Harvest
+    </button>
 </form>
 {% else %}
 <div class='alert ui-corner-all'>
