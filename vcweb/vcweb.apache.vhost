@@ -4,10 +4,7 @@ WSGISocketPrefix run/wsgi
     DocumentRoot /var/www/vcweb
     ServerName vcweb.asu.edu
 
-# FIXME: replace in django 1.3 with django.contrib.staticfiles 
-    Alias /static "/opt/webapps/virtualcommons/vcweb/static"
-    Alias /media "/var/www/vcweb.asu.edu/media"
-
+    Alias /static "/var/www/vcweb/static"
 
     WSGIDaemonProcess vcweb-production user=apache group=commons threads=25 python-path=/opt/virtualenvs/vcweb/lib/python2.6/site-packages
     WSGIProcessGroup vcweb-production
