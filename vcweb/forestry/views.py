@@ -5,7 +5,7 @@ from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from django.views.generic import View
-from django.views.generic.detail import SingleObjectTemplateResponseMixin, SingleObjectMixin
+from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from vcweb.core.decorators import participant_required, experimenter_required
 from vcweb.core.forms import QuizForm
 from vcweb.core.models import is_participant, is_experimenter, Experiment
@@ -216,9 +216,11 @@ def play(request, experiment, participant):
 # FIXME: UI crap logic in view to determine how wide to make the tree div
         number_of_trees_per_row = 20
         max_width = number_of_trees_per_row * 30
+        tree = trees['pine']
+        max_height = (resource_level.value / number_of_trees_per_row) * tree['height']
+
         number_of_resource_divs = range(0, resource_level.value / number_of_trees_per_row)
         resource_width = (resource_level.value % number_of_trees_per_row) * 30
-        tree = trees['pine']
         return render_to_response(experiment.current_round_template,
                 locals(),
                 context_instance=RequestContext(request))

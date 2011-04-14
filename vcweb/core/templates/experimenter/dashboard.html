@@ -50,7 +50,10 @@ FIXME: replace these links eventually.
             <li><a class='confirm-experiment-action' title='Creates a new copy of this experiment with the exact same configuration but no registered participants.' href='{{e.clone_url}}'><img src='/static/images/famfamfam/page_copy.png' alt='Clone experiment'/> clone</a></li>
             {% if e.participants.count == 0  %}
             <li>
-            <a title='Register participants' href='{{e.controller_url}}/register-simple'><img src='/static/images/famfamfam/group_add.png' alt='register'/> register participants</a>
+            <a title='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'><img src='/static/images/famfamfam/group_add.png' alt='register'/> register participants by email</a>
+            </li>
+            <li>
+            <a title='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.' href='{{e.controller_url}}/register-simple'><img src='/static/images/famfamfam/group_add.png' alt='register'/> register example participants</a>
             </li>
             {% else %}
             <li><a title='clear all participants' href='{{e.controller_url}}/clear-participants' class='confirm-experiment-action'><img src='/static/images/famfamfam/group_delete.png' alt=''/> clear all participants</a></li>

@@ -6,7 +6,7 @@
 {% include "includes/jquery.forms.html" %}
 <script type='text/javascript'>
     $(function() {
-            $('input:visible').each(function(i, val) {
+            $('input:visible, textarea:visible').each(function(i, val) {
                 var labelTitle = $(val).prev().attr("title");
                 $(val).qtip({ content: labelTitle,
                     position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}},

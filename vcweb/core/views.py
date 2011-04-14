@@ -10,18 +10,17 @@ from django.utils.decorators import method_decorator
 from django.views.generic import ListView, FormView, TemplateView
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin, DetailView
-from django.views.generic.edit import BaseUpdateView, UpdateView
+from django.views.generic.edit import UpdateView
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
         RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm)
-from vcweb.core.models import (Participant, Experiment, Institution, ParticipantExperimentRelationship,
-        is_participant, is_experimenter)
+from vcweb.core.models import (Participant, Experiment, Institution, is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 import hashlib
 import base64
 from datetime import datetime
-import logging
 from vcweb.core import unicodecsv
 import itertools
+import logging
 logger = logging.getLogger(__name__)
 
 """ account registration / login / logout / profile views """
@@ -183,10 +182,7 @@ class RegisterEmailListView(ExperimenterSingleExperimentMixin, UpdateView):
         experiment = self.object
         logger.debug("registering participants %s for experiment: %s" % (emails, experiment))
         experiment.authentication_code = form.cleaned_data.get('experiment_passcode')
-        institution_name = form.cleaned_data.get('institution_name')
-        institution_url = form.cleaned_data.get('institution_url')
-        institution = Institution.objects.get_or_create(name=institution_name, url=institution_url)
-        experiment.register_participants(emails=emails, institution=institution,
+        experiment.register_participants(emails=emails, institution=self.institution,
                 password=experiment.authentication_code)
 
 
@@ -198,11 +194,8 @@ class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, UpdateVi
         email_suffix = form.cleaned_data.get('email_suffix')
         experiment = self.object
         experiment_passcode = form.cleaned_data.get('experiment_passcode')
-        institution_name = form.cleaned_data.get('institution_name')
-        institution_url = form.cleaned_data.get('institution_url')
         experiment.setup_test_participants(count=number_of_participants,
-                institution_name=institution_name,
-                institution_url=institution_url,
+                institution=self.institution,
                 email_suffix=email_suffix,
                 password=experiment_passcode)
         return super(RegisterSimpleParticipantsView, self).form_valid(form)

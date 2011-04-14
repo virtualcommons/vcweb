@@ -392,12 +392,11 @@ class Experiment(models.Model):
 
 
     ''' hardcoded defaults for the slovakia pretest '''
-    def setup_test_participants(self, count=20, institution_name='Slovak Academy of Sciences', institution_url='http://www.sav.sk', email_suffix='sav.sk', password='test'):
+    def setup_test_participants(self, count=20, institution=None, email_suffix='sav.sk', password='test'):
         if self.participants.count() > 0:
             logger.warning("This experiment %s already has %d participants - aborting"
                     % (self, self.participants.count()))
             return
-        (institution, created) = Institution.objects.get_or_create(name=institution_name, url=institution_url)
         users = []
         for i in xrange(1, count+1):
             email = u's%d@%s' % (i, email_suffix)

@@ -4,11 +4,15 @@ from django.contrib.auth.models import User
 from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from vcweb.core.models import Participant, Experimenter
+from vcweb.core.models import (Participant, Experimenter, Institution)
 
 from django.core.validators import email_re
 
 import re
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 REQUIRED_EMAIL_ATTRIBUTES = { 'class' : 'required email' }
 REQUIRED_ATTRIBUTES = { 'class' : 'required' }
@@ -78,11 +82,26 @@ class EmailListField(forms.CharField):
 
 class RegisterParticipantsForm(forms.ModelForm):
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
-    experiment_passcode = forms.CharField(min_length=3, label="Experiment passcode", help_text='The password used to login to your experiment.')
-    institution_name = forms.CharField(min_length=3,label="Institution name",
+    experiment_passcode = forms.CharField(min_length=3, label="Experiment passcode", help_text='The password used to login to your experiment.', initial='test')
+    institution_name = forms.CharField(min_length=3, label="Institution name",
+            required=False, initial='Arizona State University',
             help_text='The name of the institution to be associated with these test participants')
-    institution_url = forms.URLField(min_length=3,label='Institution URL',
-            verify_exists=True, required=False, help_text='A URL, if applicable, for the institution (e.g., http://www.asu.edu)')
+    institution_url = forms.URLField(min_length=3, label='Institution URL',
+            required=False, initial='http://www.asu.edu',
+            verify_exists=True, help_text='A URL, if applicable, for the institution (e.g., http://www.asu.edu)')
+
+    def clean(self):
+        institution_name = self.cleaned_data.get('institution_name')
+        institution_url = self.cleaned_data.get('institution_url')
+        if institution_name is None and institution_url is None:
+            self.institution = None
+        else:
+            logger.debug("get or create institution with name [%s] and url [%s]" % (institution_name,
+                institution_url))
+            (institution, created) = Institution.objects.get_or_create(name=institution_name, url=institution_url)
+            self.institution = institution
+        super(RegisterParticipantsForm, self).clean()
+
 
 class RegisterSimpleParticipantsForm(RegisterParticipantsForm):
     email_suffix = forms.CharField(min_length=3, help_text='An email suffix without the "@" symbol.  Generated participants will have usernames of the format s1..sn@email_suffix.  For example, if you register 20 participants with an email suffix of example.edu, the system will generate 20 participants with usernames ranging from s1@example.edu, s2@example.edu, s3@example.edu, ... s20@example.edu.')
