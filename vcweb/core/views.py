@@ -74,8 +74,11 @@ class LogoutView(TemplateView):
             commons_user = user.participant
         elif is_experimenter(user):
             commons_user = user.experimenter
-        commons_user.authentication_token = None
-        commons_user.save()
+        else:
+            logger.error("Invalid user: %s" % user)
+        if commons_user is not None:
+            commons_user.authentication_token = None
+            commons_user.save()
         auth.logout(request)
         return redirect('home')
 

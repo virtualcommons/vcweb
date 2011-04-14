@@ -61,7 +61,7 @@ def manage_experiment(request, experiment_id=None):
         logger.warning("No experiment available with id [%s]" % experiment_id)
         return redirect('core:experimenter_index')
 
-class HarvestRoundData(object):
+class ParticipantRoundData(object):
     pass
 
 def generate_participant_history(participant_group_relationship):
@@ -69,7 +69,7 @@ def generate_participant_history(participant_group_relationship):
     experiment = group.experiment
     participant_history = []
     for round_data in experiment.playable_round_data:
-        data = HarvestRoundData()
+        data = ParticipantRoundData()
         data.round_configuration = round_data.round_configuration
         data.individual_harvest = get_harvest_decision(participant_group_relationship, round_data=round_data)
         data.group_harvest = get_group_harvest(group, round_data=round_data)
