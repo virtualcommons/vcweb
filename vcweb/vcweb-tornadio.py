@@ -36,19 +36,12 @@ class Message(object):
 Manages socket.io connections to tornadio.
 '''
 class ConnectionManager:
-    # FIXME: use (participant, experiment) tuples instead of
-    # ParticipantGroupRelationship?  The problem is that when the experiment is
-    # first started but groups haven't been allocated, socket.io won't work.  Using
-    # the ParticipantExperiment tuple would allow us to broadcast messages when we
-    # want to from the experimenter..
-    # (participant.pk, experiment.pk) -> connection
+    # bidi maps for (participant.pk, experiment.pk) -> connection
     connection_to_participant = {}
     participant_to_connection = {}
-# experimenter maps
+    # bidi maps for (experimenter.pk, experiment.pk) -> connection
     connection_to_experimenter = {}
-# (experimenter.pk, experiment.pk) -> connection
     experimenter_to_connection = {}
-
     refresh_json = simplejson.dumps({ 'message_type': 'refresh' })
 
     def add_experimenter(self, connection, incoming_experimenter_pk, incoming_experiment_pk):
@@ -104,9 +97,8 @@ class ConnectionManager:
             participant_tuple = self.connection_to_participant[connection]
             del self.participant_to_connection[participant_tuple]
             del self.connection_to_participant[connection]
-        except KeyError, k:
+        except KeyError as k:
             logger.warning("caught key error %s while trying to remove connection %s" % (connection, k) )
-            pass
 
     '''
     Generator function that yields (participant_group_relationship_id, connection) tuples
@@ -120,7 +112,6 @@ class ConnectionManager:
             participant_tuple = (participant.pk, experiment.pk)
             if participant_tuple in self.participant_to_connection:
                 yield (participant_group_relationship.pk, self.participant_to_connection[participant_tuple])
-            pass
 
     def all_participants(self, connection, experiment):
         if connection in self.connection_to_experimenter:
@@ -169,6 +160,7 @@ class ConnectionManager:
         experimenter = experiment.experimenter
         self.send_to_experimenter((experimenter.pk, experiment.pk), json)
 
+# replace with namedtuple
 class Struct:
     def __init__(self, **attributes):
         self.__dict__.update(attributes)
@@ -176,10 +168,9 @@ class Struct:
 def to_event(message):
     return Struct(**message)
 
-# global connection manager for experimenters + participants
+# connection manager for experimenters + participants
 connection_manager = ConnectionManager()
-
-# FIXME: move to core tornado module?
+# FIXME: move to a core tornado module?
 class ExperimenterHandler(SocketConnection):
     # FIXME: add authentication
     def on_open(self, *args, **kwargs):
@@ -241,23 +232,21 @@ class ParticipantHandler(SocketConnection):
                             'message': "Participant %s connected to experiment." % participant_experiment_relationship,
                             'message_type': 'info',
                             }))
-        except KeyError, e:
+        except KeyError as e:
             logger.debug("no participant group relationship id %s" % e)
-        except ParticipantExperimentRelationship.DoesNotExist, e:
+        except ParticipantExperimentRelationship.DoesNotExist as e:
             logger.debug("no participant experiment relationship with id %s (%s)" % (relationship_id, e))
 
     def on_message(self, message, *args, **kwargs):
         logger.debug("received message %s from handler %s" % (message, self))
         event = to_event(message)
-        # FIXME: on_message / connect should add them to the list of participants
+        # could handle connection here or in on_open, revisit
         if 'connect' in event.message_type:
             return
         elif event.message_type == 'submit':
-            # FIXME: need to set this up so that this forwards to the appropriate
-            # experiment handler...
             (participant_pk, experiment_pk) = connection_manager.get_participant_experiment_tuple(self)
             experiment = Experiment.objects.get(pk=experiment_pk)
-# sanity check, make sure this is a data round.
+            # sanity check, make sure this is a data round.
             if experiment.is_data_round_in_progress:
                 experimenter_tuple = (experiment.experimenter.pk, experiment.pk)
                 event.participant_pk = participant_pk
@@ -273,7 +262,7 @@ class ParticipantHandler(SocketConnection):
                 if experiment.all_participants_have_submitted:
                     connection_manager.send_to_experimenter(
                             experimenter_tuple,
-                            info_json('All participants have submitted a harvest decision.'))
+                            info_json('All participants have submitted a decision.'))
             else:
                 logger.debug("No data round in progress, received late submit event: %s" % event)
 
