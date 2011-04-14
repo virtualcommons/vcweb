@@ -545,6 +545,9 @@ class Experiment(models.Model):
     def __unicode__(self):
         return u"%s #%s | %s" % (self.experiment_metadata.title, self.pk, self.experimenter)
 
+    class Meta:
+        ordering = ['date_created', 'status']
+
 class RoundConfiguration(models.Model):
 # maps round type name to (description, default_template_name)
     ROUND_TYPES_DICT = dict(REGULAR=('Regular interactive experiment round', 'participate.html'),

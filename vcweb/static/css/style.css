@@ -55,6 +55,9 @@ span.label {
     display:inline;
     font-size: 0.8em;
 }
+span.ui-button-text {
+    font-size: 0.9em;
+}
 button.submit {
     position: relative;
     margin-left: 188px;
