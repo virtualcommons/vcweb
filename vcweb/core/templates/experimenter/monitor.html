@@ -24,7 +24,7 @@
                 confirmable.fastConfirm({
                     questionText: description + " - continue?",
                     onProceed: function(trigger) {
-                        Dajaxice.vcweb.core.experiment_controller(update, {'experiment_id': {{experiment_id}}, 'action':action});
+                        Dajaxice.vcweb.core.experiment_controller(update, {'pk': {{experiment.pk}}, 'action':action});
                         $('#statusDiv').hide('fast');
                         $('#experimentData').hide('fast');
                         $('#statusSpinner').show('fast');

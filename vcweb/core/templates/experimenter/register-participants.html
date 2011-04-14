@@ -24,13 +24,12 @@
 {% block page %}
 <form id='register-participants-form' action='' method='post'>
     <h3>Register participants</h3>
-    <p>Please register participants for <span style='padding:1px;' class='info'>{{experiment}}</span>.
+    <p>Registering participants for <span style='padding:1px;' class='info'>{{experiment}}</span>.
     </p>
     <p>
     <span style='padding: 3px;' class='ui-state-highlight'><b>There are currently {{experiment.participants.count}} registered participants.</b></span>
     {% include "includes/form-as-div.html" %}
-    <div class='submit'>
-        <button type='submit'>Register</button>
-    </div>
+    <button class='submit' type='submit'>Register</button>
+    <button><a href='/dashboard'>Cancel</a></button>
 </form>
 {% endblock page %}

@@ -187,7 +187,7 @@ class ExperimenterHandler(SocketConnection):
             extra = kwargs['extra']
             logger.debug('%s received extra: %s' % (self, extra))
             experimenter_id = extra
-        except Experimenter.DoesNotExist as e:
+        except Experimenter.DoesNotExist:
             logger.warning("Tried to establish connection but there isn't any experimenter with id %s" % experimenter_id)
 
     def on_message(self, message):

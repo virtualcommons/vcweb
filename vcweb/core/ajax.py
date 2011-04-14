@@ -81,7 +81,7 @@ def _get_experiment(request, pk):
     raise Experiment.DoesNotExist("Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter, pk))
 
 def _render_experiment_monitor_block(block, experiment, request):
-    return render_block_to_string('monitor.html', block, { 'experiment': experiment },
+    return render_block_to_string('experimenter/monitor.html', block, { 'experiment': experiment },
             context_instance=RequestContext(request))
 
 @experimenter_required

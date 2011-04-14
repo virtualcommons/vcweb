@@ -45,16 +45,9 @@ Participating in {{experiment.status_line}}
 {% endblock %}
 {% block content %}
 <h3>Forestry round number {{ experiment.current_round.round_number }}</h3>
-<div style="background: url('/static/images/forestry/{{tree.name}}.png') repeat-x repeat-y; width:{{max_width}}px; height: {{max_height}}px;">
+<div style="background: url('/static/images/forestry/{{tree.name}}.png'); width:{{max_width}}px; height: {{max_height}}px;">
     &nbsp;
 </div>
-{% comment %}
-{% for i in number_of_resource_divs %}
-<div style="background: url('/static/images/forestry/{{tree.name}}.png') repeat-x; width:{{max_width}}px; height: {{tree.height}}px;">
-    &nbsp;
-</div>
-{% endfor %}
-{% endcomment %}
 {% if resource_width > 0 %}
 <div style="background: url('/static/images/forestry/pine-tree.png') repeat-x; width:{{resource_width}}px; height: {{tree.height}}px;">
     &nbsp;

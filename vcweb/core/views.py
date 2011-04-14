@@ -182,7 +182,7 @@ class RegisterEmailListView(ExperimenterSingleExperimentMixin, UpdateView):
         experiment = self.object
         logger.debug("registering participants %s for experiment: %s" % (emails, experiment))
         experiment.authentication_code = form.cleaned_data.get('experiment_passcode')
-        experiment.register_participants(emails=emails, institution=self.institution,
+        experiment.register_participants(emails=emails, institution=form.institution,
                 password=experiment.authentication_code)
 
 
@@ -195,7 +195,7 @@ class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, UpdateVi
         experiment = self.object
         experiment_passcode = form.cleaned_data.get('experiment_passcode')
         experiment.setup_test_participants(count=number_of_participants,
-                institution=self.institution,
+                institution=form.institution,
                 email_suffix=email_suffix,
                 password=experiment_passcode)
         return super(RegisterSimpleParticipantsView, self).form_valid(form)

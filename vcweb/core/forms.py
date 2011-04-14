@@ -87,7 +87,7 @@ class RegisterParticipantsForm(forms.ModelForm):
             required=False, initial='Arizona State University',
             help_text='The name of the institution to be associated with these test participants')
     institution_url = forms.URLField(min_length=3, label='Institution URL',
-            required=False, initial='http://www.asu.edu',
+            required=False, initial='http://www.asu.edu/',
             verify_exists=True, help_text='A URL, if applicable, for the institution (e.g., http://www.asu.edu)')
 
     def clean(self):
@@ -100,7 +100,7 @@ class RegisterParticipantsForm(forms.ModelForm):
                 institution_url))
             (institution, created) = Institution.objects.get_or_create(name=institution_name, url=institution_url)
             self.institution = institution
-        super(RegisterParticipantsForm, self).clean()
+        return self.cleaned_data
 
 
 class RegisterSimpleParticipantsForm(RegisterParticipantsForm):

@@ -10,6 +10,7 @@ $(function() {
     $(':input').addClass('required');
     $('#loginForm').validate();
     $('#id_email').focus();
+    $('button').button();
 });
 </script>
 {% endblock head %}
@@ -23,9 +24,7 @@ $(function() {
     </p>
 
     {% include "includes/form-as-div.html" %}
-    <div class='submit'>
-        <input type='submit' value='Login' />
-    </div>
+    <button type='submit' class='submit'>Login</button>
 </form>
 
 {% endblock page %}

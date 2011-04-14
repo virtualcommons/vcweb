@@ -7,7 +7,7 @@ function createGotoEvent(url) {
     if (! url) {
         url = "participate";
     }
-    return createMessageEvent(url);
+    return createMessageEvent(url, "goto");
 }
 function createConnectionEvent() {
    return createMessageEvent("Initial connection", "connect");
