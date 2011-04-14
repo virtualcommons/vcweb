@@ -1,5 +1,5 @@
 body {
-    font-family: /*"Lucida Grande", "Trebuchet MS",*/ Arial, Helvetica, Tahoma, Verdana, sans-serif;
+    font-family: /*"Lucida Grande", "Trebuchet MS",*/ Arial, Verdana, Tahoma, Helvetica, sans-serif;
     font-size: 1.1em;
 }
 a.external {
@@ -41,7 +41,7 @@ label.error {
 span.label {
     float: left;
     text-align: right;
-    width: 13em;
+    width: 15em;
     font-weight: bolder;
     margin-top: 0.37em;
     margin-right: 0.37em;
@@ -52,8 +52,7 @@ span.ui-button-text {
     font-size: 0.9em;
 }
 button.submit {
-    position: relative;
-    margin-left: 188px;
+    margin-left: 215px;
 }
 
 ul.messages {

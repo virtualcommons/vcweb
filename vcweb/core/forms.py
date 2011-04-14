@@ -104,8 +104,9 @@ class RegisterParticipantsForm(forms.ModelForm):
 
 
 class RegisterSimpleParticipantsForm(RegisterParticipantsForm):
-    email_suffix = forms.CharField(min_length=3, help_text='An email suffix without the "@" symbol.  Generated participants will have usernames of the format s1..sn@email_suffix.  For example, if you register 20 participants with an email suffix of example.edu, the system will generate 20 participants with usernames ranging from s1@example.edu, s2@example.edu, s3@example.edu, ... s20@example.edu.')
-    number_of_participants = forms.IntegerField(min_value=1, help_text='The number of participants to generate.')
+    email_suffix = forms.CharField(min_length=3, initial='asu.edu', 
+            help_text='An email suffix without the "@" symbol.  Generated participants will have usernames of the format s1..sn@email_suffix.  For example, if you register 20 participants with an email suffix of example.edu, the system will generate 20 participants with usernames ranging from s1@example.edu, s2@example.edu, s3@example.edu, ... s20@example.edu.')
+    number_of_participants = forms.IntegerField(min_value=1, help_text='The number of participants to register with this experiment.')
 
 class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
     participant_emails = EmailListField(label="Participant emails", help_text='A comma or newline delimited list of emails to register as participants for this experiment.')
