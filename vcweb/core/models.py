@@ -386,7 +386,10 @@ class Experiment(models.Model):
                     u = User.objects.create_user(username=email, email=email, password=password)
                 users.append(u)
         for user in users:
-            (p, created) = Participant.objects.get_or_create(user=user, institution=institution)
+            (p, created) = Participant.objects.get_or_create(user=user)
+            # FIXME: instead of asking for the email suffix, perhaps we just append the institution URL to keep it simpler?
+            p.institution = institution
+            p.save()
             ParticipantExperimentRelationship.objects.create(participant=p, experiment=self,
                     created_by=self.experimenter.user)
 

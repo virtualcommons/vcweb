@@ -8,7 +8,7 @@ URLs defined by the core vcweb app.
 urlpatterns = patterns('vcweb.core.views',
     url(r'^dashboard/?$', login_required(Dashboard.as_view()), name='dashboard'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
-    url(r'^accounts/logout/$', LogoutView.as_view(), name='logout'),
+    url(r'^accounts/logout/$', login_required(LogoutView.as_view()), name='logout'),
     url(r'^accounts/register/$', RegistrationView.as_view(), name='register'),
     url(r'^accounts/profile/$', 'account_profile', name='profile'),
     url(r'^participate/(?P<pk>\d+)/instructions', 'instructions', name='instructions'),
