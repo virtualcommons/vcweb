@@ -16,6 +16,24 @@ $(document).ready(function() {
 			equalTo: "Please make sure your passwords match."
 		}
 	});
+        $('[title]').qtip({
+                position: { corner: {target: 'topRight', tooltip: 'bottomMiddle'}},
+                style: { name: 'cream', tip: 'bottomMiddle'},
+            });
+
+        $('input:visible, textarea:visible').each(function(i, val) {
+            var labelTitle = $(val).prev().attr("title");
+            if (! labelTitle) {
+                return;
+            }
+            $(val).qtip({ content: labelTitle,
+                position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}},
+                style: { name: 'cream', tip: 'bottomLeft'},
+                show: { when: { event: 'mouseover focus'} },
+                hide: { when: { event: 'mouseout blur' } }
+            });
+        });
+        $('button').button();
 });
 </script>
 
@@ -30,50 +48,11 @@ $(document).ready(function() {
 <p>
 Returning users can <a href='{% url core:login %}'>login here</a> or <a href='{% url password-reset %}'>retrieve your password</a>.
 </p>
-<div class='field'>
-<span class='label'><label for="id_first_name">First name</label>:</span>
 
-<input id="id_first_name" type="text" class="required" name="first_name" />
+{% include "includes/form-as-div.html" %}
 
-</div>
-
-<div class='field'>
-<span class='label'><label for="id_last_name">Last name</label>:</span>
-<input id="id_last_name" type="text" class="required" name="last_name" />
-</div>
-
-
-<div class='field'>
-<span class='label'><label for="id_email">Email</label>:</span>
-<input id="id_email" type="text" class="required email" name="email" />
-{% if form.email.errors %}
-<label class='error' for='id_email' generated='true'>{{ form.email.errors|join:". " }}</label>
-{% endif %}
-</div>
-
-<div class='field'>
-<span class='label'><label for="id_password">Password</label>:</span>
-<input id="id_password" type="password" class="required " name="password" />
-{% if form.password.errors %}
-<label class='error' for='id_password' generated='true'>{{ form.password.errors|join:". " }}</label>
-{% endif %}
-</div>
-
-<div class='field'>
-<span class='label'><label for="id_confirm_password">Confirm password</label>:</span>
-<input id="id_confirm_password" type="password" class="required" name="confirm_password" />
-{% if form.confirm_password.errors %}
-<label class='error' for='id_confirm_password' generated='true'>{{ form.confirm_password.errors|join:". " }}</label>
-{% endif %}
-</div>
-
-<div class='field'>
-<span class='label'><label for="id_institution">Institution</label>:</span>
-<input id="id_institution" type="text" class="required" name="institution" />
-</div>
-
-<div class='submit'>
-<input type='submit' value='Register' />
+<div>
+    <button class='submit'>Register</button>
 </div>
 
 </form>

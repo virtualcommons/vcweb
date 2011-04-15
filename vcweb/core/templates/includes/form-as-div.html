@@ -1,7 +1,7 @@
 {% for field in form %}
 <div class='field'>
 {% if not field.is_hidden %}
-<span class='label' title='{{field.help_text}}'>{{ field.label_tag }}:</span>
+<span class='label' {% if field.help_text %} title='{{field.help_text}}'{% endif %}>{{ field.label_tag }}:</span>
 {% endif %}
 {{ field }}
 {% if field.errors %}

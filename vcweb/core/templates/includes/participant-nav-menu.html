@@ -13,7 +13,7 @@
       {% if "participate" in request.path or "wait" in request.path %}
       <li class='{% active_re request "participate" %} {% active_re request "wait" %}'><a href='#'>Participate</a></li>
       {% else %}
-      <li class='{% active request profile %}'><a href='{{ profile }}'>Account</a></li>
+      <li class='{% active request profile %}'><a href='{{ profile }}'>Profile</a></li>
       {% endif %}
       <li><a href='{{ logout }}'>Logout</a></li>
    </ul>

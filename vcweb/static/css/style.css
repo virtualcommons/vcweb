@@ -100,7 +100,7 @@ li.warning {
     background-repeat: no-repeat;
     margin: 5px 0px;
     padding: 15px 10px 15px 40px;
-    background-position: 3px center;
+    background-position: 3px;
 }
 .errorIcon, .warningIcon, .alertIcon {
     background-image:  url('/static/images/warning.png')

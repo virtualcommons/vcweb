@@ -18,12 +18,13 @@ REQUIRED_EMAIL_ATTRIBUTES = { 'class' : 'required email' }
 REQUIRED_ATTRIBUTES = { 'class' : 'required' }
 
 class RegistrationForm(forms.Form):
-    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
-    password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
-    confirm_password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    institution = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text='Please enter a valid email.  We will never share your email in any way shape or form.')
+    password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
+    confirm_password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
+    institution = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES), help_text='The primary institution, if any, you are affiliated with.')
+    experimenter = forms.BooleanField(help_text='Check this box if you would like to request experimenter access.')
 
     def clean_email(self):
         email = self.cleaned_data['email'].lower()
