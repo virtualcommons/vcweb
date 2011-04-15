@@ -9,6 +9,9 @@
             console.error("dajaxice error: " + json);
         }
         else {
+            if (json.should_transition) {
+                getCachedSocket().send(createGotoEvent(json.transition_url));
+            }
             $('#statusDiv').html(json.status);
             $('#experimentData').accordion("destroy");
             $('#experimentData').html(json.experimentData);
@@ -116,10 +119,12 @@
             <span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/arrow_refresh.png);'></span>
             refresh all participants</span>
         </li>
+        {% comment %}
         <li><span id='gotoUrl' title='Moves all connected participants from waiting page to active page.' class='clickable' >
             <span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/arrow_right.png);'></span>
             transition all participants to next round</span>
         </li>
+        {% endcomment %}
         <li>
         <a href='download/csv'>
             <span class='vcweb-icon ui-icon icon-left' style='margin: 8px 0.15em 0px 0px; background:url(/static/images/download-icon.png);'></span>

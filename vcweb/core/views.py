@@ -13,7 +13,7 @@ from django.views.generic.detail import SingleObjectMixin, DetailView
 from django.views.generic.edit import UpdateView
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
         RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm)
-from vcweb.core.models import (Participant, Experiment, Institution, is_participant, is_experimenter)
+from vcweb.core.models import (Participant, Experimenter, Experiment, Institution, is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 import hashlib
 import base64
@@ -51,6 +51,20 @@ class Dashboard(ListView, TemplateResponseMixin):
                 logger.debug("experiment_dict %s" % experiment_dict)
             return experiment_dict
 
+def set_authentication_token(user, authentication_token=None):
+    logger.debug("Setting auth token %s on user %s" % (authentication_token, user))
+    commons_user = None
+    if is_participant(user):
+        commons_user = user.participant
+    elif is_experimenter(user):
+        commons_user = user.experimenter
+    else:
+        logger.error("Invalid user: %s" % user)
+    if commons_user is not None:
+        commons_user.authentication_token = authentication_token
+        commons_user.save()
+
+
 class LoginView(FormView, AnonymousMixin):
     form_class = LoginForm
     template_name = 'registration/login.html'
@@ -58,9 +72,8 @@ class LoginView(FormView, AnonymousMixin):
         request = self.request
         user = form.user_cache
         auth.login(request, user)
-        sha1 = hashlib.sha1()
-        sha1.update("%s%i%s" % (user.email, user.pk, datetime.now()))
-        request.session['authentication_token'] = base64.urlsafe_b64encode(sha1.digest())
+        logger.debug("session is %s" % request.session)
+        set_authentication_token(user, request.session.session_key)
         return super(LoginView, self).form_valid(form)
     def get_success_url(self):
         return_url = self.request.GET.get('next')
@@ -69,16 +82,7 @@ class LoginView(FormView, AnonymousMixin):
 class LogoutView(TemplateView):
     def get(self, request, *args, **kwargs):
         user = request.user
-        commons_user = None
-        if is_participant(user):
-            commons_user = user.participant
-        elif is_experimenter(user):
-            commons_user = user.experimenter
-        else:
-            logger.error("Invalid user: %s" % user)
-        if commons_user is not None:
-            commons_user.authentication_token = None
-            commons_user.save()
+        set_authentication_token(user)
         auth.logout(request)
         return redirect('home')
 
@@ -91,13 +95,21 @@ class RegistrationView(FormView, AnonymousMixin):
         first_name = form.cleaned_data['first_name']
         last_name = form.cleaned_data['last_name']
         institution_string = form.cleaned_data['institution']
+        experimenter_requested = form.cleaned_data['experimenter']
         institution, created = Institution.objects.get_or_create(name=institution_string)
         user = User.objects.create_user(email, email, password)
         user.first_name = first_name
         user.last_name = last_name
         user.save()
-        participant = Participant.objects.create(user=user, institution=institution)
-        logger.debug("Creating new participant: %s" % participant)
+        if experimenter_requested:
+            experimenter = Experimenter.objects.create(user=user,
+                    institution=institution)
+            logger.debug("creating new experimenter: %s, adding default forestry experiment" % experimenter)
+            experiment = Experiment.objects.get(pk=2)
+            experiment.clone(experimenter=experimenter)
+        else:
+            participant = Participant.objects.create(user=user, institution=institution)
+            logger.debug("Creating new participant: %s" % participant)
         auth.login(self.request, auth.authenticate(username=email, password=password))
         return super(RegistrationView, self).form_valid(form)
 
@@ -106,10 +118,11 @@ class RegistrationView(FormView, AnonymousMixin):
 
 @login_required
 def account_profile(request):
-    if is_participant(request.user):
-        form = ParticipantAccountForm(instance=request.user.participant)
+    user = request.user
+    if is_participant(user):
+        form = ParticipantAccountForm()
     else:
-        form = ExperimenterAccountForm(instance=request.user.experimenter)
+        form = ExperimenterAccountForm(instance=user.experimenter)
     return render_to_response('registration/profile.html', { 'form': form }, context_instance=RequestContext(request))
 
 ''' participant views '''

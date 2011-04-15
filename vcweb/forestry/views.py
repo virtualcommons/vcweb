@@ -69,6 +69,7 @@ def generate_participant_history(participant_group_relationship):
     experiment = group.experiment
     participant_history = []
     for round_data in experiment.playable_round_data:
+        logger.debug("Round %s" % round_data)
         data = ParticipantRoundData()
         data.round_configuration = round_data.round_configuration
         data.individual_harvest = get_harvest_decision(participant_group_relationship, round_data=round_data)
@@ -80,8 +81,9 @@ def generate_participant_history(participant_group_relationship):
             if resource_level.value == 100:
                 data.original_number_of_trees = 100
             else:
-                data.original_number_of_trees = resource_level.value + data.group_harvest.value - data.group_regrowth.value
-        except AttributeError:
+                data.original_number_of_trees = min(resource_level.value + data.group_harvest.value - data.group_regrowth.value, 100)
+        except AttributeError as e:
+            logger.error("Caught attribute error while trying to calculate original number of trees %s", e)
             pass
         data.final_number_of_trees = resource_level.value
         participant_history.append(data)

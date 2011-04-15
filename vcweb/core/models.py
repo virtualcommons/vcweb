@@ -481,7 +481,6 @@ class Experiment(models.Model):
 
     def start_round(self, sender=None):
         self.status = 'ROUND_IN_PROGRESS'
-        ''' get_or_create round_data for this round '''
         self.current_round_data
         self.current_round_elapsed_time = 0
         self.current_round_start_time = datetime.now()

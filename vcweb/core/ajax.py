@@ -96,7 +96,14 @@ def experiment_controller(request, pk, action=''):
             logger.warning("tried to invoke nonexistent action %s on experiment %s", action, experiment.status_line)
         status_block = _render_experiment_monitor_block('status', experiment, request)
         data_block = _render_experiment_monitor_block('data', experiment, request)
+        transition_url = None
+        should_transition = action in ('start_round', 'end_round')
+        if should_transition:
+            transition_url = 'wait' if action == 'end_round' else 'participate'
+
         return simplejson.dumps({
+            'should_transition': action in ('start_round', 'end_round'),
+            'transition_url': transition_url,
             'status': status_block,
             'experimentData': data_block,
             'active_round_number': experiment.current_round.sequence_number,

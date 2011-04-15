@@ -17,15 +17,13 @@ logger = logging.getLogger(__name__)
 REQUIRED_EMAIL_ATTRIBUTES = { 'class' : 'required email' }
 REQUIRED_ATTRIBUTES = { 'class' : 'required' }
 
-class RegistrationForm(forms.Form):
+class BaseRegistrationForm(forms.Form):
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text='Please enter a valid email.  We will never share your email in any way shape or form.')
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     confirm_password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     institution = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES), help_text='The primary institution, if any, you are affiliated with.')
-    experimenter = forms.BooleanField(help_text='Check this box if you would like to request experimenter access.')
-
     def clean_email(self):
         email = self.cleaned_data['email'].lower()
         try:
@@ -37,9 +35,12 @@ class RegistrationForm(forms.Form):
     def clean_confirm_password(self):
         password = self.cleaned_data['password']
         confirm_password = self.cleaned_data['confirm_password']
-        if password != confirm_password:
-            raise forms.ValidationError(_("Please make sure your passwords match."))
-        return self.confirm_password
+        if password == confirm_password:
+            return confirm_password
+        raise forms.ValidationError(_("Please make sure your passwords match."))
+
+class RegistrationForm(BaseRegistrationForm):
+    experimenter = forms.BooleanField(required=False, help_text='Check this box if you would like to request experimenter access.')
 
 class LoginForm(forms.Form):
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
@@ -56,17 +57,14 @@ class LoginForm(forms.Form):
                 raise forms.ValidationError(_("This user has been deactivated. Please contact us if this is in error."))
         return self.cleaned_data
 
-class ParticipantAccountForm(forms.ModelForm):
-    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
-    password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
-    confirm_password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
-
-    class Meta:
-        model = Participant
+class ParticipantAccountForm(BaseRegistrationForm):
+    pass
 
 class ExperimenterAccountForm(forms.ModelForm):
     class Meta:
         model = Experimenter
+        exclude = ('user',)
+
 
 email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
 class EmailListField(forms.CharField):
