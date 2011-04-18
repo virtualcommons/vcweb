@@ -131,11 +131,13 @@ class ConnectionManager:
     '''
     def send_refresh(self, connection, experiment, experimenter_id=None):
         for (participant_group_pk, connection) in self.all_participants(connection, experiment):
+            logger.debug("sending refresh to %s, %s" % (participant_group_pk,
+                connection))
             connection.send(ConnectionManager.refresh_json)
 
     def send_goto(self, connection, experiment, url):
         notified_participants = []
-        json = goto_json(url)
+        json = simplejson.dumps({'message_type': 'goto', 'url': url})
         for (participant_group_pk, connection) in self.all_participants(connection, experiment):
             connection.send(json)
             notified_participants.append(participant_group_pk)
@@ -191,7 +193,6 @@ class ExperimenterHandler(SocketConnection):
             experimenter_id = event.experimenter_id
             experiment = Experiment.objects.get(pk=experiment_id)
             connection_manager.send_refresh(self, experiment, experimenter_id)
-            logger.debug("pinging back to experimenter")
             self.send(info_json("Refreshed all participants"))
         elif event.message_type == 'goto':
             experiment_id = event.experiment_id

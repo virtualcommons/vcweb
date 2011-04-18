@@ -15,9 +15,6 @@ from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountFor
         RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm)
 from vcweb.core.models import (Participant, Experimenter, Experiment, Institution, is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
-import hashlib
-import base64
-from datetime import datetime
 from vcweb.core import unicodecsv
 import itertools
 import logging
@@ -43,6 +40,7 @@ class Dashboard(ListView, TemplateResponseMixin):
         if is_experimenter(user):
             return Experiment.objects.filter(experimenter__pk=self.request.user.experimenter.pk)
         else:
+# nested dictionary, {ExperimentMetadata -> { status -> [experiments,...] }}
             experiment_dict = {}
             for experiment in user.participant.experiments.exclude(status__in=(Experiment.INACTIVE, Experiment.PAUSED, Experiment.COMPLETED)):
                 if not experiment.experiment_metadata in experiment_dict:
@@ -52,7 +50,6 @@ class Dashboard(ListView, TemplateResponseMixin):
             return experiment_dict
 
 def set_authentication_token(user, authentication_token=None):
-    logger.debug("Setting auth token %s on user %s" % (authentication_token, user))
     commons_user = None
     if is_participant(user):
         commons_user = user.participant
@@ -60,10 +57,9 @@ def set_authentication_token(user, authentication_token=None):
         commons_user = user.experimenter
     else:
         logger.error("Invalid user: %s" % user)
-    if commons_user is not None:
-        commons_user.authentication_token = authentication_token
-        commons_user.save()
-
+        return
+    commons_user.authentication_token = authentication_token
+    commons_user.save()
 
 class LoginView(FormView, AnonymousMixin):
     form_class = LoginForm
@@ -110,11 +106,17 @@ class RegistrationView(FormView, AnonymousMixin):
         else:
             participant = Participant.objects.create(user=user, institution=institution)
             logger.debug("Creating new participant: %s" % participant)
-        auth.login(self.request, auth.authenticate(username=email, password=password))
+        request = self.request
+        auth.login(request, auth.authenticate(username=email, password=password))
+        set_authentication_token(user, request.session.session_key)
         return super(RegistrationView, self).form_valid(form)
 
     def get_success_url(self):
         return reverse('core:dashboard')
+
+class AccountView(FormView):
+    pass
+
 
 @login_required
 def account_profile(request):

@@ -951,15 +951,16 @@ class Group(models.Model):
 
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None):
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
-        logger.debug("criteria: %s" % criteria)
         data_value, created = self.data_values.get_or_create(**criteria)
         if created:
             logger.debug("Created new data value in get_data_value: %s" % data_value)
         return data_value
 
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None):
-        return dict([('parameter', parameter) if parameter else ('parameter__name', parameter_name),
-            ('round_data', self.current_round_data if round_data is None else round_data)])
+        return dict([
+            ('parameter', parameter) if parameter else ('parameter__name', parameter_name),
+            ('round_data', self.current_round_data if round_data is None else round_data)
+            ])
 
 
     def get_group_data_values(self, name=None, *names):

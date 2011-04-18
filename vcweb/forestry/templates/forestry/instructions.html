@@ -1,21 +1,23 @@
 {% extends "participant/base.html" %}
 {% block head %}
     {{ block.super }}
-    {% include "includes/participant.events.html" %}
-    {% include "includes/socket.io.html" %}
     <script type="text/javascript">
         $(function() {
-                var s = connect(window.location.hostname, 8888, 'participant/{{participant_experiment_relationship.pk}}');
+                var s = getCachedSocket();
                 s.on('message', function(json_string) {
                     var json = jQuery.parseJSON(json_string);
+                    console.log("received json string: " + json_string);
                     switch (json.message_type) {
                     case 'refresh':
                         console.log("refreshing..");
                         window.location.reload(true);
                         break;
                     case 'goto':
-                        console.log("going to " + json.url);
+                        console.log("goto " + json.url);
                         window.location.href = json.url;
+                        break;
+                    default:
+                        console.log("unhandled json message type: " + json.message_type + ":" + json.message);
                         break;
                     }
                 });

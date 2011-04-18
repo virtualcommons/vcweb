@@ -10,6 +10,7 @@
         }
         else {
             if (json.should_transition) {
+                console.log("Transitioning participants to " + json.transition_url);
                 getCachedSocket().send(createGotoEvent(json.transition_url));
             }
             $('#statusDiv').html(json.status);
@@ -71,8 +72,7 @@
                     break;
                 case 'submit':
                     $('#participant_data_value_' + json.participant_data_value_pk).html(json.message).effect("highlight", {}, 5000);
-                    addExperimentMessage("Participant " + json.participant_number + " (Group #" + json.participant_group + 
-                        ") submit a harvest decision of " + json.message);
+                    addExperimentMessage("Participant " + json.participant_number + " (Group #" + json.participant_group + ") submit a harvest decision of " + json.message);
                     break;
                 default:
                 }
