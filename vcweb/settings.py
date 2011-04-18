@@ -1,7 +1,13 @@
 # Django settings for vcweb project.
+import os
 from os import path
 import logging
 
+LOG_DIRECTORY = 'logs'
+try:
+    os.makedirs(LOG_DIRECTORY)
+except OSError:
+    pass
 LOG_FILENAME = 'vcweb.log'
 TORNADIO_LOG_FILENAME = 'tornadio.log'
 LOGGING = {
@@ -32,13 +38,13 @@ LOGGING = {
             'level': 'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
             'formatter': 'medium',
-            'filename': LOG_FILENAME,
+            'filename': path.join(LOG_DIRECTORY, LOG_FILENAME),
         },
         'tornadio-file': {
             'level': 'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
             'formatter': 'medium',
-            'filename': TORNADIO_LOG_FILENAME,
+            'filename': path.join(LOG_DIRECTORY, TORNADIO_LOG_FILENAME),
         },
     },
     'loggers': {

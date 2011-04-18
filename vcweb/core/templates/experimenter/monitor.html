@@ -69,7 +69,7 @@
                     addExperimentMessage(json.message);
                     break;
                 case 'chat':
-                    addChatMessage('chat-div-' + json.round_data_pk, json, json.date_created + " " + json.participant);
+                    addChatMessage('chat-div-' + json.round_data_pk, json, json.date_created + " " + json.participant, qtipOptions);
                     break;
                 case 'submit':
                     $('#participant_data_value_' + json.participant_data_value_pk).html(json.message).effect("highlight", {}, 5000);
