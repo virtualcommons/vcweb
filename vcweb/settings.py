@@ -3,6 +3,7 @@ from os import path
 import logging
 
 LOG_FILENAME = 'vcweb.log'
+TORNADIO_LOG_FILENAME = 'tornadio.log'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
@@ -33,6 +34,12 @@ LOGGING = {
             'formatter': 'medium',
             'filename': LOG_FILENAME,
         },
+        'tornadio-file': {
+            'level': 'DEBUG',
+            'class':'logging.handlers.RotatingFileHandler',
+            'formatter': 'medium',
+            'filename': TORNADIO_LOG_FILENAME,
+        },
     },
     'loggers': {
         'django': {
@@ -48,7 +55,11 @@ LOGGING = {
         'vcweb': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
-        }
+        },
+        'vcweb.tornadio': {
+            'handlers': ['console', 'tornadio-file'],
+            'level': 'DEBUG',
+        },
     }
 }
 

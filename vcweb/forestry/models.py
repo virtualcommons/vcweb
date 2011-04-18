@@ -1,5 +1,5 @@
-from django.contrib.auth.models import User
-from vcweb.core.models import ExperimentMetadata, Parameter, ParticipantExperimentRelationship, ParticipantGroupRelationship, ParticipantRoundDataValue, Participant, Institution
+from django.dispatch import receiver
+from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantGroupRelationship, ParticipantRoundDataValue,)
 from vcweb.core import signals
 from celery.decorators import task
 import logging
@@ -125,14 +125,13 @@ def stop_round_task():
     pass
 
 def round_teardown(experiment, **kwargs):
+    ''' round teardown calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth and transferring'''
     logger.debug("forestry: round_teardown for %s" % experiment)
-    ''' only calculate new resource levels for practice or regular rounds '''
     resource_level_parameter = get_resource_level_parameter()
     current_round_configuration = experiment.current_round
-# FIXME: make a round parameter for this.
     max_resource_level = 100
     for group in experiment.groups.all():
-# implements regrowth function inline
+        # FIXME: simplify logic 
         if has_resource_level(group):
             current_resource_level = get_resource_level(group)
             if current_round_configuration.is_playable_round:
@@ -141,6 +140,8 @@ def round_teardown(experiment, **kwargs):
                     group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level.value))
                     set_group_harvest(group, total_harvest)
                     current_resource_level.value = max(current_resource_level.value - total_harvest, 0)
+                    # implements regrowth function inline
+                    # FIXME: parameterize regrowth rate.
                     regrowth = current_resource_level.value / 10
                     group.log("Regrowth: adding %s to current resource level %s" % (regrowth, current_resource_level.value))
                     set_regrowth(group, regrowth)
@@ -151,17 +152,6 @@ def round_teardown(experiment, **kwargs):
                 ''' set group round data resource_level for each group + regrowth '''
                 group.log("Transferring resource level %s to next round" % get_resource_level(group))
                 group.transfer_to_next_round(resource_level_parameter)
-
-#@receiver(signals.round_started, sender='forestry')
-def round_started_handler(sender, experiment=None, **kwargs):
-    logger.debug("forestry handling round started signal")
-    round_setup(experiment, **kwargs)
-
-#@receiver(signals.round_ended, sender='forestry')
-def round_ended_handler(sender, experiment=None, **kwargs):
-    logger.debug("forestry handling round ended signal")
-    round_teardown(experiment, **kwargs)
-
 
 '''
 FIXME: figure out a better way to tie these signal handlers to a specific
@@ -176,6 +166,15 @@ id(repr(e.namespace))
 even using django.util.encodings smart_unicode and smart_str functions don't help.
 '''
 forestry_sender = 1
+@receiver(signals.round_started, sender=forestry_sender)
+def round_started_handler(sender, experiment=None, **kwargs):
+    logger.debug("forestry handling round started signal")
+    round_setup(experiment, **kwargs)
 
-signals.round_started.connect(round_started_handler, sender=forestry_sender)
-signals.round_ended.connect(round_ended_handler, sender=forestry_sender)
+@receiver(signals.round_ended, sender=forestry_sender)
+def round_ended_handler(sender, experiment=None, **kwargs):
+    logger.debug("forestry handling round ended signal")
+    round_teardown(experiment, **kwargs)
+
+
+

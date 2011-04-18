@@ -69,7 +69,7 @@
                     addExperimentMessage(json.message);
                     break;
                 case 'chat':
-                    addExperimentMessage(json.message);
+                    addChatMessage('chat-div-' + json.round_data_pk, json, json.date_created + " " + json.participant);
                     break;
                 case 'submit':
                     $('#participant_data_value_' + json.participant_data_value_pk).html(json.message).effect("highlight", {}, 5000);
@@ -200,7 +200,7 @@
                 {% for group_data_value in round_data.group_data_values.all %}
                 <tr>
                     <td>
-                        <a class='tooltip' title='{{ group_data_value.group.all_participants_str }}'>
+                        <a class='dark-yellow-highlight' title='{{ group_data_value.group.all_participants_str }}'>
                             {{ group_data_value.group }}
                         </a>
                     </td>
@@ -226,7 +226,7 @@
                 {% for participant_data_value in round_data.participant_data_values.all %}
                 <tr>
                     <td>
-                        <a class='tooltip' title='{{participant_data_value.participant}}'>
+                        <a class='dark-yellow-highlight' title='{{participant_data_value.participant}}'>
                             {{ participant_data_value.participant_number }} ({{ participant_data_value.group }})
                         </a>
                     </td>
@@ -242,13 +242,12 @@
         {% endif %}
         {% comment %} participant chats {% endcomment %}
         {% if round_data.chat_messages.count > 0 %}
-        <h4 class='collapsible'>Chat data (click to hide)</h4>
-        <div id='chat_{{round_data.pk}}' class='chat notice ui-corner-all'>
+        <h4 class='collapsible'>Chat data</h4>
+        <div id='chat-div-{{round_data.pk}}' class='chat notice ui-corner-all'>
             {% for chat_message in round_data.chat_messages.all %}
-            <div class='ui-state-highlight'>
-                <span class='icon-left ui-icon ui-icon-comment'></span>
-                <a class='tooltip' name='{{chat_message.pk}}' title='{{chat_message.date_created}} {{chat_message.participant}}'>
-                    {{chat_message.date_created|date:"H:s"}}</a> | {{chat_message}}
+            <div class='ui-state-highlight' style='line-height: 1.5em;'>
+                <a class='dark-yellow-highlight' name='{{chat_message.pk}}' title='{{chat_message.date_created}} {{chat_message.participant}}'>
+                    {{chat_message.date_created|date:"G:i:s"}}</a> | {{chat_message}}
             </div>
             {% endfor %}
         </div>

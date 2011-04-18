@@ -10,15 +10,17 @@
             var json = jQuery.parseJSON(json_string);
             switch (json.message_type) {
             case 'chat':
-                console.log("Received " + json.pk + " " + json.date_created + " " + json.message);
+                addChatMessage('chat-div', json);
+                /*
                 $("#chat-div").append(
                     $("<div class='ui-state-highlight' />")
                         .append($("<a />").attr("name", "" + json.pk)
                             .text("" + json.date_created))
                         .append(" | ")
                         .append(json.message));
-                        // scroll to bottom
-                chatDiv.scrollTop = chatDiv.scrollHeight;
+                // scroll to bottom
+                scrollToBottom(chatDiv);
+                */
                 break;
             case 'refresh':
                 location.reload(true);
@@ -58,13 +60,15 @@ Forestry Chat Round
     <div id='chat-div' class='chat notice ui-corner-all'>
         {% for chat_message in chat_messages %}
         <div class='ui-state-highlight'>
-            <a name='{{chat_message.pk}}'>{{chat_message.date_created|date:"G:i:s"}}</a> | {{chat_message}}
+            <a class='dark-yellow-highlight' name='{{chat_message.pk}}'>{{chat_message.date_created|date:"G:i:s"}}</a> | {{chat_message}}
         </div>
         {% endfor %}
     </div>
     <form id="chatform">
         <input id='chatText' type="text" />
-        <input type="submit" value='Send' />
+        <div>
+            <button type='submit'>Send</button>
+        </div>
     </form>
 {% endblock %}
 

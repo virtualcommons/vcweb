@@ -12,7 +12,8 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
 from vcweb.core.models import ParticipantExperimentRelationship, ParticipantGroupRelationship, ChatMessage, Experimenter, Experiment
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('vcweb.tornadio')
+
 
 def info_json(message):
     return simplejson.dumps({'message_type': 'info', 'message': message})
@@ -277,6 +278,8 @@ class ParticipantHandler(SocketConnection):
                     )
             chat_json = simplejson.dumps({
                 "pk": chat_message.pk,
+                'round_data_pk': current_round_data.pk,
+                'participant': unicode(participant_group_relationship.participant),
                 "date_created": chat_message.date_created.strftime("%H:%M:%S"),
                 "message" : unicode(chat_message),
                 "message_type": 'chat',

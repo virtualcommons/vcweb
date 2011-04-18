@@ -145,8 +145,9 @@ fieldset.small>legend {
 #experimentData a {
     text-decoration: none;
 }
-a.tooltip {
+.dark-yellow-highlight {
     background-color: #F9E275;
+    text-decoration: none;
 }
 #experiments a {
     text-decoration: none;

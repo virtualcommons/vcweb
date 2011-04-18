@@ -8,3 +8,16 @@ console.info = console.info || function(){};
 function scrollToBottom(element) {
     element.scrollTop = element.scrollHeight;
 }
+function addChatMessage(elementId, json, title) {
+    if (! title) {
+        title = json.date_created;
+    }
+    $('#' + elementId).append(
+        $("<div class='ui-state-highlight' style='line-height: 1.5em;'/>")
+        .append($("<a class='dark-yellow-highlight' />").attr("name", json.pk).attr("title", title)
+            .text(json.date_created))
+        .append(" | ")
+        .append(json.message));
+    scrollToBottom(document.getElementById(elementId));
+}
+
