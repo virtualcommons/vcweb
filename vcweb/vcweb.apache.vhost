@@ -4,7 +4,9 @@ WSGISocketPrefix run/wsgi
     DocumentRoot /var/www/vcweb
     ServerName vcweb.asu.edu
 
-    Alias /static "/var/www/vcweb/static"
+    Alias /static /var/www/vcweb/static
+    Alias /favicon.ico /var/www/vcweb/static/favicon.ico
+    Alias /robots.txt /var/www/vcweb/static/robots.txt
 
     WSGIDaemonProcess vcweb-production user=apache group=commons threads=25 python-path=/opt/virtualenvs/vcweb/lib/python2.6/site-packages
     WSGIProcessGroup vcweb-production

@@ -144,8 +144,12 @@ def deploy():
             sudo('hg pull && hg up', user=env.deploy_user, pty=True)
             if confirm("syncdb?"):
                 syncdb()
+            from vcweb import settings
+            env.static_root = settings.STATIC_ROOT
+            _virtualenv('%(python)s manage.py collectstatic' % env)
             sudo_chain('chmod -R ug+rw .',
+                    'find %(static_root)s -type d -exec chmod a+x {} \;' % env,
                     'find . -type d -exec chmod ug+x {} \;',
-                    'chown -R %(deploy_user)s:%(deploy_group)s .' % env,
+                    'chown -R %(deploy_user)s:%(deploy_group)s . %(static_root)s' % env,
                     _restart_command(),
                     pty=True)
