@@ -6,13 +6,6 @@ import sys
 import logging
 import simplejson
 
-# FIXME: hack, configuring before django settings configures it so we can get things spit to the console.. vcweb.log
-# seems to be missing these logging statements.
-logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s %(levelname)s %(message)s',
-    )
-
 sys.path.append(os.path.abspath('..'))
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
@@ -27,15 +20,23 @@ def info_json(message):
 def goto_json(url):
     return simplejson.dumps({'message_type': 'goto', 'url': url})
 
+def chat_json(chat_message):
+    return simplejson.dumps({
+        "pk": chat_message.pk,
+        "date_created": chat_message.date_created.strftime("%H:%M:%S"),
+        "message" : unicode(chat_message),
+        "message_type": 'chat',
+        })
+
 class Message(object):
     def __init__(self, message_type='info', **kwargs):
         self.message_type = message_type
         self.__dict__.update(**kwargs)
 
-'''
-Manages socket.io connections to tornadio.
-'''
 class ConnectionManager:
+    '''
+    Manages socket.io connections to tornadio.
+    '''
     # bidi maps for (participant.pk, experiment.pk) -> connection
     connection_to_participant = {}
     participant_to_connection = {}
@@ -274,13 +275,13 @@ class ParticipantHandler(SocketConnection):
                     message=event.message,
                     round_data=current_round_data
                     )
-            for participant_group_pk, connection in connection_manager.connections(participant_group_relationship.group):
-                connection.send(simplejson.dumps({
-                    "pk": chat_message.pk,
-                    "date_created": chat_message.date_created.strftime("%H:%M:%S"),
-                    "message" : chat_message.__unicode__(),
-                    "message_type": 'chat',
-                    }))
+            chat_json = simplejson.dumps({
+                "pk": chat_message.pk,
+                "date_created": chat_message.date_created.strftime("%H:%M:%S"),
+                "message" : unicode(chat_message),
+                "message_type": 'chat',
+                })
+            connection_manager.send_to_group(participant_group_relationship.group, chat_json)
 
     def on_close(self):
         logger.debug("closing %s" % self)

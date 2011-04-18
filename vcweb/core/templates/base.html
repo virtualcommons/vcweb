@@ -5,18 +5,18 @@
         {% block head %}
         <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <link rel="stylesheet" href="/static/css/blueprint/screen.css" type="text/css" media="screen, projection" />
-        <link rel="stylesheet" href="/static/css/blueprint/print.css" type="text/css" media="print" />
-        <!--[if lt IE 8]><link rel="stylesheet" href="/static/media/css/blueprint/ie.css" type="text/css" media="screen, projection" /><![endif]-->
-        <link href="/static/css/guarantee/style.css" rel="stylesheet" type="text/css" media="screen" />
-        <link href="/static/css/style.css" rel="stylesheet" type="text/css" media="screen" />
+        <link rel="stylesheet" href="{{STATIC_URL}}css/blueprint/screen.css" type="text/css" media="screen, projection" />
+        <link rel="stylesheet" href="{{STATIC_URL}}css/blueprint/print.css" type="text/css" media="print" />
+        <!--[if lt IE 8]><link rel="stylesheet" href="{{STATIC_URL}}media/css/blueprint/ie.css" type="text/css" media="screen, projection" /><![endif]-->
+        <link href="{{STATIC_URL}}css/guarantee/style.css" rel="stylesheet" type="text/css" media="screen" />
+        <link href="{{STATIC_URL}}css/style.css" rel="stylesheet" type="text/css" media="screen" />
         <!-- vcweb common js -->
         <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js'></script>
-        <script type='text/javascript' src='/static/js/common.js'></script>
-        <script type='text/javascript' src='/static/js/jquery.qtip-1.0.0-rc3.min.js'></script>
+        <script type='text/javascript' src='{{STATIC_URL}}js/common.js'></script>
+        <script type='text/javascript' src='{{STATIC_URL}}js/jquery.qtip-1.0.0-rc3.min.js'></script>
         {% include "includes/jquery.ui.html" %}
         {% dajaxice_js_import %}
-        <!-- <script type='/text/javascript' src='/static/js/dajaxice.core.js'></script> -->
+        <!-- <script type='/text/javascript' src='{{STATIC_URL}}js/dajaxice.core.js'></script> -->
         <script type='text/javascript'>
             <!-- sets all external links to open up in new windows -->
             $(function() {
@@ -28,7 +28,7 @@
     <body>
         <div id='logo'>
             <div style='clear: none; position:relative;float:right; left:-930px; padding: 5px;'>
-                <img src='/static/images/vcweb-logo.png' alt='vcweb logo'/>
+                <img src='{{STATIC_URL}}images/vcweb-logo.png' alt='vcweb logo'/>
             </div>
             <h1>
                 {% block logo %}

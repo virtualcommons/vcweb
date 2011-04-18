@@ -2,7 +2,7 @@
 
 {% block head %}
     {{block.super}}
-    <script type='text/javascript' src='/static/js/jquery.validate.min.js'></script>
+    <script type='text/javascript' src='{{STATIC_URL}}js/jquery.validate.min.js'></script>
     {% block participant_socket_io %}
     {% include "includes/participant.events.html" %}
     {% include "includes/socket.io.html" %}

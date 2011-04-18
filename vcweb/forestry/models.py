@@ -141,15 +141,14 @@ def round_teardown(experiment, **kwargs):
                     group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level.value))
                     set_group_harvest(group, total_harvest)
                     current_resource_level.value = max(current_resource_level.value - total_harvest, 0)
-                    #group.subtract(resource_level_parameter, total_harvest)
+                    regrowth = current_resource_level.value / 10
+                    group.log("Regrowth: adding %s to current resource level %s" % (regrowth, current_resource_level.value))
+                    set_regrowth(group, regrowth)
+                    current_resource_level.value = min(current_resource_level.value + regrowth, max_resource_level)
+                    current_resource_level.save()
             ''' transfer resource levels across chat and quiz rounds if they exist '''
             if experiment.has_next_round:
                 ''' set group round data resource_level for each group + regrowth '''
-                regrowth = current_resource_level.value / 10
-                group.log("Regrowth: adding %s to current resource level %s" % (regrowth, current_resource_level.value))
-                set_regrowth(group, regrowth)
-                current_resource_level.value = min(current_resource_level.value + regrowth, max_resource_level)
-                current_resource_level.save()
                 group.log("Transferring resource level %s to next round" % get_resource_level(group))
                 group.transfer_to_next_round(resource_level_parameter)
 

@@ -69,6 +69,7 @@
                     addExperimentMessage(json.message);
                     break;
                 case 'chat':
+                    addExperimentMessage(json.message);
                     break;
                 case 'submit':
                     $('#participant_data_value_' + json.participant_data_value_pk).html(json.message).effect("highlight", {}, 5000);
@@ -116,21 +117,21 @@
     <legend>Experiment management</legend>
     <ul class='actions'>
         <li><span id='refreshAllParticipants' title='Sends a page refresh to all connected participants.' class='clickable' >
-            <span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/arrow_refresh.png);'></span>
+            <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/arrow_refresh.png);'></span>
             refresh all participants</span>
         </li>
         {% comment %}
         <li><span id='gotoUrl' title='Moves all connected participants from waiting page to active page.' class='clickable' >
-            <span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/arrow_right.png);'></span>
+            <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/arrow_right.png);'></span>
             transition all participants to next round</span>
         </li>
         {% endcomment %}
         <li>
         <a href='download/csv'>
-            <span class='vcweb-icon ui-icon icon-left' style='margin: 8px 0.15em 0px 0px; background:url(/static/images/download-icon.png);'></span>
-            download data as <img src='/static/images/famfamfam/page_white_text.png' style='margin: 5px 0 0 0;' alt='' /> csv
+            <span class='vcweb-icon ui-icon icon-left' style='margin: 8px 0.15em 0px 0px; background:url({{STATIC_URL}}images/download-icon.png);'></span>
+            download data as <img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' style='margin: 5px 0 0 0;' alt='' /> csv
         </a> |
-        <a href='download/xls'><img src='/static/images/famfamfam/page_white_excel.png' style='margin: 5px 0 0 0;' alt=''/> xls</a>
+        <a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' style='margin: 5px 0 0 0;' alt=''/> xls</a>
         </li>
     </ul>
 </fieldset>
@@ -140,7 +141,7 @@
     JSON object in and everything auto-updates.
     {% endcomment %}
     <div id='statusSpinner' style='display:none;'>
-        <img src='/static/images/squares-circle-ajax-loader.gif' alt='... working ...' />
+        <img src='{{STATIC_URL}}images/squares-circle-ajax-loader.gif' alt='... working ...' />
     </div>
     <div id='statusDiv'>
         {% block status %}
@@ -151,13 +152,13 @@
                 {% if experiment.is_active %}
                     {% if experiment.is_round_in_progress %}
                     <li><a class='confirm-experiment-action' name='end_round' href='end-round' title='Stops the current round.'>
-                        <span class='vcweb-icon icon-left ui-icon' style='background: url(/static/images/famfamfam/control_stop_blue.png);' ></span>end round</a></li>
+                        <span class='vcweb-icon icon-left ui-icon' style='background: url({{STATIC_URL}}images/famfamfam/control_stop_blue.png);' ></span>end round</a></li>
                     {% else %}
                     <li><a class='confirm-experiment-action' name='start_round' href='start-round' title='Starts the round.'>
-                        <span class='ui-icon vcweb-icon icon-left' style='background:url(/static/images/famfamfam/control_play_blue.png);' ></span>start round</a></li>
+                        <span class='ui-icon vcweb-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/control_play_blue.png);' ></span>start round</a></li>
                     {% endif %}
                     <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round' title='Stops the current round if necessary and advances to the next round.'>
-                        <span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/control_fastforward_blue.png);' ></span>advance to next round</a></li>
+                        <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/control_fastforward_blue.png);' ></span>advance to next round</a></li>
                 {% else %}
                 {% if participant_count == 0 %}
                 <div class='alert alertIcon ui-corner-all'>
@@ -165,7 +166,7 @@
                 </div>
                 {% else %}
                 <li><a title='You must first activate an experiment before you can run it.' class='confirm-experiment-action' name='activate'
-                    href='activate'><span class='vcweb-icon ui-icon icon-left' style='background:url(/static/images/famfamfam/cog_go.png);' ></span>activate</a>
+                    href='activate'><span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/cog_go.png);' ></span>activate</a>
                 </li>
                 {%endif%}
                 {% endif %}
@@ -245,9 +246,9 @@
         <div id='chat_{{round_data.pk}}' class='chat notice ui-corner-all'>
             {% for chat_message in round_data.chat_messages.all %}
             <div class='ui-state-highlight'>
+                <span class='icon-left ui-icon ui-icon-comment'></span>
                 <a class='tooltip' name='{{chat_message.pk}}' title='{{chat_message.date_created}} {{chat_message.participant}}'>
                     {{chat_message.date_created|date:"H:s"}}</a> | {{chat_message}}
-                <span class='ui-icon ui-icon-comment icon-right'></span>
             </div>
             {% endfor %}
         </div>

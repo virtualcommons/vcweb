@@ -3,7 +3,7 @@ body {
     font-size: 1.1em;
 }
 a.external {
-    background: url(/static/images/external.png) center right no-repeat;
+    background: url(../images/external.png) center right no-repeat;
     padding-right: 13px;
 }
 h1, h2, h3, h4, h5 {
@@ -30,7 +30,7 @@ input.error {
     border: solid red;
 }
 label.error {
-    background: url('/static/images/unchecked.gif') no-repeat left center #FBE3E4;
+    background: url('../images/unchecked.gif') no-repeat left center #FBE3E4;
     line-height: normal;
     font-size: .8em;
     margin:0.3em;
@@ -103,19 +103,19 @@ li.warning {
     background-position: 3px;
 }
 .errorIcon, .warningIcon, .alertIcon {
-    background-image:  url('/static/images/warning.png')
+    background-image:  url('../images/warning.png')
 }
 .crossIcon {
-    background-image: url('/static/images/famfamfam/cross.png');
+    background-image: url('../images/famfamfam/cross.png');
 }
 .contactIcon {
-    background-image: url('/static/images/famfamfam/comment_add.png');
+    background-image: url('../images/famfamfam/comment_add.png');
 }
 .smallInfoIcon {
-    background-image: url('/static/images/famfamfam/information.png');
+    background-image: url('../images/famfamfam/information.png');
 }
 .infoIcon {
-    background-image: url('/static/images/info.png')
+    background-image: url('../images/info.png')
 }
 .small-font {
     font-size: 0.8em;
@@ -167,17 +167,17 @@ a.tooltip {
     padding-left: 25px;
 }
 #experiments span.inactive {
-    background: url('/static/images/famfamfam/clock_stop.png') center left no-repeat;
+    background: url('../images/famfamfam/clock_stop.png') center left no-repeat;
 }
 #experiments span.active {
-    background: url('/static/images/famfamfam/accept.png') center left no-repeat;
+    background: url('../images/famfamfam/accept.png') center left no-repeat;
 }
 #experiments span.round_in_progress {
-    background: url('/static/images/famfamfam/bullet_go.png') center left no-repeat;
+    background: url('../images/famfamfam/bullet_go.png') center left no-repeat;
 }
 #experiments .rightArrow {
     margin: 0;
-    background: url('/static/images/famfamfam/bullet_go.png') center left no-repeat;
+    background: url('../images/famfamfam/bullet_go.png') center left no-repeat;
     padding-left: 16px;
     padding-right: 8px;
 }
@@ -188,7 +188,7 @@ ul.horizontal {
     font-size: 0.9em;
 }
 ul.horizontal>li>a {
-    background: url("/static/images/separator.gif") bottom right no-repeat;
+    background: url("../images/separator.gif") bottom right no-repeat;
     padding-left: 8px;
     padding-right: 8px;
     text-decoration: none;
@@ -216,7 +216,7 @@ ul.horizontal>li {
     padding: 0;
 }
 #navmenu a {
-    background: #4A3226 url("/static/images/separator.gif") bottom right no-repeat;
+    background: #4A3226 url("../images/separator.gif") bottom right no-repeat;
     color: #ccc;
     display: block;
     float: left;
@@ -226,12 +226,12 @@ ul.horizontal>li {
     font-weight:normal;
 }
 #navmenu a:hover {
-    background: #2580a2 url("/static/images/hover.gif") bottom center no-repeat;
+    background: #2580a2 url("../images/hover.gif") bottom center no-repeat;
     color: #fff;
     padding-bottom: 8px;
 }
 #timeRemaining span {
-    background: url('/static/images/clock.png') bottom center no-repeat;
+    background: url('../images/famfamfam/clock.png') bottom center no-repeat;
     margin-left: 8px;
     margin-right: 8px;
 }
