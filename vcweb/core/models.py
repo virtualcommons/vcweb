@@ -698,6 +698,21 @@ class ParameterManager(models.Manager):
     def get_by_natural_key(self, key):
         return self.get(name=key)
 
+    '''
+    name_cache = {}
+    def get(self, *args, **kwargs):
+        if 'name' in kwargs:
+            # check cache
+            name = kwargs['name']
+            if name in self.name_cache:
+                return self.name_cache[name]
+            parameter = super(ParameterManager, self).get(*args, **kwargs)
+            self.name_cache[name] = parameter
+            return parameter
+        else:
+            return super(ParameterManager, self).get(*args, **kwargs)
+    '''
+
 class Parameter(models.Model):
     PARAMETER_TYPES = (('int', 'Integer value'),
                        ('string', 'String value'),
@@ -1084,20 +1099,6 @@ class Participant(CommonsUser):
     def completed_experiments(self):
         return self.experiments_with_status(Experiment.COMPLETED)
 
-    def set_data_value(self, experiment=None, parameter=None, value=None):
-        if experiment and parameter and value is not None:
-            # FIXME: shift to ParticipantGroupRelationship as data arbiter
-            current_round_data = experiment.current_round_data
-            participant_group_relationship = ParticipantGroupRelationship.objects.get(group__experiment=experiment, participant=self)
-            participant_data_value, created = current_round_data.participant_data_values.get_or_create(parameter=parameter,
-                    participant_group_relationship=participant_group_relationship)
-            participant_data_value.value = value
-            # FIXME: parameterize / make explicit?
-            participant_data_value.submitted = True
-            participant_data_value.save()
-        else:
-            logger.warning("Unable to set data value %s on experiment %s for %s" % (value, experiment, parameter))
-
     def get_participant_experiment_relationship(self, experiment):
         return ParticipantExperimentRelationship.objects.get(participant=self, experiment=experiment)
 
@@ -1154,7 +1155,7 @@ class ParticipantGroupRelationshipManager(models.Manager):
 
     def get_participant_group(self, participant, experiment):
         try:
-            return self.get(group__experiment=experiment, participant=participant)
+            return self.select_related(depth=2).get(group__experiment=experiment, participant=participant)
         except ParticipantGroupRelationship.DoesNotExist:
             logger.warning("Participant %s does not belong to a group in %s" % (participant, experiment))
             return None
@@ -1184,6 +1185,19 @@ class ParticipantGroupRelationship(models.Model):
     @property
     def group_number(self):
         return self.group.number
+
+    def set_data_value(self, parameter=None, value=None):
+        current_round_data = self.current_round_data
+        if parameter is not None and value is not None:
+            # FIXME: shift to ParticipantGroupRelationship as data arbiter?
+            participant_data_value, created = current_round_data.participant_data_values.get_or_create(parameter=parameter, participant_group_relationship=self)
+            participant_data_value.value = value
+            # FIXME: parameterize / make explicit?
+            participant_data_value.submitted = True
+            participant_data_value.save()
+        else:
+            logger.warning("Unable to set data value %s on round data %s for %s" % (value, current_round_data, parameter))
+
 
     def __unicode__(self):
         return u"{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)

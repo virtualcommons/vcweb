@@ -1,6 +1,6 @@
 from django.dispatch import receiver
 from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantGroupRelationship, ParticipantRoundDataValue,)
-from vcweb.core import signals
+from vcweb.core import signals, cacheable
 from celery.decorators import task
 import logging
 logger = logging.getLogger(__name__)
@@ -11,12 +11,12 @@ def forestry_second_tick():
     check all forestry experiments.
     '''
 
-
-# returns GroupRoundDataValue.
 def get_resource_level(group=None, round_data=None):
+    ''' returns the group resource level data parameter '''
     return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data)
 
 def get_group_harvest(group, round_data=None):
+    ''' returns the collective group harvest data parameter '''
     return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data)
 
 def get_regrowth(group, round_data=None):
@@ -58,32 +58,36 @@ def get_max_harvest_decision(resource_level):
     else:
         return 0
 
+@cacheable
 def get_forestry_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace='forestry')
 
+@cacheable
 def get_resource_level_parameter():
     return Parameter.objects.get(name='resource_level',
             scope=Parameter.GROUP_SCOPE,
             experiment_metadata=get_forestry_experiment_metadata())
 
+@cacheable
 def get_regrowth_parameter():
     return Parameter.objects.get(name='group_regrowth',
             scope=Parameter.GROUP_SCOPE,
             experiment_metadata=get_forestry_experiment_metadata())
 
+@cacheable
 def get_group_harvest_parameter():
     return Parameter.objects.get(name='group_harvest',
             scope=Parameter.GROUP_SCOPE,
             experiment_metadata=get_forestry_experiment_metadata())
 
+@cacheable
 def get_harvest_decision_parameter():
-    return Parameter.objects.get(
-            name='harvest_decision',
+    return Parameter.objects.get(name='harvest_decision',
             scope=Parameter.PARTICIPANT_SCOPE,
             experiment_metadata=get_forestry_experiment_metadata())
 
-def set_harvest_decision(participant=None, experiment=None, value=None):
-    participant.set_data_value(experiment=experiment, parameter=get_harvest_decision_parameter(), value=value)
+def set_harvest_decision(participant_group_relationship=None, value=None):
+    participant_group_relationship.set_data_value(parameter=get_harvest_decision_parameter(), value=value)
 
 def set_resource_level(group=None, value=None):
     group.set_data_value(parameter=get_resource_level_parameter(), value=value)
@@ -110,14 +114,16 @@ def round_setup(experiment, **kwargs):
         harvest decision parameters
         '''
         if round_configuration.get_parameter_value('reset.resource_level', default=False):
+            initial_resource_level = round_configuration.get_parameter_value('initial.resource_level', default=100)
             for group in experiment.groups.all():
-                ''' set resource level to default '''
-                set_resource_level(group, round_configuration.get_parameter_value('initial.resource_level'))
-        ''' initialize all participant data values '''
+                ''' set resource level to initial default '''
+                group.log("Setting resource level to initial value [%s]" % initial_resource_level)
+                set_resource_level(group, initial_resource_level)
+        ''' initialize participant data values '''
         current_round_data = experiment.current_round_data
         harvest_decision_parameter = get_harvest_decision_parameter()
-        for p in ParticipantGroupRelationship.objects.filter(group__experiment=experiment):
-            harvest_decision, created = current_round_data.participant_data_values.get_or_create(participant_group_relationship=p, parameter=harvest_decision_parameter)
+        for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=experiment):
+            harvest_decision, created = current_round_data.participant_data_values.get_or_create(participant_group_relationship=pgr, parameter=harvest_decision_parameter)
             logger.debug("%s harvest decision %s" % ("created" if created else "retrieved", harvest_decision))
 
 @task

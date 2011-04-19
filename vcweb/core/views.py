@@ -178,7 +178,7 @@ class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
 
 class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin):
     def check_user(self, user, experiment):
-        if self.request.user.experimenter.pk == experiment.experimenter.pk:
+        if self.request.user.experimenter == experiment.experimenter:
             return experiment
         raise PermissionDenied("You do not have access to %s" % experiment)
 
@@ -327,7 +327,7 @@ def experiment_controller(request, pk=None, experiment_action=None):
         experiment = Experiment.objects.get(pk=pk)
 # TODO: provide experimenter access to other users besides the creator of the
 # experiment?
-        if experimenter.pk == experiment.experimenter.pk:
+        if experimenter == experiment.experimenter:
             experiment_func = getattr(experiment, experiment_action.replace('-', '_'), None)
             if experiment_func:
                 # pass params?  start_round() takes a sender for instance..

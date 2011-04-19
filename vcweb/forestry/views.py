@@ -69,7 +69,6 @@ def generate_participant_history(participant_group_relationship):
     experiment = group.experiment
     participant_history = []
     for round_data in experiment.playable_round_data:
-        logger.debug("Round %s" % round_data)
         data = ParticipantRoundData()
         data.round_configuration = round_data.round_configuration
         data.individual_harvest = get_harvest_decision(participant_group_relationship, round_data=round_data)
@@ -89,7 +88,7 @@ def generate_participant_history(participant_group_relationship):
         participant_history.append(data)
     if experiment.is_round_in_progress:
         last_round_data = participant_history[-1]
-        if experiment.current_round.pk == last_round_data.round_configuration.pk:
+        if experiment.current_round == last_round_data.round_configuration:
             last_round_data.round_in_progress = True
     return participant_history
 
@@ -207,7 +206,7 @@ def play(request, experiment, participant):
         resource_level = get_resource_level(participant.get_group(experiment))
         max_harvest_decision = get_max_harvest_decision(resource_level.value)
         if resources_harvested <= max_harvest_decision:
-            set_harvest_decision(participant=participant, experiment=experiment, value=resources_harvested)
+            set_harvest_decision(participant_group_relationship=participant_group_relationship, value=resources_harvested)
             return redirect('forestry:wait', experiment_id=experiment.pk)
         else:
             raise forms.ValidationError("invalid harvest decision %s > max %s" % (harvest_decision, max_harvest_decision))
