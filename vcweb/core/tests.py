@@ -1,8 +1,9 @@
 from django.test import TestCase
 from vcweb.core import signals
-from vcweb.core.models import Experiment, Experimenter, ExperimentConfiguration, \
-    Participant, ParticipantExperimentRelationship, Group, ExperimentMetadata, \
-    RoundConfiguration, Parameter, RoundParameterValue, GroupActivityLog
+from vcweb.core.models import (Experiment, Experimenter, ExperimentConfiguration,
+    Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
+    ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue,
+    GroupActivityLog)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -132,15 +133,22 @@ class ExperimentTest(BaseVcwebTest):
             self.experiment.start_round(sender=self)
         self.assertTrue(self.experiment.is_active)
 
-    def test_allocate_groups(self):
-        self.experiment.allocate_groups(randomize=False)
-        self.assertEqual(self.experiment.groups.count(), 2, "should be 2 groups after non-randomized allocation")
-        for p in self.participants:
-            participant_number = p.get_participant_number(self.experiment)
-            group = p.get_group(self.experiment)
-            self.assertFalse(participant_number <= 0 or participant_number > group.max_size)
-            self.assertEqual(participant_number % group.max_size, p.id % group.max_size)
-            logger.debug("randomized participant number %i (id: %i)" % (participant_number, p.pk))
+    def test_group_allocation(self):
+        experiment = self.experiment
+        experiment.allocate_groups(randomize=False)
+        self.assertEqual(experiment.groups.count(), 2, "there should be 2 groups after non-randomized allocation")
+        self.assertEqual(sum(map(lambda group:group.participants.count(), experiment.groups.all())), 10)
+
+    def test_participant_numbering(self):
+        experiment = self.experiment
+        experiment.allocate_groups(randomize=False)
+        for pgr in ParticipantGroupRelationship.objects.by_experiment(experiment):
+            participant_number = pgr.participant_number
+            group = pgr.group
+            self.assertTrue(0 < participant_number <= group.max_size)
+            # FIXME: this relies on the fact that non-randomized group allocation will match the auto increment pk
+            # generation for the participants.  Remove?
+            self.assertEqual(participant_number % group.max_size, pgr.participant.pk % group.max_size)
 
     def test_next_round(self):
         experiment = self.experiment
@@ -151,8 +159,6 @@ class ExperimentTest(BaseVcwebTest):
             round_number += 1
             experiment.advance_to_next_round()
             self.assertTrue(experiment.current_round_sequence_number == round_number)
-            logger.debug("experiment successfully advanced to next round: %s" %
-                    experiment.current_round)
 
     def test_increment_elapsed_time(self):
         experiment = self.experiment
@@ -164,15 +170,6 @@ class ExperimentTest(BaseVcwebTest):
         experiment = self.load_experiment()
         self.assertEqual(experiment.current_round_elapsed_time, current_round_elapsed_time + 1)
         self.assertEqual(experiment.total_elapsed_time, total_elapsed_time + 1)
-
-
-    def test_get_participant_number(self):
-        self.experiment.allocate_groups()
-        self.assertEqual(self.experiment.groups.count(), 2, "Should have two groups after allocation")
-        for p in self.participants:
-            participant_number = p.get_participant_number(self.experiment)
-            self.assertTrue(participant_number > 0, 'participant number should be greater than 0')
-            logger.debug("participant number %i (id: %i)" % (participant_number, p.pk))
 
 class GroupTest(BaseVcwebTest):
     def test_set_data_value_activity_log(self):

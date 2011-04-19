@@ -83,8 +83,7 @@ def test():
     runs tests on this local codebase, not the deployed codebase
     '''
     with cd(env.project_path):
-        with hide('stdout'):
-            _virtualenv('%(python)s manage.py test %(apps)s' % env)
+        _virtualenv('%(python)s manage.py test %(apps)s' % env)
 
 def tornado(ip="149.169.203.115", port=8888):
     local("{python} vcweb-tornado.py {port}".format(python=env.python, **locals()), capture=False)

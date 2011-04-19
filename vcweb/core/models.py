@@ -311,7 +311,7 @@ class Experiment(models.Model):
 
     @property
     def playable_round_data(self):
-        return self.round_data.filter(round_configuration__round_type__in=RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS)
+        return self.round_data.select_related(depth=1).filter(round_configuration__round_type__in=RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS)
 
     @property
     def all_quiz_questions(self):
@@ -1085,7 +1085,6 @@ class Participant(CommonsUser):
     can_receive_invitations = models.BooleanField(default=False)
     groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participants')
     experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participants')
-#    authentication_token = models.CharField(max_length=64, null=True, blank=True)
 
     @property
     def active_experiments(self):
@@ -1104,12 +1103,6 @@ class Participant(CommonsUser):
 
     def get_participant_group_relationship(self, experiment):
         return ParticipantGroupRelationship.objects.get_participant_group(self, experiment)
-
-    def get_participant_number(self, experiment):
-        return ParticipantGroupRelationship.objects.get_participant_number(experiment, self)
-
-    def get_group(self, experiment):
-        return ParticipantGroupRelationship.objects.get_group(experiment, self)
 
     def experiments_with_status(self, status=Experiment.ACTIVE):
         return self.experiment_relationships.filter(experiment__status=status)
@@ -1149,26 +1142,25 @@ class ParticipantExperimentRelationship(models.Model):
 
 class ParticipantGroupRelationshipManager(models.Manager):
 
+    def by_experiment(self, experiment):
+        return self.select_related(depth=1).filter(group__experiment=experiment)
+
     def get_group(self, experiment, participant):
         participant_group = self.get_participant_group(participant, experiment)
         return participant_group.group if participant_group else None
 
     def get_participant_group(self, participant, experiment):
         try:
-            return self.select_related(depth=2).get(group__experiment=experiment, participant=participant)
+            return self.select_related(depth=1).get(group__experiment=experiment, participant=participant)
         except ParticipantGroupRelationship.DoesNotExist:
             logger.warning("Participant %s does not belong to a group in %s" % (participant, experiment))
             return None
 
-    def get_participant_number(self, experiment, participant):
-        participant_group = self.get_participant_group(participant, experiment)
-        return participant_group.participant_number if participant_group else None
-
-"""
-Many-to-many relationship entity storing a participant, group, their participant number in that group, the 
-round in which they joined the group, and the datetime that they joined the group.
-"""
 class ParticipantGroupRelationship(models.Model):
+    """
+    Many-to-many relationship entity storing a participant, group, their participant number in that group, the
+    round in which they joined the group, and the datetime that they joined the group.
+    """
     participant_number = models.PositiveIntegerField()
     participant = models.ForeignKey(Participant, related_name='participant_group_relationships')
     group = models.ForeignKey(Group, related_name = 'participant_group_relationships')
