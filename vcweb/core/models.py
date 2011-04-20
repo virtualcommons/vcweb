@@ -1081,6 +1081,7 @@ class GroupRoundDataValue(DataValue):
     class Meta:
         ordering = [ 'round_data', 'group', 'parameter' ]
 
+
 class Participant(CommonsUser):
     can_receive_invitations = models.BooleanField(default=False)
     groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participants')

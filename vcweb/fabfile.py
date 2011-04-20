@@ -32,7 +32,9 @@ postgres a few times to figure out what to automate, probably with south?
 syncdb_commands = ['(test -f vcweb.db && rm -f vcweb.db) || true',
         '%(python)s manage.py syncdb --noinput' % env,
         '%(python)s manage.py loaddata test_users_participants' % env,
-        '%(python)s manage.py loaddata forestry_test_data' % env]
+        '%(python)s manage.py loaddata forestry_test_data' % env,
+        '%(python)s manage.py loaddata slovakia' % env,
+        ]
 
 def shell():
     local("{python} manage.py shell".format(python=env.python), capture=False)

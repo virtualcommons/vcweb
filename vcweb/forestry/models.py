@@ -1,6 +1,6 @@
 from django.dispatch import receiver
 from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantGroupRelationship, ParticipantRoundDataValue,)
-from vcweb.core import signals, cacheable
+from vcweb.core import signals, simplecache
 from celery.decorators import task
 import logging
 logger = logging.getLogger(__name__)
@@ -58,30 +58,30 @@ def get_max_harvest_decision(resource_level):
     else:
         return 0
 
-@cacheable
-def get_forestry_experiment_metadata():
+@simplecache
+def get_forestry_experiment_metadata(refresh=False):
     return ExperimentMetadata.objects.get(namespace='forestry')
 
-@cacheable
-def get_resource_level_parameter():
+@simplecache
+def get_resource_level_parameter(refresh=False):
     return Parameter.objects.get(name='resource_level',
             scope=Parameter.GROUP_SCOPE,
             experiment_metadata=get_forestry_experiment_metadata())
 
-@cacheable
-def get_regrowth_parameter():
+@simplecache
+def get_regrowth_parameter(refresh=False):
     return Parameter.objects.get(name='group_regrowth',
             scope=Parameter.GROUP_SCOPE,
             experiment_metadata=get_forestry_experiment_metadata())
 
-@cacheable
-def get_group_harvest_parameter():
+@simplecache
+def get_group_harvest_parameter(refresh=False):
     return Parameter.objects.get(name='group_harvest',
             scope=Parameter.GROUP_SCOPE,
             experiment_metadata=get_forestry_experiment_metadata())
 
-@cacheable
-def get_harvest_decision_parameter():
+@simplecache
+def get_harvest_decision_parameter(refresh=False):
     return Parameter.objects.get(name='harvest_decision',
             scope=Parameter.PARTICIPANT_SCOPE,
             experiment_metadata=get_forestry_experiment_metadata())

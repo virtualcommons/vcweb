@@ -1,8 +1,13 @@
-from vcweb.core.models import RoundConfiguration, Parameter, ParticipantRoundDataValue, GroupRoundDataValue, ParticipantExperimentRelationship, ParticipantGroupRelationship
+from vcweb.core.models import (RoundConfiguration, Parameter,
+        ParticipantRoundDataValue, GroupRoundDataValue,
+        ParticipantExperimentRelationship, ParticipantGroupRelationship)
 from vcweb.core.tests import BaseVcwebTest
-from vcweb.forestry.models import round_setup, round_teardown, get_resource_level, get_harvest_decision_parameter, get_harvest_decisions, forestry_sender
+from vcweb.forestry.models import (get_group_harvest_parameter,
+        get_regrowth_parameter, round_setup, round_teardown, get_resource_level,
+        set_resource_level, set_harvest_decision, get_harvest_decision_parameter,
+        get_harvest_decisions, forestry_sender, get_forestry_experiment_metadata,
+        get_resource_level_parameter)
 import logging
-
 logger = logging.getLogger(__name__)
 
 class ForestryRoundSignalTest(BaseVcwebTest):
@@ -91,7 +96,6 @@ FIXME: several of these can and should be lifted to core/tests.py
 class ForestryParametersTest(BaseVcwebTest):
 
     def test_get_set_harvest_decisions(self):
-        from vcweb.forestry.models import get_harvest_decisions, get_harvest_decision_parameter, set_harvest_decision
         e = self.advance_to_data_round()
         # generate harvest decisions
         current_round_data = e.current_round_data
@@ -120,23 +124,33 @@ class ForestryParametersTest(BaseVcwebTest):
                 self.assertEqual(hd.value, 5)
 
 
-    def test_cacheable(self):
-        from vcweb.forestry.models import (get_group_harvest_parameter, get_regrowth_parameter,
-                get_forestry_experiment_metadata, get_resource_level_parameter)
+    def test_simple_cache_parameters(self):
         def verify_cached_data(func):
             self.assertEqual(func(), func())
             self.assertEqual(id(func()), id(func()))
-
         caching_funcs = (get_harvest_decision_parameter, get_group_harvest_parameter, get_regrowth_parameter,
                 get_resource_level_parameter, get_forestry_experiment_metadata)
-        for index, func in enumerate(caching_funcs):
-            verify_cached_data(func)
         for i in range(0, 25):
             for func in caching_funcs:
                 verify_cached_data(func)
 
+    def test_simple_cache_parameter_refresh(self):
+        def verify_refreshed_data(func):
+            self.assertEqual(func(), func())
+            a = func()
+            b = func(refresh=True)
+            self.assertNotEqual(id(a), id(b))
+            self.assertEqual(a, b)
+
+        caching_funcs = (get_harvest_decision_parameter, get_group_harvest_parameter, get_regrowth_parameter,
+                get_resource_level_parameter, get_forestry_experiment_metadata)
+        for i in range(0, 25):
+            for func in caching_funcs:
+                verify_refreshed_data(func)
+
+
+
     def test_get_set_resource_level(self):
-        from vcweb.forestry.models import get_resource_level, set_resource_level
         e = self.advance_to_data_round()
 
         for group in e.groups.all():
