@@ -1100,7 +1100,7 @@ class Participant(CommonsUser):
         return self.experiments_with_status(Experiment.COMPLETED)
 
     def get_participant_experiment_relationship(self, experiment):
-        return ParticipantExperimentRelationship.objects.get(participant=self, experiment=experiment)
+        return ParticipantExperimentRelationship.objects.select_related(depth=1).get(participant=self, experiment=experiment)
 
     def get_participant_group_relationship(self, experiment):
         return ParticipantGroupRelationship.objects.get_participant_group(self, experiment)
@@ -1111,10 +1111,10 @@ class Participant(CommonsUser):
     class Meta:
         ordering = ['user']
 
-"""
-Many-to-many relationship entity storing a participant and the experiment they are participating in.
-"""
 class ParticipantExperimentRelationship(models.Model):
+    """
+    Many-to-many relationship entity storing a participant and the experiment they are participating in.
+    """
     participant = models.ForeignKey(Participant, related_name='experiment_relationships')
     participant_identifier = models.CharField(max_length=32)
     sequential_participant_identifier = models.PositiveIntegerField()
@@ -1127,16 +1127,17 @@ class ParticipantExperimentRelationship(models.Model):
         super(ParticipantExperimentRelationship, self).__init__(*args, **kwargs)
         self.generate_identifier()
 
-    """ generates a unique identifier for the given participant and experiment stored in this relationship """
     def generate_identifier(self):
-        """ set participant_identifier if it hasn't been set already.  """
+        """
+        generates a unique identifier for the given participant and experiment stored in this relationship.
+        a no-op if participant_identifier is already set.
+        """
         if not self.participant_identifier:
             sha1 = hashlib.sha1()
             sha1.update("%s%i%s" % (self.participant.user.email, self.experiment.pk, self.date_created))
             self.participant_identifier = base64.urlsafe_b64encode(sha1.digest())
             self.sequential_participant_identifier = ParticipantExperimentRelationship.objects.filter(experiment=self.experiment).count() + 1
         return self.participant_identifier
-
 
     def __unicode__(self):
         return u"Experiment {0} - participant {1} (created {2})".format(self.experiment, self.participant, self.date_created)
@@ -1145,10 +1146,6 @@ class ParticipantGroupRelationshipManager(models.Manager):
 
     def by_experiment(self, experiment):
         return self.select_related(depth=1).filter(group__experiment=experiment)
-
-    def get_group(self, experiment, participant):
-        participant_group = self.get_participant_group(participant, experiment)
-        return participant_group.group if participant_group else None
 
     def get_participant_group(self, participant, experiment):
         try:

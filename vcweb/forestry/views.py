@@ -203,7 +203,7 @@ def play(request, experiment, participant):
     harvest_decision = get_harvest_decision(participant_group_relationship)
     if form.is_valid():
         resources_harvested = form.cleaned_data['harvest_decision']
-        resource_level = get_resource_level(participant.get_group(experiment))
+        resource_level = get_resource_level(participant_group_relationship.group)
         max_harvest_decision = get_max_harvest_decision(resource_level.value)
         if resources_harvested <= max_harvest_decision:
             set_harvest_decision(participant_group_relationship=participant_group_relationship, value=resources_harvested)
