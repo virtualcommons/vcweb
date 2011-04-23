@@ -84,7 +84,7 @@
                 s.send(createRefreshEvent());
                 return false;
             });
-            $('#gotoUrl').click(function(evt) {
+            $('#transitionAllParticipants').click(function(evt) {
                 console.log("sending goto event");
                 s.send(createGotoEvent());
                 return false;
@@ -120,12 +120,10 @@
             <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/arrow_refresh.png);'></span>
             refresh all participants</span>
         </li>
-        {% comment %}
-        <li><span id='gotoUrl' title='Moves all connected participants from waiting page to active page.' class='clickable' >
+        <li><span id='transitionAllParticipants' title='Moves all connected participants from waiting page to active page.' class='clickable' >
             <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/arrow_right.png);'></span>
             transition all participants to next round</span>
         </li>
-        {% endcomment %}
         <li>
         <a href='download/csv'>
             <span class='vcweb-icon ui-icon icon-left' style='margin: 8px 0.15em 0px 0px; background:url({{STATIC_URL}}images/download-icon.png);'></span>
