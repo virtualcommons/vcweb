@@ -1,4 +1,5 @@
 WSGISocketPrefix run/wsgi
+WSGIPythonHome /opt/virtualenvs/vcweb
 <VirtualHost *:80>
     ServerAdmin allen.lee@asu.edu
     DocumentRoot /var/www/vcweb

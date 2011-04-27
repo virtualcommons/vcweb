@@ -49,18 +49,20 @@ class ConnectionManager:
     def add_experimenter(self, connection, incoming_experimenter_pk, incoming_experiment_pk):
         experimenter_pk = int(incoming_experimenter_pk)
         experiment_id = int(incoming_experiment_pk)
+        experimenter_tuple = (experimenter_pk, experiment_id)
         logger.debug("registering experimenter %s with connection %s" % (experimenter_pk, connection))
         if connection in self.connection_to_experimenter:
             self.remove_experimenter(connection)
-        self.connection_to_experimenter[connection] = (experimenter_pk, experiment_id)
-        self.experimenter_to_connection[(experimenter_pk, experiment_id)] = connection
+        self.connection_to_experimenter[connection] = experimenter_tuple
+        self.experimenter_to_connection[experimenter_tuple] = connection
 
     def remove_experimenter(self, connection):
         if connection in self.connection_to_experimenter:
-            (experimenter_pk, experiment_id) = self.connection_to_experimenter[connection]
-            logger.debug("removing experimenter %s" % experimenter_pk)
+            experimenter_tuple = self.connection_to_experimenter[connection]
+            logger.debug("removing experimenter %s" % experimenter_tuple[0])
             del self.connection_to_experimenter[connection]
-            del self.experimenter_to_connection[(experimenter_pk, experiment_id)]
+            if experimenter_tuple in self.experimenter_to_connection:
+                del self.experimenter_to_connection[experimenter_tuple]
 
     def get_participant_group_relationship(self, connection):
         if connection in self.connection_to_participant:
@@ -85,22 +87,21 @@ class ConnectionManager:
             return None
 
     def add_participant(self, auth_token, connection, participant_experiment_relationship):
-        participant_tuple = (participant_experiment_relationship.participant.pk,
-                participant_experiment_relationship.experiment.pk)
+        participant_tuple = (participant_experiment_relationship.participant.pk, participant_experiment_relationship.experiment.pk)
         if participant_tuple in self.participant_to_connection:
             logger.debug("participant already has a connection, removing previous mappings.")
-            self.remove(self.participant_to_connection[participant_tuple])
+            self.remove_participant(self.participant_to_connection[participant_tuple])
 
         self.connection_to_participant[connection] = participant_tuple
         self.participant_to_connection[participant_tuple] = connection
 
-    def remove(self, connection):
+    def remove_participant(self, connection):
         try:
             participant_tuple = self.connection_to_participant[connection]
             del self.participant_to_connection[participant_tuple]
             del self.connection_to_participant[connection]
         except KeyError as k:
-            logger.warning("caught key error %s while trying to remove connection %s" % (connection, k) )
+            logger.warning("caught key error %s while trying to remove participant connection %s" % (connection, k) )
 
     '''
     Generator function that yields (participant_group_relationship_id, connection) tuples
@@ -216,7 +217,7 @@ class ParticipantHandler(SocketConnection):
         #logger.debug("auth token: %s, id %s" % (auth_token, participant_group_relationship_id))
         relationship_id = extra
         try:
-            participant_experiment_relationship = ParticipantExperimentRelationship.objects.get(pk=relationship_id)
+            participant_experiment_relationship = ParticipantExperimentRelationship.objects.select_related(depth=1).get(pk=relationship_id)
             connection_manager.add_participant(extra, self, participant_experiment_relationship)
             participant_group_rel = connection_manager.get_participant_group_relationship(self)
             if participant_group_rel is not None:
@@ -288,7 +289,7 @@ class ParticipantHandler(SocketConnection):
 
     def on_close(self):
         logger.debug("closing %s" % self)
-        connection_manager.remove(self)
+        connection_manager.remove_participant(self)
 
 def main(argv=None):
     if argv is None:
