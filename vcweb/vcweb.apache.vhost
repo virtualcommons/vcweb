@@ -6,6 +6,11 @@ WSGIPythonHome /opt/virtualenvs/vcweb
     ServerName vcweb.asu.edu
 
     Alias /static /var/www/vcweb/static
+    <FilesMatch "\.(html|js|png|jpg|gif|css)">
+    ExpiresDefault "access plus 1 days"
+    ExpiresActive On
+    </FilesMatch>
+
     Alias /favicon.ico /var/www/vcweb/static/favicon.ico
     Alias /robots.txt /var/www/vcweb/static/robots.txt
 

@@ -8,7 +8,7 @@
 body {
     margin: 0;
     padding: 0;
-    background: #FFFFFF url(/static/images/guarantee/img01.gif) repeat-x left top;
+    background: #FFFFFF url(images/img01.gif) repeat-x left top;
     color: #8A8A8A;
 }
 
@@ -50,7 +50,7 @@ img.right {
 #menu {
     float: left;
     height: 36px;
-    background: url(/static/images/guarantee/img02.gif) no-repeat left top;
+    background: url(images/img02.gif) no-repeat left top;
 }
 
 #menu ul {
@@ -71,7 +71,7 @@ img.right {
     width: 140px;
     height: 22px;
     padding: 10px 0px 0px 0px;
-    background: url(/static/images/guarantee/img04.gif) no-repeat left top;
+    background: url(images/img04.gif) no-repeat left top;
     text-decoration: none;
     text-align: center;
     font-family: Helvetica, sans-serif;
@@ -84,7 +84,7 @@ img.right {
 }
 
 #menu .active a {
-    background: url(/static/images/guarantee/img03.gif) no-repeat left top;
+    background: url(images/img03.gif) no-repeat left top;
     color: #FFFFF0;
 }
 
@@ -219,7 +219,7 @@ img.right {
     height: 32px;
     margin-left: 2px;
     padding: 4px 30px 2px 15px;
-    background: url(/static/images/guarantee/img05.gif) repeat-x left top;
+    background: url(images/img05.gif) repeat-x left top;
     font-family: Arial, Helvetica, sans-serif;
     font-weight: normal;
     font-size: 1em;
@@ -243,7 +243,7 @@ img.right {
     height: 18px;
     margin: 0px; 
     padding: 3px 0px 0px 40px;
-    background: url(/static/images/guarantee/img06.gif) no-repeat left top;
+    background: url(images/img06.gif) no-repeat left top;
     text-decoration: none;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 1em;
@@ -258,7 +258,7 @@ img.right {
     height: 18px;
     margin: 0px; 
     padding: 3px 0px 0px 40px;
-    background: url(/static/images/guarantee/img07.gif) no-repeat left top;
+    background: url(images/img07.gif) no-repeat left top;
     text-decoration: none;
     font-family: Arial, Helvetica, sans-serif;
     font-size: .9em;
@@ -296,7 +296,7 @@ img.right {
     margin: 0;
     padding: 0.50em 0.3em;
     border-bottom: 0.06em solid #E9E8DD;
-    background: url(/static/images/guarantee/img08.gif) no-repeat left 1.13em;
+    background: url(images/img08.gif) no-repeat left 1.13em;
 }
 
 #sidebar li li a {
@@ -318,7 +318,7 @@ img.right {
     height: 1.88em;
     margin: 0 0 0.63em 0;
     padding: 0.38em 0 0.14em 0.88em;
-    background: url(/static/images/guarantee/img05.gif) repeat-x left top;
+    background: url(images/img05.gif) repeat-x left top;
     text-transform: capitalize;
     font-size: 1.5em;
     font-weight: normal;
@@ -400,7 +400,7 @@ img.right {
     height: 100px;
     margin: 0 auto;
     padding: 0;
-    background: url(/static/images/guarantee/img02.gif) repeat-x left top;
+    background: url(images/img02.gif) repeat-x left top;
 }
 
 #footer-bgcontent {
