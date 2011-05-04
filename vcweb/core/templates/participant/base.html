@@ -8,11 +8,10 @@
     {% include "includes/socket.io.html" %}
     <script type='text/javascript'>
         var qtipOptions = {position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'green', tip: 'bottomMiddle'} };
-        connect(window.location.hostname, 8888, 'participant/{{participant_experiment_relationship.pk}}');
+        connect('participant/{{participant_experiment_relationship.pk}}');
         $(function() {
             $('[title]').qtip(qtipOptions);
         });
-</script>
     </script>
     {% endblock %}
 {% endblock %}

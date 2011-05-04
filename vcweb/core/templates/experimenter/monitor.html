@@ -60,7 +60,7 @@
             registerCallbacks({{ experiment.round_data.count }}, {{ experiment.current_round.sequence_number }});
             // socket.io connection
             // FIXME: add auth
-            var s = connect(window.location.hostname, 8888, 'experimenter/{{request.user.experimenter.pk}}');
+            var s = connect('experimenter/{{request.user.experimenter.pk}}');
             s.on('message', function(json_string) {
                 console.log("Received message: " + json_string);
                 var json = jQuery.parseJSON(json_string);

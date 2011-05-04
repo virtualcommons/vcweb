@@ -7,13 +7,12 @@ import logging
 import simplejson
 
 sys.path.append(os.path.abspath('..'))
-
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
 from vcweb.core.models import ParticipantExperimentRelationship, ParticipantGroupRelationship, ChatMessage, Experimenter, Experiment
+from vcweb import settings
 
-logger = logging.getLogger('vcweb.tornadio')
-
+logger = logging.getLogger('tornadio.vcweb')
 
 def info_json(message):
     return simplejson.dumps({'message_type': 'info', 'message': message})
@@ -28,11 +27,6 @@ def chat_json(chat_message):
         "message" : unicode(chat_message),
         "message_type": 'chat',
         })
-
-class Message(object):
-    def __init__(self, message_type='info', **kwargs):
-        self.message_type = message_type
-        self.__dict__.update(**kwargs)
 
 class ConnectionManager:
     '''
@@ -300,7 +294,7 @@ def main(argv=None):
     experimenterRouter = get_router(ExperimenterHandler, resource="experimenter", extra_re=r'\d+', extra_sep='/')
     #configure the Tornado application
     # currently only allow one command-line argument, the port to run on.
-    port = int(argv[1]) if (len(argv) > 1) else 8888
+    port = int(argv[1]) if (len(argv) > 1) else settings.SOCKET_IO_PORT
 
     application = tornado.web.Application(
             [participantRouter.route(), experimenterRouter.route(), ],

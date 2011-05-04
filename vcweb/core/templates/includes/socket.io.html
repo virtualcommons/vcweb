@@ -5,14 +5,17 @@
 
 <script type="text/javascript">
 var cachedSocket;
-function connect(host, port, resource) {
+var defaultPort = 8881;
+function connect(resource) {
+    var host = window.location.hostname;
     if ( !host ) {
         console.log("Tried to connect to invalid host, connecting to vcweb.asu.edu instead.");
         host = "vcweb.asu.edu";
     }
+    var port = {{SOCKET_IO_PORT}};
     if ( !port ) {
-        console.log("using default port 8888");
-        port = 8888;
+        console.log("using default port: " + defaultPort);
+        port = defaultPort;
     }
     cachedSocket = new io.Socket(host, {"port": port,  "resource": resource});
     cachedSocket.connect();

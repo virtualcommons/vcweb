@@ -61,10 +61,12 @@ LOGGING = {
         'vcweb': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
+            'propagate': True,
         },
-        'vcweb.tornadio': {
+        'tornadio.vcweb': {
             'handlers': ['console', 'tornadio-file'],
             'level': 'DEBUG',
+            'propagate': False,
         },
     }
 }
@@ -130,6 +132,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
         'django.core.context_processors.static',
         'django.contrib.auth.context_processors.auth',
         'django.contrib.messages.context_processors.messages',
+        'vcweb.core.context_processors.socket_io',
         )
 
 MIDDLEWARE_CLASSES = (
@@ -169,8 +172,10 @@ INSTALLED_APPS = (
 
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
-
 EMAIL_HOST = "smtp.asu.edu"
+
+# socket.io configuration
+SOCKET_IO_PORT = 8882;
 
 # celery rabbitmq/amqp configuration
 BROKER_HOST = "localhost"
@@ -183,7 +188,6 @@ BROKER_VHOST = "vcweb.vhost"
 CELERYBEAT_MAX_LOOP_INTERVAL = 5
 CELERYBEAT_LOG_FILE = 'celerybeat.log'
 CELERYBEAT_LOG_LEVEL = 'ERROR'
-
 
 # activation window
 ACCOUNT_ACTIVATION_DAYS = 30

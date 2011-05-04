@@ -1,6 +1,7 @@
 from fabric.api import local, run, sudo, cd, env, hide
 from fabric.contrib.console import confirm
 from fabric.contrib import django
+from fabric.context_managers import settings as fab_settings
 
 import os, sys
 
@@ -24,6 +25,8 @@ env.apps = ' '.join(env.applist)
 
 # django integration for access to settings, etc.
 django.project(env.project_name)
+
+from vcweb import settings as vcweb_settings
 
 """
 this currently only works for sqlite3 development database.  do it by hand with
@@ -49,22 +52,19 @@ def setup_virtualenv():
     run('virtualenv -p %(python)s --no-site-packages %(virtualenv_path)s;' % env)
 
 def clear_rabbitmq_db():
-    from fabric.context_managers import settings
-    with settings(warn_only=True):
+    with fab_settings(warn_only=True):
         sudo_chain(["rabbitmqctl %s" % cmd for cmd in ['stop_app', 'reset', 'start_app']])
 
 def setup_rabbitmq():
-    from vcweb import settings
-    from fabric.context_managers import settings as fab_settings
     clear_rabbitmq_db()
     with fab_settings(warn_only=True):
-        sudo("rabbitmqctl delete_user %s" % settings.BROKER_USER, pty=True)
-    sudo("rabbitmqctl add_user %s %s" % (settings.BROKER_USER, settings.BROKER_PASSWORD), pty=True)
+        sudo("rabbitmqctl delete_user %s" % vcweb_settings.BROKER_USER, pty=True)
+    sudo("rabbitmqctl add_user %s %s" % (vcweb_settings.BROKER_USER, vcweb_settings.BROKER_PASSWORD), pty=True)
     with fab_settings(warn_only=True):
-        sudo("rabbitmqctl delete_vhost %s" % settings.BROKER_VHOST, pty=True)
-    sudo("rabbitmqctl add_vhost %s" % settings.BROKER_VHOST, pty=True)
+        sudo("rabbitmqctl delete_vhost %s" % vcweb_settings.BROKER_VHOST, pty=True)
+    sudo("rabbitmqctl add_vhost %s" % vcweb_settings.BROKER_VHOST, pty=True)
 # figure out what the appropriate rabbitmq perms are here.
-    sudo('rabbitmqctl set_permissions -p %s %s ".*" ".*" ".*"' % (settings.BROKER_VHOST, settings.BROKER_USER), pty=True)
+    sudo('rabbitmqctl set_permissions -p %s %s ".*" ".*" ".*"' % (vcweb_settings.BROKER_VHOST, vcweb_settings.BROKER_USER), pty=True)
 
 def _virtualenv(*commands, **kwargs):
     """ source the virtualenv before executing this command """
@@ -87,11 +87,8 @@ def test():
     with cd(env.project_path):
         _virtualenv('%(python)s manage.py test %(apps)s' % env)
 
-def tornado(ip="149.169.203.115", port=8888):
-    local("{python} vcweb-tornado.py {port}".format(python=env.python, **locals()), capture=False)
-
-def tornadio(ip="149.169.203.115", port=8888):
-    local("{python} vcweb-tornadio.py {port}".format(python=env.python, **locals()), capture=False)
+def tornadio(ip="149.169.203.115", port=vcweb_settings.SOCKET_IO_PORT):
+    local("{python} vcwebio.py {port}".format(python=env.python, **locals()), capture=False)
 
 def server(ip="149.169.203.115", port=8000):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
@@ -145,8 +142,7 @@ def deploy():
             sudo('hg pull && hg up', user=env.deploy_user, pty=True)
             if confirm("syncdb?"):
                 syncdb()
-            from vcweb import settings
-            env.static_root = settings.STATIC_ROOT
+            env.static_root = vcweb_settings.STATIC_ROOT
             _virtualenv('%(python)s manage.py collectstatic' % env)
             sudo_chain('chmod -R ug+rw .',
                     'find %(static_root)s -type d -exec chmod a+x {} \;' % env,
