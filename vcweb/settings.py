@@ -3,6 +3,9 @@ import os
 from os import path
 import logging
 
+DEBUG = True
+TEMPLATE_DEBUG = DEBUG
+
 LOG_DIRECTORY = 'logs'
 try:
     os.makedirs(LOG_DIRECTORY)
@@ -71,9 +74,6 @@ LOGGING = {
     }
 }
 
-DEBUG = True
-TEMPLATE_DEBUG = DEBUG
-
 ADMINS = (
         ('Allen Lee', 'allen.lee@asu.edu')
         # ('Your Name', 'your_email@domain.com'),
@@ -133,6 +133,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
         'django.contrib.auth.context_processors.auth',
         'django.contrib.messages.context_processors.messages',
         'vcweb.core.context_processors.socket_io',
+        'vcweb.core.context_processors.debug_mode',
         )
 
 MIDDLEWARE_CLASSES = (
@@ -165,9 +166,9 @@ INSTALLED_APPS = (
         'django.contrib.staticfiles',
         'vcweb.core',
         'vcweb.forestry',
+        'dajaxice',
         'djcelery',
         'djkombu',
-        'dajaxice',
         )
 
 

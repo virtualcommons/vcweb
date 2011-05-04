@@ -1,5 +1,4 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-{% load dajaxice_templatetags %}
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
         {% block head %}
@@ -15,8 +14,12 @@
         <script type='text/javascript' src='{{STATIC_URL}}js/common.js'></script>
         <script type='text/javascript' src='{{STATIC_URL}}js/jquery.qtip-1.0.0-rc3.min.js'></script>
         {% include "includes/jquery.ui.html" %}
+        {% if debug_mode %}
+        {% load dajaxice_templatetags %}
         {% dajaxice_js_import %}
-        <!-- <script type='/text/javascript' src='{{STATIC_URL}}js/dajaxice.core.js'></script> -->
+        {% else %}
+        <script type='/text/javascript' src='{{STATIC_URL}}js/dajaxice.core.js'></script>
+        {% endif %}
         <script type='text/javascript'>
             <!-- sets all external links to open up in new windows and jquery-ui buttonifies all buttons-->
             $(function() {

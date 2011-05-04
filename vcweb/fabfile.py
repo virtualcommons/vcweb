@@ -101,6 +101,7 @@ def celerybeat():
 
 def push():
     local('hg push')
+    local('hg push ssh://hg@bitbucket.org/virtualcommons/vcweb')
 
 def dev():
     env.project_path = env.deploy_path + env.project_name
@@ -114,6 +115,10 @@ def loc():
     env.deploy_user = 'alllee'
     env.apache = 'apache2'
     env.hosts = ['localhost']
+
+def staticg():
+    local('%(python)s manage.py generate_static_dajaxice > static/js/dajaxice.core.js' % env)
+    local('%(python)s manage.py collectstatic' % env)
 
 def setup():
     setup_virtualenv()
