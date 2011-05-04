@@ -16,11 +16,6 @@ $(document).ready(function() {
 			equalTo: "Please make sure your passwords match."
 		}
 	});
-        $('[title]').qtip({
-                position: { corner: {target: 'topRight', tooltip: 'bottomMiddle'}},
-                style: { name: 'cream', tip: 'bottomMiddle'},
-            });
-
         $('input:visible, textarea:visible').each(function(i, val) {
             var labelTitle = $(val).prev().attr("title");
             if (! labelTitle) {
@@ -40,12 +35,12 @@ $(document).ready(function() {
 
 {% block title %}Virtual Commons Web Experiment Registration{% endblock %}
 
-{% block content %}
+{% block page %}
 
 <form id='registrationForm' action='' method='post'>
     <h3>New User</h3>
 <p>
-Returning users can <a href='{% url core:login %}'>login here</a> or <a href='{% url password-reset %}'>retrieve your password</a>.
+Already have an account?  You can <a href='{% url core:login %}'>login here</a> or <a href='{% url password-reset %}'>retrieve your password</a>.
 </p>
 
 {% include "includes/form-as-div.html" %}
@@ -56,5 +51,5 @@ Returning users can <a href='{% url core:login %}'>login here</a> or <a href='{%
 
 </form>
 
-{% endblock content %}
+{% endblock %}
 

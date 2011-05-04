@@ -24,20 +24,6 @@ h2 { font-size: 1.4em; }
 h3 { font-size: 1.2em; }
 h4 { font-size: 1.0em; }
 h5 { font-size: 0.9em; }
-input.error {
-    padding: 0;
-    margin: 0;
-    border: solid red;
-}
-label.error {
-    background: url('../images/unchecked.gif') no-repeat left center #FBE3E4;
-    line-height: normal;
-    font-size: .8em;
-    margin:0.3em;
-    padding:0.3em;
-    padding-left: 1.1em;
-    margin-left: 0.3em;
-}
 span.label {
     float: left;
     text-align: right;
@@ -141,6 +127,19 @@ fieldset.small>legend {
 }
 .field > input[type='password'] {
     width: 15em;
+}
+input.error {
+    margin: 0.5em 0 0.5em 0;
+    padding: 1px 0px 1px 0px;
+    border: 1px solid red;
+}
+label.error {
+    background: url('../images/unchecked.gif') no-repeat left center #FBE3E4;
+    font-size: .8em;
+    margin:0.3em;
+    padding:0.3em;
+    padding-left: 1.1em;
+    margin-left: 0.3em;
 }
 #experimentData a {
     text-decoration: none;
