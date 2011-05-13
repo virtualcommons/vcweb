@@ -411,6 +411,21 @@ class Experiment(models.Model):
             users.append(user)
         self.register_participants(users=users, institution=institution)
 
+    def initialize_parameters(self, group_parameters=None, participant_parameters=None):
+        if group_parameters is None:
+            group_parameters = []
+        if participant_parameters is None:
+            participant_parameters = []
+        current_round_data = self.current_round_data
+        for group in self.groups.select_related(depth=1).all():
+            for parameter in group_parameters:
+                group_data_value, created = current_round_data.group_data_values.get_or_create(group=group, parameter=parameter)
+                logger.debug("%s (%s)", group_data_value, created)
+            for pgr in group.participant_group_relationships.all():
+                for parameter in participant_parameters:
+                    participant_data_value, created = current_round_data.participant_data_values.get_or_create(participant_group_relationship=pgr, parameter=parameter)
+                    logger.debug("%s (%s)", participant_data_value, created)
+
     def log(self, log_message):
         if log_message:
             self.activity_log.create(round_configuration=self.current_round, log_message=log_message)
@@ -804,7 +819,7 @@ class Parameter(models.Model):
         return value
 
     def __unicode__(self):
-        return u"%s parameter: %s (%s, %s)" % (self.experiment_metadata.namespace, self.name, self.type, self.scope)
+        return u"%s (type:%s, scope:%s, experiment: %s)" % (self.name, self.type, self.scope, self.experiment_metadata)
 
     class Meta:
         ordering = ['name']
@@ -1076,7 +1091,8 @@ class GroupRoundDataValue(DataValue):
         return self.round_data.round_configuration
 
     def __unicode__(self):
-        return u"data value {0}: {1} (group {2}, round {3})".format(self.parameter, self.value, self.group, self.round_configuration)
+        return u"{0}={1} ({2}, {3})".format(self.parameter, self.value, self.group, self.round_configuration)
+
     class Meta:
         ordering = [ 'round_data', 'group', 'parameter' ]
 

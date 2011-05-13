@@ -31,10 +31,7 @@ class Dashboard(ListView, TemplateResponseMixin):
     context_object_name = 'experiments'
     def get_template_names(self):
         user = self.request.user
-        if is_experimenter(user):
-            return ['experimenter/dashboard.html']
-        else:
-            return ['participant/dashboard.html']
+        return ['experimenter/dashboard.html'] if is_experimenter(user) else ['participant/dashboard.html']
     def get_queryset(self):
         user = self.request.user
         if is_experimenter(user):
@@ -46,7 +43,7 @@ class Dashboard(ListView, TemplateResponseMixin):
                 if not experiment.experiment_metadata in experiment_dict:
                     experiment_dict[experiment.experiment_metadata] = dict([(choice[0], list()) for choice in Experiment.STATUS_CHOICES])
                 experiment_dict[experiment.experiment_metadata][experiment.status].append(experiment)
-                logger.debug("experiment_dict %s" % experiment_dict)
+                logger.info("experiment_dict %s", experiment_dict)
             return experiment_dict
 
 def set_authentication_token(user, authentication_token=None):

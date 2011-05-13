@@ -1,5 +1,6 @@
 from django.dispatch import receiver
-from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantGroupRelationship, ParticipantRoundDataValue,)
+from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantGroupRelationship,
+        ParticipantRoundDataValue,Group)
 from vcweb.core import signals, simplecache
 from celery.decorators import task
 import logging
@@ -93,22 +94,19 @@ def set_resource_level(group=None, value=None):
     group.set_data_value(parameter=get_resource_level_parameter(), value=value)
 
 def round_setup(experiment, **kwargs):
-    logger.debug("forestry: round_setup for %s", experiment)
+    logger.debug(experiment)
     round_configuration = experiment.current_round
-    '''
-    FIXME: replace with dict-based dispatch on round_configuration.round_type?
-    '''
-    if round_configuration.is_instructions_round:
-        logger.debug("set up instructions round")
-        # do instructions stuff
-    elif round_configuration.is_quiz_round:
-        logger.debug("setting up quiz round")
-    elif round_configuration.is_chat_round:
-        logger.debug("set up chat round")
-    elif round_configuration.is_debriefing_round:
-        logger.debug("set up debriefing round")
-
     if round_configuration.is_playable_round:
+        # participant parameter
+        harvest_decision_parameter = get_harvest_decision_parameter()
+        # group parameters
+        regrowth_parameter = get_regrowth_parameter()
+        group_harvest_parameter = get_group_harvest_parameter()
+        resource_level_parameter = get_resource_level_parameter()
+        # initialize group and participant data values
+        experiment.initialize_parameters(
+                group_parameters=(regrowth_parameter, group_harvest_parameter, resource_level_parameter),
+                participant_parameters=(harvest_decision_parameter))
         '''
         practice or regular round, set up resource levels and participant
         harvest decision parameters
@@ -119,12 +117,6 @@ def round_setup(experiment, **kwargs):
                 ''' set resource level to initial default '''
                 group.log("Setting resource level to initial value [%s]" % initial_resource_level)
                 set_resource_level(group, initial_resource_level)
-        ''' initialize participant data values '''
-        current_round_data = experiment.current_round_data
-        harvest_decision_parameter = get_harvest_decision_parameter()
-        for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=experiment):
-            harvest_decision, created = current_round_data.participant_data_values.get_or_create(participant_group_relationship=pgr, parameter=harvest_decision_parameter)
-            logger.debug("%s (%s)", harvest_decision, created)
 
 @task
 def stop_round_task():
@@ -137,7 +129,7 @@ def round_teardown(experiment, **kwargs):
     current_round_configuration = experiment.current_round
     max_resource_level = 100
     for group in experiment.groups.all():
-        # FIXME: simplify logic 
+        # FIXME: simplify logic
         if has_resource_level(group):
             current_resource_level = get_resource_level(group)
             if current_round_configuration.is_playable_round:
