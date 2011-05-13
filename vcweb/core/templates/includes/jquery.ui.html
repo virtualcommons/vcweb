@@ -1,2 +1,4 @@
-<link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/themes/pepper-grinder/jquery-ui.css" rel="stylesheet" type="text/css" media="screen" />
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
+{% with jquery_ui_version="1.8.12" %}
+<link href="http://ajax.googleapis.com/ajax/libs/jqueryui/{{jquery_ui_version}}/themes/pepper-grinder/jquery-ui.css" rel="stylesheet" type="text/css" media="screen" />
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/{{jquery_ui_version}}/jquery-ui.min.js"></script>
+{% endwith %}

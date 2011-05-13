@@ -93,7 +93,7 @@ def set_resource_level(group=None, value=None):
     group.set_data_value(parameter=get_resource_level_parameter(), value=value)
 
 def round_setup(experiment, **kwargs):
-    logger.debug("forestry: round_setup for %s" % experiment)
+    logger.debug("forestry: round_setup for %s", experiment)
     round_configuration = experiment.current_round
     '''
     FIXME: replace with dict-based dispatch on round_configuration.round_type?
@@ -124,7 +124,7 @@ def round_setup(experiment, **kwargs):
         harvest_decision_parameter = get_harvest_decision_parameter()
         for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=experiment):
             harvest_decision, created = current_round_data.participant_data_values.get_or_create(participant_group_relationship=pgr, parameter=harvest_decision_parameter)
-            logger.debug("%s harvest decision %s" % ("created" if created else "retrieved", harvest_decision))
+            logger.debug("%s (%s)", harvest_decision, created)
 
 @task
 def stop_round_task():
@@ -132,7 +132,7 @@ def stop_round_task():
 
 def round_teardown(experiment, **kwargs):
     ''' round teardown calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth and transferring'''
-    logger.debug("forestry: round_teardown for %s" % experiment)
+    logger.debug("forestry: round_teardown for %s", experiment)
     resource_level_parameter = get_resource_level_parameter()
     current_round_configuration = experiment.current_round
     max_resource_level = 100

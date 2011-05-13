@@ -26,7 +26,7 @@ def index(request):
         #return render_to_response('forestry/experimenter-index.html')
         return redirect('forestry:experimenter_index')
     else:
-        logger.warning("user %s isn't an experimenter or participant" % request.user)
+        logger.warning("user %s isn't an experimenter or participant", request.user)
         return redirect('home')
 
 @experimenter_required
@@ -58,7 +58,7 @@ def manage_experiment(request, experiment_id=None):
                 { 'experiment': experiment },
                 context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
-        logger.warning("No experiment available with id [%s]" % experiment_id)
+        logger.warning("No experiment available with id [%s]", experiment_id)
         return redirect('core:experimenter_index')
 
 class ParticipantRoundData(object):
@@ -107,7 +107,7 @@ def wait(request, experiment_id=None):
             },
             context_instance=RequestContext(request))
     except Experiment.DoesNotExist:
-        logger.warning("No experiment found with id %s" % experiment_id)
+        logger.warning("No experiment found with id %s", experiment_id)
         return redirect('forestry:participant_index')
 
 

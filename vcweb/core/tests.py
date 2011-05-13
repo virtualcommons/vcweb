@@ -120,8 +120,7 @@ class ExperimentConfigurationTest(BaseVcwebTest):
 
 class ExperimentTest(BaseVcwebTest):
     def round_started_test_handler(self, experiment=None, time=None, round_configuration=None, **kwargs):
-        logger.debug("invoking round started test handler with args experiment:%s time:%s round_configuration_id:%s"
-                     % (experiment, time, round_configuration))
+        logger.debug("invoking round started test handler with args experiment:%s time:%s round_configuration_id:%s", experiment, time, round_configuration)
         self.assertEqual(experiment, self.experiment)
         self.assertEqual(round_configuration, self.experiment.current_round)
         self.assertTrue(time, "time should be set")
@@ -268,8 +267,7 @@ class ParticipantExperimentRelationshipTest(BaseVcwebTest):
             per = ParticipantExperimentRelationship.objects.create(participant=p,
                     experiment=e, created_by=self.experimenter.user)
             self.assertTrue(per.id > 0)
-            logger.debug("Participant identifier is %s - sequential id is %i"
-                         % (per.participant_identifier, per.sequential_participant_identifier))
+            logger.debug("Participant identifier is %s - sequential id is %i", per.participant_identifier, per.sequential_participant_identifier)
             self.assertTrue(per.participant_identifier)
             self.assertTrue(per.sequential_participant_identifier > 0)
 
@@ -332,7 +330,7 @@ class RoundConfigurationTest(BaseVcwebTest):
     def test_get_templates(self):
         e = self.experiment
         for round_type, data in RoundConfiguration.ROUND_TYPES_DICT.items():
-            logger.debug("inspecting round type: %s with data %s" % (round_type, data))
+            logger.debug("inspecting round type: %s with data %s", round_type, data)
             rc = self.create_new_round_configuration(round_type=round_type)
             e.current_round_sequence_number = rc.sequence_number
             self.assertEqual(e.current_round_template, "%s/%s" % (e.namespace, data[1]), 'should have returned template for ' + data[0])

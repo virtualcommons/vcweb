@@ -95,15 +95,14 @@ class RegisterParticipantsForm(forms.ModelForm):
         if institution_name is None and institution_url is None:
             self.institution = None
         else:
-            logger.debug("get or create institution with name [%s] and url [%s]" % (institution_name,
-                institution_url))
+            logger.debug("get or create institution with name [%s] and url [%s]", institution_name, institution_url)
             (institution, created) = Institution.objects.get_or_create(name=institution_name, url=institution_url)
             self.institution = institution
         return self.cleaned_data
 
 
 class RegisterSimpleParticipantsForm(RegisterParticipantsForm):
-    email_suffix = forms.CharField(min_length=3, initial='asu.edu', 
+    email_suffix = forms.CharField(min_length=3, initial='asu.edu',
             help_text='An email suffix without the "@" symbol.  Generated participants will have usernames of the format s1..sn@email_suffix.  For example, if you register 20 participants with an email suffix of example.edu, the system will generate 20 participants with usernames ranging from s1@example.edu, s2@example.edu, s3@example.edu, ... s20@example.edu.')
     number_of_participants = forms.IntegerField(min_value=1, help_text='The number of participants to register with this experiment.')
 

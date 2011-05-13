@@ -44,8 +44,9 @@ class ConnectionManager:
         experimenter_pk = int(incoming_experimenter_pk)
         experiment_id = int(incoming_experiment_pk)
         experimenter_tuple = (experimenter_pk, experiment_id)
-        logger.debug("registering experimenter %s with connection %s" % (experimenter_pk, connection))
+        logger.debug("registering experimenter %s with connection %s", experimenter_pk, connection)
         if connection in self.connection_to_experimenter:
+            logger.debug("experimenter already registered, removing previous mapping")
             self.remove_experimenter(connection)
         self.connection_to_experimenter[connection] = experimenter_tuple
         self.experimenter_to_connection[experimenter_tuple] = connection
@@ -53,7 +54,7 @@ class ConnectionManager:
     def remove_experimenter(self, connection):
         if connection in self.connection_to_experimenter:
             experimenter_tuple = self.connection_to_experimenter[connection]
-            logger.debug("removing experimenter %s" % experimenter_tuple[0])
+            logger.debug("removing experimenter %s", experimenter_tuple[0])
             del self.connection_to_experimenter[connection]
             if experimenter_tuple in self.experimenter_to_connection:
                 del self.experimenter_to_connection[experimenter_tuple]
@@ -61,10 +62,9 @@ class ConnectionManager:
     def get_participant_group_relationship(self, connection):
         if connection in self.connection_to_participant:
             (participant_pk, experiment_pk) = self.connection_to_participant[connection]
-            logger.debug("Looking for ParticipantGroupRelationship with tuple (%s, %s)" %
-                    (participant_pk, experiment_pk))
+            logger.debug("Looking for ParticipantGroupRelationship with tuple (%s, %s)", participant_pk, experiment_pk)
             return ParticipantGroupRelationship.objects.get(participant__pk=participant_pk, group__experiment__pk = experiment_pk)
-        logger.debug("Didn't find connection %s in connection map %s." % (connection, self.connection_to_participant))
+        logger.debug("Didn't find connection %s in connection map %s.", connection, self.connection_to_participant)
         return None
 
     def get_experiment(self, connection):
@@ -95,7 +95,7 @@ class ConnectionManager:
             del self.participant_to_connection[participant_tuple]
             del self.connection_to_participant[connection]
         except KeyError as k:
-            logger.warning("caught key error %s while trying to remove participant connection %s" % (connection, k) )
+            logger.warning("caught key error %s while trying to remove participant connection %s", connection, k)
 
     '''
     Generator function that yields (participant_group_relationship_id, connection) tuples
@@ -118,18 +118,15 @@ class ConnectionManager:
                     for participant_group_pk, connection in self.connections(group):
                         yield (participant_group_pk, connection)
             else:
-                logger.warning("Experimenter %s tried to refresh experiment %s" %
-                        (experimenter_pk, experiment))
+                logger.warning("Experimenter %s tried to refresh experiment %s", experimenter_pk, experiment)
         else:
-            logger.warning("No experimenter available for connection %s" %
-                connection)
+            logger.warning("No experimenter available for connection %s", connection)
     '''
     experimenter functions
     '''
     def send_refresh(self, connection, experiment, experimenter_id=None):
         for (participant_group_pk, connection) in self.all_participants(connection, experiment):
-            logger.debug("sending refresh to %s, %s" % (participant_group_pk,
-                connection))
+            logger.debug("sending refresh to %s, %s", participant_group_pk, connection)
             connection.send(ConnectionManager.refresh_json)
 
     def send_goto(self, connection, experiment, url):
@@ -143,14 +140,14 @@ class ConnectionManager:
 
     def send_to_experimenter(self, experimenter_tuple, json):
         (experimenter_pk, experiment_pk) = experimenter_tuple
-        logger.debug("sending %s to experimenter %s" % (json, experimenter_tuple))
+        logger.debug("sending %s to experimenter %s", json, experimenter_tuple)
         if experimenter_tuple in self.experimenter_to_connection:
             connection = self.experimenter_to_connection[experimenter_tuple]
-            logger.debug("sending to connection %s" % connection)
+            logger.debug("sending to connection %s", connection)
             connection.send(json)
         else:
-            logger.debug("no experimenter found with pk %s" % experimenter_pk)
-            logger.debug("all experimenters: %s" % self.experimenter_to_connection)
+            logger.debug("no experimenter found with pk %s", experimenter_pk)
+            logger.debug("all experimenters: %s", self.experimenter_to_connection)
 
     def send_to_group(self, group, json):
         for participant_group_pk, connection in self.connections(group):
@@ -175,14 +172,14 @@ class ExperimenterHandler(SocketConnection):
     def on_open(self, *args, **kwargs):
         try:
             extra = kwargs['extra']
-            logger.debug('%s received extra: %s' % (self, extra))
+            logger.debug('%s received extra: %s', self, extra)
             experimenter_id = extra
         except Experimenter.DoesNotExist:
-            logger.warning("Tried to establish connection but there isn't any experimenter with id %s" % experimenter_id)
+            logger.warning("Tried to establish connection but there isn't any experimenter with id %s", experimenter_id)
 
     def on_message(self, message):
         event = to_event(message)
-        logger.debug("%s received message %s" % (self, message))
+        logger.debug("%s received message %s", self, message)
         if event.message_type == 'connect':
             connection_manager.add_experimenter(self, event.experimenter_id, event.experiment_id)
         elif event.message_type == 'refresh':
@@ -197,7 +194,7 @@ class ExperimenterHandler(SocketConnection):
             url = event.message
             notified_participants = connection_manager.send_goto(self, experiment, url)
             self.send(info_json("Sent goto:%s to all participants" % url))
-            logger.debug("sending all connected participants %s to %s" % (notified_participants, url))
+            logger.debug("sending all connected participants %s to %s", notified_participants, url)
 
     def on_close(self):
         connection_manager.remove_experimenter(self)
@@ -231,12 +228,12 @@ class ParticipantHandler(SocketConnection):
                             'message_type': 'info',
                             }))
         except KeyError as e:
-            logger.debug("no participant group relationship id %s" % e)
+            logger.debug("no participant group relationship id %s", e)
         except ParticipantExperimentRelationship.DoesNotExist as e:
-            logger.debug("no participant experiment relationship with id %s (%s)" % (relationship_id, e))
+            logger.debug("no participant experiment relationship with id %s (%s)", relationship_id, e)
 
     def on_message(self, message, *args, **kwargs):
-        logger.debug("received message %s from handler %s" % (message, self))
+        logger.debug("received message %s from handler %s", message, self)
         event = to_event(message)
         # could handle connection here or in on_open, revisit
         if 'connect' in event.message_type:
@@ -255,14 +252,14 @@ class ParticipantHandler(SocketConnection):
                 event.participant_number = participant_group_relationship.participant_number
                 event.participant_group = participant_group_relationship.group_number
                 json = simplejson.dumps(event.__dict__)
-                logger.debug("json is: %s" % json)
+                logger.debug("json is: %s", json)
                 connection_manager.send_to_experimenter(experimenter_tuple, json)
                 if experiment.all_participants_have_submitted:
                     connection_manager.send_to_experimenter(
                             experimenter_tuple,
                             info_json('All participants have submitted a decision.'))
             else:
-                logger.debug("No data round in progress, received late submit event: %s" % event)
+                logger.debug("No data round in progress, received late submit event: %s", event)
 
         elif event.message_type == 'chat':
             participant_group_relationship = connection_manager.get_participant_group_relationship(self)
@@ -282,7 +279,7 @@ class ParticipantHandler(SocketConnection):
             connection_manager.send_to_group(participant_group_relationship.group, chat_json)
 
     def on_close(self):
-        logger.debug("closing %s" % self)
+        logger.debug("removing participant connection %s", self)
         connection_manager.remove_participant(self)
 
 def main(argv=None):

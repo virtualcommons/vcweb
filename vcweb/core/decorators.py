@@ -34,10 +34,10 @@ def create_user_decorator(view_function, is_valid_user, redirect_to='core:dashbo
     def decorator(fn):
         def _decorated_view(request, *args, **kwargs):
             if is_valid_user(request.user):
-                logger.debug('user was valid: %s' % request.user)
+                logger.debug('user was valid: %s', request.user)
                 return fn(request, *args, **kwargs)
             else:
-                logger.debug('user was invalid, redirecting to %s' % redirect_to)
+                logger.debug('user was invalid, redirecting to %s', redirect_to)
                 return redirect(redirect_to)
         _decorated_view.__name__ = fn.__name__
         _decorated_view.__dict__ = fn.__dict__

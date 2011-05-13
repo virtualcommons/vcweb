@@ -1,27 +1,28 @@
 # Django settings for vcweb project.
-import os
-from os import path
+from os import path, makedirs
 import logging
+import sys
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 LOG_DIRECTORY = 'logs'
 try:
-    os.makedirs(LOG_DIRECTORY)
+    makedirs(LOG_DIRECTORY)
 except OSError:
     pass
-LOG_FILENAME = 'vcweb.log'
+
+
+# logging configuration
+VCWEB_LOG_FILENAME = 'vcweb.log'
 TORNADIO_LOG_FILENAME = 'tornadio.log'
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
     'formatters': {
         'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
-        },
-        'medium': {
-            'format': '%(asctime)s %(levelname)s %(message)s'
+            'format': '%(levelname)s %(asctime)s [%(name)s|%(funcName)s:%(lineno)d] %(message)s'
         },
         'simple': {
             'format': '%(levelname)s %(message)s'
@@ -32,22 +33,33 @@ LOGGING = {
             'level':'DEBUG',
             'class':'django.utils.log.NullHandler',
         },
-        'console':{
+        'stdout':{
             'level':'DEBUG',
             'class':'logging.StreamHandler',
-            'formatter': 'simple'
+            'formatter': 'verbose',
+            'stream':sys.stdout,
         },
-        'file': {
+        'stderr':{
+            'level': 'DEBUG',
+            'class':'logging.StreamHandler',
+            'formatter': 'verbose',
+            'stream':sys.stderr,
+        },
+        'vcweb-file': {
             'level': 'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
-            'formatter': 'medium',
-            'filename': path.join(LOG_DIRECTORY, LOG_FILENAME),
+            'formatter': 'verbose',
+            'filename': path.join(LOG_DIRECTORY, VCWEB_LOG_FILENAME),
+            'backupCount': 6,
+            'maxBytes': 10000000,
         },
         'tornadio-file': {
             'level': 'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
-            'formatter': 'medium',
+            'formatter': 'verbose',
             'filename': path.join(LOG_DIRECTORY, TORNADIO_LOG_FILENAME),
+            'backupCount': 6,
+            'maxBytes': 10000000,
         },
     },
     'loggers': {
@@ -57,17 +69,16 @@ LOGGING = {
             'level':'INFO',
         },
         'django.request': {
-            'handlers': ['console'],
+            'handlers': ['null'],
             'level': 'ERROR',
             'propagate': False,
         },
         'vcweb': {
-            'handlers': ['console', 'file'],
+            'handlers': ['vcweb-file', 'stdout'],
             'level': 'DEBUG',
-            'propagate': True,
         },
         'tornadio.vcweb': {
-            'handlers': ['console', 'tornadio-file'],
+            'handlers': ['tornadio-file', 'stderr'],
             'level': 'DEBUG',
             'propagate': False,
         },
@@ -169,6 +180,7 @@ INSTALLED_APPS = (
         'dajaxice',
         'djcelery',
         'djkombu',
+#        'django_extensions',
         )
 
 

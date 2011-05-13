@@ -27,8 +27,8 @@ handles each second tick.  Might rethink this and use timed / delayed tasks in c
 controlled experiments and for longer-scale experiments use 1 minute granularity for performance sake.
 """
 def second_tick_handler(sender, time=None, **kwargs):
-    logger.debug("handling second tick signal at %s" % time)
-    logger.debug("kwargs: %s" % kwargs)
+    logger.debug("handling second tick signal at %s", time)
+    logger.debug("kwargs: %s", kwargs)
     # inspect all active experiments and update their time left
     Experiment.objects.increment_elapsed_time(status='ROUND_IN_PROGRESS')
 
@@ -369,8 +369,7 @@ class Experiment(models.Model):
 
     def register_participants(self, users=None, emails=None, institution=None, password=None):
         if self.participants.count() > 0:
-            logger.warning("This experiment %s already has %d participants - aborting" % (self,
-                self.participants.count()))
+            logger.warning("This experiment %s already has %d participants - aborting", self, self.participants.count())
             return
         if users is None:
             users = []
@@ -397,8 +396,7 @@ class Experiment(models.Model):
     ''' hardcoded defaults for the slovakia pretest '''
     def setup_test_participants(self, count=20, institution=None, email_suffix='sav.sk', password='test'):
         if self.participants.count() > 0:
-            logger.warning("This experiment %s already has %d participants - aborting"
-                    % (self, self.participants.count()))
+            logger.warning("This experiment %s already has %d participants - aborting", self, self.participants.count())
             return
         users = []
         for i in xrange(1, count+1):
@@ -491,7 +489,7 @@ class Experiment(models.Model):
         sender = self.experiment_metadata.pk if sender is None else sender
         #sender = self.namespace.encode('utf-8')
         # notify registered game handlers
-        logger.debug("About to send round started signal with sender %s" % sender)
+        logger.debug("About to send round started signal with sender %s", sender)
         return signals.round_started.send(sender, experiment=self, time=datetime.now(), round_configuration=self.current_round)
 
     def end_round(self, sender=None):
@@ -501,7 +499,7 @@ class Experiment(models.Model):
         self.log('Ending round with elapsed time %s' % self.current_round_elapsed_time)
         sender = self.experiment_metadata.pk if sender is None else sender
         #sender = self.namespace.encode('utf-8')
-        logger.debug("about to send round ended signal with sender %s" % sender)
+        logger.debug("about to send round ended signal with sender %s", sender)
         return signals.round_ended.send(sender, experiment=self, round_configuration=self.current_round)
 
     def stop(self):
@@ -542,7 +540,7 @@ class Experiment(models.Model):
                 ParticipantExperimentRelationship.objects.create(participant=participant,
                         experiment=experiment, created_by=self.experimenter.user)
         else:
-            logger.warning("Tried to transfer participants to an experiment %s that already had participants %s" % (experiment, experiment.participants.all()))
+            logger.warning("Tried to transfer participants to an experiment %s that already had participants %s", experiment, experiment.participants.all())
 
     def __unicode__(self):
         return u"%s #%s | %s" % (self.experiment_metadata.title, self.pk, self.experimenter)
@@ -641,7 +639,7 @@ class RoundConfiguration(models.Model):
         parameter = Parameter.objects.get(name=name, scope=Parameter.ROUND_SCOPE)
         round_parameter, created = self.round_parameter_values.get_or_create(parameter=parameter)
         if created:
-            logger.debug("created new parameter %s for %s" % (parameter, self))
+            logger.debug("created new parameter %s for %s", parameter, self)
         return round_parameter
 
     def set_parameter(self, name=None, value=None):
@@ -918,7 +916,7 @@ class Group(models.Model):
         if self.current_round.is_playable_round:
             round_data = self.current_round_data
             if round_data.group_data_values.filter(group=self).count() == 0:
-                logger.debug("no group data values for the current round %s, creating new ones." % round_data)
+                logger.debug("no group data values for the current round %s, creating new ones.", round_data)
                 self.log("Initializing %s data parameters" % round_data)
                 for group_data_parameter in self.data_parameters:
                     self.data_values.create(round_data=round_data, parameter=group_data_parameter)
@@ -947,7 +945,7 @@ class Group(models.Model):
         '''
         updated_rows = self.data_values.filter(round_data=self.current_round_data, parameter=parameter).update(**update_dict)
         if updated_rows != 1:
-            logger.error("Updated %s rows, should have been only one..." % updated_rows)
+            logger.error("Updated %s rows, should have been only one.", updated_rows)
         '''
         data_value = self.current_round_data.data_values.get(parameter=parameter)
         data_value.value += amount
@@ -968,7 +966,7 @@ class Group(models.Model):
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         data_value, created = self.data_values.get_or_create(**criteria)
         if created:
-            logger.debug("Created new data value in get_data_value: %s" % data_value)
+            logger.debug("Created new data value in get_data_value: %s", data_value)
         return data_value
 
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None):
@@ -997,7 +995,7 @@ class Group(models.Model):
     '''
     def transfer_to_next_round(self, parameter=None, value=None, transfer_existing_value=True):
         if self.experiment.is_last_round:
-            logger.warning("Trying to transfer parameter %s to next round but this is the last round" % parameter)
+            logger.warning("Trying to transfer parameter %s to next round but this is the last round", parameter)
             return
         value = self.get_scalar_data_value(parameter=parameter) if transfer_existing_value else value
         if not parameter:
@@ -1008,8 +1006,9 @@ class Group(models.Model):
 
     def transfer_parameter(self, parameter, value):
         next_round_data, created = self.experiment.round_data.get_or_create(round_configuration=self.experiment.next_round)
-        logger.debug("next round data: %s (%s)" % (next_round_data, "created" if created else "retrieved"))
+        logger.debug("next round data: %s (%s)", next_round_data, created)
         group_data_value, created = next_round_data.group_data_values.get_or_create(group=self, parameter=parameter, defaults={'value': value})
+        logger.debug("group data value %s (%s)", group_data_value, created)
         if not created:
             group_data_value.value = value
             group_data_value.save()
@@ -1029,7 +1028,7 @@ class Group(models.Model):
     """
     def add_participant(self, participant):
         if not participant:
-            logger.warning("Trying to add invalid participant %s to group %s" % (participant, self))
+            logger.warning("Trying to add invalid participant %s to group %s", participant, self)
             return self
 
         ''' add the participant to this group if there is room, otherwise create and add to a fresh group '''
@@ -1151,7 +1150,7 @@ class ParticipantGroupRelationshipManager(models.Manager):
         try:
             return self.select_related(depth=1).get(group__experiment=experiment, participant=participant)
         except ParticipantGroupRelationship.DoesNotExist:
-            logger.warning("Participant %s does not belong to a group in %s" % (participant, experiment))
+            logger.warning("Participant %s does not belong to a group in %s", participant, experiment)
             return None
 
 class ParticipantGroupRelationship(models.Model):
@@ -1186,7 +1185,7 @@ class ParticipantGroupRelationship(models.Model):
             participant_data_value.submitted = True
             participant_data_value.save()
         else:
-            logger.warning("Unable to set data value %s on round data %s for %s" % (value, current_round_data, parameter))
+            logger.warning("Unable to set data value %s on round data %s for %s", value, current_round_data, parameter)
 
 
     def __unicode__(self):

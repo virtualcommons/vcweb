@@ -42,9 +42,9 @@
             });
         });
         $('#statusSpinner').hide();
+        $('#statusDiv [title]').qtip(qtipOptions);
         $('#statusDiv').show('fast');
         $('#experimentData').show('fast');
-        $('#statusDiv [title]').qtip(qtipOptions);
         if (round_data_count > 0) {
             $('#experimentData').accordion({
                 active: active_round_number - 1,
