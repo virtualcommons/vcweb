@@ -450,7 +450,6 @@ class Experiment(models.Model):
         self.groups.all().delete()
         # seed the initial group.
         current_group = self.groups.create(number=1, max_size=self.experiment_configuration.max_group_size)
-        current_group.initialize_data_parameters()
         participants = list(self.participants.all())
         if randomize:
             random.shuffle(participants)
@@ -458,7 +457,6 @@ class Experiment(models.Model):
         for p in participants:
             if current_group.is_full:
                 current_group = current_group.create_next_group()
-                current_group.initialize_data_parameters()
             current_group.add_participant(p)
 
         # XXX: if there a performance hit here, should probably do a void return instead
@@ -486,9 +484,6 @@ class Experiment(models.Model):
             self.current_round_elapsed_time = 0
             self.current_round_sequence_number += 1
             self.save()
-            # initialize group parameters if necessary
-            for g in self.groups.all():
-                g.initialize_data_parameters()
         else:
             logger.warning("trying to advance past the last round - no-op")
 
@@ -926,7 +921,6 @@ class Group(models.Model):
     '''
     Initializes data parameters for all groups in this round, as necessary.
     If this round already has data parameters, is a no-op.
-    '''
     def initialize_data_parameters(self):
         if self.current_round.is_playable_round:
             round_data = self.current_round_data
@@ -936,6 +930,7 @@ class Group(models.Model):
                 for group_data_parameter in self.data_parameters:
                     self.data_values.create(round_data=round_data, parameter=group_data_parameter)
 
+    '''
 
     '''
     Not as efficient as a simple SQL update because we need to do some type

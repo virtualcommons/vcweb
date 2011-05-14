@@ -95,6 +95,23 @@ FIXME: several of these can and should be lifted to core/tests.py
 '''
 class ForestryParametersTest(BaseVcwebTest):
 
+    def test_initialize_parameters_at_round_start(self):
+        e = self.advance_to_data_round()
+        e.start_round()
+        current_round_data = e.current_round_data
+        group_parameters = (get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter())
+        for group in e.groups.select_related(depth=1).all():
+            for parameter in group_parameters:
+                group_data_value = group.data_values.get(round_data=current_round_data, parameter=parameter)
+                self.assertTrue(group_data_value.parameter in group_parameters)
+                self.assertTrue(group_data_value)
+# single participant data parameter, harvest decisions
+            for pgr in group.participant_group_relationships.all():
+                prdv = pgr.round_data_values.get(round_data=current_round_data,
+                        parameter=get_harvest_decision_parameter())
+                self.assertTrue(prdv)
+                self.assertEquals(prdv.parameter, get_harvest_decision_parameter())
+
     def test_get_set_harvest_decisions(self):
         e = self.advance_to_data_round()
         # generate harvest decisions

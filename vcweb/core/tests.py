@@ -170,6 +170,30 @@ class ExperimentTest(BaseVcwebTest):
         self.assertEqual(experiment.current_round_elapsed_time, current_round_elapsed_time + 1)
         self.assertEqual(experiment.total_elapsed_time, total_elapsed_time + 1)
 
+    def test_instructions_round_parameters(self):
+        e = self.experiment
+        e.activate()
+        e.start_round()
+        # instructions round
+        current_round_data = e.current_round_data
+        self.assertEqual(current_round_data.group_data_values.count(), 0)
+        self.assertEqual(current_round_data.participant_data_values.count(), 0)
+
+    def test_playable_round(self):
+        e = self.advance_to_data_round()
+        e.start_round()
+        current_round_data = e.current_round_data
+        for group in e.groups.all():
+            for parameter in group.data_parameters.all():
+                group_data_value, created = current_round_data.group_data_values.get_or_create(group=group,
+                        parameter=parameter)
+                self.assertFalse(created)
+            for pgr in group.participant_group_relationships.all():
+                for parameter in e.parameters(scope=Parameter.PARTICIPANT_SCOPE):
+                    participant_data_value, created = current_round_data.participant_data_values.get_or_create(participant_group_relationship=pgr,
+                            parameter=parameter)
+                    self.assertFalse(created)
+
 class GroupTest(BaseVcwebTest):
     def test_set_data_value_activity_log(self):
         e = self.advance_to_data_round()
@@ -204,44 +228,6 @@ class GroupTest(BaseVcwebTest):
                     g.transfer_to_next_round(parameter)
             e.advance_to_next_round()
 
-    def test_initialize_data_parameters(self):
-        e = self.experiment
-        e.activate()
-        e.start_round()
-        # instructions round
-        for g in e.groups.all():
-            g.initialize_data_parameters()
-            self.assertEqual(e.current_round_data.group_data_values.count(), 0)
-            self.assertEqual(e.current_round_data.participant_data_values.count(), 0)
-        # quiz round
-        e.advance_to_next_round()
-        e.start_round()
-        for g in e.groups.all():
-            g.initialize_data_parameters()
-# FIXME: (changed to practice round for demo purposes)
-            #self.assertEqual(e.current_round_data.group_data_values.count(), 0)
-            #self.assertEqual(e.current_round_data.participant_data_values.count(), 0)
-        # first practice round
-        e.advance_to_next_round()
-        e.start_round()
-        for g in e.groups.all():
-            for i in xrange(10):
-                self.assertEqual(e.current_round_data.group_data_values.count(), 2)
-                # multiple invocations to initialize_data_parameters should be harmless.
-                g.initialize_data_parameters()
-                self.assertEqual(e.current_round_data.group_data_values.count(), 2)
-                g.initialize_data_parameters()
-                self.assertEqual(e.current_round_data.group_data_values.count(), 2)
-                g.initialize_data_parameters()
-        # first chat round (practice)
-        e.end_round()
-        e.advance_to_next_round()
-        e.start_round()
-        for g in e.groups.all():
-            g.initialize_data_parameters()
-            self.assertEqual(e.current_round_data.group_data_values.count(), 2)
-            self.assertEqual(e.current_round_data.participant_data_values.count(), 0)
-        # second practice round
 
 
     def test_group_add(self):
