@@ -1,6 +1,5 @@
 from django.dispatch import receiver
-from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantGroupRelationship,
-        ParticipantRoundDataValue,Group)
+from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue)
 from vcweb.core import signals, simplecache
 from celery.decorators import task
 import logging
@@ -108,7 +107,7 @@ def round_setup(experiment, **kwargs):
                 group_parameters=(regrowth_parameter, group_harvest_parameter, resource_level_parameter),
                 participant_parameters=[harvest_decision_parameter])
         '''
-        practice or regular round, set up resource levels and participant
+        during a practice or regular round, set up resource levels and participant
         harvest decision parameters
         '''
         if round_configuration.get_parameter_value('reset.resource_level', default=False):
@@ -124,7 +123,7 @@ def stop_round_task():
 
 def round_teardown(experiment, **kwargs):
     ''' round teardown calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth and transferring'''
-    logger.debug("forestry: round_teardown for %s", experiment)
+    logger.debug("%s", experiment)
     resource_level_parameter = get_resource_level_parameter()
     current_round_configuration = experiment.current_round
     max_resource_level = 100

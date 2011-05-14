@@ -412,10 +412,13 @@ class Experiment(models.Model):
         self.register_participants(users=users, institution=institution)
 
     def initialize_parameters(self, group_parameters=None, participant_parameters=None):
+        if not self.is_playable_round:
+            logger.warn("ignoring request to initialize parameters for round %s", self.current_round)
+            return
         if group_parameters is None:
-            group_parameters = []
+            group_parameters = self.parameters(scope=Parameter.GROUP_SCOPE)
         if participant_parameters is None:
-            participant_parameters = []
+            participant_parameters = self.parameters(scope=Parameter.PARTICIPANT_SCOPE)
         current_round_data = self.current_round_data
         for group in self.groups.select_related(depth=1).all():
             for parameter in group_parameters:
