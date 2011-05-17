@@ -26,7 +26,6 @@ env.apps = ' '.join(env.applist)
 # django integration for access to settings, etc.
 django.project(env.project_name)
 
-from vcweb import settings as vcweb_settings
 
 """
 this currently only works for sqlite3 development database.  do it by hand with
@@ -56,6 +55,7 @@ def clear_rabbitmq_db():
         sudo_chain(["rabbitmqctl %s" % cmd for cmd in ['stop_app', 'reset', 'start_app']])
 
 def setup_rabbitmq():
+    from vcweb import settings as vcweb_settings
     clear_rabbitmq_db()
     with fab_settings(warn_only=True):
         sudo("rabbitmqctl delete_user %s" % vcweb_settings.BROKER_USER, pty=True)
@@ -87,7 +87,10 @@ def test():
     with cd(env.project_path):
         _virtualenv('%(python)s manage.py test %(apps)s' % env)
 
-def tornadio(ip="149.169.203.115", port=vcweb_settings.SOCKET_IO_PORT):
+def tornadio(ip="149.169.203.115", port=None):
+    from vcweb import settings as vcweb_settings
+    if port is None:
+        port = vcweb_settings.SOCKET_IO_PORT
     local("{python} vcwebio.py {port}".format(python=env.python, **locals()), capture=False)
 
 def server(ip="149.169.203.115", port=8000):
@@ -139,6 +142,7 @@ def sudo_chain(*commands, **kwargs):
     sudo(' && '.join(commands), **kwargs)
 
 def deploy():
+    from vcweb import settings as vcweb_settings
     """ deploys to an already setup environment """
     env.project_path = env.deploy_path + env.project_name
     push()
