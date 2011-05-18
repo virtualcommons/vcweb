@@ -98,7 +98,8 @@ class RegistrationView(FormView, AnonymousMixin):
             experimenter = Experimenter.objects.create(user=user,
                     institution=institution)
             logger.debug("creating new experimenter: %s, adding default forestry experiment" % experimenter)
-            experiment = Experiment.objects.get(pk=2)
+	    # FIXME: hard coded slovakia experiment, get rid of this!
+            experiment = Experiment.objects.get(pk=1)
             experiment.clone(experimenter=experimenter)
         else:
             participant = Participant.objects.create(user=user, institution=institution)

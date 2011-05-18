@@ -13,7 +13,8 @@ env.python = 'python2.6'
 env.project_name = 'vcweb'
 env.deploy_user = 'apache'
 env.deploy_group = 'commons'
-env.virtualenv_path = '/opt/virtualenvs/%(project_name)s' % env
+env.virtualenv_path = "%s/.virtualenvs/%s" % (os.getenv("HOME"), env['project_name'])
+#env.virtualenv_path = '/opt/virtualenvs/%(project_name)s' % env
 env.deploy_path = '/opt/webapps/virtualcommons/'
 # default to current working directory
 env.project_path = os.path.dirname(__file__)
@@ -48,7 +49,11 @@ def syncdb(**kwargs):
 
 def setup_virtualenv():
     """ Setup a fresh virtualenv """
-    run('virtualenv -p %(python)s --no-site-packages %(virtualenv_path)s;' % env)
+    try:
+	os.makedirs("%(virtualenv_path)s" % env)
+    except OSError:
+	pass
+    local('virtualenv -p %(python)s --no-site-packages %(virtualenv_path)s' % env)
 
 def clear_rabbitmq_db():
     with fab_settings(warn_only=True):
@@ -69,13 +74,13 @@ def setup_rabbitmq():
 def _virtualenv(*commands, **kwargs):
     """ source the virtualenv before executing this command """
     env.command = ' && '.join(commands)
-    return run('source %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
+    return local('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
 
 def pip():
     ''' looks for requirements.pip in the django project directory '''
     _virtualenv('pip install -E %(virtualenv_path)s -r %(project_path)s/requirements.pip' % env)
-    with cd(env.virtualenv_path):
-        sudo_chain('chgrp -R %(deploy_group)s .' % env, 'chmod -R g+rw' % env, pty=True)
+    #with cd(env.virtualenv_path):
+    #    sudo_chain('chgrp -R %(deploy_group)s .' % env, 'chmod -R g+rw' % env, pty=True)
 
 def host_type():
     run('uname -a')
@@ -87,13 +92,13 @@ def test():
     with cd(env.project_path):
         _virtualenv('%(python)s manage.py test %(apps)s' % env)
 
-def tornadio(ip="149.169.203.115", port=None):
+def tornadio(ip="127.0.0.1", port=None):
     from vcweb import settings as vcweb_settings
     if port is None:
         port = vcweb_settings.SOCKET_IO_PORT
-    local("{python} vcwebio.py {port}".format(python=env.python, **locals()), capture=False)
+    _virtualenv("{python} vcwebio.py {port}".format(python=env.python, **locals()), capture=False)
 
-def server(ip="149.169.203.115", port=8000):
+def server(ip="127.0.0.1", port=8000):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
 
 def celeryd():
@@ -125,11 +130,11 @@ def staticg():
 
 def setup():
     setup_virtualenv()
-    sudo('hg clone %(hg_url)s %(deploy_path)s' % env, pty=True, user=env.deploy_user)
-    sudo_chain('chown -R %(deploy_user)s:%(deploy_group)s %(deploy_path)s' % env,
-            'chmod -R ug+rw %(deploy_path)s' % env,
-            'find %(deploy_path)s -type d -exec chmod ug+x {} \;' % env,
-            pty=True)
+    #sudo('hg clone %(hg_url)s %(deploy_path)s' % env, pty=True, user=env.deploy_user)
+    #sudo_chain('chown -R %(deploy_user)s:%(deploy_group)s %(deploy_path)s' % env,
+    #        'chmod -R ug+rw %(deploy_path)s' % env,
+    #        'find %(deploy_path)s -type d -exec chmod ug+x {} \;' % env,
+    #        pty=True)
     pip()
 
 def _restart_command():

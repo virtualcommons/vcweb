@@ -5,15 +5,23 @@ Dependencies:
 
     RabbitMQ (maybe)
 
+System prerequisites:
+1. python 2.6+ with easy_install
+2. sqlite3 for dev database
+3. mercurial
+
 Steps to install:
 1. download and install easy_install
-2. easy_install pip
-3. pip install virtualenv (if you don't want to muck up your base python system)
-4. pip install fabric
-5. fab setup (change default settings in fabfile.py as necessary; eventually I should make this configurable)
-6. fab syncdb
-7. fab server (in one terminal)
-8. fab tornadio (in another terminal) if you want to run vcweb w/ server push enabled.
+2. sudo easy_install pip
+3. sudo pip install virtualenv (if you don't want to muck up your base python system)
+4. sudo pip install fabric
+5. fab setup - this creates a virtualenv in ~/.virtualenvs/vcweb by default
+6. add an alias to your .bashrc:
+alias vcweb='. ~/.virtualenvs/vcweb/bin/activate'
+this activates your virtualenv
+7. fab syncdb
+8. fab server (in one terminal)
+9. fab tornadio (in another terminal) if you want to run vcweb w/ server push enabled.
 
 To start up celeryd and celerybeat
 
