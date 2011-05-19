@@ -140,7 +140,6 @@ STATICFILES_DIRS = (
 import djcelery
 djcelery.setup_loader()
 
-
 # set up jquery-ui css classes for django messages
 from django.contrib import messages
 MESSAGE_TAGS = {

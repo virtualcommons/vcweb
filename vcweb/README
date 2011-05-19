@@ -6,7 +6,7 @@ Dependencies:
     RabbitMQ (maybe)
 
 System prerequisites:
-1. python 2.6+ with easy_install
+1. python 2.6+ with easy_install and python-dev headers (for paramiko/fabric)
 2. sqlite3 for dev database
 3. mercurial
 
