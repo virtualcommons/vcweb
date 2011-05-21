@@ -9,7 +9,7 @@ import os, sys
 sys.path.append(os.path.abspath('..'))
 
 # default env configuration
-env.python = 'python2.6'
+env.python = 'python'
 env.project_name = 'vcweb'
 env.deploy_user = 'apache'
 env.deploy_group = 'commons'
@@ -108,7 +108,6 @@ def celerybeat():
     local("%(python)s manage.py celerybeat" % env)
 
 def push():
-    local('hg push')
     local('hg push ssh://hg@bitbucket.org/virtualcommons/vcweb')
 
 def dev():
