@@ -47,11 +47,11 @@ def participant_index(request):
     return render_to_response('forestry/participant-index.html', locals(), context_instance=RequestContext(request))
 
 @experimenter_required
-def configure(request):
-    return Http404()
+def configure(request, experiment_id=None):
+    raise Http404()
 
 @experimenter_required
-def manage_experiment(request, experiment_id=None):
+def monitor_experiment(request, experiment_id=None):
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
         return render_to_response('forestry/manage-experiment.html',

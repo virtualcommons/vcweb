@@ -58,9 +58,12 @@ FIXME: replace these links eventually.
             {% else %}
             <li><a title='clear all participants' href='{{e.controller_url}}/clear-participants' class='confirm-experiment-action'><img src='{{STATIC_URL}}images/famfamfam/group_delete.png' alt=''/> clear all participants</a></li>
             {% endif %}
-            <!-- <li><a href='{{e.management_url}}'><img src='{{STATIC_URL}}images/famfamfam/application_go.png' alt='Custom management interface'/> manage (unfinished)</a></li> -->
             {% if e.is_active %}
             <li><a title='stop this experiment' href='{{e.stop_url}}' class='confirm-experiment-action'><img src='{{STATIC_URL}}images/famfamfam/stop.png' alt=''/> stop</a></li>
+            {% else %}
+            <li>
+            <a title='Configure this experiment (currently implemented for sanitation game)' href='{{e.configure_url}}'><img src='{{STATIC_URL}}images/famfamfam/wrench.png' alt='configure' /> configure</a>
+            </li>
             {% endif %}
         </ul>
     </div>

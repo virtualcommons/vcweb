@@ -274,6 +274,10 @@ class Experiment(models.Model):
         return "/%s/experimenter" % self.get_absolute_url()
 
     @property
+    def configure_url(self):
+        return "/%s/configure" % self.get_absolute_url()
+
+    @property
     def stop_url(self):
         return "%s/stop" % self.controller_url
 
@@ -1325,4 +1329,3 @@ def is_experimenter(user, experimenter=None):
 
 def is_participant(user):
     return hasattr(user, 'participant') and isinstance(user.participant, Participant)
-

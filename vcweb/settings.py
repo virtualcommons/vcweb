@@ -98,6 +98,7 @@ INSTALLED_APPS = (
         'django.contrib.staticfiles',
         'vcweb.core',
         'vcweb.forestry',
+        'vcweb.sanitation',
         'dajaxice',
         'djcelery',
         'djkombu',

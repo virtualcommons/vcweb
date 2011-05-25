@@ -53,8 +53,9 @@ def set_authentication_token(user, authentication_token=None):
     elif is_experimenter(user):
         commons_user = user.experimenter
     else:
-        logger.error("Invalid user: %s" % user)
+        logger.error("Invalid user: %s", user)
         return
+    logger.debug("%s authentication_token=%s", commons_user, authentication_token)
     commons_user.authentication_token = authentication_token
     commons_user.save()
 
@@ -65,7 +66,6 @@ class LoginView(FormView, AnonymousMixin):
         request = self.request
         user = form.user_cache
         auth.login(request, user)
-        logger.debug("session is %s" % request.session)
         set_authentication_token(user, request.session.session_key)
         return super(LoginView, self).form_valid(form)
     def get_success_url(self):
@@ -97,13 +97,14 @@ class RegistrationView(FormView, AnonymousMixin):
         if experimenter_requested:
             experimenter = Experimenter.objects.create(user=user,
                     institution=institution)
-            logger.debug("creating new experimenter: %s, adding default forestry experiment" % experimenter)
+            logger.debug("creating new experimenter: %s, adding default forestry experiment", experimenter)
+            # FIXME: add a default experiment for all ExperimentMetadata types
 	    # FIXME: hard coded slovakia experiment, get rid of this!
             experiment = Experiment.objects.get(pk=1)
             experiment.clone(experimenter=experimenter)
         else:
             participant = Participant.objects.create(user=user, institution=institution)
-            logger.debug("Creating new participant: %s" % participant)
+            logger.debug("Creating new participant: %s", participant)
         request = self.request
         auth.login(request, auth.authenticate(username=email, password=password))
         set_authentication_token(user, request.session.session_key)
@@ -139,7 +140,7 @@ def instructions(request, pk=None, namespace=None):
         experiment = Experiment.objects.get(experiment_metadata__namespace=namespace)
 
     if not experiment:
-        logger.warning("Tried to request instructions for id %s or namespace %s" % (pk, namespace))
+        logger.warning("Tried to request instructions for id %s or namespace %s", pk, namespace)
         return redirect('home')
 
     return render_to_response(experiment.get_template_path('instructions.html'), locals(), context_instance=RequestContext(request))
@@ -196,7 +197,7 @@ class RegisterEmailListView(ExperimenterSingleExperimentMixin, UpdateView):
     def form_valid(self, form):
         emails = form.cleaned_data.get('participant_emails')
         experiment = self.object
-        logger.debug("registering participants %s for experiment: %s" % (emails, experiment))
+        logger.debug("registering participants %s for experiment: %s", emails, experiment)
         experiment.authentication_code = form.cleaned_data.get('experiment_passcode')
         experiment.register_participants(emails=emails, institution=form.institution,
                 password=experiment.authentication_code)
@@ -240,8 +241,7 @@ def manage(request, pk=None):
 # redirect to experiment specific management page?
         return redirect(experiment.management_url)
     except Experiment.DoesNotExist:
-        logger.warning("Tried to manage non-existent experiment with id %s" %
-                pk)
+        logger.warning("Tried to manage non-existent experiment with id %s", pk)
 
 
 # FIXME: add data converter objects to write to csv, excel, etc.

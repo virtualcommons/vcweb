@@ -1,0 +1,36 @@
+[
+    {
+        "fields": {
+            "creator": 1,
+            "experiment_metadata": [
+                "sanitation"
+            ],
+            "is_public": true,
+            "max_group_size": 10,
+            "max_number_of_participants": -1,
+            "name": "Sanitation Default Configuration"
+        },
+        "model": "core.experimentconfiguration",
+        "pk": 11 
+    },
+    {
+        "fields": {
+            "authentication_code": "TEST_FORESTRY",
+            "current_round_elapsed_time": 0,
+            "current_round_sequence_number": 1,
+            "duration": "1h",
+            "experiment_configuration": 1,
+            "experiment_metadata": [
+                "sanitation"
+            ],
+            "experimenter": 1,
+            "is_experimenter_driven": false,
+            "start_date_time": null,
+            "status": "INACTIVE",
+            "tick_duration": "10s",
+            "total_elapsed_time": 0
+        },
+        "model": "core.experiment",
+        "pk": 11 
+    }
+]
