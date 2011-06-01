@@ -828,7 +828,7 @@ class Parameter(models.Model):
 
 class ParameterizedValue(models.Model):
     parameter = models.ForeignKey(Parameter)
-    string_value = models.CharField(max_length=512, null=True, blank=True)
+    string_value = models.TextField(null=True, blank=True)
     int_value = models.IntegerField(null=True, blank=True)
     float_value = models.FloatField(null=True, blank=True)
     boolean_value = models.NullBooleanField(null=True, blank=True)

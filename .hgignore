@@ -10,3 +10,5 @@ tags
 .idea
 build
 logs
+tmp
+.orig

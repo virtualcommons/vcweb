@@ -76,6 +76,10 @@ li.warning {
 .float-right {
     float:right;
 }
+.vcweb-ui-icon {
+    display:inline;
+    margin: 7px;
+}
 .vcweb-icon {
     display:inline;
     background-repeat: no-repeat;
