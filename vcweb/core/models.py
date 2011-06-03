@@ -127,7 +127,7 @@ class ExperimentConfiguration(models.Model):
     The configuration for a given Experiment instance.  One ExperimentConfiguration can be applied to many Experiment
     instances but can only be associated to a single ExperimentMetadata record.  
     """
-    experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='configurations')
+    experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='experiment_configurations')
     creator = models.ForeignKey(Experimenter, related_name='experiment_configurations')
     name = models.CharField(max_length=255)
     max_number_of_participants = models.PositiveIntegerField(default=0)
@@ -738,18 +738,18 @@ class Parameter(models.Model):
     NONE_VALUES_DICT = dict(map(lambda x,y: (x[0], y), PARAMETER_TYPES, [0, '', 0.0, False, None]))
     #dict(zip([parameter_type[0] for parameter_type in PARAMETER_TYPES], [0, '', 0.0, False, None]))
 
-    '''
-    all converters are one-arg functions that convert string input into
-    the appropriate data type.
-    NOTE: they expect already validated string data and will throw ValueErrors
-    on invalid input.
-    '''
     CONVERTERS = {
             'int': int,
             'string':str,
             'float': float,
             'boolean': lambda x: bool(x) and str(x).lower() != 'false'
             }
+    '''
+    all converters are one-arg functions that convert string input into
+    the appropriate data type.
+    NOTE: they expect already validated string data and will throw ValueErrors
+    on invalid input.
+    '''
 
     GROUP_SCOPE = 'group'
     GROUP_ROUND_SCOPE = 'group_round'
@@ -848,10 +848,10 @@ class ParameterizedValue(models.Model):
     class Meta:
         abstract = True
 
-"""
-Used for specific round configuration data.
-"""
 class RoundParameterValue(ParameterizedValue):
+    """
+    Represents a specific piece of round configuration data.
+    """
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_parameter_values')
 
     def __unicode__(self):
@@ -872,13 +872,20 @@ class DataValue(ParameterizedValue):
 
 class Group(models.Model):
     number = models.PositiveIntegerField()
-    """ how many members can this group hold at a maximum? Should be specified as a ConfigurationParameter somewhere """
+    ''' internal numbering unique to the given experiment '''
     max_size = models.PositiveIntegerField(default=5)
+    """ 
+    how many members can this group hold at a maximum? Could be specified as a
+    RoundParameterValue / ExperimentConfiguration value
+    """
     experiment = models.ForeignKey(Experiment, related_name='groups')
+    """
+    The experiment that contains this Group.
+    """
 
-    """ should return a unique chat / event channel to communicate on """
     @property
     def channel(self):
+        """ should return a unique chat / event channel to communicate on """
         return u"%s.%d" % (self.experiment.event_channel_name, self.number)
 
     @property
@@ -939,11 +946,11 @@ class Group(models.Model):
 
     '''
 
-    '''
-    Not as efficient as a simple SQL update because we need to do some type
-    conversion / processing to put the value into the appropriate field.
-    '''
     def set_data_value(self, parameter_name=None, parameter=None, value=None):
+        '''
+        Not as efficient as a simple SQL update because we need to do some type
+        conversion / processing to put the value into the appropriate field.
+        '''
         data_value = self.get_data_value(parameter_name=parameter_name, parameter=parameter)
         data_value.value = value
         self.log("setting parameter %s = %s" % (parameter, value))
@@ -1004,13 +1011,13 @@ class Group(models.Model):
             logger.warning("Trying to retrieve data value by name with no args")
         return None
 
-    '''
-    Transfers the given parameter to the next round.  If parameter isn't set,
-    transfer all parameters to the next round.
-    FIXME: If this ends up being surprising or isn't desired behavior for
-    common use cases, revisit and remove.
-    '''
     def transfer_to_next_round(self, parameter=None, value=None, transfer_existing_value=True):
+        '''
+        Transfers the given parameter to the next round.  If parameter isn't set,
+        transfer all parameters to the next round.
+        FIXME: If this ends up being surprising or isn't desired behavior for
+        common use cases, revisit and remove.
+        '''
         if self.experiment.is_last_round:
             logger.warning("Trying to transfer parameter %s to next round but this is the last round", parameter)
             return
@@ -1063,11 +1070,12 @@ class Group(models.Model):
         ordering = ['experiment', 'number']
 
 
-"""
-round-specific data for a given experiment.  Contains related sets to group_data
-(GroupRoundDataValue), participant_data (ParticipantRoundDataValue), and chat_messages (ChatMessage)
-"""
 class RoundData(models.Model):
+    """
+    round-specific data for a given experiment.  Contains related sets to group_data
+    (GroupRoundDataValue), participant_data (ParticipantRoundDataValue), and
+    chat_messages (ChatMessage)
+    """
     experiment = models.ForeignKey(Experiment, related_name='round_data')
     round_configuration = models.ForeignKey(RoundConfiguration)
     elapsed_time = models.PositiveIntegerField(default=0)

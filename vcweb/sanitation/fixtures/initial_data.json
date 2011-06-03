@@ -7,7 +7,6 @@
             ],
             "is_public": true,
             "max_group_size": 10,
-            "max_number_of_participants": -1,
             "name": "Sanitation Default Configuration"
         },
         "model": "core.experimentconfiguration",
