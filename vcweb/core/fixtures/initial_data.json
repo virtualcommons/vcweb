@@ -12,7 +12,7 @@
         "pk": 1,
         "model": "auth.user",
         "fields": {
-            "username": "alee",
+            "username": "allen.lee@asu.edu",
             "first_name": "Allen",
             "last_name": "Lee",
             "is_active": true,
