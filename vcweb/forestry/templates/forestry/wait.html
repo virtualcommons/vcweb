@@ -1,15 +1,12 @@
 {% extends "participant/base.html" %}
 {% block head %}
 {{ block.super }}
-{% include "includes/socket.io.html" %}
-{% include "includes/participant.events.html" %}
 {% include "includes/tablesorter.html" %}
 <script type="text/javascript">
     $(function() {
-            $('#participant-history').tablesorter({widgets: ['zebra'],
-                headers: { 0: {sorter: false}, 1: {sorter: false} }
-            });
-        $('[title]').qtip({position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'green', tip: 'bottomMiddle'} });
+        $('#participant-history').tablesorter({widgets: ['zebra'],
+            headers: { 0: {sorter: false}, 1: {sorter: false} }
+        });
         var s = getCachedSocket();
         s.on('message', function(json_string) {
             var json = jQuery.parseJSON(json_string);

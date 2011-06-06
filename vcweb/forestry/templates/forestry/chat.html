@@ -4,7 +4,6 @@
 <script type="text/javascript">
     $(function() {
         var chatDiv = document.getElementById('chat-div');
-        // var s = connect(window.location.hostname, 8888, 'participant/{{participant_experiment_relationship.pk}}');
         var s = getCachedSocket();
         s.on('message', function(json_string) {
             var json = jQuery.parseJSON(json_string);

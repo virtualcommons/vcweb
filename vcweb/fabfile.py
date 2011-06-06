@@ -19,7 +19,7 @@ env.deploy_path = '/opt/webapps/virtualcommons/'
 # default to current working directory
 env.project_path = os.path.dirname(__file__)
 env.hosts = ['localhost']
-env.hg_url = 'http://virtualcommons.hg.sourceforge.net:8000/hgroot/virtualcommons/virtualcommons'
+env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
 env.apache = 'httpd'
 env.applist = ['core', 'forestry']
 env.apps = ' '.join(env.applist)
@@ -98,7 +98,7 @@ def tornadio(ip="127.0.0.1", port=None):
         port = vcweb_settings.SOCKET_IO_PORT
     _virtualenv("{python} vcwebio.py {port}".format(python=env.python, **locals()), capture=False)
 
-def server(ip="127.0.0.1", port=8000):
+def server(ip="149.169.203.115", port=8000):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
 
 def celeryd():
