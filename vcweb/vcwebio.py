@@ -41,13 +41,15 @@ class ConnectionManager:
     refresh_json = simplejson.dumps({ 'message_type': 'refresh' })
 
     def add_experimenter(self, connection, incoming_experimenter_pk, incoming_experiment_pk):
+        logger.debug("experimenter_to_connection: %s", self.experimenter_to_connection)
+        logger.debug("connection_to_experimenter: %s", self.connection_to_experimenter)
         experimenter_pk = int(incoming_experimenter_pk)
         experiment_id = int(incoming_experiment_pk)
         experimenter_tuple = (experimenter_pk, experiment_id)
         logger.debug("registering experimenter %s with connection %s", experimenter_pk, connection)
         if connection in self.connection_to_experimenter:
-            logger.debug("experimenter already registered, removing previous mapping")
-            self.remove_experimenter(connection)
+            logger.debug("this experimenter has an existing connection (%s <-> %s) ",
+                    self.connection_to_experimenter[connection], experimenter_tuple)
         self.connection_to_experimenter[connection] = experimenter_tuple
         self.experimenter_to_connection[experimenter_tuple] = connection
 
@@ -67,20 +69,12 @@ class ConnectionManager:
         logger.debug("Didn't find connection %s in connection map %s.", connection, self.connection_to_participant)
         return None
 
-    def get_experiment(self, connection):
-        if connection in self.connection_to_participant:
-            experiment_pk = self.connection_to_participant[connection][1]
-            return Experiment.objects.get(pk=experiment_pk)
-        else:
-            return None
-
     def get_participant_experiment_tuple(self, connection):
-        if connection in self.connection_to_participant:
-            return self.connection_to_participant[connection]
-        else:
-            return None
+        return self.connection_to_participant[connection]
 
     def add_participant(self, auth_token, connection, participant_experiment_relationship):
+        logger.debug("connection to participant: %s", self.connection_to_participant)
+        logger.debug("participant to connection: %s", self.participant_to_connection)
         participant_tuple = (participant_experiment_relationship.participant.pk, participant_experiment_relationship.experiment.pk)
         if participant_tuple in self.participant_to_connection:
             logger.debug("participant already has a connection, removing previous mappings.")
@@ -197,6 +191,7 @@ class ExperimenterHandler(SocketConnection):
             logger.debug("sending all connected participants %s to %s", notified_participants, url)
 
     def on_close(self):
+        logger.debug("removing experimenter connection %s", self)
         connection_manager.remove_experimenter(self)
 
 class ParticipantHandler(SocketConnection):
@@ -241,6 +236,7 @@ class ParticipantHandler(SocketConnection):
         elif event.message_type == 'submit':
             (participant_pk, experiment_pk) = connection_manager.get_participant_experiment_tuple(self)
             experiment = Experiment.objects.get(pk=experiment_pk)
+            logger.debug("processing participant submission for participant %s and experiment %s", participant_pk, experiment)
             # sanity check, make sure this is a data round.
             if experiment.is_data_round_in_progress:
                 experimenter_tuple = (experiment.experimenter.pk, experiment.pk)
@@ -252,7 +248,7 @@ class ParticipantHandler(SocketConnection):
                 event.participant_number = participant_group_relationship.participant_number
                 event.participant_group = participant_group_relationship.group_number
                 json = simplejson.dumps(event.__dict__)
-                logger.debug("json is: %s", json)
+                logger.debug("submit event json: %s", json)
                 connection_manager.send_to_experimenter(experimenter_tuple, json)
                 if experiment.all_participants_have_submitted:
                     connection_manager.send_to_experimenter(
