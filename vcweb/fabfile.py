@@ -74,7 +74,7 @@ def setup_rabbitmq():
 def _virtualenv(*commands, **kwargs):
     """ source the virtualenv before executing this command """
     env.command = ' && '.join(commands)
-    return local('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
+    return run('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
 
 def pip():
     ''' looks for requirements.pip in the django project directory '''
