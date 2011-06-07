@@ -442,7 +442,7 @@ class Experiment(models.Model):
 
     def log(self, log_message):
         if log_message:
-            logger.debug(log_message)
+            logger.debug("%s: %s", self, log_message)
             self.activity_log.create(round_configuration=self.current_round, log_message=log_message)
 
     def data_file_name(self, file_ext='csv'):
@@ -690,7 +690,7 @@ class RoundConfiguration(models.Model):
         return Template(template_string).substitute(kwargs, round_number=self.display_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return u"%s > %s" % (self.display_label, self.experiment_configuration)
+        return u"%s > %s %s" % (self.display_label, self.experiment_configuration, self.sequence_label)
 
     @property
     def display_label(self):
