@@ -33,7 +33,6 @@
             }
         });
         $('#forestry-form').submit(function() {
-            $('#submit').button("disable");
             var harvestDecisionValue = $('#harvest-decision-id').val();
             // FIXME: this isn't getting sent through properly before the submit occurs.  
             // Should work out communicating directly from Django to the tornadio process.
