@@ -33,9 +33,10 @@
             }
         });
         $('#forestry-form').submit(function() {
-            $('#submit').prop("disabled", true);
+            $('#submit').button("disable");
             var harvestDecisionValue = $('#harvest-decision-id').val();
-            // FIXME: this isn't getting sent through properly before the submit occurs.
+            // FIXME: this isn't getting sent through properly before the submit occurs.  
+            // Should work out communicating directly from Django to the tornadio process.
             s.send(createSubmitEvent(harvestDecisionValue));
             return true;
         });
