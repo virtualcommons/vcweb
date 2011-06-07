@@ -11,7 +11,7 @@ def forestry_second_tick():
     check all forestry experiments.
     '''
 
-def get_resource_level(group=None, round_data=None):
+def get_resource_level(group, round_data=None):
     ''' returns the group resource level data parameter '''
     return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data)
 
@@ -43,6 +43,12 @@ def set_regrowth(group, value):
 
 def set_group_harvest(group, value):
     group.set_data_value(parameter=get_group_harvest_parameter(), value=value)
+
+def should_reset_resource_level(round_configuration):
+    return round_configuration.get_parameter_value('reset.resource_level', default=False)
+
+def get_initial_resource_level(round_configuration):
+    return round_configuration.get_parameter_value('initial.resource_level', default=100)
 
 def get_max_harvest_decision(resource_level):
     if resource_level >= 25:
@@ -110,8 +116,8 @@ def round_setup(experiment, **kwargs):
         during a practice or regular round, set up resource levels and participant
         harvest decision parameters
         '''
-        if round_configuration.get_parameter_value('reset.resource_level', default=False):
-            initial_resource_level = round_configuration.get_parameter_value('initial.resource_level', default=100)
+        if should_reset_resource_level(round_configuration):
+            initial_resource_level = get_initial_resource_level(round_configuration)
             for group in experiment.groups.all():
                 ''' set resource level to initial default '''
                 group.log("Setting resource level to initial value [%s]" % initial_resource_level)
