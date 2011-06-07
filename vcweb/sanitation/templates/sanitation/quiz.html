@@ -1,0 +1,20 @@
+{% extends "participant/base.html" %}
+
+{% block title %} {{experiment.namespace}} Configuration {% endblock %}
+
+{% block page %}
+
+<fieldset>
+    <legend>{{experiment.namespace}} (id: {{ experiment.pk }})</legend>
+    <div class='info'>
+
+    {% for question in quiz_questions %}
+<p><b>{{question.0}}</b> {{question.1}} <input id='' type="{{question.2}}" value="{{question.3}}"/></p>
+    {% endfor %}
+
+	</div>
+    <form id="consentform">
+	<button type='submit'>Accept</button>
+    </form>
+
+{% endblock page %}

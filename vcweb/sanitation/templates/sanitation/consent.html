@@ -1,0 +1,19 @@
+{% extends "participant/base.html" %}
+
+{% block title %} {{experiment.namespace}} Configuration {% endblock %}
+
+{% block page %}
+
+<fieldset>
+    <legend>{{experiment.namespace}} (id: {{ experiment.pk }})</legend>
+    <div class='info'>
+<p>Experiment runs from {{experiment.current_round_start_time}} to {}</p>
+<p>Dear Participant: <br> generic instructions...</p>
+<p>Specific Instructions</p>
+This experiment is being run by {{experiment.experimenter}}
+</div>
+<p>By clicking accept you agree to the terms of participation. (IRB stuff)</p>
+    <form id="consentform">
+	<button type='submit'>Accept</button>
+    </form>
+{% endblock page %}

@@ -1,0 +1,21 @@
+{% extends "participant/base.html" %}
+
+{% block title %} {{experiment.namespace}} Configuration {% endblock %}
+
+{% block content %}
+
+<fieldset>
+    <legend>{{experiment.namespace}} (id: {{ experiment.pk }})</legend>
+    <div class='info'>
+<p>
+Dynamic Experiment goes here. 
+</p>
+	</div>
+
+
+{% endblock content %}
+
+{% block sidebar %}
+{% include "sanitation/includes/chat.html" %}
+{% include "sanitation/includes/payoff-table.html" %}
+{% endblock sidebar %}
