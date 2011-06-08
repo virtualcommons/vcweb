@@ -1029,6 +1029,10 @@ class Group(models.Model):
             self.transfer_parameter(parameter, value)
 
     def transfer_parameter(self, parameter, value):
+        if self.experiment.is_last_round:
+            logger.error("Trying to transfer parameter (%s: %s) past the last round of the experiment",
+                    parameter, value)
+            return None
         next_round_data, created = self.experiment.round_data.get_or_create(round_configuration=self.experiment.next_round)
         logger.debug("next round data: %s (%s)", next_round_data, created)
         group_data_value, created = next_round_data.group_data_values.get_or_create(group=self, parameter=parameter, defaults={'value': value})

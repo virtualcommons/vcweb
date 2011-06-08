@@ -129,9 +129,11 @@ def stop_round_task():
     pass
 
 def round_teardown(experiment, **kwargs):
-    ''' round teardown calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth and transferring'''
-    logger.debug("%s", experiment)
-    resource_level_parameter = get_resource_level_parameter()
+    '''
+    calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth.
+    also responsible for transferring those parameters to the next round as needed.
+    '''
+    logger.debug(experiment)
     current_round_configuration = experiment.current_round
     max_resource_level = 100
     for group in experiment.groups.all():
@@ -155,7 +157,7 @@ def round_teardown(experiment, **kwargs):
             if experiment.has_next_round:
                 ''' set group round data resource_level for each group + regrowth '''
                 group.log("Transferring resource level %s to next round" % get_resource_level(group))
-                group.transfer_to_next_round(resource_level_parameter)
+                group.transfer_parameter(current_resource_level.parameter, current_resource_level.value)
 
 '''
 FIXME: figure out a better way to tie these signal handlers to a specific
