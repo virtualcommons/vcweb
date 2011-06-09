@@ -4,16 +4,47 @@
 
 {% block page %}
 
+
 <fieldset>
-    <legend>{{experiment.namespace}} (id: {{ experiment.pk }})</legend>
+    <legend>{{experiment.namespace}} participation consent form. (id: {{ experiment.pk }})</legend>
     <div class='info'>
 <p>Experiment runs from {{experiment.current_round_start_time}} to {}</p>
-<p>Dear Participant: <br> generic instructions...</p>
-<p>Specific Instructions</p>
-This experiment is being run by {{experiment.experimenter}}
+<p>
+(General Instructions)
+
+This experiment is part of vcweb designed to conduct research with the goal to evaluate the impact of different policies on collective action in regard to investments in public goods. In this case, the experiment concerns the maintainance of a resource that is subject to pollution, which we refer to as a 'sanitation game'.
+
+By participaint you will be assigned to a group that shares a virtual resource which you need to maintain free of pollution. The resource is represented by a text-file which containts text discussing public health and sanitation. The pollution is represented by {{consent.1}} symbols. On an {{consent.3}} schedule, more {{consent.1}} symbols are added. The objective to remove the pollution represent by the {{consent.1}} symbols and keep it clean from pollution. Less symbols means a cleaner resource.
+
+The resource maybe clean or dirty depending on the activity of your group. In order to keep the resource clean you will have to return to this site to check it over the course of the experiment which lasts {{consent.2}}
+
+We hope our study will increase the understanding of policies that increase the dissemination of sanitation. 
+
+Vcweb maintains your confidentiality during the experiment by vcweb and after the experiment by the experiment proctor. Your entire activity during the sanitation game is confidential.
+
+If you have any questions concerning the research study, please contact the research team at: (Marco Janssen, Marco.Janssen@asu.edu).
+
+There are no foreseeable risks or discomforts to your participation.
+
+</p>
+
+<p>
+(Specific Instructions)
+
+The other participants in this experiment are students enrolled in your {{consent.0}}. The extra credit points you can earn depend on the performance of your group in this task and is explained when you have logged in.
+
+The first time you Login you will be asked to answer some questions about demographics and comprehension of the instructions for the {{experiment.namespace}} game.
+
+If you choose not to participate or to withdraw from the study at any time, there will be no penalty to your grade.
+</p>
+
+
+This experiment is being run by {{experiment.experimenter}} who may be contacted for assistance during the experiment.
 </div>
-<p>By clicking accept you agree to the terms of participation. (IRB stuff)</p>
-    <form id="consentform">
+<p>By clicking accept you agree to the terms of participation.<br> You must be of legal voting age to participate.</p>
+    <form id="consentform" action="">
 	<button type='submit'>Accept</button>
     </form>
+
+<p>The results of this study may be used in publications or presentations but your name will not used.</p>
 {% endblock page %}

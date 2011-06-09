@@ -1,13 +1,14 @@
 {% extends "participant/base.html" %}
 
-{% block title %} {{experiment.namespace}} Configuration {% endblock %}
+{% block title %} {{experiment.namespace}} Instructions {% endblock %}
 
 {% block page %}
 
 <fieldset>
-    <legend>{{experiment.namespace}} (id: {{ experiment.pk }})</legend>
+    <legend>{{experiment.namespace}} Instructions (id: {{ experiment.pk }})</legend>
     <div class='info'>
-<p>Instructions printed here</p>
+{% include "sanitation/includes/instructions.html" %}
+
 </div>
     <form id="consentform">
 	<button type='submit'>Accept</button>

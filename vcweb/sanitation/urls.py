@@ -5,4 +5,6 @@ urlpatterns = patterns('vcweb.sanitation.views',
     url(r'^(?P<experiment_id>\d+)/configure$', 'configure', name='configure'),
     url(r'^(?P<experiment_id>\d+)/experimenter$', 'monitor_experiment', name='monitor_experiment'),
     url(r'^(?P<experiment_id>\d+)/participate$', 'participate', name='participate'),
+    url(r'^(?P<experiment_id>\d+)/consent$', 'consent', name='consent'),
+    url(r'^(?P<experiment_id>\d+)/survey$', 'survey', name='survey'),
 )

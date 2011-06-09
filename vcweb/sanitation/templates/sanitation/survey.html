@@ -3,11 +3,26 @@
 {% block title %} {{experiment.namespace}} Configuration {% endblock %}
 
 {% block page %}
-
 <fieldset>
-    <legend>{{experiment.namespace}} (id: {{ experiment.pk }})</legend>
+    <legend>{{experiment.namespace}} {{current_location}} (id: {{ experiment.pk }})</legend>
     <div class='info'>
-<p>Survey printed here</p>
+<table>
+<tr><td>{{ s1.sequence_number }}. {{ s1.question }}</td></tr><tr><td>
+{% for option in s1.options %}
+<input name="s1_{{ s1.type }}" type="{{ s1.type }}">{{ option }}<br>
+{% endfor %}
+</td></tr>
+<tr><td>{{ s2.sequence_number }}. {{ s2.question }}</td></tr><tr><td>
+{% for option in s2.options %}
+<input name="s2_{{ s2.type }}" type="{{ s2.type }}">{{ option }}<br>
+{% endfor %}
+</td></tr>
+<tr><td>{{ s3.sequence_number }}. {{ s3.question }}</td></tr><tr><td>
+{% for option in s3.options %}
+<input name="s3_{{ s3.type }}" type="{{ s3.type }}">{{ option }}<br>
+{% endfor %}
+</td></tr>
+</table>
 </div>
     <form id="consentform">
 	<button type='submit'>Accept</button>
