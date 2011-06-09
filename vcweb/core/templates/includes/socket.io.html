@@ -4,7 +4,6 @@
 </script>
 
 <script type="text/javascript">
-var vcwebSocket = {};
 var cachedSocket;
 var defaultPort = 8881;
 function connect(resource) {
@@ -18,21 +17,17 @@ function connect(resource) {
         console.log("using default port: " + defaultPort);
         port = defaultPort;
     }
-    console.log("Establishing connection to " + host + ":" + port + "/" + resource);
-    cachedSocket = new io.Socket(host, {port: port, resource: resource});
+    cachedSocket = new io.Socket(host, {"port": port,  "resource": resource});
     cachedSocket.connect();
-    console.log("connect invoked to " + host + ":" + port + "/" + resource);
     cachedSocket.on('connect', function() {
-        console.debug("onconnect to " + host + ":" + port + "/" + resource);
+        console.log("Connecting to " + host + ":" + port + "/" + resource);
         cachedSocket.send(createConnectionEvent());
     });
-    /*
     cachedSocket.on('disconnect', function(data) {
         console.log("received disconnect, reconnecting.");
         cachedSocket.connect();
         cachedSocket.send(createReconnectionEvent());
     });
-    */
     return cachedSocket;
 }
 function getCachedSocket() {

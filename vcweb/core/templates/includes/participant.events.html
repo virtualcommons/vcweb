@@ -19,10 +19,10 @@ function createMessageEvent(payload, event_type) {
       "message": payload
    };
 }
-function createChatEvent(payload) {
-   return createMessageEvent(payload);
+function createChatEvent(message) {
+   return createMessageEvent(message);
 }
-function createSubmitEvent(payload) {
-    return createMessageEvent(payload, "submit");
+function createSubmitEvent(message) {
+    return createMessageEvent(message, "submit");
 }
 </script>

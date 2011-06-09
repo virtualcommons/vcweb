@@ -12,7 +12,6 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 from vcweb.core.models import ParticipantExperimentRelationship, ParticipantGroupRelationship, ChatMessage, Experimenter, Experiment
 from vcweb import settings
 
-# FIXME: currently tornadio.vcweb to avoid confusion with vcweb loggers
 logger = logging.getLogger('tornadio.vcweb')
 
 def info_json(message):
@@ -33,37 +32,29 @@ class ConnectionManager:
     '''
     Manages socket.io connections to tornadio.
     '''
-    # bidi maps for (participant.pk, experiment.pk) -> SocketConnection
+    # bidi maps for (participant.pk, experiment.pk) -> connection
     connection_to_participant = {}
     participant_to_connection = {}
-    # bidi maps for (experimenter.pk, experiment.pk) -> SocketConnection
+    # bidi maps for (experimenter.pk, experiment.pk) -> connection
     connection_to_experimenter = {}
     experimenter_to_connection = {}
-    '''
-    We use participant_pk + experiment_pk tuples as keys in these bidimaps because
-    groups may not have formed yet.
-    FIXME: consider refactoring core so that an "all" group always exists in an
-    experiment.  
-    '''
     refresh_json = simplejson.dumps({ 'message_type': 'refresh' })
 
     def add_experimenter(self, connection, incoming_experimenter_pk, incoming_experiment_pk):
-        logger.debug("experimenter_to_connection: %s", self.experimenter_to_connection)
-        logger.debug("connection_to_experimenter: %s", self.connection_to_experimenter)
         experimenter_pk = int(incoming_experimenter_pk)
         experiment_id = int(incoming_experiment_pk)
         experimenter_tuple = (experimenter_pk, experiment_id)
         logger.debug("registering experimenter %s with connection %s", experimenter_pk, connection)
         if connection in self.connection_to_experimenter:
-            logger.debug("this experimenter has an existing connection (%s <-> %s) ",
-                    self.connection_to_experimenter[connection], experimenter_tuple)
+            logger.debug("experimenter already registered, removing previous mapping")
+            self.remove_experimenter(connection)
         self.connection_to_experimenter[connection] = experimenter_tuple
         self.experimenter_to_connection[experimenter_tuple] = connection
 
     def remove_experimenter(self, connection):
         if connection in self.connection_to_experimenter:
             experimenter_tuple = self.connection_to_experimenter[connection]
-            logger.debug("removing experimenter %s", experimenter_tuple)
+            logger.debug("removing experimenter %s", experimenter_tuple[0])
             del self.connection_to_experimenter[connection]
             if experimenter_tuple in self.experimenter_to_connection:
                 del self.experimenter_to_connection[experimenter_tuple]
@@ -73,15 +64,23 @@ class ConnectionManager:
             (participant_pk, experiment_pk) = self.connection_to_participant[connection]
             logger.debug("Looking for ParticipantGroupRelationship with tuple (%s, %s)", participant_pk, experiment_pk)
             return ParticipantGroupRelationship.objects.get(participant__pk=participant_pk, group__experiment__pk = experiment_pk)
-        logger.warning("Couldn't find a participant group relationship using connection %s in connection map %s", connection, self.connection_to_participant)
+        logger.debug("Didn't find connection %s in connection map %s.", connection, self.connection_to_participant)
         return None
 
+    def get_experiment(self, connection):
+        if connection in self.connection_to_participant:
+            experiment_pk = self.connection_to_participant[connection][1]
+            return Experiment.objects.get(pk=experiment_pk)
+        else:
+            return None
+
     def get_participant_experiment_tuple(self, connection):
-        return self.connection_to_participant[connection]
+        if connection in self.connection_to_participant:
+            return self.connection_to_participant[connection]
+        else:
+            return None
 
     def add_participant(self, auth_token, connection, participant_experiment_relationship):
-        logger.debug("connection to participant: %s", self.connection_to_participant)
-        logger.debug("participant to connection: %s", self.participant_to_connection)
         participant_tuple = (participant_experiment_relationship.participant.pk, participant_experiment_relationship.experiment.pk)
         if participant_tuple in self.participant_to_connection:
             logger.debug("participant already has a connection, removing previous mappings.")
@@ -198,7 +197,6 @@ class ExperimenterHandler(SocketConnection):
             logger.debug("sending all connected participants %s to %s", notified_participants, url)
 
     def on_close(self):
-        logger.debug("removing experimenter connection %s", self)
         connection_manager.remove_experimenter(self)
 
 class ParticipantHandler(SocketConnection):
@@ -243,7 +241,6 @@ class ParticipantHandler(SocketConnection):
         elif event.message_type == 'submit':
             (participant_pk, experiment_pk) = connection_manager.get_participant_experiment_tuple(self)
             experiment = Experiment.objects.get(pk=experiment_pk)
-            logger.debug("processing participant submission for participant %s and experiment %s", participant_pk, experiment)
             # sanity check, make sure this is a data round.
             if experiment.is_data_round_in_progress:
                 experimenter_tuple = (experiment.experimenter.pk, experiment.pk)
@@ -255,7 +252,7 @@ class ParticipantHandler(SocketConnection):
                 event.participant_number = participant_group_relationship.participant_number
                 event.participant_group = participant_group_relationship.group_number
                 json = simplejson.dumps(event.__dict__)
-                logger.debug("submit event json: %s", json)
+                logger.debug("json is: %s", json)
                 connection_manager.send_to_experimenter(experimenter_tuple, json)
                 if experiment.all_participants_have_submitted:
                     connection_manager.send_to_experimenter(

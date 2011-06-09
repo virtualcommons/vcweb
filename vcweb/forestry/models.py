@@ -11,7 +11,7 @@ def forestry_second_tick():
     check all forestry experiments.
     '''
 
-def get_resource_level(group, round_data=None):
+def get_resource_level(group=None, round_data=None):
     ''' returns the group resource level data parameter '''
     return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data)
 
@@ -43,12 +43,6 @@ def set_regrowth(group, value):
 
 def set_group_harvest(group, value):
     group.set_data_value(parameter=get_group_harvest_parameter(), value=value)
-
-def should_reset_resource_level(round_configuration):
-    return round_configuration.get_parameter_value('reset.resource_level', default=False)
-
-def get_initial_resource_level(round_configuration):
-    return round_configuration.get_parameter_value('initial.resource_level', default=100)
 
 def get_max_harvest_decision(resource_level):
     if resource_level >= 25:
@@ -116,9 +110,8 @@ def round_setup(experiment, **kwargs):
         during a practice or regular round, set up resource levels and participant
         harvest decision parameters
         '''
-        if should_reset_resource_level(round_configuration):
-            initial_resource_level = get_initial_resource_level(round_configuration)
-            logger.debug("Resetting resource level for %s to %d", round_configuration, initial_resource_level)
+        if round_configuration.get_parameter_value('reset.resource_level', default=False):
+            initial_resource_level = round_configuration.get_parameter_value('initial.resource_level', default=100)
             for group in experiment.groups.all():
                 ''' set resource level to initial default '''
                 group.log("Setting resource level to initial value [%s]" % initial_resource_level)
@@ -129,11 +122,9 @@ def stop_round_task():
     pass
 
 def round_teardown(experiment, **kwargs):
-    '''
-    calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth.
-    also responsible for transferring those parameters to the next round as needed.
-    '''
-    logger.debug(experiment)
+    ''' round teardown calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth and transferring'''
+    logger.debug("%s", experiment)
+    resource_level_parameter = get_resource_level_parameter()
     current_round_configuration = experiment.current_round
     max_resource_level = 100
     for group in experiment.groups.all():
@@ -157,7 +148,7 @@ def round_teardown(experiment, **kwargs):
             if experiment.has_next_round:
                 ''' set group round data resource_level for each group + regrowth '''
                 group.log("Transferring resource level %s to next round" % get_resource_level(group))
-                group.transfer_parameter(current_resource_level.parameter, current_resource_level.value)
+                group.transfer_to_next_round(resource_level_parameter)
 
 '''
 FIXME: figure out a better way to tie these signal handlers to a specific

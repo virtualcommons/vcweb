@@ -19,7 +19,7 @@ env.deploy_path = '/opt/webapps/virtualcommons/'
 # default to current working directory
 env.project_path = os.path.dirname(__file__)
 env.hosts = ['localhost']
-env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
+env.hg_url = 'http://virtualcommons.hg.sourceforge.net:8000/hgroot/virtualcommons/virtualcommons'
 env.apache = 'httpd'
 env.applist = ['core', 'forestry']
 env.apps = ' '.join(env.applist)
@@ -30,7 +30,7 @@ django.project(env.project_name)
 
 """
 this currently only works for sqlite3 development database.  do it by hand with
-postgres a few times to figure out what to automate.
+postgres a few times to figure out what to automate, probably with south?
 """
 syncdb_commands = ['(test -f vcweb.db && rm -f vcweb.db) || true',
         '%(python)s manage.py syncdb --noinput' % env,
@@ -44,7 +44,7 @@ def shell():
 
 def syncdb(**kwargs):
     with cd(env.project_path):
-        _virtualenv(run, *syncdb_commands, **kwargs)
+        _virtualenv(*syncdb_commands, **kwargs)
 
 
 def setup_virtualenv():
@@ -71,14 +71,14 @@ def setup_rabbitmq():
 # figure out what the appropriate rabbitmq perms are here.
     sudo('rabbitmqctl set_permissions -p %s %s ".*" ".*" ".*"' % (vcweb_settings.BROKER_VHOST, vcweb_settings.BROKER_USER), pty=True)
 
-def _virtualenv(executor, *commands, **kwargs):
+def _virtualenv(*commands, **kwargs):
     """ source the virtualenv before executing this command """
     env.command = ' && '.join(commands)
-    return executor('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
+    return local('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
 
 def pip():
     ''' looks for requirements.pip in the django project directory '''
-    _virtualenv(run, 'pip install -E %(virtualenv_path)s -r %(project_path)s/requirements.pip' % env)
+    _virtualenv('pip install -E %(virtualenv_path)s -r %(project_path)s/requirements.pip' % env)
     #with cd(env.virtualenv_path):
     #    sudo_chain('chgrp -R %(deploy_group)s .' % env, 'chmod -R g+rw' % env, pty=True)
 
@@ -90,13 +90,13 @@ def test():
     runs tests on this local codebase, not the deployed codebase
     '''
     with cd(env.project_path):
-        _virtualenv(local, '%(python)s manage.py test %(apps)s' % env)
+        _virtualenv('%(python)s manage.py test %(apps)s' % env)
 
 def tornadio(ip="127.0.0.1", port=None):
     from vcweb import settings as vcweb_settings
     if port is None:
         port = vcweb_settings.SOCKET_IO_PORT
-    _virtualenv(local, "{python} vcwebio.py {port}".format(python=env.python, **locals()), capture=False)
+    _virtualenv("{python} vcwebio.py {port}".format(python=env.python, **locals()), capture=False)
 
 def server(ip="127.0.0.1", port=8000):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
@@ -156,7 +156,7 @@ def deploy():
             if confirm("syncdb?"):
                 syncdb()
             env.static_root = vcweb_settings.STATIC_ROOT
-            _virtualenv(run,'%(python)s manage.py collectstatic' % env)
+            _virtualenv('%(python)s manage.py collectstatic' % env)
             sudo_chain('chmod -R ug+rw .',
                     'find %(static_root)s -type d -exec chmod a+x {} \;' % env,
                     'find . -type d -exec chmod ug+x {} \;',

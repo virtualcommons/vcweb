@@ -2,7 +2,11 @@ from vcweb.core.models import (RoundConfiguration, Parameter,
         ParticipantRoundDataValue, GroupRoundDataValue,
         ParticipantExperimentRelationship, ParticipantGroupRelationship)
 from vcweb.core.tests import BaseVcwebTest
-from vcweb.forestry.models import *
+from vcweb.forestry.models import (get_group_harvest_parameter,
+        get_regrowth_parameter, round_setup, round_teardown, get_resource_level,
+        set_resource_level, set_harvest_decision, get_harvest_decision_parameter,
+        get_harvest_decisions, forestry_sender, get_forestry_experiment_metadata,
+        get_resource_level_parameter)
 import logging
 logger = logging.getLogger(__name__)
 
@@ -85,43 +89,12 @@ class ForestryViewsTest(BaseVcwebTest):
         e.current_round_sequence_number = rc.sequence_number
         self.assertEqual(e.current_round_template, 'forestry/quiz.html', 'should return default quiz.html')
 
-class TransferParametersTest(BaseVcwebTest):
-    def test_transfer_parameters(self):
-        def calculate_expected_resource_level(resource_level, harvested):
-            after_harvest = max(resource_level - harvested, 0)
-            return min(100, int(after_harvest + (after_harvest * .10)))
 
-        e = self.advance_to_data_round()
-        expected_resource_level = 100
-        while True:
-            e.start_round()
-            current_round_configuration = e.current_round
-            if should_reset_resource_level(current_round_configuration):
-                logger.debug("resetting resource level for round %s, %d", current_round_configuration,
-                        e.current_round_sequence_number)
-                expected_resource_level = get_initial_resource_level(current_round_configuration)
-
-            max_harvest_decision = get_max_harvest_decision(expected_resource_level)
-            for pgr in e.participant_group_relationships:
-                self.assertEquals(get_resource_level(pgr.group).value, expected_resource_level)
-                set_harvest_decision(pgr, max_harvest_decision)
-            e.end_round()
-
-            if current_round_configuration.is_playable_round:
-                expected_resource_level = calculate_expected_resource_level(expected_resource_level, max_harvest_decision * 5)
-
-            for group in e.groups.all():
-                self.assertEquals(get_resource_level(pgr.group).value, expected_resource_level)
-
-            if e.has_next_round:
-                e.advance_to_next_round()
-            else:
-                break
-
+'''
+FIXME: several of these can and should be lifted to core/tests.py
+'''
 class ForestryParametersTest(BaseVcwebTest):
-    '''
-    FIXME: several of these can and should be lifted to core/tests.py
-    '''
+
     def test_initialize_parameters_at_round_start(self):
         e = self.advance_to_data_round()
         e.start_round()
@@ -192,13 +165,15 @@ class ForestryParametersTest(BaseVcwebTest):
             for func in caching_funcs:
                 verify_refreshed_data(func)
 
+
+
     def test_get_set_resource_level(self):
         e = self.advance_to_data_round()
-        e.start_round()
+
         for group in e.groups.all():
             resource_level = get_resource_level(group)
             self.assertTrue(resource_level.pk > 0)
-            self.assertEqual(resource_level.value, 100)
+            self.assertFalse(resource_level.value)
             resource_level.value = 3
             resource_level.save()
 

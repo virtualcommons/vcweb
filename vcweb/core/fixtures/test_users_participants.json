@@ -11,7 +11,7 @@
         "pk": 1, 
         "model": "core.participant", 
         "fields": {
-            "can_receive_invitations": true, 
+            "can_receive_invitations": true,  "current_location":0,
             "user": 2, 
             "failed_password_attempts": 0, 
             "institution": 1
@@ -21,7 +21,7 @@
         "pk": 2, 
         "model": "core.participant", 
         "fields": {
-            "can_receive_invitations": true, 
+            "can_receive_invitations": true,  "current_location":0,
             "user": 3, 
             "failed_password_attempts": 0, 
             "institution": 1
@@ -31,7 +31,7 @@
         "pk": 3, 
         "model": "core.participant", 
         "fields": {
-            "can_receive_invitations": true, 
+            "can_receive_invitations": true,  "current_location":0,
             "user": 4, 
             "failed_password_attempts": 0, 
             "institution": 1
@@ -41,7 +41,7 @@
         "pk": 4, 
         "model": "core.participant", 
         "fields": {
-            "can_receive_invitations": true, 
+            "can_receive_invitations": true,  "current_location":0,
             "user": 5, 
             "failed_password_attempts": 0, 
             "institution": 1
@@ -51,7 +51,7 @@
         "pk": 5, 
         "model": "core.participant", 
         "fields": {
-            "can_receive_invitations": true, 
+            "can_receive_invitations": true,  "current_location":0,
             "user": 6, 
             "failed_password_attempts": 0, 
             "institution": 1
@@ -61,7 +61,7 @@
         "pk": 6, 
         "model": "core.participant", 
         "fields": {
-            "can_receive_invitations": true, 
+            "can_receive_invitations": true,  "current_location":0,
             "user": 7, 
             "failed_password_attempts": 0, 
             "institution": 1
@@ -71,7 +71,7 @@
         "pk": 7, 
         "model": "core.participant", 
         "fields": {
-            "can_receive_invitations": true, 
+            "can_receive_invitations": true,  "current_location":0,
             "user": 8, 
             "failed_password_attempts": 0, 
             "institution": 1
@@ -81,7 +81,7 @@
         "pk": 8, 
         "model": "core.participant", 
         "fields": {
-            "can_receive_invitations": true, 
+            "can_receive_invitations": true,  "current_location":0,
             "user": 9, 
             "failed_password_attempts": 0, 
             "institution": 1
@@ -91,7 +91,7 @@
         "pk": 9, 
         "model": "core.participant", 
         "fields": {
-            "can_receive_invitations": true, 
+            "can_receive_invitations": true,  "current_location":0,
             "user": 10, 
             "failed_password_attempts": 0, 
             "institution": 1
@@ -101,7 +101,7 @@
         "pk": 10, 
         "model": "core.participant", 
         "fields": {
-            "can_receive_invitations": true, 
+            "can_receive_invitations": true,  "current_location":0,
             "user": 11, 
             "failed_password_attempts": 0, 
             "institution": 1

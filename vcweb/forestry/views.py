@@ -114,11 +114,10 @@ def wait(request, experiment_id=None):
 class ParticipateView(SingleObjectTemplateResponseMixin, ParticipantSingleExperimentMixin, View):
     template_name_field = 'current_round_template'
 
-# FIXME: refactor the conditional logic here.
+# FIXME: refactor this ugliness
 @participant_required
 def participate(request, experiment_id=None):
     participant = request.user.participant
-    logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
     try:
         experiment = Experiment.objects.get(pk=experiment_id)
         current_round = experiment.current_round
@@ -191,14 +190,13 @@ def chat(request, experiment, participant):
         },
         context_instance=RequestContext(request))
 
-
-# FIXME: figure out the appropriate place for this
 trees = {
         'deciduous': { 'name': 'deciduous-tree', 'height': 32 },
         'pine': {'name': 'pine-tree', 'height': 79 },
         }
+
+
 def play(request, experiment, participant):
-    logger.debug("handling play request for participant %s and experiment %s", participant, experiment)
     form = HarvestDecisionForm(request.POST or None)
     participant_group_relationship = participant.get_participant_group_relationship(experiment)
     participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)

@@ -266,12 +266,6 @@ class Experiment(models.Model):
                 self.current_round.sequence_label)
 
     @property
-    def participant_group_relationships(self):
-        for group in self.groups.all():
-            for pgr in group.participant_group_relationships.all():
-                yield pgr
-
-    @property
     def namespace(self):
         return self.experiment_metadata.namespace
 
@@ -321,8 +315,7 @@ class Experiment(models.Model):
 
     @property
     def playable_round_data(self):
-        return self.round_data.select_related(depth=1).filter(round_configuration__round_type__in=RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS,
-                round_configuration__sequence_number__lte=self.current_round_sequence_number)
+        return self.round_data.select_related(depth=1).filter(round_configuration__round_type__in=RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS)
 
     @property
     def all_quiz_questions(self):
@@ -442,7 +435,6 @@ class Experiment(models.Model):
 
     def log(self, log_message):
         if log_message:
-            logger.debug("%s: %s", self, log_message)
             self.activity_log.create(round_configuration=self.current_round, log_message=log_message)
 
     def data_file_name(self, file_ext='csv'):
@@ -690,7 +682,7 @@ class RoundConfiguration(models.Model):
         return Template(template_string).substitute(kwargs, round_number=self.display_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return u"%s > %s %s" % (self.display_label, self.experiment_configuration, self.sequence_label)
+        return u"%s > %s" % (self.display_label, self.experiment_configuration)
 
     @property
     def display_label(self):
@@ -829,7 +821,7 @@ class Parameter(models.Model):
         return value
 
     def __unicode__(self):
-        return u"[name: %s, type:%s, scope:%s]" % (self.name, self.type, self.scope)
+        return u"%s (type:%s, scope:%s, experiment: %s)" % (self.name, self.type, self.scope, self.experiment_metadata)
 
     class Meta:
         ordering = ['name']
@@ -842,7 +834,6 @@ class ParameterizedValue(models.Model):
     boolean_value = models.NullBooleanField(null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
 
     @property
     def value(self):
@@ -938,9 +929,32 @@ class Group(models.Model):
         return self.activity_log.filter(round_configuration=self.current_round)
 
     def log(self, log_message):
-        if log_message:
-            logger.debug(log_message)
-            self.activity_log.create(round_configuration=self.current_round, log_message=log_message)
+        self.activity_log.create(round_configuration=self.current_round,
+                log_message=log_message)
+
+    '''
+    Initializes data parameters for all groups in this round, as necessary.
+    If this round already has data parameters, is a no-op.
+    def initialize_data_parameters(self):
+        if self.current_round.is_playable_round:
+            round_data = self.current_round_data
+            if round_data.group_data_values.filter(group=self).count() == 0:
+                logger.debug("no group data values for the current round %s, creating new ones.", round_data)
+                self.log("Initializing %s data parameters" % round_data)
+                for group_data_parameter in self.data_parameters:
+                    self.data_values.create(round_data=round_data, parameter=group_data_parameter)
+
+    '''
+
+    def set_data_value(self, parameter_name=None, parameter=None, value=None):
+        '''
+        Not as efficient as a simple SQL update because we need to do some type
+        conversion / processing to put the value into the appropriate field.
+        '''
+        data_value = self.get_data_value(parameter_name=parameter_name, parameter=parameter)
+        data_value.value = value
+        self.log("setting parameter %s = %s" % (parameter, value))
+        data_value.save()
 
     def subtract(self, parameter=None, amount=0):
         self.add(parameter, -amount)
@@ -973,25 +987,11 @@ class Group(models.Model):
         return self.get_data_value(parameter=parameter, parameter_name=parameter_name).value
 
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None):
-        if round_data is None:
-            round_data = self.current_round_data
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
-        try:
-            return self.data_values.get(**criteria)
-        except GroupRoundDataValue.DoesNotExist as e:
-            logger.warning("No data value found for criteria %s", criteria)
-            raise e
-
-    def set_data_value(self, parameter_name=None, parameter=None, value=None):
-        '''
-        Not as efficient as a simple SQL update because we need to do some type
-        conversion / processing to put the value into the appropriate field.
-        '''
-        data_value = self.get_data_value(parameter_name=parameter_name, parameter=parameter)
-        data_value.value = value
-        self.log("setting parameter %s = %s" % (parameter, value))
-        data_value.save()
-
+        data_value, created = self.data_values.get_or_create(**criteria)
+        if created:
+            logger.debug("Created new data value in get_data_value: %s", data_value)
+        return data_value
 
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None):
         return dict([
@@ -1029,14 +1029,10 @@ class Group(models.Model):
             self.transfer_parameter(parameter, value)
 
     def transfer_parameter(self, parameter, value):
-        if self.experiment.is_last_round:
-            logger.error("Trying to transfer parameter (%s: %s) past the last round of the experiment",
-                    parameter, value)
-            return None
         next_round_data, created = self.experiment.round_data.get_or_create(round_configuration=self.experiment.next_round)
         logger.debug("next round data: %s (%s)", next_round_data, created)
         group_data_value, created = next_round_data.group_data_values.get_or_create(group=self, parameter=parameter, defaults={'value': value})
-        logger.debug("%s (%s)", group_data_value, created)
+        logger.debug("group data value %s (%s)", group_data_value, created)
         if not created:
             group_data_value.value = value
             group_data_value.save()
@@ -1112,6 +1108,7 @@ class GroupRoundDataValue(DataValue):
 
 
 class Participant(CommonsUser):
+    current_location = models.IntegerField(default=0)
     can_receive_invitations = models.BooleanField(default=False)
     groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participants')
     experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participants')
