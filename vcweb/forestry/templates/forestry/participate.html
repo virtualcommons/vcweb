@@ -1,6 +1,7 @@
 {% extends "participant/base.html" %}
 {% block head %}
 {{ block.super }}
+{% comment %}{% include "includes/jquery.confirm.html" %} {%endcomment%}
 <script type="text/javascript">
     $(function() {
         $("#forestry-form").validate({
@@ -32,11 +33,26 @@
             }
         });
         $('#forestry-form').submit(function() {
-            $(this).attr('disabled', true);
-            harvestDecisionValue = $('#harvest-decision-id').val();
+            var harvestDecisionValue = $('#harvest-decision-id').val();
+            // FIXME: this isn't getting sent through properly before the submit occurs.  
+            // Should work out communicating directly from Django to the tornadio process.
             s.send(createSubmitEvent(harvestDecisionValue));
             return true;
         });
+        /*
+        $('#submit').click(function() {
+            $(this).fastConfirm({
+                questionText: "Submit your harvest decision of " + harvestDecisionValue + "?",
+                onProceed: function(trigger) {
+                    $('#forestry-form').submit();
+                    $(trigger).fastConfirm('close');
+                },
+                onCancel: function(trigger) {
+                    $(trigger).fastConfirm('close');
+                }
+            });
+        });
+        */
     });
 </script>
 {% endblock %}
@@ -80,7 +96,7 @@ Participating in {{experiment.status_line}}
         <input id='harvest-decision-id' style='width: 2em; text-align: right;' type="text" name='harvest_decision' class='required digits' maxlength='1'/>
     </div>
     <div>
-        <button type='submit'>Harvest</button>
+        <button id='submit' type='submit'>Harvest</button>
     </div>
 </form>
 {% else %}

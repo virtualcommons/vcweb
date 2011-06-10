@@ -1,15 +1,12 @@
 {% extends "participant/base.html" %}
 {% block head %}
 {{ block.super }}
-{% include "includes/participant.events.html" %}
-{% include "includes/socket.io.html" %}
 {% include "includes/tablesorter.html" %}
 <script type="text/javascript">
     $(function() {
-            $('#participant-history').tablesorter({widgets: ['zebra'],
-                headers: { 0: {sorter: false}, 1: {sorter: false} }
-            });
-        $('[title]').qtip({position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'green', tip: 'bottomMiddle'} });
+        $('#participant-history').tablesorter({widgets: ['zebra'],
+            headers: { 0: {sorter: false}, 1: {sorter: false} }
+        });
         var s = getCachedSocket();
         s.on('message', function(json_string) {
             var json = jQuery.parseJSON(json_string);
@@ -36,14 +33,11 @@ Forestry Experiment Round {{ experiment.current_round.round_number }}
 {% block page %}
 <h3>Waiting for the next round to start</h3>
 <p>
-The facilitator will start the next round when every participant is ready.
-<br/>
+Please wait, {{request.user.participant}}. The facilitator will start the next round when every participant is ready.
+</p>
 <div class='ui-state-highlight ui-corner-all'>
     <small><span class='float-left vcweb-ui-icon ui-icon ui-icon-circle-arrow-w'></span><a href='participate'>return to participation page</a></small>
 </div>
-<br/>
-</p>
-
 <h3>Participant History</h3>
 <div id='group-history'>
     {% if participant_history %}
@@ -88,12 +82,5 @@ The facilitator will start the next round when every participant is ready.
     </table>
 
     {% endif %}
-</div>
-<h3>Instructions</h3>
-<div class='info ui-corner-all'>
-    Please wait until the next round begins.
-    {% comment%}
-    add ajax spinner and polling
-    {% endcomment %}
 </div>
 {% endblock %}

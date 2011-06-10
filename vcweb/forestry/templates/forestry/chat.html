@@ -4,7 +4,6 @@
 <script type="text/javascript">
     $(function() {
         var chatDiv = document.getElementById('chat-div');
-        // var s = connect(window.location.hostname, 8888, 'participant/{{participant_experiment_relationship.pk}}');
         var s = getCachedSocket();
         s.on('message', function(json_string) {
             var json = jQuery.parseJSON(json_string);
@@ -45,16 +44,20 @@
 </script>
 {% endblock %}
 {% block title %}
-Forestry Chat Round
+Communication Round: {{experiment}}
 {% endblock %}
 
 {% block page %}
-<h3>Chat</h3>
-    <div class='info ui-corner-all'>
-        <span class='icon-left ui-icon ui-icon-info'></span>
-        <b>
-            Hello, {{participant.full_name}}.
-            You are participant {{ participant_group_relationship.participant_number }} in {{participant_group_relationship.group}}.
+<h3 style='margin-top: -30px;'>Communication Round Instructions</h3>
+    <div class='alert alertIcon ui-corner-all' style='font-size: 0.8em; line-height: 1.0em;'>
+            You are <b>participant {{ participant_group_relationship.participant_number }}.</b>
+            You can chat about any aspect of the experiment with the other members of your group with two restrictions:
+            <ol style='margin-left: 15px;margin-bottom: 0;'>
+            <li>You cannot promise side payments after the experiment is completed 
+            <li>You cannot threaten any member of your group with any consequences after the experiment is completed
+            </ol>
+            We are monitoring the chat traffic and if we detect any violation
+            of these rules you will be removed from the experiment.
         </b>
     </div>
     <div id='chat-div' class='chat notice ui-corner-all'>
