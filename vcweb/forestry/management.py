@@ -1,6 +1,5 @@
-#from django.dispatch import receiver
-
-from django.db.models.signals import post_syncdb
+from django.db.models import signals
+from django.dispatch import receiver
 from vcweb.core.models import ExperimentMetadata
 
 import vcweb
@@ -22,6 +21,7 @@ cons:
 
 '''
 
+@receiver(signals.post_syncdb, sender=vcweb.core.models, dispatch_uid='forestry_metadata_creator')
 def post_syncdb_handler(sender, **kwargs):
     forestry_dict = {
             "about_url": "http://commons.asu.edu",
@@ -32,8 +32,3 @@ def post_syncdb_handler(sender, **kwargs):
             }
     forestry_metadata, created = ExperimentMetadata.objects.get_or_create(**forestry_dict)
     logger.debug("forestry: %s (%s)" % (forestry_metadata, created))
-
-post_syncdb.connect(post_syncdb_handler, sender=vcweb.core.models,
-        dispatch_uid='forestry_metadata_creator')
-
-

@@ -1,13 +1,14 @@
+from datetime import datetime
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.aggregates import Max
+from django.dispatch import receiver
 from django.template.defaultfilters import slugify
-
 from string import Template
 from vcweb.core import signals
+
 import base64
-from  datetime import datetime
 import hashlib
 import logging
 import random
@@ -18,21 +19,21 @@ logger = logging.getLogger(__name__)
 
 """
 Contains all data models used in the core as well as a number of helper functions.
-
-Is getting monolithically unwieldy.  Consider splitting into models
-subdirectory
-
-tick handlers.
-handles each second tick.  Might rethink this and use timed / delayed tasks in celery execute at the end of each round for
-controlled experiments and for longer-scale experiments use 1 minute granularity for performance sake.
+FIXME: getting a bit monolithically unwieldy.  Consider splitting into models subdirectory
 """
+
+@receiver(signals.second_tick, sender=None)
 def second_tick_handler(sender, time=None, **kwargs):
+    """
+    tick handlers. handles each second tick.  Might rethink this and use timed /
+    delayed tasks in celery execute at the end of each round for controlled
+    experiments and for longer-scale experiments use 1 minute granularity for
+    performance sake.
+    """
     logger.debug("handling second tick signal at %s", time)
     logger.debug("kwargs: %s", kwargs)
     # inspect all active experiments and update their time left
     Experiment.objects.increment_elapsed_time(status='ROUND_IN_PROGRESS')
-
-signals.second_tick.connect(second_tick_handler, sender=None)
 
 class ExperimentMetadataManager(models.Manager):
     def get_by_natural_key(self, key):
@@ -275,6 +276,8 @@ class Experiment(models.Model):
     def namespace(self):
         return self.experiment_metadata.namespace
 
+# The following URL helper properties are generic experiment management URLs
+# available to experimenters but not participants
     @property
     def management_url(self):
         return "/%s/experimenter" % self.get_absolute_url()
@@ -282,29 +285,7 @@ class Experiment(models.Model):
     @property
     def configure_url(self):
         return "/%s/configure" % self.get_absolute_url()
-# sanitation urls
 
-    @property
-    def consent_url(self):
-        return "/%s/consent" % self.get_absolute_url()
-
-    @property
-    def survey_url(self):
-        return "/%s/survey" % self.get_absolute_url()
-
-    @property
-    def quiz_url(self):
-        return "/%s/quiz" % self.get_absolute_url()
-
-    @property
-    def play_url(self):
-        return "/%s/play" % self.get_absolute_url()
-
-    @property
-    def instructions_url(self):
-        return "/%s/instructions" % self.get_absolute_url()
-
-#
     @property
     def stop_url(self):
         return "%s/stop" % self.controller_url
@@ -1173,6 +1154,9 @@ class ParticipantExperimentRelationship(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User)
     last_completed_round_sequence_number = models.PositiveIntegerField(default=0)
+    current_location = models.CharField(max_length=64, null=True, blank=True)
+# arbitrary JSON-encoded data
+    additional_data = models.TextField(null=True, blank=True)
 
     def __init__(self, *args, **kwargs):
         super(ParticipantExperimentRelationship, self).__init__(*args, **kwargs)

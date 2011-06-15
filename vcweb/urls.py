@@ -27,6 +27,7 @@ urlpatterns = patterns('',
     # instances of forestry with ExperimentMetadata.namespace)
     url(r'^forestry/', include('vcweb.forestry.urls', namespace='forestry', app_name='forestry')),
     url(r'^sanitation/', include('vcweb.sanitation.urls', namespace='sanitation', app_name='sanitation')),
+    url(r'^lighterprints/', include('vcweb.lighterprints.urls', namespace='lighterprints', app_name='lighterprints')),
     url(r'^admin/', include(admin.site.urls)),
     # core catches everything else
     url(r'', include('vcweb.core.urls', namespace='core', app_name='core')),
