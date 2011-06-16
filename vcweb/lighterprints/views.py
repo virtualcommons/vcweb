@@ -23,7 +23,7 @@ class JSONResponseMixin(object):
     def convert_context_to_json(self, context):
         "Convert the context dictionary into a JSON object"
         logger.debug("serializing context %s", context)
-        return serializers.serialize('json', context['object_list'], fields=('display_name', 'description', 'url'))
+        return serializers.serialize('json', context['object_list'])
 
 class ActivityListView(JSONResponseMixin, BaseListView, MultipleObjectTemplateResponseMixin):
 # FIXME: replace with dynamic set
