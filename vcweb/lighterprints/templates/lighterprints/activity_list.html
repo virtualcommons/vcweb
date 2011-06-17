@@ -1,1 +1,14 @@
 {% extends "base.html" %}
+
+{% block title %} Lighter Footprints {% endblock %}
+
+{% block page %}
+{% for level, activities in activity_by_level.items %}
+<h3>Level {{level}} Activities</h3>
+<ul>
+    {% for activity in activities %}
+    <li>{{ activity }}</li>
+    {% endfor %}
+</ul>
+{% endfor %}
+{% endblock page %}

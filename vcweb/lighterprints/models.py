@@ -8,7 +8,22 @@ class Activity(models.Model):
     url = models.URLField()
     savings = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     available_all_day = models.BooleanField(default=False)
-    available_start_time = models.TimeField(null=True, blank=True)
-    available_end_time = models.TimeField(null=True, blank=True)
 # FIXME: allow for experiment-configurable levels?
     level = models.PositiveIntegerField(default=1)
+    group_activity = models.BooleanField(default=False, help_text='Whether or not this activity has beneficial group effect multipliers, e.g., ride sharing')
+    cooldown = models.PositiveIntegerField(default=1, help_text='How much time, in hours, must elapse before this activity can become available again')
+
+    @property
+    def label(self):
+        return self.display_name if self.display_name else self.name
+
+    def __unicode__(self):
+        return u'%s (+%s)' % (self.label, self.savings)
+
+    class Meta:
+        ordering = ['level', 'name']
+
+class ActivityAvailability(models.Model):
+    activity = models.ForeignKey(Activity)
+    available_start_time = models.TimeField(null=True, blank=True)
+    available_end_time = models.TimeField(null=True, blank=True)

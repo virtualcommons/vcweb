@@ -1,66 +1,72 @@
 [
     {
-        "pk": 1,
+        "pk": 4,
         "model": "lighterprints.activity",
         "fields": {
-            "available_start_time": null,
-            "display_name": "Enable sleep function on your computer",
-            "description": "Annual energy savings from enabling sleep feature on computer and monitor = 235 kWh\r\nSavings assumes you have an ENERGY STAR computer. It assumes a weighted average of consumer behavior rather than assuming computers are turned off all night.  ",
-            "available_all_day": true,
-            "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
-            "available_end_time": null,
-            "summary": "Your computer consumes less energy when it's asleep or turned off",
-            "savings": "0.98",
+            "display_name": "Adjust your thermostat by 2 degrees",
+            "description": "Climate-controlled buildings costs a lot of energy. Adjusting the temperature with two degrees saved 2000 pound of CO2 a year.",
+            "available_all_day": false,
+            "url": "http://www.savecarbon.org/activity_form/twodegrees",
             "level": 1,
-            "name": "enable-computer-sleep"
+            "summary": "Heating or cooling buildings less saves energy",
+            "savings": "5.5",
+            "name": "adjust-thermostat"
         }
     },
     {
         "pk": 2,
         "model": "lighterprints.activity",
         "fields": {
-            "available_start_time": null,
             "display_name": "Eat locally grown food for lunch",
             "description": "The food we eat comes from all over the world. How much CO2 emissions this generates depends on your specific location and menu. On average a person in the USA can save 1400 pounds of CO2 per year by switching to locally grown food. We assume that one lunch is equivalent of 1.5 pounds of CO2 saved.",
             "available_all_day": true,
             "url": "http://www.huffingtonpost.com/bill-chameides/carbon-savings-at-home_b_113551.html",
-            "available_end_time": null,
+            "level": 1,
             "summary": "Less energy for transport when only locally grown food is consumed",
             "savings": "2",
-            "level": 1,
             "name": "eat-local-lunch"
+        }
+    },
+    {
+        "pk": 1,
+        "model": "lighterprints.activity",
+        "fields": {
+            "display_name": "Enable sleep function on your computer",
+            "description": "Annual energy savings from enabling sleep feature on computer and monitor = 235 kWh\r\nSavings assumes you have an ENERGY STAR computer. It assumes a weighted average of consumer behavior rather than assuming computers are turned off all night.  ",
+            "available_all_day": true,
+            "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
+            "level": 1,
+            "summary": "Your computer consumes less energy when it's asleep or turned off",
+            "savings": "0.98",
+            "name": "enable-computer-sleep"
+        }
+    },
+    {
+        "pk": 5,
+        "model": "lighterprints.activity",
+        "fields": {
+            "display_name": "Recycle materials",
+            "description": "Average number of pounds of CO2 equivalent per person per year that could be saved by recycling glass (6.83), plastic (18.96) and aluminum and steel cans (86.05). This is 2.15 a week.",
+            "available_all_day": true,
+            "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
+            "level": 1,
+            "summary": "Recycling processes used materials into new products to prevent waste of potentially useful materials.",
+            "savings": "0.31",
+            "name": "recycle"
         }
     },
     {
         "pk": 3,
         "model": "lighterprints.activity",
         "fields": {
-            "available_start_time": null,
             "display_name": "Share your ride",
             "description": "We assume a 22.4 miles per gallon car. CO2 emissions are 19.53 pounds per gallon and 1.5 pound per gallon of non-CO2 CO2 equivalent emissions. This means 0.94 pounds per mile. We assume a trip length of 5 miles.\r\n\r\nIf there are N carpoolers, the savings are (N-1) / N* 4.7. Hence for N=2 persons, the savings is 2.85. More carpoolers lead to more reductions.",
             "available_all_day": false,
             "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
-            "available_end_time": null,
+            "level": 1,
             "summary": "Using mass transit, bicycle commuting, or carpooling is more efficient than traveling alone in your car.",
             "savings": "2.85",
-            "level": 1,
             "name": "share-your-ride"
-        }
-    },
-    {
-        "pk": 4,
-        "model": "lighterprints.activity",
-        "fields": {
-            "available_start_time": "06:00:00",
-            "display_name": "Adjust your thermostat by 2 degrees",
-            "description": "Climate-controlled buildings costs a lot of energy. Adjusting the temperature with two degrees saved 2000 pound of CO2 a year.",
-            "available_all_day": false,
-            "url": "http://www.savecarbon.org/activity_form/twodegrees",
-            "available_end_time": "08:00:00",
-            "summary": "Heating or cooling buildings less saves energy",
-            "savings": "5.5",
-            "level": 1,
-            "name": "adjust-thermostat"
         }
     }
 ]
