@@ -11,4 +11,16 @@
     {% endfor %}
 </ul>
 {% endfor %}
+{% comment %}
+<h3>regroup method</h3>
+{% regroup activity_list by level as level_list %}
+{% for level in level_list %}
+<h3>Level {{level.grouper}} Activities</h3>
+<ul>
+    {% for activity in level.list %}
+    <li>{{activity}}</li>
+    {% endfor %}
+</ul>
+{% endfor %}
+{% endcomment %}
 {% endblock page %}

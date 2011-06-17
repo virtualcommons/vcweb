@@ -6,12 +6,13 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Model
 from django.db.models.query import QuerySet
 from django.core.serializers import serialize
+from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from django.utils.decorators import method_decorator
 from django.utils.functional import curry
-from django.utils.simplejson import dumps, loads, JSONEncoder
+from django.utils.simplejson import loads, dumps
 from django.views.generic import ListView, FormView, TemplateView
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin, DetailView
@@ -25,17 +26,16 @@ import itertools
 import logging
 logger = logging.getLogger(__name__)
 
-""" account registration / login / logout / profile views """
-class DjangoJSONEncoder(JSONEncoder):
+class VcwebJSONEncoder(DjangoJSONEncoder):
     def default(self, obj):
         if isinstance(obj, QuerySet):
             return loads(serialize('json', obj))
         elif isinstance(obj, Model):
             return loads(serialize('json', [obj]))[0]
         else:
-            return JSONEncoder.default(self, obj)
+            return DjangoJSONEncoder.default(self, obj)
 
-dumps = curry(dumps, cls=DjangoJSONEncoder)
+dumps = curry(dumps, cls=VcwebJSONEncoder)
 
 class JSONResponseMixin(object):
     def render_to_response(self, context, **kwargs):
@@ -55,11 +55,16 @@ class JSONResponseMixin(object):
         return dumps(context[context_key])
 
 class AnonymousMixin(object):
+    """ provides the anonymous_required decorator """
     @method_decorator(anonymous_required)
     def dispatch(self, *args, **kwargs):
         return super(AnonymousMixin, self).dispatch(*args, **kwargs)
 
 class Dashboard(ListView, TemplateResponseMixin):
+    """ 
+    general dashboard for participants or experimenters that displays a list of
+    experiments to either participate in or configure/manage/monitor, respectively
+    """
     context_object_name = 'experiments'
     def get_template_names(self):
         user = self.request.user
@@ -70,6 +75,8 @@ class Dashboard(ListView, TemplateResponseMixin):
             return Experiment.objects.filter(experimenter__pk=self.request.user.experimenter.pk)
         else:
 # nested dictionary, {ExperimentMetadata -> { status -> [experiments,...] }}
+# FIXME: could also use collections.defaultdict or regroup template tag to
+# accomplish this..
             experiment_dict = {}
             for experiment in user.participant.experiments.exclude(status__in=(Experiment.INACTIVE, Experiment.PAUSED, Experiment.COMPLETED)):
                 if not experiment.experiment_metadata in experiment_dict:
