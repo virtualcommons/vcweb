@@ -3,10 +3,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
+from django.db.models import Model
+from django.db.models.query import QuerySet
+from django.core.serializers import serialize
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from django.utils.decorators import method_decorator
+from django.utils.functional import curry
+from django.utils.simplejson import dumps, loads, JSONEncoder
 from django.views.generic import ListView, FormView, TemplateView
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin, DetailView
@@ -21,6 +26,33 @@ import logging
 logger = logging.getLogger(__name__)
 
 """ account registration / login / logout / profile views """
+class DjangoJSONEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, QuerySet):
+            return loads(serialize('json', obj))
+        elif isinstance(obj, Model):
+            return loads(serialize('json', [obj]))[0]
+        else:
+            return JSONEncoder.default(self, obj)
+
+dumps = curry(dumps, cls=DjangoJSONEncoder)
+
+class JSONResponseMixin(object):
+    def render_to_response(self, context, **kwargs):
+        "Returns a JSON response containing 'context' as payload"
+        return self.get_json_response(self.convert_context_to_json(context, **kwargs))
+
+    def get_json_response(self, content, **httpresponse_kwargs):
+        "Construct an `HttpResponse` object."
+        logger.debug("return json response %s", content)
+        return HttpResponse(content,
+                content_type='application/json',
+                **httpresponse_kwargs)
+
+    def convert_context_to_json(self, context, context_key='object_list', **kwargs):
+        "Convert the context dictionary into a JSON object"
+        logger.debug("serializing context %s with context_key %s", context, context_key)
+        return dumps(context[context_key])
 
 class AnonymousMixin(object):
     @method_decorator(anonymous_required)
@@ -345,3 +377,4 @@ def experiment_controller(request, pk=None, experiment_action=None):
     logger.warning(error_message)
     messages.warning(request, error_message)
     return redirect('core:dashboard')
+
