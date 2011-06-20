@@ -256,13 +256,14 @@ class Experiment(models.Model):
 
     @property
     def round_status_display(self):
-        return "Round %s of %s, %s" % (self.current_round.sequence_number, self.experiment_configuration.final_sequence_number, self.get_status_display())
+        return u"Round %s of %s, %s" % (self.current_round.sequence_number, self.experiment_configuration.final_sequence_number, self.get_status_display())
 
     @property
     def status_line(self):
-        return "%s #%s, %s %s" % (
+        return u"%s #%s (%s), %s %s" % (
                 self.experiment_metadata.title,
                 self.pk,
+                self.experiment_configuration.name,
                 self.get_status_display(),
                 self.current_round.sequence_label)
 

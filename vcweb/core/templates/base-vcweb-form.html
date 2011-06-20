@@ -4,3 +4,12 @@
     {{ block.super }}
     {% include "includes/jquery.forms.html" %}
 {% endblock head %}
+
+{% block page %}
+<form action='.' method='post'>
+{% csrf_token %}
+{% block form %}
+
+{% endblock form %}
+</form>
+{% endblock page %}

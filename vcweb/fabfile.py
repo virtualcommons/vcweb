@@ -44,7 +44,7 @@ def shell():
 
 def syncdb(**kwargs):
     with cd(env.project_path):
-        _virtualenv(run, *syncdb_commands, **kwargs)
+        _virtualenv(local, *syncdb_commands, **kwargs)
 
 
 def setup_virtualenv():
@@ -153,8 +153,6 @@ def deploy():
     if confirm("Deploy to %(hosts)s ?" % env):
         with cd(env.project_path):
             sudo('hg pull && hg up', user=env.deploy_user, pty=True)
-            if confirm("syncdb?"):
-                syncdb()
             env.static_root = vcweb_settings.STATIC_ROOT
             _virtualenv(run,'%(python)s manage.py collectstatic' % env)
             sudo_chain('chmod -R ug+rw .',

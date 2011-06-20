@@ -25,9 +25,9 @@ cons:
 def post_syncdb_handler(sender, **kwargs):
     forestry_dict = {
             "about_url": "http://commons.asu.edu",
-            "description": "Web-based version of the forestry field experiments.",
+            "description": "A web-based version of forestry field experiments (Cardenas, Janssen and Bousquet).",
             "namespace": "forestry",
-            "title": "Forestry Web Experiment",
+            "title": "Forestry Experiment",
             "date_created": "2011-01-01"
             }
     forestry_metadata, created = ExperimentMetadata.objects.get_or_create(**forestry_dict)
