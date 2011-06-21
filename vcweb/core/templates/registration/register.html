@@ -4,8 +4,8 @@
 
 <script type='text/javascript'>
 $(document).ready(function() {
-	$("#registrationForm :input:visible:enabled:first").focus();
-	$('#registrationForm').validate();
+	$("#vcweb-form :input:visible:enabled:first").focus();
+	$('#vcweb-form').validate();
 	$('#id_password').rules("add", {
 		minlength: 3
 	});
@@ -16,7 +16,7 @@ $(document).ready(function() {
 			equalTo: "Please make sure your passwords match."
 		}
 	});
-        $('input:visible, textarea:visible').each(function(i, val) {
+        $('#vcweb-form').find('input:visible, textarea:visible').each(function(i, val) {
             var labelTitle = $(val).prev().attr("title");
             if (! labelTitle) {
                 return;
@@ -33,23 +33,14 @@ $(document).ready(function() {
 
 {% endblock head %}
 
-{% block title %}Virtual Commons Web Experiment Registration{% endblock %}
-
-{% block page %}
-
-<form id='registrationForm' action='' method='post'>
-    <h3>New User</h3>
+{% block title %}Register with vcweb{% endblock %}
+{% block form %}
+<h3>New User</h3>
 <p>
 Already have an account?  You can <a href='{% url core:login %}'>login here</a> or <a href='{% url password-reset %}'>retrieve your password</a>.
 </p>
-
 {% include "includes/form-as-div.html" %}
-
 <div>
     <button class='submit'>Register</button>
 </div>
-
-</form>
-
-{% endblock %}
-
+{% endblock form %}

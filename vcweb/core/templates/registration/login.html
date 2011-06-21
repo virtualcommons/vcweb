@@ -8,23 +8,18 @@
 <script type='text/javascript'>
 $(function() {
     $(':input').addClass('required');
-    $('#loginForm').validate();
+    $('#vcweb-form').validate();
     $('#id_email').focus();
 });
 </script>
 {% endblock head %}
 
-{% block page %}
-
-<form id='loginForm' action='' method='post'>
+{% block form %}
     <h3>Returning User</h3>
     <p>
     Don&#39;t have an account or a first-time user?  Please <a href='{% url core:register %}'>register first</a>.
     </p>
-
     {% include "includes/form-as-div.html" %}
     <div><button type='submit' class='submit'>Login</button></div>
-</form>
-
-{% endblock page %}
+{% endblock form %}
 
