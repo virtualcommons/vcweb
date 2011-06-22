@@ -62,6 +62,7 @@
 {% endblock %}
 {% block content %}
 <h3>Forestry round number {{ experiment.current_round.round_number }}</h3>
+{% if max_harvest_decision > 0 %}
 <div style="background: url('{{STATIC_URL}}images/forestry/{{tree.name}}.png'); width:{{max_width}}px; height: {{max_height}}px;">
     &nbsp;
 </div>
@@ -71,11 +72,12 @@
 </div>
 {% endif %}
 
-{% if resource_level.value == 0 %}
+{% else %}
 <div style='padding: 8px; margin: auto; border: solid 1px; background: #E8E8E8 url({{STATIC_URL}}images/forestry/deforestation.jpg) no-repeat center; height: 282px; width:425px;'>
     &nbsp;
 </div>
 {% endif %}
+
 <div style='padding: 5px; margin: 8px 0px;' class='ui-state-highlight'>
     <span class='icon-left ui-icon ui-icon-info'>&nbsp;</span>
     There are <b>{{ resource_level.value }}</b> trees left.

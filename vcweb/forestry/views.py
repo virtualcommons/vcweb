@@ -70,7 +70,8 @@ def generate_participant_history(participant_group_relationship):
     experiment = group.experiment
     participant_history = deque()
     for round_data in experiment.playable_round_data:
-        logger.debug("generating participant history for %s", round_data)
+        logger.debug("generating participant history for %s, current round %s",
+                participant_group_relationship.participant, round_data)
         data = ParticipantRoundData()
 # FIXME: this kind of binding is a bit laborious and error-prone, refactor if possible
         data.round_configuration = round_data.round_configuration

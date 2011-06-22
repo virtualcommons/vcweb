@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import tornado.web
 from tornadio import SocketConnection, get_router, server
+from tornado.escape import xhtml_escape
 import os
 import sys
 import logging
@@ -17,17 +18,6 @@ logger = logging.getLogger('tornadio.vcweb')
 
 def info_json(message):
     return simplejson.dumps({'message_type': 'info', 'message': message})
-
-def goto_json(url):
-    return simplejson.dumps({'message_type': 'goto', 'url': url})
-
-def chat_json(chat_message):
-    return simplejson.dumps({
-        "pk": chat_message.pk,
-        "date_created": chat_message.date_created.strftime("%H:%M:%S"),
-        "message" : unicode(chat_message),
-        "message_type": 'chat',
-        })
 
 class ConnectionManager:
     '''
@@ -259,7 +249,7 @@ class ParticipantHandler(SocketConnection):
                 participant_group_relationship = connection_manager.get_participant_group_relationship(self)
                 current_round_data = participant_group_relationship.group.experiment.current_round_data
                 chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
-                        message=event.message,
+                        message=xhtml_escape(event.message),
                         round_data=current_round_data
                         )
                 chat_json = simplejson.dumps({
