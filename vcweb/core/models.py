@@ -694,7 +694,7 @@ class RoundConfiguration(models.Model):
         return Template(template_string).substitute(kwargs, round_number=self.display_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return u"%s > %s %s" % (self.display_label, self.experiment_configuration, self.sequence_label)
+        return u"%s (%s)" % (self.display_label, self.sequence_label)
 
     @property
     def display_label(self):
@@ -1043,7 +1043,7 @@ class Group(models.Model):
         next_round_data, created = self.experiment.round_data.get_or_create(round_configuration=self.experiment.next_round)
         logger.debug("next round data: %s (%s)", next_round_data, created)
         group_data_value, created = next_round_data.group_data_values.get_or_create(group=self, parameter=parameter, defaults={'value': value})
-        logger.debug("%s (%s)", group_data_value, created)
+        logger.debug("group data value: %s (%s)", group_data_value, created)
         if not created:
             group_data_value.value = value
             group_data_value.save()

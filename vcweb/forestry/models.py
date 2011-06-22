@@ -99,8 +99,8 @@ def set_resource_level(group=None, value=None):
     group.set_data_value(parameter=get_resource_level_parameter(), value=value)
 
 def round_setup(experiment, **kwargs):
-    logger.debug(experiment)
     round_configuration = experiment.current_round
+    logger.debug("current round %s", round_configuration)
     if round_configuration.is_playable_round:
         # participant parameter
         harvest_decision_parameter = get_harvest_decision_parameter()
@@ -133,8 +133,8 @@ def round_teardown(experiment, **kwargs):
     calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth.
     also responsible for transferring those parameters to the next round as needed.
     '''
-    logger.debug(experiment)
     current_round_configuration = experiment.current_round
+    logger.debug("current round: %s", current_round_configuration)
     max_resource_level = 100
     for group in experiment.groups.all():
         # FIXME: simplify logic
@@ -174,7 +174,6 @@ even using django.util.encodings smart_unicode and smart_str functions don't hel
 forestry_sender = 1
 @receiver(signals.round_started, sender=forestry_sender)
 def round_started_handler(sender, experiment=None, **kwargs):
-    logger.debug("forestry handling round started signal")
     round_setup(experiment, **kwargs)
 
 @receiver(signals.round_ended, sender=forestry_sender)

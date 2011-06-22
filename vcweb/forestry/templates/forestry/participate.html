@@ -37,31 +37,26 @@
             var harvestDecisionValue = $('#harvest-decision-id').val();
             // FIXME: this isn't getting sent through properly before the submit occurs.  
             // Should work out communicating directly from Django to the tornadio process.
+            $('#submit').attr('disabled', true);
             s.send(createSubmitEvent(harvestDecisionValue));
-            return true;
+            $('#forestry-form').delay(500).submit();
+            return false;
         });
         */
-        $('#submit').click(function() {
+        $('#submit-harvest').click(function() {
             var harvestDecisionValue = $('#harvest-decision-id').val();
+            $('#submit-harvest').attr('disabled', true);
             s.send(createSubmitEvent(harvestDecisionValue));
-            $('#submit').disable();
-            $('#submitDialog').dialog({modal: true});
-            $(this).fastConfirm({
-                questionText: "Submit your harvest decision of " + harvestDecisionValue + "?",
-                onProceed: function(trigger) {
-                    $('#forestry-form').submit();
-                    $(trigger).fastConfirm('close');
-                },
-                onCancel: function(trigger) {
-                    $(trigger).fastConfirm('close');
-                }
-            });
+            setTimeout(function() {
+                $('#forestry-form').submit();
+                }, 300);
+            return true;
         });
     });
 </script>
 {% endblock %}
 {% block title %}
-Participating in {{experiment.status_line}}
+{{ experiment.status_line }}
 {% endblock %}
 {% block content %}
 <h3>Forestry round number {{ experiment.current_round.round_number }}</h3>
@@ -101,7 +96,7 @@ Participating in {{experiment.status_line}}
         <input id='harvest-decision-id' style='width: 2em; text-align: right;' type="text" name='harvest_decision' class='required digits' maxlength='1'/>
     </div>
     <div>
-        <button id='submit' type='submit'>Harvest</button>
+        <button id='submit-harvest' type='submit'>Harvest</button>
     </div>
 </form>
 {% else %}
