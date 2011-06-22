@@ -37,16 +37,18 @@
             var harvestDecisionValue = $('#harvest-decision-id').val();
             // FIXME: this isn't getting sent through properly before the submit occurs.  
             // Should work out communicating directly from Django to the tornadio process.
-            $('#submit').attr('disabled', true);
-            s.send(createSubmitEvent(harvestDecisionValue));
-            $('#forestry-form').delay(500).submit();
-            return false;
+            // $('#submit-harvest').attr('disabled', true);
+            if (harvestDecisionValue) {
+                s.send(createSubmitEvent(harvestDecisionValue));
+            }
+            return true;
         });
         */
         $('#submit-harvest').click(function() {
             var harvestDecisionValue = $('#harvest-decision-id').val();
-            $('#submit-harvest').attr('disabled', true);
-            s.send(createSubmitEvent(harvestDecisionValue));
+            if (harvestDecisionValue) {
+                s.send(createSubmitEvent(harvestDecisionValue));
+            }
             setTimeout(function() {
                 $('#forestry-form').submit();
                 }, 800);
