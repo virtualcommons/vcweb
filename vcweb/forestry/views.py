@@ -69,6 +69,7 @@ def generate_participant_history(participant_group_relationship):
     experiment = group.experiment
     participant_history = []
     for round_data in experiment.playable_round_data:
+        logger.debug("generating participant history for %s", round_data)
         data = ParticipantRoundData()
         data.round_configuration = round_data.round_configuration
         data.individual_harvest = get_harvest_decision(participant_group_relationship, round_data=round_data)

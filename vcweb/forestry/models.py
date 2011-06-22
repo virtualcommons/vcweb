@@ -13,14 +13,14 @@ def forestry_second_tick():
 
 def get_resource_level(group, round_data=None):
     ''' returns the group resource level data parameter '''
-    return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data)
+    return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data, default=0)
 
 def get_group_harvest(group, round_data=None):
     ''' returns the collective group harvest data parameter '''
-    return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data)
+    return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data, default=0)
 
 def get_regrowth(group, round_data=None):
-    return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data)
+    return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0)
 
 def has_resource_level(group=None):
     return group.has_data_parameter(parameter=get_resource_level_parameter())

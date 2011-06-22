@@ -57,6 +57,7 @@
     }
     function addExperimentMessage(message) {
         if (message) {
+            console.debug("adding message " + message + " to experiment messages div");
             $("#experiment-messages").append($("<div style='font-size: 0.8em;line-height:0.9em;padding:3px;' class='ui-state-highlight' />").append(message));
         }
     }
@@ -99,7 +100,7 @@
 </script>
 {% endblock %}
 {% block title %}
-{{ experiment.pk }}
+#{{ experiment.pk }}: {{ experiment.experiment_metadata }}
 {% endblock %}
 {% block page %}
 {{block.super}}
@@ -176,11 +177,11 @@
             </ul>
             <br/>
             <ul class='messages'>
-                <li title='{{experiment.actions_help_text}}'>{{ experiment.round_status_display }}</li>
+                <li title='{{experiment.actions_help_text}}'>{{ experiment.sequence_label }}, {{experiment.get_status_display}}</li>
                 <li>Type: {{ experiment.current_round.get_round_type_display }}</li>
                 <li>Round started on {{ experiment.current_round_start_time }}</li>
                 <li>Time remaining: {{ experiment.time_remaining }}</li>
-                <li>Registered participants: <b>{{participant_count}}</b>
+                <li title='{{experiment.participants.all|join:" "}}'>Registered participants: <b>{{participant_count}}</b>
                 </li>
             </ul>
         </fieldset>

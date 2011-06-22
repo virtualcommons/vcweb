@@ -139,6 +139,7 @@ class ExperimentConfiguration(models.Model):
 
     @property
     def final_sequence_number(self):
+        # FIXME: or max round_configurations.sequence_number (degenerate data)
         return self.round_configurations.count()
 
     @property
@@ -255,17 +256,16 @@ class Experiment(models.Model):
         return "%s.%s" % (self.namespace, self.pk)
 
     @property
-    def round_status_display(self):
-        return u"Round %s of %s, %s" % (self.current_round.sequence_number, self.experiment_configuration.final_sequence_number, self.get_status_display())
+    def sequence_label(self):
+        return u"Round %s of %s" % (self.current_round_sequence_number, self.experiment_configuration.final_sequence_number)
 
     @property
     def status_line(self):
-        return u"%s #%s (%s), %s %s" % (
+        return u"%s #%s (%s), %s" % (
                 self.experiment_metadata.title,
                 self.pk,
                 self.experiment_configuration.name,
-                self.get_status_display(),
-                self.current_round.sequence_label)
+                self.sequence_label)
 
     @property
     def participant_group_relationships(self):
@@ -502,7 +502,7 @@ class Experiment(models.Model):
         if self.has_next_round:
             self.current_round_elapsed_time = 0
             self.current_round_sequence_number += 1
-            self.save()
+            self.start_round()
         else:
             logger.warning("trying to advance past the last round - no-op")
 
@@ -702,7 +702,7 @@ class RoundConfiguration(models.Model):
 
     @property
     def sequence_label(self):
-        return u"(%d of %d)" % (self.sequence_number, self.experiment_configuration.final_sequence_number)
+        return u"%d of %d" % (self.sequence_number, self.experiment_configuration.final_sequence_number)
 
     class Meta:
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]
@@ -976,7 +976,7 @@ class Group(models.Model):
     def get_scalar_data_value(self, parameter=None, parameter_name=None):
         return self.get_data_value(parameter=parameter, parameter_name=parameter_name).value
 
-    def get_data_value(self, parameter=None, parameter_name=None, round_data=None):
+    def get_data_value(self, parameter=None, parameter_name=None, round_data=None, default=None):
         if round_data is None:
             round_data = self.current_round_data
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
@@ -984,7 +984,10 @@ class Group(models.Model):
             return self.data_values.get(**criteria)
         except GroupRoundDataValue.DoesNotExist as e:
             logger.warning("No data value found for criteria %s", criteria)
-            raise e
+            if default is None:
+                raise e
+            else:
+                return default
 
     def set_data_value(self, parameter_name=None, parameter=None, value=None):
         '''
@@ -1215,7 +1218,8 @@ class ParticipantGroupRelationship(models.Model):
     def set_data_value(self, parameter=None, value=None):
         current_round_data = self.current_round_data
         if parameter is not None and value is not None:
-            # FIXME: shift to ParticipantGroupRelationship as data arbiter?
+            # FIXME: make sure this is concurrent-safe or better yet that all participant data values are created at the
+            # start of a round.
             participant_data_value, created = current_round_data.participant_data_values.get_or_create(parameter=parameter, participant_group_relationship=self)
             participant_data_value.value = value
             # FIXME: parameterize / make explicit?
