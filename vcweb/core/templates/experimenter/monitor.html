@@ -48,9 +48,9 @@
         $('#statusDiv [title]').qtip(qtipOptions);
         $('#statusDiv').show('fast');
         $('#experimentData').show('fast');
+        console.log("active round number: " + active_round_number);
         if (round_data_count > 0) {
             $('#experimentData').accordion({
-                active: active_round_number - 1,
                 autoHeight: false
             });
         }
@@ -191,7 +191,7 @@
 </div>
 <div id='experimentData'>
     {% block data %}
-    {% for round_data in experiment.round_data.all %}
+    {% for round_data in experiment.round_data.all reversed %}
     <h3><a href='#'>{{ round_data }}</a></h3>
     <div id='round_data_{{forloop.counter}}'>
         {% if round_data.group_data_values.count > 0 %}
@@ -245,7 +245,6 @@
         <div class='info ui-corner-all'><span class='ui-icon ui-icon-info icon-left'></span>No participant data for this round.</div>
         {% endif %}
         {% comment %} participant chats {% endcomment %}
-        {% if round_data.chat_messages.count > 0 %}
         <h4 class='collapsible'>Chat data</h4>
         <div id='chat-div-{{round_data.pk}}' class='chat notice ui-corner-all'>
             {% for chat_message in round_data.chat_messages.all %}
@@ -253,9 +252,13 @@
                 <a class='dark-yellow-highlight' name='{{chat_message.pk}}' title='{{chat_message.date_created}} {{chat_message.participant}}'>
                     {{chat_message.date_created|date:"G:i:s"}}</a> | {{chat_message}}
             </div>
+            {% empty %}
+            <div class='ui-state-highlight' style='line-height: 1.5em;'>
+                <span class='ui-icon ui-icon-info vcweb-icon'></span>
+                <span class='dark-yellow-highlight'>{% now "G:i:s" %}</span> | No chat messages have been sent yet.
+            </div>
             {% endfor %}
         </div>
-        {% endif %}
     </div>
     {% empty %}
     <div class='alert ui-state-highlight ui-corner-all'><span class='ui-icon ui-icon-alert icon-left'></span>Round data is not yet available.</div>

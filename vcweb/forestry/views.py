@@ -13,6 +13,7 @@ from vcweb.core.views import ParticipantSingleExperimentMixin
 from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision, get_harvest_decision, get_group_harvest, get_regrowth
 from vcweb.forestry.forms import HarvestDecisionForm
 import logging
+from collections import deque
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class ParticipantRoundData(object):
 def generate_participant_history(participant_group_relationship):
     group = participant_group_relationship.group
     experiment = group.experiment
-    participant_history = []
+    participant_history = deque()
     for round_data in experiment.playable_round_data:
         logger.debug("generating participant history for %s", round_data)
         data = ParticipantRoundData()
@@ -86,7 +87,7 @@ def generate_participant_history(participant_group_relationship):
             logger.error("Caught attribute error while trying to calculate original number of trees %s", e)
             pass
         data.final_number_of_trees = resource_level.value
-        participant_history.append(data)
+        participant_history.appendleft(data)
     if experiment.is_round_in_progress:
         last_round_data = participant_history[-1]
         if experiment.current_round == last_round_data.round_configuration:

@@ -111,7 +111,7 @@ def experiment_controller(request, pk, action=''):
         'transition_url': transition_url,
         'status': status_block,
         'experimentData': data_block,
-        'active_round_number': experiment.current_round.sequence_number,
+        'active_round_number': experiment.current_round_sequence_number,
         'round_data_count': experiment.round_data.count(),
         'error_message': error_message,
         })
