@@ -89,9 +89,8 @@ def generate_participant_history(participant_group_relationship):
         data.final_number_of_trees = resource_level.value
         participant_history.appendleft(data)
     if experiment.is_round_in_progress:
-        last_round_data = participant_history[-1]
-        if experiment.current_round == last_round_data.round_configuration:
-            last_round_data.round_in_progress = True
+        last_round_data = participant_history[0]
+        last_round_data.round_in_progress = (experiment.current_round == last_round_data.round_configuration)
     return participant_history
 
 @participant_required
