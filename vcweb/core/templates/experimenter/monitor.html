@@ -16,6 +16,9 @@
             $('#statusDiv').html(json.status);
             $('#experimentData').accordion("destroy");
             $('#experimentData').html(json.experimentData);
+            if (json.error_message) {
+                addExperimentMessage(json.error_message)
+            }
             registerCallbacks(json.round_data_count, json.active_round_number);
         }
     }
@@ -53,7 +56,9 @@
         }
     }
     function addExperimentMessage(message) {
-        $("#experiment-messages").append($("<div style='font-size: 0.8em;line-height:0.9em;padding:3px;' class='ui-state-highlight' />").append(message));
+        if (message) {
+            $("#experiment-messages").append($("<div style='font-size: 0.8em;line-height:0.9em;padding:3px;' class='ui-state-highlight' />").append(message));
+        }
     }
     $(function() {
             var experimentMessageDiv = document.getElementById('experiment-messages');

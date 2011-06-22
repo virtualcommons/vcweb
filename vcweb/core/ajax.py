@@ -89,11 +89,18 @@ def _render_experiment_monitor_block(block, experiment, request):
 def experiment_controller(request, pk, action=''):
     try:
         experiment = _get_experiment(request, pk)
-        experiment_func = getattr(experiment, action.replace('-', '_'), None)
-        if experiment_func:
+        error_message = None
+# FIXME: this is convenient but dangerous.  
+# dashes become underscores for function invocation.  
+        try:
+            experiment_func = getattr(experiment, action.replace('-', '_'))
             experiment_func()
-        else:
-            logger.warning("tried to invoke nonexistent action %s on experiment %s", action, experiment.status_line)
+        except TypeError as e:
+            logger.warning("action %s wasn't callable on experiment %s (%s)", action, experiment.status_line, e)
+            error_message = "Couldn't call %s" % action
+        except AttributeError as e:
+            logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
+            error_message = "No such attribute %s on Experiment" % action
         status_block = _render_experiment_monitor_block('status', experiment, request)
         data_block = _render_experiment_monitor_block('data', experiment, request)
         transition_url = None
@@ -102,12 +109,13 @@ def experiment_controller(request, pk, action=''):
             transition_url = 'wait' if action == 'end_round' else 'participate'
 
         return simplejson.dumps({
-            'should_transition': action in ('start_round', 'end_round'),
+            'should_transition': should_transition,
             'transition_url': transition_url,
             'status': status_block,
             'experimentData': data_block,
             'active_round_number': experiment.current_round.sequence_number,
             'round_data_count': experiment.round_data.count(),
+            'error_message': error_message,
             })
     except Experiment.DoesNotExist, error:
         return HttpResponse(error)
