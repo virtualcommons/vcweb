@@ -250,6 +250,7 @@
         <div class='info ui-corner-all'><span class='ui-icon ui-icon-info icon-left'></span>No participant data for this round.</div>
         {% endif %}
         {% comment %} participant chats {% endcomment %}
+        {% if round_data.round_configuration.is_chat_round %}
         <h4 class='collapsible'>Chat data</h4>
         <div id='chat-div-{{round_data.pk}}' class='chat notice ui-corner-all'>
             {% for chat_message in round_data.chat_messages.all %}
@@ -259,6 +260,7 @@
             </div>
             {% endfor %}
         </div>
+        {% endif %}
     </div>
     {% empty %}
     <div class='alert ui-state-highlight ui-corner-all'><span class='ui-icon ui-icon-alert icon-left'></span>Round data is not yet available.</div>
