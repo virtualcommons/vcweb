@@ -1,16 +1,17 @@
-<div data-role='page' id='full-activity-list'>
-    {% include "lighterprints/mobile/header.html" %}
-    <div data-role='content'>
-        {% for level, activities in activity_by_level.iteritems %}
-        <div data-role='collapsible' data-theme='b'>
-            <h3>Level {{level}} Activities</h3>
-            <div class='ui-grid-d'>
-                {% for activity, grid_letter in activities %}
-                <div class='ui-block-{{grid_letter}}'><button data-theme='e'>{{ activity }}</button></div>
-                {% endfor %}
-            </div>
+{% extends "lighterprints/mobile/lpbase.html" %}
+
+{% block page_id %}full-activity-list{% endblock page_id %}
+{% block content %}
+<div data-role='content'>
+    {% for level, activities in activity_by_level.iteritems %}
+    <div data-role='collapsible' data-theme='b'>
+        <h3>Level {{level}} Activities</h3>
+        <div class='ui-grid-d'>
+            {% for activity, grid_letter in activities %}
+            <div class='ui-block-{{grid_letter}}'><button data-theme='e'>{{ activity }}</button></div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
-    {% include "lighterprints/mobile/footer.html" %}
+    {% endfor %}
 </div>
+{% endblock %}

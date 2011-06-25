@@ -12,7 +12,7 @@
     </head>
     <body>
         {% block page %}
-        <div data-role='page' id='home'>
+        <div data-role='page' id='{% block page_id %}home{% endblock %}'>
             {% block header %}
             <div data-role='header' data-position='inline'>
                 <h1>vcmobile</h1>
