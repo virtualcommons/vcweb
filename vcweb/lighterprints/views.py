@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class ActivityListView(JSONResponseMixin, BaseListView, MultipleObjectTemplateResponseMixin):
+class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
 # FIXME: replace with dynamic set
     model = Activity
 
@@ -30,7 +30,6 @@ class ActivityListView(JSONResponseMixin, BaseListView, MultipleObjectTemplateRe
         if self.request.GET.get('format', 'html') == 'json':
             return JSONResponseMixin.render_to_response(self, context, context_key='activity_by_level')
         else:
-            logger.debug("returning MOTRM render_to_response with context %s", context['activity_by_level'])
             return MultipleObjectTemplateResponseMixin.render_to_response(self, context)
 
 class ActivityDetailView(JSONResponseMixin, BaseDetailView):
@@ -38,3 +37,18 @@ class ActivityDetailView(JSONResponseMixin, BaseDetailView):
 
 class DoActivityView(FormView):
     pass
+
+class MobileView(ActivityListView):
+
+    def get_context_data(self, **kwargs):
+        context = super(ActivityListView, self).get_context_data(**kwargs)
+        activity_by_level = collections.defaultdict(list)
+        jquery_grid_list = list("abcde")
+        for index, activity in enumerate(Activity.objects.all()):
+            activity_by_level[activity.level].append((activity, jquery_grid_list[index]))
+        context['activity_by_level'] = dict(activity_by_level)
+        logger.debug("activity by level %s", activity_by_level)
+        return context
+
+    def get_template_names(self):
+        return ['lighterprints/mobile.html']
