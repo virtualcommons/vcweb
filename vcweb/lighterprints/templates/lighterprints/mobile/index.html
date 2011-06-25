@@ -9,18 +9,25 @@
 Lighter Footprints
 {% endblock %}
 
-{% block content %}
-<div data-role='page' id='home-screen'>
-    {% include "lighterprints/mobile/header.html" %}
-    <div data-role='content' data-theme='e'>
-        <h3>Available activities</h3>
-        <div class='ui-grid-{{grid_letter}}'>
-            {% for activity, grid_letter in available_activities %}
-            <div class='ui-block-{{grid_letter}}'><button data-theme='b'>{{activity}}</button></div>
-            {% endfor %}
-        </div>
+{% block header %}
+{% include "lighterprints/mobile/header.html" %}
+{% endblock header %}
 
+{% block content %}
+<div data-role='content' data-theme='e'>
+    <h3>Available activities</h3>
+    <div class='ui-grid-{{grid_letter}}'>
+        {% for activity, grid_letter in available_activities %}
+        <div class='ui-block-{{grid_letter}}'><button data-theme='b'>{{activity}}</button></div>
+        {% endfor %}
     </div>
 </div>
-{% include "lighterprints/mobile/full-activity-list.html" %}
 {% endblock content %}
+
+{% block extrapages %}
+{% include "lighterprints/mobile/full-activity-list.html" %}
+{% endblock extrapages %}
+
+{% block footer %}
+{% include "lighterprints/mobile/footer.html" %}
+{% endblock footer %}

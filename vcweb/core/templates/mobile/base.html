@@ -11,7 +11,25 @@
         {% endblock %}
     </head>
     <body>
-        {% block content %}
-        {% endblock content %}
+        {% block page %}
+        <div data-role='page' id='home'>
+            {% block header %}
+            <div data-role='header' data-position='inline'>
+                <h1>vcmobile</h1>
+            </div>
+            {% endblock header %}
+            {% block content %}
+            {% endblock content %}
+            {% block footer %}
+            <div data-role='footer'>
+                <h4>
+                    This project is funded by the <a href='http://nsf.gov'>National Science Foundation</a> and <a href='http://www.asu.edu'>Arizona State University</a>.
+                </h4>
+            </div> 
+            {% endblock footer %}
+        </div>
+        {% block extrapages %}
+        {% endblock extrapages %}
+        {% endblock page %}
     </body>
 </html>

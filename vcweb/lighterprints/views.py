@@ -22,7 +22,6 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
 
     def get_context_data(self, **kwargs):
         context = super(BaseListView, self).get_context_data(**kwargs)
-        logger.debug("ActivityListView.get_context_data: %s", context)
         context['activity_by_level'] = self.get_activity_by_level()
         return context
 
@@ -36,19 +35,18 @@ class ActivityDetailView(JSONResponseMixin, BaseDetailView):
     template_name = 'lighterprints/activity_detail.html'
 
 class MobileView(ActivityListView):
-    jquery_grid_list = list("abcde")
+    jqm_grid_columns = tuple("abcde")
 
     def get_activity_by_level(self):
         activity_by_level = collections.defaultdict(list)
         for index, activity in enumerate(Activity.objects.all()):
-            activity_by_level[activity.level].append((activity, MobileView.jquery_grid_list[index]))
+            activity_by_level[activity.level].append((activity, MobileView.jqm_grid_columns[index]))
         return dict(activity_by_level)
 
     def get_context_data(self, **kwargs):
         context = super(MobileView, self).get_context_data(**kwargs)
-        logger.debug("super context: %s", context)
         available_activities = get_available_activities(self.request)
-        context['grid_letter'] = 'a' if len(available_activities) < 2 else MobileView.jquery_grid_list[len(available_activities) - 2]
+        context['grid_letter'] = MobileView.jqm_grid_columns[max(len(available_activities) - 2, 0)]
         context['available_activities'] = available_activities
         return context
 
@@ -61,6 +59,6 @@ class DoActivityView(FormView):
 def get_available_activities(request):
     # FIXME: currently stubbed out to return all activities. should move this to
     # models.py and have it take a Participant?
-    return zip(Activity.objects.all(), MobileView.jquery_grid_list)
+    return zip(Activity.objects.all(), MobileView.jqm_grid_columns)
 
 
