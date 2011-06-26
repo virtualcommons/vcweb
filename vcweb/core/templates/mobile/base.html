@@ -8,6 +8,22 @@
         <script type="text/javascript" src="http://code.jquery.com/mobile/1.0b1/jquery.mobile-1.0b1.min.js"></script>
         <link href="{{STATIC_URL}}css/mobile.css" rel="stylesheet" type="text/css" media="screen" />
         <!-- vcweb common js -->
+        <script type='text/javascript'>
+        // maintain active button state
+        $(document).delegate("div:jqmData(role='page')", 'pageshow', function() {
+            console.debug("window location hash is " + window.location.hash);
+            if (window.location.hash) {
+                $(this).find("div:jqmData(role='navbar') a").each(function() {
+                    if ($(this).attr('href') == window.location.hash) {
+                        $(this).addClass('ui-btn-active ui-state-persist');
+                    }
+                    else {
+                        $(this).removeClass('ui-btn-active ui-state-persist');
+                    }
+                });
+            }
+        });
+        </script>
         {% endblock %}
     </head>
     <body>

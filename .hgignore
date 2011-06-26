@@ -11,4 +11,4 @@ tags
 build
 logs
 tmp
-.orig
+*.orig

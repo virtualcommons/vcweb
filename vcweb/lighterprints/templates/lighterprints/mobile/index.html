@@ -1,16 +1,6 @@
 {% extends "mobile/base.html" %}
 {% block head %}
 {{ block.super }}
-<script type='text/javascript'>
-    // maintain active button state
-    $("div:jqmData(role='page')").live('pageshow', function (event) {
-        console.debug("window location hash is " + window.location.hash);
-        if (window.location.hash) {
-            $('#navbar a').removeClass('ui-btn-active');
-            $('#navbar a[href="' + window.location.hash + '"]').addClass('ui-btn-active');
-        }
-    });
-</script>
 {% endblock head %}
 
 {% block title %}
