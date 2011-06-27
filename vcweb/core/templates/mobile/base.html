@@ -10,7 +10,8 @@
         <!-- vcweb common js -->
         <script type='text/javascript'>
         // maintain active button state
-        $(document).delegate("div:jqmData(role='page')", 'pageshow', function() {
+        /*
+        $("body").delegate("div:jqmData(role='page')", 'pageshow', function() {
             console.debug("window location hash is " + window.location.hash);
             if (window.location.hash) {
                 $(this).find("div:jqmData(role='navbar') a").each(function() {
@@ -23,6 +24,7 @@
                 });
             }
         });
+        */
         </script>
         {% endblock %}
     </head>

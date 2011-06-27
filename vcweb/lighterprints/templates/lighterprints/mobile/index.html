@@ -8,12 +8,13 @@ Lighter Footprints
 {% endblock %}
 
 {% block header %}
-{% include "lighterprints/mobile/header.html" %}
+<div data-role='header'>
+    <h1>Available Activities</h1>
+</div>
 {% endblock header %}
 
 {% block content %}
 <div data-role='content' data-theme='e'>
-    <h3>Available activities</h3>
     <div class='ui-grid-{{grid_letter}}'>
         {% for activity, grid_letter in available_activities %}
         <div class='ui-block-{{grid_letter}}'><button data-theme='b'>{{activity}}</button></div>
