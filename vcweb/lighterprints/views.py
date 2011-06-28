@@ -16,12 +16,19 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
 
     def get_context_data(self, **kwargs):
         context = super(BaseListView, self).get_context_data(**kwargs)
-        all_activities = Activity.objects.all()
+        all_activities = context['activity_list']
         activity_by_level = collections.defaultdict(list)
+        flattened_activities = []
         for activity in all_activities:
             activity_by_level[activity.level].append(activity)
+            #activity_as_dict = collections.OrderedDict()
+            activity_as_dict = {}
+            for attr_name in ('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'cooldown'):
+                activity_as_dict[attr_name] = getattr(activity, attr_name)
+            flattened_activities.append(activity_as_dict)
+
         context['activity_by_level'] = dict(activity_by_level)
-        context['flattened_activities'] = all_activities
+        context['flattened_activities'] = flattened_activities
         return context
 
     def render_to_response(self, context, **response_kwargs):
@@ -39,7 +46,7 @@ class MobileView(ActivityListView):
     def get_context_data(self, **kwargs):
         context = super(MobileView, self).get_context_data(**kwargs)
         activity_by_level = collections.defaultdict(list)
-        for index, activity in enumerate(context['flattened_activities']):
+        for index, activity in enumerate(context['activity_list']):
             activity_by_level[activity.level].append((activity,
                 MobileView.jqm_grid_columns[index % 5]))
         context['activity_by_level'] = dict(activity_by_level)
