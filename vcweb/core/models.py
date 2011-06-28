@@ -22,16 +22,15 @@ Contains all data models used in the core as well as a number of helper function
 FIXME: getting a bit monolithically unwieldy.  Consider splitting into models subdirectory
 """
 
-@receiver(signals.second_tick, sender=None)
-def second_tick_handler(sender, time=None, **kwargs):
+@receiver(signals.minute_tick, sender=None)
+def minute_tick_handler(sender, time=None, **kwargs):
     """
-    tick handlers. handles each second tick.  Might rethink this and use timed /
+    tick handlers. handles each minute tick.  Might rethink this and use timed /
     delayed tasks in celery execute at the end of each round for controlled
     experiments and for longer-scale experiments use 1 minute granularity for
     performance sake.
     """
-    logger.debug("handling second tick signal at %s", time)
-    logger.debug("kwargs: %s", kwargs)
+    logger.debug("handling minute tick signal at %s with kwargs %s", time, kwargs)
     # inspect all active experiments and update their time left
     Experiment.objects.increment_elapsed_time(status='ROUND_IN_PROGRESS')
 
@@ -161,11 +160,11 @@ class ExperimentManager(models.Manager):
     def get_all_active(self):
         return self.filter(status='ACTIVE')
 
-    def increment_elapsed_time(self, status='ROUND_IN_PROGRESS'):
+    def increment_elapsed_time(self, status='ROUND_IN_PROGRESS', amount=60):
         if status:
             es = self.filter(status=status)
-            es.update(current_round_elapsed_time=models.F('current_round_elapsed_time') + 1,
-                    total_elapsed_time=models.F('total_elapsed_time') + 1)
+            es.update(current_round_elapsed_time=models.F('current_round_elapsed_time') + amount,
+                    total_elapsed_time=models.F('total_elapsed_time') + amount)
             # check each experiment's total_elapsed_time against the total allotted time and
             # issue round_stopped signals to experiments that need to be stopped.
             for experiment in es.all():

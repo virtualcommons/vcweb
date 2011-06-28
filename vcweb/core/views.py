@@ -22,6 +22,7 @@ from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountFor
 from vcweb.core.models import (Participant, Experimenter, Experiment, Institution, is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core import unicodecsv
+from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
 import logging
 logger = logging.getLogger(__name__)
@@ -44,13 +45,21 @@ class JSONResponseMixin(object):
 
     def get_json_response(self, content, **httpresponse_kwargs):
         "Construct an `HttpResponse` object."
+        callback = self.request.GET.get('callback', '')
+        if is_valid_jsonp_callback_value(callback):
+            content = '%s(%s)' % (callback, content)
+        logger.debug("returning json content %s", content)
         return HttpResponse(content,
                 content_type='application/json',
                 **httpresponse_kwargs)
 
     def convert_context_to_json(self, context, context_key='object_list', **kwargs):
-        "Convert the context dictionary into a JSON object"
-        return dumps(context[context_key])
+        """
+        Converts the data object associated with context_key in the context dict
+        into a JSON object and returns it.  If context_key is None, converts the
+        entire context dict.
+        """
+        return dumps( context if context_key is None else context[context_key] )
 
 class AnonymousMixin(object):
     """ provides the anonymous_required decorator """
