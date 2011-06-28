@@ -14,20 +14,19 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
 # FIXME: replace with dynamic set
     model = Activity
 
-    def get_activity_by_level(self):
-        activity_by_level = collections.defaultdict(list)
-        for activity in Activity.objects.all():
-            activity_by_level[activity.level].append(activity)
-        return dict(activity_by_level)
-
     def get_context_data(self, **kwargs):
         context = super(BaseListView, self).get_context_data(**kwargs)
-        context['activity_by_level'] = self.get_activity_by_level()
+        all_activities = Activity.objects.all()
+        activity_by_level = collections.defaultdict(list)
+        for activity in all_activities:
+            activity_by_level[activity.level].append(activity)
+        context['activity_by_level'] = dict(activity_by_level)
+        context['flattened_activities'] = all_activities
         return context
 
     def render_to_response(self, context, **response_kwargs):
         if self.request.GET.get('format', 'html') == 'json':
-            return JSONResponseMixin.render_to_response(self, context, context_key='activity_by_level')
+            return JSONResponseMixin.render_to_response(self, context, context_key='flattened_activities')
         else:
             return MultipleObjectTemplateResponseMixin.render_to_response(self, context)
 
@@ -37,14 +36,14 @@ class ActivityDetailView(JSONResponseMixin, BaseDetailView):
 class MobileView(ActivityListView):
     jqm_grid_columns = tuple("abcde")
 
-    def get_activity_by_level(self):
-        activity_by_level = collections.defaultdict(list)
-        for index, activity in enumerate(Activity.objects.all()):
-            activity_by_level[activity.level].append((activity, MobileView.jqm_grid_columns[index]))
-        return dict(activity_by_level)
-
     def get_context_data(self, **kwargs):
         context = super(MobileView, self).get_context_data(**kwargs)
+        activity_by_level = collections.defaultdict(list)
+        for index, activity in enumerate(context['flattened_activities']):
+            activity_by_level[activity.level].append((activity,
+                MobileView.jqm_grid_columns[index % 5]))
+        context['activity_by_level'] = dict(activity_by_level)
+
         available_activities = get_available_activities(self.request)
         context['grid_letter'] = MobileView.jqm_grid_columns[max(len(available_activities) - 2, 0)]
         context['available_activities'] = available_activities

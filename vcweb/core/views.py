@@ -44,14 +44,12 @@ class JSONResponseMixin(object):
 
     def get_json_response(self, content, **httpresponse_kwargs):
         "Construct an `HttpResponse` object."
-        logger.debug("return json response %s", content)
         return HttpResponse(content,
                 content_type='application/json',
                 **httpresponse_kwargs)
 
     def convert_context_to_json(self, context, context_key='object_list', **kwargs):
         "Convert the context dictionary into a JSON object"
-        logger.debug("serializing context %s with context_key %s", context, context_key)
         return dumps(context[context_key])
 
 class AnonymousMixin(object):
