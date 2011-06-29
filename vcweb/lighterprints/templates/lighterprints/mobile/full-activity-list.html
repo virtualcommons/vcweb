@@ -13,10 +13,15 @@
         <h3>Level {{level}} Activities</h3>
         <div class='ui-grid-d'>
             {% for activity, grid_letter in activities %}
-            <div class='ui-block-{{grid_letter}}'><button data-theme='e'>{{ activity }}</button></div>
+            <div class='ui-block-{{grid_letter}}'><button data-icon='{{activity.icon_name}}' data-iconpos='top' data-theme='e'>{{ activity }}</button></div>
             {% endfor %}
         </div>
     </div>
     {% endfor %}
 </div>
 {% endblock %}
+
+{% block footer %}
+{% include "lighterprints/mobile/footer.html" %}
+{% endblock footer %}
+

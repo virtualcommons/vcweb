@@ -33,7 +33,7 @@
         <div data-role='page' id='{% block page_id %}home{% endblock %}'>
             {% block header %}
             <div data-role='header' data-position='inline'>
-                <h1>vcmobile</h1>
+                <h1>{{experiment|default:"vcweb mobile"}}</h1>
             </div>
             {% endblock header %}
             {% block content %}

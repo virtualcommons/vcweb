@@ -17,6 +17,10 @@ class Activity(models.Model):
     def label(self):
         return self.display_name if self.display_name else self.name
 
+    @property
+    def icon_name(self):
+        return self.name
+
     def __unicode__(self):
         return u'%s (+%s)' % (self.label, self.savings)
 

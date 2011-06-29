@@ -1,10 +1,16 @@
 <div data-role='page' id='{% block page_id %}home{% endblock %}'>
     {% block header %}
-    {% include "lighterprints/mobile/header.html" %}
+    <div data-role='header' data-position='inline'>
+        <h1>{{experiment.title|default:"vcweb experiment"}}</h1>
+    </div>
     {% endblock header %}
     {% block content %}
     {% endblock content %}
     {% block footer %}
-    {% include "lighterprints/mobile/footer.html" %}
+    <div data-role='footer'>
+        <h4>
+            This project is funded by the <a href='http://nsf.gov'>National Science Foundation</a> and <a href='http://www.asu.edu'>Arizona State University</a>.
+        </h4>
+    </div> 
     {% endblock footer %}
 </div>

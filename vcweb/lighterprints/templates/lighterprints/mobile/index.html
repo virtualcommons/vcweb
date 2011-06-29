@@ -17,7 +17,7 @@ Lighter Footprints
 <div data-role='content' data-theme='e'>
     <div class='ui-grid-{{grid_letter}}'>
         {% for activity, grid_letter in available_activities %}
-        <div class='ui-block-{{grid_letter}}'><button data-theme='b'>{{activity}}</button></div>
+        <div class='ui-block-{{grid_letter}}'><button data-icon='{{activity.icon_name}}' data-iconpos='top' data-theme='b'>{{activity}}</button></div>
         {% endfor %}
     </div>
 </div>
