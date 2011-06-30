@@ -25,7 +25,6 @@ this activates your virtualenv
 
 To start up celeryd and celerybeat
 
-./manage.py celeryd
-./manage.py celerybeat
+./manage.py celeryd -B
 
-(or fab celeryd / celerybeat)
+(or fab celeryd)

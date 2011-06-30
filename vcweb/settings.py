@@ -1,4 +1,4 @@
-# Django settings for vcweb project.
+from django.contrib import messages
 from os import path, makedirs
 import sys
 
@@ -8,7 +8,6 @@ TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
         ('Allen Lee', 'allen.lee@asu.edu')
-        # ('Your Name', 'your_email@domain.com'),
         )
 
 MANAGERS = ADMINS
@@ -113,20 +112,14 @@ EMAIL_HOST = "smtp.asu.edu"
 # socket.io configuration
 SOCKET_IO_PORT = 8882;
 
-# celery configuration 
-BROKER_BACKEND = "djkombu.transport.DatabaseTransport"
-# rabbitmq/amqp celery config
-BROKER_HOST = "localhost"
-BROKER_PORT = 5672
-BROKER_USER = "vcweb"
-BROKER_PASSWORD = 'override this in settings_local.py'
-BROKER_VHOST = "vcweb.vhost"
-
 # celerybeat configuration
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 CELERYBEAT_MAX_LOOP_INTERVAL = 5
 CELERYBEAT_LOG_FILE = 'celerybeat.log'
 CELERYBEAT_LOG_LEVEL = 'ERROR'
+
+# simplest celery transport that uses Django database (djkombu_messages)
+BROKER_BACKEND = "djkombu.transport.DatabaseTransport"
 
 # activation window
 ACCOUNT_ACTIVATION_DAYS = 30
@@ -142,11 +135,8 @@ STATICFILES_DIRS = (
         path.join(path.abspath(path.dirname(__file__)), 'static').replace('\\', '/'),
         )
 
-import djcelery
-djcelery.setup_loader()
 
 # set up jquery-ui css classes for django messages
-from django.contrib import messages
 MESSAGE_TAGS = {
         messages.constants.INFO : 'ui-state-highlight ui-corner-all',
         messages.constants.WARNING: 'ui-state-error ui-corner-all',
@@ -166,7 +156,6 @@ except OSError:
 # logging configuration
 VCWEB_LOG_FILENAME = 'vcweb.log'
 TORNADIO_LOG_FILENAME = 'tornadio.log'
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
@@ -234,4 +223,9 @@ LOGGING = {
         },
     }
 }
+
+# this is the last thing to happen so we can override django-celery configuration
+# settings
+import djcelery
+djcelery.setup_loader()
 
