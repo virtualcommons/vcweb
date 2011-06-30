@@ -113,7 +113,9 @@ EMAIL_HOST = "smtp.asu.edu"
 # socket.io configuration
 SOCKET_IO_PORT = 8882;
 
-# celery rabbitmq/amqp configuration
+# celery configuration 
+BROKER_BACKEND = "djkombu.transport.DatabaseTransport"
+# rabbitmq/amqp celery config
 BROKER_HOST = "localhost"
 BROKER_PORT = 5672
 BROKER_USER = "vcweb"
@@ -121,6 +123,7 @@ BROKER_PASSWORD = 'override this in settings_local.py'
 BROKER_VHOST = "vcweb.vhost"
 
 # celerybeat configuration
+CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 CELERYBEAT_MAX_LOOP_INTERVAL = 5
 CELERYBEAT_LOG_FILE = 'celerybeat.log'
 CELERYBEAT_LOG_LEVEL = 'ERROR'

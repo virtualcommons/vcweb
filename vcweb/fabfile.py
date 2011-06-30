@@ -102,10 +102,7 @@ def server(ip="127.0.0.1", port=8000):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
 
 def celeryd():
-    local("%(python)s manage.py celeryd" % env)
-
-def celerybeat():
-    local("%(python)s manage.py celerybeat" % env)
+    local("%(python)s manage.py celeryd -B" % env)
 
 def push():
     local('hg push ssh://hg@bitbucket.org/virtualcommons/vcweb')
