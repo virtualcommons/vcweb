@@ -1,4 +1,9 @@
 from django.db import models
+from django.db.models import Sum
+from vcweb.core import signals
+from vcweb.core.models import Experiment, ExperimentMetadata, GroupRoundDataValue
+from django.dispatch import receiver
+import datetime
 
 class Activity(models.Model):
     name = models.CharField(max_length=32, unique=True)
@@ -31,3 +36,35 @@ class ActivityAvailability(models.Model):
     activity = models.ForeignKey(Activity)
     available_start_time = models.TimeField(null=True, blank=True)
     available_end_time = models.TimeField(null=True, blank=True)
+
+def get_active_experiments():
+    return Experiment.objects.filter(experiment_metadata=ExperimentMetadata.objects.get(name='lighterprints'),
+            status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
+
+@receiver(signals.midnight_tick)
+def update_active_experiments(sender, time=None, **kwargs):
+    for experiment in get_active_experiments():
+        # calculate total carbon savings and decide if they move on to the next level
+        for group in experiment.groups.all():
+            grdv = GroupRoundDataValue.objects.get(group=group, name='carbon_footprint_level')
+            if should_advance_level(group, grdv.value):
+# advance group level
+                grdv.value = min(grdv.value + 1, 3)
+                grdv.save()
+
+
+def get_daily_carbon_savings(group):
+# grab all of yesterday's participant data values
+    today = datetime.date.today()
+    yesterday = today - datetime.timedelta(1)
+    participant_data_values = group.get_participant_data_values().filter(date_created__gte=yesterday)
+    participant_data_values.aggregate(total=Sum('value'))
+    return participant_data_values['total']
+
+
+def should_advance_level(group, level):
+    if level < 3:
+        daily_carbon_savings = get_daily_carbon_savings(group)
+        return daily_carbon_savings > level * 10
+    return False
+

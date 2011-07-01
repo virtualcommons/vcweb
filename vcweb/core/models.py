@@ -870,10 +870,10 @@ class RoundParameterValue(ParameterizedValue):
         return u"{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.value)
 
 
-"""
-A DataValue is used by Groups and Participants.  GroupRoundData
-"""
 class DataValue(ParameterizedValue):
+    """
+    Supertype for GroupRoundDataValue and ParticipantRoundDataValue
+    """
     experiment = models.ForeignKey(Experiment)
 
     def __unicode__(self):
@@ -886,7 +886,7 @@ class Group(models.Model):
     number = models.PositiveIntegerField()
     ''' internal numbering unique to the given experiment '''
     max_size = models.PositiveIntegerField(default=5)
-    """ 
+    """
     how many members can this group hold at a maximum? Could be specified as a
     RoundParameterValue / ExperimentConfiguration value
     """
