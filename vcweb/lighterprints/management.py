@@ -7,7 +7,7 @@ from datetime import datetime
 import logging
 logger = logging.getLogger(__name__)
 
-@receiver(post_syncdb, sender=vcweb.core.models, dispatch_uid='sanitation_metadata_creator')
+@receiver(post_syncdb, sender=vcweb.core.models, dispatch_uid='lighterprints_metadata_creator')
 def post_syncdb_handler(sender, **kwargs):
     '''
     creates the forestry ExperimentMetadata record if not already created.

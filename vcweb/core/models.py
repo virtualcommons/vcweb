@@ -25,10 +25,7 @@ FIXME: getting a bit monolithically unwieldy.  Consider splitting into models su
 @receiver(signals.minute_tick, sender=None)
 def minute_tick_handler(sender, time=None, **kwargs):
     """
-    tick handlers. handles each minute tick.  Might rethink this and use timed /
-    delayed tasks in celery execute at the end of each round for controlled
-    experiments and for longer-scale experiments use 1 minute granularity for
-    performance sake.
+    handles each minute tick
     """
     logger.debug("handling minute tick signal at %s with kwargs %s", time, kwargs)
     # inspect all active experiments and update their time left
@@ -1297,12 +1294,15 @@ Stores participant-specific data value and associates a Participant, Experiment
 """
 class ParticipantRoundDataValue(DataValue):
     round_data = models.ForeignKey(RoundData, related_name='participant_data_values')
-    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='round_data_values')
+    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='participant_data_values')
     submitted = models.BooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
         super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
-        if not hasattr(self, 'experiment'):
+        if 'experiment' in kwargs and not hasattr(self, 'round_data'):
+            self.experiment = kwargs['experiment']
+            self.round_data = self.experiment.current_round_data
+        elif not hasattr(self, 'experiment'):
             self.experiment = self.round_data.experiment
 
     @property

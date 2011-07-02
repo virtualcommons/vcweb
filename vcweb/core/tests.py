@@ -8,12 +8,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-"""
-base class for vcweb.core tests, sets up test fixtures for participants,
-forestry_test_data, and a number of participants, experiments, etc.,
-based on the forestry experiment
-"""
 class BaseVcwebTest(TestCase):
+    """
+    base class for vcweb.core tests, sets up test fixtures for participants,
+    forestry_test_data, and a number of participants, experiments, etc.,
+    based on the forestry experiment
+    """
     fixtures = ['test_users_participants', 'forestry_test_data']
 
     def load_experiment(self):
@@ -165,10 +165,11 @@ class ExperimentTest(BaseVcwebTest):
         self.assertTrue(current_round_elapsed_time == 0)
         total_elapsed_time = experiment.total_elapsed_time
         self.assertTrue(total_elapsed_time == 0)
-        Experiment.objects.increment_elapsed_time(status=experiment.status)
+        delta = 120
+        Experiment.objects.increment_elapsed_time(status=experiment.status, amount=delta)
         experiment = self.load_experiment()
-        self.assertEqual(experiment.current_round_elapsed_time, current_round_elapsed_time + 1)
-        self.assertEqual(experiment.total_elapsed_time, total_elapsed_time + 1)
+        self.assertEqual(experiment.current_round_elapsed_time, current_round_elapsed_time + delta)
+        self.assertEqual(experiment.total_elapsed_time, total_elapsed_time + delta)
 
     def test_instructions_round_parameters(self):
         e = self.experiment

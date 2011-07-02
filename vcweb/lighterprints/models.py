@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models import Sum
-from vcweb.core import signals
+from vcweb.core import signals, simplecache
 from vcweb.core.models import Experiment, ExperimentMetadata, GroupRoundDataValue
 from django.dispatch import receiver
 import datetime
@@ -37,8 +37,12 @@ class ActivityAvailability(models.Model):
     available_start_time = models.TimeField(null=True, blank=True)
     available_end_time = models.TimeField(null=True, blank=True)
 
+@simplecache
+def get_lighterprints_experiment_metadata():
+    return ExperimentMetadata.objects.get(namespace='lighterprints')
+
 def get_active_experiments():
-    return Experiment.objects.filter(experiment_metadata=ExperimentMetadata.objects.get(name='lighterprints'),
+    return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
             status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
 
 @receiver(signals.midnight_tick)
