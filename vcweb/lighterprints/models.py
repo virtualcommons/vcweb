@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Sum
 from vcweb.core import signals, simplecache
-from vcweb.core.models import Experiment, ExperimentMetadata, GroupRoundDataValue
+from vcweb.core.models import Experiment, ExperimentMetadata, Experimenter, GroupRoundDataValue, Parameter
 from django.dispatch import receiver
 import datetime
 
@@ -40,6 +40,18 @@ class ActivityAvailability(models.Model):
 @simplecache
 def get_lighterprints_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace='lighterprints')
+
+@simplecache
+def create_activity_performed_parameter(experimenter=None):
+    if experimenter is None:
+        experimenter = Experimenter.objects.get(pk=1)
+    parameter, created = Parameter.objects.get_or_create(name='activity_performed', scope=Parameter.PARTICIPANT_SCOPE, type='int',
+            creator=experimenter, experiment_metadata=get_lighterprints_experiment_metadata())
+    return parameter
+
+@simplecache
+def get_activity_performed_parameter():
+    return Parameter.objects.get(name='activity_performed')
 
 def get_active_experiments():
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),

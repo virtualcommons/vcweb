@@ -16,16 +16,44 @@ class BaseVcwebTest(TestCase):
     """
     fixtures = ['test_users_participants', 'forestry_test_data']
 
-    def load_experiment(self):
-        self.experiment = Experiment.objects.get(pk=1)
-        return self.experiment
+    def load_experiment(self, experiment_metadata=None, **kwargs):
+        if experiment_metadata is None:
+# default to the Forestry experiment if no metadata is passed in
+            experiment = Experiment.objects.get(pk=1).clone()
+        else:
+            experiment = self.create_new_experiment(experiment_metadata, **kwargs)
+        if experiment.participants.count() == 0:
+            experiment.setup_test_participants(email_suffix='asu.edu')
+        logger.debug("loaded %s", experiment)
+        self.experiment = experiment
+        return experiment
+
+    @property
+    def experiment_metadata(self):
+        return self.experiment.experiment_metadata
+
+    @property
+    def experiment_configuration(self):
+        return self.experiment.experiment_configuration
+
+    @property
+    def experimenter(self):
+        return self.experiment.experimenter
+
+    def create_new_experiment(self, experiment_metadata, experimenter=None):
+        if experimenter is None:
+            experimenter = Experimenter.objects.get(pk=1)
+        experiment_configuration = ExperimentConfiguration.objects.create(experiment_metadata=experiment_metadata,
+                name='Test Experiment Configuration', creator=experimenter)
+        for index in xrange(1, 10):
+            experiment_configuration.round_configurations.create(sequence_number=index)
+        return Experiment.objects.create(experimenter=self.experimenter,
+                experiment_metadata=experiment_metadata, experiment_configuration=experiment_configuration)
+
 
     def setUp(self):
         self.participants = Participant.objects.all()
         self.load_experiment()
-        self.experimenter = Experimenter.objects.get(pk=1)
-        self.experiment_metadata = ExperimentMetadata.objects.get(pk=1)
-        self.experiment_configuration = ExperimentConfiguration.objects.get(pk=1)
 
     def advance_to_data_round(self):
         self.experiment.activate()
@@ -47,11 +75,6 @@ class BaseVcwebTest(TestCase):
                 round_type=round_type,
                 template_name=template_name
                 )
-
-    def create_new_experiment(self):
-        return Experiment.objects.create(experimenter=self.experimenter,
-                experiment_configuration=self.experiment_configuration,
-                experiment_metadata=self.experiment_metadata)
 
     def create_new_parameter(self, name='vcweb.test.parameter', scope='EXPERIMENT_SCOPE', parameter_type='string'):
         return self.experiment_metadata.parameters.create(creator=self.experimenter, 
@@ -249,7 +272,7 @@ class ParticipantExperimentRelationshipTest(BaseVcwebTest):
 
     def test_participant_identifier(self):
         """ exercises the generation of participant_identifier """
-        e = self.create_new_experiment()
+        e = self.experiment.clone()
         for p in self.participants:
             per = ParticipantExperimentRelationship.objects.create(participant=p,
                     experiment=e, created_by=self.experimenter.user)

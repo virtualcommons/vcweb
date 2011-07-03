@@ -398,10 +398,10 @@ class Experiment(models.Model):
         for user in users:
             (p, created) = Participant.objects.get_or_create(user=user)
             # FIXME: instead of asking for the email suffix, perhaps we just append the institution URL to keep it simpler?
-            p.institution = institution
-            p.save()
-            ParticipantExperimentRelationship.objects.create(participant=p, experiment=self,
-                    created_by=self.experimenter.user)
+            if institution and p.institution != institution:
+                p.institution = institution
+                p.save()
+            ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=self.experimenter.user)
 
 
     ''' hardcoded defaults for the slovakia pretest '''
@@ -586,8 +586,7 @@ class RoundConfiguration(models.Model):
     ROUND_TYPE_CHOICES = [(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES]
     PLAYABLE_ROUND_CONFIGURATIONS = (PRACTICE, REGULAR)
 
-    experiment_configuration = models.ForeignKey(ExperimentConfiguration,
-                                                 related_name='round_configurations')
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configurations')
     sequence_number = models.PositiveIntegerField(help_text='Used internally to determine the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5')
     display_number = models.PositiveIntegerField(default=0,
                                                help_text='The round number to be displayed with this round.  If set to zero, defaults to the internally used sequence_number.')
@@ -720,21 +719,6 @@ class QuizQuestion(models.Model):
 class ParameterManager(models.Manager):
     def get_by_natural_key(self, key):
         return self.get(name=key)
-
-    '''
-    name_cache = {}
-    def get(self, *args, **kwargs):
-        if 'name' in kwargs:
-            # check cache
-            name = kwargs['name']
-            if name in self.name_cache:
-                return self.name_cache[name]
-            parameter = super(ParameterManager, self).get(*args, **kwargs)
-            self.name_cache[name] = parameter
-            return parameter
-        else:
-            return super(ParameterManager, self).get(*args, **kwargs)
-    '''
 
 class Parameter(models.Model):
     PARAMETER_TYPES = (('int', 'Integer value'),
