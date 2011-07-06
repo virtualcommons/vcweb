@@ -26,6 +26,11 @@ class Activity(models.Model):
     def icon_name(self):
         return self.name
 
+    @property
+    def icon_url(self):
+        # FIXME: implement as return "/activity/id/icon"
+        pass
+
     def __unicode__(self):
         return u'%s (+%s)' % (self.label, self.savings)
 
