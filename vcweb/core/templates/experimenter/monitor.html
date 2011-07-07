@@ -149,7 +149,7 @@
     </div>
     <div id='statusDiv'>
         {% block status %}
-        {% with participant_count=experiment.participants.count %}
+        {% with participant_count=experiment.participant_set.count %}
         <fieldset class='small ui-corner-all'>
             <legend>round status</legend>
             <ul id='actions' class='actions'>
@@ -186,7 +186,7 @@
                 <li>Type: {{ experiment.current_round.get_round_type_display }}</li>
                 <li>Round started on {{ experiment.current_round_start_time }}</li>
                 <li>Time remaining: {{ experiment.time_remaining }}</li>
-                <li title='{{experiment.participants.all|join:" "}}'>Registered participants: <b>{{participant_count}}</b>
+                <li title='{{experiment.participant_set.all|join:" "}}'>Registered participants: <b>{{participant_count}}</b>
                 </li>
             </ul>
         </fieldset>

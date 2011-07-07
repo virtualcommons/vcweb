@@ -124,8 +124,8 @@ class ExperimentConfiguration(models.Model):
     The configuration for a given Experiment instance.  One ExperimentConfiguration can be applied to many Experiment
     instances but can only be associated to a single ExperimentMetadata record.  
     """
-    experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='experiment_configurations')
-    creator = models.ForeignKey(Experimenter, related_name='experiment_configurations')
+    experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='experiment_configuration_set')
+    creator = models.ForeignKey(Experimenter, related_name='experiment_configuration_set')
     name = models.CharField(max_length=255)
     max_number_of_participants = models.PositiveIntegerField(default=0)
     date_created = models.DateField(auto_now_add=True)
@@ -136,11 +136,11 @@ class ExperimentConfiguration(models.Model):
     @property
     def final_sequence_number(self):
         # FIXME: or max round_configurations.sequence_number (degenerate data)
-        return self.round_configurations.count()
+        return self.round_configuration_set.count()
 
     @property
     def last_round_sequence_number(self):
-        return self.round_configurations.aggregate(sequence_number=Max('sequence_number'))['sequence_number']
+        return self.round_configuration_set.aggregate(sequence_number=Max('sequence_number'))['sequence_number']
 
     @property
     def namespace(self):
@@ -186,11 +186,11 @@ class Experiment(models.Model):
     current_round_sequence_number = models.PositiveIntegerField(default=1)
     """ Each round is assigned a sequential sequence number, ranging from 1 to N.  Used to identify which round the
     experiment is currently running. """
-    experimenter = models.ForeignKey(Experimenter, related_name='experiments')
+    experimenter = models.ForeignKey(Experimenter)
     """ the user running this experiment """
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
     """ the experiment metadata object that this experiment instance represents """
-    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='experiments')
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration)
     """ the configuration parameters in use for this experiment run. """
     status = models.CharField(max_length=32, choices=STATUS_CHOICES,
                               default='INACTIVE')
@@ -265,8 +265,8 @@ class Experiment(models.Model):
 
     @property
     def participant_group_relationships(self):
-        for group in self.groups.all():
-            for pgr in group.participant_group_relationships.all():
+        for group in self.group_set .all():
+            for pgr in group.participant_group_relationship_set.all():
                 yield pgr
 
     @property
@@ -316,7 +316,7 @@ class Experiment(models.Model):
 
     @property
     def current_round_data(self):
-        round_data, created = self.round_data.get_or_create(round_configuration=self.current_round)
+        round_data, created = self.round_data_set.get_or_create(round_configuration=self.current_round)
         return round_data
 
     @property
@@ -375,12 +375,12 @@ class Experiment(models.Model):
 
     @property
     def all_participants_have_submitted(self):
-        pdvs = self.current_round_data.participant_data_values
+        pdvs = self.current_round_data.participant_data_value_set
         return pdvs.filter(submitted=False).count() == 0
 
     def register_participants(self, users=None, emails=None, institution=None, password=None):
-        if self.participants.count() > 0:
-            logger.warning("This experiment %s already has %d participants - aborting", self, self.participants.count())
+        if self.participant_set.count() > 0:
+            logger.warning("This experiment %s already has %d participants - aborting", self, self.participant_set.count())
             return
         if users is None:
             users = []
@@ -406,8 +406,8 @@ class Experiment(models.Model):
 
     ''' hardcoded defaults for the slovakia pretest '''
     def setup_test_participants(self, count=20, institution=None, email_suffix='sav.sk', password='test'):
-        if self.participants.count() > 0:
-            logger.warning("This experiment %s already has %d participants - aborting", self, self.participants.count())
+        if self.participant_set.count() > 0:
+            logger.warning("This experiment %s already has %d participants - aborting", self, self.participant_set.count())
             return
         users = []
         for i in xrange(1, count+1):
@@ -431,25 +431,25 @@ class Experiment(models.Model):
         if participant_parameters is None:
             participant_parameters = self.parameters(scope=Parameter.PARTICIPANT_SCOPE)
         current_round_data = self.current_round_data
-        for group in self.groups.select_related(depth=1).all():
+        for group in self.group_set.select_related(depth=1).all():
             for parameter in group_parameters:
-                group_data_value, created = current_round_data.group_data_values.get_or_create(group=group, parameter=parameter)
+                group_data_value, created = current_round_data.group_data_value_set.get_or_create(group=group, parameter=parameter)
                 logger.debug("%s (%s)", group_data_value, created)
-            for pgr in group.participant_group_relationships.all():
+            for pgr in group.participant_group_relationship_set.all():
                 for parameter in participant_parameters:
-                    participant_data_value, created = current_round_data.participant_data_values.get_or_create(participant_group_relationship=pgr, parameter=parameter)
+                    participant_data_value, created = current_round_data.participant_data_value_set.get_or_create(participant_group_relationship=pgr, parameter=parameter)
                     logger.debug("%s (%s)", participant_data_value, created)
 
     def log(self, log_message):
         if log_message:
             logger.debug("%s: %s", self, log_message)
-            self.activity_log.create(round_configuration=self.current_round, log_message=log_message)
+            self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message)
 
     def data_file_name(self, file_ext='csv'):
         return "%s_%s_%s.%s" % (slugify(self.experiment_metadata.title), self.pk, datetime.now().strftime("%d-%m-%y-%H%M"), file_ext)
 
     def parameters(self, scope=None):
-        ps = self.experiment_metadata.parameters
+        ps = self.experiment_metadata.parameter_set
         return ps.filter(scope=scope) if scope else ps
 
     def activate(self):
@@ -462,10 +462,10 @@ class Experiment(models.Model):
     def allocate_groups(self, randomize=True):
         # clear out all existing groups
         # FIXME: record previous mappings in activity log.
-        self.groups.all().delete()
+        self.group_set.all().delete()
         # seed the initial group.
-        current_group = self.groups.create(number=1, max_size=self.experiment_configuration.max_group_size)
-        participants = list(self.participants.all())
+        current_group = self.group_set.create(number=1, max_size=self.experiment_configuration.max_group_size)
+        participants = list(self.participant_set.all())
         if randomize:
             random.shuffle(participants)
 
@@ -476,10 +476,10 @@ class Experiment(models.Model):
 
         # XXX: if there a performance hit here, should probably do a void return instead
         # or collect the groups as they are added
-        return self.groups
+        return self.group_set
 
     def get_round_configuration(self, sequence_number):
-        return self.experiment_configuration.round_configurations.get(sequence_number=sequence_number)
+        return self.experiment_configuration.round_configuration_set.get(sequence_number=sequence_number)
 
     def get_template_path(self, name):
         return "%s/%s" % (self.namespace, name)
@@ -560,12 +560,12 @@ class Experiment(models.Model):
                           )
 
     def transfer_participants(self, experiment):
-        if experiment.participants.count() == 0:
-            for participant in self.participants.all():
+        if experiment.participant_set.count() == 0:
+            for participant in self.participant_set.all():
                 ParticipantExperimentRelationship.objects.create(participant=participant,
                         experiment=experiment, created_by=self.experimenter.user)
         else:
-            logger.warning("Tried to transfer participants to an experiment %s that already had participants %s", experiment, experiment.participants.all())
+            logger.warning("Tried to transfer participants to an experiment %s that already had participants %s", experiment, experiment.participant_set.all())
 
     def __unicode__(self):
         return u"%s #%s | %s" % (self.experiment_metadata.title, self.pk, self.experimenter)
@@ -586,7 +586,7 @@ class RoundConfiguration(models.Model):
     ROUND_TYPE_CHOICES = [(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES]
     PLAYABLE_ROUND_CONFIGURATIONS = (PRACTICE, REGULAR)
 
-    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configurations')
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configuration_set')
     sequence_number = models.PositiveIntegerField(help_text='Used internally to determine the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5')
     display_number = models.PositiveIntegerField(default=0,
                                                help_text='The round number to be displayed with this round.  If set to zero, defaults to the internally used sequence_number.')
@@ -661,20 +661,20 @@ class RoundConfiguration(models.Model):
 
     def get_parameter(self, name):
         parameter = Parameter.objects.get(name=name, scope=Parameter.ROUND_SCOPE)
-        round_parameter, created = self.round_parameter_values.get_or_create(parameter=parameter)
+        round_parameter, created = self.round_parameter_value_set.get_or_create(parameter=parameter)
         if created:
             logger.debug("created new parameter %s for %s", parameter, self)
         return round_parameter
 
     def set_parameter(self, name=None, value=None):
         parameter = Parameter.objects.get(name=name, scope=Parameter.ROUND_SCOPE)
-        parameter_value, created = self.round_parameter_values.get_or_create(parameter=parameter)
+        parameter_value, created = self.round_parameter_value_set.get_or_create(parameter=parameter)
         parameter_value.value = value
         parameter_value.save()
 
     def get_parameter_value(self, name, default=None):
         try:
-            return self.round_parameter_values.get(parameter__name=name).value
+            return self.round_parameter_value_set.get(parameter__name=name).value
         except RoundParameterValue.DoesNotExist:
             return default
 
@@ -707,8 +707,8 @@ class QuizQuestion(models.Model):
     answer = models.CharField(max_length=64)
     input_type = models.CharField(max_length=32)
     explanation = models.CharField(max_length=512)
-    round_configuration = models.ForeignKey(RoundConfiguration, related_name='quiz_questions')
-    experiment = models.ForeignKey(Experiment, related_name='default_quiz_questions', null=True, blank=True)
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='quiz_question_set')
+    experiment = models.ForeignKey(Experiment, related_name='default_quiz_question_set', null=True, blank=True)
 
     def is_correct(self, candidate):
         return self.answer == candidate
@@ -764,7 +764,7 @@ class Parameter(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     creator = models.ForeignKey(Experimenter)
-    experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='parameters')
+    experiment_metadata = models.ForeignKey(ExperimentMetadata)
     enum_choices = models.TextField(null=True, blank=True)
     is_required = models.BooleanField(default=False)
 
@@ -817,6 +817,7 @@ class Parameter(models.Model):
 
     class Meta:
         ordering = ['name']
+        unique_together = ['name', 'experiment_metadata', 'scope']
 
 class ParameterizedValue(models.Model):
     parameter = models.ForeignKey(Parameter)
@@ -845,7 +846,7 @@ class RoundParameterValue(ParameterizedValue):
     """
     Represents a specific piece of round configuration data.
     """
-    round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_parameter_values')
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_parameter_value_set')
 
     def __unicode__(self):
         return u"{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.value)
@@ -871,7 +872,7 @@ class Group(models.Model):
     how many members can this group hold at a maximum? Could be specified as a
     RoundParameterValue / ExperimentConfiguration value
     """
-    experiment = models.ForeignKey(Experiment, related_name='groups')
+    experiment = models.ForeignKey(Experiment)
     """
     The experiment that contains this Group.
     """
@@ -887,7 +888,7 @@ class Group(models.Model):
 
     @property
     def size(self):
-        return self.participants.count()
+        return self.participant_set.count()
 
     @property
     def current_round(self):
@@ -895,7 +896,7 @@ class Group(models.Model):
 
     @property
     def all_participants_str(self):
-        return ', '.join([participant.email for participant in self.participants.all()])
+        return ', '.join([participant.email for participant in self.participant_set.all()])
 
     @property
     def data_parameters(self):
@@ -919,12 +920,12 @@ class Group(models.Model):
 
     @property
     def current_round_activity_log(self):
-        return self.activity_log.filter(round_configuration=self.current_round)
+        return self.activity_log_set.filter(round_configuration=self.current_round)
 
     def log(self, log_message):
         if log_message:
             logger.debug(log_message)
-            self.activity_log.create(round_configuration=self.current_round, log_message=log_message)
+            self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message)
 
     def subtract(self, parameter=None, amount=0):
         self.add(parameter, -amount)
@@ -961,7 +962,7 @@ class Group(models.Model):
             round_data = self.current_round_data
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         try:
-            return self.data_values.get(**criteria)
+            return self.data_value_set.get(**criteria)
         except GroupRoundDataValue.DoesNotExist as e:
             logger.warning("No data value found for criteria %s", criteria)
             if default is None:
@@ -1067,8 +1068,8 @@ class RoundData(models.Model):
     (GroupRoundDataValue), participant_data (ParticipantRoundDataValue), and
     chat_messages (ChatMessage)
     """
-    experiment = models.ForeignKey(Experiment, related_name='round_data')
-    round_configuration = models.ForeignKey(RoundConfiguration)
+    experiment = models.ForeignKey(Experiment, related_name='round_data_set')
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_data_set')
     elapsed_time = models.PositiveIntegerField(default=0)
 
     def __unicode__(self):
@@ -1078,8 +1079,8 @@ class RoundData(models.Model):
         ordering = [ 'round_configuration' ]
 
 class GroupRoundDataValue(DataValue):
-    group = models.ForeignKey(Group, related_name='data_values')
-    round_data = models.ForeignKey(RoundData, related_name='group_data_values')
+    group = models.ForeignKey(Group, related_name='data_value_set')
+    round_data = models.ForeignKey(RoundData, related_name='group_data_value_set')
 
     def __init__(self, *args, **kwargs):
         super(GroupRoundDataValue, self).__init__(*args, **kwargs)
@@ -1100,8 +1101,8 @@ class GroupRoundDataValue(DataValue):
 
 class Participant(CommonsUser):
     can_receive_invitations = models.BooleanField(default=False)
-    groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participants')
-    experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participants')
+    groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participant_set')
+    experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participant_set')
 
     @property
     def active_experiments(self):
@@ -1131,10 +1132,10 @@ class ParticipantExperimentRelationship(models.Model):
     """
     Many-to-many relationship entity storing a participant and the experiment they are participating in.
     """
-    participant = models.ForeignKey(Participant, related_name='experiment_relationships')
+    participant = models.ForeignKey(Participant, related_name='experiment_relationship_set')
     participant_identifier = models.CharField(max_length=32)
     sequential_participant_identifier = models.PositiveIntegerField()
-    experiment = models.ForeignKey(Experiment, related_name='participant_relationships')
+    experiment = models.ForeignKey(Experiment, related_name='participant_relationship_set')
     date_created = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User)
     last_completed_round_sequence_number = models.PositiveIntegerField(default=0)
@@ -1179,8 +1180,8 @@ class ParticipantGroupRelationship(models.Model):
     round in which they joined the group, and the datetime that they joined the group.
     """
     participant_number = models.PositiveIntegerField()
-    participant = models.ForeignKey(Participant, related_name='participant_group_relationships')
-    group = models.ForeignKey(Group, related_name = 'participant_group_relationships')
+    participant = models.ForeignKey(Participant, related_name='participant_group_relationship_set')
+    group = models.ForeignKey(Group, related_name = 'participant_group_relationship_set')
     round_joined = models.ForeignKey(RoundConfiguration)
     date_created = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
@@ -1200,7 +1201,7 @@ class ParticipantGroupRelationship(models.Model):
         if parameter is not None and value is not None:
             # FIXME: make sure this is concurrent-safe or better yet that all participant data values are created at the
             # start of a round.
-            participant_data_value, created = current_round_data.participant_data_values.get_or_create(parameter=parameter, participant_group_relationship=self)
+            participant_data_value, created = current_round_data.participant_data_value_set.get_or_create(parameter=parameter, participant_group_relationship=self)
             participant_data_value.value = value
             # FIXME: parameterize / make explicit?
             participant_data_value.submitted = True
@@ -1218,7 +1219,7 @@ class ParticipantGroupRelationship(models.Model):
 class ChatMessageManager(models.Manager):
     def message(self, experiment, message):
         current_round_data = experiment.current_round_data
-        for participant in experiment.participants.all():
+        for participant in experiment.participant_set.all():
             yield ChatMessage.objects.create(participant_group_relationship=participant.get_participant_group_relationship(experiment),
                     message=message,
                     round_data=current_round_data)
@@ -1228,19 +1229,19 @@ class ChatMessage(models.Model):
     A chat message sent by a participant in a group to the rest of the members of the group or a target participant
     if target_participant is set.
     """
-    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='chat_messages')
+    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='participant_chat_message_set')
     """ the combination of participant and group that generated this chat message """
 
     message = models.CharField(max_length=512)
     """ the chat message """
 
-    target_participant = models.ForeignKey(ParticipantGroupRelationship, null=True, blank=True, related_name='targets')
+    target_participant = models.ForeignKey(ParticipantGroupRelationship, null=True, blank=True, related_name='target_participant_chat_message_set')
     """ if set, this is a targeted message to the other participant in this group.  If null, this is a broadcast message to the entire group """
 
     date_created = models.DateTimeField(auto_now_add=True)
     """ the creation datetime of this chat message """
 
-    round_data = models.ForeignKey(RoundData, related_name='chat_messages')
+    round_data = models.ForeignKey(RoundData, related_name='chat_message_set')
     """ the round data associated with this chat message """
 
     objects = ChatMessageManager()
@@ -1277,8 +1278,8 @@ Stores participant-specific data value and associates a Participant, Experiment
 (from DataValue), the round in which the data value was associated.
 """
 class ParticipantRoundDataValue(DataValue):
-    round_data = models.ForeignKey(RoundData, related_name='participant_data_values')
-    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='participant_data_values')
+    round_data = models.ForeignKey(RoundData, related_name='participant_data_value_set')
+    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='participant_data_value_set')
     submitted = models.BooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
@@ -1318,14 +1319,14 @@ class ActivityLog(models.Model):
         return u"%s - %s" % (self.date_created.strftime("%m-%d-%Y %H:%M"), self.log_message)
 
 class GroupActivityLog(ActivityLog):
-    group = models.ForeignKey(Group, related_name='activity_log')
+    group = models.ForeignKey(Group, related_name='activity_log_set')
     round_configuration = models.ForeignKey(RoundConfiguration)
 
     def __unicode__(self):
         return u"%s %s" % (self.group, super(GroupActivityLog, self).__unicode__())
 
 class ExperimentActivityLog(ActivityLog):
-    experiment = models.ForeignKey(Experiment, related_name='activity_log')
+    experiment = models.ForeignKey(Experiment, related_name='activity_log_set')
     round_configuration = models.ForeignKey(RoundConfiguration)
 
 def is_experimenter(user, experimenter=None):

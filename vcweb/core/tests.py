@@ -22,7 +22,7 @@ class BaseVcwebTest(TestCase):
             experiment = Experiment.objects.get(pk=1).clone()
         else:
             experiment = self.create_new_experiment(experiment_metadata, **kwargs)
-        if experiment.participants.count() == 0:
+        if experiment.participant_set.count() == 0:
             experiment.setup_test_participants(email_suffix='asu.edu')
         logger.debug("loaded %s", experiment)
         self.experiment = experiment
@@ -46,7 +46,7 @@ class BaseVcwebTest(TestCase):
         experiment_configuration = ExperimentConfiguration.objects.create(experiment_metadata=experiment_metadata,
                 name='Test Experiment Configuration', creator=experimenter)
         for index in xrange(1, 10):
-            experiment_configuration.round_configurations.create(sequence_number=index)
+            experiment_configuration.round_configuration_set.create(sequence_number=index)
         return Experiment.objects.create(experimenter=self.experimenter,
                 experiment_metadata=experiment_metadata, experiment_configuration=experiment_configuration)
 
@@ -77,8 +77,7 @@ class BaseVcwebTest(TestCase):
                 )
 
     def create_new_parameter(self, name='vcweb.test.parameter', scope='EXPERIMENT_SCOPE', parameter_type='string'):
-        return self.experiment_metadata.parameters.create(creator=self.experimenter, 
-                name=name, scope=scope, type=parameter_type)
+        return self.experiment_metadata.parameter_set.create(creator=self.experimenter, name=name, scope=scope, type=parameter_type)
 
 
     def create_new_group(self, max_size=10, experiment=None):
@@ -158,8 +157,8 @@ class ExperimentTest(BaseVcwebTest):
     def test_group_allocation(self):
         experiment = self.experiment
         experiment.allocate_groups(randomize=False)
-        self.assertEqual(experiment.groups.count(), 2, "there should be 2 groups after non-randomized allocation")
-        self.assertEqual(sum(map(lambda group:group.participants.count(), experiment.groups.all())), 10)
+        self.assertEqual(experiment.group_set.count(), 2, "there should be 2 groups after non-randomized allocation")
+        self.assertEqual( 10, sum([group.participant_set.count() for group in experiment.group_set]) )
 
     def test_participant_numbering(self):
         experiment = self.experiment
@@ -200,21 +199,21 @@ class ExperimentTest(BaseVcwebTest):
         e.start_round()
         # instructions round
         current_round_data = e.current_round_data
-        self.assertEqual(current_round_data.group_data_values.count(), 0)
-        self.assertEqual(current_round_data.participant_data_values.count(), 0)
+        self.assertEqual(current_round_data.group_data_value_set.count(), 0)
+        self.assertEqual(current_round_data.participant_data_value_set.count(), 0)
 
     def test_playable_round(self):
         e = self.advance_to_data_round()
         e.start_round()
         current_round_data = e.current_round_data
-        for group in e.groups.all():
+        for group in e.group_set.all():
             for parameter in group.data_parameters.all():
-                group_data_value, created = current_round_data.group_data_values.get_or_create(group=group,
+                group_data_value, created = current_round_data.group_data_value_set.get_or_create(group=group,
                         parameter=parameter)
                 self.assertFalse(created)
-            for pgr in group.participant_group_relationships.all():
+            for pgr in group.participant_group_relationship_set.all():
                 for parameter in e.parameters(scope=Parameter.PARTICIPANT_SCOPE):
-                    participant_data_value, created = current_round_data.participant_data_values.get_or_create(participant_group_relationship=pgr,
+                    participant_data_value, created = current_round_data.participant_data_value_set.get_or_create(participant_group_relationship=pgr,
                             parameter=parameter)
                     self.assertFalse(created)
 
@@ -222,9 +221,9 @@ class GroupTest(BaseVcwebTest):
     def test_set_data_value_activity_log(self):
         e = self.advance_to_data_round()
         test_data_value = 10
-        for g in e.groups.all():
+        for g in e.group_set.all():
             activity_log_counter = GroupActivityLog.objects.filter(group=g).count()
-            for data_value in g.data_values.all():
+            for data_value in g.data_value_set.all():
                 # XXX: pathological use of set_data_value, no point in doing it
                 # this way since typical usage would do a lookup by name.
                 g.set_data_value(parameter=data_value.parameter, value=test_data_value)
@@ -239,14 +238,14 @@ class GroupTest(BaseVcwebTest):
         first_pass = True
         while e.has_next_round:
             if first_pass:
-                for g in e.groups.all():
+                for g in e.group_set.all():
                     g.set_data_value(parameter=parameter, value=test_data_value)
                     self.assertEqual(g.get_data_value(parameter=parameter).value, test_data_value)
                     self.assertEqual(g.get_scalar_data_value(parameter=parameter), test_data_value)
                     g.transfer_to_next_round(parameter)
                 first_pass = False
             else:
-                for g in e.groups.all():
+                for g in e.group_set.all():
                     self.assertEqual(g.get_data_value(parameter=parameter).value, test_data_value)
                     self.assertEqual(g.get_scalar_data_value(parameter=parameter), test_data_value)
                     g.transfer_to_next_round(parameter)
@@ -263,8 +262,8 @@ class GroupTest(BaseVcwebTest):
         for p in self.participants:
             g.add_participant(p)
             count += 1
-            self.assertTrue(g.participants)
-            self.assertEqual(g.participants.count(), count, "group.participants size should be %i" % count)
+            self.assertTrue(g.participant_set)
+            self.assertEqual(g.participant_set.count(), count, "group.participants size should be %i" % count)
             self.assertEqual(g.size, count, "group size should be %i" % count)
 
 
@@ -281,7 +280,7 @@ class ParticipantExperimentRelationshipTest(BaseVcwebTest):
             self.assertTrue(per.participant_identifier)
             self.assertTrue(per.sequential_participant_identifier > 0)
 
-        self.assertEqual(e.participants.count(), self.participants.count())
+        self.assertEqual(e.participant_set.count(), self.participants.count())
 
 
 class RoundConfigurationTest(BaseVcwebTest):

@@ -218,7 +218,7 @@ class SingleExperimentMixin(SingleObjectMixin):
 
 class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
     def check_user(self, user, experiment):
-        # FIXME: should we do a user.participant in experiment.participants.all() check?
+        # FIXME: should we do a user.participant in experiment.participant_set.all() check?
         return experiment
 
 class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin):
@@ -275,7 +275,7 @@ class CloneExperimentView(ExperimenterSingleExperimentView):
 
 class ClearParticipantsExperimentView(ExperimenterSingleExperimentView):
     def process_experiment(self, experiment):
-        experiment.participants.all().delete()
+        experiment.participant_set.all().delete()
         return experiment
     def render_to_response(self, context):
         return redirect('core:dashboard')
