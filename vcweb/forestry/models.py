@@ -138,10 +138,12 @@ def round_teardown(experiment, **kwargs):
     max_resource_level = 100
     for group in experiment.group_set.all():
         # FIXME: simplify logic
+        logger.debug("group %s has resource level", group)
         if has_resource_level(group):
             current_resource_level = get_resource_level(group)
             if current_round_configuration.is_playable_round:
                 total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
+                logger.debug("total harvest for playable round: %d", total_harvest)
                 if current_resource_level.value > 0 and total_harvest > 0:
                     group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level.value))
                     set_group_harvest(group, total_harvest)

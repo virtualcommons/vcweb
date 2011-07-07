@@ -265,7 +265,7 @@ class Experiment(models.Model):
 
     @property
     def participant_group_relationships(self):
-        for group in self.group_set .all():
+        for group in self.group_set.all():
             for pgr in group.participant_group_relationship_set.all():
                 yield pgr
 
@@ -938,7 +938,7 @@ class Group(models.Model):
         vs
         GroupRoundDataValue.objects.filter(group_round_data=self.current_round_data, parameter=parameter).update(**update_dict)
         '''
-        updated_rows = self.data_values.filter(round_data=self.current_round_data, parameter=parameter).update(**update_dict)
+        updated_rows = self.data_value_set.filter(round_data=self.current_round_data, parameter=parameter).update(**update_dict)
         if updated_rows != 1:
             logger.error("Updated %s rows, should have been only one.", updated_rows)
         '''
@@ -949,7 +949,7 @@ class Group(models.Model):
     def has_data_parameter(self, **kwargs):
         criteria = self._data_parameter_criteria(**kwargs)
         try:
-            self.data_values.get(**criteria)
+            self.data_value_set.get(**criteria)
             return True
         except:
             return False
@@ -992,9 +992,9 @@ class Group(models.Model):
         round_data = self.current_round_data
         if names:
             if name: names.append(name)
-            return self.data_values.filter(round_data=round_data, parameter__name__in=names)
+            return self.data_value_set.filter(round_data=round_data, parameter__name__in=names)
         elif name:
-            return self.data_values.get(round_data=round_data, parameter__name=name)
+            return self.data_value_set.get(round_data=round_data, parameter__name=name)
         else:
             logger.warning("Trying to retrieve data value by name with no args")
         return None
@@ -1021,9 +1021,9 @@ class Group(models.Model):
             logger.error("Trying to transfer parameter (%s: %s) past the last round of the experiment",
                     parameter, value)
             return None
-        next_round_data, created = self.experiment.round_data.get_or_create(round_configuration=self.experiment.next_round)
+        next_round_data, created = self.experiment.round_data_set.get_or_create(round_configuration=self.experiment.next_round)
         logger.debug("next round data: %s (%s)", next_round_data, created)
-        group_data_value, created = next_round_data.group_data_values.get_or_create(group=self, parameter=parameter, defaults={'value': value})
+        group_data_value, created = next_round_data.group_data_value_set.get_or_create(group=self, parameter=parameter, defaults={'value': value})
         logger.debug("group data value: %s (%s)", group_data_value, created)
         if not created:
             group_data_value.value = value

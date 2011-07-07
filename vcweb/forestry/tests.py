@@ -81,17 +81,18 @@ class TransferParametersTest(BaseVcwebTest):
                         e.current_round_sequence_number)
                 expected_resource_level = get_initial_resource_level(current_round_configuration)
 
-            max_harvest_decision = get_max_harvest_decision(expected_resource_level)
-            for pgr in e.participant_group_relationships:
-                self.assertEquals(get_resource_level(pgr.group).value, expected_resource_level)
-                set_harvest_decision(pgr, max_harvest_decision)
-            e.end_round()
-
             if current_round_configuration.is_playable_round:
+                max_harvest_decision = get_max_harvest_decision(expected_resource_level)
+                for pgr in e.participant_group_relationships:
+                    self.assertEquals(get_resource_level(pgr.group).value, expected_resource_level)
+                    set_harvest_decision(pgr, max_harvest_decision)
+
                 expected_resource_level = calculate_expected_resource_level(expected_resource_level, max_harvest_decision * 5)
 
+            e.end_round()
             for group in e.group_set.all():
-                self.assertEquals(get_resource_level(pgr.group).value, expected_resource_level)
+                logger.debug("checking group: %s", group)
+                self.assertEquals(get_resource_level(group).value, expected_resource_level)
 
             if e.has_next_round:
                 e.advance_to_next_round()
