@@ -321,7 +321,7 @@ class Experiment(models.Model):
 
     @property
     def playable_round_data(self):
-        return self.round_data.select_related(depth=1).filter(round_configuration__round_type__in=RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS,
+        return self.round_data_set.select_related(depth=1).filter(round_configuration__round_type__in=RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS,
                 round_configuration__sequence_number__lte=self.current_round_sequence_number)
 
     @property
@@ -908,7 +908,7 @@ class Group(models.Model):
 
     @property
     def current_round_data_values(self):
-        return self.current_round_data.group_data_values
+        return self.current_round_data.group_data_value_set
 
     @property
     def is_full(self):

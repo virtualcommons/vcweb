@@ -300,7 +300,7 @@ def download_data(request, pk=None, file_type='csv'):
         writer = unicodecsv.UnicodeWriter(response)
         writer.writerow(['Group', 'Members'])
         for group in experiment.groups.all():
-            writer.writerow(itertools.chain.from_iterable([[group], group.participants.all()]))
+            writer.writerow(itertools.chain.from_iterable([[group], group.participant_set.all()]))
         for round_data in experiment.round_data.all():
             round_configuration = round_data.round_configuration
             # write out group-wide data values
@@ -338,8 +338,8 @@ def download_data_excel(request, pk=None):
         current_row = 0
         group_sheet.write(0, 0, 'Group')
         group_sheet.write(0, 1, 'Participant')
-        for group in experiment.groups.all():
-            for participant in group.participants.all():
+        for group in experiment.group_set.all():
+            for participant in group.participant_set.all():
                 group_sheet.write(current_row, 0, group)
                 group_sheet.write(current_row, 1, participant)
             current_row += 1

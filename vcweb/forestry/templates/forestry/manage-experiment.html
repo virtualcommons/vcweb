@@ -14,8 +14,7 @@
         <a href='#'>view data</a> |
         <a href='#'>download data</a>
     </div>
-    {% if experiment.groups.count > 0 %}
-    {% for group in experiment.groups.all %}
+    {% for group in experiment.group_set.all %}
     <h3> {{ group }} </h3>
     <div class='participants'>
         <table>
@@ -23,7 +22,7 @@
                 <th>Participant</th><th>Round</th><th>Parameter</th><th>Value</th>
             </thead>
             <tbody>
-                {% for participant in group.participants.all %}
+                {% for participant in group.participant_set.all %}
 
                 {% endfor %}
             </tbody>
@@ -37,10 +36,9 @@
             {% endfor %}
         </ul>
     </div>
-    {% endfor %}
-    {% else %}
+    {% empty %}
     <div class='info'>Groups have not been allocated yet.</div>
-    {% endif %}
+    {% endfor %}
 </fieldset>
 </p>
 

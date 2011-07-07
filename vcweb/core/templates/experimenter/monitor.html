@@ -63,7 +63,7 @@
     }
     $(function() {
             var experimentMessageDiv = document.getElementById('experiment-messages');
-            registerCallbacks({{ experiment.round_data.count }}, {{ experiment.current_round.sequence_number }});
+            registerCallbacks({{ experiment.round_data_set.count }}, {{ experiment.current_round.sequence_number }});
             // socket.io connection
             // FIXME: add auth
             var s = connect('experimenter/{{request.user.experimenter.pk}}');
@@ -196,7 +196,7 @@
 </div>
 <div id='experimentData'>
     {% block data %}
-    {% for round_data in experiment.round_data.all reversed %}
+    {% for round_data in experiment.round_data_set.all reversed %}
     <h3><a href='#'>{{ round_data }}</a></h3>
     <div id='round_data_{{forloop.counter}}'>
         {% if round_data.group_data_values.count > 0 %}

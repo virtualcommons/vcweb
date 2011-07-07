@@ -45,20 +45,18 @@ FIXME: replace these links eventually.
     {% for e in experiments %}
     <div class='notice ui-corner-all'>
         {{e.status_line}} 
+        <span style='float:right; padding: 3px;' class='ui-state-highlight'><b>{{e.participant_set.count}} registered participants</b></span>
         <ul class='horizontal experiment-menu'>
-            <li><span style='padding: 3px;' class='ui-state-highlight'><b>{{e.participants.count}} registered participants</b></span></li>
             <li><a title='Monitor and control this experiment' 
                 href='{{e.monitor_url}}'>
                 <img src='{{STATIC_URL}}images/famfamfam/zoom.png' alt='General experiment monitoring interface'/> monitor</a></li>
             <li>
             <a class='confirm-experiment-action' title='Creates a new copy of this experiment with the exact same configuration but no registered participants.'
                 href='{{e.clone_url}}'><img src='{{STATIC_URL}}images/famfamfam/page_copy.png' alt='Clone experiment'/> clone</a></li>
-            {% if e.participants.count == 0  %}
-            {% comment %}
+            {% if e.participant_set.count == 0  %}
             <li>
             <a title='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'><img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> register participants by email</a>
             </li>
-            {% endcomment %}
             <li>
             <a title='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.' 
                 href='{{e.controller_url}}/register-simple'>

@@ -74,7 +74,7 @@ Harvest per hour Limit <input id='' type="text" value="(0-9)" size="3" disabled/
                 <th>Participant</th><th>Round</th><th>Parameter</th><th>Value</th>
             </thead>
             <tbody>
-                {% for participant in group.participants.all %}
+                {% for participant in group.participant_set.all %}
                 {% endfor %}
             </tbody>
         </table>
