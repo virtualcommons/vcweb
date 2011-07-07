@@ -158,7 +158,7 @@ class ExperimentManager(models.Manager):
         return self.filter(status='ACTIVE')
 
     def increment_elapsed_time(self, status='ROUND_IN_PROGRESS', amount=60):
-        if status:
+        if status is not None:
             es = self.filter(status=status)
             es.update(current_round_elapsed_time=models.F('current_round_elapsed_time') + amount,
                     total_elapsed_time=models.F('total_elapsed_time') + amount)
@@ -449,8 +449,8 @@ class Experiment(models.Model):
         return "%s_%s_%s.%s" % (slugify(self.experiment_metadata.title), self.pk, datetime.now().strftime("%d-%m-%y-%H%M"), file_ext)
 
     def parameters(self, scope=None):
-        ps = self.experiment_metadata.parameter_set
-        return ps.filter(scope=scope) if scope else ps
+        parameter_set = self.experiment_metadata.parameter_set
+        return parameter_set.filter(scope=scope) if scope else parameter_set
 
     def activate(self):
         if not self.is_active:

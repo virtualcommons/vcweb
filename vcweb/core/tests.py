@@ -23,7 +23,7 @@ class BaseVcwebTest(TestCase):
         else:
             experiment = self.create_new_experiment(experiment_metadata, **kwargs)
         if experiment.participant_set.count() == 0:
-            experiment.setup_test_participants(email_suffix='asu.edu')
+            experiment.setup_test_participants(email_suffix='asu.edu', count=10)
         logger.debug("loaded %s", experiment)
         self.experiment = experiment
         return experiment
@@ -157,8 +157,9 @@ class ExperimentTest(BaseVcwebTest):
     def test_group_allocation(self):
         experiment = self.experiment
         experiment.allocate_groups(randomize=False)
+        logger.debug("experiment participants is %s", experiment.participant_set.all())
         self.assertEqual(experiment.group_set.count(), 2, "there should be 2 groups after non-randomized allocation")
-        self.assertEqual( 10, sum([group.participant_set.count() for group in experiment.group_set]) )
+        self.assertEqual( 10, sum([group.participant_set.count() for group in experiment.group_set.all()]) )
 
     def test_participant_numbering(self):
         experiment = self.experiment
@@ -189,7 +190,7 @@ class ExperimentTest(BaseVcwebTest):
         self.assertTrue(total_elapsed_time == 0)
         delta = 120
         Experiment.objects.increment_elapsed_time(status=experiment.status, amount=delta)
-        experiment = self.load_experiment()
+        experiment = Experiment.objects.get(pk=self.experiment.pk)
         self.assertEqual(experiment.current_round_elapsed_time, current_round_elapsed_time + delta)
         self.assertEqual(experiment.total_elapsed_time, total_elapsed_time + delta)
 
@@ -259,11 +260,13 @@ class GroupTest(BaseVcwebTest):
         """
         g = self.create_new_group(max_size=10, experiment=self.experiment)
         count = 0;
+        logger.debug("self participants: %s (%s)", self.participants, len(self.participants))
         for p in self.participants:
-            g.add_participant(p)
+            g = g.add_participant(p)
             count += 1
-            self.assertTrue(g.participant_set)
-            self.assertEqual(g.participant_set.count(), count, "group.participants size should be %i" % count)
+            if count > 10:
+                count = count % 10
+            self.assertEqual(g.participant_set.count(), count, "group.participant_set count should be %i" % count)
             self.assertEqual(g.size, count, "group size should be %i" % count)
 
 
