@@ -29,7 +29,7 @@ class Activity(models.Model):
 
     @property
     def icon_url(self):
-        return self.icon.url
+        return self.icon.url if self.icon else ""
 
     def __unicode__(self):
         return u'%s (+%s)' % (self.label, self.savings)

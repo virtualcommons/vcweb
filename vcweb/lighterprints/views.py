@@ -23,8 +23,8 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
             activity_by_level[activity.level].append(activity)
             #activity_as_dict = collections.OrderedDict()
             activity_as_dict = {}
-            for attr_name in ('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url'):
-                activity_as_dict[attr_name] = getattr(activity, attr_name)
+            for attr_name in ('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining'):
+                activity_as_dict[attr_name] = getattr(activity, attr_name, None)
             flattened_activities.append(activity_as_dict)
 
         context['activity_by_level'] = dict(activity_by_level)
