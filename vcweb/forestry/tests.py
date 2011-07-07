@@ -237,8 +237,8 @@ class ForestryParametersTest(BaseVcwebTest):
     def test_data_values(self):
         e = self.create_participant_data_values()
         num_participant_parameters = e.parameters(scope=Parameter.PARTICIPANT_SCOPE).count()
-        self.assertEqual(e.participants.count() * num_participant_parameters, ParticipantRoundDataValue.objects.filter(experiment=e).count(),
-                             'There should be %s participants * %s total data parameters = %s' % (e.participants.count(), num_participant_parameters, e.participants.count() * num_participant_parameters))
+        self.assertEqual(e.participant_set.count() * num_participant_parameters, ParticipantRoundDataValue.objects.filter(experiment=e).count(),
+                'There should be %s participants * %s total data parameters = %s' % (e.participant_set.count(), num_participant_parameters, e.participant_set.count() * num_participant_parameters))
 
     def test_data_value_conversion(self):
         e = self.create_participant_data_values()

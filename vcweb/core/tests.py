@@ -40,6 +40,10 @@ class BaseVcwebTest(TestCase):
     def experimenter(self):
         return self.experiment.experimenter
 
+    @property
+    def participants(self):
+        return self.experiment.participant_set.all()
+
     def create_new_experiment(self, experiment_metadata, experimenter=None):
         if experimenter is None:
             experimenter = Experimenter.objects.get(pk=1)
@@ -52,7 +56,6 @@ class BaseVcwebTest(TestCase):
 
 
     def setUp(self):
-        self.participants = Participant.objects.all()
         self.load_experiment()
 
     def advance_to_data_round(self):

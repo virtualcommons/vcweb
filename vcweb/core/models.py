@@ -817,7 +817,7 @@ class Parameter(models.Model):
 
     class Meta:
         ordering = ['name']
-        unique_together = ['name', 'experiment_metadata', 'scope']
+        unique_together = ('name', 'experiment_metadata', 'scope')
 
 class ParameterizedValue(models.Model):
     parameter = models.ForeignKey(Parameter)
