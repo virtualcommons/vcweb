@@ -16,7 +16,8 @@ class Activity(models.Model):
 # FIXME: allow for experiment-configurable levels?
     level = models.PositiveIntegerField(default=1)
     group_activity = models.BooleanField(default=False, help_text='Whether or not this activity has beneficial group effect multipliers, e.g., ride sharing')
-    cooldown = models.PositiveIntegerField(default=1, help_text='How much time, in hours, must elapse before this activity can become available again')
+    cooldown = models.PositiveIntegerField(default=1, null=True, blank=True, help_text='How much time, in hours, must elapse before this activity can become available again')
+    icon = models.ImageField(upload_to='lighterprints/activity-icons/')
 
     @property
     def label(self):
@@ -28,8 +29,7 @@ class Activity(models.Model):
 
     @property
     def icon_url(self):
-        # FIXME: implement as return "/activity/id/icon"
-        pass
+        return self.icon.url
 
     def __unicode__(self):
         return u'%s (+%s)' % (self.label, self.savings)

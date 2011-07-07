@@ -8,6 +8,7 @@ kombu
 django-kombu
 django-dajaxice
 django-autocomplete
+PIL
 #django-unittest-depth
 #redis
 #beanstalkc
