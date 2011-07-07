@@ -95,7 +95,7 @@ class ConnectionManager:
     '''
     def connections(self, group):
         experiment = group.experiment
-        for participant_group_relationship in group.participant_group_relationships.all():
+        for participant_group_relationship in group.participant_group_relationship_set.select_related(depth=1).all():
             ''' only return currently connected connections in this group '''
             participant = participant_group_relationship.participant
             participant_tuple = (participant.pk, experiment.pk)
@@ -106,7 +106,7 @@ class ConnectionManager:
         if connection in self.connection_to_experimenter:
             (experimenter_pk, experiment_pk) = self.connection_to_experimenter[connection]
             if experiment.pk == experiment_pk:
-                for group in experiment.groups.all():
+                for group in experiment.group_set.all():
                     for participant_group_pk, connection in self.connections(group):
                         yield (participant_group_pk, connection)
             else:
@@ -230,7 +230,7 @@ class ParticipantHandler(SocketConnection):
                 event.participant_pk = participant_pk
                 pgr_pk = event.participant_group_relationship_id
                 participant_group_relationship = ParticipantGroupRelationship.objects.get(pk=pgr_pk)
-                prdv = experiment.current_round_data.participant_data_values.get(participant_group_relationship__pk=pgr_pk)
+                prdv = experiment.current_round_data.participant_data_value_set.get(participant_group_relationship__pk=pgr_pk)
                 event.participant_data_value_pk = prdv.pk
                 event.participant_number = participant_group_relationship.participant_number
                 event.participant_group = participant_group_relationship.group_number
