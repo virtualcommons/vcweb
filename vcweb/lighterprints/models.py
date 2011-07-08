@@ -42,6 +42,12 @@ class ActivityAvailability(models.Model):
     available_start_time = models.TimeField(null=True, blank=True)
     available_end_time = models.TimeField(null=True, blank=True)
 
+    def __unicode__(self):
+        return u'%s (%s - %s)' % (self.activity, self.available_start_time, self.available_end_time)
+
+    class Meta:
+        ordering = ['activity', 'available_start_time']
+
 @simplecache
 def get_lighterprints_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace='lighterprints')
