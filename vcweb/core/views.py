@@ -179,17 +179,12 @@ class ParticipantMixin(object):
         return super(ParticipantMixin, self).dispatch(*args, **kwargs)
 
 @login_required
-def instructions(request, pk=None, namespace=None):
-    if pk:
-        experiment = Experiment.objects.get(pk=pk)
-    elif namespace:
-        experiment = Experiment.objects.get(experiment_metadata__namespace=namespace)
-
-    if not experiment:
-        logger.warning("Tried to request instructions for id %s or namespace %s", pk, namespace)
+def instructions(request, namespace=None):
+    if namespace is not None:
+        return render_to_response('%s/instructions.html' % namespace,
+                context_instance=RequestContext(request))
+    else:
         return redirect('home')
-
-    return render_to_response(experiment.get_template_path('instructions.html'), locals(), context_instance=RequestContext(request))
 
 """
 experimenter views
