@@ -38,7 +38,7 @@ class Activity(models.Model):
         ordering = ['level', 'name']
 
 class ActivityAvailability(models.Model):
-    activity = models.ForeignKey(Activity)
+    activity = models.ForeignKey(Activity, related_name='availability_set')
     available_start_time = models.TimeField(null=True, blank=True)
     available_end_time = models.TimeField(null=True, blank=True)
 

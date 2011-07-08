@@ -7,7 +7,12 @@
 <h3>Level {{level}} Activities</h3>
 <ul>
     {% for activity in activities %}
-    <li>{{ activity }}</li>
+    <li>{{ activity }} <img src='{{activity.icon_url}}' alt='activity icon' />
+    <br/>
+    {% for activity_availability in activity.availability_set.all %}
+    ({{ activity_availability.available_start_time|time }} - {{ activity_availability.available_end_time|time }})
+    {% endfor %}
+    </li>
     {% endfor %}
 </ul>
 {% endfor %}
