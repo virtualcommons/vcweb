@@ -8,8 +8,11 @@
             "available_all_day": false,
             "url": "http://www.savecarbon.org/activity_form/twodegrees",
             "level": 1,
+            "group_activity": false,
             "summary": "Heating or cooling buildings less saves energy",
-            "savings": "5.5",
+            "savings": "5.50",
+            "cooldown": 1,
+            "icon": "",
             "name": "adjust-thermostat"
         }
     },
@@ -22,8 +25,11 @@
             "available_all_day": true,
             "url": "http://www.huffingtonpost.com/bill-chameides/carbon-savings-at-home_b_113551.html",
             "level": 1,
+            "group_activity": false,
             "summary": "Less energy for transport when only locally grown food is consumed",
-            "savings": "2",
+            "savings": "2.00",
+            "cooldown": 1,
+            "icon": "",
             "name": "eat-local-lunch"
         }
     },
@@ -36,8 +42,11 @@
             "available_all_day": true,
             "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
             "level": 1,
+            "group_activity": false,
             "summary": "Your computer consumes less energy when it's asleep or turned off",
             "savings": "0.98",
+            "cooldown": 1,
+            "icon": "lighterprints/activity-icons/compsleep.bmp",
             "name": "enable-computer-sleep"
         }
     },
@@ -50,8 +59,11 @@
             "available_all_day": true,
             "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
             "level": 1,
+            "group_activity": false,
             "summary": "Recycling processes used materials into new products to prevent waste of potentially useful materials.",
             "savings": "0.31",
+            "cooldown": 1,
+            "icon": "",
             "name": "recycle"
         }
     },
@@ -64,9 +76,245 @@
             "available_all_day": false,
             "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
             "level": 1,
+            "group_activity": false,
             "summary": "Using mass transit, bicycle commuting, or carpooling is more efficient than traveling alone in your car.",
             "savings": "2.85",
+            "cooldown": 1,
+            "icon": "",
             "name": "share-your-ride"
+        }
+    },
+    {
+        "pk": 10,
+        "model": "lighterprints.activity",
+        "fields": {
+            "display_name": "Bike or take public transportation when you go out",
+            "description": "We assume a 22.4 miles per gallon car and a 4 mile trip length. CO2 emissions are 19.53 pounds per gallon and 1.5 pound per gallon of non-CO2 CO2 equivalent emissions. This means 0.94 pounds per mile. ",
+            "available_all_day": false,
+            "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
+            "level": 2,
+            "group_activity": false,
+            "summary": "Reduce fossil fuel consumption and emissions by not driving a car",
+            "savings": "7.52",
+            "cooldown": 1,
+            "icon": "lighterprints/activity-icons/biketo.bmp",
+            "name": "bike-public-transport"
+        }
+    },
+    {
+        "pk": 6,
+        "model": "lighterprints.activity",
+        "fields": {
+            "display_name": "Turn water off while brushing your teeth",
+            "description": "0.5 kWh per person per day, assuming four minutes a day (enough to account for brushing teeth twice daily) and typical energy use for water supply, treatment, and heating. With 1.52 CO2 per kWh this leads to a savings of 0.76 pound of CO2 a day.",
+            "available_all_day": false,
+            "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
+            "level": 2,
+            "group_activity": false,
+            "summary": "Don't leave the water running while you're brushing your teeth",
+            "savings": "0.76",
+            "cooldown": 1,
+            "icon": "lighterprints/activity-icons/toothbrush.bmp",
+            "name": "brushing-your-teeth"
+        }
+    },
+    {
+        "pk": 7,
+        "model": "lighterprints.activity",
+        "fields": {
+            "display_name": "Turn off your computer at night",
+            "description": "The average computer uses about 120 Watts (75 Watts for the screen and 45 Watts for the CPU) whether you're using it or not.\r\nOne computer left on 24 hours a day will lead to cost 1,500 pounds of CO2 into the atmosphere.",
+            "available_all_day": false,
+            "url": "http://sustainability.tufts.edu/",
+            "level": 2,
+            "group_activity": false,
+            "summary": "Save energy and turn off your computer when it's not needed.",
+            "savings": "1.37",
+            "cooldown": 1,
+            "icon": "lighterprints/activity-icons/compsleep_1.bmp",
+            "name": "computer-off"
+        }
+    },
+    {
+        "pk": 9,
+        "model": "lighterprints.activity",
+        "fields": {
+            "display_name": "Replace beef with poultry",
+            "description": "Replacing the protein you get from beef with poultry can save you 1,555 pounds of CO2 emissions annually. Per day this switch leads to a 4.26 pounds of CO2 savings.",
+            "available_all_day": false,
+            "url": "http://www.simplesteps.org/food/shopping-wise/co2-smackdown-step-6-trimming-out-beef-and-pork",
+            "level": 2,
+            "group_activity": false,
+            "summary": "Beef production is very energy intensive",
+            "savings": "4.26",
+            "cooldown": 1,
+            "icon": "lighterprints/activity-icons/nobeef.bmp",
+            "name": "no-beef"
+        }
+    },
+    {
+        "pk": 8,
+        "model": "lighterprints.activity",
+        "fields": {
+            "display_name": "Recycle paper",
+            "description": "Average number of pounds of CO2 equivalent per person per year that could be saved by recycling magazines (14.86), newspaper (89.76) and junk mail (100). This is 0.56 pound per day.",
+            "available_all_day": false,
+            "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
+            "level": 2,
+            "group_activity": false,
+            "summary": "Saving paper resources and production by recycling",
+            "savings": "0.56",
+            "cooldown": 1,
+            "icon": "lighterprints/activity-icons/recycle.bmp",
+            "name": "recycle-paper"
+        }
+    },
+    {
+        "pk": 14,
+        "model": "lighterprints.activity",
+        "fields": {
+            "display_name": "Air dry your clothes",
+            "description": "Drying your clothes saves 723 pounds of CO2 every year. This is 1.98 pounds per day.",
+            "available_all_day": false,
+            "url": "http://www.simplesteps.org/tools/house-savings-calculator#laundry",
+            "level": 3,
+            "group_activity": false,
+            "summary": "Air drying your clothes saves gas or electricity",
+            "savings": "1.98",
+            "cooldown": 1,
+            "icon": "lighterprints/activity-icons/airdry.bmp",
+            "name": "air-dry-clothes"
+        }
+    },
+    {
+        "pk": 13,
+        "model": "lighterprints.activity",
+        "fields": {
+            "display_name": "Eat a green lunch",
+            "description": "You can save 500 pounds of CO2 a year by reducing waste at lunch time. This means packing your lunch in a reusable container, using reusable/washable utensils, and don\u2019t use paper napkins.",
+            "available_all_day": false,
+            "url": "http://www.savecarbon.org/activity_form/lunches",
+            "level": 3,
+            "group_activity": false,
+            "summary": "Reduce the amount of waste you produce at lunch time.",
+            "savings": "1.37",
+            "cooldown": 1,
+            "icon": "lighterprints/activity-icons/organic_1.bmp",
+            "name": "green-lunch"
+        }
+    },
+    {
+        "pk": 11,
+        "model": "lighterprints.activity",
+        "fields": {
+            "display_name": "Turn off unnecessary lights",
+            "description": "Per bulb per hour: [60 watts / 1000 watts/kWh] *1.52 pounds of CO2 per kWh = 0.09 pound of CO2 per bulb per hour. Assume turning off 5 bulbs for 5 hours. This leads to 2.28 pounds of CO2 per day.",
+            "available_all_day": false,
+            "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
+            "level": 3,
+            "group_activity": false,
+            "summary": "Turning lights off in areas that don't need it saves energy.",
+            "savings": "2.28",
+            "cooldown": 1,
+            "icon": "lighterprints/activity-icons/lightsoff.bmp",
+            "name": "lights-off"
+        }
+    },
+    {
+        "pk": 12,
+        "model": "lighterprints.activity",
+        "fields": {
+            "display_name": "Become a vegan for a day",
+            "description": "A plant-based diet saves 1608 pound of CO2 per year compared to an average diet.",
+            "available_all_day": false,
+            "url": "http://www.simplesteps.org/tools/house-savings-calculator#diet",
+            "level": 3,
+            "group_activity": false,
+            "summary": "Raising animals for meat is resource intensive",
+            "savings": "4.41",
+            "cooldown": 1,
+            "icon": "lighterprints/activity-icons/organic.bmp",
+            "name": "vegan-for-a-day"
+        }
+    },
+    {
+        "pk": 15,
+        "model": "lighterprints.activity",
+        "fields": {
+            "display_name": "Wash your clothes with cold water",
+            "description": "You can save 400 pound of CO2 a year by washing all your clothes with cold water.",
+            "available_all_day": false,
+            "url": "http://www.savecarbon.org/activity_form/washcold",
+            "level": 3,
+            "group_activity": false,
+            "summary": "Save energy by not heating water",
+            "savings": "1.10",
+            "cooldown": 1,
+            "icon": "lighterprints/activity-icons/airdry_1.bmp",
+            "name": "wash-cold-water"
+        }
+    },
+    {
+        "pk": 4,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "06:00:00",
+            "available_end_time": "08:00:00",
+            "activity": 4
+        }
+    },
+    {
+        "pk": 1,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "12:00:00",
+            "available_end_time": "14:00:00",
+            "activity": 2
+        }
+    },
+    {
+        "pk": 2,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "08:00:00",
+            "available_end_time": "10:00:00",
+            "activity": 10
+        }
+    },
+    {
+        "pk": 3,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "16:00:00",
+            "available_end_time": "18:00:00",
+            "activity": 10
+        }
+    },
+    {
+        "pk": 7,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "18:00:00",
+            "available_end_time": "23:00:00",
+            "activity": 10
+        }
+    },
+    {
+        "pk": 5,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "07:00:00",
+            "available_end_time": "09:00:00",
+            "activity": 6
+        }
+    },
+    {
+        "pk": 6,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "21:00:00",
+            "available_end_time": "23:59:59",
+            "activity": 6
         }
     }
 ]
