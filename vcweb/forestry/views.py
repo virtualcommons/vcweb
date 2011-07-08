@@ -73,7 +73,7 @@ def generate_participant_history(participant_group_relationship):
         logger.debug("generating participant history for %s, current round %s",
                 participant_group_relationship.participant, round_data)
         data = ParticipantRoundData()
-# FIXME: this kind of binding is a bit laborious and error-prone, refactor if possible
+# FIXME: laborious and error-prone data binding, refactor if possible
         data.round_configuration = round_data.round_configuration
         data.individual_harvest = get_harvest_decision(participant_group_relationship, round_data=round_data)
         data.group_harvest = get_group_harvest(group, round_data=round_data)
@@ -183,7 +183,7 @@ def quiz(request, experiment, participant):
 def chat(request, experiment, participant):
     participant_group_rel = participant.get_participant_group_relationship(experiment)
     participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
-    chat_messages = experiment.current_round_data.chat_messages.filter(participant_group_relationship__group=participant_group_rel.group)
+    chat_messages = experiment.current_round_data.chat_message_set.filter(participant_group_relationship__group=participant_group_rel.group)
     return render_to_response(experiment.current_round_template, {
         'participant_group_relationship': participant_group_rel,
         'participant_experiment_relationship': participant_experiment_relationship,
