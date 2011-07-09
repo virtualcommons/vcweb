@@ -7,8 +7,8 @@ from django.db.models import Model
 from django.db.models.query import QuerySet
 from django.core.serializers import serialize
 from django.core.serializers.json import DjangoJSONEncoder
-from django.http import HttpResponse
-from django.shortcuts import render_to_response, redirect
+from django.http import HttpResponse, Http404
+from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context import RequestContext
 from django.utils.decorators import method_decorator
 from django.utils.functional import curry
@@ -46,11 +46,12 @@ class JSONResponseMixin(object):
     def get_json_response(self, content, **httpresponse_kwargs):
         "Construct an `HttpResponse` object."
         callback = self.request.GET.get('callback', '')
+        content_type = 'application/x-json'
         if is_valid_jsonp_callback_value(callback):
             content = '%s(%s)' % (callback, content)
-        logger.debug("returning json content %s", content)
+            content_type = 'text/javascript'
         return HttpResponse(content,
-                content_type='application/json',
+                content_type=content_type,
                 **httpresponse_kwargs)
 
     def convert_context_to_json(self, context, context_key='object_list', **kwargs):
@@ -100,7 +101,7 @@ def set_authentication_token(user, authentication_token=None):
         commons_user = user.experimenter
     else:
         logger.error("Invalid user: %s", user)
-        return
+        raise Http404
     logger.debug("%s authentication_token=%s", commons_user, authentication_token)
     commons_user.authentication_token = authentication_token
     commons_user.save()
