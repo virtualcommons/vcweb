@@ -396,6 +396,7 @@ class Experiment(models.Model):
                     u = User.objects.create_user(username=email, email=email, password=password)
                 users.append(u)
         for user in users:
+            logger.debug("registering user %s", user)
             (p, created) = Participant.objects.get_or_create(user=user)
             # FIXME: instead of asking for the email suffix, perhaps we just append the institution URL to keep it simpler?
             if institution and p.institution != institution:
@@ -464,7 +465,9 @@ class Experiment(models.Model):
         # FIXME: record previous mappings in activity log.
         self.group_set.all().delete()
         # seed the initial group.
-        current_group = self.group_set.create(number=1, max_size=self.experiment_configuration.max_group_size)
+        max_group_size = self.experiment_configuration.max_group_size
+        logger.debug("creating group with max size %d", max_group_size)
+        current_group = self.group_set.create(number=1, max_size=max_group_size)
         participants = list(self.participant_set.all())
         if randomize:
             random.shuffle(participants)

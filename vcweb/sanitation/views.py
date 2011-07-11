@@ -1,5 +1,8 @@
 # importing external methods and classes
+#from vcweb.core.models import Experiment
 from vcweb.core.models import Experiment
+from vcweb.core.models import ParticipantExperimentRelationship
+from vcweb.sanitation.models import pollutify
 from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 import logging
@@ -7,10 +10,6 @@ import random
 
 #FIXME come from database(user)
 treatment = "In-group"
-current_location = "consent"
-
-#FIXME comes from type of experiment
-sequence = ["consent","survey","instructions","quiz","play"]
 
 #FIXME Globals... comes from somewhere
 logger = logging.getLogger(__name__)
@@ -23,32 +22,12 @@ venue = 'Introduction to Global Health Class'
 	#FIXME rename object to something like "experimental settings"
 	#FIXME replace 'one week' with a calculation of duration
 consent = [venue, symbol,'one week', growth_rate]
-resource = "Sanitation is vital for health: Readers of a prestigious medical journal were recently asked to name the greatest medical advance in the last century and a half. The result: better sanitation. In nineteenth-century Europe and North America, diarrhoea, cholera, and typhoid spread through poor sanitation was the leading cause of childhood illness and death; today, such deaths are rare in these regions. In developing countries, however, they are all too common, and recent research suggests that poor sanitation and hygiene are either the chief or the underlying cause in over half of the annual 10 million child deaths. Compelling, evidence-based analysis shows that hygiene and sanitation are among the most cost-effective public health interventions to reduce childhood mortality. Access to a toilet alone can reduce child diarrhoeal deaths by over 30 percent, and hand-washing by more than 40 percent."
+resource_string = "Sanitation is vital for health: Readers of a prestigious medical journal were recently asked to name the greatest medical advance in the last century and a half. The result: better sanitation. In nineteenth-century Europe and North America, diarrhoea, cholera, and typhoid spread through poor sanitation was the leading cause of childhood illness and death; today, such deaths are rare in these regions. In developing countries, however, they are all too common, and recent research suggests that poor sanitation and hygiene are either the chief or the underlying cause in over half of the annual 10 million child deaths. Compelling, evidence-based analysis shows that hygiene and sanitation are among the most cost-effective public health interventions to reduce childhood mortality. Access to a toilet alone can reduce child diarrhoeal deaths by over 30 percent, and hand-washing by more than 40 percent."
 
-#FIXME mode to models, make method "current_game_state" that returns game_state
-resource_index = range(1,(len(resource) + 1))
 pollution_amount = random.randint(1,200)
-pollution = random.sample(resource_index, pollution_amount) 
-game_state = ""
-for i, char in  enumerate(resource):
-	if i in pollution:
-#FIXME turn pollution symbol into 
-		symbol_url = str("" + symbol + "")
-		game_state = game_state + symbol_url
-	game_state = game_state + char
 
-#FIXME list of index out of range
-
-def next_url(absolute_url,current_location,sequence):
-	a = sequence.index(current_location)
-	a = a + 1
-	if a == len(sequence):
-		a = 0
-		next_page = sequence[a]
-	else:
-		next_page = sequence[a]
-        logger.debug("next_page: %s is valid", next_page)	
-	return "/%s/%s" % (absolute_url, next_page)
+pollution_symbol = '@'
+#game_state =  pollutify(resource_string, pollution_amount, pollution_symbol)
 
 #FIXME propose that quiz has a limit of 10 questions
 #FIXME Find a better place to put the declaration of questions quiz/survey
@@ -98,11 +77,11 @@ def configure(request, experiment_id=None):
         context_instance=RequestContext(request))
 
 #Participant
-	#Pages in experiment sequence
+
 def consent(request, experiment):
 	logger.debug("handling consent")
 	consent = ['Introduction to Global Health Class', symbol,'one week', growth_rate]
-	next_url = "instructions"
+	next_url = "consent"
 	return render_to_response('sanitation/consent.html', locals(), context_instance=RequestContext(request))
 
 def survey(request, experiment):
@@ -129,9 +108,16 @@ def participate(request, experiment_id=None):
 
     participant = request.user.participant
     experiment = Experiment.objects.get(pk=experiment_id)
-#    absolute_url = experiment.namespace
-#    n_url = next_url(absolute_url,current_location,sequence)
+    participantrelationship = ParticipantExperimentRelationship.objects.get(id = participant.id)
 
+    current_location = participantrelationship.current_location.lower()
+    if request.method == 'POST':
+      current_location =  request.POST['next']
+      participantrelationship.current_location = current_location
+      participantrelationship.save()
+
+
+    sequence = ["consent","survey","instructions","quiz","play"]
     if current_location in sequence:
         logger.debug("current location %s is valid", current_location)
         location_method = globals()[current_location]

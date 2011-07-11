@@ -48,7 +48,7 @@
             "current_round_elapsed_time": 0,
             "current_round_sequence_number": 1,
             "duration": "1h",
-            "experiment_configuration": 1,
+            "experiment_configuration": 3,
             "experiment_metadata": [
                 "sanitation"
             ],
@@ -61,5 +61,31 @@
         },
         "model": "core.experiment",
         "pk": 3
+    },
+    {
+        "fields": {
+        	"name":"sanitation.pollution",
+        	"experiment_metadata": 3,
+        	"creator": 4,
+        	"type": "int",
+                "date_created": "2011-01-01 15:13:07",
+        	"scope": "group",
+                "description": "The integer values for this parameter represent locations in a text corpus (i.e., single coordinates OK)"
+        },
+        "model": "core.parameter",
+        "pk": 6
+    },
+    {
+        "fields": {
+        	"name":"sanitation.collectedpollution",
+        	"experiment_metadata": 3,
+        	"creator": 4,
+        	"type": "int",
+                "date_created": "2011-01-01 15:13:07",
+        	"scope": "participant",
+                "description": "The integer values for this parameter are informal foreign keys to the sanitation.pollution location data value pks"
+        },
+        "model": "core.parameter",
+        "pk": 7
     }
 ]
