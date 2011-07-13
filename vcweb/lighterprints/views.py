@@ -1,8 +1,12 @@
+from django.shortcuts import get_object_or_404
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import FormView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
+from vcweb.core.models import ParticipantGroupRelationship, ChatMessage
 from vcweb.core.views import JSONResponseMixin
+# FIXME: move to core?
+from vcweb.lighterprints.forms import ChatForm
 from vcweb.lighterprints.models import Activity
 
 import collections
@@ -15,7 +19,7 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
     model = Activity
 
     def get_context_data(self, **kwargs):
-        context = super(BaseListView, self).get_context_data(**kwargs)
+        context = super(ActivityListView, self).get_context_data(**kwargs)
         all_activities = context['activity_list']
         activity_by_level = collections.defaultdict(list)
         flattened_activities = []
@@ -61,6 +65,29 @@ class MobileView(ActivityListView):
 
 class DoActivityView(FormView):
     pass
+
+class PostChatMessageView(FormView):
+    form_class = ChatForm
+    pass
+
+class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
+    model = ChatMessage
+    def get_queryset(self):
+        # FIXME: stubbed out for now, passing in the participant id for the time
+        # being
+        # participant = self.request.user.participant
+        participant_id = self.kwargs['participant_id']
+        experiment_id = self.kwargs['experiment_id']
+# FIXME: will change once we have proper auth set up
+        self.participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, participant__pk=participant_id, group__experiment__pk=experiment_id)
+        self.group = self.participant_group_relationship.group
+        return ChatMessage.objects.filter(participant_group_relationship__group = self.group)
+
+    def get_context_data(self, **kwargs):
+        context = super(DiscussionBoardView, self).get_context_data(**kwargs)
+        context['group'] = self.group
+        context['participant_group_relationship'] = self.participant_group_relationship
+        return context
 
 def get_available_activities(request):
     # FIXME: currently stubbed out to return all activities. should move this to

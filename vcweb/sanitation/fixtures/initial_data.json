@@ -65,7 +65,9 @@
     {
         "fields": {
         	"name":"sanitation.pollution",
-        	"experiment_metadata": 3,
+                "experiment_metadata": [
+                    "sanitation"
+                ],
         	"creator": 4,
         	"type": "int",
                 "date_created": "2011-01-01 15:13:07",
@@ -78,7 +80,9 @@
     {
         "fields": {
         	"name":"sanitation.collectedpollution",
-        	"experiment_metadata": 3,
+                "experiment_metadata": [
+                    "sanitation"
+                ],
         	"creator": 4,
         	"type": "int",
                 "date_created": "2011-01-01 15:13:07",
