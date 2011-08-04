@@ -1,10 +1,12 @@
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import FormView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
 from vcweb.core.models import ParticipantGroupRelationship, ChatMessage
-from vcweb.core.views import JSONResponseMixin
+from vcweb.core.views import JSONResponseMixin, dumps
 # FIXME: move to core?
 from vcweb.lighterprints.forms import ChatForm
 from vcweb.lighterprints.models import Activity
@@ -66,9 +68,17 @@ class MobileView(ActivityListView):
 class DoActivityView(FormView):
     pass
 
-class PostChatMessageView(FormView):
-    form_class = ChatForm
-    pass
+
+@csrf_exempt
+def post_chat_message(request):
+    if request.method == 'POST':
+        form = ChatForm(request.POST)
+        if form.is_valid():
+            participant_group_pk = form.cleaned_data['participant_group_relationship_id']
+            participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_pk)
+            content = dumps(ChatMessage.objects.filter(participant_group_relationship__group=participant_group_relationship.group))
+            return HttpResponse(content, content_type='text/javascript')
+    return HttpResponseBadRequest()
 
 class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
     model = ChatMessage
