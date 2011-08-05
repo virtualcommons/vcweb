@@ -5,10 +5,10 @@ from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import FormView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
-from vcweb.core.models import ParticipantGroupRelationship, ChatMessage
+from vcweb.core.models import (ChatMessage, Experiment, ParticipantGroupRelationship)
 from vcweb.core.views import JSONResponseMixin, dumps
 # FIXME: move to core?
-from vcweb.lighterprints.forms import ChatForm
+from vcweb.lighterprints.forms import ActivityForm, ChatForm
 from vcweb.lighterprints.models import Activity
 
 import collections
@@ -68,20 +68,37 @@ class MobileView(ActivityListView):
 class DoActivityView(FormView):
     pass
 
+@csrf_exempt
+def do_activity(request, activity_id):
+    form = ActivityForm(request.POST or None)
+    if form.is_valid():
+        activity_id = form.cleaned_data['activity_id']
+        participant_group_pk = form.cleaned_data['participant_group_relationship_id']
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_pk)
+        activity = get_object_or_404(Activity, pk=activity_id)
+
+        return HttpResponse('', content_type='text/javascript')
+    return HttpResponseBadRequest("Invalid activity post")
+
 
 @csrf_exempt
-def post_chat_message(request):
-    if request.method == 'POST':
-        form = ChatForm(request.POST)
-        if form.is_valid():
-            participant_group_pk = form.cleaned_data['participant_group_relationship_id']
-            participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_pk)
-            content = dumps(ChatMessage.objects.filter(participant_group_relationship__group=participant_group_relationship.group))
-            return HttpResponse(content, content_type='text/javascript')
-    return HttpResponseBadRequest()
+def post_chat_message(request, experiment_id):
+    experiment = get_object_or_404(Experiment, pk=experiment_id)
+    form = ChatForm(request.POST or None)
+    if form.is_valid():
+        participant_group_pk = form.cleaned_data['participant_group_relationship_id']
+        message = form.cleaned_data['message']
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_pk)
+        chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
+                message=message, round_data=experiment.current_round_data)
+        logger.debug("Participant %s created chat message %s", request.user.participant, chat_message)
+        content = dumps(ChatMessage.objects.filter(participant_group_relationship__group=participant_group_relationship.group))
+        return HttpResponse(content, content_type='text/javascript')
+    return HttpResponseBadRequest("Invalid chat message post")
 
 class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
     model = ChatMessage
+    template_name = 'discussion_board.html'
     def get_queryset(self):
         # FIXME: stubbed out for now, passing in the participant id for the time
         # being

@@ -9,16 +9,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 '''
-creates the forestry ExperimentMetadata record if not already created.
+creates the sanitation ExperimentMetadata record if not already created.
 
-XXX: also create forestry parameters here?
+pros/cons for doing it this way vs adding it to initial_data.json
 
-FIXME: what are pros/cons for doing it this way vs adding it to initial_data.json
 pros:
-1. don't have to hard-code pks and pk references..
+1. don't have to hard-code pks and pk references
 
 cons:
-1. have to invoke syncdb in order to get this to run
+1. have to invoke syncdb in order to get this to run, which is unacceptable once we
+start having persistent data
 
 '''
 

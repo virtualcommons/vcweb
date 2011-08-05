@@ -1,5 +1,38 @@
 [
     {
+        "fields": {
+            "authentication_code": "TEST_LIGHTERPRINTS",
+            "current_round_elapsed_time": 0,
+            "current_round_sequence_number": 1,
+            "duration": "1h",
+            "experiment_configuration": 4,
+            "experiment_metadata": [
+                "lighterprints"
+            ],
+            "experimenter": 1,
+            "is_experimenter_driven": false,
+            "start_date_time": null,
+            "status": "INACTIVE",
+            "tick_duration": "10s",
+            "total_elapsed_time": 0
+        },
+        "model": "core.experiment",
+        "pk": 4
+    },
+    {
+        "fields": {
+            "creator": 1,
+            "experiment_metadata": [
+                "lighterprints"
+            ],
+            "is_public": true,
+            "max_group_size": 20,
+            "name": "Lighter Footprints Default Configuration"
+        },
+        "model": "core.experimentconfiguration",
+        "pk": 4
+    },
+    {
         "pk": 4,
         "model": "lighterprints.activity",
         "fields": {
@@ -63,7 +96,7 @@
             "summary": "Recycling processes used materials into new products to prevent waste of potentially useful materials.",
             "savings": "0.31",
             "cooldown": 1,
-            "icon": "",
+            "icon": "lighterprints/activity-icons/recycle-2-icon.png",
             "name": "recycle"
         }
     },

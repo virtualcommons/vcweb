@@ -145,8 +145,8 @@ class RegistrationView(FormView, AnonymousMixin):
             experimenter = Experimenter.objects.create(user=user,
                     institution=institution)
             logger.debug("creating new experimenter: %s, adding default forestry experiment", experimenter)
-            # FIXME: add a default experiment for all ExperimentMetadata types
-	    # FIXME: hard coded slovakia experiment, get rid of this!
+            # FIXME: add a default experiment for all ExperimentMetadata types instead of a hard coded experiment
+            # configuration
             experiment = Experiment.objects.get(pk=1)
             experiment.clone(experimenter=experimenter)
         else:
