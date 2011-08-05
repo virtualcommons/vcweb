@@ -68,6 +68,9 @@ def get_active_experiments():
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
             status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
 
+def is_activity_available(participant=None, experiment=None, activity=None, **kwargs):
+    return True
+
 @receiver(signals.midnight_tick)
 def update_active_experiments(sender, time=None, **kwargs):
     for experiment in get_active_experiments():

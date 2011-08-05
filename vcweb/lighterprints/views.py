@@ -9,7 +9,7 @@ from vcweb.core.models import (ChatMessage, Experiment, ParticipantGroupRelation
 from vcweb.core.views import JSONResponseMixin, dumps
 # FIXME: move to core?
 from vcweb.lighterprints.forms import ActivityForm, ChatForm
-from vcweb.lighterprints.models import Activity
+from vcweb.lighterprints.models import Activity, is_activity_available
 
 import collections
 import logging
@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
-# FIXME: replace with dynamic set
     model = Activity
 
     def get_context_data(self, **kwargs):
@@ -31,6 +30,12 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
             activity_as_dict = {}
             for attr_name in ('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining'):
                 activity_as_dict[attr_name] = getattr(activity, attr_name, None)
+            if self.request.user.is_authenticated():
+                # authenticated request, figure out if this activity is available
+                experiment_id = self.request.GET.get('experiment_id')
+                participant = self.request.user.participant
+                experiment = get_object_or_404(Experiment, pk=experiment_id)
+                activity_as_dict['availability'] = is_activity_available(participant=participant, experiment=experiment, activity=activity)
             flattened_activities.append(activity_as_dict)
 
         context['activity_by_level'] = dict(activity_by_level)
@@ -76,6 +81,7 @@ def do_activity(request, activity_id):
         participant_group_pk = form.cleaned_data['participant_group_relationship_id']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_pk)
         activity = get_object_or_404(Activity, pk=activity_id)
+
 
         return HttpResponse('', content_type='text/javascript')
     return HttpResponseBadRequest("Invalid activity post")
