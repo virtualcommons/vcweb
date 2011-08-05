@@ -91,19 +91,6 @@ class BaseVcwebTest(TestCase):
     class Meta:
         abstract = True
 
-class QueueTest(BaseVcwebTest):
-    def test_simple(self):
-        from kombu.connection import BrokerConnection
-        connection = BrokerConnection(transport="djkombu.transport.DatabaseTransport")
-        q = connection.SimpleQueue("chat")
-        for test_string in ('testing', '1-2-3', 'good gravy'):
-            q.put(test_string)
-            self.assertEqual(test_string, q.get().body)
-
-    def test_publish(self):
-        pass
-
-
 class ExperimentMetadataTest(BaseVcwebTest):
     namespace_regex = ExperimentMetadata.namespace_regex
 
@@ -306,7 +293,7 @@ class RoundConfigurationTest(BaseVcwebTest):
         e = self.experiment
 # current_round is instructions, with no available parameters.
         round_configuration = e.current_round
-        name = 'initial.resource_level'
+        name = 'initial_resource_level'
         round_configuration.set_parameter(name=name, value=501)
         self.assertEqual(round_configuration.get_parameter_value(name), 501)
         self.assertEqual(round_configuration.get_parameter(name).value, round_configuration.get_parameter_value(name))

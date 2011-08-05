@@ -165,6 +165,7 @@ class ExperimentManager(models.Manager):
             # check each experiment's total_elapsed_time against the total allotted time and
             # issue round_stopped signals to experiments that need to be stopped.
             for experiment in es.all():
+                logger.debug("checking elapsed time on experiment %s", experiment)
                 experiment.check_elapsed_time()
 
 class Experiment(models.Model):

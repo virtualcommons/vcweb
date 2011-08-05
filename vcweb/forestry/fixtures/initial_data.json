@@ -189,7 +189,7 @@
     },
     {
         "fields": {
-        	"name":"reset.resource_level",
+        	"name":"reset_resource_level",
         	"experiment_metadata": 1,
         	"creator": 1,
         	"type": "boolean",
@@ -201,7 +201,7 @@
     },
     {
         "fields": {
-        	"name":"initial.resource_level",
+        	"name":"initial_resource_level",
         	"experiment_metadata": 1,
         	"creator": 1,
         	"type": "int",
@@ -249,7 +249,7 @@
     {
         "fields": {
         	"round_configuration": 2,
-                "parameter": [ "reset.resource_level" ],
+                "parameter": [ "reset_resource_level" ],
                 "boolean_value": "True"
         },
         "model": "core.roundparametervalue",
@@ -258,7 +258,7 @@
     {
         "fields": {
         	"round_configuration": 2,
-                "parameter": [ "initial.resource_level" ],
+                "parameter": [ "initial_resource_level" ],
                 "int_value": 100
         },
         "model": "core.roundparametervalue",
@@ -267,7 +267,7 @@
     {
         "fields": {
         	"round_configuration": 3,
-                "parameter": [ "reset.resource_level" ],
+                "parameter": [ "reset_resource_level" ],
                 "boolean_value": "True"
         },
         "model": "core.roundparametervalue",
@@ -276,7 +276,7 @@
     {
         "fields": {
         	"round_configuration": 3,
-                "parameter": [ "initial.resource_level" ],
+                "parameter": [ "initial_resource_level" ],
                 "int_value": 100
         },
         "model": "core.roundparametervalue",
@@ -285,7 +285,7 @@
     {
         "fields": {
         	"round_configuration": 5,
-                "parameter": [ "reset.resource_level" ],
+                "parameter": [ "reset_resource_level" ],
                 "boolean_value": "False"
         },
         "model": "core.roundparametervalue",

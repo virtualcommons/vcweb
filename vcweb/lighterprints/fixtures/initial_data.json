@@ -33,6 +33,19 @@
         "pk": 4
     },
     {
+        "fields": {
+            "date_created": "2011-07-07 15:13:03",
+            "duration": 0,
+            "experiment_configuration": 4,
+            "instructions": "Welcome to the sanitation experiment.",
+            "last_modified": "2011-07-07 15:13:03",
+            "round_type": "REGULAR",
+            "sequence_number": 1
+        },
+        "model": "core.roundconfiguration",
+        "pk": 44
+    },
+    {
         "pk": 4,
         "model": "lighterprints.activity",
         "fields": {

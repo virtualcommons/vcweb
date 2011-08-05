@@ -45,10 +45,10 @@ def set_group_harvest(group, value):
     group.set_data_value(parameter=get_group_harvest_parameter(), value=value)
 
 def should_reset_resource_level(round_configuration):
-    return round_configuration.get_parameter_value('reset.resource_level', default=False)
+    return round_configuration.get_parameter_value('reset_resource_level', default=False)
 
 def get_initial_resource_level(round_configuration):
-    return round_configuration.get_parameter_value('initial.resource_level', default=100)
+    return round_configuration.get_parameter_value('initial_resource_level', default=100)
 
 def get_max_harvest_decision(resource_level):
     if resource_level >= 25:

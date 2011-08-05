@@ -44,6 +44,19 @@
     },
     {
         "fields": {
+            "date_created": "2011-07-07 15:13:03",
+            "duration": 0,
+            "experiment_configuration": 3,
+            "instructions": "Welcome to the sanitation experiment.",
+            "last_modified": "2011-07-07 15:13:03",
+            "round_type": "REGULAR",
+            "sequence_number": 1
+        },
+        "model": "core.roundconfiguration",
+        "pk": 43
+    },
+    {
+        "fields": {
             "authentication_code": "TEST_SANITATION",
             "current_round_elapsed_time": 0,
             "current_round_sequence_number": 1,
@@ -75,7 +88,7 @@
                 "description": "The integer values for this parameter represent locations in a text corpus (i.e., single coordinates OK)"
         },
         "model": "core.parameter",
-        "pk": 6
+        "pk": 7
     },
     {
         "fields": {
@@ -90,6 +103,6 @@
                 "description": "The integer values for this parameter are informal foreign keys to the sanitation.pollution location data value pks"
         },
         "model": "core.parameter",
-        "pk": 7
+        "pk": 8
     }
 ]
