@@ -1,9 +1,13 @@
 from django.db import models
 from django.db.models import Sum
 from vcweb.core import signals, simplecache
-from vcweb.core.models import Experiment, ExperimentMetadata, Experimenter, GroupRoundDataValue, Parameter
+from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
+        GroupRoundDataValue, ParticipantRoundDataValue, Parameter)
 from django.dispatch import receiver
 import datetime
+
+import logging
+logger = logging.getLogger(__name__)
 
 class Activity(models.Model):
     name = models.CharField(max_length=32, unique=True)
@@ -68,8 +72,22 @@ def get_active_experiments():
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
             status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
 
-def is_activity_available(participant=None, experiment=None, activity=None, **kwargs):
-    return True
+def is_activity_available(participant_group_relationship=None, activity=None, **kwargs):
+    if activity is None:
+        logger.debug("cannot check availability for non activity")
+        return False
+# how often can a participant participate in an activity?  For the time being, just
+# whenever its schedule is available and 
+    now = datetime.datetime.now()
+    current_time = now.time()
+    availabilities = ActivityAvailability.objects.filter(activity=activity, available_start_time__lte=current_time, available_end_time__gte=current_time)
+# FIXME: check if this participant has already participated in this activity
+    data_value_set = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(), 
+            participant_group_relationship=participant_group_relationship,
+            submitted=True,
+            date_created__lte=now,
+            date_created__gte=now)
+    return availabilities.count() > 0 and data_value_set.count() == 0
 
 @receiver(signals.midnight_tick)
 def update_active_experiments(sender, time=None, **kwargs):
