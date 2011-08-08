@@ -9,7 +9,7 @@ from vcweb.core.models import (ChatMessage, Experiment, ParticipantGroupRelation
 from vcweb.core.views import JSONResponseMixin, dumps
 # FIXME: move to core?
 from vcweb.lighterprints.forms import ActivityForm, ChatForm
-from vcweb.lighterprints.models import Activity, is_activity_available
+from vcweb.lighterprints.models import Activity, is_activity_available, do_activity
 
 import collections
 import logging
@@ -74,16 +74,16 @@ class DoActivityView(FormView):
     pass
 
 @csrf_exempt
-def do_activity(request, activity_id):
+def perform_activity_view(request, activity_id):
     form = ActivityForm(request.POST or None)
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
         participant_group_pk = form.cleaned_data['participant_group_relationship_id']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_pk)
         activity = get_object_or_404(Activity, pk=activity_id)
-
-
-        return HttpResponse('', content_type='text/javascript')
+        performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
+        logger.debug("performed activity %s", performed_activity)
+        return HttpResponse(dumps(performed_activity), content_type='text/javascript')
     return HttpResponseBadRequest("Invalid activity post")
 
 

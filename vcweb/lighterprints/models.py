@@ -72,22 +72,33 @@ def get_active_experiments():
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
             status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
 
-def is_activity_available(participant_group_relationship=None, activity=None, **kwargs):
+def is_activity_available(activity=None, participant_group_relationship=None, **kwargs):
     if activity is None:
         logger.debug("cannot check availability for non activity")
         return False
-# how often can a participant participate in an activity?  For the time being, just
-# whenever its schedule is available and 
+# how often can a participant participate in an activity?
+# whenever it falls within the ActivityAvailability schedule and if the participant
+# hasn't already performed this activity during this cycle.
     now = datetime.datetime.now()
     current_time = now.time()
     availabilities = ActivityAvailability.objects.filter(activity=activity, available_start_time__lte=current_time, available_end_time__gte=current_time)
 # FIXME: check if this participant has already participated in this activity
-    data_value_set = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(), 
+    data_value_set = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
             participant_group_relationship=participant_group_relationship,
             submitted=True,
             date_created__lte=now,
             date_created__gte=now)
     return availabilities.count() > 0 and data_value_set.count() == 0
+
+def do_activity(activity=None, participant_group_relationship=None):
+    if is_activity_available(activity, participant_group_relationship):
+        round_data = participant_group_relationship.group.current_round_data
+        return ParticipantRoundDataValue.objects.create(parameter=get_activity_performed_parameter(),
+                participant_group_relationship=participant_group_relationship,
+                round_data=round_data,
+                # FIXME: use activity unique name instead?
+                value=activity.pk
+                )
 
 @receiver(signals.midnight_tick)
 def update_active_experiments(sender, time=None, **kwargs):
