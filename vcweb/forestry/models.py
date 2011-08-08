@@ -111,7 +111,8 @@ def round_setup(experiment, **kwargs):
         # initialize group and participant data values
         experiment.initialize_parameters(
                 group_parameters=(regrowth_parameter, group_harvest_parameter, resource_level_parameter),
-                participant_parameters=[harvest_decision_parameter])
+                participant_parameters=[harvest_decision_parameter]
+                )
         '''
         during a practice or regular round, set up resource levels and participant
         harvest decision parameters

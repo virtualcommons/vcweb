@@ -4,6 +4,7 @@ from vcweb.core import signals, simplecache
 from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
         GroupRoundDataValue, ParticipantRoundDataValue, Parameter)
 from django.dispatch import receiver
+from decimal import Decimal
 import datetime
 
 import logging
@@ -56,7 +57,6 @@ class ActivityAvailability(models.Model):
 def get_lighterprints_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace='lighterprints')
 
-@simplecache
 def create_activity_performed_parameter(experimenter=None):
     if experimenter is None:
         experimenter = Experimenter.objects.get(pk=1)
@@ -68,6 +68,10 @@ def create_activity_performed_parameter(experimenter=None):
 @simplecache
 def get_activity_performed_parameter():
     return Parameter.objects.get(name='activity_performed')
+
+@simplecache
+def get_carbon_footprint_level_parameter():
+    return Parameter.objects.get(name='carbon_footprint_level')
 
 def get_active_experiments():
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
@@ -114,21 +118,37 @@ def do_activity(activity=None, participant_group_relationship=None):
 def update_active_experiments(sender, time=None, **kwargs):
     for experiment in get_active_experiments():
         # calculate total carbon savings and decide if they move on to the next level
-        for group in experiment.groups.all():
-            grdv = GroupRoundDataValue.objects.get(group=group, name='carbon_footprint_level')
+        for group in experiment.group_set.all():
+            grdv = GroupRoundDataValue.objects.get(group=group, parameter__name='carbon_footprint_level')
             if should_advance_level(group, grdv.value):
 # advance group level
                 grdv.value = min(grdv.value + 1, 3)
                 grdv.save()
 
+@receiver(signals.round_started)
+def round_started_handler(sender, experiment=None, **kwargs):
+    if sender != get_lighterprints_experiment_metadata().pk:
+        logger.debug("received invalid signal from sender %s", sender)
+        return
+    # FIXME: See if we can push this logic up to core..
+    logger.debug("initializing lighter prints")
+    experiment.initialize_parameters(
+            group_parameters = [get_carbon_footprint_level_parameter()],
+            participant_parameters = [get_activity_performed_parameter()]
+            )
 
 def get_daily_carbon_savings(group):
 # grab all of yesterday's participant data values
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(1)
-    participant_data_values = group.get_participant_data_values().filter(date_created__gte=yesterday)
-    participant_data_values.aggregate(total=Sum('value'))
-    return participant_data_values['total']
+    total_savings = Decimal(0.0)
+    for activity_performed_dv in group.get_participant_data_values(parameter_name='activity_performed').filter(date_created__gte=yesterday):
+        logger.debug("%s", activity_performed_dv)
+        activity = Activity.objects.get(pk=activity_performed_dv.value)
+        total_savings += activity.savings
+    #total = participant_data_values.aggregate(total=Sum('int_value'))['total']
+    logger.debug("total carbon savings: %s", total_savings)
+    return total_savings
 
 
 def should_advance_level(group, level):
