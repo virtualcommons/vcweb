@@ -30,11 +30,33 @@ class UpdateLevelTest(BaseTest):
         e.activate()
         e.start_round()
         current_round_data = e.current_round_data
-        parameter = create_activity_performed_parameter()
+        activity_performed_parameter = create_activity_performed_parameter()
+        logger.debug("activity performed parameter: %s", activity_performed_parameter)
 # initialize participant carbon savings
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
             for activity in Activity.objects.all():
-                activity_performed, created = participant_group_relationship.participant_data_value_set.get_or_create(round_data=current_round_data, parameter=parameter)
-                activity_performed.value = activity.pk
-            logger.debug("activity performed %s (%s)", activity_performed, created)
+                activity_performed = participant_group_relationship.participant_data_value_set.create(round_data=current_round_data, parameter=activity_performed_parameter, experiment=e)
+                activity_performed.value = activity.id
+                activity_performed.save()
+
+class DoActivityTest(BaseTest):
+    def test_view(self):
+        logger.debug("testing do activity view")
+        e = self.experiment
+        create_activity_performed_parameter()
+        e.activate()
+        e.start_round()
+        for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
+            logger.debug("all available activities: %s", available_activities())
+            for activity_availability in available_activities():
+                logger.debug("available activity: %s", activity_availability)
+                activity = activity_availability.activity
+                logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
+                response = self.client.post('/lighterprints/api/do-activity', {
+                    'participant_group_relationship_id': participant_group_relationship.id,
+                    'activity_id': activity.id
+                    })
+                logger.debug("response %s", response)
+                self.assertEqual(response.status_code, 200)
+
 

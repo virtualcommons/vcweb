@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from vcweb.core import signals, simplecache
 from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
         GroupRoundDataValue, ParticipantRoundDataValue, Parameter)
@@ -62,6 +62,7 @@ def create_activity_performed_parameter(experimenter=None):
         experimenter = Experimenter.objects.get(pk=1)
     parameter, created = Parameter.objects.get_or_create(name='activity_performed', scope=Parameter.PARTICIPANT_SCOPE, type='int',
             creator=experimenter, experiment_metadata=get_lighterprints_experiment_metadata())
+    if created: logger.debug("created activity performed parameter %s", parameter)
     return parameter
 
 @simplecache
@@ -72,6 +73,15 @@ def get_active_experiments():
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
             status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
 
+def available_activities(activity=None):
+    current_time = datetime.datetime.now().time()
+    filter_dict = dict(available_start_time__lte=current_time,
+            available_end_time__gte=current_time)
+    if activity is not None:
+        filter_dict['activity'] = activity
+    logger.debug("filtering with filter dict %s", filter_dict)
+    return ActivityAvailability.objects.select_related(depth=1).filter(Q(**filter_dict) | Q(activity__available_all_day=True))
+
 def is_activity_available(activity=None, participant_group_relationship=None, **kwargs):
     if activity is None:
         logger.debug("cannot check availability for non activity")
@@ -81,7 +91,7 @@ def is_activity_available(activity=None, participant_group_relationship=None, **
 # hasn't already performed this activity during this cycle.
     now = datetime.datetime.now()
     current_time = now.time()
-    availabilities = ActivityAvailability.objects.filter(activity=activity, available_start_time__lte=current_time, available_end_time__gte=current_time)
+    availabilities = ActivityAvailability.objects.filter(Q(activity=activity, activity__available_all_day=True) | Q(available_start_time__lte=current_time, available_end_time__gte=current_time))
 # FIXME: check if this participant has already participated in this activity
     data_value_set = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
             participant_group_relationship=participant_group_relationship,

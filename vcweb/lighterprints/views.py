@@ -74,7 +74,7 @@ class DoActivityView(FormView):
     pass
 
 @csrf_exempt
-def perform_activity_view(request, activity_id):
+def perform_activity(request):
     form = ActivityForm(request.POST or None)
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
