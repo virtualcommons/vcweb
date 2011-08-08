@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Sum, Q
+from django.db.models import Q
 from vcweb.core import signals, simplecache
 from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
         GroupRoundDataValue, ParticipantRoundDataValue, Parameter)
@@ -119,11 +119,11 @@ def update_active_experiments(sender, time=None, **kwargs):
     for experiment in get_active_experiments():
         # calculate total carbon savings and decide if they move on to the next level
         for group in experiment.group_set.all():
-            grdv = GroupRoundDataValue.objects.get(group=group, parameter__name='carbon_footprint_level')
-            if should_advance_level(group, grdv.value):
+            carbon_footprint_level_grdv = get_carbon_footprint_level(group)
+            if should_advance_level(group, carbon_footprint_level_grdv.value):
 # advance group level
-                grdv.value = min(grdv.value + 1, 3)
-                grdv.save()
+                carbon_footprint_level_grdv.value = min(carbon_footprint_level_grdv.value + 1, 3)
+                carbon_footprint_level_grdv.save()
 
 @receiver(signals.round_started)
 def round_started_handler(sender, experiment=None, **kwargs):
@@ -132,10 +132,14 @@ def round_started_handler(sender, experiment=None, **kwargs):
         return
     # FIXME: See if we can push this logic up to core..
     logger.debug("initializing lighter prints")
-    experiment.initialize_parameters(
-            group_parameters = [get_carbon_footprint_level_parameter()],
-            participant_parameters = [get_activity_performed_parameter()]
-            )
+    current_round_data = experiment.current_round_data
+    carbon_footprint_level_parameter = get_carbon_footprint_level_parameter()
+    for group in experiment.group_set.all():
+        carbon_footprint_level_grdv = current_round_data.group_data_value_set.create(group=group, parameter=carbon_footprint_level_parameter)
+        carbon_footprint_level_grdv.value = 1
+        carbon_footprint_level_grdv.save()
+
+
 
 def get_daily_carbon_savings(group):
 # grab all of yesterday's participant data values
@@ -143,17 +147,21 @@ def get_daily_carbon_savings(group):
     yesterday = today - datetime.timedelta(1)
     total_savings = Decimal(0.0)
     for activity_performed_dv in group.get_participant_data_values(parameter_name='activity_performed').filter(date_created__gte=yesterday):
-        logger.debug("%s", activity_performed_dv)
         activity = Activity.objects.get(pk=activity_performed_dv.value)
         total_savings += activity.savings
     #total = participant_data_values.aggregate(total=Sum('int_value'))['total']
     logger.debug("total carbon savings: %s", total_savings)
     return total_savings
 
+def get_carbon_footprint_level(group):
+    return GroupRoundDataValue.objects.get(group=group, parameter=get_carbon_footprint_level_parameter())
+
 
 def should_advance_level(group, level):
     if level < 3:
         daily_carbon_savings = get_daily_carbon_savings(group)
+        logger.debug("daily carbon savings were %s, but were they greater than level * 10? %s", daily_carbon_savings,
+                level * 10)
         return daily_carbon_savings > level * 10
     return False
 

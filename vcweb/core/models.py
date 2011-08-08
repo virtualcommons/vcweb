@@ -437,10 +437,11 @@ class Experiment(models.Model):
             for parameter in group_parameters:
                 group_data_value, created = current_round_data.group_data_value_set.get_or_create(group=group, parameter=parameter)
                 logger.debug("%s (%s)", group_data_value, created)
-            for pgr in group.participant_group_relationship_set.all():
-                for parameter in participant_parameters:
-                    participant_data_value, created = current_round_data.participant_data_value_set.get_or_create(participant_group_relationship=pgr, parameter=parameter)
-                    logger.debug("%s (%s)", participant_data_value, created)
+            if participant_parameters:
+                for pgr in group.participant_group_relationship_set.all():
+                    for parameter in participant_parameters:
+                        participant_data_value, created = current_round_data.participant_data_value_set.get_or_create(participant_group_relationship=pgr, parameter=parameter)
+                        logger.debug("%s (%s)", participant_data_value, created)
 
     def log(self, log_message):
         if log_message:

@@ -33,13 +33,16 @@ class UpdateLevelTest(BaseTest):
         activity_performed_parameter = create_activity_performed_parameter()
 # initialize participant carbon savings
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
-            for activity in Activity.objects.all():
-                activity_performed = participant_group_relationship.participant_data_value_set.get(round_data=current_round_data, parameter=activity_performed_parameter, experiment=e)
+            for activity in available_activities():
+                activity_performed = participant_group_relationship.participant_data_value_set.create(round_data=current_round_data, parameter=activity_performed_parameter, experiment=e)
                 activity_performed.value = activity.id
                 activity_performed.save()
             logger.debug("all activities performed: %s",
                     participant_group_relationship.participant_data_value_set.all())
         update_active_experiments(self)
+        for group in e.group_set.all():
+            self.assertEqual(get_carbon_footprint_level(group).value, 2)
+            self.assertEqual(get_daily_carbon_savings(group), Decimal('19.15'))
 
 
 class DoActivityTest(BaseTest):
