@@ -397,7 +397,7 @@ class Experiment(models.Model):
                     u = User.objects.create_user(username=email, email=email, password=password)
                 users.append(u)
         for user in users:
-            logger.debug("registering user %s", user)
+            #logger.debug("registering user %s", user)
             (p, created) = Participant.objects.get_or_create(user=user)
             # FIXME: instead of asking for the email suffix, perhaps we just append the institution URL to keep it simpler?
             if institution and p.institution != institution:

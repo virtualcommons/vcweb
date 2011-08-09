@@ -73,6 +73,9 @@ def get_activity_performed_parameter():
 def get_carbon_footprint_level_parameter():
     return Parameter.objects.get(name='carbon_footprint_level')
 
+def get_carbon_footprint_level(group):
+    return GroupRoundDataValue.objects.get(group=group, parameter=get_carbon_footprint_level_parameter())
+
 def get_active_experiments():
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
             status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
@@ -93,25 +96,27 @@ def is_activity_available(activity=None, participant_group_relationship=None, **
 # how often can a participant participate in an activity?
 # whenever it falls within the ActivityAvailability schedule and if the participant
 # hasn't already performed this activity during this cycle.
-    now = datetime.datetime.now()
+    now = datetime.datetime.today()
     current_time = now.time()
     availabilities = ActivityAvailability.objects.filter(Q(activity=activity, activity__available_all_day=True) | Q(available_start_time__lte=current_time, available_end_time__gte=current_time))
-# FIXME: check if this participant has already participated in this activity
-    data_value_set = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
+# FIXME: check if this participant has already participated in this activity within this particular interval (for all
+# day, today, for time slots, during this particular time slot).
+    already_performed = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
             participant_group_relationship=participant_group_relationship,
             submitted=True,
-            date_created__lte=now,
-            date_created__gte=now)
-    return availabilities.count() > 0 and data_value_set.count() == 0
+            date_created__lte=now)
+    return (availabilities.count() > 0) and (already_performed.count() == 0)
 
 def do_activity(activity=None, participant_group_relationship=None):
     if is_activity_available(activity, participant_group_relationship):
+        logger.debug("activity %s was available", activity)
         round_data = participant_group_relationship.group.current_round_data
         return ParticipantRoundDataValue.objects.create(parameter=get_activity_performed_parameter(),
                 participant_group_relationship=participant_group_relationship,
                 round_data=round_data,
                 # FIXME: use activity unique name instead?
-                value=activity.pk
+                value=activity.pk,
+                submitted=True
                 )
 
 @receiver(signals.midnight_tick)
@@ -131,15 +136,14 @@ def round_started_handler(sender, experiment=None, **kwargs):
         logger.debug("received invalid signal from sender %s", sender)
         return
     # FIXME: See if we can push this logic up to core..
-    logger.debug("initializing lighter prints")
     current_round_data = experiment.current_round_data
     carbon_footprint_level_parameter = get_carbon_footprint_level_parameter()
+# only create the carbon footprint level parameter, the participant activity performed data values will be created each
+# time.
     for group in experiment.group_set.all():
         carbon_footprint_level_grdv = current_round_data.group_data_value_set.create(group=group, parameter=carbon_footprint_level_parameter)
         carbon_footprint_level_grdv.value = 1
         carbon_footprint_level_grdv.save()
-
-
 
 def get_daily_carbon_savings(group):
 # grab all of yesterday's participant data values
@@ -152,10 +156,6 @@ def get_daily_carbon_savings(group):
     #total = participant_data_values.aggregate(total=Sum('int_value'))['total']
     logger.debug("total carbon savings: %s", total_savings)
     return total_savings
-
-def get_carbon_footprint_level(group):
-    return GroupRoundDataValue.objects.get(group=group, parameter=get_carbon_footprint_level_parameter())
-
 
 def should_advance_level(group, level):
     if level < 3:

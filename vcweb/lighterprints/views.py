@@ -83,8 +83,9 @@ def perform_activity(request):
         activity = get_object_or_404(Activity, pk=activity_id)
         performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
         logger.debug("performed activity %s", performed_activity)
-        return HttpResponse(dumps(performed_activity), content_type='text/javascript')
-    return HttpResponseBadRequest("Invalid activity post")
+        if performed_activity is not None:
+            return HttpResponse(dumps(performed_activity), content_type='text/javascript')
+    return HttpResponseBadRequest("Could not perform activity")
 
 
 @csrf_exempt
