@@ -30,12 +30,14 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
             activity_as_dict = {}
             for attr_name in ('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining'):
                 activity_as_dict[attr_name] = getattr(activity, attr_name, None)
-            if self.request.user.is_authenticated():
-                # authenticated request, figure out if this activity is available
-                experiment_id = self.request.GET.get('experiment_id')
-                participant = self.request.user.participant
-                experiment = get_object_or_404(Experiment, pk=experiment_id)
-                activity_as_dict['availability'] = is_activity_available(participant=participant, experiment=experiment, activity=activity)
+            try:
+                if self.request.user.is_authenticated():
+                    # authenticated request, figure out if this activity is available
+                    participant_group_relationship_id = self.request.GET.get('participant_group_relationship_id')
+                    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_relationship_id)
+                    activity_as_dict['availability'] = is_activity_available(activity, participant_group_relationship)
+            except Exception as e:
+                logger.debug("failed to get authenticated activity list: %s", e)
             flattened_activities.append(activity_as_dict)
 
         context['activity_by_level'] = dict(activity_by_level)
