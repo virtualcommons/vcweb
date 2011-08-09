@@ -75,6 +75,7 @@ class DoActivityView(FormView):
 
 @csrf_exempt
 def perform_activity(request):
+    logger.debug("performing activity")
     form = ActivityForm(request.POST or None)
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
@@ -82,7 +83,6 @@ def perform_activity(request):
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_pk)
         activity = get_object_or_404(Activity, pk=activity_id)
         performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
-        logger.debug("performed activity %s", performed_activity)
         if performed_activity is not None:
             return HttpResponse(dumps(performed_activity), content_type='text/javascript')
     return HttpResponseBadRequest("Could not perform activity")

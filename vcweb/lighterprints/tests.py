@@ -64,12 +64,11 @@ class DoActivityTest(BaseTest):
                 self.assertEqual(response.status_code, 200)
 # try to do the same activity again
                 logger.debug("XXX: all activity performed parameters: %s", ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter()))
- 
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_relationship_id': participant_group_relationship.id,
-                    'activity_id': activity.id
+                    'activity_id': activity.pk
                     })
-                self.assertEqual(response.status_code, 500)
+                self.assertEqual(response.status_code, 400)
 
 
 

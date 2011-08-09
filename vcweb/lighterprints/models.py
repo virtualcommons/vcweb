@@ -82,32 +82,48 @@ def get_active_experiments():
 
 def available_activities(activity=None):
     current_time = datetime.datetime.now().time()
-    filter_dict = dict(available_start_time__lte=current_time,
-            available_end_time__gte=current_time)
+    available_time_slot = dict(available_start_time__lte=current_time, available_end_time__gte=current_time)
+    available_all_day = dict(activity__available_all_day=True)
     if activity is not None:
-        filter_dict['activity'] = activity
-    logger.debug("filtering with filter dict %s", filter_dict)
-    return ActivityAvailability.objects.select_related(depth=1).filter(Q(**filter_dict) | Q(activity__available_all_day=True))
+        available_time_slot['activity'] = activity
+        available_all_day['activity'] = activity
+    return ActivityAvailability.objects.select_related(depth=1).filter(Q(**available_time_slot) | Q(**available_all_day))
 
-def is_activity_available(activity=None, participant_group_relationship=None, **kwargs):
-    if activity is None:
-        logger.debug("cannot check availability for non activity")
-        return False
+def is_activity_available(activity, participant_group_relationship, **kwargs):
 # how often can a participant participate in an activity?
 # whenever it falls within the ActivityAvailability schedule and if the participant
 # hasn't already performed this activity during this cycle.
-    now = datetime.datetime.today()
-    current_time = now.time()
-    availabilities = ActivityAvailability.objects.filter(Q(activity=activity, activity__available_all_day=True) | Q(available_start_time__lte=current_time, available_end_time__gte=current_time))
-# FIXME: check if this participant has already participated in this activity within this particular interval (for all
-# day, today, for time slots, during this particular time slot).
-    already_performed = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
-            participant_group_relationship=participant_group_relationship,
-            submitted=True,
-            date_created__lte=now)
-    return (availabilities.count() > 0) and (already_performed.count() == 0)
+    logger.debug("checking if %s is available for %s", activity, participant_group_relationship)
+    if activity.available_all_day:
+        # check if they've done it already today, check if the combine is necessary
+        today = datetime.datetime.combine(datetime.date.today(), datetime.time())
+        already_performed = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
+                participant_group_relationship=participant_group_relationship,
+                int_value=activity.id,
+                date_created__gt=today)
+        logger.debug("activity is available all day, was it already performed? %s", already_performed)
+        return already_performed.count() == 0
+    else:
+        logger.debug("XXX: wasn't available all day")
+        now = datetime.datetime.now()
+        current_time = now.time()
+        # FIXME: check if this participant has already participated in this activity within this particular interval (for all
+        # day, today, for time slots, during this particular time slot). There should only be one availability
+        try:
+            logger.debug("checking availability set %s", activity.availability_set.all())
+            availabilities = activity.availability_set.filter(available_start_time__lte=current_time, available_end_time__gte=current_time)
+            earliest_start_time = datetime.datetime.combine(datetime.date.today(), availabilities[0].available_start_time)
+            logger.debug("earliest start time: %s", earliest_start_time)
+            already_performed = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
+                    participant_group_relationship=participant_group_relationship,
+                    int_value=activity.pk,
+                    date_created__lte=now,
+                    date_created__gte=earliest_start_time)
+            return already_performed.count() == 0
+        except:
+            return False
 
-def do_activity(activity=None, participant_group_relationship=None):
+def do_activity(activity, participant_group_relationship):
     if is_activity_available(activity, participant_group_relationship):
         logger.debug("activity %s was available", activity)
         round_data = participant_group_relationship.group.current_round_data
