@@ -74,7 +74,7 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Adjust your thermostat by 2 degrees",
-            "description": "Climate-controlled buildings costs a lot of energy. Adjusting the temperature with two degrees saved 2000 pound of CO2 a year.",
+            "description": "Climate-controlled buildings cost a lot of energy. Adjusting the temperature by two degrees saves 2,000 pounds of CO2 a year.",
             "available_all_day": false,
             "url": "http://www.savecarbon.org/activity_form/twodegrees",
             "level": 1,
@@ -82,7 +82,7 @@
             "summary": "Heating or cooling buildings less saves energy",
             "savings": "5.50",
             "cooldown": 1,
-            "icon": "",
+            "icon": "lighterprints/activity-icons/93-thermometer.png",
             "name": "adjust-thermostat"
         }
     },
@@ -91,15 +91,15 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Eat locally grown food for lunch",
-            "description": "The food we eat comes from all over the world. How much CO2 emissions this generates depends on your specific location and menu. On average a person in the USA can save 1400 pounds of CO2 per year by switching to locally grown food. We assume that one lunch is equivalent of 1.5 pounds of CO2 saved.",
+            "description": "The food we eat comes from all over the world. How much CO2 this emits depends on your specific location and menu. On average, a person in the USA can save 1,400 pounds of CO2 per year by switching to locally grown food. We assume that one lunch is equivalent of 1.5 pounds of CO2 saved.",
             "available_all_day": true,
             "url": "http://www.huffingtonpost.com/bill-chameides/carbon-savings-at-home_b_113551.html",
             "level": 1,
             "group_activity": false,
-            "summary": "Less energy for transport when only locally grown food is consumed",
-            "savings": "2.00",
+            "summary": "Less energy is used for transportation when only locally grown food is consumed",
+            "savings": "1.50",
             "cooldown": 1,
-            "icon": "",
+            "icon": "lighterprints/activity-icons/80-shopping-cart.png",
             "name": "eat-local-lunch"
         }
     },
@@ -108,7 +108,7 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Enable sleep function on your computer",
-            "description": "Annual energy savings from enabling sleep feature on computer and monitor = 235 kWh\r\nSavings assumes you have an ENERGY STAR computer. It assumes a weighted average of consumer behavior rather than assuming computers are turned off all night.  ",
+            "description": "Annual energy savings from enabling the sleep feature on a computer and monitor = 235 kWh.\r\nSavings assumes a weighted average of consumer behavior rather than assuming computers are turned off all night, as well as that the computer and monitor are ENERGY STAR rated. ",
             "available_all_day": true,
             "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
             "level": 1,
@@ -116,7 +116,7 @@
             "summary": "Your computer consumes less energy when it's asleep or turned off",
             "savings": "0.98",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/compsleep.bmp",
+            "icon": "lighterprints/activity-icons/69-display.png",
             "name": "enable-computer-sleep"
         }
     },
@@ -125,7 +125,7 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Recycle materials",
-            "description": "Average number of pounds of CO2 equivalent per person per year that could be saved by recycling glass (6.83), plastic (18.96) and aluminum and steel cans (86.05). This is 2.15 a week.",
+            "description": "The average number of pounds of CO2 equivalent per person per year that could be saved by recycling is 6.83 pounds for glass, 18.96 pounds for plastic, and 86.05 pounds for aluminum and steel cans. This is an average of 2.15 pounds a week, or .31 pounds a day.",
             "available_all_day": true,
             "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
             "level": 1,
@@ -133,7 +133,7 @@
             "summary": "Recycling processes used materials into new products to prevent waste of potentially useful materials.",
             "savings": "0.31",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/recycle-2-icon.png",
+            "icon": "lighterprints/activity-icons/142-wine-bottle.png",
             "name": "recycle"
         }
     },
@@ -142,15 +142,15 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Share your ride",
-            "description": "We assume a 22.4 miles per gallon car. CO2 emissions are 19.53 pounds per gallon and 1.5 pound per gallon of non-CO2 CO2 equivalent emissions. This means 0.94 pounds per mile. We assume a trip length of 5 miles.\r\n\r\nIf there are N carpoolers, the savings are (N-1) / N* 4.7. Hence for N=2 persons, the savings is 2.85. More carpoolers lead to more reductions.",
+            "description": "We assume a car averaging 22.4 miles per gallon. CO2 emissions are 19.53 pounds per gallon and 1.5 pounds per gallon of non-CO2 CO2 equivalent emissions. This means 0.94 pounds per mile. We assume a trip length of 5 miles.\r\n\r\nIf there are N carpoolers, the savings are (N-1) / N* 4.7. Hence for N=2 persons, the savings are 2.85 pounds. More carpoolers lead to more reductions.",
             "available_all_day": false,
             "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
             "level": 1,
             "group_activity": false,
-            "summary": "Using mass transit, bicycle commuting, or carpooling is more efficient than traveling alone in your car.",
+            "summary": "Carpooling is more energy efficient than travelling alone in your car.",
             "savings": "2.85",
             "cooldown": 1,
-            "icon": "",
+            "icon": "lighterprints/activity-icons/car.png",
             "name": "share-your-ride"
         }
     },
@@ -159,15 +159,15 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Bike or take public transportation when you go out",
-            "description": "We assume a 22.4 miles per gallon car and a 4 mile trip length. CO2 emissions are 19.53 pounds per gallon and 1.5 pound per gallon of non-CO2 CO2 equivalent emissions. This means 0.94 pounds per mile. ",
+            "description": "We assume a car averaging 22.4 miles per gallon and a trip length of 4 miles. CO2 emissions are 19.53 pounds per gallon and 1.5 pounds per gallon of non-CO2 CO2 equivalent emissions. This means 0.94 pounds per mile. ",
             "available_all_day": false,
             "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
             "level": 2,
             "group_activity": false,
             "summary": "Reduce fossil fuel consumption and emissions by not driving a car",
-            "savings": "7.52",
+            "savings": "9.40",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/biketo.bmp",
+            "icon": "lighterprints/activity-icons/102-walk.png",
             "name": "bike-public-transport"
         }
     },
@@ -176,7 +176,7 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Turn water off while brushing your teeth",
-            "description": "0.5 kWh per person per day, assuming four minutes a day (enough to account for brushing teeth twice daily) and typical energy use for water supply, treatment, and heating. With 1.52 CO2 per kWh this leads to a savings of 0.76 pound of CO2 a day.",
+            "description": "Turning off the water while brushing saves 0.5 kWh per person per day. This assumes four minutes a day spent brushing (enough to account for brushing teeth twice daily) and typical energy use for water supply, treatment, and heating. With 1.52 CO2 per kWh this leads to a savings of 0.76 pounds of CO2 a day.",
             "available_all_day": false,
             "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
             "level": 2,
@@ -184,7 +184,7 @@
             "summary": "Don't leave the water running while you're brushing your teeth",
             "savings": "0.76",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/toothbrush.bmp",
+            "icon": "lighterprints/activity-icons/186-toothbrush.png",
             "name": "brushing-your-teeth"
         }
     },
@@ -193,7 +193,7 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Turn off your computer at night",
-            "description": "The average computer uses about 120 Watts (75 Watts for the screen and 45 Watts for the CPU) whether you're using it or not.\r\nOne computer left on 24 hours a day will lead to cost 1,500 pounds of CO2 into the atmosphere.",
+            "description": "The average computer uses about 120 Watts (75 Watts for the screen and 45 Watts for the CPU) whether you're using it or not.\r\nOne computer left on 24 hours a day will cause 1,500 pounds of CO2 to be emitted into the atmosphere.",
             "available_all_day": false,
             "url": "http://sustainability.tufts.edu/",
             "level": 2,
@@ -201,7 +201,7 @@
             "summary": "Save energy and turn off your computer when it's not needed.",
             "savings": "1.37",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/compsleep_1.bmp",
+            "icon": "lighterprints/activity-icons/screen_sleep_glossy.png",
             "name": "computer-off"
         }
     },
@@ -210,7 +210,7 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Replace beef with poultry",
-            "description": "Replacing the protein you get from beef with poultry can save you 1,555 pounds of CO2 emissions annually. Per day this switch leads to a 4.26 pounds of CO2 savings.",
+            "description": "Replacing the protein you get from beef with poultry can save you 1,555 pounds of CO2 emissions annually. Per day, this switch leads to 4.26 pounds of CO2 savings.",
             "available_all_day": false,
             "url": "http://www.simplesteps.org/food/shopping-wise/co2-smackdown-step-6-trimming-out-beef-and-pork",
             "level": 2,
@@ -218,7 +218,7 @@
             "summary": "Beef production is very energy intensive",
             "savings": "4.26",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/nobeef.bmp",
+            "icon": "lighterprints/activity-icons/109-chicken.png",
             "name": "no-beef"
         }
     },
@@ -227,7 +227,7 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Recycle paper",
-            "description": "Average number of pounds of CO2 equivalent per person per year that could be saved by recycling magazines (14.86), newspaper (89.76) and junk mail (100). This is 0.56 pound per day.",
+            "description": "The average number of pounds of CO2 equivalent per person per year that could be saved by recycling paper is 14.86 pounds for magazines, 89.76 pounds for newspapers, and 100 pounds for junk mail. These add up to 0.56 pounds per day.",
             "available_all_day": false,
             "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
             "level": 2,
@@ -235,7 +235,7 @@
             "summary": "Saving paper resources and production by recycling",
             "savings": "0.56",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/recycle.bmp",
+            "icon": "lighterprints/activity-icons/166-newspaper.png",
             "name": "recycle-paper"
         }
     },
@@ -244,7 +244,7 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Air dry your clothes",
-            "description": "Drying your clothes saves 723 pounds of CO2 every year. This is 1.98 pounds per day.",
+            "description": "Air drying your clothes saves 723 pounds of CO2 every year, or 1.98 pounds per day.",
             "available_all_day": false,
             "url": "http://www.simplesteps.org/tools/house-savings-calculator#laundry",
             "level": 3,
@@ -252,7 +252,7 @@
             "summary": "Air drying your clothes saves gas or electricity",
             "savings": "1.98",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/airdry.bmp",
+            "icon": "lighterprints/activity-icons/67-tshirt.png",
             "name": "air-dry-clothes"
         }
     },
@@ -278,15 +278,15 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Turn off unnecessary lights",
-            "description": "Per bulb per hour: [60 watts / 1000 watts/kWh] *1.52 pounds of CO2 per kWh = 0.09 pound of CO2 per bulb per hour. Assume turning off 5 bulbs for 5 hours. This leads to 2.28 pounds of CO2 per day.",
+            "description": "The amount of CO2 saved by turning lights off is [60 watts / 1000 watts/kWh] * 1.52 pounds of CO2 per kWh, which equals 0.09 pounds of CO2 per bulb per hour. Assuming 5 bulbs are turned off for 5 hours, this saves 2.28 pounds of CO2 per day.",
             "available_all_day": false,
             "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
             "level": 3,
             "group_activity": false,
-            "summary": "Turning lights off in areas that don't need it saves energy.",
+            "summary": "Turning lights off in areas that don't need them saves energy.",
             "savings": "2.28",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/lightsoff.bmp",
+            "icon": "lighterprints/activity-icons/84-lightbulb.png",
             "name": "lights-off"
         }
     },
@@ -295,7 +295,7 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Become a vegan for a day",
-            "description": "A plant-based diet saves 1608 pound of CO2 per year compared to an average diet.",
+            "description": "A plant-based diet saves 1,608 pounds of CO2 per year compared to the average diet.",
             "available_all_day": false,
             "url": "http://www.simplesteps.org/tools/house-savings-calculator#diet",
             "level": 3,
@@ -303,7 +303,7 @@
             "summary": "Raising animals for meat is resource intensive",
             "savings": "4.41",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/organic.bmp",
+            "icon": "lighterprints/activity-icons/lettuce.png",
             "name": "vegan-for-a-day"
         }
     },
@@ -312,7 +312,7 @@
         "model": "lighterprints.activity",
         "fields": {
             "display_name": "Wash your clothes with cold water",
-            "description": "You can save 400 pound of CO2 a year by washing all your clothes with cold water.",
+            "description": "You can save 400 pounds of CO2 a year by washing all your clothes with cold water.",
             "available_all_day": false,
             "url": "http://www.savecarbon.org/activity_form/washcold",
             "level": 3,
@@ -320,10 +320,11 @@
             "summary": "Save energy by not heating water",
             "savings": "1.10",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/airdry_1.bmp",
+            "icon": "lighterprints/activity-icons/mwcold.png",
             "name": "wash-cold-water"
         }
     },
+
     {
         "pk": 4,
         "model": "lighterprints.activityavailability",
