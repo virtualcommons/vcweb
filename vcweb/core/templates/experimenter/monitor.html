@@ -158,13 +158,8 @@
                     <li><a class='confirm-experiment-action' name='end_round' href='end-round' title='Stops the current round.'>
                         <span class='vcweb-icon icon-left ui-icon' style='background: url({{STATIC_URL}}images/famfamfam/control_stop_blue.png);' ></span>end round</a></li>
                     {% else %}
-                    {% comment %}
-                    FIXME: disabling for the time being, I have a suspicion Veronika
-                    might be clicking it accidentally and redoing rounds (thus
-                    applying group harvest + regrowth twice)
                     <li><a class='confirm-experiment-action' name='start_round' href='start-round' title='Starts the round.'>
                         <span class='ui-icon vcweb-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/control_play_blue.png);' ></span>start round</a></li>
-                    {% endcomment %}
                     {% endif %}
                     <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round' title='Stops the current round if necessary and advances to the next round.'>
                         <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/control_fastforward_blue.png);' ></span>advance to next round</a></li>
