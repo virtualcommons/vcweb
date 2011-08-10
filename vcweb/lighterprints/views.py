@@ -110,7 +110,7 @@ def post_chat_message(request, experiment_id):
         logger.debug("Participant %s created chat message %s", request.user.participant, chat_message)
         content = dumps(ChatMessage.objects.filter(participant_group_relationship__group=participant_group_relationship.group))
         return HttpResponse(content, content_type='text/javascript')
-    return HttpResponseBadRequest("Invalid chat message post")
+    return HttpResponseBadRequest(dumps({'response': "Invalid chat message post"}))
 
 class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
     model = ChatMessage
@@ -136,6 +136,7 @@ def login(request):
     try:
         if form.is_valid():
             user = form.user_cache
+            logger.debug("user was authenticated as %s, attempting to login", user)
             auth.login(request, user)
             set_authentication_token(user, request.session.session_key)
             participant = user.participant
@@ -147,4 +148,4 @@ def login(request):
             return HttpResponse(dumps({'participant_group_id': participant_group_relationship.id}), content_type='text/javascript')
     except Exception as e:
         logger.debug("Invalid login: %s", e)
-    return HttpResponse(dumps({"response": "Invalid login"}), content_type='text/javascript')
+    return HttpResponseBadRequest(dumps({"response": "Invalid login"}), content_type='text/javascript')
