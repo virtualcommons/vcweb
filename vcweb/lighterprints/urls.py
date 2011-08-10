@@ -1,7 +1,7 @@
 from django.conf.urls.defaults import url, patterns
 
 from vcweb.lighterprints.views import (ActivityDetailView, ActivityListView, MobileView,
-        post_chat_message, perform_activity, DiscussionBoardView)
+        post_chat_message, perform_activity, DiscussionBoardView, login)
 
 urlpatterns = patterns('vcweb.lighterprints.views',
     url(r'^mobile$', MobileView.as_view(), name='mobile'),
@@ -12,4 +12,5 @@ urlpatterns = patterns('vcweb.lighterprints.views',
     url(r'^discussion/(?P<experiment_id>\d+)/', DiscussionBoardView.as_view()),
     url(r'^api/do-activity$', perform_activity),
     url(r'^api/post-chat', post_chat_message),
+    url(r'^api/login', login),
 )

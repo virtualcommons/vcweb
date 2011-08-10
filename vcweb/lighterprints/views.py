@@ -1,3 +1,4 @@
+from django.contrib import auth
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
@@ -5,11 +6,12 @@ from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import FormView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
+from vcweb.core.forms import LoginForm
 from vcweb.core.models import (ChatMessage, Experiment, ParticipantGroupRelationship)
-from vcweb.core.views import JSONResponseMixin, dumps
-# FIXME: move to core?
+from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token
+# FIXME: move ChatForm to core?
 from vcweb.lighterprints.forms import ActivityForm, ChatForm
-from vcweb.lighterprints.models import Activity, is_activity_available, do_activity
+from vcweb.lighterprints.models import (Activity, is_activity_available, do_activity, get_lighterprints_experiment_metadata)
 
 import collections
 import logging
@@ -33,8 +35,8 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
             try:
                 if self.request.user.is_authenticated():
                     # authenticated request, figure out if this activity is available
-                    participant_group_relationship_id = self.request.GET.get('participant_group_relationship_id')
-                    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_relationship_id)
+                    participant_group_id = self.request.GET.get('participant_group_id')
+                    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
                     activity_as_dict['availability'] = is_activity_available(activity, participant_group_relationship)
             except Exception as e:
                 logger.debug("failed to get authenticated activity list: %s", e)
@@ -52,6 +54,11 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
 
 class ActivityDetailView(JSONResponseMixin, BaseDetailView):
     template_name = 'lighterprints/activity_detail.html'
+
+def get_available_activities(request):
+    # FIXME: currently stubbed out to return all activities. should move this to
+    # models.py and have it take a Participant?
+    return zip(Activity.objects.all(), MobileView.jqm_grid_columns)
 
 class MobileView(ActivityListView):
     jqm_grid_columns = tuple("abcde")
@@ -81,7 +88,7 @@ def perform_activity(request):
     form = ActivityForm(request.POST or None)
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
-        participant_group_pk = form.cleaned_data['participant_group_relationship_id']
+        participant_group_pk = form.cleaned_data['participant_group_id']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_pk)
         activity = get_object_or_404(Activity, pk=activity_id)
         performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
@@ -95,7 +102,7 @@ def post_chat_message(request, experiment_id):
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     form = ChatForm(request.POST or None)
     if form.is_valid():
-        participant_group_pk = form.cleaned_data['participant_group_relationship_id']
+        participant_group_pk = form.cleaned_data['participant_group_id']
         message = form.cleaned_data['message']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_pk)
         chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
@@ -112,10 +119,9 @@ class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin
         # FIXME: stubbed out for now, passing in the participant id for the time
         # being
         # participant = self.request.user.participant
-        participant_id = self.kwargs['participant_id']
-        experiment_id = self.kwargs['experiment_id']
+        participant_group_id = self.kwargs['participant_group_id']
 # FIXME: will change once we have proper auth set up
-        self.participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, participant__pk=participant_id, group__experiment__pk=experiment_id)
+        self.participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         self.group = self.participant_group_relationship.group
         return ChatMessage.objects.filter(participant_group_relationship__group = self.group)
 
@@ -125,9 +131,20 @@ class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin
         context['participant_group_relationship'] = self.participant_group_relationship
         return context
 
-def get_available_activities(request):
-    # FIXME: currently stubbed out to return all activities. should move this to
-    # models.py and have it take a Participant?
-    return zip(Activity.objects.all(), MobileView.jqm_grid_columns)
-
-
+def login(request):
+    form = LoginForm(request.POST or None)
+    try:
+        if form.is_valid():
+            user = form.user_cache
+            auth.login(request, user)
+            set_authentication_token(user, request.session.session_key)
+            participant = user.participant
+            active_experiments = participant.experiments.filter(status__in=('ACTIVE', 'ROUND_IN_PROGRESS'), experiment_metadata=get_lighterprints_experiment_metadata())
+            # FIXME: assuming participant is only participating in one active experiment
+            # at a time..
+            active_experiment = active_experiments[0]
+            participant_group_relationship = participant.get_participant_group_relationship(active_experiment)
+            return HttpResponse(dumps({'participant_group_id': participant_group_relationship.id}), content_type='text/javascript')
+    except Exception as e:
+        logger.debug("Invalid login: %s", e)
+    return HttpResponse(dumps({"response": "Invalid login"}), content_type='text/javascript')
