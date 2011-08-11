@@ -63,9 +63,10 @@ class GroupActivityTest(BaseTest):
         recent_activity = group_activity_dict['recent_activity']
         self.assertEqual(0, len(chat_messages))
         self.assertEqual(5, len(recent_activity))
+        test_message = "Midnight mushrumps"
         response = self.client.post('/lighterprints/api/post-chat', {
             'participant_group_id': participant_group_relationship.id,
-            'message': "Midnight mushrumps",
+            'message': test_message,
             })
         self.assertEqual(response.status_code, 200)
         group_activity_json = get_group_activity_json(participant_group_relationship)
@@ -73,6 +74,7 @@ class GroupActivityTest(BaseTest):
         chat_messages = group_activity_dict['chat_messages']
         recent_activity = group_activity_dict['recent_activity']
         self.assertEqual(1, len(chat_messages))
+        self.assertEqual(chat_messages[0]['message'], test_message)
         self.assertEqual(5, len(recent_activity))
 
 
