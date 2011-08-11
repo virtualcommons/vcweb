@@ -79,6 +79,7 @@ class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin
         context = super(DiscussionBoardView, self).get_context_data(**kwargs)
         context['group'] = self.group
         context['participant_group_relationship'] = self.participant_group_relationship
+        context['group_activity'] = get_group_activity_json(self.participant_group_relationship)
         return context
 
 
