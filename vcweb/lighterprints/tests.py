@@ -45,6 +45,7 @@ class UpdateLevelTest(BaseTest):
 
 class GroupActivityTest(BaseTest):
     def test_group_activity_json(self):
+        import simplejson as json
         e = self.experiment
         e.activate()
         e.start_round()
@@ -57,10 +58,23 @@ class GroupActivityTest(BaseTest):
             activity_performed.value = activity.id
             activity_performed.save()
         group_activity_json = get_group_activity_json(participant_group_relationship)
-        logger.debug("group activity json: %s", group_activity_json)
-        import simplejson as json
         group_activity_dict = json.loads(group_activity_json)
-        logger.debug("group activity dict: %s", group_activity_dict)
+        chat_messages = group_activity_dict['chat_messages']
+        recent_activity = group_activity_dict['recent_activity']
+        self.assertEqual(0, len(chat_messages))
+        self.assertEqual(5, len(recent_activity))
+        response = self.client.post('/lighterprints/api/post-chat', {
+            'participant_group_id': participant_group_relationship.id,
+            'message': "Midnight mushrumps",
+            })
+        self.assertEqual(response.status_code, 200)
+        group_activity_json = get_group_activity_json(participant_group_relationship)
+        group_activity_dict = json.loads(group_activity_json)
+        chat_messages = group_activity_dict['chat_messages']
+        recent_activity = group_activity_dict['recent_activity']
+        self.assertEqual(1, len(chat_messages))
+        self.assertEqual(5, len(recent_activity))
+
 
 
 class DoActivityTest(BaseTest):
@@ -79,10 +93,8 @@ class DoActivityTest(BaseTest):
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.id
                     })
-                logger.debug("response %s", response)
                 self.assertEqual(response.status_code, 200)
 # try to do the same activity again
-                logger.debug("XXX: all activity performed parameters: %s", ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter()))
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk

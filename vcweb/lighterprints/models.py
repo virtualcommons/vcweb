@@ -173,11 +173,9 @@ def get_daily_carbon_savings(group):
     logger.debug("total carbon savings: %s", total_savings)
     return total_savings
 
-def should_advance_level(group, level):
-    if level < 3:
+def should_advance_level(group, level, max_level=3, level_multiplier=10):
+    if level < max_level:
         daily_carbon_savings = get_daily_carbon_savings(group)
-        logger.debug("daily carbon savings were %s, but were they greater than level * 10? %s", daily_carbon_savings,
-                level * 10)
-        return daily_carbon_savings > level * 10
+        return daily_carbon_savings > (level * level_multiplier)
     return False
 

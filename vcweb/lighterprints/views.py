@@ -142,8 +142,8 @@ def perform_activity(request):
     form = ActivityForm(request.POST or None)
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
-        participant_group_pk = form.cleaned_data['participant_group_id']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_pk)
+        participant_group_id = form.cleaned_data['participant_group_id']
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         activity = get_object_or_404(Activity, pk=activity_id)
         performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
         if performed_activity is not None:
@@ -154,16 +154,13 @@ def perform_activity(request):
 def post_chat_message(request):
     form = ChatForm(request.POST or None)
     if form.is_valid():
-        participant_group_pk = form.cleaned_data['participant_group_id']
+        participant_group_id = form.cleaned_data['participant_group_id']
         message = form.cleaned_data['message']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_pk)
-        group = participant_group_relationship.group
-        chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
-                message=message, round_data=group.current_round_data)
-        logger.debug("Participant %s created chat message %s", request.user.participant, chat_message)
-        # FIXME: add recent Activity performed data as well as all ChatMessages
-        # sent, ordered by date.
-        content = dumps(ChatMessage.objects.filter(participant_group_relationship__group=group))
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        chat_message = participant_group_relationship.participant_chat_message_set.create(message=message,
+                round_data=participant_group_relationship.current_round_data)
+        logger.debug("Participant %s created chat message %s", participant_group_relationship.participant, chat_message)
+        content = get_group_activity_json(participant_group_relationship)
         return HttpResponse(content, content_type='text/javascript')
     return HttpResponseBadRequest(dumps({'response': "Invalid chat message post"}))
 
