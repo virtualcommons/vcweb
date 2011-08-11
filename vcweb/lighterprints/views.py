@@ -7,15 +7,21 @@ from django.views.generic.edit import FormView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
 from vcweb.core.forms import LoginForm
-from vcweb.core.models import (ChatMessage, Experiment, ParticipantGroupRelationship)
+from vcweb.core.models import (ChatMessage, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue)
 from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token
 # FIXME: move ChatForm to core?
 from vcweb.lighterprints.forms import ActivityForm, ChatForm
-from vcweb.lighterprints.models import (Activity, is_activity_available, do_activity, get_lighterprints_experiment_metadata)
+from vcweb.lighterprints.models import (Activity, is_activity_available, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
 
 import collections
 import logging
 logger = logging.getLogger(__name__)
+
+def to_activity_dict(activity, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining')):
+    activity_as_dict = {}
+    for attr_name in attrs:
+        activity_as_dict[attr_name] = getattr(activity, attr_name, None)
+    return activity_as_dict
 
 
 class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
@@ -29,9 +35,7 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
         for activity in all_activities:
             activity_by_level[activity.level].append(activity)
             #activity_as_dict = collections.OrderedDict()
-            activity_as_dict = {}
-            for attr_name in ('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining'):
-                activity_as_dict[attr_name] = getattr(activity, attr_name, None)
+            activity_as_dict = to_activity_dict(activity)
             try:
                 if self.request.user.is_authenticated():
                     # authenticated request, figure out if this activity is available
@@ -51,6 +55,32 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
             return JSONResponseMixin.render_to_response(self, context, context_key='flattened_activities')
         else:
             return MultipleObjectTemplateResponseMixin.render_to_response(self, context)
+
+class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
+    model = ChatMessage
+    template_name = 'discussion_board.html'
+    def get_queryset(self):
+        # FIXME: stubbed out for now, passing in the participant id for the time
+        # being
+        # participant = self.request.user.participant
+        participant_group_id = self.kwargs['participant_group_id']
+# FIXME: will change once we have proper auth set up
+        self.participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        self.group = self.participant_group_relationship.group
+        return ChatMessage.objects.filter(participant_group_relationship__group = self.group)
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.GET.get('format', 'html') == 'json':
+            return JSONResponseMixin.render_to_response(self, context, context_key='group_activity')
+        else:
+            return MultipleObjectTemplateResponseMixin.render_to_response(self, context)
+
+    def get_context_data(self, **kwargs):
+        context = super(DiscussionBoardView, self).get_context_data(**kwargs)
+        context['group'] = self.group
+        context['participant_group_relationship'] = self.participant_group_relationship
+        return context
+
 
 class ActivityDetailView(JSONResponseMixin, BaseDetailView):
     template_name = 'lighterprints/activity_detail.html'
@@ -82,6 +112,30 @@ class MobileView(ActivityListView):
 class DoActivityView(FormView):
     pass
 
+def get_group_activity_json(participant_group_relationship, number_of_activities=5):
+    group = participant_group_relationship.group
+    chat_messages = []
+    for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
+        chat_messages.append({
+            'date_created': chat_message.date_created,
+            'message': chat_message.message,
+            'participant_number': participant_group_relationship.participant_number,
+            'participant': participant_group_relationship.participant
+            })
+    group_activity = []
+    performed_activities = ParticipantRoundDataValue.objects.filter(participant_group_relationship__group=group, submitted=True, parameter=get_activity_performed_parameter()).order_by('-date_created')
+    for activity_prdv in performed_activities[:number_of_activities]:
+        # FIXME: change this to activity name if we decide to use names instead of
+        # pks
+        activity = Activity.objects.get(pk=activity_prdv.value)
+        performed_activity_dict = to_activity_dict(activity, attrs=('pk', 'name', 'icon_url', 'summary', 'savings'))
+        performed_activity_dict['date_performed'] = activity_prdv.date_created
+        group_activity.append(performed_activity_dict)
+    return dumps({
+        'chat_messages': chat_messages,
+        'recent_activity': group_activity
+        })
+
 @csrf_exempt
 def perform_activity(request):
     logger.debug("performing activity")
@@ -107,28 +161,11 @@ def post_chat_message(request):
         chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
                 message=message, round_data=group.current_round_data)
         logger.debug("Participant %s created chat message %s", request.user.participant, chat_message)
+        # FIXME: add recent Activity performed data as well as all ChatMessages
+        # sent, ordered by date.
         content = dumps(ChatMessage.objects.filter(participant_group_relationship__group=group))
         return HttpResponse(content, content_type='text/javascript')
     return HttpResponseBadRequest(dumps({'response': "Invalid chat message post"}))
-
-class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
-    model = ChatMessage
-    template_name = 'discussion_board.html'
-    def get_queryset(self):
-        # FIXME: stubbed out for now, passing in the participant id for the time
-        # being
-        # participant = self.request.user.participant
-        participant_group_id = self.kwargs['participant_group_id']
-# FIXME: will change once we have proper auth set up
-        self.participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-        self.group = self.participant_group_relationship.group
-        return ChatMessage.objects.filter(participant_group_relationship__group = self.group)
-
-    def get_context_data(self, **kwargs):
-        context = super(DiscussionBoardView, self).get_context_data(**kwargs)
-        context['group'] = self.group
-        context['participant_group_relationship'] = self.participant_group_relationship
-        return context
 
 @csrf_exempt
 def login(request):

@@ -1184,6 +1184,7 @@ class ParticipantGroupRelationship(models.Model):
     Many-to-many relationship entity storing a participant, group, their participant number in that group, the
     round in which they joined the group, and the datetime that they joined the group.
     """
+# FIXME: should also add a participant_identifier field here in case we want to use something other than numbers..?
     participant_number = models.PositiveIntegerField()
     participant = models.ForeignKey(Participant, related_name='participant_group_relationship_set')
     group = models.ForeignKey(Group, related_name = 'participant_group_relationship_set')

@@ -37,17 +37,36 @@ class UpdateLevelTest(BaseTest):
                 activity_performed = participant_group_relationship.participant_data_value_set.create(round_data=current_round_data, parameter=activity_performed_parameter, experiment=e)
                 activity_performed.value = activity.id
                 activity_performed.save()
+        # FIXME: sender parameter doesn't really matter here, just pass self in as the sender
         update_active_experiments(self)
         for group in e.group_set.all():
             self.assertEqual(get_carbon_footprint_level(group).value, 2)
-            self.assertEqual(get_daily_carbon_savings(group), Decimal('58.20'))
+            self.assertEqual(get_daily_carbon_savings(group), Decimal('55.70'))
+
+class GroupActivityTest(BaseTest):
+    def test_group_activity_json(self):
+        e = self.experiment
+        e.activate()
+        e.start_round()
+        participant_group_relationship = ParticipantGroupRelationship.objects.filter(group__experiment=e)[0]
+        # do every activity in level 1 for this particular participant
+        activity_performed_parameter = get_activity_performed_parameter()
+        current_round_data = e.current_round_data
+        for activity in Activity.objects.filter(level=1):
+            activity_performed = participant_group_relationship.participant_data_value_set.create(submitted=True, round_data=current_round_data, parameter=activity_performed_parameter, experiment=e)
+            activity_performed.value = activity.id
+            activity_performed.save()
+        group_activity_json = get_group_activity_json(participant_group_relationship)
+        logger.debug("group activity json: %s", group_activity_json)
+        import simplejson as json
+        group_activity_dict = json.loads(group_activity_json)
+        logger.debug("group activity dict: %s", group_activity_dict)
 
 
 class DoActivityTest(BaseTest):
     def test_view(self):
         logger.debug("testing do activity view")
         e = self.experiment
-        create_activity_performed_parameter()
         e.activate()
         e.start_round()
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
@@ -57,7 +76,7 @@ class DoActivityTest(BaseTest):
                 activity = activity_availability.activity
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
                 response = self.client.post('/lighterprints/api/do-activity', {
-                    'participant_group_relationship_id': participant_group_relationship.id,
+                    'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.id
                     })
                 logger.debug("response %s", response)
@@ -65,7 +84,7 @@ class DoActivityTest(BaseTest):
 # try to do the same activity again
                 logger.debug("XXX: all activity performed parameters: %s", ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter()))
                 response = self.client.post('/lighterprints/api/do-activity', {
-                    'participant_group_relationship_id': participant_group_relationship.id,
+                    'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
                     })
                 self.assertEqual(response.status_code, 400)
