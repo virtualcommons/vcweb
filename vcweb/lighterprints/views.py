@@ -43,7 +43,9 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
                     # authenticated request, figure out if this activity is available
                     participant_group_id = self.request.GET.get('participant_group_id')
                     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-                    activity_as_dict['availability'] = is_activity_available(activity, participant_group_relationship)
+                    activity_as_dict['available'] = is_activity_available(activity, participant_group_relationship)
+                    activity_as_dict['time_slots'] = ','.join(["%s - %s" % (av.available_start_time, av.available_end_time) for av in activity.availability_set.all()])
+
             except Exception as e:
                 logger.debug("failed to get authenticated activity list: %s", e)
             flattened_activities.append(activity_as_dict)
@@ -143,8 +145,10 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         # FIXME: change this to activity name if we decide to use names instead of
         # pks
         activity = Activity.objects.get(pk=activity_prdv.value)
-        performed_activity_dict = to_activity_dict(activity, attrs=('pk', 'name', 'icon_url', 'summary', 'savings'))
+        performed_activity_dict = to_activity_dict(activity, attrs=('pk', 'display_name', 'name', 'icon_url', 'savings'))
         performed_activity_dict['date_performed'] = activity_prdv.date_created
+        performed_activity_dict['participant_id'] = participant_group_relationship.participant_number
+        performed_activity_dict['performed_activity_id'] = activity_prdv.pk
         group_activity.append(performed_activity_dict)
     return dumps({
         'chat_messages': chat_messages,
@@ -162,7 +166,10 @@ def perform_activity(request):
         activity = get_object_or_404(Activity, pk=activity_id)
         performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
         if performed_activity is not None:
-            return HttpResponse(dumps(performed_activity), content_type='text/javascript')
+            activity_dict = to_activity_dict(activity)
+            activity_dict['date_created'] = performed_activity.date_created
+            activity_dict['performed_activity_id'] = performed_activity.pk
+            return HttpResponse(dumps(activity_dict), content_type='text/javascript')
     return HttpResponseBadRequest(dumps({'response': "Could not perform activity"}), content_type='text/javascript')
 
 @csrf_exempt
