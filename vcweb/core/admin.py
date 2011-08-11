@@ -1,25 +1,21 @@
 '''
-registering django models with django admin
+Registers django models with the django admin app.
 '''
 
 from django.contrib import admin
 from django.contrib.auth.models import Permission
-from vcweb.core.models import Parameter, RoundParameterValue, \
-    ExperimentConfiguration, RoundConfiguration, \
-    Experimenter, Participant, Group, Experiment, ParticipantExperimentRelationship, \
-    ParticipantGroupRelationship, GroupRoundDataValue, GroupActivityLog
+from vcweb.core.models import *
 
 
-admin.site.register(Parameter)
-admin.site.register(RoundParameterValue)
-admin.site.register(ExperimentConfiguration)
-admin.site.register(RoundConfiguration)
-admin.site.register(Experimenter)
-admin.site.register(Participant)
-admin.site.register(Group)
-admin.site.register(Experiment)
-admin.site.register(ParticipantExperimentRelationship)
-admin.site.register(ParticipantGroupRelationship)
+models = (
+        Parameter, RoundParameterValue, ExperimentConfiguration, RoundConfiguration,
+        Experimenter, Participant, Group, Experiment,
+        ParticipantExperimentRelationship, ParticipantGroupRelationship,
+        GroupRoundDataValue, ParticipantRoundDataValue, GroupActivityLog,
+        ChatMessage, QuizQuestion
+        )
+
+for model in models:
+    admin.site.register(model)
+
 admin.site.register(Permission)
-admin.site.register(GroupRoundDataValue)
-admin.site.register(GroupActivityLog)
