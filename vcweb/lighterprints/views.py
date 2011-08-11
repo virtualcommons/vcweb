@@ -94,21 +94,20 @@ def perform_activity(request):
         performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
         if performed_activity is not None:
             return HttpResponse(dumps(performed_activity), content_type='text/javascript')
-    return HttpResponseBadRequest("Could not perform activity")
-
+    return HttpResponseBadRequest(dumps({'response': "Could not perform activity"}), content_type='text/javascript')
 
 @csrf_exempt
-def post_chat_message(request, experiment_id):
-    experiment = get_object_or_404(Experiment, pk=experiment_id)
+def post_chat_message(request):
     form = ChatForm(request.POST or None)
     if form.is_valid():
         participant_group_pk = form.cleaned_data['participant_group_id']
         message = form.cleaned_data['message']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_pk)
+        group = participant_group_relationship.group
         chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
-                message=message, round_data=experiment.current_round_data)
+                message=message, round_data=group.current_round_data)
         logger.debug("Participant %s created chat message %s", request.user.participant, chat_message)
-        content = dumps(ChatMessage.objects.filter(participant_group_relationship__group=participant_group_relationship.group))
+        content = dumps(ChatMessage.objects.filter(participant_group_relationship__group=group))
         return HttpResponse(content, content_type='text/javascript')
     return HttpResponseBadRequest(dumps({'response': "Invalid chat message post"}))
 
@@ -131,6 +130,7 @@ class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin
         context['participant_group_relationship'] = self.participant_group_relationship
         return context
 
+@csrf_exempt
 def login(request):
     form = LoginForm(request.POST or None)
     try:
@@ -146,6 +146,8 @@ def login(request):
             active_experiment = active_experiments[0]
             participant_group_relationship = participant.get_participant_group_relationship(active_experiment)
             return HttpResponse(dumps({'participant_group_id': participant_group_relationship.id}), content_type='text/javascript')
+        else:
+            logger.debug("invalid form %s", form)
     except Exception as e:
         logger.debug("Invalid login: %s", e)
     return HttpResponseBadRequest(dumps({"response": "Invalid login"}), content_type='text/javascript')
