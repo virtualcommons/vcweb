@@ -1,6 +1,7 @@
 from django.contrib import auth
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
+from django.utils.timesince import timesince
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import FormView
@@ -9,6 +10,7 @@ from django.views.generic.list import BaseListView, MultipleObjectTemplateRespon
 from vcweb.core.forms import LoginForm
 from vcweb.core.models import (ChatMessage, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue)
 from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token
+from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 # FIXME: move ChatForm to core?
 from vcweb.lighterprints.forms import ActivityForm, ChatForm
 from vcweb.lighterprints.models import (Activity, is_activity_available, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
@@ -113,12 +115,24 @@ class MobileView(ActivityListView):
 class DoActivityView(FormView):
     pass
 
+def group_activity(request, participant_group_id):
+    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+    content = get_group_activity_json(participant_group_relationship)
+    callback = request.GET.get('callback', '')
+    content_type = 'application/x-json'
+    if is_valid_jsonp_callback_value(callback):
+        content = '%s(%s)' % (callback, content)
+        content_type = 'text/javascript'
+        return HttpResponse(content, content_type)
+    return HttpResponseBadRequest(dumps({'response': "Could not perform activity"}), content_type='text/javascript')
+
+
 def get_group_activity_json(participant_group_relationship, number_of_activities=5):
     group = participant_group_relationship.group
     chat_messages = []
     for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
         chat_messages.append({
-            'date_created': chat_message.date_created,
+            'date_created': timesince(chat_message.date_created),
             'message': chat_message.message,
             'participant_number': participant_group_relationship.participant_number,
             'participant': participant_group_relationship.participant
