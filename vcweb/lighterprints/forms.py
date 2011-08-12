@@ -1,6 +1,6 @@
 from django import forms
 
-from django.utils.html.escape import escape
+from django.utils.html import escape
 
 
 class ChatForm(forms.Form):
