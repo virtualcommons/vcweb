@@ -82,7 +82,7 @@
             "summary": "Heating or cooling buildings less saves energy",
             "savings": "5.50",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/93-thermometer.png",
+            "icon": "lighterprints/activity-icons/93-thermometer_1.png",
             "name": "adjust-thermostat"
         }
     },
@@ -92,14 +92,14 @@
         "fields": {
             "display_name": "Eat locally grown food for lunch",
             "description": "The food we eat comes from all over the world. How much CO2 this emits depends on your specific location and menu. On average, a person in the USA can save 1,400 pounds of CO2 per year by switching to locally grown food. We assume that one lunch is equivalent of 1.5 pounds of CO2 saved.",
-            "available_all_day": true,
+            "available_all_day": false,
             "url": "http://www.huffingtonpost.com/bill-chameides/carbon-savings-at-home_b_113551.html",
             "level": 1,
             "group_activity": false,
             "summary": "Less energy is used for transportation when only locally grown food is consumed",
             "savings": "1.50",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/80-shopping-cart.png",
+            "icon": "lighterprints/activity-icons/80-shopping-cart_1.png",
             "name": "eat-local-lunch"
         }
     },
@@ -116,7 +116,7 @@
             "summary": "Your computer consumes less energy when it's asleep or turned off",
             "savings": "0.98",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/69-display.png",
+            "icon": "lighterprints/activity-icons/69-display_1.png",
             "name": "enable-computer-sleep"
         }
     },
@@ -133,7 +133,7 @@
             "summary": "Recycling processes used materials into new products to prevent waste of potentially useful materials.",
             "savings": "0.31",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/142-wine-bottle.png",
+            "icon": "lighterprints/activity-icons/51-recycle.png",
             "name": "recycle"
         }
     },
@@ -148,9 +148,9 @@
             "level": 1,
             "group_activity": false,
             "summary": "Carpooling is more energy efficient than travelling alone in your car.",
-            "savings": "2.85",
+            "savings": "9.40",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/car.png",
+            "icon": "lighterprints/activity-icons/81-dashboard_1.png",
             "name": "share-your-ride"
         }
     },
@@ -165,9 +165,9 @@
             "level": 2,
             "group_activity": false,
             "summary": "Reduce fossil fuel consumption and emissions by not driving a car",
-            "savings": "9.40",
+            "savings": "7.52",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/102-walk.png",
+            "icon": "lighterprints/activity-icons/47-bicycle-to.png",
             "name": "bike-public-transport"
         }
     },
@@ -184,7 +184,7 @@
             "summary": "Don't leave the water running while you're brushing your teeth",
             "savings": "0.76",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/186-toothbrush.png",
+            "icon": "lighterprints/activity-icons/186-toothbrush_1.png",
             "name": "brushing-your-teeth"
         }
     },
@@ -201,7 +201,7 @@
             "summary": "Save energy and turn off your computer when it's not needed.",
             "savings": "1.37",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/screen_sleep_glossy.png",
+            "icon": "lighterprints/activity-icons/126-moon_1.png",
             "name": "computer-off"
         }
     },
@@ -218,7 +218,7 @@
             "summary": "Beef production is very energy intensive",
             "savings": "4.26",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/109-chicken.png",
+            "icon": "lighterprints/activity-icons/109-chicken_1.png",
             "name": "no-beef"
         }
     },
@@ -228,14 +228,14 @@
         "fields": {
             "display_name": "Recycle paper",
             "description": "The average number of pounds of CO2 equivalent per person per year that could be saved by recycling paper is 14.86 pounds for magazines, 89.76 pounds for newspapers, and 100 pounds for junk mail. These add up to 0.56 pounds per day.",
-            "available_all_day": false,
+            "available_all_day": true,
             "url": "http://www.epa.gov/climatechange/kids/calc/index.html",
             "level": 2,
             "group_activity": false,
             "summary": "Saving paper resources and production by recycling",
             "savings": "0.56",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/166-newspaper.png",
+            "icon": "lighterprints/activity-icons/166-newspaper_1.png",
             "name": "recycle-paper"
         }
     },
@@ -252,7 +252,7 @@
             "summary": "Air drying your clothes saves gas or electricity",
             "savings": "1.98",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/67-tshirt.png",
+            "icon": "lighterprints/activity-icons/67-tshirt_1.png",
             "name": "air-dry-clothes"
         }
     },
@@ -269,7 +269,7 @@
             "summary": "Reduce the amount of waste you produce at lunch time.",
             "savings": "1.37",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/organic_1.bmp",
+            "icon": "lighterprints/activity-icons/48-fork-and-knife_1.png",
             "name": "green-lunch"
         }
     },
@@ -286,7 +286,7 @@
             "summary": "Turning lights off in areas that don't need them saves energy.",
             "savings": "2.28",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/84-lightbulb.png",
+            "icon": "lighterprints/activity-icons/84-lightbulb_1.png",
             "name": "lights-off"
         }
     },
@@ -303,7 +303,7 @@
             "summary": "Raising animals for meat is resource intensive",
             "savings": "4.41",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/lettuce.png",
+            "icon": "lighterprints/activity-icons/125-food_1.png",
             "name": "vegan-for-a-day"
         }
     },
@@ -320,11 +320,10 @@
             "summary": "Save energy by not heating water",
             "savings": "1.10",
             "cooldown": 1,
-            "icon": "lighterprints/activity-icons/mwcold.png",
+            "icon": "lighterprints/activity-icons/24-washing-new.png",
             "name": "wash-cold-water"
         }
     },
-
     {
         "pk": 4,
         "model": "lighterprints.activityavailability",
@@ -344,25 +343,25 @@
         }
     },
     {
-        "pk": 2,
+        "pk": 9,
         "model": "lighterprints.activityavailability",
         "fields": {
             "available_start_time": "08:00:00",
             "available_end_time": "10:00:00",
-            "activity": 10
+            "activity": 3
         }
     },
     {
-        "pk": 3,
+        "pk": 17,
         "model": "lighterprints.activityavailability",
         "fields": {
             "available_start_time": "16:00:00",
             "available_end_time": "18:00:00",
-            "activity": 10
+            "activity": 3
         }
     },
     {
-        "pk": 7,
+        "pk": 2,
         "model": "lighterprints.activityavailability",
         "fields": {
             "available_start_time": "18:00:00",
@@ -383,9 +382,72 @@
         "pk": 6,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "21:00:00",
+            "available_start_time": "22:00:00",
             "available_end_time": "23:59:59",
             "activity": 6
+        }
+    },
+    {
+        "pk": 10,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "23:00:00",
+            "available_end_time": "07:00:00",
+            "activity": 7
+        }
+    },
+    {
+        "pk": 11,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "18:00:00",
+            "available_end_time": "19:00:00",
+            "activity": 9
+        }
+    },
+    {
+        "pk": 15,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "23:00:00",
+            "available_end_time": "06:00:00",
+            "activity": 14
+        }
+    },
+    {
+        "pk": 13,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "12:00:00",
+            "available_end_time": "14:00:00",
+            "activity": 13
+        }
+    },
+    {
+        "pk": 12,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "18:00:00",
+            "available_end_time": "23:00:00",
+            "activity": 11
+        }
+    },
+    {
+        "pk": 16,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "07:00:00",
+            "available_end_time": "09:00:00",
+            "activity": 12
+        }
+    },
+    {
+        "pk": 14,
+        "model": "lighterprints.activityavailability",
+        "fields": {
+            "available_start_time": "16:00:00",
+            "available_end_time": "23:00:00",
+            "activity": 15
         }
     }
 ]
