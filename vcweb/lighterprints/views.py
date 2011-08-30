@@ -129,7 +129,7 @@ def group_activity(request, participant_group_id):
     return HttpResponseBadRequest(dumps({'response': "Could not perform activity"}), content_type='text/javascript')
 
 
-def get_group_activity_json(participant_group_relationship, number_of_activities=5):
+def get_group_activity_json(participant_group_relationship, number_of_activities=5, retrieve_all=True):
     group = participant_group_relationship.group
     chat_messages = []
     for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
@@ -140,6 +140,8 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
             })
     group_activity = []
     performed_activities = ParticipantRoundDataValue.objects.filter(participant_group_relationship__group=group, submitted=True, parameter=get_activity_performed_parameter()).order_by('-date_created')
+    if retrieve_all:
+        number_of_activities = len(performed_activities)
     for activity_prdv in performed_activities[:number_of_activities]:
         # FIXME: change this to activity name if we decide to use names instead of
         # pks
