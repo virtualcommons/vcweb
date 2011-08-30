@@ -8,7 +8,7 @@ from django.views.generic.edit import FormView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
 from vcweb.core.forms import LoginForm
-from vcweb.core.models import (ChatMessage, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue)
+from vcweb.core.models import (ChatMessage, ParticipantGroupRelationship, ParticipantRoundDataValue)
 from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 # FIXME: move ChatForm to core?
