@@ -90,6 +90,7 @@ def available_activities(activity=None):
     return ActivityAvailability.objects.select_related(depth=1).filter(Q(**available_time_slot) | Q(**available_all_day))
 
 def is_activity_available(activity, participant_group_relationship, **kwargs):
+    # FIXME: make sure that the activity level is appropriate for this PGR
 # how often can a participant participate in an activity?
 # whenever it falls within the ActivityAvailability schedule and if the participant
 # hasn't already performed this activity during this cycle.
