@@ -124,9 +124,9 @@ def group_activity(request, participant_group_id):
     content_type = 'application/x-json'
     if is_valid_jsonp_callback_value(callback):
         content = '%s(%s)' % (callback, content)
-        content_type = 'text/javascript'
+        content_type = 'application/json'
         return HttpResponse(content, content_type)
-    return HttpResponseBadRequest(dumps({'response': "Could not perform activity"}), content_type='text/javascript')
+    return HttpResponseBadRequest(dumps({'response': "Could not perform activity"}), content_type='application/json')
 
 
 def get_group_activity_json(participant_group_relationship, number_of_activities=5, retrieve_all=True):
@@ -170,8 +170,8 @@ def perform_activity(request):
             activity_dict = to_activity_dict(activity)
             activity_dict['date_created'] = performed_activity.date_created
             activity_dict['performed_activity_id'] = performed_activity.pk
-            return HttpResponse(dumps(activity_dict), content_type='text/javascript')
-    return HttpResponseBadRequest(dumps({'response': "Could not perform activity"}), content_type='text/javascript')
+            return HttpResponse(dumps(activity_dict), content_type='application/json')
+    return HttpResponseBadRequest(dumps({'response': "Could not perform activity"}), content_type='application/json')
 
 @csrf_exempt
 def post_chat_message(request):
@@ -184,7 +184,7 @@ def post_chat_message(request):
                 round_data=participant_group_relationship.current_round_data)
         logger.debug("Participant %s created chat message %s", participant_group_relationship.participant, chat_message)
         content = get_group_activity_json(participant_group_relationship)
-        return HttpResponse(content, content_type='text/javascript')
+        return HttpResponse(content, content_type='application/json')
     return HttpResponseBadRequest(dumps({'response': "Invalid chat message post"}))
 
 @csrf_exempt
@@ -202,9 +202,9 @@ def login(request):
             # at a time..
             active_experiment = active_experiments[0]
             participant_group_relationship = participant.get_participant_group_relationship(active_experiment)
-            return HttpResponse(dumps({'participant_group_id': participant_group_relationship.id}), content_type='text/javascript')
+            return HttpResponse(dumps({'participant_group_id': participant_group_relationship.id}), content_type='application/json')
         else:
             logger.debug("invalid form %s", form)
     except Exception as e:
         logger.debug("Invalid login: %s", e)
-    return HttpResponseBadRequest(dumps({"response": "Invalid login"}), content_type='text/javascript')
+    return HttpResponseBadRequest(dumps({"response": "Invalid login"}), content_type='application/json')
