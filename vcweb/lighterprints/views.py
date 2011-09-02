@@ -25,6 +25,23 @@ def to_activity_dict(activity, attrs=('pk', 'name', 'summary', 'display_name', '
         activity_as_dict[attr_name] = getattr(activity, attr_name, None)
     return activity_as_dict
 
+# returns a tuple of (flattened_activities list + activity_by_level dict)
+def get_all_available_activities(participant_group_relationship, all_activities=None):
+    if all_activities is None:
+        all_activities = Activity.objects.all()
+    flattened_activities = []
+    activity_by_level = collections.defaultdict(list)
+    for activity in all_activities:
+        activity_by_level[activity.level].append(activity)
+        #activity_as_dict = collections.OrderedDict()
+        activity_as_dict = to_activity_dict(activity)
+        try:
+            activity_as_dict['available'] = is_activity_available(activity, participant_group_relationship)
+            activity_as_dict['time_slots'] = ','.join(["%s - %s" % (av.available_start_time, av.available_end_time) for av in activity.availability_set.all()])
+        except Exception as e:
+            logger.debug("failed to get authenticated activity list: %s", e)
+        flattened_activities.append(activity_as_dict)
+    return (flattened_activities, activity_by_level)
 
 class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
     model = Activity
@@ -32,24 +49,11 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
     def get_context_data(self, **kwargs):
         context = super(ActivityListView, self).get_context_data(**kwargs)
         all_activities = context['activity_list']
-        activity_by_level = collections.defaultdict(list)
-        flattened_activities = []
-        for activity in all_activities:
-            activity_by_level[activity.level].append(activity)
-            #activity_as_dict = collections.OrderedDict()
-            activity_as_dict = to_activity_dict(activity)
-            try:
-                if self.request.user.is_authenticated():
-                    # authenticated request, figure out if this activity is available
-                    participant_group_id = self.request.GET.get('participant_group_id')
-                    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-                    activity_as_dict['available'] = is_activity_available(activity, participant_group_relationship)
-                    activity_as_dict['time_slots'] = ','.join(["%s - %s" % (av.available_start_time, av.available_end_time) for av in activity.availability_set.all()])
-
-            except Exception as e:
-                logger.debug("failed to get authenticated activity list: %s", e)
-            flattened_activities.append(activity_as_dict)
-
+        if self.request.user.is_authenticated():
+            # authenticated request, figure out if this activity is available
+            participant_group_id = self.request.GET.get('participant_group_id')
+            participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+            (flattened_activities, activity_by_level) = get_all_available_activities(participant_group_relationship, all_activities)
         context['activity_by_level'] = dict(activity_by_level)
         context['flattened_activities'] = flattened_activities
         return context
