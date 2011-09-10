@@ -328,8 +328,8 @@
         "pk": 4,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "06:00:00",
-            "available_end_time": "08:00:00",
+            "start_time": "06:00:00",
+            "end_time": "08:00:00",
             "activity": 4
         }
     },
@@ -337,8 +337,8 @@
         "pk": 1,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "12:00:00",
-            "available_end_time": "14:00:00",
+            "start_time": "12:00:00",
+            "end_time": "14:00:00",
             "activity": 2
         }
     },
@@ -346,8 +346,8 @@
         "pk": 9,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "08:00:00",
-            "available_end_time": "10:00:00",
+            "start_time": "08:00:00",
+            "end_time": "10:00:00",
             "activity": 3
         }
     },
@@ -355,8 +355,8 @@
         "pk": 17,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "16:00:00",
-            "available_end_time": "18:00:00",
+            "start_time": "16:00:00",
+            "end_time": "18:00:00",
             "activity": 3
         }
     },
@@ -364,8 +364,8 @@
         "pk": 2,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "18:00:00",
-            "available_end_time": "23:00:00",
+            "start_time": "18:00:00",
+            "end_time": "23:00:00",
             "activity": 10
         }
     },
@@ -373,8 +373,8 @@
         "pk": 5,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "07:00:00",
-            "available_end_time": "09:00:00",
+            "start_time": "07:00:00",
+            "end_time": "09:00:00",
             "activity": 6
         }
     },
@@ -382,8 +382,8 @@
         "pk": 6,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "22:00:00",
-            "available_end_time": "23:59:59",
+            "start_time": "22:00:00",
+            "end_time": "23:59:59",
             "activity": 6
         }
     },
@@ -391,8 +391,8 @@
         "pk": 10,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "23:00:00",
-            "available_end_time": "07:00:00",
+            "start_time": "23:00:00",
+            "end_time": "07:00:00",
             "activity": 7
         }
     },
@@ -400,8 +400,8 @@
         "pk": 11,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "18:00:00",
-            "available_end_time": "19:00:00",
+            "start_time": "18:00:00",
+            "end_time": "19:00:00",
             "activity": 9
         }
     },
@@ -409,8 +409,8 @@
         "pk": 15,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "23:00:00",
-            "available_end_time": "06:00:00",
+            "start_time": "23:00:00",
+            "end_time": "06:00:00",
             "activity": 14
         }
     },
@@ -418,8 +418,8 @@
         "pk": 13,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "12:00:00",
-            "available_end_time": "14:00:00",
+            "start_time": "12:00:00",
+            "end_time": "14:00:00",
             "activity": 13
         }
     },
@@ -427,8 +427,8 @@
         "pk": 12,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "18:00:00",
-            "available_end_time": "23:00:00",
+            "start_time": "18:00:00",
+            "end_time": "23:00:00",
             "activity": 11
         }
     },
@@ -436,8 +436,8 @@
         "pk": 16,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "07:00:00",
-            "available_end_time": "09:00:00",
+            "start_time": "07:00:00",
+            "end_time": "09:00:00",
             "activity": 12
         }
     },
@@ -445,8 +445,8 @@
         "pk": 14,
         "model": "lighterprints.activityavailability",
         "fields": {
-            "available_start_time": "16:00:00",
-            "available_end_time": "23:00:00",
+            "start_time": "16:00:00",
+            "end_time": "23:00:00",
             "activity": 15
         }
     }

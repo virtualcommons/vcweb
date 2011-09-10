@@ -31,13 +31,15 @@ def get_all_available_activities(participant_group_relationship, all_activities=
         all_activities = Activity.objects.all()
     flattened_activities = []
     activity_by_level = collections.defaultdict(list)
+    time_fmt_str = '%m:%M %p'
+
     for activity in all_activities:
         activity_by_level[activity.level].append(activity)
         #activity_as_dict = collections.OrderedDict()
         activity_as_dict = to_activity_dict(activity)
         try:
             activity_as_dict['available'] = is_activity_available(activity, participant_group_relationship)
-            activity_as_dict['time_slots'] = ','.join(["%s - %s" % (av.available_start_time, av.available_end_time) for av in activity.availability_set.all()])
+            activity_as_dict['time_slots'] = ','.join(["%s - %s" % (av.start_time.strftime(time_fmt_str), av.end_time.strftime(time_fmt_str)) for av in activity.availability_set.all()])
         except Exception as e:
             logger.debug("failed to get authenticated activity list: %s", e)
         flattened_activities.append(activity_as_dict)

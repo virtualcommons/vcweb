@@ -44,14 +44,14 @@ class Activity(models.Model):
 
 class ActivityAvailability(models.Model):
     activity = models.ForeignKey(Activity, related_name='availability_set')
-    available_start_time = models.TimeField(null=True, blank=True)
-    available_end_time = models.TimeField(null=True, blank=True)
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
 
     def __unicode__(self):
-        return u'%s (%s - %s)' % (self.activity, self.available_start_time, self.available_end_time)
+        return u'%s (%s - %s)' % (self.activity, self.start_time, self.end_time)
 
     class Meta:
-        ordering = ['activity', 'available_start_time']
+        ordering = ['activity', 'start_time']
 
 @simplecache
 def get_lighterprints_experiment_metadata():
@@ -82,7 +82,7 @@ def get_active_experiments():
 
 def available_activities(activity=None):
     current_time = datetime.datetime.now().time()
-    available_time_slot = dict(available_start_time__lte=current_time, available_end_time__gte=current_time)
+    available_time_slot = dict(start_time__lte=current_time, end_time__gte=current_time)
     available_all_day = dict(activity__available_all_day=True)
     if activity is not None:
         available_time_slot['activity'] = activity
@@ -95,7 +95,11 @@ def is_activity_available(activity, participant_group_relationship, **kwargs):
 # whenever it falls within the ActivityAvailability schedule and if the participant
 # hasn't already performed this activity during this cycle.
     logger.debug("checking if %s is available for %s", activity, participant_group_relationship)
-    if activity.available_all_day:
+    level = get_carbon_footprint_level(participant_group_relationship.group)
+    if activity.level > level:
+        logger.debug("activity %s had larger level (%s) than group level (%s)", activity, activity.level, level)
+        return False
+    elif activity.available_all_day:
         # check if they've done it already today, check if the combine is necessary
         today = datetime.datetime.combine(datetime.date.today(), datetime.time())
         already_performed = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
@@ -112,8 +116,8 @@ def is_activity_available(activity, participant_group_relationship, **kwargs):
         # day, today, for time slots, during this particular time slot). There should only be one availability
         try:
             logger.debug("checking availability set %s", activity.availability_set.all())
-            availabilities = activity.availability_set.filter(available_start_time__lte=current_time, available_end_time__gte=current_time)
-            earliest_start_time = datetime.datetime.combine(datetime.date.today(), availabilities[0].available_start_time)
+            availabilities = activity.availability_set.filter(start_time__lte=current_time, end_time__gte=current_time)
+            earliest_start_time = datetime.datetime.combine(datetime.date.today(), availabilities[0].start_time)
             logger.debug("earliest start time: %s", earliest_start_time)
             already_performed = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
                     participant_group_relationship=participant_group_relationship,
@@ -122,6 +126,7 @@ def is_activity_available(activity, participant_group_relationship, **kwargs):
                     date_created__gte=earliest_start_time)
             return already_performed.count() == 0
         except:
+            logger.debug("exception while checking if this activity had already been performed by this participant")
             return False
 
 def do_activity(activity, participant_group_relationship):
