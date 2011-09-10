@@ -50,6 +50,7 @@ class ActivityAvailability(models.Model):
     def __unicode__(self):
         return u'%s (%s - %s)' % (self.activity, self.start_time, self.end_time)
 
+    @property
     def time_slot(self):
         return u'%s - %s' % (self.start_time.strftime('%I:%M %p'), self.end_time.strftime('%I:%M %p'))
 
