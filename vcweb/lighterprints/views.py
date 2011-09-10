@@ -1,4 +1,5 @@
 from django.contrib import auth
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from django.utils.timesince import timesince
@@ -9,8 +10,7 @@ from django.views.generic.list import BaseListView, MultipleObjectTemplateRespon
 
 from vcweb.core.forms import LoginForm
 from vcweb.core.models import (ChatMessage, ParticipantGroupRelationship, ParticipantRoundDataValue)
-from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token
-from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
+from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token, json_response
 # FIXME: move ChatForm to core?
 from vcweb.lighterprints.forms import ActivityForm, ChatForm
 from vcweb.lighterprints.models import (Activity, is_activity_available, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
@@ -54,9 +54,10 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
             participant_group_id = self.request.GET.get('participant_group_id')
             participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
             (flattened_activities, activity_by_level) = get_all_available_activities(participant_group_relationship, all_activities)
-        context['activity_by_level'] = dict(activity_by_level)
-        context['flattened_activities'] = flattened_activities
-        return context
+            context['activity_by_level'] = dict(activity_by_level)
+            context['flattened_activities'] = flattened_activities
+            return context
+        raise PermissionDenied("You must be authenticated to view all activities.")
 
     def render_to_response(self, context, **response_kwargs):
         if self.request.GET.get('format', 'html') == 'json':
@@ -124,14 +125,7 @@ class DoActivityView(FormView):
 def group_activity(request, participant_group_id):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
     content = get_group_activity_json(participant_group_relationship)
-    callback = request.GET.get('callback', '')
-    content_type = 'application/x-json'
-    if is_valid_jsonp_callback_value(callback):
-        content = '%s(%s)' % (callback, content)
-        content_type = 'application/json'
-        return HttpResponse(content, content_type)
-    return HttpResponseBadRequest(dumps({'response': "Could not perform activity"}), content_type='application/json')
-
+    return json_response(request, content)
 
 def get_group_activity_json(participant_group_relationship, number_of_activities=5, retrieve_all=True):
     group = participant_group_relationship.group

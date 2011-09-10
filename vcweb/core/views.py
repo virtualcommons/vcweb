@@ -38,21 +38,22 @@ class VcwebJSONEncoder(DjangoJSONEncoder):
 
 dumps = curry(dumps, cls=VcwebJSONEncoder)
 
+def json_response(request, content, **http_response_kwargs):
+    "Construct an `HttpResponse` object."
+    callback = request.GET.get('callback', '')
+    content_type = 'application/json'
+    if is_valid_jsonp_callback_value(callback):
+        content = '%s(%s)' % (callback, content)
+        content_type = 'application/javascript'
+    return HttpResponse(content, content_type=content_type, **http_response_kwargs)
+
 class JSONResponseMixin(object):
     def render_to_response(self, context, **kwargs):
         "Returns a JSON response containing 'context' as payload"
         return self.get_json_response(self.convert_context_to_json(context, **kwargs))
 
     def get_json_response(self, content, **httpresponse_kwargs):
-        "Construct an `HttpResponse` object."
-        callback = self.request.GET.get('callback', '')
-        content_type = 'application/x-json'
-        if is_valid_jsonp_callback_value(callback):
-            content = '%s(%s)' % (callback, content)
-            content_type = 'text/javascript'
-        return HttpResponse(content,
-                content_type=content_type,
-                **httpresponse_kwargs)
+        return json_response(self.request, content, **httpresponse_kwargs)
 
     def convert_context_to_json(self, context, context_key='object_list', **kwargs):
         """
@@ -69,7 +70,7 @@ class AnonymousMixin(object):
         return super(AnonymousMixin, self).dispatch(*args, **kwargs)
 
 class Dashboard(ListView, TemplateResponseMixin):
-    """ 
+    """
     general dashboard for participants or experimenters that displays a list of
     experiments to either participate in or configure/manage/monitor, respectively
     """

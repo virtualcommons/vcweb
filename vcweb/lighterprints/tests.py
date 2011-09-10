@@ -19,10 +19,16 @@ class BaseTest(BaseVcwebTest):
 
 class ActivityViewTest(BaseTest):
     def test_list(self):
-        response = self.client.get('/lighterprints/activity/list?format=json')
-        logger.debug("response is: %s", response)
-        self.assertEqual(response.status_code, 200)
-
+        for pgr in self.experiment.participant_group_relationships:
+            participant = pgr.participant
+            response = self.client.get('/lighterprints/activity/list', {'format':'json'})
+            self.assertEqual(response.status_code, 403)
+            self.client.login(username=participant.email, password='test')
+            response = self.client.get('/lighterprints/activity/list', {'format':'json', 'participant_group_id': pgr.id})
+            self.assertEqual(response.status_code, 200)
+            self.client.logout()
+            response = self.client.get('/lighterprints/activity/list', {'format':'json', 'participant_group_id': pgr.id})
+            self.assertEqual(response.status_code, 403)
 
 class UpdateLevelTest(BaseTest):
     def test_daily_carbon_savings(self):
@@ -41,7 +47,7 @@ class UpdateLevelTest(BaseTest):
         update_active_experiments(self)
         for group in e.group_set.all():
             self.assertEqual(get_carbon_footprint_level(group).value, 2)
-            self.assertEqual(get_daily_carbon_savings(group), Decimal('55.70'))
+            self.assertEqual(get_daily_carbon_savings(group), Decimal('88.45'))
 
 class GroupActivityTest(BaseTest):
     def test_group_activity_json(self):
