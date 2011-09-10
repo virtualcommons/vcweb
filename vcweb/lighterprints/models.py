@@ -51,7 +51,7 @@ class ActivityAvailability(models.Model):
         return u'%s (%s - %s)' % (self.activity, self.start_time, self.end_time)
 
     def time_slot(self):
-        return u'%s - %s' % map(lambda time: time.strftime('%I:%M %p'), (self.start_time, self.end_time))
+        return u'%s - %s' % (self.start_time.strftime('%I:%M %p'), self.end_time.strftime('%I:%M %p'))
 
     class Meta:
         ordering = ['activity', 'start_time']
