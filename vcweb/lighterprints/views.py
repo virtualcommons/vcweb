@@ -132,10 +132,12 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
     group = participant_group_relationship.group
     chat_messages = []
     for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
+        pgr = chat_message.participant_group_relationship
         chat_messages.append({
             'date_created': timesince(chat_message.date_created),
             'message': chat_message.message,
-            'participant_number': chat_message.participant_group_relationship.participant_number,
+            'participant_number': pgr.participant_number,
+            'participant_group_id':pgr.pk
             })
     group_activity = []
     performed_activities = ParticipantRoundDataValue.objects.filter(participant_group_relationship__group=group, submitted=True, parameter=get_activity_performed_parameter()).order_by('-date_created')
@@ -147,7 +149,9 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         activity = Activity.objects.get(pk=activity_prdv.value)
         performed_activity_dict = to_activity_dict(activity, attrs=('pk', 'display_name', 'name', 'icon_url', 'savings'))
         performed_activity_dict['date_performed'] = activity_prdv.date_created
-        performed_activity_dict['participant_id'] = activity_prdv.participant_group_relationship.participant_number
+        pgr = activity_prdv.participant_group_relationship
+        performed_activity_dict['participant_number'] = pgr.participant_number
+        performed_activity_dict['participant_group_id'] = pgr.pk
         performed_activity_dict['performed_activity_id'] = activity_prdv.pk
         group_activity.append(performed_activity_dict)
     return dumps({
