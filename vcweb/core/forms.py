@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.forms import widgets, ValidationError
+from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 
 from vcweb.core.models import (Participant, Experimenter, Institution)
@@ -108,6 +109,14 @@ class RegisterSimpleParticipantsForm(RegisterParticipantsForm):
 
 class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
     participant_emails = EmailListField(label="Participant emails", help_text='A comma or newline delimited list of emails to register as participants for this experiment.')
+
+
+
+class ChatForm(forms.Form):
+    message = forms.CharField(required=True, max_length=512)
+    participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
+    def clean_message(self):
+        return escape(self.cleaned_data['message'])
 
 class QuizForm(forms.Form):
     name_question = forms.CharField(max_length=64, label="What is your name?")

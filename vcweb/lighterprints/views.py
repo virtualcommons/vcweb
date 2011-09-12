@@ -8,11 +8,10 @@ from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import FormView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
-from vcweb.core.forms import LoginForm
+from vcweb.core.forms import ChatForm, LoginForm
 from vcweb.core.models import (ChatMessage, ParticipantGroupRelationship, ParticipantRoundDataValue)
 from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token, json_response
-# FIXME: move ChatForm to core?
-from vcweb.lighterprints.forms import ActivityForm, ChatForm
+from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, is_activity_available, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
 
 import collections
