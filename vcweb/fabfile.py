@@ -32,7 +32,7 @@ django.project(env.project_name)
 this currently only works for sqlite3 development database.  do it by hand with
 postgres a few times to figure out what to automate.
 """
-syncdb_commands = ['(test -f vcweb.db && rm -f vcweb.db) || true',
+syncdb_commands = [
         '%(python)s manage.py syncdb --noinput' % env,
         '%(python)s manage.py loaddata test_users_participants' % env,
         '%(python)s manage.py loaddata forestry_test_data' % env,
@@ -44,6 +44,8 @@ def shell():
 
 def syncdb(**kwargs):
     with cd(env.project_path):
+        if os.path.exists('vcweb.db'):
+            os.remove('vcweb.db')
         _virtualenv(local, *syncdb_commands, **kwargs)
 
 
@@ -74,7 +76,10 @@ def setup_rabbitmq():
 def _virtualenv(executor, *commands, **kwargs):
     """ source the virtualenv before executing this command """
     env.command = ' && '.join(commands)
-    return executor('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
+    if os.path.exists(env.virtualenv_path):
+        return executor('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
+    else:
+        return executor(env.command, **kwargs)
 
 def pip():
     ''' looks for requirements.pip in the django project directory '''

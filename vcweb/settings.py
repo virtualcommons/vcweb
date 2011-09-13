@@ -111,6 +111,13 @@ CELERYBEAT_LOG_LEVEL = 'ERROR'
 
 # simplest celery transport that uses Django database (djkombu_messages)
 BROKER_BACKEND = "djkombu.transport.DatabaseTransport"
+# django celery integration
+# celery rabbitmq/amqp configuration
+BROKER_HOST = "localhost"
+BROKER_PORT = 5672
+BROKER_USER = "vcweb"
+BROKER_VHOST = "vcweb.vhost"
+BROKER_PASSWORD = 'CUSTOMIZE_ME'
 
 # activation window
 ACCOUNT_ACTIVATION_DAYS = 30
