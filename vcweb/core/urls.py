@@ -1,7 +1,7 @@
 from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.decorators import login_required
 from vcweb.core.views import (Dashboard, LoginView, LogoutView, RegistrationView, MonitorExperimentView, CloneExperimentView,
-        RegisterEmailListView, RegisterSimpleParticipantsView, ClearParticipantsExperimentView)
+        RegisterEmailListView, RegisterSimpleParticipantsView, ClearParticipantsExperimentView, add_experiment)
 '''
 URLs defined by the core vcweb app.
 '''
@@ -12,6 +12,7 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^accounts/register/$', RegistrationView.as_view(), name='register'),
     url(r'^accounts/profile/$', 'account_profile', name='profile'),
     url(r'^participate/(?P<namespace>\w+)/instructions', 'instructions', name='namespace_instructions'),
+    url(r'^experiment/add$', add_experiment, name='add_experiment'),
     url(r'^experiment/(?P<pk>\d+)/monitor$', MonitorExperimentView.as_view(), name='monitor_experiment'),
     url(r'^experiment/(?P<pk>\d+)/register-email-list$', RegisterEmailListView.as_view(), name='register_email_list'),
     url(r'^experiment/(?P<pk>\d+)/register-simple$', RegisterSimpleParticipantsView.as_view(), name='register_simple'),

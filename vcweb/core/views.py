@@ -19,7 +19,7 @@ from django.views.generic.detail import SingleObjectMixin, DetailView
 from django.views.generic.edit import UpdateView
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
         RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm)
-from vcweb.core.models import (Participant, Experimenter, Experiment, Institution, is_participant, is_experimenter)
+from vcweb.core.models import (Participant, Experimenter, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
@@ -277,9 +277,19 @@ class ClearParticipantsExperimentView(ExperimenterSingleExperimentView):
     def render_to_response(self, context):
         return redirect('core:dashboard')
 
+# FIXME: replace method with class-based view later (if beneficial)
+class AddExperimentView(ExperimenterMixin, TemplateView):
+    pass
+
+@experimenter_required
+def add_experiment(request):
+    return render_to_response('experimenter/add-experiment.html',
+            { 'experiment_list': ExperimentMetadata.objects.all() },
+            context_instance=RequestContext(request))
+
 @experimenter_required
 def manage(request, pk=None):
-    try :
+    try:
         experiment = Experiment.objects.get(pk=pk)
 # redirect to experiment specific management page?
         return redirect(experiment.management_url)
