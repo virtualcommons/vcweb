@@ -1,0 +1,22 @@
+{% extends "experimenter/base.html" %}
+{% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
+{% block head %}
+{{ block.super }}
+
+{% endblock %}
+
+{% block page %}
+
+<ul>
+    {% for experiment in experiment_list %}
+    <li>{{ experiment.title }}
+    {% endfor %}
+</ul>
+
+<form method="POST" action=''>
+
+    <button type='submit'>Add</button>
+</form>
+
+{% endblock %}
+
