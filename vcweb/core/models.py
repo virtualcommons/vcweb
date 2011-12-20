@@ -1133,6 +1133,7 @@ class Participant(CommonsUser):
     class Meta:
         ordering = ['user']
 
+
 class ParticipantExperimentRelationship(models.Model):
     """
     Many-to-many relationship entity storing a participant and the experiment they are participating in.
@@ -1289,6 +1290,7 @@ class ParticipantRoundDataValue(DataValue):
     submitted = models.BooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
+        # FIXME: holy crap this sucks and destroys admin site's ability to add / manage comments from scratch
         super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
         if 'experiment' in kwargs and not hasattr(self, 'round_data'):
             self.experiment = kwargs['experiment']
@@ -1317,6 +1319,15 @@ class ParticipantRoundDataValue(DataValue):
 
     class Meta:
         ordering = [ 'round_data', 'participant_group_relationship', 'parameter' ]
+
+class Comment(ParticipantRoundDataValue):
+    text = models.TextField(null=True, blank=True)
+
+class ThumbsUp(models.Model):
+    participant = models.ForeignKey(Participant)
+    target_data_value = models.ForeignKey(ParticipantRoundDataValue)
+    date_created = models.DateTimeField(auto_now_add=True)
+
 
 class ActivityLog(models.Model):
     log_message = models.TextField()
