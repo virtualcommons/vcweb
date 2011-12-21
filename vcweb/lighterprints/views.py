@@ -203,4 +203,4 @@ def login(request):
             logger.debug("invalid form %s", form)
     except Exception as e:
         logger.debug("Invalid login: %s", e)
-    return HttpResponseBadRequest(dumps({"response": "Invalid login"}), content_type='application/json')
+    return HttpResponse(dumps({'success': False, 'message': "Invalid login"}), content_type='application/json')
