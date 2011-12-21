@@ -171,6 +171,9 @@ def do_activity(activity, participant_group_relationship):
                 submitted=True
                 )
 
+def get_performed_activity_ids(participant_group_relationship):
+    return [prdv.pk for prdv in participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())]
+
 @receiver(signals.midnight_tick)
 def update_active_experiments(sender, time=None, **kwargs):
     for experiment in get_active_experiments():

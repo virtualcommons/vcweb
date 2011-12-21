@@ -16,7 +16,6 @@ class BaseTest(BaseVcwebTest):
         experiment_metadata = get_lighterprints_experiment_metadata()
         self.load_experiment(experiment_metadata=experiment_metadata)
 
-
 class ActivityViewTest(BaseTest):
     def test_list(self):
         for pgr in self.experiment.participant_group_relationships:
@@ -83,8 +82,6 @@ class GroupActivityTest(BaseTest):
         self.assertEqual(chat_messages[0]['message'], test_message)
         self.assertEqual(5, len(recent_activity))
 
-
-
 class DoActivityTest(BaseTest):
     def test_view(self):
         logger.debug("testing do activity view")
@@ -109,9 +106,19 @@ class DoActivityTest(BaseTest):
                     'activity_id': activity.pk
                     })
                 self.assertEqual(response.status_code, 400)
-#                response self.client.post('/lighterprints/api/post-comment', {
-#                    'participant_group_id': participant_group_relationship.id,
-#                    'target_id': 
+            performed_activity_ids = get_performed_activity_ids(participant_group_relationship)
+            text = "This is a harrowing comment"
+            for activity_id in performed_activity_ids:
+                response = self.client.post('/lighterprints/api/post-comment', {
+                    'participant_group_id': participant_group_relationship.pk,
+                    'message': text,
+                    'target_id': activity_id
+                    })
+                self.assertEqual(response.status_code, 200)
+                logger.debug("response: %s", response)
+                logger.debug(response.comment)
+
+
 
 
 
