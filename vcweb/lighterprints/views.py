@@ -8,40 +8,15 @@ from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import FormView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
-from vcweb.core.forms import ChatForm, LoginForm
+from vcweb.core.forms import ChatForm, LoginForm, CommentForm
 from vcweb.core.models import (ChatMessage, ParticipantGroupRelationship, ParticipantRoundDataValue)
 from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token, json_response
 from vcweb.lighterprints.forms import ActivityForm
-from vcweb.lighterprints.models import (Activity, is_activity_available, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
+from vcweb.lighterprints.models import (Activity, to_activity_dict, get_all_available_activities, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
 
 import collections
 import logging
 logger = logging.getLogger(__name__)
-
-def to_activity_dict(activity, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining')):
-    activity_as_dict = {}
-    for attr_name in attrs:
-        activity_as_dict[attr_name] = getattr(activity, attr_name, None)
-    return activity_as_dict
-
-# returns a tuple of (flattened_activities list + activity_by_level dict)
-def get_all_available_activities(participant_group_relationship, all_activities=None):
-    if all_activities is None:
-        all_activities = Activity.objects.all()
-    flattened_activities = []
-    activity_by_level = collections.defaultdict(list)
-
-    for activity in all_activities:
-        activity_by_level[activity.level].append(activity)
-        #activity_as_dict = collections.OrderedDict()
-        activity_as_dict = to_activity_dict(activity)
-        try:
-            activity_as_dict['available'] = is_activity_available(activity, participant_group_relationship)
-            activity_as_dict['time_slots'] = ','.join([av.time_slot for av in activity.availability_set.all()])
-        except Exception as e:
-            logger.debug("failed to get authenticated activity list: %s", e)
-        flattened_activities.append(activity_as_dict)
-    return (flattened_activities, activity_by_level)
 
 class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
     model = Activity
@@ -190,6 +165,25 @@ def post_chat_message(request):
     return HttpResponseBadRequest(dumps({'response': "Invalid chat message post"}))
 
 @csrf_exempt
+def post_comment(request):
+    form = CommentForm(request.POST or None)
+    if form.is_valid():
+        participant_group_id = form.cleaned_data['participant_group_id']
+        target_id = form.cleaned_data['target_id']
+        message = form.cleaned_data['message']
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
+        comment = participant_group_relationship.comment_set.create(text=message,
+                round_data=participant_group_relationship.current_round_data,
+                target_data_value=target)
+        logger.debug("Participant %s commented '%s' on %s", participant_group_relationship.participant, message, target)
+
+        #content = get_group_activity_json(participant_group_relationship)
+        #return HttpResponse(content, content_type='application/json')
+        return HttpResponse(dumps({'comment' : comment}))
+    return HttpResponseBadRequest(dumps({'response': 'Invalid comment post'}))
+
+@csrf_exempt
 def login(request):
     form = LoginForm(request.POST or None)
     try:
@@ -204,7 +198,7 @@ def login(request):
             # at a time..
             active_experiment = active_experiments[0]
             participant_group_relationship = participant.get_participant_group_relationship(active_experiment)
-            return HttpResponse(dumps({'participant_group_id': participant_group_relationship.id}), content_type='application/json')
+            return HttpResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.id}), content_type='application/json')
         else:
             logger.debug("invalid form %s", form)
     except Exception as e:

@@ -5,8 +5,8 @@ from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
         GroupRoundDataValue, ParticipantRoundDataValue, Parameter)
 from django.dispatch import receiver
 from decimal import Decimal
+import collections
 import datetime
-
 import logging
 logger = logging.getLogger(__name__)
 
@@ -84,14 +84,40 @@ def get_active_experiments():
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
             status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
 
+def to_activity_dict(activity, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining')):
+    activity_as_dict = {}
+    for attr_name in attrs:
+        activity_as_dict[attr_name] = getattr(activity, attr_name, None)
+    return activity_as_dict
+
+# returns a tuple of (flattened_activities list + activity_by_level dict)
+def get_all_available_activities(participant_group_relationship, all_activities=None):
+    if all_activities is None:
+        all_activities = Activity.objects.all()
+    flattened_activities = []
+    activity_by_level = collections.defaultdict(list)
+
+    for activity in all_activities:
+        activity_by_level[activity.level].append(activity)
+        #activity_as_dict = collections.OrderedDict()
+        activity_as_dict = to_activity_dict(activity)
+        try:
+            activity_as_dict['available'] = is_activity_available(activity, participant_group_relationship)
+            activity_as_dict['time_slots'] = ','.join([av.time_slot for av in activity.availability_set.all()])
+        except Exception as e:
+            logger.debug("failed to get authenticated activity list: %s", e)
+        flattened_activities.append(activity_as_dict)
+    return (flattened_activities, activity_by_level)
+
 def available_activities(activity=None):
     current_time = datetime.datetime.now().time()
     available_time_slot = dict(start_time__lte=current_time, end_time__gte=current_time)
-    available_all_day = dict(activity__available_all_day=True)
     if activity is not None:
         available_time_slot['activity'] = activity
-        available_all_day['activity'] = activity
-    return ActivityAvailability.objects.select_related(depth=1).filter(Q(**available_time_slot) | Q(**available_all_day))
+    activities = [activity_availability.activity for activity_availability in ActivityAvailability.objects.select_related(depth=1).filter(Q(**available_time_slot))]
+    logger.debug("activities: %s", activities)
+    activities.extend(Activity.objects.filter(available_all_day=True))
+    return activities
 
 def is_activity_available(activity, participant_group_relationship, **kwargs):
     # FIXME: make sure that the activity level is appropriate for this PGR

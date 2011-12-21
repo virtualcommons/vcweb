@@ -1322,6 +1322,7 @@ class ParticipantRoundDataValue(DataValue):
 
 class Comment(ParticipantRoundDataValue):
     text = models.TextField(null=True, blank=True)
+    target_data_value = models.ForeignKey(ParticipantRoundDataValue, related_name='comment_target_set')
 
 class ThumbsUp(models.Model):
     participant = models.ForeignKey(Participant)

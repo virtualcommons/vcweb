@@ -110,10 +110,15 @@ class RegisterSimpleParticipantsForm(RegisterParticipantsForm):
 class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
     participant_emails = EmailListField(label="Participant emails", help_text='A comma or newline delimited list of emails to register as participants for this experiment.')
 
-
-
 class ChatForm(forms.Form):
     message = forms.CharField(required=True, max_length=512)
+    participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
+    def clean_message(self):
+        return escape(self.cleaned_data['message'])
+
+class CommentForm(forms.Form):
+    message = forms.CharField(required=True, max_length=512)
+    target_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
     participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
     def clean_message(self):
         return escape(self.cleaned_data['message'])

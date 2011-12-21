@@ -91,24 +91,27 @@ class DoActivityTest(BaseTest):
         e = self.experiment
         e.activate()
         e.start_round()
+
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
-            logger.debug("all available activities: %s", available_activities())
-            for activity_availability in available_activities():
-                logger.debug("available activity: %s", activity_availability)
-                activity = activity_availability.activity
+            activities = available_activities()
+            logger.debug("all available activities: %s", activities)
+            for activity in activities:
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
-                    'activity_id': activity.id
+                    'activity_id': activity.pk
                     })
                 self.assertEqual(response.status_code, 200)
-# try to do the same activity again
+                logger.debug("Initial do activity response: %s", response)
+# trying to do the same activity again should result in an error response
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
                     })
                 self.assertEqual(response.status_code, 400)
-
+#                response self.client.post('/lighterprints/api/post-comment', {
+#                    'participant_group_id': participant_group_relationship.id,
+#                    'target_id': 
 
 
 
