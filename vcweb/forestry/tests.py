@@ -211,7 +211,7 @@ class ForestryParametersTest(BaseVcwebTest):
                 data_value.value = 100
                 data_value.save()
                 self.assertEqual(100, data_value.value)
-            self.assertEqual(e.current_round_data.group_data_value_set.count(), GroupRoundDataValue.objects.filter(experiment=e, round_data=current_round_data).count())
+            self.assertEqual(e.current_round_data.group_data_value_set.count(), GroupRoundDataValue.objects.filter(group__experiment=e, round_data=current_round_data).count())
             self.assertEqual(e.parameters(scope=Parameter.GROUP_SCOPE).count(), 3)
             data_round_number += 1
 
@@ -238,7 +238,7 @@ class ForestryParametersTest(BaseVcwebTest):
     def test_data_values(self):
         e = self.create_participant_data_values()
         num_participant_parameters = e.parameters(scope=Parameter.PARTICIPANT_SCOPE).count()
-        self.assertEqual(e.participant_set.count() * num_participant_parameters, ParticipantRoundDataValue.objects.filter(experiment=e).count(),
+        self.assertEqual(e.participant_set.count() * num_participant_parameters, ParticipantRoundDataValue.objects.filter(round_data__experiment=e).count(),
                 'There should be %s participants * %s total data parameters = %s' % (e.participant_set.count(), num_participant_parameters, e.participant_set.count() * num_participant_parameters))
 
     def test_data_value_conversion(self):
