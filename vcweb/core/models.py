@@ -6,7 +6,7 @@ from django.db.models.aggregates import Max
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from string import Template
-from vcweb.core import signals
+from vcweb.core import signals, simplecache
 
 import base64
 import hashlib
@@ -722,8 +722,8 @@ class QuizQuestion(models.Model):
         return u'%s' % self.label
 
 class ParameterManager(models.Manager):
-    def get_by_natural_key(self, key):
-        return self.get(name=key)
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
 
 class Parameter(models.Model):
     PARAMETER_TYPES = (('int', 'Integer value'),
@@ -769,7 +769,7 @@ class Parameter(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     creator = models.ForeignKey(Experimenter)
-    experiment_metadata = models.ForeignKey(ExperimentMetadata)
+    experiment_metadata = models.ForeignKey(ExperimentMetadata, null=True, blank=True)
     enum_choices = models.TextField(null=True, blank=True)
     is_required = models.BooleanField(default=False)
 
@@ -818,13 +818,16 @@ class Parameter(models.Model):
         return value
 
     def __unicode__(self):
-        return u"[name: %s, type:%s, scope:%s]" % (self.name, self.type, self.scope)
+        return u"%s (%s) scope:%s" % (self.label, self.type, self.scope)
 
     class Meta:
         ordering = ['name']
         unique_together = ('name', 'experiment_metadata', 'scope')
 
 class ParameterizedValue(models.Model):
+    """
+    Supertype for GroupRoundDataValue and ParticipantRoundDataValue
+    """
     parameter = models.ForeignKey(Parameter)
     string_value = models.TextField(null=True, blank=True)
     int_value = models.IntegerField(null=True, blank=True)
@@ -844,6 +847,9 @@ class ParameterizedValue(models.Model):
         converted_value = self.parameter.convert(obj)
         setattr(self, self.parameter.value_field_name, converted_value)
 
+    def __unicode__(self):
+        return u"Data value: [parameter {0}, value {1}], recorded at {2}".format(self.parameter, self.value, self.date_created)
+
     class Meta:
         abstract = True
 
@@ -855,19 +861,6 @@ class RoundParameterValue(ParameterizedValue):
 
     def __unicode__(self):
         return u"{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.value)
-
-
-class DataValue(ParameterizedValue):
-    """
-    Supertype for GroupRoundDataValue and ParticipantRoundDataValue
-    """
-    experiment = models.ForeignKey(Experiment)
-
-    def __unicode__(self):
-        return u"Data value: [parameter {0}, value {1}], recorded at {2} for experiment {3}".format(self.parameter, self.value, self.time_recorded, self.experiment)
-
-    class Meta:
-        abstract = True
 
 class Group(models.Model):
     number = models.PositiveIntegerField()
@@ -1083,7 +1076,7 @@ class RoundData(models.Model):
     class Meta:
         ordering = [ 'round_configuration' ]
 
-class GroupRoundDataValue(DataValue):
+class GroupRoundDataValue(ParameterizedValue):
     group = models.ForeignKey(Group, related_name='data_value_set')
     round_data = models.ForeignKey(RoundData, related_name='group_data_value_set')
 
@@ -1200,6 +1193,9 @@ class ParticipantGroupRelationship(models.Model):
         return self.group.current_round_data
 
     @property
+    def experiment(self):
+        return self.group.experiment
+    @property
     def group_number(self):
         return self.group.number
 
@@ -1280,23 +1276,21 @@ class ChatMessage(models.Model):
     class Meta:
         ordering = ['date_created']
 
-"""
-Stores participant-specific data value and associates a Participant, Experiment
-(from DataValue), the round in which the data value was associated.
-"""
-class ParticipantRoundDataValue(DataValue):
+class ParticipantRoundDataValue(ParameterizedValue):
+    """
+    Represents one data point collected for a given Participant in a given Round.
+    """
     round_data = models.ForeignKey(RoundData, related_name='participant_data_value_set')
     participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='participant_data_value_set')
     submitted = models.BooleanField(default=False)
+    target_data_value = models.ForeignKey('ParticipantRoundDataValue', related_name='target_data_value_set', null=True, blank=True)
 
     def __init__(self, *args, **kwargs):
-        # FIXME: holy crap this sucks and destroys admin site's ability to add / manage comments from scratch
         super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
-        if 'experiment' in kwargs and not hasattr(self, 'round_data'):
-            self.experiment = kwargs['experiment']
-            self.round_data = self.experiment.current_round_data
-        elif not hasattr(self, 'experiment'):
-            self.experiment = self.round_data.experiment
+        # FIXME: is this really necessary?
+        if 'participant_group_relationship' in kwargs and not hasattr(self, 'round_data'):
+            participant_group_relationship = kwargs['participant_group_relationship']
+            self.round_data = participant_group_relationship.experiment.current_round_data
 
     @property
     def participant(self):
@@ -1320,9 +1314,14 @@ class ParticipantRoundDataValue(DataValue):
     class Meta:
         ordering = [ 'round_data', 'participant_group_relationship', 'parameter' ]
 
+@simplecache
+def get_comment_parameter():
+    return Parameter.objects.get(name='comment', scope=Parameter.PARTICIPANT_SCOPE)
+
 class Comment(ParticipantRoundDataValue):
-    text = models.TextField(null=True, blank=True)
-    target_data_value = models.ForeignKey(ParticipantRoundDataValue, related_name='comment_target_set')
+    def __init__(self, *args, **kwargs):
+        kwargs['parameter'] = get_comment_parameter()
+        super(Comment, self).__init__(*args, **kwargs)
 
 class ThumbsUp(models.Model):
     participant = models.ForeignKey(Participant)
@@ -1346,6 +1345,7 @@ class GroupActivityLog(ActivityLog):
 class ExperimentActivityLog(ActivityLog):
     experiment = models.ForeignKey(Experiment, related_name='activity_log_set')
     round_configuration = models.ForeignKey(RoundConfiguration)
+
 
 def is_experimenter(user, experimenter=None):
     if hasattr(user, 'experimenter') and isinstance(user.experimenter, Experimenter):

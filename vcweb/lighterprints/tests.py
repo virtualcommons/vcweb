@@ -7,6 +7,7 @@ from vcweb.lighterprints.models import *
 
 import logging
 logger = logging.getLogger(__name__)
+import simplejson as json
 
 class BaseTest(BaseVcwebTest):
     def setUp(self):
@@ -15,7 +16,6 @@ class BaseTest(BaseVcwebTest):
         self.factory = RequestFactory()
         experiment_metadata = get_lighterprints_experiment_metadata()
         self.load_experiment(experiment_metadata=experiment_metadata)
-
 
 class ActivityViewTest(BaseTest):
     def test_list(self):
@@ -40,7 +40,7 @@ class UpdateLevelTest(BaseTest):
 # initialize participant carbon savings
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
             for activity in Activity.objects.filter(level=1):
-                activity_performed = participant_group_relationship.participant_data_value_set.create(round_data=current_round_data, parameter=activity_performed_parameter, experiment=e)
+                activity_performed = participant_group_relationship.participant_data_value_set.create(round_data=current_round_data, parameter=activity_performed_parameter)
                 activity_performed.value = activity.id
                 activity_performed.save()
         # FIXME: sender parameter doesn't really matter here, just pass self in as the sender
@@ -60,7 +60,7 @@ class GroupActivityTest(BaseTest):
         activity_performed_parameter = get_activity_performed_parameter()
         current_round_data = e.current_round_data
         for activity in Activity.objects.filter(level=1):
-            activity_performed = participant_group_relationship.participant_data_value_set.create(submitted=True, round_data=current_round_data, parameter=activity_performed_parameter, experiment=e)
+            activity_performed = participant_group_relationship.participant_data_value_set.create(submitted=True, round_data=current_round_data, parameter=activity_performed_parameter)
             activity_performed.value = activity.id
             activity_performed.save()
         group_activity_json = get_group_activity_json(participant_group_relationship)
@@ -83,8 +83,6 @@ class GroupActivityTest(BaseTest):
         self.assertEqual(chat_messages[0]['message'], test_message)
         self.assertEqual(5, len(recent_activity))
 
-
-
 class DoActivityTest(BaseTest):
     def test_view(self):
         logger.debug("testing do activity view")
@@ -102,16 +100,33 @@ class DoActivityTest(BaseTest):
                     'activity_id': activity.pk
                     })
                 self.assertEqual(response.status_code, 200)
+                json_object = json.loads(response.content)
+                self.assertTrue(json_object['success'])
                 logger.debug("Initial do activity response: %s", response)
 # trying to do the same activity again should result in an error response
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
                     })
-                self.assertEqual(response.status_code, 400)
-#                response self.client.post('/lighterprints/api/post-comment', {
-#                    'participant_group_id': participant_group_relationship.id,
-#                    'target_id': 
+                self.assertEqual(response.status_code, 200)
+                json_object = json.loads(response.content)
+                self.assertFalse(json_object['success'])
+
+            performed_activity_ids = get_performed_activity_ids(participant_group_relationship)
+            text = "This is a harrowing comment"
+            for activity_id in performed_activity_ids:
+                logger.debug("posting comment on id %s", activity_id)
+                response = self.client.post('/lighterprints/api/post-comment', {
+                    'participant_group_id': participant_group_relationship.pk,
+                    'message': text,
+                    'target_id': activity_id
+                    })
+                self.assertEqual(response.status_code, 200)
+                json_object = json.loads(response.content)
+                logger.debug("json: %s", json_object)
+                self.assertEqual(json_object['comment'], text)
+
+
 
 
 

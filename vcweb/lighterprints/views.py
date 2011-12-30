@@ -9,7 +9,7 @@ from django.views.generic.edit import FormView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
 from vcweb.core.forms import ChatForm, LoginForm, CommentForm
-from vcweb.core.models import (ChatMessage, ParticipantGroupRelationship, ParticipantRoundDataValue)
+from vcweb.core.models import (ChatMessage, Comment, ParticipantGroupRelationship, ParticipantRoundDataValue)
 from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token, json_response
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, to_activity_dict, get_all_available_activities, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
@@ -129,6 +129,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         performed_activity_dict['performed_activity_id'] = activity_prdv.pk
         group_activity.append(performed_activity_dict)
     return dumps({
+        'success': True,
         'chat_messages': chat_messages,
         'recent_activity': group_activity
         })
@@ -147,8 +148,9 @@ def perform_activity(request):
             activity_dict = to_activity_dict(activity)
             activity_dict['date_created'] = performed_activity.date_created
             activity_dict['performed_activity_id'] = performed_activity.pk
+            activity_dict['success'] = True
             return HttpResponse(dumps(activity_dict), content_type='application/json')
-    return HttpResponseBadRequest(dumps({'response': "Could not perform activity"}), content_type='application/json')
+    return HttpResponse(dumps({'success': False, 'response': "Could not perform activity"}), content_type='application/json')
 
 @csrf_exempt
 def post_chat_message(request):
@@ -162,7 +164,7 @@ def post_chat_message(request):
         logger.debug("Participant %s created chat message %s", participant_group_relationship.participant, chat_message)
         content = get_group_activity_json(participant_group_relationship)
         return HttpResponse(content, content_type='application/json')
-    return HttpResponseBadRequest(dumps({'response': "Invalid chat message post"}))
+    return HttpResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
 
 @csrf_exempt
 def post_comment(request):
@@ -172,16 +174,21 @@ def post_comment(request):
         target_id = form.cleaned_data['target_id']
         message = form.cleaned_data['message']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
-        comment = participant_group_relationship.comment_set.create(text=message,
-                round_data=participant_group_relationship.current_round_data,
+        logger.debug("target: %s", target)
+        comment = Comment.objects.create(
+                value=message,
+                participant_group_relationship=participant_group_relationship,
                 target_data_value=target)
         logger.debug("Participant %s commented '%s' on %s", participant_group_relationship.participant, message, target)
 
         #content = get_group_activity_json(participant_group_relationship)
         #return HttpResponse(content, content_type='application/json')
-        return HttpResponse(dumps({'comment' : comment}))
-    return HttpResponseBadRequest(dumps({'response': 'Invalid comment post'}))
+        return HttpResponse(dumps({'success': True, 'comment' : comment.value, 'target': target}))
+    else:
+        logger.debug("invalid form: %s from request: %s", form, request)
+        return HttpResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
 
 @csrf_exempt
 def login(request):
