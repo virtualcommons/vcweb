@@ -1219,62 +1219,6 @@ class ParticipantGroupRelationship(models.Model):
     class Meta:
         ordering = ['group', 'participant_number']
 
-class ChatMessageManager(models.Manager):
-    def message(self, experiment, message):
-        current_round_data = experiment.current_round_data
-        for participant in experiment.participant_set.all():
-            yield ChatMessage.objects.create(participant_group_relationship=participant.get_participant_group_relationship(experiment),
-                    message=message,
-                    round_data=current_round_data)
-
-class ChatMessage(models.Model):
-    """
-    A chat message sent by a participant in a group to the rest of the members of the group or a target participant
-    if target_participant is set.
-    """
-    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='participant_chat_message_set')
-    """ the combination of participant and group that generated this chat message """
-
-    message = models.CharField(max_length=512)
-    """ the chat message """
-
-    target_participant = models.ForeignKey(ParticipantGroupRelationship, null=True, blank=True, related_name='target_participant_chat_message_set')
-    """ if set, this is a targeted message to the other participant in this group.  If null, this is a broadcast message to the entire group """
-
-    date_created = models.DateTimeField(auto_now_add=True)
-    """ the creation datetime of this chat message """
-
-    round_data = models.ForeignKey(RoundData, related_name='chat_message_set')
-    """ the round data associated with this chat message """
-
-    objects = ChatMessageManager()
-
-    @property
-    def group(self):
-        return self.participant_group_relationship.group
-
-    @property
-    def participant(self):
-        return self.participant_group_relationship.participant
-
-    @property
-    def round_configuration(self):
-        return self.round_data.round_configuration
-
-    @property
-    def as_html(self):
-        return "<a name='{0}'>{1}</a> | {2}".format(self.pk,
-                self.date_created.strftime("%H:%M:%S"),
-                self.__unicode__())
-
-
-    def __unicode__(self):
-        """ return this participant's sequence number combined with the message """
-        participant_number = self.participant_group_relationship.participant_number
-        return u"{0}: {1}".format(participant_number, self.message)
-
-    class Meta:
-        ordering = ['date_created']
 
 class ParticipantRoundDataValue(ParameterizedValue):
     """
@@ -1313,6 +1257,59 @@ class ParticipantRoundDataValue(ParameterizedValue):
 
     class Meta:
         ordering = [ 'round_data', 'participant_group_relationship', 'parameter' ]
+
+
+@simplecache
+def get_chat_message_parameter():
+    return Parameter.objects.get(name='chat_message', scope=Parameter.PARTICIPANT_SCOPE)
+
+class ChatMessageManager(models.Manager):
+    def message(self, experiment, message):
+        current_round_data = experiment.current_round_data
+        for participant in experiment.participant_set.all():
+            yield ChatMessage.objects.create(participant_group_relationship=participant.get_participant_group_relationship(experiment),
+                    value=message,
+                    round_data=current_round_data)
+
+# FIXME: make this inherit from ParticipantRoundDataValue instead
+class ChatMessage(ParticipantRoundDataValue):
+    target_participant = models.ForeignKey(ParticipantGroupRelationship, null=True, blank=True, related_name='target_participant_chat_message_set')
+    """ if set, this is a targeted message to the other participant in this group.  If null, this is a broadcast message to the entire group """
+    objects = ChatMessageManager()
+
+    def __init__(self, *args, **kwargs):
+        kwargs['parameter'] = get_chat_message_parameter()
+        super(ChatMessage, self).__init__(*args, **kwargs)
+
+    @property
+    def message(self):
+        return self.value
+
+    @property
+    def group(self):
+        return self.participant_group_relationship.group
+
+    @property
+    def participant(self):
+        return self.participant_group_relationship.participant
+
+    @property
+    def round_configuration(self):
+        return self.round_data.round_configuration
+
+    @property
+    def as_html(self):
+        return "<a name='{0}'>{1}</a> | {2}".format(self.pk,
+                self.date_created.strftime("%H:%M:%S"),
+                self.__unicode__())
+
+    def __unicode__(self):
+        """ return this participant's sequence number combined with the message """
+        participant_number = self.participant_group_relationship.participant_number
+        return u"{0}: {1}".format(participant_number, self.value)
+
+    class Meta:
+        ordering = ['date_created']
 
 @simplecache
 def get_comment_parameter():

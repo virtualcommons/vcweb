@@ -109,7 +109,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         pgr = chat_message.participant_group_relationship
         chat_messages.append({
             'date_created': timesince(chat_message.date_created),
-            'message': chat_message.message,
+            'message': chat_message.value,
             'participant_number': pgr.participant_number,
             'participant_group_id':pgr.pk
             })
@@ -159,8 +159,8 @@ def post_chat_message(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         message = form.cleaned_data['message']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-        chat_message = participant_group_relationship.participant_chat_message_set.create(message=message,
-                round_data=participant_group_relationship.current_round_data)
+        chat_message = ChatMessage.objects.create(value=message,
+                participant_group_relationship=participant_group_relationship)
         logger.debug("Participant %s created chat message %s", participant_group_relationship.participant, chat_message)
         content = get_group_activity_json(participant_group_relationship)
         return HttpResponse(content, content_type='application/json')

@@ -249,7 +249,7 @@ class ParticipantHandler(SocketConnection):
                 participant_group_relationship = connection_manager.get_participant_group_relationship(self)
                 current_round_data = participant_group_relationship.group.experiment.current_round_data
                 chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
-                        message=xhtml_escape(event.message),
+                        value=xhtml_escape(event.message),
                         round_data=current_round_data
                         )
                 chat_json = simplejson.dumps({
