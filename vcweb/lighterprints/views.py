@@ -107,11 +107,14 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
     chat_messages = []
     for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
         pgr = chat_message.participant_group_relationship
+        comments = [c.to_json_dict() for c in Comment.objects.filter(target_data_value=chat_message.pk)]
         chat_messages.append({
+            'pk': chat_message.pk,
             'date_created': timesince(chat_message.date_created),
             'message': chat_message.value,
             'participant_number': pgr.participant_number,
-            'participant_group_id':pgr.pk
+            'participant_group_id':pgr.pk,
+            'comments': comments
             })
     group_activity = []
     performed_activities = ParticipantRoundDataValue.objects.filter(participant_group_relationship__group=group, submitted=True, parameter=get_activity_performed_parameter()).order_by('-date_created')

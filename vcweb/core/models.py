@@ -1271,7 +1271,6 @@ class ChatMessageManager(models.Manager):
                     value=message,
                     round_data=current_round_data)
 
-# FIXME: make this inherit from ParticipantRoundDataValue instead
 class ChatMessage(ParticipantRoundDataValue):
     target_participant = models.ForeignKey(ParticipantGroupRelationship, null=True, blank=True, related_name='target_participant_chat_message_set')
     """ if set, this is a targeted message to the other participant in this group.  If null, this is a broadcast message to the entire group """
@@ -1319,6 +1318,14 @@ class Comment(ParticipantRoundDataValue):
     def __init__(self, *args, **kwargs):
         kwargs['parameter'] = get_comment_parameter()
         super(Comment, self).__init__(*args, **kwargs)
+
+    def to_json_dict(self, **kwargs):
+        return { 'pk' : self.pk,
+                'participant_group_id': self.participant_group_relationship.pk,
+                'participant_number': self.participant_group_relationship.participant_number,
+                'date_created': self.date_created,
+                'message': self.value
+                }
 
 class ThumbsUp(models.Model):
     participant = models.ForeignKey(Participant)
