@@ -1326,6 +1326,8 @@ class Comment(ParticipantRoundDataValue):
                 'date_created': self.date_created,
                 'message': self.value
                 }
+    class Meta:
+        ordering = ['date_created']
 
 class ThumbsUp(models.Model):
     participant = models.ForeignKey(Participant)
