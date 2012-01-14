@@ -3,7 +3,7 @@ from fabric.contrib.console import confirm
 from fabric.contrib import django
 from fabric.context_managers import settings as fab_settings
 
-import os, sys
+import os, sys, shutil
 
 # needed to push vcweb.settings onto the path.
 sys.path.append(os.path.abspath('..'))
@@ -44,8 +44,10 @@ def shell():
 
 def syncdb(**kwargs):
     with cd(env.project_path):
-        if os.path.exists('vcweb.db'):
-            os.remove('vcweb.db')
+        from vcweb import settings as vcweb_settings
+        if os.path.exists(vcweb_settings.DATA_DIR):
+            shutil.rmtree(vcweb_settings.DATA_DIR)
+        os.mkdir(vcweb_settings.DATA_DIR)
         _virtualenv(local, *syncdb_commands, **kwargs)
 
 

@@ -36,6 +36,12 @@ class Activity(models.Model):
     def icon_url(self):
         return self.icon.url if self.icon else ""
 
+    def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining')):
+        activity_as_dict = {}
+        for attr_name in attrs:
+            activity_as_dict[attr_name] = getattr(self, attr_name, None)
+            return activity_as_dict
+
     def __unicode__(self):
         return u'%s (+%s)' % (self.label, self.savings)
 
@@ -84,6 +90,7 @@ def get_active_experiments():
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
             status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
 
+# FIXME: push into Activity class itself
 def to_activity_dict(activity, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining')):
     activity_as_dict = {}
     for attr_name in attrs:

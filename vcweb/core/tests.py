@@ -91,6 +91,8 @@ class BaseVcwebTest(TestCase):
     class Meta:
         abstract = True
 
+
+
 class ExperimentMetadataTest(BaseVcwebTest):
     namespace_regex = ExperimentMetadata.namespace_regex
 
@@ -336,3 +338,20 @@ class RoundConfigurationTest(BaseVcwebTest):
             rc = self.create_new_round_configuration(round_type=round_type)
             e.current_round_sequence_number = rc.sequence_number
             self.assertEqual(e.current_round_template, "%s/%s" % (e.namespace, data[1]), 'should have returned template for ' + data[0])
+
+
+class GraphDatabaseTest(TestCase):
+    def test_create_participant(self):
+        from vcweb.core.graph import create_participant, create_activity, get_participant
+        usernames = []
+        for i in range(1,10):
+            username = 'test'+str(i)+'@asu.edu'
+            usernames.append(username)
+            create_participant(i, username)
+        for i in range(1,15):
+            name = 'activity'+str(i)
+            create_activity(i, name)
+        for i in range(1, 10):
+            self.assertEqual(get_participant(i)["username"], usernames[i-1])
+
+

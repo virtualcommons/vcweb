@@ -12,10 +12,12 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
+DATA_DIR = 'data'
+
 DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'vcweb.db',
+            'NAME': path.join(DATA_DIR, 'vcweb.db')
             }
         }
 # Local time zone for this installation. Choices can be found here:
@@ -142,13 +144,15 @@ MEDIA_ROOT = path.join(STATIC_ROOT, 'media')
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
 MEDIA_URL = '/static/media/'
 
-
 # set up jquery-ui css classes for django messages
 MESSAGE_TAGS = {
         messages.constants.INFO : 'ui-state-highlight ui-corner-all',
         messages.constants.WARNING: 'ui-state-error ui-corner-all',
         messages.constants.ERROR: 'ui-state-error ui-corner-all'
         }
+
+GRAPH_DATABASE_PATH=path.join(DATA_DIR, 'neo4j-store')
+
 try:
     from settings_local import *
 except ImportError:
