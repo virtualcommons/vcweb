@@ -342,16 +342,21 @@ class RoundConfigurationTest(BaseVcwebTest):
 
 class GraphDatabaseTest(TestCase):
     def test_create_participant(self):
-        from vcweb.core.graph import create_participant, create_activity, get_participant
+        from vcweb.core.graph import create_participant, create_activity,get_participant,get_activity
         usernames = []
+        activity_names = []
         for i in range(1,10):
             username = 'test'+str(i)+'@asu.edu'
             usernames.append(username)
-            create_participant(i, username)
+            create_participant(i, username)        
         for i in range(1,15):
             name = 'activity'+str(i)
+            activity_names.append(name)
             create_activity(i, name)
+            
         for i in range(1, 10):
-            self.assertEqual(get_participant(i)["username"], usernames[i-1])
+            self.assertEqual(get_participant(i)["username"],username[i-1])
+        for i in range(1, 15):
+            self.assertEqual(get_activity(i)["name"],activity_names[i-1])
 
 
