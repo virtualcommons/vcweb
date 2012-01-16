@@ -52,6 +52,10 @@ class Neo4jDAO(object):
         with self._db.transaction:
             idx = self._db.node.indexes.get(index)
         return idx
+    def get_rel_index(self,index):
+        with self._db.transaction:
+            idx = self._db.relationship.indexes.get(index)
+        return idx
 
     def shutdown(self):
         logger.debug("Shutting down neo4j embedded database")
@@ -59,13 +63,23 @@ class Neo4jDAO(object):
             self._db.shutdown()
         except NameError:
             print 'Could not shutdown Neo4j database. Is it open in another process?'
-
+    
     def initialize_indexes(self):
         try:
             logger.debug("creating indexes for %s and relationship indexes %s", Index, RelationshipIndex)
             for index in Index.values():
+                #FIXME: Work around to avoid re-creation of index at time of unit testing 
+                #       as post_syncdb method is invoked every time for 'manage.py test'
+                if self.get_node_index(index) is not None:
+                    logger.debug("Index %s already exists for nodes", index)
+                    continue
                 self.create_node_index(index)
             for relationship_index in RelationshipIndex.values():
+                #FIXME: Work around to avoid re-creation of index at time of unit testing 
+                #       as post_syncdb method is invoked every time for 'manage.py test'
+                if self.get_rel_index(relationship_index) is not None:
+                    logger.debug("Index %s already exists for relationship", relationship_index)
+                    continue
                 self.create_rel_index(relationship_index)
         except Exception as e:
             logger.debug("Unable to initialize indexes: %s", e)
@@ -169,6 +183,8 @@ class Comment(object):
     
     
 def create_participant(pk,username):
+    if get_participant(pk) is not None:
+        raise ValueError("Participant Node of id %s already exists." % pk)
     with _conn.transaction:
         participant = _conn.node(id=pk,username=username,type="participant")
         dao.get_node_index(Index.PARTICIPANT)['username'][username] = participant
@@ -176,6 +192,8 @@ def create_participant(pk,username):
     return participant
 
 def create_activity(pk,name):
+    if get_activity(pk) is not None:
+        raise ValueError("Activity Node of id %s already exists." % pk)
     with _conn.transaction:
         activity = _conn.node(id=pk,name=name,type="activity")
         dao.get_node_index(Index.ACTIVITY)['name'][name] = activity
@@ -301,5 +319,13 @@ def wall_page(ppk):
 atexit.register(dao.shutdown)
     
 if __name__ == '__main__':
-    wall_page(1)
+    """
+    usernames = []
+    for i in range(1,10):
+            username = 'test'+str(i)+'@asu.edu'
+            usernames.append(username)
+            create_participant(i, username)
+    """
+    print get_participant(1)
+    
     dao.shutdown()
