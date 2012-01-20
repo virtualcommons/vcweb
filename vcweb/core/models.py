@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models.aggregates import Max
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
+from django.utils.timesince import timesince
 from string import Template
 from vcweb.core import signals, simplecache
 
@@ -1323,7 +1324,7 @@ class Comment(ParticipantRoundDataValue):
         return { 'pk' : self.pk,
                 'participant_group_id': self.participant_group_relationship.pk,
                 'participant_number': self.participant_group_relationship.participant_number,
-                'date_created': self.date_created,
+                'date_created': timesince(self.date_created),
                 'message': self.value
                 }
     class Meta:

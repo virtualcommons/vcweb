@@ -5,6 +5,7 @@ from vcweb.lighterprints.views import (ActivityDetailView, ActivityListView, Mob
         post_chat_message, post_comment, perform_activity, DiscussionBoardView, login,
         group_activity)
 
+# handles all /lighterprints/* URL requests
 urlpatterns = patterns('vcweb.lighterprints.views',
     url(r'^mobile$', MobileView.as_view(), name='mobile'),
     url(r'^(?P<experiment_id>\d+)/configure$', 'configure', name='configure'),
