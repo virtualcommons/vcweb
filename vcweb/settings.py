@@ -12,7 +12,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATA_DIR = '/data'
+DATA_DIR = 'data'
 
 DATABASES = {
         'default': {
