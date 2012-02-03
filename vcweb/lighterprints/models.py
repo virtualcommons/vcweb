@@ -18,6 +18,7 @@ class Activity(models.Model):
     url = models.URLField()
     savings = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     available_all_day = models.BooleanField(default=False)
+    personal_benefits = models.TextField(null=True, blank=True)
 # FIXME: allow for experiment-configurable levels?
     level = models.PositiveIntegerField(default=1)
     group_activity = models.BooleanField(default=False, help_text='Whether or not this activity has beneficial group effect multipliers, e.g., ride sharing')
@@ -40,7 +41,7 @@ class Activity(models.Model):
         activity_as_dict = {}
         for attr_name in attrs:
             activity_as_dict[attr_name] = getattr(self, attr_name, None)
-            return activity_as_dict
+        return activity_as_dict
 
     def __unicode__(self):
         return u'%s (+%s)' % (self.label, self.savings)
@@ -59,6 +60,12 @@ class ActivityAvailability(models.Model):
     @property
     def time_slot(self):
         return u'%s - %s' % (self.start_time.strftime('%I:%M %p'), self.end_time.strftime('%I:%M %p'))
+
+    def to_dict(self, attrs=('start_time', 'end_time')):
+        d = {}
+        for attr_name in attrs:
+            d[attr_name] = getattr(self, attr_name, None)
+        return d
 
     class Meta:
         ordering = ['activity', 'start_time']
@@ -109,6 +116,7 @@ def get_all_available_activities(participant_group_relationship, all_activities=
         #activity_as_dict = collections.OrderedDict()
         activity_as_dict = to_activity_dict(activity)
         try:
+            activity_as_dict['availabilities'] = [availability.to_dict() for availability in ActivityAvailability.objects.filter(activity=activity)]
             activity_as_dict['available'] = is_activity_available(activity, participant_group_relationship)
             activity_as_dict['time_slots'] = ','.join([av.time_slot for av in activity.availability_set.all()])
         except Exception as e:
