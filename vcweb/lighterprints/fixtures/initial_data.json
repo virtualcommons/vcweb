@@ -1,5 +1,30 @@
 [
     {
+        "pk": 15,
+        "model": "auth.user",
+        "fields": {
+            "username": "srelias@asu.edu",
+            "first_name": "Steven",
+            "last_name": "Elias",
+            "is_active": true,
+            "is_superuser": false,
+            "is_staff": true,
+            "last_login": "2011-07-21 11:26:11",
+            "groups": [],
+            "user_permissions": [
+                85,
+                86,
+                87,
+                88,
+                89,
+                90
+            ],
+            "password": "sha1$b6803$fdf4e561936dcf4d4986ee2820bcb4dbf08501d7",
+            "email": "srelias@asu.edu",
+            "date_joined": "2011-07-08 16:23:27"
+        }
+    },
+    {
         "fields": {
             "authentication_code": "TEST_LIGHTERPRINTS",
             "current_round_elapsed_time": 0,

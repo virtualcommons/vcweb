@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models import Q
-from vcweb.core import signals, simplecache
+from vcweb.core import signals, simplecache, enum
 from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
         GroupRoundDataValue, ParticipantRoundDataValue, Parameter)
 from django.dispatch import receiver
@@ -9,6 +9,8 @@ import collections
 import datetime
 import logging
 logger = logging.getLogger(__name__)
+
+ActivityStatus = enum('AVAILABLE', 'COMPLETED', 'UNAVAILABLE')
 
 class Activity(models.Model):
     name = models.CharField(max_length=32, unique=True)
@@ -22,6 +24,7 @@ class Activity(models.Model):
 # FIXME: allow for experiment-configurable levels?
     level = models.PositiveIntegerField(default=1)
     group_activity = models.BooleanField(default=False, help_text='Whether or not this activity has beneficial group effect multipliers, e.g., ride sharing')
+# currently unused
     cooldown = models.PositiveIntegerField(default=1, null=True, blank=True, help_text='How much time, in hours, must elapse before this activity can become available again')
     icon = models.ImageField(upload_to='lighterprints/activity-icons/')
 
@@ -134,8 +137,7 @@ def available_activities(activity=None):
     activities.extend(Activity.objects.filter(available_all_day=True))
     return activities
 
-def is_activity_available(activity, participant_group_relationship, **kwargs):
-    # FIXME: make sure that the activity level is appropriate for this PGR
+def check_activity_availability(activity, participant_group_relationship, **kwargs):
 # how often can a participant participate in an activity?
 # whenever it falls within the ActivityAvailability schedule and if the participant
 # hasn't already performed this activity during this cycle.
@@ -143,7 +145,7 @@ def is_activity_available(activity, participant_group_relationship, **kwargs):
     level = get_carbon_footprint_level(participant_group_relationship.group)
     if activity.level > level:
         logger.debug("activity %s had larger level (%s) than group level (%s)", activity, activity.level, level)
-        return False
+        return ActivityStatus.UNAVAILABLE
     elif activity.available_all_day:
         # check if they've done it already today, check if the combine is necessary
         today = datetime.datetime.combine(datetime.date.today(), datetime.time())
@@ -152,9 +154,8 @@ def is_activity_available(activity, participant_group_relationship, **kwargs):
                 int_value=activity.id,
                 date_created__gt=today)
         logger.debug("activity is available all day, was it already performed? %s", already_performed)
-        return already_performed.count() == 0
+        return ActivityStatus.AVAILABLE if already_performed.count() == 0 else ActivityStatus.COMPLETED
     else:
-        logger.debug("XXX: wasn't available all day")
         now = datetime.datetime.now()
         current_time = now.time()
         # FIXME: check if this participant has already participated in this activity within this particular interval (for all
@@ -169,10 +170,13 @@ def is_activity_available(activity, participant_group_relationship, **kwargs):
                     int_value=activity.pk,
                     date_created__lte=now,
                     date_created__gte=earliest_start_time)
-            return already_performed.count() == 0
+            return ActivityStatus.AVAILABLE if already_performed.count() == 0 else ActivityStatus.COMPLETED
         except:
             logger.debug("exception while checking if this activity had already been performed by this participant")
-            return False
+            return ActivityStatus.UNAVAILABLE
+
+def is_activity_available(activity, participant_group_relationship):
+    return check_activity_availability(activity, participant_group_relationship) == ActivityStatus.AVAILABLE
 
 def do_activity(activity, participant_group_relationship):
     if is_activity_available(activity, participant_group_relationship):

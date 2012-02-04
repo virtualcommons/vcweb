@@ -237,7 +237,7 @@ def create_participant_comment_rel(ppk,comment,reltype):
     pass
 
 def get_participant(pk):
-    return  dao.get_node_index(Index.PARTICIPANT)['id'][pk].single
+    return dao.get_node_index(Index.PARTICIPANT)['id'][pk].single
 
 def get_activity(pk):
     return dao.get_node_index(Index.ACTIVITY)['id'][pk].single

@@ -12,3 +12,7 @@ class simplecache(object):
         if self.cached_object is None or refresh:
             self.cached_object = self.func()
         return self.cached_object
+
+def enum(*sequential, **named):
+    enums = dict(zip(sequential, range(len(sequential))), **named)
+    return type('Enum', (), enums)
