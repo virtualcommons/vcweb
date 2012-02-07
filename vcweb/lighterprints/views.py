@@ -12,7 +12,7 @@ from vcweb.core.forms import ChatForm, LoginForm, CommentForm
 from vcweb.core.models import (ChatMessage, Comment, ParticipantGroupRelationship, ParticipantRoundDataValue)
 from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token, json_response
 from vcweb.lighterprints.forms import ActivityForm
-from vcweb.lighterprints.models import (Activity, to_activity_dict, get_all_available_activities, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
+from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
 
 import collections
 import logging
@@ -124,7 +124,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         # FIXME: change this to activity name if we decide to use names instead of
         # pks
         activity = Activity.objects.get(pk=activity_prdv.value)
-        performed_activity_dict = to_activity_dict(activity, attrs=('pk', 'display_name', 'name', 'icon_url', 'savings'))
+        performed_activity_dict = activity.to_dict(attrs=('pk', 'display_name', 'name', 'icon_url', 'savings'))
         performed_activity_dict['date_performed'] = activity_prdv.date_created
         pgr = activity_prdv.participant_group_relationship
         performed_activity_dict['participant_number'] = pgr.participant_number
@@ -148,7 +148,7 @@ def perform_activity(request):
         activity = get_object_or_404(Activity, pk=activity_id)
         performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
         if performed_activity is not None:
-            activity_dict = to_activity_dict(activity)
+            activity_dict = activity.to_dict()
             activity_dict['date_created'] = performed_activity.date_created
             activity_dict['performed_activity_id'] = performed_activity.pk
             activity_dict['success'] = True

@@ -40,7 +40,7 @@ class Activity(models.Model):
     def icon_url(self):
         return self.icon.url if self.icon else ""
 
-    def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining')):
+    def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining', 'personal_benefits')):
         activity_as_dict = {}
         for attr_name in attrs:
             activity_as_dict[attr_name] = getattr(self, attr_name, None)
@@ -100,12 +100,6 @@ def get_active_experiments():
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
             status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
 
-# FIXME: push into Activity class itself
-def to_activity_dict(activity, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining')):
-    activity_as_dict = {}
-    for attr_name in attrs:
-        activity_as_dict[attr_name] = getattr(activity, attr_name, None)
-    return activity_as_dict
 
 # returns a tuple of (flattened_activities list + activity_by_level dict)
 def get_all_available_activities(participant_group_relationship, all_activities=None):
@@ -116,8 +110,7 @@ def get_all_available_activities(participant_group_relationship, all_activities=
 
     for activity in all_activities:
         activity_by_level[activity.level].append(activity)
-        #activity_as_dict = collections.OrderedDict()
-        activity_as_dict = to_activity_dict(activity)
+        activity_as_dict = activity.to_dict()
         try:
             activity_as_dict['availabilities'] = [availability.to_dict() for availability in ActivityAvailability.objects.filter(activity=activity)]
             activity_as_dict['available'] = is_activity_available(activity, participant_group_relationship)
