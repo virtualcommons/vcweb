@@ -1320,13 +1320,13 @@ class Comment(ParticipantRoundDataValue):
         kwargs['parameter'] = get_comment_parameter()
         super(Comment, self).__init__(*args, **kwargs)
 
-    def to_json_dict(self, **kwargs):
-        return { 'pk' : self.pk,
+    def to_dict(self):
+        return {'pk' : self.pk,
                 'participant_group_id': self.participant_group_relationship.pk,
                 'participant_number': self.participant_group_relationship.participant_number,
                 'date_created': timesince(self.date_created),
-                'message': self.value
-                }
+                'message': self.value}
+
     class Meta:
         ordering = ['date_created']
 

@@ -107,7 +107,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
     chat_messages = []
     for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
         pgr = chat_message.participant_group_relationship
-        comments = [c.to_json_dict() for c in Comment.objects.filter(target_data_value=chat_message.pk)]
+        comments = [c.to_dict() for c in Comment.objects.filter(target_data_value=chat_message.pk)]
         chat_messages.append({
             'pk': chat_message.pk,
             'date_created': timesince(chat_message.date_created),

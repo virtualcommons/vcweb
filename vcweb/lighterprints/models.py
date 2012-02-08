@@ -19,6 +19,7 @@ class Activity(models.Model):
     description = models.TextField()
     url = models.URLField()
     savings = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    points = models.PositiveIntegerField(default=0)
     available_all_day = models.BooleanField(default=False)
     personal_benefits = models.TextField(null=True, blank=True)
 # FIXME: allow for experiment-configurable levels?
@@ -40,7 +41,7 @@ class Activity(models.Model):
     def icon_url(self):
         return self.icon.url if self.icon else ""
 
-    def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'group_activity', 'icon_url', 'time_remaining', 'personal_benefits')):
+    def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'icon_url', 'personal_benefits', 'points')):
         activity_as_dict = {}
         for attr_name in attrs:
             activity_as_dict[attr_name] = getattr(self, attr_name, None)
