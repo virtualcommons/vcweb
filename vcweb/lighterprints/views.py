@@ -162,9 +162,16 @@ def post_chat_message(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         message = form.cleaned_data['message']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-# FIXME: add target_participant_id for participant wall chat postings
-        chat_message = ChatMessage.objects.create(value=message,
-                participant_group_relationship=participant_group_relationship)
+        chat_message_parameters = {
+                'value': message,
+                'participant_group_relationship': participant_group_relationship
+                }
+        if 'target_participant_group_id' in form.cleaned_data:
+            target_participant_group_id = form.cleaned_data['target_participant_group_id']
+            target_participant = ParticipantGroupRelationship.objects.get(pk=target_participant_group_id)
+            chat_message_parameters['target_participant'] = target_participant
+            # FIXME: add target_participant_id for participant wall chat postings
+        chat_message = ChatMessage.objects.create(**chat_message_parameters)
         logger.debug("Participant %s created chat message %s", participant_group_relationship.participant, chat_message)
         content = get_group_activity_json(participant_group_relationship)
         return HttpResponse(content, content_type='application/json')

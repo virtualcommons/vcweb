@@ -113,7 +113,7 @@ class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
 class ChatForm(forms.Form):
     message = forms.CharField(required=True, max_length=512)
     participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
-    target_participant_id = forms.IntegerField(widget=forms.HiddenInput)
+    target_participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
     def clean_message(self):
         return self.cleaned_data['message']
 
