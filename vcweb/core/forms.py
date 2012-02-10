@@ -113,15 +113,16 @@ class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
 class ChatForm(forms.Form):
     message = forms.CharField(required=True, max_length=512)
     participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
+    target_participant_id = forms.IntegerField(widget=forms.HiddenInput)
     def clean_message(self):
-        return escape(self.cleaned_data['message'])
+        return self.cleaned_data['message']
 
 class CommentForm(forms.Form):
     message = forms.CharField(required=True, max_length=512)
     target_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
     participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
     def clean_message(self):
-        return escape(self.cleaned_data['message'])
+        return self.cleaned_data['message']
 
 class QuizForm(forms.Form):
     name_question = forms.CharField(max_length=64, label="What is your name?")

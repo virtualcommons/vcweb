@@ -257,7 +257,7 @@ class ParticipantHandler(SocketConnection):
                     'round_data_pk': current_round_data.pk,
                     'participant': unicode(participant_group_relationship.participant),
                     "date_created": chat_message.date_created.strftime("%H:%M:%S"),
-                    "message" : unicode(chat_message),
+                    "message" : xhtml_escape(unicode(chat_message)),
                     "message_type": 'chat',
                     })
                 connection_manager.send_to_group(participant_group_relationship.group, chat_json)

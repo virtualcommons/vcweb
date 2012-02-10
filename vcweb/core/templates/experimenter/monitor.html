@@ -248,12 +248,14 @@
         {% if round_data.round_configuration.is_chat_round %}
         <h4 class='collapsible'>Chat data</h4>
         <div id='chat-div-{{round_data.pk}}' class='chat notice ui-corner-all'>
+            {% autoescape on %}
             {% for chat_message in round_data.chat_messages.all %}
             <div class='ui-state-highlight' style='line-height: 1.5em;'>
                 <a class='dark-yellow-highlight' name='{{chat_message.pk}}' title='{{chat_message.date_created}} {{chat_message.participant}}'>
                     {{chat_message.date_created|date:"G:i:s"}}</a> | {{chat_message}}
             </div>
             {% endfor %}
+            {% endautoescape %}
         </div>
         {% endif %}
     </div>

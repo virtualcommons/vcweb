@@ -162,6 +162,7 @@ def post_chat_message(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         message = form.cleaned_data['message']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+# FIXME: add target_participant_id for participant wall chat postings
         chat_message = ChatMessage.objects.create(value=message,
                 participant_group_relationship=participant_group_relationship)
         logger.debug("Participant %s created chat message %s", participant_group_relationship.participant, chat_message)
