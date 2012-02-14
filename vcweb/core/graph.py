@@ -7,6 +7,7 @@ from vcweb import settings
 from neo4j import GraphDatabase
 from neo4j import OUTGOING,ANY
 from neo4j import Evaluation
+import traceback
 
 import atexit
 import time
@@ -35,7 +36,9 @@ class Neo4jDAO(object):
     Sample Singleton implementation
     '''
     _instance = None
+    #_db = GraphDatabase(settings.GRAPH_DATABASE_PATH)
     _db = GraphDatabase(settings.GRAPH_DATABASE_PATH)
+    logger.debug("Graph database store directory %s:",_db.storeDir)
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(Neo4jDAO, cls).__new__(cls, *args, **kwargs)
@@ -52,36 +55,41 @@ class Neo4jDAO(object):
         with self._db.transaction:
             idx = self._db.node.indexes.get(index)
         return idx
-    def get_rel_index(self,index):
+    
+    def indexExistsForNodes(self,index):
         with self._db.transaction:
-            idx = self._db.relationship.indexes.get(index)
-        return idx
+            return self._db.node.indexes.exists(index)
+        
+    def indexExistsForRelationships(self,index):
+        with self._db.transaction:
+            return self._db.relationship.indexes.exists(index)
 
     def shutdown(self):
         logger.debug("Shutting down neo4j embedded database")
         try:
             self._db.shutdown()
         except NameError:
-            print 'Could not shutdown Neo4j database. Is it open in another process?'
+            logger.debug("Could not shutdown Neo4j database. Is it open in another process?")
     
     def initialize_indexes(self):
         try:
-            logger.debug("creating indexes for %s and relationship indexes %s", Index, RelationshipIndex)
+            logger.debug("creating indexes for %s and relationship indexes %s", Index, RelationshipIndex)  
             for index in Index.values():
                 #FIXME: Work around to avoid re-creation of index at time of unit testing 
                 #       as post_syncdb method is invoked every time for 'manage.py test'
-                if self.get_node_index(index) is not None:
+                if self.indexExistsForNodes(index):
                     logger.debug("Index %s already exists for nodes", index)
                     continue
                 self.create_node_index(index)
             for relationship_index in RelationshipIndex.values():
                 #FIXME: Work around to avoid re-creation of index at time of unit testing 
                 #       as post_syncdb method is invoked every time for 'manage.py test'
-                if self.get_rel_index(relationship_index) is not None:
+                if self.indexExistsForRelationships(relationship_index):
                     logger.debug("Index %s already exists for relationship", relationship_index)
                     continue
                 self.create_rel_index(relationship_index)
         except Exception as e:
+            print e
             logger.debug("Unable to initialize indexes: %s", e)
 
 dao = Neo4jDAO()
@@ -203,6 +211,7 @@ def create_activity(pk,name):
 #creates comment node
 #param:pk = unique token of activity performed by participant
 #param: text = actual comment
+
 def create_comment(ppk,activity_performed_id,text):
     with _conn.transaction:
         comment = _conn.node(tag=activity_performed_id,text=text,type="comment")
@@ -317,15 +326,17 @@ def wall_page(ppk):
         print wall_thread_dict
 
 atexit.register(dao.shutdown)
-    
+"""   
 if __name__ == '__main__':
-    """
+    
     usernames = []
     for i in range(1,10):
             username = 'test'+str(i)+'@asu.edu'
             usernames.append(username)
             create_participant(i, username)
-    """
-    print get_participant(1)
     
+    print get_participant(1)
+   
+    dao.initialize_indexes()
     dao.shutdown()
+    """
