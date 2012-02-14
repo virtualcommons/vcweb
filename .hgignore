@@ -1,5 +1,4 @@
 syntax:glob
-
 *.pyc
 *~
 settings_local.py
@@ -14,3 +13,5 @@ tmp
 *.orig
 data/
 resource/
+*.patch
+.pydevproject
