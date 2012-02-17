@@ -6,6 +6,8 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 
+SERVER_EMAIL='vcweb@asu.edu'
+EMAIL_HOST='smtp.asu.edu'
 ADMINS = (
         ('Allen Lee', 'allen.lee@asu.edu')
         )
