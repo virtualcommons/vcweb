@@ -117,6 +117,10 @@ class ChatForm(forms.Form):
     def clean_message(self):
         return self.cleaned_data['message']
 
+class ThumbsUpForm(forms.Form):
+    target_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
+    participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
+
 class CommentForm(forms.Form):
     message = forms.CharField(required=True, max_length=512)
     target_id = forms.IntegerField(required=True, widget=forms.HiddenInput)

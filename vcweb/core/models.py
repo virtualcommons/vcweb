@@ -1221,7 +1221,6 @@ class ParticipantGroupRelationship(models.Model):
     class Meta:
         ordering = ['group', 'participant_number']
 
-
 class ParticipantRoundDataValue(ParameterizedValue):
     """
     Represents one data point collected for a given Participant in a given Round.
@@ -1332,11 +1331,18 @@ class Comment(ParticipantRoundDataValue):
     class Meta:
         ordering = ['date_created']
 
-class ThumbsUp(models.Model):
-    participant = models.ForeignKey(Participant)
-    target_data_value = models.ForeignKey(ParticipantRoundDataValue)
-    date_created = models.DateTimeField(auto_now_add=True)
+class ThumbsUp(ParticipantRoundDataValue):
+    def __init__(self, *args, **kwargs):
+        kwargs['parameter'] = get_thumbs_up_parameter()
+        super(ThumbsUp, self).__init__(*args, **kwargs)
 
+    def to_dict(self):
+        return {'pk' : self.pk,
+                'participant_group_id': self.participant_group_relationship.pk,
+                'participant_number': self.participant_group_relationship.participant_number,
+                'target': self.target_data_value,
+                'date_created': timesince(self.date_created)
+                }
 
 class ActivityLog(models.Model):
     log_message = models.TextField()

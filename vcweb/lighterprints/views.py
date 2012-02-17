@@ -124,12 +124,12 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         # FIXME: change this to activity name if we decide to use names instead of
         # pks
         activity = Activity.objects.get(pk=activity_prdv.value)
-        performed_activity_dict = activity.to_dict(attrs=('pk', 'display_name', 'name', 'icon_url', 'savings'))
+        performed_activity_dict = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings'))
         performed_activity_dict['date_performed'] = activity_prdv.date_created
         pgr = activity_prdv.participant_group_relationship
         performed_activity_dict['participant_number'] = pgr.participant_number
         performed_activity_dict['participant_group_id'] = pgr.pk
-        performed_activity_dict['performed_activity_id'] = activity_prdv.pk
+        performed_activity_dict['activity_performed_id'] = activity_prdv.pk
         group_activity.append(performed_activity_dict)
     return dumps({
         'success': True,
@@ -176,6 +176,27 @@ def post_chat_message(request):
         content = get_group_activity_json(participant_group_relationship)
         return HttpResponse(content, content_type='application/json')
     return HttpResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
+
+@csrf_exempt
+def thumbs_up(request):
+    form = ThumbsUpForm(request.POST or None)
+    if form.is_valid():
+        participant_group_id = form.cleaned_data['participant_group_id']
+        target_id = form.cleaned_data['target_id']
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        logger.debug("pgr: %s", participant_group_relationship)
+        target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
+        logger.debug("target: %s", target)
+        thumbs_up = ThumbsUp.objects.create(participant_group_relationship=participant_group_relationship, target_data_value=target)
+        logger.debug("Participant %s liked %s", participant_group_relationship, target)
+
+        #content = get_group_activity_json(participant_group_relationship)
+        #return HttpResponse(content, content_type='application/json')
+        return HttpResponse(dumps({'success': True, 'comment' : comment.value, 'target': target}))
+    else:
+        logger.debug("invalid form: %s from request: %s", form, request)
+        return HttpResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
+
 
 @csrf_exempt
 def post_comment(request):
