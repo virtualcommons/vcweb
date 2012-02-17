@@ -97,6 +97,7 @@ INSTALLED_APPS = (
         'dajaxice',
         'djcelery',
         'djkombu',
+        'raven.contrib.django',
         )
 
 
