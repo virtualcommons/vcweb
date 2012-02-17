@@ -170,11 +170,13 @@ def post_chat_message(request):
                 'value': message,
                 'participant_group_relationship': participant_group_relationship
                 }
-        if 'target_participant_group_id' in form.cleaned_data:
-            target_participant_group_id = form.cleaned_data['target_participant_group_id']
-            target_participant = ParticipantGroupRelationship.objects.get(pk=target_participant_group_id)
-            chat_message_parameters['target_participant'] = target_participant
-            # FIXME: add target_participant_id for participant wall chat postings
+        logger.debug("about to check target participant")
+# FIXME: causing errors, need to check logic
+#        if 'target_participant_group_id' in form.cleaned_data:
+#            target_participant_group_id = form.cleaned_data['target_participant_group_id']
+#            target_participant = ParticipantGroupRelationship.objects.get(pk=target_participant_group_id)
+#            chat_message_parameters['target_participant'] = target_participant
+        logger.debug("creating chat message")
         chat_message = ChatMessage.objects.create(**chat_message_parameters)
         logger.debug("Participant %s created chat message %s", participant_group_relationship.participant, chat_message)
         content = get_group_activity_json(participant_group_relationship)
