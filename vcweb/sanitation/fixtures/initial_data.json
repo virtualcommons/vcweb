@@ -1,35 +1,5 @@
 [
     {
-        "pk": 14,
-        "model": "auth.user",
-        "fields": {
-            "username": "marcel.hurtado@gmail.com",
-            "first_name": "Marcel",
-            "last_name": "Hurtado",
-            "is_active": true,
-            "is_superuser": true,
-            "is_staff": true,
-            "last_login": "2011-06-03 13:07:25",
-            "groups": [
-                1
-            ],
-            "user_permissions": [],
-            "password": "sha1$617b8$76ccc42b1d93df9cd0b06409a2904406bf643677",
-            "email": "marcel.hurtado@gmail.com",
-            "date_joined": "2011-06-03 13:07:25"
-        }
-    },
-    {
-        "pk": 4,
-        "model": "core.experimenter",
-        "fields": {
-            "approved": true,
-            "user": 14,
-            "failed_password_attempts": 0,
-            "institution": 1
-        }
-    },
-    {
         "fields": {
             "creator": 1,
             "experiment_metadata": [
@@ -81,7 +51,7 @@
                 "experiment_metadata": [
                     "sanitation"
                 ],
-        	"creator": 4,
+        	"creator": 1,
         	"type": "int",
                 "date_created": "2011-01-01 15:13:07",
         	"scope": "group",
@@ -96,7 +66,7 @@
                 "experiment_metadata": [
                     "sanitation"
                 ],
-        	"creator": 4,
+        	"creator": 1,
         	"type": "int",
                 "date_created": "2011-01-01 15:13:07",
         	"scope": "participant",

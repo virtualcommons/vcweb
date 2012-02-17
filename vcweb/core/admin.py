@@ -12,7 +12,7 @@ models = (
         Experimenter, Participant, Group, Experiment,
         ParticipantExperimentRelationship, ParticipantGroupRelationship,
         GroupRoundDataValue, ParticipantRoundDataValue, GroupActivityLog,
-        ChatMessage, QuizQuestion, Comment, ThumbsUp
+        ChatMessage, QuizQuestion, Comment, Like
         )
 
 for model in models:

@@ -1,6 +1,6 @@
 [
-    {
-        "pk": 15,
+     {
+        "pk": 14,
         "model": "auth.user",
         "fields": {
             "username": "srelias@asu.edu",
@@ -22,6 +22,31 @@
             "password": "sha1$b6803$fdf4e561936dcf4d4986ee2820bcb4dbf08501d7",
             "email": "srelias@asu.edu",
             "date_joined": "2011-07-08 16:23:27"
+        }
+    },
+    {   
+        "pk": 15,
+        "model": "auth.user",
+        "fields": {
+            "username": "jmhastin@asu.edu",
+            "first_name": "Jenny",
+            "last_name": "Hastings",
+            "is_active": true,
+            "is_superuser": false,
+            "is_staff": true,
+            "last_login": "2012-02-17 12:26:12",
+            "groups": [],
+            "user_permissions": [
+                91,
+                92,
+                93,
+                94,
+                95,
+                96
+            ],
+            "password": "sha1$d5aa9$1b81860e131dffc257fd9437788652f19766ad09",
+            "email": "jmhastin@asu.edu",
+            "date_joined": "2012-02-17 12:26:12"
         }
     },
     {
@@ -72,24 +97,24 @@
     },
     {
         "fields": {
-        	"name":"activity_performed",
-        	"experiment_metadata": [ "lighterprints" ],
-        	"creator": 1,
-        	"type": "int",
+               "name":"activity_performed",
+               "experiment_metadata": [ "lighterprints" ],
+               "creator": 1,
+               "type": "int",
                 "date_created": "2011-01-01 15:13:03",
-        	"scope": "participant"
+               "scope": "participant"
         },
         "model": "core.parameter",
         "pk": 9
     },
     {
         "fields": {
-        	"name":"carbon_footprint_level",
-        	"experiment_metadata": [ "lighterprints" ],
-        	"creator": 1,
-        	"type": "int",
+               "name":"carbon_footprint_level",
+               "experiment_metadata": [ "lighterprints" ],
+               "creator": 1,
+               "type": "int",
                 "date_created": "2011-01-01 15:13:07",
-        	"scope": "group"
+               "scope": "group"
         },
         "model": "core.parameter",
         "pk": 10
@@ -105,9 +130,11 @@
             "level": 1,
             "group_activity": false,
             "summary": "Heating or cooling buildings less saves energy",
-            "savings": "5.50",
             "cooldown": 1,
+            "savings": "5.50",
+            "points": 0,
             "icon": "lighterprints/activity-icons/93-thermometer_1.png",
+            "personal_benefits": "Less energy used results in savings on an electric bill. ",
             "name": "adjust-thermostat"
         }
     },
@@ -122,9 +149,11 @@
             "level": 1,
             "group_activity": false,
             "summary": "Less energy is used for transportation when only locally grown food is consumed",
-            "savings": "1.50",
             "cooldown": 1,
+            "savings": "1.50",
+            "points": 0,
             "icon": "lighterprints/activity-icons/80-shopping-cart_1.png",
+            "personal_benefits": "Locally grown food often contains less preservatives and is fresher, making it a healthier and tastier choice. ",
             "name": "eat-local-lunch"
         }
     },
@@ -139,9 +168,11 @@
             "level": 1,
             "group_activity": false,
             "summary": "Your computer consumes less energy when it's asleep or turned off",
-            "savings": "0.98",
             "cooldown": 1,
+            "savings": "0.98",
+            "points": 0,
             "icon": "lighterprints/activity-icons/69-display_1.png",
+            "personal_benefits": "Using the sleep function can save money on your electric bill. It also can reduce the heat produced by your computer, which may improve its lifetime. ",
             "name": "enable-computer-sleep"
         }
     },
@@ -156,9 +187,11 @@
             "level": 1,
             "group_activity": false,
             "summary": "Recycling processes used materials into new products to prevent waste of potentially useful materials.",
-            "savings": "0.31",
             "cooldown": 1,
+            "savings": "0.31",
+            "points": 0,
             "icon": "lighterprints/activity-icons/51-recycle.png",
+            "personal_benefits": null,
             "name": "recycle"
         }
     },
@@ -173,9 +206,11 @@
             "level": 1,
             "group_activity": false,
             "summary": "Carpooling is more energy efficient than travelling alone in your car.",
-            "savings": "9.40",
             "cooldown": 1,
+            "savings": "9.40",
+            "points": 0,
             "icon": "lighterprints/activity-icons/81-dashboard_1.png",
+            "personal_benefits": null,
             "name": "share-your-ride"
         }
     },
@@ -190,9 +225,11 @@
             "level": 2,
             "group_activity": false,
             "summary": "Reduce fossil fuel consumption and emissions by not driving a car",
-            "savings": "7.52",
             "cooldown": 1,
+            "savings": "7.52",
+            "points": 0,
             "icon": "lighterprints/activity-icons/47-bicycle-to.png",
+            "personal_benefits": null,
             "name": "bike-public-transport"
         }
     },
@@ -207,9 +244,11 @@
             "level": 2,
             "group_activity": false,
             "summary": "Don't leave the water running while you're brushing your teeth",
-            "savings": "0.76",
             "cooldown": 1,
+            "savings": "0.76",
+            "points": 0,
             "icon": "lighterprints/activity-icons/186-toothbrush_1.png",
+            "personal_benefits": null,
             "name": "brushing-your-teeth"
         }
     },
@@ -224,9 +263,11 @@
             "level": 2,
             "group_activity": false,
             "summary": "Save energy and turn off your computer when it's not needed.",
-            "savings": "1.37",
             "cooldown": 1,
+            "savings": "1.37",
+            "points": 0,
             "icon": "lighterprints/activity-icons/126-moon_1.png",
+            "personal_benefits": null,
             "name": "computer-off"
         }
     },
@@ -241,9 +282,11 @@
             "level": 2,
             "group_activity": false,
             "summary": "Beef production is very energy intensive",
-            "savings": "4.26",
             "cooldown": 1,
+            "savings": "4.26",
+            "points": 0,
             "icon": "lighterprints/activity-icons/109-chicken_1.png",
+            "personal_benefits": null,
             "name": "no-beef"
         }
     },
@@ -258,9 +301,11 @@
             "level": 2,
             "group_activity": false,
             "summary": "Saving paper resources and production by recycling",
-            "savings": "0.56",
             "cooldown": 1,
+            "savings": "0.56",
+            "points": 0,
             "icon": "lighterprints/activity-icons/166-newspaper_1.png",
+            "personal_benefits": null,
             "name": "recycle-paper"
         }
     },
@@ -275,9 +320,11 @@
             "level": 3,
             "group_activity": false,
             "summary": "Air drying your clothes saves gas or electricity",
-            "savings": "1.98",
             "cooldown": 1,
+            "savings": "1.98",
+            "points": 0,
             "icon": "lighterprints/activity-icons/67-tshirt_1.png",
+            "personal_benefits": null,
             "name": "air-dry-clothes"
         }
     },
@@ -292,9 +339,11 @@
             "level": 3,
             "group_activity": false,
             "summary": "Reduce the amount of waste you produce at lunch time.",
-            "savings": "1.37",
             "cooldown": 1,
+            "savings": "1.37",
+            "points": 0,
             "icon": "lighterprints/activity-icons/48-fork-and-knife_1.png",
+            "personal_benefits": "You can save money by buying reusable containers and utensils once instead of buying disposable items regularly. ",
             "name": "green-lunch"
         }
     },
@@ -309,9 +358,11 @@
             "level": 3,
             "group_activity": false,
             "summary": "Turning lights off in areas that don't need them saves energy.",
-            "savings": "2.28",
             "cooldown": 1,
+            "savings": "2.28",
+            "points": 0,
             "icon": "lighterprints/activity-icons/84-lightbulb_1.png",
+            "personal_benefits": "Turning lights off can save you money on your electric bill. Since lights give off heat, turning them off can also help keep rooms cooler. ",
             "name": "lights-off"
         }
     },
@@ -326,9 +377,11 @@
             "level": 3,
             "group_activity": false,
             "summary": "Raising animals for meat is resource intensive",
-            "savings": "4.41",
             "cooldown": 1,
+            "savings": "4.41",
+            "points": 0,
             "icon": "lighterprints/activity-icons/125-food_1.png",
+            "personal_benefits": null,
             "name": "vegan-for-a-day"
         }
     },
@@ -343,9 +396,11 @@
             "level": 3,
             "group_activity": false,
             "summary": "Save energy by not heating water",
-            "savings": "1.10",
             "cooldown": 1,
+            "savings": "1.10",
+            "points": 0,
             "icon": "lighterprints/activity-icons/24-washing-new.png",
+            "personal_benefits": null,
             "name": "wash-cold-water"
         }
     },

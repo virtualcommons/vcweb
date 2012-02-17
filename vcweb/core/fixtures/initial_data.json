@@ -55,6 +55,24 @@
         }
     },
     {
+        "pk": 13,
+        "model": "core.parameter",
+        "fields": {
+            "experiment_metadata": null,
+            "display_name": "Like",
+            "name": "like",
+            "creator": 1,
+            "default_value_string": "",
+            "last_modified": "2011-12-22 13:50:08",
+            "date_created": "2011-12-22 13:50:08",
+            "scope": "participant",
+            "enum_choices": "",
+            "is_required": false,
+            "type": "string",
+            "description": "Facebook-like like (or google plus-like +1 or ...)"
+        }
+    },
+    {
         "pk": 12,
         "model": "core.parameter",
         "fields": {

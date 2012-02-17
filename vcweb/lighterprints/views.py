@@ -8,8 +8,8 @@ from django.views.generic.detail import BaseDetailView
 from django.views.generic.edit import FormView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
-from vcweb.core.forms import ChatForm, LoginForm, CommentForm, ThumbsUpForm
-from vcweb.core.models import (ChatMessage, Comment, ParticipantGroupRelationship, ParticipantRoundDataValue, ThumbsUp)
+from vcweb.core.forms import ChatForm, LoginForm, CommentForm, LikeForm
+from vcweb.core.models import (ChatMessage, Comment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token, json_response
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
@@ -108,7 +108,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
     for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
         pgr = chat_message.participant_group_relationship
         comments = [c.to_dict() for c in Comment.objects.filter(target_data_value=chat_message.pk)]
-        likes = [thumbs_up.to_dict() for thumbs_up in ThumbsUp.objects.filter(target_data_value=chat_message.pk)]
+        likes = [like.to_dict() for like in Like.objects.filter(target_data_value=chat_message.pk)]
         chat_messages.append({
             'pk': chat_message.pk,
             'date_created': timesince(chat_message.date_created),
@@ -133,7 +133,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         performed_activity_dict['participant_group_id'] = pgr.pk
         performed_activity_dict['activity_performed_id'] = activity_prdv.pk
         performed_activity_dict['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=activity_prdv.pk)]
-        performed_activity_dict['likes'] = [thumbs_up.to_dict() for thumbs_up in ThumbsUp.objects.filter(target_data_value=activity_prdv.pk)]
+        performed_activity_dict['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=activity_prdv.pk)]
         group_activity.append(performed_activity_dict)
     return dumps({
         'success': True,
@@ -182,8 +182,8 @@ def post_chat_message(request):
     return HttpResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
 
 @csrf_exempt
-def thumbs_up(request):
-    form = ThumbsUpForm(request.POST or None)
+def like(request):
+    form = LikeForm(request.POST or None)
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
         target_id = form.cleaned_data['target_id']
@@ -191,7 +191,7 @@ def thumbs_up(request):
         logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         logger.debug("target: %s", target)
-        (thumbs_up, created) = ThumbsUp.objects.get_or_create(participant_group_relationship=participant_group_relationship, target_data_value=target)
+        (like, created) = Like.objects.get_or_create(participant_group_relationship=participant_group_relationship, target_data_value=target)
         logger.debug("Participant %s liked %s (new? %s)", participant_group_relationship, target, created)
         return HttpResponse(dumps({'success': True}))
     else:

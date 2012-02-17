@@ -1335,10 +1335,10 @@ class Comment(ParticipantRoundDataValue):
     class Meta:
         ordering = ['date_created']
 
-class ThumbsUp(ParticipantRoundDataValue):
+class Like(ParticipantRoundDataValue):
     def __init__(self, *args, **kwargs):
         kwargs['parameter'] = get_thumbs_up_parameter()
-        super(ThumbsUp, self).__init__(*args, **kwargs)
+        super(Like, self).__init__(*args, **kwargs)
 
     def to_dict(self):
         return {'pk' : self.pk,
