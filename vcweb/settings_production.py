@@ -45,7 +45,6 @@ BROKER_PASSWORD = 'CUSTOMIZE_ME'
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'CUSTOMIZE_ME'
 
-EMAIL_HOST = "smtp.asu.edu"
 if 'raven.contrib.django' not in INSTALLED_APPS:
     INSTALLED_APPS.append('raven.contrib.django')
 

@@ -101,7 +101,6 @@ INSTALLED_APPS = (
 
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
-EMAIL_HOST = "smtp.asu.edu"
 
 # socket.io configuration
 SOCKET_IO_PORT = 8882;
