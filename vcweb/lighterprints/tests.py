@@ -70,7 +70,7 @@ class GroupActivityTest(BaseTest):
         self.assertEqual(0, len(chat_messages))
         self.assertEqual(5, len(recent_activity))
         test_message = "Midnight mushrumps"
-        response = self.client.post('/lighterprints/api/post-chat', {
+        response = self.client.post('/lighterprints/api/message', {
             'participant_group_id': participant_group_relationship.id,
             'message': test_message,
             })
@@ -116,7 +116,7 @@ class DoActivityTest(BaseTest):
             text = "This is a harrowing comment"
             for activity_id in performed_activity_ids:
                 logger.debug("posting comment on id %s", activity_id)
-                response = self.client.post('/lighterprints/api/post-comment', {
+                response = self.client.post('/lighterprints/api/comment', {
                     'participant_group_id': participant_group_relationship.pk,
                     'message': text,
                     'target_id': activity_id
