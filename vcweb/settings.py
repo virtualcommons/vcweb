@@ -97,7 +97,6 @@ INSTALLED_APPS = (
         'dajaxice',
         'djcelery',
         'djkombu',
-#        'django_extensions',
         )
 
 
@@ -172,8 +171,15 @@ TORNADIO_LOG_FILENAME = 'tornadio.log'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
+    'root': {
+        'level': 'WARNING',
+        'handlers': ['sentry'],
+    },
     'formatters': {
         'verbose': {
+             'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+        'vcweb_verbose': {
             'format': '%(levelname)s %(asctime)s [%(name)s|%(funcName)s:%(lineno)d] %(message)s'
         },
         'simple': {
@@ -181,23 +187,20 @@ LOGGING = {
         },
     },
     'handlers': {
-        'null': {
-            'level':'DEBUG',
-            'class':'django.utils.log.NullHandler',
+#        'null': {
+#            'level':'DEBUG',
+#            'class':'django.utils.log.NullHandler',
+#        },
+        'sentry': {
+             'level': 'ERROR',
+             'class': 'raven.contrib.django.handlers.SentryHandler',
         },
-        'stdout':{
+        'console':{
             'level':'DEBUG',
             'class':'logging.StreamHandler',
-            'formatter': 'verbose',
-            'stream':sys.stdout,
+            'formatter': 'vcweb_verbose',
         },
-        'stderr':{
-            'level': 'DEBUG',
-            'class':'logging.StreamHandler',
-            'formatter': 'verbose',
-            'stream':sys.stderr,
-        },
-        'vcweb-file': {
+        'vcweb.file': {
             'level': 'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
             'formatter': 'verbose',
@@ -205,7 +208,7 @@ LOGGING = {
             'backupCount': 6,
             'maxBytes': 10000000,
         },
-        'tornadio-file': {
+        'tornadio.file': {
             'level': 'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
             'formatter': 'verbose',
@@ -215,22 +218,27 @@ LOGGING = {
         },
     },
     'loggers': {
-        'django': {
-            'handlers':['null'],
-            'propagate': True,
-            'level':'INFO',
+        'django.db.backends': {
+            'level':'ERROR',
+            'handlers':['console'],
+            'propagate': False,
         },
-        'django.request': {
-            'handlers': ['null'],
-            'level': 'ERROR',
+        'raven': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'sentry.errors': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
             'propagate': False,
         },
         'vcweb': {
-            'handlers': ['vcweb-file', 'stdout'],
+            'handlers': ['vcweb.file', 'console'],
             'level': 'DEBUG',
         },
         'tornadio.vcweb': {
-            'handlers': ['tornadio-file', 'stderr'],
+            'handlers': ['tornadio.file', 'console'],
             'level': 'DEBUG',
             'propagate': False,
         },

@@ -10,6 +10,7 @@ django-dajaxice
 django-autocomplete
 PIL
 django-piston
+raven
 #django-unittest-depth
 #redis
 #beanstalkc
