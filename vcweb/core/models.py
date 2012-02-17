@@ -1315,6 +1315,10 @@ class ChatMessage(ParticipantRoundDataValue):
 def get_comment_parameter():
     return Parameter.objects.get(name='comment', scope=Parameter.PARTICIPANT_SCOPE)
 
+@simplecache
+def get_thumbs_up_parameter():
+    return Parameter.objects.get(name='thumbs_up', scope=Parameter.PARTICIPANT_SCOPE)
+
 class Comment(ParticipantRoundDataValue):
     def __init__(self, *args, **kwargs):
         kwargs['parameter'] = get_comment_parameter()
