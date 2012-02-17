@@ -3,7 +3,7 @@ from django.views.decorators.cache import never_cache
 
 from vcweb.lighterprints.views import (ActivityDetailView, ActivityListView, MobileView,
         post_chat_message, post_comment, perform_activity, DiscussionBoardView, login,
-        group_activity, thumbs_up)
+        group_activity, like)
 
 # handles all /lighterprints/* URL requests
 urlpatterns = patterns('vcweb.lighterprints.views',
@@ -14,8 +14,8 @@ urlpatterns = patterns('vcweb.lighterprints.views',
     url(r'^discussion/(?P<experiment_id>\d+)/(?P<participant_id>\d+)', DiscussionBoardView.as_view()),
     url(r'^api/group-activity/(?P<participant_group_id>\d+)', never_cache(group_activity)),
     url(r'^api/do-activity$', perform_activity),
-    url(r'^api/post-chat', post_chat_message),
-    url(r'^api/post-comment', post_comment),
-    url(r'^api/post-thumbs-up', thumbs_up),
+    url(r'^api/message', post_chat_message),
+    url(r'^api/comment', post_comment),
+    url(r'^api/like', like),
     url(r'^api/login', login),
 )
