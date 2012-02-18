@@ -1,6 +1,7 @@
 from django.conf.urls.defaults import patterns, url, include
 from django.contrib import admin
 from vcweb import settings
+from vcweb.core import views
 
 from django.views.generic.base import TemplateView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -10,6 +11,8 @@ from dajaxice.core import dajaxice_autodiscover
 dajaxice_autodiscover()
 # set up admin URLs
 admin.autodiscover()
+
+handler500 = views.handler500
 
 urlpatterns = patterns('',
     url(r'^$', TemplateView.as_view(template_name='index.html'), name='home'),

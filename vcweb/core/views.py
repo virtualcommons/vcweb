@@ -379,8 +379,10 @@ def experiment_controller(request, pk=None, experiment_action=None):
 # TODO: provide experimenter access to other users besides the creator of the
 # experiment?
         if experimenter == experiment.experimenter:
+            # FIXME: dangerous to expose all experiment methods, even if it's only to the experimenter, should expose
+            # via experiment.invoke(action, experimenter) instead
             experiment_func = getattr(experiment, experiment_action.replace('-', '_'), None)
-            if experiment_func:
+            if experiment_func in experiment.app:
                 # pass params?  start_round() takes a sender for instance..
                 experiment_func()
                 return redirect('core:monitor_experiment', pk=pk)
@@ -398,4 +400,7 @@ def experiment_controller(request, pk=None, experiment_action=None):
     logger.warning(error_message)
     messages.warning(request, error_message)
     return redirect('core:dashboard')
+
+def handler500(request):
+    return render_to_response('500.html', context_instance=RequestContext(request))
 
