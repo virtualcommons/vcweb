@@ -348,14 +348,20 @@ class GraphDatabaseTest(TestCase):
         for i in range(1,10):
             username = 'test'+str(i)+'@asu.edu'
             usernames.append(username)
-            create_participant(i, username)        
+            try:
+                create_participant(i, username)        
+            except ValueError:
+                logger.warning("Participant %s already exists", username)
         for i in range(1,15):
             name = 'activity'+str(i)
             activity_names.append(name)
-            create_activity(i, name)
+            try:
+                create_activity(i, name)
+            except ValueError:
+                logger.warning("Activity %s already exists", name)
             
         for i in range(1, 10):
-            self.assertEqual(get_participant(i)["username"],username[i-1])
+            self.assertEqual(get_participant(i)["username"],usernames[i-1])
         for i in range(1, 15):
             self.assertEqual(get_activity(i)["name"],activity_names[i-1])
 
