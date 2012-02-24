@@ -1,7 +1,9 @@
 from django.contrib import auth
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
+from django.utils.html import escape
 from django.utils.timesince import timesince
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
@@ -24,13 +26,22 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
     def get_context_data(self, **kwargs):
         context = super(ActivityListView, self).get_context_data(**kwargs)
         all_activities = context['activity_list']
-        if self.request.user.is_authenticated():
+        user = self.request.user
+        if user.is_authenticated():
             # authenticated request, figure out if this activity is available
             participant_group_id = self.request.GET.get('participant_group_id')
             participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+            logger.debug("Retrieving activity list, about to check participants")
+            # FIXME: need to improve error handling here and see if we can return
+            # out a JSON error object
+            if participant_group_relationship.participant != user.participant:
+                logger.warning("authenticated user %s tried to retrieve activity listing for %s", user, participant_group_relationship)
+                context['flattened_activities'] = []
+                return context
             (flattened_activities, activity_by_level) = get_all_available_activities(participant_group_relationship, all_activities)
             context['activity_by_level'] = dict(activity_by_level)
             context['flattened_activities'] = flattened_activities
+            logger.debug("returning %s", context)
             return context
         raise PermissionDenied("You must be authenticated to view all activities.")
 
@@ -97,10 +108,15 @@ class MobileView(ActivityListView):
 class DoActivityView(FormView):
     pass
 
+@login_required
 def group_activity(request, participant_group_id):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-    content = get_group_activity_json(participant_group_relationship)
-    return json_response(request, content)
+    if request.user.participant == participant_group_relationship.participant:
+        content = get_group_activity_json(participant_group_relationship)
+        return json_response(request, content)
+    else:
+        logger.warning("authenticated user %s tried to retrieve group activity for %s", request.user, participant_group_relationship)
+        return HttpResponse(dumps({'success': False, 'message': 'Invalid authz request'}))
 
 def get_group_activity_json(participant_group_relationship, number_of_activities=5, retrieve_all=True):
     group = participant_group_relationship.group
@@ -112,8 +128,8 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         chat_messages.append({
             'pk': chat_message.pk,
             'date_created': timesince(chat_message.date_created),
-            'message': chat_message.value,
-            'display_name': pgr.participant.full_name,
+            'message': escape(chat_message.value),
+            'participant_name': escape(pgr.participant.full_name),
             'participant_number': pgr.participant_number,
             'participant_group_id':pgr.pk,
             'comments': comments,
@@ -131,7 +147,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         performed_activity_dict['date_performed'] = activity_prdv.date_created
         pgr = activity_prdv.participant_group_relationship
         performed_activity_dict['participant_number'] = pgr.participant_number
-        performed_activity_dict['display_name'] = pgr.participant.full_name
+        performed_activity_dict['participant_name'] = pgr.participant.full_name
         performed_activity_dict['participant_group_id'] = pgr.pk
         performed_activity_dict['activity_performed_id'] = activity_prdv.pk
         performed_activity_dict['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=activity_prdv.pk)]
@@ -144,6 +160,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         })
 
 @csrf_exempt
+@login_required
 def perform_activity(request):
     logger.debug("performing activity")
     form = ActivityForm(request.POST or None)
@@ -151,6 +168,8 @@ def perform_activity(request):
         activity_id = form.cleaned_data['activity_id']
         participant_group_id = form.cleaned_data['participant_group_id']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        if participant_group_relationship.participant != request.user.participant:
+            return HttpResponse(dumps({'success': False, 'message': "Invalid request"}))
         activity = get_object_or_404(Activity, pk=activity_id)
         performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
         if performed_activity is not None:
@@ -162,12 +181,16 @@ def perform_activity(request):
     return HttpResponse(dumps({'success': False, 'response': "Could not perform activity"}), content_type='application/json')
 
 @csrf_exempt
+@login_required
 def post_chat_message(request):
     form = ChatForm(request.POST or None)
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
         message = form.cleaned_data['message']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        if participant_group_relationship.participant != request.user.participant:
+            return HttpResponse(dumps({'success': False, 'message': "Invalid request"}))
+
         chat_message_parameters = {
                 'value': message,
                 'participant_group_relationship': participant_group_relationship
@@ -186,12 +209,15 @@ def post_chat_message(request):
     return HttpResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
 
 @csrf_exempt
+@login_required
 def like(request):
     form = LikeForm(request.POST or None)
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
         target_id = form.cleaned_data['target_id']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        if participant_group_relationship.participant != request.user.participant:
+            return HttpResponse(dumps({'success': False, 'message': "Invalid request"}))
         logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         logger.debug("target: %s", target)
@@ -204,6 +230,7 @@ def like(request):
 
 
 @csrf_exempt
+@login_required
 def post_comment(request):
     form = CommentForm(request.POST or None)
     if form.is_valid():
@@ -211,6 +238,8 @@ def post_comment(request):
         target_id = form.cleaned_data['target_id']
         message = form.cleaned_data['message']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        if participant_group_relationship.participant != request.user.participant:
+            return HttpResponse(dumps({'success': False, 'message': "Invalid request"}))
         logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         logger.debug("target: %s", target)
@@ -222,7 +251,7 @@ def post_comment(request):
 
         #content = get_group_activity_json(participant_group_relationship)
         #return HttpResponse(content, content_type='application/json')
-        return HttpResponse(dumps({'success': True, 'comment' : comment.value, 'target': target}))
+        return HttpResponse(dumps({'success': True, 'comment' : escape(comment.value), 'target': target}))
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
         return HttpResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
