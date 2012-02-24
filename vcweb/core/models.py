@@ -1327,6 +1327,7 @@ class Comment(ParticipantRoundDataValue):
     def to_dict(self):
         return {'pk' : self.pk,
                 'participant_group_id': self.participant_group_relationship.pk,
+                'participant_name': escape(self.participant_group_relationship.participant.full_name),
                 'participant_number': self.participant_group_relationship.participant_number,
                 'date_created': timesince(self.date_created),
                 'message': escape(self.value)
@@ -1343,6 +1344,7 @@ class Like(ParticipantRoundDataValue):
     def to_dict(self):
         return {'pk' : self.pk,
                 'participant_group_id': self.participant_group_relationship.pk,
+                'participant_name': escape(self.participant_group_relationship.participant.full_name),
                 'participant_number': self.participant_group_relationship.participant_number,
                 'target': self.target_data_value,
                 'date_created': timesince(self.date_created)

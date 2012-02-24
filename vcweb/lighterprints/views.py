@@ -1,7 +1,7 @@
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.html import escape
 from django.utils.timesince import timesince
@@ -32,10 +32,11 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
             participant_group_id = self.request.GET.get('participant_group_id')
             participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
             logger.debug("Retrieving activity list, about to check participants")
-            # FIXME: need to improve error handling here and see if we can return
-            # out a JSON error object
+            # XXX: we can only return a context dictionary or raise an exception
+            # at this location
             if participant_group_relationship.participant != user.participant:
                 logger.warning("authenticated user %s tried to retrieve activity listing for %s", user, participant_group_relationship)
+                context['success'] = False
                 context['flattened_activities'] = []
                 return context
             (flattened_activities, activity_by_level) = get_all_available_activities(participant_group_relationship, all_activities)
