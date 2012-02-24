@@ -113,6 +113,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
             'pk': chat_message.pk,
             'date_created': timesince(chat_message.date_created),
             'message': chat_message.value,
+            'display_name': pgr.participant.full_name,
             'participant_number': pgr.participant_number,
             'participant_group_id':pgr.pk,
             'comments': comments,
@@ -130,6 +131,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         performed_activity_dict['date_performed'] = activity_prdv.date_created
         pgr = activity_prdv.participant_group_relationship
         performed_activity_dict['participant_number'] = pgr.participant_number
+        performed_activity_dict['display_name'] = pgr.participant.full_name
         performed_activity_dict['participant_group_id'] = pgr.pk
         performed_activity_dict['activity_performed_id'] = activity_prdv.pk
         performed_activity_dict['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=activity_prdv.pk)]
