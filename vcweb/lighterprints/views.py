@@ -169,6 +169,7 @@ def perform_activity(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
+            logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id, participant_group_relationship)
             return HttpResponse(dumps({'success': False, 'message': "Invalid request"}))
         activity = get_object_or_404(Activity, pk=activity_id)
         performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
@@ -189,8 +190,8 @@ def post_chat_message(request):
         message = form.cleaned_data['message']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
+            logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, participant_group_relationship)
             return HttpResponse(dumps({'success': False, 'message': "Invalid request"}))
-
         chat_message_parameters = {
                 'value': message,
                 'participant_group_relationship': participant_group_relationship
@@ -217,6 +218,7 @@ def like(request):
         target_id = form.cleaned_data['target_id']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
+            logger.warning("authenticated user %s tried to like target_id %s as %s", request.user, target_id, participant_group_relationship)
             return HttpResponse(dumps({'success': False, 'message': "Invalid request"}))
         logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
@@ -239,6 +241,7 @@ def post_comment(request):
         message = form.cleaned_data['message']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
+            logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message, target_id, participant_group_relationship)
             return HttpResponse(dumps({'success': False, 'message': "Invalid request"}))
         logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
