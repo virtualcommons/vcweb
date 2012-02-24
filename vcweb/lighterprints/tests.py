@@ -74,6 +74,14 @@ class GroupActivityTest(BaseTest):
             'participant_group_id': participant_group_relationship.id,
             'message': test_message,
             })
+# should not be allowed to post when not logged in
+        self.assertEqual(response.status_code, 302)
+        self.client.login(username=participant_group_relationship.participant.email, password='test')
+        response = self.client.post('/lighterprints/api/message', {
+            'participant_group_id': participant_group_relationship.id,
+            'message': test_message,
+            })
+# now it should be OK, logged in user
         self.assertEqual(response.status_code, 200)
         group_activity_json = get_group_activity_json(participant_group_relationship)
         group_activity_dict = json.loads(group_activity_json)
@@ -93,6 +101,8 @@ class DoActivityTest(BaseTest):
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
             activities = available_activities()
             logger.debug("all available activities: %s", activities)
+            participant = participant_group_relationship.participant
+            self.client.login(username=participant.email, password='test')
             for activity in activities:
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
                 response = self.client.post('/lighterprints/api/do-activity', {
