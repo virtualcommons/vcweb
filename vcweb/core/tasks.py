@@ -1,4 +1,4 @@
-from celery.decorators import periodic_task
+from celery.task import periodic_task
 from celery.schedules import crontab
 from datetime import datetime, timedelta
 from vcweb.core import signals

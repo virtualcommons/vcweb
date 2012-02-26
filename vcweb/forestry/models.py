@@ -1,7 +1,6 @@
 from django.dispatch import receiver
 from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue)
 from vcweb.core import signals, simplecache
-from celery.decorators import task
 import logging
 logger = logging.getLogger(__name__)
 
@@ -124,10 +123,6 @@ def round_setup(experiment, **kwargs):
                 ''' set resource level to initial default '''
                 group.log("Setting resource level to initial value [%s]" % initial_resource_level)
                 set_resource_level(group, initial_resource_level)
-
-@task
-def stop_round_task():
-    pass
 
 def round_teardown(experiment, **kwargs):
     '''
