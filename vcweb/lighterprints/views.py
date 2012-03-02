@@ -144,16 +144,16 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         # FIXME: change this to activity name if we decide to use names instead of
         # pks
         activity = Activity.objects.get(pk=activity_prdv.value)
-        performed_activity_dict = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings'))
-        performed_activity_dict['date_performed'] = activity_prdv.date_created
+        activity_performed_dict = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
+        activity_performed_dict['date_performed'] = activity_prdv.date_created
         pgr = activity_prdv.participant_group_relationship
-        performed_activity_dict['participant_number'] = pgr.participant_number
-        performed_activity_dict['participant_name'] = pgr.participant.full_name
-        performed_activity_dict['participant_group_id'] = pgr.pk
-        performed_activity_dict['activity_performed_id'] = activity_prdv.pk
-        performed_activity_dict['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=activity_prdv.pk)]
-        performed_activity_dict['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=activity_prdv.pk)]
-        group_activity.append(performed_activity_dict)
+        activity_performed_dict['participant_number'] = pgr.participant_number
+        activity_performed_dict['participant_name'] = pgr.participant.full_name
+        activity_performed_dict['participant_group_id'] = pgr.pk
+        activity_performed_dict['activity_performed_id'] = activity_prdv.pk
+        activity_performed_dict['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=activity_prdv.pk)]
+        activity_performed_dict['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=activity_prdv.pk)]
+        group_activity.append(activity_performed_dict)
     return dumps({
         'success': True,
         'chat_messages': chat_messages,
