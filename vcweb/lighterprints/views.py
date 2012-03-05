@@ -16,6 +16,7 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
 
 import collections
+import itertools
 import logging
 logger = logging.getLogger(__name__)
 
@@ -113,8 +114,10 @@ def get_notification_json(participant_group_relationship):
 # refactor
 # selects only comments and likes whose targeted action belongs to the participant_group_relationship in question and
 # that have been posted since the last user's login
-    user_actions = ParticipantRoundDataValue.objects.filter(target_data_value__participant_group_relationship=participant_group_relationship, 
-            last_modified__gte=last_login)
+# FIXME: bah, need to use django-model-utils InheritanceManager to properly downcast and get access to the appropriate
+# subtype to_dict() method
+    user_actions = itertools.chain(*[cls.objects.filter(target_data_value__participant_group_relationship=participant_group_relationship, 
+        last_modified__gte=last_login) for cls in (Comment, Like)])
     for user_action in user_actions:
         user_action_dict = user_action.to_dict()
         target_data_value = user_action.target_data_value
