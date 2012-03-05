@@ -106,8 +106,39 @@ class MobileView(ActivityListView):
     def get_template_names(self):
         return ['lighterprints/mobile/index.html']
 
-class DoActivityView(FormView):
-    pass
+def get_notification_json(participant_group_relationship):
+    last_login = participant_group_relationship.participant.last_login
+    logger.debug("Finding notifications for participant %s since %s", participant_group_relationship, last_login)
+    data_values = ParticipantRoundDataValue.objects.filter(
+            participant_group_relationship=participant_group_relationship,
+            # FIXME: for this to fully work, we need to touch last_modified on PRDVs when posting comments/likes
+            last_modified__gte=last_login)
+    json_array = []
+    for data_value in data_values:
+        for comment in Comment.objects.filter(target_data_value=data_value):
+            comment_dict = comment.to_dict()
+            comment_dict['target_value'] = comment.target_data_value.value
+            comment_dict['summary_type'] = 'comment'
+            json_array.append(comment_dict)
+        for like in Like.objects.filter(target_data_value=data_value):
+            like_dict = like.to_dict()
+            like_dict['target_value'] = comment.target_data_value.value
+            like_dict['summary_type'] = 'like'
+            json_array.append(like_dict)
+        # FIXME: add actual activity performed data value as well?
+    return json_array
+
+@login_required
+def get_notifications(request, participant_group_id):
+    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+    if request.user.participant == participant_group_relationship.participant:
+        notifications = get_notification_json(participant_group_relationship)
+        return json_response(request, notifications)
+    else:
+        logger.warning("authenticated user %s tried to retrieve notifications for %s", request.user,
+                participant_group_relationship)
+        return HttpResponse(dumps({'success':False, 'message': 'Invalid authz request'}))
+
 
 @login_required
 def group_activity(request, participant_group_id):

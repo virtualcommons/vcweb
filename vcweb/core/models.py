@@ -106,6 +106,10 @@ class CommonsUser(models.Model):
     def email(self):
         return self.user.email
 
+    @property
+    def last_login(self):
+        return self.user.last_login
+
     def is_authenticated(self):
         return self.user.is_authenticated()
 
