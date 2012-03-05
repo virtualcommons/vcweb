@@ -7,7 +7,6 @@ from django.utils.html import escape
 from django.utils.timesince import timesince
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
-from django.views.generic.edit import FormView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
 from vcweb.core.forms import ChatForm, LoginForm, CommentForm, LikeForm
@@ -17,7 +16,6 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
 
 import collections
-import itertools
 import logging
 logger = logging.getLogger(__name__)
 
@@ -110,20 +108,22 @@ class MobileView(ActivityListView):
 def get_notification_json(participant_group_relationship):
     last_login = participant_group_relationship.participant.last_login
     logger.debug("Finding notifications for participant %s since %s", participant_group_relationship, last_login)
-    data_values = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship, last_modified__gte=last_login)
     json_array = []
 # FIXME: this may be a good use case for the graph db - a nested loop of selects is not very performant.  revisit and
 # refactor
-    for data_value in data_values:
-        for user_action in itertools.chain(*[cls.objects.filter(target_data_value=data_value) for cls in (Comment, Like)]):
-            user_action_dict = user_action.to_dict()
-            target_data_value = user_action.target_data_value
-            target_value = target_data_value.value
-            if target_data_value.parameter == get_activity_performed_parameter():
-                target_value = Activity.objects.get(pk=target_data_value.value).display_name
-            user_action_dict['target_value'] = target_value
-            user_action_dict['summary_type'] = user_action.parameter.name
-            json_array.append(user_action_dict)
+# selects only comments and likes whose targeted action belongs to the participant_group_relationship in question and
+# that have been posted since the last user's login
+    user_actions = ParticipantRoundDataValue.objects.filter(target_data_value__participant_group_relationship=participant_group_relationship, 
+            last_modified__gte=last_login)
+    for user_action in user_actions:
+        user_action_dict = user_action.to_dict()
+        target_data_value = user_action.target_data_value
+        target_value = target_data_value.value
+        if target_data_value.parameter == get_activity_performed_parameter():
+            target_value = Activity.objects.get(pk=target_data_value.value).display_name
+        user_action_dict['target_value'] = target_value
+        user_action_dict['summary_type'] = user_action.parameter.name
+        json_array.append(user_action_dict)
     return json_array
 
 @login_required
