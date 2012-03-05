@@ -17,6 +17,7 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
 
 import collections
+import itertools
 import logging
 logger = logging.getLogger(__name__)
 
@@ -109,23 +110,20 @@ class MobileView(ActivityListView):
 def get_notification_json(participant_group_relationship):
     last_login = participant_group_relationship.participant.last_login
     logger.debug("Finding notifications for participant %s since %s", participant_group_relationship, last_login)
-    data_values = ParticipantRoundDataValue.objects.filter(
-            participant_group_relationship=participant_group_relationship,
-            # FIXME: for this to fully work, we need to touch last_modified on PRDVs when posting comments/likes
-            last_modified__gte=last_login)
+    data_values = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship, last_modified__gte=last_login)
     json_array = []
+# FIXME: this may be a good use case for the graph db - a nested loop of selects is not very performant.  revisit and
+# refactor
     for data_value in data_values:
-        for comment in Comment.objects.filter(target_data_value=data_value):
-            comment_dict = comment.to_dict()
-            comment_dict['target_value'] = comment.target_data_value.value
-            comment_dict['summary_type'] = 'comment'
-            json_array.append(comment_dict)
-        for like in Like.objects.filter(target_data_value=data_value):
-            like_dict = like.to_dict()
-            like_dict['target_value'] = comment.target_data_value.value
-            like_dict['summary_type'] = 'like'
-            json_array.append(like_dict)
-        # FIXME: add actual activity performed data value as well?
+        for user_action in itertools.chain([cls.objects.filter(target_data_value=data_value) for cls in (Comment, Like)]):
+            user_action_dict = user_action.to_dict()
+            target_data_value = user_action.target_data_value
+            target_value = target_data_value.value
+            if target_data_value.parameter == get_activity_performed_parameter():
+                target_value = Activity.objects.get(pk=target_data_value.value).display_name
+            user_action_dict['target_value'] = target_value
+            user_action_dict['summary_type'] = user_action.parameter.name
+            json_array.append(user_action_dict)
     return json_array
 
 @login_required
@@ -255,6 +253,8 @@ def like(request):
         logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         logger.debug("target: %s", target)
+# XXX: explicit save, should fold similarities between this and post_comment into a single place
+        target.save()
         (like, created) = Like.objects.get_or_create(participant_group_relationship=participant_group_relationship, target_data_value=target)
         logger.debug("Participant %s liked %s (new? %s)", participant_group_relationship, target, created)
         return HttpResponse(dumps({'success': True}))
@@ -278,6 +278,8 @@ def post_comment(request):
         logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         logger.debug("target: %s", target)
+# XXX: explicit save to touch last_modified on the target object
+        target.save()
         comment = Comment.objects.create(
                 value=message,
                 participant_group_relationship=participant_group_relationship,
