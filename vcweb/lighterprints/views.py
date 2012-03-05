@@ -115,7 +115,7 @@ def get_notification_json(participant_group_relationship):
 # FIXME: this may be a good use case for the graph db - a nested loop of selects is not very performant.  revisit and
 # refactor
     for data_value in data_values:
-        for user_action in itertools.chain([cls.objects.filter(target_data_value=data_value) for cls in (Comment, Like)]):
+        for user_action in itertools.chain(*[cls.objects.filter(target_data_value=data_value) for cls in (Comment, Like)]):
             user_action_dict = user_action.to_dict()
             target_data_value = user_action.target_data_value
             target_value = target_data_value.value
