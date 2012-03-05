@@ -256,8 +256,6 @@ def like(request):
         logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         logger.debug("target: %s", target)
-# XXX: explicit save, should fold similarities between this and post_comment into a single place
-        target.save()
         (like, created) = Like.objects.get_or_create(participant_group_relationship=participant_group_relationship, target_data_value=target)
         logger.debug("Participant %s liked %s (new? %s)", participant_group_relationship, target, created)
         return HttpResponse(dumps({'success': True}))
@@ -281,8 +279,6 @@ def post_comment(request):
         logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         logger.debug("target: %s", target)
-# XXX: explicit save to touch last_modified on the target object
-        target.save()
         comment = Comment.objects.create(
                 value=message,
                 participant_group_relationship=participant_group_relationship,
