@@ -127,7 +127,8 @@ def get_notification_json(participant_group_relationship):
         user_action_dict['target_value'] = target_value
         user_action_dict['summary_type'] = user_action.parameter.name
         json_array.append(user_action_dict)
-    return json_array
+    logger.debug("returning notifications %s for participant %s", json_array)
+    return dumps({'success': True, 'notifications': json_array})
 
 @login_required
 def get_notifications(request, participant_group_id):
