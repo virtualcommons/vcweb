@@ -340,29 +340,3 @@ class RoundConfigurationTest(BaseVcwebTest):
             self.assertEqual(e.current_round_template, "%s/%s" % (e.namespace, data[1]), 'should have returned template for ' + data[0])
 
 
-class GraphDatabaseTest(TestCase):
-    def test_create_participant(self):
-        from vcweb.core.graph import create_participant, create_activity,get_participant,get_activity
-        usernames = []
-        activity_names = []
-        for i in range(1,10):
-            username = 'test'+str(i)+'@asu.edu'
-            usernames.append(username)
-            try:
-                create_participant(i, username)        
-            except ValueError:
-                logger.warning("Participant %s already exists", username)
-        for i in range(1,15):
-            name = 'activity'+str(i)
-            activity_names.append(name)
-            try:
-                create_activity(i, name)
-            except ValueError:
-                logger.warning("Activity %s already exists", name)
-            
-        for i in range(1, 10):
-            self.assertEqual(get_participant(i)["username"],usernames[i-1])
-        for i in range(1, 15):
-            self.assertEqual(get_activity(i)["name"],activity_names[i-1])
-
-
