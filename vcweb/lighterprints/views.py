@@ -125,6 +125,7 @@ def get_notification_json(participant_group_relationship):
         if target_data_value.parameter == get_activity_performed_parameter():
             target_value = Activity.objects.get(pk=target_data_value.value).display_name
         user_action_dict['target_value'] = target_value
+        user_action_dict['target_type'] = target_data_value.parameter.name
         user_action_dict['summary_type'] = user_action.parameter.name
         json_array.append(user_action_dict)
     logger.debug("returning notifications %s for participant %s", json_array)
