@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.aggregates import Max
+from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from django.utils.html import escape
@@ -89,6 +90,17 @@ class CommonsUser(models.Model):
     failed_password_attempts = models.PositiveIntegerField(default=0)
     institution = models.ForeignKey(Institution, null=True, blank=True)
     authentication_token = models.CharField(max_length=64, null=True, blank=True)
+    penultimate_login = models.DateTimeField(null=True, blank=True)
+
+
+    @receiver(pre_save, sender='CommonsUser')
+    def set_penultimate_login(sender, instance, raw, *args, **kwargs):
+        if raw: return
+        logger.debug("args: %s, kwargs: %s", args, kwargs)
+        penultimate_login = instance.penultimate_login
+        last_login = instance.user.last_login
+        if penultimate_login is None or penultimate_login < last_login:
+            instance.penultimate_login = last_login
 
     @property
     def full_name(self):
@@ -1110,11 +1122,11 @@ class Participant(CommonsUser):
 
     @property
     def active_experiments(self):
-        return self.experiment_relationships.filter(experiment__status=Experiment.ACTIVE)
+        return self.experiment_relationship_set.filter(experiment__status=Experiment.ACTIVE)
 
     @property
     def inactive_experiments(self):
-        return self.experiment_relationships.exclude(experiment__status=Experiment.ACTIVE)
+        return self.experiment_relationship_set.exclude(experiment__status=Experiment.ACTIVE)
 
     @property
     def completed_experiments(self):
@@ -1127,7 +1139,7 @@ class Participant(CommonsUser):
         return ParticipantGroupRelationship.objects.get_participant_group(self, experiment)
 
     def experiments_with_status(self, status=Experiment.ACTIVE):
-        return self.experiment_relationships.filter(experiment__status=status)
+        return self.experiment_relationship_set.filter(experiment__status=status)
 
     class Meta:
         ordering = ['user']

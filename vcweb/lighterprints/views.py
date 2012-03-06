@@ -107,7 +107,7 @@ class MobileView(ActivityListView):
         return ['lighterprints/mobile/index.html']
 
 def get_notification_json(participant_group_relationship):
-    last_login = participant_group_relationship.participant.last_login
+    last_login = participant_group_relationship.participant.penultimate_login
     logger.debug("Finding notifications for participant %s since %s", participant_group_relationship, last_login)
     json_array = []
 # FIXME: this may be a good use case for the graph db - a nested loop of selects is not very performant.  revisit and
@@ -128,7 +128,8 @@ def get_notification_json(participant_group_relationship):
         user_action_dict['target_type'] = target_data_value.parameter.name
         user_action_dict['summary_type'] = user_action.parameter.name
         json_array.append(user_action_dict)
-    logger.debug("returning notifications %s for participant %s", json_array)
+    logger.debug("returning notifications %s for participant %s", json_array,
+            participant_group_relationship)
     return dumps({'success': True, 'notifications': json_array})
 
 @login_required
