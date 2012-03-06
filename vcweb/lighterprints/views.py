@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -9,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
-from vcweb.core.forms import ChatForm, LoginForm, CommentForm, LikeForm
+from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, UpdateNotificationsSinceForm)
 from vcweb.core.models import (ChatMessage, Comment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token, json_response
 from vcweb.lighterprints.forms import ActivityForm
@@ -106,18 +107,23 @@ class MobileView(ActivityListView):
     def get_template_names(self):
         return ['lighterprints/mobile/index.html']
 
+# FIXME: use persistent_messages instead where the user has to explicitly clear /
+# dismiss the messages.  additional fields would be target_id
 def get_notification_json(participant_group_relationship):
-    last_login = participant_group_relationship.participant.penultimate_login
-    logger.debug("Finding notifications for participant %s since %s", participant_group_relationship, last_login)
+# FIXME: push into ParticipantGroupRelationship
+    notification_date = participant_group_relationship.notifications_since
+    if notification_date is None:
+        notification_date = participant_group_relationship.date_created
+    logger.debug("Finding notifications for participant %s since %s", participant_group_relationship, notification_date)
     json_array = []
 # FIXME: this may be a good use case for the graph db - a nested loop of selects is not very performant.  revisit and
 # refactor
 # selects only comments and likes whose targeted action belongs to the participant_group_relationship in question and
 # that have been posted since the last user's login
-# FIXME: bah, need to use django-model-utils InheritanceManager to properly downcast and get access to the appropriate
-# subtype to_dict() method
     user_actions = itertools.chain(*[cls.objects.filter(target_data_value__participant_group_relationship=participant_group_relationship, 
-        last_modified__gte=last_login) for cls in (Comment, Like)])
+        last_modified__gte=notification_date) for cls in (Comment, Like)])
+    # bah, need to use django-model-utils InheritanceManager to properly downcast and get access to the appropriate
+    # subtype to_dict() method
     for user_action in user_actions:
         user_action_dict = user_action.to_dict()
         target_data_value = user_action.target_data_value
@@ -128,9 +134,22 @@ def get_notification_json(participant_group_relationship):
         user_action_dict['target_type'] = target_data_value.parameter.name
         user_action_dict['summary_type'] = user_action.parameter.name
         json_array.append(user_action_dict)
-    logger.debug("returning notifications %s for participant %s", json_array,
-            participant_group_relationship)
+    logger.debug("returning notifications %s for participant %s", json_array, participant_group_relationship)
     return dumps({'success': True, 'notifications': json_array})
+
+def update_notifications_since(request):
+    form = UpdateNotificationsSinceForm(request.POST or None)
+    if form.is_valid():
+        participant_group_id = form.cleaned_data['participant_group_id']
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        if request.user.participant == participant_group_relationship.participant:
+            participant_group_relationship.notifications_since = datetime.now()
+            participant_group_relationship.save()
+            return HttpResponse(dumps({'success':True}))
+        else:
+            logger.warning("authenticated user %s tried to update notifications since for %s", request.user, participant_group_relationship)
+    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
+
 
 @login_required
 def get_notifications(request, participant_group_id):

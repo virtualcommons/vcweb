@@ -90,17 +90,6 @@ class CommonsUser(models.Model):
     failed_password_attempts = models.PositiveIntegerField(default=0)
     institution = models.ForeignKey(Institution, null=True, blank=True)
     authentication_token = models.CharField(max_length=64, null=True, blank=True)
-    penultimate_login = models.DateTimeField(null=True, blank=True)
-
-
-    @receiver(pre_save, sender='CommonsUser')
-    def set_penultimate_login(sender, instance, raw, *args, **kwargs):
-        if raw: return
-        logger.debug("args: %s, kwargs: %s", args, kwargs)
-        penultimate_login = instance.penultimate_login
-        last_login = instance.user.last_login
-        if penultimate_login is None or penultimate_login < last_login:
-            instance.penultimate_login = last_login
 
     @property
     def full_name(self):
@@ -1203,6 +1192,7 @@ class ParticipantGroupRelationship(models.Model):
     round_joined = models.ForeignKey(RoundConfiguration)
     date_created = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
+    notifications_since = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     objects = ParticipantGroupRelationshipManager()
 
