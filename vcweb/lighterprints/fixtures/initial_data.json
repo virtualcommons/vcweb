@@ -12,12 +12,12 @@
             "last_login": "2011-07-21 11:26:11",
             "groups": [],
             "user_permissions": [
-                85,
-                86,
-                87,
-                88,
-                89,
-                90
+                91,
+                92,
+                93,
+                94,
+                95,
+                96
             ],
             "password": "sha1$b6803$fdf4e561936dcf4d4986ee2820bcb4dbf08501d7",
             "email": "srelias@asu.edu",
@@ -132,7 +132,7 @@
             "summary": "Heating or cooling buildings less saves energy",
             "cooldown": 1,
             "savings": "5.50",
-            "points": 0,
+            "points": 55,
             "icon": "lighterprints/activity-icons/93-thermometer_1.png",
             "personal_benefits": "Less energy used results in savings on an electric bill. ",
             "name": "adjust-thermostat"
@@ -151,7 +151,7 @@
             "summary": "Less energy is used for transportation when only locally grown food is consumed",
             "cooldown": 1,
             "savings": "1.50",
-            "points": 0,
+            "points": 15,
             "icon": "lighterprints/activity-icons/80-shopping-cart_1.png",
             "personal_benefits": "Locally grown food often contains less preservatives and is fresher, making it a healthier and tastier choice. ",
             "name": "eat-local-lunch"
@@ -170,7 +170,7 @@
             "summary": "Your computer consumes less energy when it's asleep or turned off",
             "cooldown": 1,
             "savings": "0.98",
-            "points": 0,
+            "points": 10,
             "icon": "lighterprints/activity-icons/69-display_1.png",
             "personal_benefits": "Using the sleep function can save money on your electric bill. It also can reduce the heat produced by your computer, which may improve its lifetime. ",
             "name": "enable-computer-sleep"
@@ -189,7 +189,7 @@
             "summary": "Recycling processes used materials into new products to prevent waste of potentially useful materials.",
             "cooldown": 1,
             "savings": "0.31",
-            "points": 0,
+            "points": 3,
             "icon": "lighterprints/activity-icons/51-recycle.png",
             "personal_benefits": null,
             "name": "recycle"
@@ -208,7 +208,7 @@
             "summary": "Carpooling is more energy efficient than travelling alone in your car.",
             "cooldown": 1,
             "savings": "9.40",
-            "points": 0,
+            "points": 94,
             "icon": "lighterprints/activity-icons/81-dashboard_1.png",
             "personal_benefits": null,
             "name": "share-your-ride"
@@ -227,7 +227,7 @@
             "summary": "Reduce fossil fuel consumption and emissions by not driving a car",
             "cooldown": 1,
             "savings": "7.52",
-            "points": 0,
+            "points": 75,
             "icon": "lighterprints/activity-icons/47-bicycle-to.png",
             "personal_benefits": null,
             "name": "bike-public-transport"
@@ -246,7 +246,7 @@
             "summary": "Don't leave the water running while you're brushing your teeth",
             "cooldown": 1,
             "savings": "0.76",
-            "points": 0,
+            "points": 8,
             "icon": "lighterprints/activity-icons/186-toothbrush_1.png",
             "personal_benefits": null,
             "name": "brushing-your-teeth"
@@ -265,7 +265,7 @@
             "summary": "Save energy and turn off your computer when it's not needed.",
             "cooldown": 1,
             "savings": "1.37",
-            "points": 0,
+            "points": 14,
             "icon": "lighterprints/activity-icons/126-moon_1.png",
             "personal_benefits": null,
             "name": "computer-off"
@@ -284,7 +284,7 @@
             "summary": "Beef production is very energy intensive",
             "cooldown": 1,
             "savings": "4.26",
-            "points": 0,
+            "points": 43,
             "icon": "lighterprints/activity-icons/109-chicken_1.png",
             "personal_benefits": null,
             "name": "no-beef"
@@ -303,7 +303,7 @@
             "summary": "Saving paper resources and production by recycling",
             "cooldown": 1,
             "savings": "0.56",
-            "points": 0,
+            "points": 6,
             "icon": "lighterprints/activity-icons/166-newspaper_1.png",
             "personal_benefits": null,
             "name": "recycle-paper"
@@ -322,7 +322,7 @@
             "summary": "Air drying your clothes saves gas or electricity",
             "cooldown": 1,
             "savings": "1.98",
-            "points": 0,
+            "points": 20,
             "icon": "lighterprints/activity-icons/67-tshirt_1.png",
             "personal_benefits": null,
             "name": "air-dry-clothes"
@@ -341,7 +341,7 @@
             "summary": "Reduce the amount of waste you produce at lunch time.",
             "cooldown": 1,
             "savings": "1.37",
-            "points": 0,
+            "points": 14,
             "icon": "lighterprints/activity-icons/48-fork-and-knife_1.png",
             "personal_benefits": "You can save money by buying reusable containers and utensils once instead of buying disposable items regularly. ",
             "name": "green-lunch"
@@ -360,7 +360,7 @@
             "summary": "Turning lights off in areas that don't need them saves energy.",
             "cooldown": 1,
             "savings": "2.28",
-            "points": 0,
+            "points": 23,
             "icon": "lighterprints/activity-icons/84-lightbulb_1.png",
             "personal_benefits": "Turning lights off can save you money on your electric bill. Since lights give off heat, turning them off can also help keep rooms cooler. ",
             "name": "lights-off"
@@ -379,7 +379,7 @@
             "summary": "Raising animals for meat is resource intensive",
             "cooldown": 1,
             "savings": "4.41",
-            "points": 0,
+            "points": 44,
             "icon": "lighterprints/activity-icons/125-food_1.png",
             "personal_benefits": null,
             "name": "vegan-for-a-day"
@@ -398,7 +398,7 @@
             "summary": "Save energy by not heating water",
             "cooldown": 1,
             "savings": "1.10",
-            "points": 0,
+            "points": 11,
             "icon": "lighterprints/activity-icons/24-washing-new.png",
             "personal_benefits": null,
             "name": "wash-cold-water"

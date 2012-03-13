@@ -954,8 +954,7 @@ class Group(models.Model):
     def has_data_parameter(self, **kwargs):
         criteria = self._data_parameter_criteria(**kwargs)
         try:
-            self.data_value_set.get(**criteria)
-            return True
+            return self.data_value_set.filter(**criteria).count() > 0
         except:
             return False
 
@@ -963,8 +962,6 @@ class Group(models.Model):
         return self.get_data_value(parameter=parameter, parameter_name=parameter_name).value
 
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None, default=None):
-        if round_data is None:
-            round_data = self.current_round_data
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         try:
             return self.data_value_set.get(**criteria)
@@ -986,11 +983,13 @@ class Group(models.Model):
         data_value.save()
 
 
-    def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None):
-        return dict([
+    def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
+        criteria = dict([
             ('parameter', parameter) if parameter else ('parameter__name', parameter_name),
             ('round_data', self.current_round_data if round_data is None else round_data)
             ])
+        criteria.update(kwargs)
+        return criteria
 
 
     def get_group_data_values(self, name=None, *names):
@@ -1035,8 +1034,9 @@ class Group(models.Model):
             group_data_value.save()
         return group_data_value
 
-    def get_participant_data_values(self, parameter_name=None):
-        return ParticipantRoundDataValue.objects.filter(round_data=self.current_round_data, participant_group_relationship__group=self, parameter__name=parameter_name)
+    def get_participant_data_values(self, **kwargs):
+        criteria = self._data_parameter_criteria(participant_group_relationship__group=self, **kwargs)
+        return ParticipantRoundDataValue.objects.filter(**criteria)
 
 
     def create_next_group(self):

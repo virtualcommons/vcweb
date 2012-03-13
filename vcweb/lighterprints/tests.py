@@ -47,7 +47,7 @@ class UpdateLevelTest(BaseTest):
         update_active_experiments(self)
         for group in e.group_set.all():
             self.assertEqual(get_carbon_footprint_level(group).value, 2)
-            self.assertEqual(get_daily_carbon_savings(group), Decimal('88.45'))
+            self.assertEqual(get_average_points_per_person(group), 177)
 
 class GroupActivityTest(BaseTest):
     def test_group_activity_json(self):
