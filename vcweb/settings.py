@@ -193,6 +193,7 @@ LOGGING = {
 #        },
         'sentry': {
              'level': 'ERROR',
+             'formatter': 'verbose',
              'class': 'raven.contrib.django.handlers.SentryHandler',
         },
         'console':{
@@ -203,7 +204,7 @@ LOGGING = {
         'vcweb.file': {
             'level': 'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
-            'formatter': 'verbose',
+            'formatter': 'vcweb_verbose',
             'filename': path.join(LOG_DIRECTORY, VCWEB_LOG_FILENAME),
             'backupCount': 6,
             'maxBytes': 10000000,
@@ -211,7 +212,7 @@ LOGGING = {
         'tornadio.file': {
             'level': 'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
-            'formatter': 'verbose',
+            'formatter': 'vcweb_verbose',
             'filename': path.join(LOG_DIRECTORY, TORNADIO_LOG_FILENAME),
             'backupCount': 6,
             'maxBytes': 10000000,
