@@ -118,11 +118,11 @@ def get_notification_json(participant_group_relationship):
         notification_date = participant_group_relationship.date_created
     logger.debug("Finding notifications for participant %s since %s", participant_group_relationship, notification_date)
     json_array = []
-# FIXME: this may be a good use case for the graph db - a nested loop of selects is not very performant.  revisit and
-# refactor
-# selects only comments and likes whose targeted action belongs to the participant_group_relationship in question and
-# that have been posted since the last user's login
-    user_actions = itertools.chain(*[cls.objects.filter(target_data_value__participant_group_relationship=participant_group_relationship, 
+# FIXME: this may be a good use case for the graph db - a nested loop of selects is not very performant.  revisit and refactor
+
+# selects only comments and likes whose targeted action belongs to the participant_group_relationship in
+# question and that have been posted since the last user's login
+    user_actions = itertools.chain(*[cls.objects.filter(target_data_value__participant_group_relationship=participant_group_relationship,
         last_modified__gte=notification_date) for cls in (Comment, Like)])
     # bah, need to use django-model-utils InheritanceManager to properly downcast and get access to the appropriate
     # subtype to_dict() method
@@ -140,18 +140,17 @@ def get_notification_json(participant_group_relationship):
     return dumps({'success': True, 'notifications': json_array})
 
 @login_required
-@csrf_exempt
-def group_points_summary(request):
-    participant_group_id = request.GET.get('participant_group_id')
-    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group'), pk=participant_group_id)
+def get_notifications(request, participant_group_id):
+    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
     if request.user.participant == participant_group_relationship.participant:
-        group = participant_group_relationship.group
-        return HttpResponse(dumps({'success':True,
-            'average_points_per_person': get_average_points_per_person(group),
-            'points_to_next_level': points_to_next_level(get_carbon_footprint_level(group))
-            }))
-    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
+        notifications = get_notification_json(participant_group_relationship)
+        return json_response(request, notifications)
+    else:
+        logger.warning("authenticated user %s tried to retrieve notifications for %s", request.user,
+                participant_group_relationship)
+        return HttpResponse(dumps({'success':False, 'message': 'Invalid authz request'}))
 
+@login_required
 def update_notifications_since(request):
     form = ParticipantGroupIdForm(request.POST or None)
     if form.is_valid():
@@ -166,16 +165,15 @@ def update_notifications_since(request):
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
 @login_required
-def get_notifications(request, participant_group_id):
-    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+def group_points_summary(request, participant_group_id):
+    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group'), pk=participant_group_id)
     if request.user.participant == participant_group_relationship.participant:
-        notifications = get_notification_json(participant_group_relationship)
-        return json_response(request, notifications)
-    else:
-        logger.warning("authenticated user %s tried to retrieve notifications for %s", request.user,
-                participant_group_relationship)
-        return HttpResponse(dumps({'success':False, 'message': 'Invalid authz request'}))
-
+        group = participant_group_relationship.group
+        return HttpResponse(dumps({'success':True,
+            'average_points_per_person': get_average_points_per_person(group),
+            'points_to_next_level': points_to_next_level(get_carbon_footprint_level(group))
+            }))
+    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
 @login_required
 def group_activity(request, participant_group_id):

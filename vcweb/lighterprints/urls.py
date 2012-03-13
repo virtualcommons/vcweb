@@ -18,7 +18,7 @@ urlpatterns = patterns('vcweb.lighterprints.views',
     url(r'^api/comment', post_comment),
     url(r'^api/like', like),
     url(r'^api/login', login),
-    url(r'^api/group-points-summary', group_points_summary),
+    url(r'^api/group-points-summary/(?P<participant_group_id>\d+)', group_points_summary),
     url(r'^api/summary/clear', update_notifications_since),
     url(r'^api/summary/(?P<participant_group_id>\d+)', get_notifications),
 )
