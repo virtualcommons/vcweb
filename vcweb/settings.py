@@ -1,6 +1,5 @@
 from django.contrib import messages
 from os import path, makedirs
-import sys
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -98,6 +97,7 @@ INSTALLED_APPS = (
         'djcelery',
         'djkombu',
         'raven.contrib.django',
+        'kronos',
         )
 
 

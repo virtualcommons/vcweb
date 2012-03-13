@@ -189,6 +189,7 @@ def get_performed_activity_ids(participant_group_relationship):
 
 @receiver(signals.midnight_tick)
 def update_active_experiments(sender, time=None, **kwargs):
+    logger.debug("updating active experiments")
     for experiment in get_active_experiments():
         # calculate total carbon savings and decide if they move on to the next level
         for group in experiment.group_set.all():
