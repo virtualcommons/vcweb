@@ -227,8 +227,11 @@ def get_average_points_per_person(group):
             average_savings_per_person)
     return average_savings_per_person
 
+def points_to_next_level(level, level_multiplier=100):
+    return level * level_multiplier
+
 def should_advance_level(group, level, max_level=3, level_multiplier=100):
     if level < max_level:
-        return get_average_points_per_person(group) >= (level * level_multiplier)
+        return get_average_points_per_person(group) >= points_to_next_level(level)
     return False
 

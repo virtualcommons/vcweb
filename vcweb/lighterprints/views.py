@@ -10,11 +10,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
-from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, UpdateNotificationsSinceForm)
+from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm)
 from vcweb.core.models import (ChatMessage, Comment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token, json_response
 from vcweb.lighterprints.forms import ActivityForm
-from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter)
+from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity,
+        get_lighterprints_experiment_metadata, get_activity_performed_parameter, points_to_next_level,
+        get_average_points_per_person, get_carbon_footprint_level)
 
 import collections
 import itertools
@@ -137,8 +139,23 @@ def get_notification_json(participant_group_relationship):
     logger.debug("returning notifications %s for participant %s", json_array, participant_group_relationship)
     return dumps({'success': True, 'notifications': json_array})
 
+@login_required
+@csrf_exempt
+def group_points_summary(request):
+    form = ParticipantGroupIdForm(request.POST or None)
+    if form.is_valid():
+        participant_group_id = form.cleaned_data['participant_group_id']
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group'), pk=participant_group_id)
+        if request.user.participant == participant_group_relationship.participant:
+            group = participant_group_relationship.group
+            return HttpResponse(dumps({'success':True,
+                'average_points_per_person': get_average_points_per_person(group),
+                'points_to_next_level': points_to_next_level(get_carbon_footprint_level(group))
+                }))
+    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
+
 def update_notifications_since(request):
-    form = UpdateNotificationsSinceForm(request.POST or None)
+    form = ParticipantGroupIdForm(request.POST or None)
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
@@ -149,7 +166,6 @@ def update_notifications_since(request):
         else:
             logger.warning("authenticated user %s tried to update notifications since for %s", request.user, participant_group_relationship)
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
-
 
 @login_required
 def get_notifications(request, participant_group_id):
@@ -263,6 +279,7 @@ def post_chat_message(request):
         content = get_group_activity_json(participant_group_relationship)
         return HttpResponse(content, content_type='application/json')
     return HttpResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
+
 
 @csrf_exempt
 @login_required
