@@ -218,7 +218,7 @@ def get_average_points_per_person(group):
 # grab all of yesterday's participant data values
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(1)
-    total_savings = Decimal(0.0)
+    total_savings = 0
     for activity_performed_dv in group.get_participant_data_values(parameter=get_activity_performed_parameter()).filter(date_created__gte=yesterday):
         activity = Activity.objects.get(pk=activity_performed_dv.value)
         total_savings += activity.points
