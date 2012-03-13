@@ -142,16 +142,14 @@ def get_notification_json(participant_group_relationship):
 @login_required
 @csrf_exempt
 def group_points_summary(request):
-    form = ParticipantGroupIdForm(request.POST or None)
-    if form.is_valid():
-        participant_group_id = form.cleaned_data['participant_group_id']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group'), pk=participant_group_id)
-        if request.user.participant == participant_group_relationship.participant:
-            group = participant_group_relationship.group
-            return HttpResponse(dumps({'success':True,
-                'average_points_per_person': get_average_points_per_person(group),
-                'points_to_next_level': points_to_next_level(get_carbon_footprint_level(group))
-                }))
+    participant_group_id = request.GET.get('participant_group_id')
+    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group'), pk=participant_group_id)
+    if request.user.participant == participant_group_relationship.participant:
+        group = participant_group_relationship.group
+        return HttpResponse(dumps({'success':True,
+            'average_points_per_person': get_average_points_per_person(group),
+            'points_to_next_level': points_to_next_level(get_carbon_footprint_level(group))
+            }))
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
 def update_notifications_since(request):
