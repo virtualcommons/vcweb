@@ -214,24 +214,29 @@ def round_started_handler(sender, experiment=None, **kwargs):
         carbon_footprint_level_grdv.value = 1
         carbon_footprint_level_grdv.save()
 
-def get_average_points_per_person(group):
+def average_points_per_person(group):
+    return get_group_points_summary(group)[0]
+
+# returns a tuple of the average points per person and the total savings for
+# the given group
+def get_group_points_summary(group):
 # grab all of yesterday's participant data values
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(1)
-    total_savings = 0
+    total_points = 0
     for activity_performed_dv in group.get_participant_data_values(parameter=get_activity_performed_parameter()).filter(date_created__gte=yesterday):
         activity = Activity.objects.get(pk=activity_performed_dv.value)
-        total_savings += activity.points
-    average_savings_per_person = total_savings / group.size
-    logger.debug("total carbon savings: %s divided by %s members = %s per person", total_savings, group.size,
-            average_savings_per_person)
-    return average_savings_per_person
+        total_points += activity.points
+    average = total_points / group.size
+    logger.debug("total carbon savings: %s divided by %s members = %s per person", total_points, group.size,
+            average)
+    return (average, total_points)
 
 def points_to_next_level(level, level_multiplier=100):
     return level * level_multiplier
 
-def should_advance_level(group, level, max_level=3, level_multiplier=100):
+def should_advance_level(group, level, max_level=3):
     if level < max_level:
-        return get_average_points_per_person(group) >= points_to_next_level(level)
+        return average_points_per_person(group) >= points_to_next_level(level)
     return False
 

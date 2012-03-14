@@ -16,7 +16,7 @@ from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token,
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity,
         get_lighterprints_experiment_metadata, get_activity_performed_parameter, points_to_next_level,
-        get_average_points_per_person, get_carbon_footprint_level)
+        get_group_points_summary, get_carbon_footprint_level)
 
 import collections
 import itertools
@@ -169,9 +169,12 @@ def group_points_summary(request, participant_group_id):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group'), pk=participant_group_id)
     if request.user.participant == participant_group_relationship.participant:
         group = participant_group_relationship.group
+        (average_points, total_points) = get_group_points_summary(group)
+        logger.debug("getting point summary for group: %s", group)
         return HttpResponse(dumps({'success':True,
-            'average_points_per_person': get_average_points_per_person(group),
-            'points_to_next_level': points_to_next_level(get_carbon_footprint_level(group))
+            'average_points_per_person': average_points,
+            'total_points': total_points,
+            'points_to_next_level': points_to_next_level(get_carbon_footprint_level(group).value)
             }))
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
