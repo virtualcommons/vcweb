@@ -135,7 +135,7 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
 # whenever it falls within the ActivityAvailability schedule and if the participant
 # hasn't already performed this activity during this cycle.
     logger.debug("checking if %s is available for %s", activity, participant_group_relationship)
-    level = get_carbon_footprint_level(participant_group_relationship.group)
+    level = get_footprint_level(participant_group_relationship.group)
     if activity.level > level:
         logger.debug("activity %s had larger level (%s) than group level (%s)", activity, activity.level, level)
         return ActivityStatus.UNAVAILABLE
@@ -192,11 +192,11 @@ def update_active_experiments(sender, time=None, **kwargs):
     for experiment in get_active_experiments():
         # calculate total carbon savings and decide if they move on to the next level
         for group in experiment.group_set.all():
-            carbon_footprint_level_grdv = get_carbon_footprint_level(group)
-            if should_advance_level(group, carbon_footprint_level_grdv.value):
+            footprint_level_grdv = get_footprint_level(group)
+            if should_advance_level(group, footprint_level_grdv.value):
 # advance group level
-                carbon_footprint_level_grdv.value = min(carbon_footprint_level_grdv.value + 1, 3)
-                carbon_footprint_level_grdv.save()
+                footprint_level_grdv.value = min(footprint_level_grdv.value + 1, 3)
+                footprint_level_grdv.save()
 
 @receiver(signals.round_started)
 def round_started_handler(sender, experiment=None, **kwargs):
@@ -205,13 +205,13 @@ def round_started_handler(sender, experiment=None, **kwargs):
         return
     # FIXME: See if we can push this logic up to core..
     current_round_data = experiment.current_round_data
-    carbon_footprint_level_parameter = get_carbon_footprint_level_parameter()
+    footprint_level_parameter = get_footprint_level_parameter()
 # only create the carbon footprint level parameter, the participant activity performed data values will be created each
 # time.
     for group in experiment.group_set.all():
-        carbon_footprint_level_grdv = current_round_data.group_data_value_set.create(group=group, parameter=carbon_footprint_level_parameter)
-        carbon_footprint_level_grdv.value = 1
-        carbon_footprint_level_grdv.save()
+        footprint_level_grdv = current_round_data.group_data_value_set.create(group=group, parameter=footprint_level_parameter)
+        footprint_level_grdv.value = 1
+        footprint_level_grdv.save()
 
 def average_points_per_person(group):
     return get_group_points_summary(group)[0]

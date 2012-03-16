@@ -31,7 +31,7 @@ class ActivityViewTest(BaseTest):
             self.assertEqual(response.status_code, 403)
 
 class UpdateLevelTest(BaseTest):
-    def test_daily_carbon_savings(self):
+    def test_daily_points(self):
         e = self.experiment
         e.activate()
         e.start_round()
@@ -46,12 +46,11 @@ class UpdateLevelTest(BaseTest):
         # FIXME: sender parameter doesn't really matter here, just pass self in as the sender
         update_active_experiments(self)
         for group in e.group_set.all():
-            self.assertEqual(get_carbon_footprint_level(group).value, 2)
-            self.assertEqual(get_average_points_per_person(group), 177)
+            self.assertEqual(get_footprint_level(group).value, 2)
+            self.assertEqual(average_points_per_person(group), 177)
 
 class GroupActivityTest(BaseTest):
     def test_group_activity_json(self):
-        import simplejson as json
         e = self.experiment
         e.activate()
         e.start_round()
