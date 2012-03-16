@@ -135,7 +135,7 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
 # whenever it falls within the ActivityAvailability schedule and if the participant
 # hasn't already performed this activity during this cycle.
     logger.debug("checking if %s is available for %s", activity, participant_group_relationship)
-    level = get_footprint_level(participant_group_relationship.group)
+    level = get_footprint_level(participant_group_relationship.group).value
     if activity.level > level:
         logger.debug("activity %s had larger level (%s) than group level (%s)", activity, activity.level, level)
         return ActivityStatus.UNAVAILABLE
