@@ -156,16 +156,18 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
         try:
             logger.debug("checking availability set %s", activity.availability_set.all())
             availabilities = activity.availability_set.filter(start_time__lte=current_time, end_time__gte=current_time)
-            earliest_start_time = datetime.datetime.combine(datetime.date.today(), availabilities[0].start_time)
-            logger.debug("earliest start time: %s", earliest_start_time)
-            already_performed = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
-                    participant_group_relationship=participant_group_relationship,
-                    int_value=activity.pk,
-                    date_created__range=(earliest_start_time, now))
-            return ActivityStatus.AVAILABLE if already_performed.count() == 0 else ActivityStatus.COMPLETED
+            if availabilities.count() > 0:
+                earliest_start_time = datetime.datetime.combine(datetime.date.today(), availabilities[0].start_time)
+                logger.debug("earliest start time: %s", earliest_start_time)
+                already_performed = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
+                        participant_group_relationship=participant_group_relationship,
+                        int_value=activity.pk,
+                        date_created__range=(earliest_start_time, now))
+                return ActivityStatus.AVAILABLE if already_performed.count() == 0 else ActivityStatus.COMPLETED
         except Exception as e:
             logger.debug("exception while checking if this activity had already been performed by this participant: %s", e)
-            return ActivityStatus.UNAVAILABLE
+# default behavior is for the activity to be unavailable
+    return ActivityStatus.UNAVAILABLE
 
 def is_activity_available(activity, participant_group_relationship):
     return check_activity_availability(activity, participant_group_relationship) == ActivityStatus.AVAILABLE
