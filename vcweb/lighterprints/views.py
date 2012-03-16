@@ -118,8 +118,6 @@ def get_notification_json(participant_group_relationship):
         notification_date = participant_group_relationship.date_created
     logger.debug("Finding notifications for participant %s since %s", participant_group_relationship, notification_date)
     json_array = []
-# FIXME: this may be a good use case for the graph db - a nested loop of selects is not very performant.  revisit and refactor
-
 # selects only comments and likes whose targeted action belongs to the participant_group_relationship in
 # question and that have been posted since the last user's login
     user_actions = itertools.chain(*[cls.objects.filter(target_data_value__participant_group_relationship=participant_group_relationship,
@@ -171,11 +169,13 @@ def group_points_summary(request, participant_group_id):
         group = participant_group_relationship.group
         (average_points, total_points) = get_group_points_summary(group)
         logger.debug("getting point summary for group: %s", group)
-        return HttpResponse(dumps({'success':True,
+        groups = []
+        groups.append({
             'average_points_per_person': average_points,
             'total_points': total_points,
             'points_to_next_level': points_to_next_level(get_carbon_footprint_level(group).value)
-            }))
+            })
+        return HttpResponse(dumps({'success':True, 'scores': groups }))
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
 @login_required

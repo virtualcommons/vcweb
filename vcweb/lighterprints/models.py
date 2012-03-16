@@ -4,7 +4,6 @@ from vcweb.core import signals, simplecache, enum
 from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
         GroupRoundDataValue, ParticipantRoundDataValue, Parameter)
 from django.dispatch import receiver
-from decimal import Decimal
 import collections
 import datetime
 import logging
@@ -220,7 +219,7 @@ def average_points_per_person(group):
 # returns a tuple of the average points per person and the total savings for
 # the given group
 def get_group_points_summary(group):
-# grab all of yesterday's participant data values
+    # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(1)
     total_points = 0
