@@ -45,7 +45,6 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
             (flattened_activities, activity_by_level) = get_all_available_activities(participant_group_relationship, all_activities)
             context['activity_by_level'] = dict(activity_by_level)
             context['flattened_activities'] = flattened_activities
-            logger.debug("returning %s", context)
             return context
         raise PermissionDenied("You must be authenticated to view all activities.")
 
