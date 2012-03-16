@@ -109,7 +109,7 @@
     },
     {
         "fields": {
-               "name":"carbon_footprint_level",
+               "name":"footprint_level",
                "experiment_metadata": [ "lighterprints" ],
                "creator": 1,
                "type": "int",

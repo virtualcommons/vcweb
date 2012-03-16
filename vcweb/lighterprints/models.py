@@ -90,11 +90,11 @@ def get_activity_performed_parameter():
     return Parameter.objects.get(name='activity_performed')
 
 @simplecache
-def get_carbon_footprint_level_parameter():
-    return Parameter.objects.get(name='carbon_footprint_level')
+def get_footprint_level_parameter():
+    return Parameter.objects.get(name='footprint_level')
 
-def get_carbon_footprint_level(group):
-    return GroupRoundDataValue.objects.get(group=group, parameter=get_carbon_footprint_level_parameter())
+def get_footprint_level(group):
+    return GroupRoundDataValue.objects.get(group=group, parameter=get_footprint_level_parameter())
 
 def get_active_experiments():
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
