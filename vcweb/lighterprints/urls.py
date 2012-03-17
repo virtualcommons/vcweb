@@ -1,16 +1,15 @@
 from django.conf.urls.defaults import url, patterns
 from django.views.decorators.cache import never_cache
-from django.views.generic.simple import redirect_to
 
-from vcweb.lighterprints.views import (ActivityDetailView, ActivityListView, MobileView,
-        post_chat_message, post_comment, perform_activity, DiscussionBoardView, login,
-        group_activity, like, get_notifications, update_notifications_since, group_score)
+from vcweb.lighterprints.views import (ActivityDetailView, ActivityListView, MobileView, post_chat_message,
+        post_comment, perform_activity, DiscussionBoardView, login, participate, group_activity, like,
+        get_notifications, update_notifications_since, group_score)
 
 # handles all /lighterprints/* URL requests
 urlpatterns = patterns('vcweb.lighterprints.views',
     url(r'^mobile$', MobileView.as_view(), name='mobile'),
     url(r'^(?P<experiment_id>\d+)/configure$', 'configure', name='configure'),
-    url(r'^participate/?$', redirect_to, {'url': 'http://vcweb.asu.edu/devfoot'}),
+    url(r'^((?P<experiment_id>\d+)/)?participate/?$', participate, name='participate'),
     url(r'^activity/list/?$', never_cache(ActivityListView.as_view())),
     url(r'^activity/(?P<activity_id>\d+)$', never_cache(ActivityDetailView.as_view())),
     url(r'^discussion/(?P<experiment_id>\d+)/(?P<participant_id>\d+)', DiscussionBoardView.as_view()),

@@ -3,7 +3,7 @@ from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.utils.html import escape
 from django.utils.timesince import timesince
 from django.views.decorators.csrf import csrf_exempt
@@ -353,3 +353,9 @@ def login(request):
     except Exception as e:
         logger.debug("Invalid login: %s", e)
     return HttpResponse(dumps({'success': False, 'message': "Invalid login"}), content_type='application/json')
+
+
+def participate(request, experiment_id=None):
+    # FIXME: need to change to prod eventually
+    return redirect('http://vcweb.asu.edu/devfoot')
+
