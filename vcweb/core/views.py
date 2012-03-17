@@ -239,11 +239,14 @@ class RegisterEmailListView(ExperimenterSingleExperimentMixin, UpdateView):
     template_name = 'experimenter/register-email-participants.html'
     def form_valid(self, form):
         emails = form.cleaned_data.get('participant_emails')
+        institution = form.cleaned_data.get('institution')
         experiment = self.object
         logger.debug("registering participants %s for experiment: %s", emails, experiment)
         experiment.authentication_code = form.cleaned_data.get('experiment_passcode')
-        experiment.register_participants(emails=emails, institution=form.institution,
+        experiment.save()
+        experiment.register_participants(emails=emails, institution=institution,
                 password=experiment.authentication_code)
+        return super(RegisterEmailListView, self).form_valid(form)
 
 
 class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, UpdateView):
