@@ -16,7 +16,7 @@ from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token,
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity,
         get_lighterprints_experiment_metadata, get_activity_performed_parameter, points_to_next_level,
-        get_group_points_summary, get_footprint_level)
+        get_group_score, get_footprint_level)
 
 import collections
 import itertools
@@ -167,7 +167,7 @@ def group_score(request, participant_group_id):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group'), pk=participant_group_id)
     if request.user.participant == participant_group_relationship.participant:
         group = participant_group_relationship.group
-        (average_points, total_points) = get_group_points_summary(group)
+        (average_points, total_points) = get_group_score(group)
         logger.debug("getting group score for: %s", group)
         level = get_footprint_level(group).value
         groups = []

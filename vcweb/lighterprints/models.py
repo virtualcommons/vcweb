@@ -218,16 +218,15 @@ def round_started_handler(sender, experiment=None, **kwargs):
         footprint_level_grdv.save()
 
 def average_points_per_person(group):
-    return get_group_points_summary(group)[0]
+    return get_group_score(group)[0]
 
 # returns a tuple of the average points per person and the total savings for
 # the given group
-def get_group_points_summary(group):
+def get_group_score(group):
     # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
     today = datetime.date.today()
-    yesterday = today - datetime.timedelta(1)
     total_points = 0
-    for activity_performed_dv in group.get_participant_data_values(parameter=get_activity_performed_parameter()).filter(date_created__gte=yesterday):
+    for activity_performed_dv in group.get_participant_data_values(parameter=get_activity_performed_parameter()).filter(date_created__gte=today):
         activity = Activity.objects.get(pk=activity_performed_dv.value)
         total_points += activity.points
     average = total_points / group.size
