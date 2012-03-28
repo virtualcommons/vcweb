@@ -6,7 +6,7 @@ from fabric.context_managers import settings as fab_settings
 import os, sys, shutil
 
 # needed to push vcweb.settings onto the path.
-sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath('.'))
 
 # default env configuration
 env.python = 'python'

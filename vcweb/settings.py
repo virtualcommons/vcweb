@@ -4,6 +4,7 @@ from os import path, makedirs
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
+USE_TZ = False
 
 SERVER_EMAIL='vcweb@asu.edu'
 EMAIL_HOST='smtp.asu.edu'

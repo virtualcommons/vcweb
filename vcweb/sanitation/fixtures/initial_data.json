@@ -7,6 +7,8 @@
             ],
             "is_public": true,
             "max_group_size": 10,
+            "date_created": "2011-07-07",
+            "last_modified": "2011-07-07 15:13:03",
             "name": "Sanitation Default Configuration"
         },
         "model": "core.experimentconfiguration",
@@ -40,6 +42,8 @@
             "start_date_time": null,
             "status": "INACTIVE",
             "tick_duration": "10s",
+            "last_modified": "2011-07-07 15:13:04",
+            "date_created": "2011-07-07 15:13:03",
             "total_elapsed_time": 0
         },
         "model": "core.experiment",
@@ -54,6 +58,7 @@
         	"creator": 1,
         	"type": "int",
                 "date_created": "2011-01-01 15:13:07",
+                "last_modified": "2011-01-01 15:13:07",
         	"scope": "group",
                 "description": "The integer values for this parameter represent locations in a text corpus (i.e., single coordinates OK)"
         },
@@ -69,6 +74,7 @@
         	"creator": 1,
         	"type": "int",
                 "date_created": "2011-01-01 15:13:07",
+                "last_modified": "2011-01-01 15:13:07",
         	"scope": "participant",
                 "description": "The integer values for this parameter are informal foreign keys to the sanitation.pollution location data value pks"
         },

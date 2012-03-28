@@ -7,7 +7,9 @@
             ],
             "is_public": true,
             "max_group_size": 5,
-            "name": "Forestry Default Configuration"
+            "name": "Forestry Default Configuration",
+            "date_created": "2010-09-07",
+            "last_modified": "2010-09-07 16:13:03"
         },
         "model": "core.experimentconfiguration",
         "pk": 1
@@ -25,6 +27,8 @@
             "start_date_time": null,
             "status": "INACTIVE",
             "tick_duration": "10s",
+            "date_created": "2010-09-07",
+            "last_modified": "2010-09-07 12:23:37",
             "total_elapsed_time": 0
         },
         "model": "core.experiment",
@@ -170,6 +174,7 @@
         	"creator": 1,
         	"type": "int",
                 "date_created": "2011-01-01 15:13:03",
+                "last_modified": "2011-01-01 15:13:05",
         	"scope": "participant"
         },
         "model": "core.parameter",
@@ -182,6 +187,7 @@
         	"creator": 1,
         	"type": "int",
                 "date_created": "2011-01-01 15:13:07",
+                "last_modified": "2011-01-01 15:15:05",
         	"scope": "group"
         },
         "model": "core.parameter",
@@ -194,6 +200,8 @@
         	"creator": 1,
         	"type": "boolean",
         	"scope": "round",
+                "date_created": "2011-01-01 15:13:07",
+                "last_modified": "2011-01-01 15:15:05",
                 "default_value_string": "true"
         },
         "model": "core.parameter",
@@ -206,6 +214,8 @@
         	"creator": 1,
         	"type": "int",
         	"scope": "round",
+                "date_created": "2011-01-01 15:13:07",
+                "last_modified": "2011-01-01 15:15:05",
                 "default_value_string": 100
         },
         "model": "core.parameter",
@@ -221,9 +231,9 @@
             "name": "group_regrowth",
             "creator": 1,
             "default_value_string": "",
+            "date_created": "2011-03-15 17:02:47",
             "last_modified": "2011-03-15 17:05:36",
             "scope": "group",
-            "date_created": "2011-03-15 17:02:47",
             "enum_choices": "",
             "is_required": false,
             "type": "int"
@@ -238,9 +248,9 @@
             "name": "group_harvest",
             "creator": 1,
             "default_value_string": "",
+            "date_created": "2011-03-15 17:04:24",
             "last_modified": "2011-03-15 17:04:24",
             "scope": "group",
-            "date_created": "2011-03-15 17:04:24",
             "enum_choices": "",
             "is_required": false,
             "type": "int"
@@ -249,6 +259,8 @@
     {
         "fields": {
         	"round_configuration": 2,
+                "date_created": "2011-03-15 17:04:24",
+                "last_modified": "2011-03-15 17:04:24",
                 "parameter": [ "reset_resource_level" ],
                 "boolean_value": "True"
         },
@@ -258,6 +270,8 @@
     {
         "fields": {
         	"round_configuration": 2,
+                "date_created": "2011-03-15 17:04:24",
+                "last_modified": "2011-03-15 17:04:24",
                 "parameter": [ "initial_resource_level" ],
                 "int_value": 100
         },
@@ -267,6 +281,8 @@
     {
         "fields": {
         	"round_configuration": 3,
+                "date_created": "2011-03-15 17:04:24",
+                "last_modified": "2011-03-15 17:04:24",
                 "parameter": [ "reset_resource_level" ],
                 "boolean_value": "True"
         },
@@ -276,6 +292,8 @@
     {
         "fields": {
         	"round_configuration": 3,
+                "date_created": "2011-03-15 17:04:24",
+                "last_modified": "2011-03-15 17:04:24",
                 "parameter": [ "initial_resource_level" ],
                 "int_value": 100
         },
@@ -285,6 +303,8 @@
     {
         "fields": {
         	"round_configuration": 5,
+                "date_created": "2011-03-15 17:04:24",
+                "last_modified": "2011-03-15 17:04:24",
                 "parameter": [ "reset_resource_level" ],
                 "boolean_value": "False"
         },

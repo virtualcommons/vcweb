@@ -63,6 +63,8 @@
             "is_experimenter_driven": false,
             "start_date_time": null,
             "status": "INACTIVE",
+            "date_created": "2011-07-07 15:12:07",
+            "last_modified": "2011-07-07 15:13:03",
             "tick_duration": "10s",
             "total_elapsed_time": 0
         },
@@ -75,6 +77,8 @@
             "experiment_metadata": [
                 "lighterprints"
             ],
+            "date_created": "2011-07-07",
+            "last_modified": "2011-07-07 15:13:03",
             "is_public": true,
             "max_group_size": 20,
             "name": "Lighter Footprints Default Configuration"
@@ -102,6 +106,7 @@
                "creator": 1,
                "type": "int",
                 "date_created": "2011-01-01 15:13:03",
+                "last_modified": "2011-07-07 15:13:03",
                "scope": "participant"
         },
         "model": "core.parameter",
@@ -113,7 +118,8 @@
                "experiment_metadata": [ "lighterprints" ],
                "creator": 1,
                "type": "int",
-                "date_created": "2011-01-01 15:13:07",
+               "date_created": "2011-01-01 15:13:07",
+               "last_modified": "2011-07-07 15:13:03",
                "scope": "group"
         },
         "model": "core.parameter",

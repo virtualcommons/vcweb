@@ -54,6 +54,7 @@ class ExperimentMetadata(models.Model):
     # short name slug
     short_name = models.SlugField(max_length=32, unique=True, null=True)
     description = models.TextField(null=True, blank=True)
+# FIXME: convert to DateTimeField
     date_created = models.DateField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     about_url = models.URLField(null=True, blank=True, verify_exists=True)
@@ -135,6 +136,7 @@ class ExperimentConfiguration(models.Model):
     creator = models.ForeignKey(Experimenter, related_name='experiment_configuration_set')
     name = models.CharField(max_length=255)
     max_number_of_participants = models.PositiveIntegerField(default=0)
+# FIXME: convert to DateTimeField uniformly
     date_created = models.DateField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=True)
