@@ -104,13 +104,14 @@ class DoActivityTest(BaseTest):
             self.client.login(username=participant.email, password='test')
             for activity in activities:
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
+                expected_success = is_activity_available(activity, participant_group_relationship)
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
                     })
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
-                self.assertTrue(json_object['success'])
+                self.assertEqual(expected_success, json_object['success'])
                 logger.debug("Initial do activity response: %s", response)
 # trying to do the same activity again should result in an error response
                 response = self.client.post('/lighterprints/api/do-activity', {
