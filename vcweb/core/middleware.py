@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class ExceptionHandlingMiddleware(object):
     def process_exception(self, request, exception):
-        logger.error(traceback.format_exception(exception))
+        logger.error(traceback.format_exception(*sys.exc_info()))
         if type(exception) == PermissionDenied:
             if request.user.is_authenticated():
                 messages.warning(request, exception)
