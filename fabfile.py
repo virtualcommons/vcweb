@@ -15,7 +15,7 @@ env.deploy_user = 'apache'
 env.deploy_group = 'commons'
 env.virtualenv_path = "%s/.virtualenvs/%s" % (os.getenv("HOME"), env['project_name'])
 #env.virtualenv_path = '/opt/virtualenvs/%(project_name)s' % env
-env.deploy_path = '/opt/webapps/virtualcommons/'
+env.deploy_path = '/opt/'
 # default to current working directory
 env.project_path = os.path.dirname(__file__)
 env.hosts = ['localhost']
