@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context import RequestContext
 from django.views.generic import View
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
@@ -123,7 +123,9 @@ def participate(request, experiment_id=None):
     participant = request.user.participant
     logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
     try:
-        experiment = Experiment.objects.get(pk=experiment_id)
+        experiment = get_object_or_404(Experiment.objects.select_related(), pk=experiment_id)
+        if experiment.experiment_metadata != get_forestry_experiment_metadata():
+            raise Http404
         current_round = experiment.current_round
         participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
         if current_round.is_instructions_round:
