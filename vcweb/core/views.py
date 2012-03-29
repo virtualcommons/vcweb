@@ -209,7 +209,7 @@ class SingleExperimentMixin(SingleObjectMixin):
 
     def get_object(self, queryset=None):
         pk = self.kwargs.get('pk', None)
-        experiment = Experiment.objects.get(pk=pk)
+        experiment = get_object_or_404(Experiment, pk=pk)
         user = self.request.user
         return self.check_user(user, experiment)
 

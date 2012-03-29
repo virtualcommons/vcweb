@@ -174,7 +174,7 @@ LOGGING = {
     'disable_existing_loggers': True,
     'root': {
         'level': 'WARNING',
-        'handlers': ['sentry'],
+        'handlers': ['sentry', 'vcweb.file'],
     },
     'formatters': {
         'verbose': {
@@ -238,6 +238,7 @@ LOGGING = {
         'vcweb': {
             'handlers': ['vcweb.file', 'console'],
             'level': 'DEBUG',
+            'propagate': False,
         },
         'tornadio.vcweb': {
             'handlers': ['tornadio.file', 'console'],
