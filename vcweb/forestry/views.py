@@ -33,7 +33,7 @@ def index(request):
 @experimenter_required
 def experimenter_index(request):
     experimenter = request.user.experimenter
-    experiments = experimenter.experiments.all()
+    experiments = experimenter.experiment_set.filter(experiment_metadata=get_forestry_experiment_metadata())
     return render_to_response('forestry/experimenter-index.html', locals(), context_instance=RequestContext(request))
 
 @participant_required
