@@ -1153,7 +1153,8 @@ class ParticipantExperimentRelationship(models.Model):
 
     def __init__(self, *args, **kwargs):
         super(ParticipantExperimentRelationship, self).__init__(*args, **kwargs)
-        self.generate_identifier()
+        if 'experiment' in kwargs:
+            self.generate_identifier()
 
     def generate_identifier(self):
         """
