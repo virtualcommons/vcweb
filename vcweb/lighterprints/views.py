@@ -120,7 +120,7 @@ def get_notification_json(participant_group_relationship):
 # selects only comments and likes whose targeted action belongs to the participant_group_relationship in
 # question and that have been posted since the last user's login
     user_actions = itertools.chain(*[cls.objects.filter(target_data_value__participant_group_relationship=participant_group_relationship,
-        last_modified__gte=notification_date) for cls in (Comment, Like)])
+        last_modified__gte=notification_date).exclude(participant_group_relationship=participant_group_relationship) for cls in (Comment, Like)])
     # bah, need to use django-model-utils InheritanceManager to properly downcast and get access to the appropriate
     # subtype to_dict() method
     for user_action in user_actions:
