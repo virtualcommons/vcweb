@@ -1,6 +1,5 @@
-#from django.dispatch import receiver
-
-from django.db.models.signals import post_syncdb
+from django.db.models import signals
+from django.dispatch import receiver
 from vcweb.core.models import ExperimentMetadata
 import vcweb
 from datetime import datetime
@@ -22,20 +21,16 @@ start having persistent data
 
 '''
 
+@receiver(signals.post_syncdb, sender=vcweb.core.models, dispatch_uid='sanitation_metadata_creator')
 def post_syncdb_handler(sender, **kwargs):
     sanitation_dict = {
             "about_url": "http://commons.asu.edu",
             "description": "Web-based version sanitation experiment.",
             "namespace": "sanitation",
             "title": "Sanitation Experiment",
-            "date_created": "2011-01-01"
+            "date_created": datetime.now()
             }
-    created = False
     try:
-        metadata = ExperimentMetadata.objects.get(namespace='sanitation')
+        ExperimentMetadata.objects.get(namespace='sanitation')
     except:
-        metadata, created = ExperimentMetadata.objects.get_or_create(**sanitation_dict)
-    logger.debug("sanitation: %s (%s)", metadata, created)
-
-post_syncdb.connect(post_syncdb_handler, sender=vcweb.core.models,
-        dispatch_uid='sanitation_metadata_creator')
+        ExperimentMetadata.objects.create(**sanitation_dict)

@@ -14,13 +14,11 @@ def post_syncdb_handler(sender, **kwargs):
             "description": "A mobile-ready HTML5 experiment / game that educates and examines how groups of people coordinate to reach carbon emission targets.",
             "namespace": "lighterprints",
             "title": "Lighter Footprints",
-            "date_created": "2011-01-01"
+            "date_created": datetime.now()
             }
-    created = False
     try:
-        metadata = ExperimentMetadata.objects.get(namespace='lighterprints')
+        ExperimentMetadata.objects.get(namespace='lighterprints')
     except:
-        metadata, created = ExperimentMetadata.objects.get_or_create(**experiment_metadata_dict)
-    logger.debug("experiment metadata: %s (%s)", metadata, created)
+        ExperimentMetadata.objects.get_or_create(**experiment_metadata_dict)
 
 

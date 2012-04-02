@@ -30,9 +30,7 @@ def post_syncdb_handler(sender, **kwargs):
             "title": "Forestry Experiment",
             "date_created": "2011-01-01"
             }
-    created = False
     try:
-        forestry_metadata = ExperimentMetadata.objects.get(namespace='forestry')
+        ExperimentMetadata.objects.get(namespace='forestry')
     except:
-        forestry_metadata, created = ExperimentMetadata.objects.create(**forestry_dict)
-    logger.debug("forestry: %s (%s)" % (forestry_metadata, created))
+        ExperimentMetadata.objects.create(**forestry_dict)
