@@ -1,5 +1,20 @@
 [
     {
+        "pk": 1,
+        "model": "core.experimentmetadata",
+        "fields": {
+            "description": "A web-based version of forestry field experiments (Cardenas, Janssen and Bousquet).",
+            "short_name": null,
+            "title": "Forestry Experiment",
+            "namespace": "forestry",
+            "default_configuration": null,
+            "last_modified": "2012-04-02T00:21:44.960",
+            "date_created": "2012-04-02",
+            "logo_url": null,
+            "about_url": "http://commons.asu.edu"
+        }
+    },
+    {
         "fields": {
             "creator": 1,
             "experiment_metadata": [

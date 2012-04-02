@@ -34,6 +34,7 @@ postgres a few times to figure out what to automate.
 """
 syncdb_commands = [
         '%(python)s manage.py syncdb --noinput' % env,
+        '%(python)s manage.py migrate' % env,
         '%(python)s manage.py loaddata slovakia' % env,
         ]
 
