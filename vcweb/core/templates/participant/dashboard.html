@@ -8,10 +8,12 @@
 Virtual Commons Web Participant Dashboard
 {% endblock %}
 {% block page %}
-<div class='info infoIcon ui-corner-all'>
-    Welcome back, {{request.user.participant}}.  Experiments you're participating in are listed below.
-</div>
 <div id='experiments'>
+    {% if experiments.items %}
+    <div class='info infoIcon ui-corner-all'>
+        Welcome, {{request.user.participant}}.  Experiments you're participating in are listed below.
+    </div>
+    {% endif %}
     {% for experiment_metadata, experiment_status_dict in experiments.items %}
         <h3> {{ experiment_metadata.title }} </h3>
         {% for experiment_status, experiments in experiment_status_dict.items %}
@@ -24,6 +26,10 @@ Virtual Commons Web Participant Dashboard
             {% endfor %}
             {% endif %}
         {% endfor %}
+    {% empty %}
+    <div class='info alertIcon ui-corner-all'>
+        You aren't participating in any experiments at the moment.  
+    </div>
     {% endfor %}
 </div>
 {% endblock page %}
