@@ -127,6 +127,9 @@ class Experimenter(CommonsUser):
         ordering = ['user']
 
 class ExperimenterRequest(models.Model):
+    """
+    a request for this user to be an experimenter, should notify admins
+    """
     user = models.OneToOneField(User, verbose_name=u'Django User', unique=True)
     date_created = models.DateTimeField(auto_now_add=True)
     approved = models.BooleanField(default=False)

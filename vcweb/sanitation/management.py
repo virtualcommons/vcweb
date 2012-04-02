@@ -28,10 +28,14 @@ def post_syncdb_handler(sender, **kwargs):
             "description": "Web-based version sanitation experiment.",
             "namespace": "sanitation",
             "title": "Sanitation Experiment",
-            "date_created": datetime.now()
+            "date_created": "2011-01-01"
             }
-    sanitation_metadata, created = ExperimentMetadata.objects.get_or_create(**sanitation_dict)
-    logger.debug("sanitation: %s (%s)", sanitation_metadata, created)
+    created = False
+    try:
+        metadata = ExperimentMetadata.objects.get(namespace='sanitation')
+    except:
+        metadata, created = ExperimentMetadata.objects.get_or_create(**sanitation_dict)
+    logger.debug("sanitation: %s (%s)", metadata, created)
 
 post_syncdb.connect(post_syncdb_handler, sender=vcweb.core.models,
         dispatch_uid='sanitation_metadata_creator')
