@@ -99,8 +99,10 @@ INSTALLED_APPS = (
         'djkombu',
         'raven.contrib.django',
         'kronos',
+        'south',
         )
 
+SOUTH_TESTS_MIGRATE = False
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
 

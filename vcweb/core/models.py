@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.aggregates import Max
-from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from django.utils.html import escape
@@ -126,6 +125,11 @@ class Experimenter(CommonsUser):
     approved = models.BooleanField(default=False)
     class Meta:
         ordering = ['user']
+
+class ExperimenterRequest(models.Model):
+    user = models.OneToOneField(User, verbose_name=u'Django User', unique=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    approved = models.BooleanField(default=False)
 
 class ExperimentConfiguration(models.Model):
     """
@@ -1376,11 +1380,17 @@ class ExperimentActivityLog(ActivityLog):
     experiment = models.ForeignKey(Experiment, related_name='activity_log_set')
     round_configuration = models.ForeignKey(RoundConfiguration)
 
-
 def is_experimenter(user, experimenter=None):
+    """
+    returns true if user.experimenter exists and is an Experimenter instance.  If an experimenter is passed in as a
+    keyword argument, adds the additional constraint that user.experimenter == experimenter
+    """
     if hasattr(user, 'experimenter') and isinstance(user.experimenter, Experimenter):
-        return True if experimenter is None else user.experimenter == experimenter
+        return user.experimenter.approved and (experimenter is None or user.experimenter == experimenter)
     return False
 
 def is_participant(user):
+    """
+    returns true if user.participant exists and is a Participant instance.
+    """
     return hasattr(user, 'participant') and isinstance(user.participant, Participant)

@@ -19,7 +19,7 @@ from django.views.generic.detail import SingleObjectMixin, DetailView
 from django.views.generic.edit import UpdateView
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
         RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm)
-from vcweb.core.models import (Participant, Experimenter, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
+from vcweb.core.models import (Participant, ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
@@ -143,16 +143,10 @@ class RegistrationView(FormView, AnonymousMixin):
         user.last_name = last_name
         user.save()
         if experimenter_requested:
-            experimenter = Experimenter.objects.create(user=user,
-                    institution=institution)
-            logger.debug("creating new experimenter: %s, adding default forestry experiment", experimenter)
-            # FIXME: add a default experiment for all ExperimentMetadata types instead of a hard coded experiment
-            # configuration
-            experiment = Experiment.objects.get(pk=1)
-            experiment.clone(experimenter=experimenter)
-        else:
-            participant = Participant.objects.create(user=user, institution=institution)
-            logger.debug("Creating new participant: %s", participant)
+            experimenter_request = ExperimenterRequest.objects.create(user=user)
+            logger.debug("creating new experimenter request: %s", experimenter_request)
+        participant = Participant.objects.create(user=user, institution=institution)
+        logger.debug("Creating new participant: %s", participant)
         request = self.request
         auth.login(request, auth.authenticate(username=email, password=password))
         set_authentication_token(user, request.session.session_key)
@@ -220,7 +214,7 @@ class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
 
 class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin):
     def check_user(self, user, experiment):
-        if self.request.user.experimenter == experiment.experimenter:
+        if is_experimenter(self.request.user, experiment.experimenter):
             return experiment
         raise PermissionDenied("You do not have access to %s" % experiment)
 
