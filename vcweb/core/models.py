@@ -239,7 +239,7 @@ class Experiment(models.Model):
     """
     amqp_exchange_name = models.CharField(max_length=64, default="vcweb.default.exchange")
 
-    slug = models.SlugField(max_length=16, unique=True, null=True, blank=True)
+    slug = models.SlugField(max_length=32, unique=True, null=True, blank=True)
     ''' short slug to use instead of experiment pk, currently unimplemented '''
 
     objects = ExperimentManager()
