@@ -320,6 +320,10 @@ class Experiment(models.Model):
     def participant_url(self):
         return "/%s/participate" % self.get_absolute_url()
 
+    @property
+    def participant_emails(self):
+        return self.participant_set.all().values_list('user__email', flat=True)
+
     def get_absolute_url(self):
         return "%s/%s" % (self.experiment_metadata.namespace, self.pk)
 

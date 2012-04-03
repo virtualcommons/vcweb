@@ -1,0 +1,6 @@
+Hello, {{ full_name }}:
+
+You have been registered as participating in the experiment {{ experiment_name }} and we wanted to let you know that it
+has just begun.  You can participate in this experiment by visiting {{ experiment_url }} in your web browser.  
+
+{{ special_instructions }}
