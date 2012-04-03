@@ -7,6 +7,7 @@ TEMPLATE_DEBUG = DEBUG
 USE_TZ = False
 
 SERVER_EMAIL='vcweb@asu.edu'
+SERVER_NAME='vcweb.asu.edu'
 EMAIL_HOST='smtp.asu.edu'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ADMINS = (
