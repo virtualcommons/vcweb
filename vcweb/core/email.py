@@ -11,6 +11,10 @@ def send_email(subject='vcweb experiment notification', context=None, template_n
         logger.warning("ignoring attempt to send an email (%s) to no recipients from %s", template_name, reply_to)
         return
     text_content = render_to_string('email/%s.txt' % template_name, context)
+    try:
+        html_content = render_to_string('email/%s.html' % template_name, context)
+    except:
+        logger.debug("no html content found for template %s", template_name)
     headers = {}
     bcc = []
     if reply_to is not None:
@@ -18,11 +22,8 @@ def send_email(subject='vcweb experiment notification', context=None, template_n
         headers['Reply-To'] = reply_to
     for recipient in recipients:
         message = EmailMultiAlternatives(subject, text_content, from_address, [recipient], bcc=bcc, headers=headers)
-        try:
-            html_content = render_to_string('email/%s.html' % template_name, context)
+        if html_content is not None:
             message.attach_alternative(html_content, 'text/html')
-        except:
-            logger.debug("no html content found for template %s", template_name)
         message.send()
 
 def send_experiment_started(experiment, subject='a vcweb experiment you are participating in has just started', extra_instructions=''):

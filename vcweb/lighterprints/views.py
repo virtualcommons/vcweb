@@ -356,6 +356,5 @@ def login(request):
 
 
 def participate(request, experiment_id=None):
-    # FIXME: need to change to prod eventually
-    return redirect('http://vcweb.asu.edu/devfoot')
+    return redirect('http://vcweb.asu.edu/lighterfootprints')
 
