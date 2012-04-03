@@ -22,8 +22,8 @@ urlpatterns = patterns('',
     #url(r'^accounts/password_reset/$', 'django.contrib.auth.views.password_reset', {'template_name':'password_reset_form.html', 'email_template_name':'userpanel/password_reset_email.html'}),
     url(r'^accounts/password/reset/$', 'django.contrib.auth.views.password_reset', name='password-reset'),
     url(r'^accounts/password_reset/done/$', 'django.contrib.auth.views.password_reset_done'),
-    url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$', 'django.contrib.auth.views.password_reset_confirm', {'template_name':'password_reset_confirm.html'}),
-    url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete', {'template_name':'password_reset_complete.html'}),
+    url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$', 'django.contrib.auth.views.password_reset_confirm'),
+    url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete'),
     url(r'^%s/' % settings.DAJAXICE_MEDIA_PREFIX, include('dajaxice.urls')),
 
     # FIXME: ideally this should be set up dynamically by iterating through each
