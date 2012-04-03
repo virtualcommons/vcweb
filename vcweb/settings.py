@@ -8,6 +8,7 @@ USE_TZ = False
 
 SERVER_EMAIL='vcweb@asu.edu'
 EMAIL_HOST='smtp.asu.edu'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ADMINS = (
         ('Allen Lee', 'allen.lee@asu.edu')
         )
@@ -246,6 +247,7 @@ LOGGING = {
         },
     }
 }
+
 
 # this is the last thing to happen so we can override django-celery configuration
 # settings

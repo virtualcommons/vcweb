@@ -22,7 +22,7 @@ def notify(subject='vcweb experiment notification', context=None, template_name=
 def send_experiment_started(experiment):
     notify(subject='a vcweb experiment you are participating in has just started',
             context = Context({'experiment': experiment}),
-            template_name='experiment_started',
+            template_name='experiment-started',
             reply_to=experiment.experimenter.email,
             bcc=experiment.participant_emails)
 
