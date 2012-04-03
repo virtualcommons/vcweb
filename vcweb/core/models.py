@@ -287,6 +287,10 @@ class Experiment(models.Model):
                 yield pgr
 
     @property
+    def display_name(self):
+        return self.experiment_metadata.title
+
+    @property
     def namespace(self):
         return self.experiment_metadata.namespace
 

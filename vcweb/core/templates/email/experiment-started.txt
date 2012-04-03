@@ -1,6 +1,13 @@
-Hello, {{ full_name }}:
+Greetings!
 
-You have been registered as participating in the experiment {{ experiment_name }} and we wanted to let you know that it
-has just begun.  You can participate in this experiment by visiting {{ experiment_url }} in your web browser.  
+You have been registered as participating in the experiment {{ experiment.name }} and we wanted to let you know that it
+has just begun.  You can participate in this experiment by visiting {{ experiment.participant_url }} in your web browser.  
 
 {{ special_instructions }}
+
+Thanks for participating!
+
+NOTE: your login username is the same as the email address to which this message was sent. If you have trouble logging
+in, you can reset your password by visiting https://vcweb.asu.edu/accounts/password/reset/ or contact us at
+http://vcweb.asu.edu/contact
+

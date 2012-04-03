@@ -2,13 +2,15 @@
 
 {% block content %}
 <p>
-Hello, {{ full_name }}:
+Greetings!
 <br><br>
-You have been registered as participating in the experiment {{ experiment_name }} and we wanted to let you know that it
-has just begun.  You can participate in this experiment by visiting {{ experiment_url }} in your web browser.  
+You have been registered as participating in the experiment {{ experiment.name }} and we wanted to let you know that it
+has just begun.  You can participate in this experiment by visiting {{ experiment.participant_url }} in your web browser.
 </p>
 <p>
 {{ special_instructions }}
 </p>
+<p>
+Thanks for participating!
+</p>
 {% endblock %}
-
