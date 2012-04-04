@@ -1238,7 +1238,6 @@ class ParticipantGroupRelationship(models.Model):
         else:
             logger.warning("Unable to set data value %s on round data %s for %s", value, current_round_data, parameter)
 
-
     def __unicode__(self):
         return u"{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)
 
@@ -1278,10 +1277,10 @@ class ParticipantRoundDataValue(ParameterizedValue):
         return self.round_data.round_configuration
 
     def __unicode__(self):
-        return u"{0} : {1} for participant {2}".format(self.parameter, self.value, self.participant_group_relationship)
+        return u"{0} : {1} pgr:{2} ({3})".format(self.parameter, self.value, self.participant_group_relationship, self.round_data.experiment)
 
     class Meta:
-        ordering = [ 'round_data', 'participant_group_relationship', 'parameter' ]
+        ordering = [ '-date_created', 'round_data', 'participant_group_relationship', 'parameter' ]
 
 
 @simplecache
