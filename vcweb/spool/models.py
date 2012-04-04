@@ -20,7 +20,7 @@ class ParticipantSignup(models.Model):
     participant = models.ForeignKey(Participant, related_name='signup_set')
     invitation = models.ForeignKey(Invitation, related_name='signup_set')
     date_created = models.DateTimeField(auto_now_add=True)
-    attendance = models.EnumField(null=True, values=('participated', 'turned away', 'absent'))
+    attendance = models.CharField(max_length=1, null=True, blank=True, choices=((0, 'participated'), (1, 'turned away'), (2, 'absent')))
 
 class FaqEntry(models.Model):
     creator = models.ForeignKey(User)
