@@ -24,6 +24,30 @@ Contains all data models used in the core as well as a number of helper function
 FIXME: getting a bit monolithically unwieldy.  Consider splitting into models subdirectory
 """
 
+class EnumField(models.Field):
+    """
+    Copied from http://stackoverflow.com/questions/21454/specifying-a-mysql-enum-in-a-django-model
+
+    A field class that maps to MySQL's ENUM type.
+
+    Usage:
+
+    Class Card(models.Model):
+        suit = EnumField(values=('Clubs', 'Diamonds', 'Spades', 'Hearts'))
+
+    c = Card()
+    c.suit = 'Clubs'
+    c.save()
+    """
+    def __init__(self, *args, **kwargs):
+        self.values = kwargs.pop('values')
+        kwargs['choices'] = [(v, v) for v in self.values]
+        kwargs['default'] = self.values[0]
+        super(EnumField, self).__init__(*args, **kwargs)
+
+    def db_type(self):
+        return "enum({0})".format( ','.join("'%s'" % v for v in self.values) )
+
 @receiver(signals.minute_tick, sender=None)
 def minute_tick_handler(sender, time=None, **kwargs):
     """
