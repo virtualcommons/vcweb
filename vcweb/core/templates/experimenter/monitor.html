@@ -194,14 +194,14 @@
     {% for round_data in experiment.round_data_set.all reversed %}
     <h3><a href='#'>{{ round_data }}</a></h3>
     <div id='round_data_{{forloop.counter}}'>
-        {% if round_data.group_data_values.count > 0 %}
+        {% if round_data.group_data_value_set.count > 0 %}
         <h4 class='collapsible'>Group data</h4>
         <table>
             <thead>
                 <tr><th>Group</th><th>Parameter Name</th><th>Value</th></tr>
             </thead>
             <tbody>
-                {% for group_data_value in round_data.group_data_values.all %}
+                {% for group_data_value in round_data.group_data_value_set.all %}
                 <tr>
                     <td>
                         <a class='dark-yellow-highlight' title='{{ group_data_value.group.all_participants_str }}'>
@@ -220,14 +220,14 @@
         </div>
         {% endif %}
         {% comment %} participant data values {% endcomment %}
-        {% if round_data.participant_data_values.count > 0 %}
+        {% if round_data.participant_data_value_set.count > 0 %}
         <h4>Participant data</h4>
         <table>
             <thead>
                 <tr><th>Participant</th><th>Parameter name</th><th>Value</th><th>Type</th></tr>
             </thead>
             <tbody>
-                {% for participant_data_value in round_data.participant_data_values.all %}
+                {% for participant_data_value in round_data.participant_data_value_set.all %}
                 <tr>
                     <td>
                         <a class='dark-yellow-highlight' title='{{participant_data_value.participant}}'>

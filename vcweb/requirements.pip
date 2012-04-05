@@ -19,5 +19,7 @@ django-kronos
 #pymongo
 # for sentry
 raven
-gevent
+#gevent
 sentry
+feedparser
+feedcache

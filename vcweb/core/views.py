@@ -196,7 +196,7 @@ class SingleExperimentMixin(SingleObjectMixin):
     model = Experiment
     context_object_name = 'experiment'
 
-    def process_experiment(self, experiment):
+    def process(self):
         pass
     def check_user(self, user, experiment):
         return experiment
@@ -204,24 +204,28 @@ class SingleExperimentMixin(SingleObjectMixin):
     def get_object(self, queryset=None):
         pk = self.kwargs.get('pk', None)
         experiment = get_object_or_404(Experiment, pk=pk)
-        user = self.request.user
-        return self.check_user(user, experiment)
+        return self.check_user(experiment)
 
 class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
-    def check_user(self, user, experiment):
-        # FIXME: should we do a user.participant in experiment.participant_set.all() check?
-        return experiment
+    def check_user(self, experiment):
+        user = self.request.user
+        if experiment.participant_set.filter(participant__user=user).count() == 1:
+            return experiment
+        logger.warning("unauthz access to experiment %s by user %s", experiment, user)
+        raise PermissionDenied("You do not have access to %s" % experiment)
 
 class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin):
-    def check_user(self, user, experiment):
-        if is_experimenter(self.request.user, experiment.experimenter):
+    def check_user(self, experiment):
+        user = self.request.user
+        if is_experimenter(user, experiment.experimenter):
             return experiment
+        logger.warning("unauthz access to experiment %s by user %s", experiment, user)
         raise PermissionDenied("You do not have access to %s" % experiment)
 
 class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, TemplateView):
     def get(self, request, **kwargs):
-        self.object = self.get_object()
-        self.process_experiment(self.object)
+        self.experiment = self.object = self.get_object()
+        self.process()
         context = self.get_context_data(object=self.object)
         return self.render_to_response(context)
 
@@ -242,7 +246,6 @@ class RegisterEmailListView(ExperimenterSingleExperimentMixin, UpdateView):
                 password=experiment.authentication_code)
         return super(RegisterEmailListView, self).form_valid(form)
 
-
 class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, UpdateView):
     form_class = RegisterSimpleParticipantsForm
     template_name = 'experimenter/register-simple-participants.html'
@@ -262,15 +265,15 @@ class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, UpdateVi
 
 # FIXME: uses GET (which should be idempotent) to modify database state which makes HTTP sadful
 class CloneExperimentView(ExperimenterSingleExperimentView):
-    def process_experiment(self, experiment):
-        return experiment.clone()
+    def process(self):
+        return self.experiment.clone()
     def render_to_response(self, context):
         return redirect('core:dashboard')
 
 class ClearParticipantsExperimentView(ExperimenterSingleExperimentView):
-    def process_experiment(self, experiment):
-        experiment.participant_set.all().delete()
-        return experiment
+    def process(self):
+        self.experiment.participant_set.all().delete()
+        return self.experiment
     def render_to_response(self, context):
         return redirect('core:dashboard')
 
@@ -309,12 +312,12 @@ def download_data(request, pk=None, file_type='csv'):
             round_configuration = round_data.round_configuration
             # write out group-wide data values
             writer.writerow(['Group', 'Round', 'Data Parameter', 'Data Parameter Value'])
-            for group_data_value in round_data.group_data_values.all():
+            for group_data_value in round_data.group_data_value_set.all():
                 writer.writerow([group_data_value.group, round_configuration,
                     group_data_value.parameter.label, group_data_value.value])
             # write out specific participant data values for this round
             writer.writerow(['Participant', 'Round', 'Data Parameter', 'Data Parameter Value'])
-            for participant_data_value in round_data.participant_data_values.all():
+            for participant_data_value in round_data.participant_data_value_set.all():
                 writer.writerow([participant_data_value.participant_group_relationship, round_configuration,
                     participant_data_value.parameter.label, participant_data_value.value])
             if round_data.chat_messages.count() > 0:
@@ -352,7 +355,7 @@ def download_data_excel(request, pk=None):
         group_sheet.write(current_row, 2, 'Data Parameter')
         group_sheet.write(current_row, 3, 'Data Parameter Value')
         for group in experiment.groups.all():
-            for data_value in group.data_values.all():
+            for data_value in group.data_value_set.all():
                 group_sheet.write(current_row, 0, group)
                 group_sheet.write(current_row, 1, data_value.round_configuration)
                 group_sheet.write(current_row, 2, data_value.parameter.label)

@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.test.client import RequestFactory, Client
 from vcweb.core import signals
 from vcweb.core.models import (Experiment, Experimenter, ExperimentConfiguration,
     Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
@@ -18,13 +19,11 @@ class BaseVcwebTest(TestCase):
 
     def load_experiment(self, experiment_metadata=None, **kwargs):
         if experiment_metadata is None:
-# default to the Forestry experiment if no metadata is passed in
-            experiment = Experiment.objects.get(pk=1).clone()
+            experiment = Experiment.objects.all()[0].clone()
         else:
             experiment = self.create_new_experiment(experiment_metadata, **kwargs)
         if experiment.participant_set.count() == 0:
             experiment.setup_test_participants(email_suffix='asu.edu', count=10)
-        logger.debug("loaded %s", experiment)
         self.experiment = experiment
         return experiment
 
@@ -56,6 +55,8 @@ class BaseVcwebTest(TestCase):
 
 
     def setUp(self):
+        self.client = Client()
+        self.factory = RequestFactory()
         self.load_experiment()
 
     def advance_to_data_round(self):
@@ -163,6 +164,11 @@ class ExperimentTest(BaseVcwebTest):
             # FIXME: this relies on the fact that non-randomized group allocation will match the auto increment pk
             # generation for the participants.  Remove?
             self.assertEqual(participant_number % group.max_size, pgr.participant.pk % group.max_size)
+
+    def test_authorization(self):
+        experiment = self.experiment
+        self.client.login(username=experiment.experimenter.email, password='test')
+
 
     def test_next_round(self):
         experiment = self.experiment

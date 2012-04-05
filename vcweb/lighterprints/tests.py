@@ -1,19 +1,16 @@
-from django.test.client import RequestFactory, Client
-
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.core.models import ParticipantGroupRelationship
 from vcweb.lighterprints.views import *
 from vcweb.lighterprints.models import *
 
 import logging
-logger = logging.getLogger(__name__)
 import simplejson as json
+
+logger = logging.getLogger(__name__)
 
 class BaseTest(BaseVcwebTest):
     def setUp(self):
         super(BaseTest, self).setUp()
-        self.client = Client()
-        self.factory = RequestFactory()
         experiment_metadata = get_lighterprints_experiment_metadata()
         self.load_experiment(experiment_metadata=experiment_metadata)
 
