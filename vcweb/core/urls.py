@@ -1,5 +1,6 @@
 from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import cache_page
 from vcweb.core.views import (Dashboard, LoginView, LogoutView, RegistrationView, MonitorExperimentView, CloneExperimentView,
         RegisterEmailListView, RegisterSimpleParticipantsView, ClearParticipantsExperimentView, add_experiment)
 '''
@@ -13,7 +14,7 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^accounts/profile/$', 'account_profile', name='profile'),
     url(r'^participate/(?P<namespace>\w+)/instructions', 'instructions', name='namespace_instructions'),
     url(r'^experiment/add$', add_experiment, name='add_experiment'),
-    url(r'^experiment/(?P<pk>\d+)/monitor$', MonitorExperimentView.as_view(), name='monitor_experiment'),
+    url(r'^experiment/(?P<pk>\d+)/monitor$', cache_page(60)(MonitorExperimentView.as_view()), name='monitor_experiment'),
     url(r'^experiment/(?P<pk>\d+)/register-email-list$', RegisterEmailListView.as_view(), name='register_email_list'),
     url(r'^experiment/(?P<pk>\d+)/register-simple$', RegisterSimpleParticipantsView.as_view(), name='register_simple'),
     url(r'^experiment/(?P<pk>\d+)/clone$', CloneExperimentView.as_view(), name='clone'),
