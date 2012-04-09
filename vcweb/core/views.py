@@ -402,6 +402,12 @@ def experiment_controller(request, pk=None, experiment_action=None):
     messages.warning(request, error_message)
     return redirect('core:dashboard')
 
+def daily_report(request, pk=None):
+    experiment = get_object_or_404(Experiment, pk=pk)
+    round_data = experiment.current_round_data
+
+
+
 def handler500(request):
     return render_to_response('500.html', context_instance=RequestContext(request))
 

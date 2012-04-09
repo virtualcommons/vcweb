@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.html import escape
 from django.utils.timesince import timesince
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
@@ -162,6 +163,7 @@ def update_notifications_since(request):
             logger.warning("authenticated user %s tried to update notifications since for %s", request.user, participant_group_relationship)
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
+@cache_page(60)
 @login_required
 def group_score(request, participant_group_id):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group'), pk=participant_group_id)
@@ -180,6 +182,7 @@ def group_score(request, participant_group_id):
         return HttpResponse(dumps({'success':True, 'scores': groups }))
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
+@cache_page(60)
 @login_required
 def group_activity(request, participant_group_id):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)

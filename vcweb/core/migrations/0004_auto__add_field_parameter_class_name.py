@@ -8,48 +8,14 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Deleting model 'FaqEntry'
-        db.delete_table('spool_faqentry')
-
-        # Deleting model 'ParticipantStatistics'
-        db.delete_table('spool_participantstatistics')
-
-        # Adding model 'SpoolParticipantStatistics'
-        db.create_table('spool_spoolparticipantstatistics', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('participant', self.gf('django.db.models.fields.related.ForeignKey')(related_name='spool_statistics_set', to=orm['core.Participant'])),
-            ('absences', self.gf('django.db.models.fields.PositiveIntegerField')(default=0)),
-            ('discharges', self.gf('django.db.models.fields.PositiveIntegerField')(default=0)),
-            ('participations', self.gf('django.db.models.fields.PositiveIntegerField')(default=0)),
-            ('invitations', self.gf('django.db.models.fields.PositiveIntegerField')(default=0)),
-        ))
-        db.send_create_signal('spool', ['SpoolParticipantStatistics'])
+        # Adding field 'Parameter.class_name'
+        db.add_column('core_parameter', 'class_name',
+                      self.gf('django.db.models.fields.CharField')(max_length=64, null=True, blank=True),
+                      keep_default=False)
 
     def backwards(self, orm):
-        # Adding model 'FaqEntry'
-        db.create_table('spool_faqentry', (
-            ('last_modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
-            ('answer', self.gf('django.db.models.fields.TextField')()),
-            ('date_created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-            ('question', self.gf('django.db.models.fields.TextField')()),
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('slug', self.gf('django.db.models.fields.SlugField')(max_length=32)),
-        ))
-        db.send_create_signal('spool', ['FaqEntry'])
-
-        # Adding model 'ParticipantStatistics'
-        db.create_table('spool_participantstatistics', (
-            ('participant', self.gf('django.db.models.fields.related.ForeignKey')(related_name='statistics_set', to=orm['core.Participant'])),
-            ('discharges', self.gf('django.db.models.fields.PositiveIntegerField')(default=0)),
-            ('participations', self.gf('django.db.models.fields.PositiveIntegerField')(default=0)),
-            ('absences', self.gf('django.db.models.fields.PositiveIntegerField')(default=0)),
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-        ))
-        db.send_create_signal('spool', ['ParticipantStatistics'])
-
-        # Deleting model 'SpoolParticipantStatistics'
-        db.delete_table('spool_spoolparticipantstatistics')
+        # Deleting field 'Parameter.class_name'
+        db.delete_column('core_parameter', 'class_name')
 
     models = {
         'auth.group': {
@@ -88,6 +54,21 @@ class Migration(SchemaMigration):
             'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
         },
+        'core.activitylog': {
+            'Meta': {'object_name': 'ActivityLog'},
+            'date_created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'log_message': ('django.db.models.fields.TextField', [], {})
+        },
+        'core.chatmessage': {
+            'Meta': {'ordering': "['date_created']", 'object_name': 'ChatMessage', '_ormbases': ['core.ParticipantRoundDataValue']},
+            'participantrounddatavalue_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['core.ParticipantRoundDataValue']", 'unique': 'True', 'primary_key': 'True'}),
+            'target_participant': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'target_participant_chat_message_set'", 'null': 'True', 'to': "orm['core.ParticipantGroupRelationship']"})
+        },
+        'core.comment': {
+            'Meta': {'ordering': "['date_created']", 'object_name': 'Comment', '_ormbases': ['core.ParticipantRoundDataValue']},
+            'participantrounddatavalue_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['core.ParticipantRoundDataValue']", 'unique': 'True', 'primary_key': 'True'})
+        },
         'core.experiment': {
             'Meta': {'ordering': "['date_created', 'status']", 'object_name': 'Experiment'},
             'amqp_exchange_name': ('django.db.models.fields.CharField', [], {'default': "'vcweb.default.exchange'", 'max_length': '64'}),
@@ -108,6 +89,12 @@ class Migration(SchemaMigration):
             'status': ('django.db.models.fields.CharField', [], {'default': "'INACTIVE'", 'max_length': '32'}),
             'tick_duration': ('django.db.models.fields.CharField', [], {'max_length': '32', 'null': 'True', 'blank': 'True'}),
             'total_elapsed_time': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'})
+        },
+        'core.experimentactivitylog': {
+            'Meta': {'object_name': 'ExperimentActivityLog', '_ormbases': ['core.ActivityLog']},
+            'activitylog_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['core.ActivityLog']", 'unique': 'True', 'primary_key': 'True'}),
+            'experiment': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'activity_log_set'", 'to': "orm['core.Experiment']"}),
+            'round_configuration': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['core.RoundConfiguration']"})
         },
         'core.experimentconfiguration': {
             'Meta': {'ordering': "['experiment_metadata', 'creator', 'date_created']", 'object_name': 'ExperimentConfiguration'},
@@ -130,6 +117,13 @@ class Migration(SchemaMigration):
             'institution': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['core.Institution']", 'null': 'True', 'blank': 'True'}),
             'user': ('django.db.models.fields.related.OneToOneField', [], {'related_name': "'experimenter'", 'unique': 'True', 'to': "orm['auth.User']"})
         },
+        'core.experimenterrequest': {
+            'Meta': {'object_name': 'ExperimenterRequest'},
+            'approved': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'date_created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'user': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['auth.User']", 'unique': 'True'})
+        },
         'core.experimentmetadata': {
             'Meta': {'ordering': "['namespace', 'date_created']", 'object_name': 'ExperimentMetadata'},
             'about_url': ('django.db.models.fields.URLField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
@@ -150,6 +144,26 @@ class Migration(SchemaMigration):
             'max_size': ('django.db.models.fields.PositiveIntegerField', [], {'default': '5'}),
             'number': ('django.db.models.fields.PositiveIntegerField', [], {})
         },
+        'core.groupactivitylog': {
+            'Meta': {'object_name': 'GroupActivityLog', '_ormbases': ['core.ActivityLog']},
+            'activitylog_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['core.ActivityLog']", 'unique': 'True', 'primary_key': 'True'}),
+            'group': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'activity_log_set'", 'to': "orm['core.Group']"}),
+            'round_configuration': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['core.RoundConfiguration']"})
+        },
+        'core.grouprounddatavalue': {
+            'Meta': {'ordering': "['round_data', 'group', 'parameter']", 'object_name': 'GroupRoundDataValue'},
+            'boolean_value': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
+            'date_created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'float_value': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'group': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'data_value_set'", 'to': "orm['core.Group']"}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'int_value': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
+            'last_modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
+            'parameter': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['core.Parameter']"}),
+            'round_data': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'group_data_value_set'", 'to': "orm['core.RoundData']"}),
+            'string_value': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'})
+        },
         'core.institution': {
             'Meta': {'object_name': 'Institution'},
             'date_created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
@@ -158,6 +172,27 @@ class Migration(SchemaMigration):
             'last_modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'}),
             'url': ('django.db.models.fields.URLField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'})
+        },
+        'core.like': {
+            'Meta': {'ordering': "['-date_created', 'round_data', 'participant_group_relationship', 'parameter']", 'object_name': 'Like', '_ormbases': ['core.ParticipantRoundDataValue']},
+            'participantrounddatavalue_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['core.ParticipantRoundDataValue']", 'unique': 'True', 'primary_key': 'True'})
+        },
+        'core.parameter': {
+            'Meta': {'ordering': "['name']", 'unique_together': "(('name', 'experiment_metadata', 'scope'),)", 'object_name': 'Parameter'},
+            'class_name': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'}),
+            'creator': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['core.Experimenter']"}),
+            'date_created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'default_value_string': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
+            'description': ('django.db.models.fields.CharField', [], {'max_length': '512', 'null': 'True', 'blank': 'True'}),
+            'display_name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
+            'enum_choices': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'experiment_metadata': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['core.ExperimentMetadata']", 'null': 'True', 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'is_required': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'last_modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'}),
+            'scope': ('django.db.models.fields.CharField', [], {'default': "'round'", 'max_length': '32'}),
+            'type': ('django.db.models.fields.CharField', [], {'max_length': '32'})
         },
         'core.participant': {
             'Meta': {'ordering': "['user']", 'object_name': 'Participant'},
@@ -194,6 +229,32 @@ class Migration(SchemaMigration):
             'participant_number': ('django.db.models.fields.PositiveIntegerField', [], {}),
             'round_joined': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['core.RoundConfiguration']"})
         },
+        'core.participantrounddatavalue': {
+            'Meta': {'ordering': "['-date_created', 'round_data', 'participant_group_relationship', 'parameter']", 'object_name': 'ParticipantRoundDataValue'},
+            'boolean_value': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
+            'date_created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'float_value': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'int_value': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
+            'last_modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
+            'parameter': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['core.Parameter']"}),
+            'participant_group_relationship': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'participant_data_value_set'", 'to': "orm['core.ParticipantGroupRelationship']"}),
+            'round_data': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'participant_data_value_set'", 'to': "orm['core.RoundData']"}),
+            'string_value': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'submitted': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'target_data_value': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'target_data_value_set'", 'null': 'True', 'to': "orm['core.ParticipantRoundDataValue']"})
+        },
+        'core.quizquestion': {
+            'Meta': {'object_name': 'QuizQuestion'},
+            'answer': ('django.db.models.fields.CharField', [], {'max_length': '64'}),
+            'experiment': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'default_quiz_question_set'", 'null': 'True', 'to': "orm['core.Experiment']"}),
+            'explanation': ('django.db.models.fields.CharField', [], {'max_length': '512'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'input_type': ('django.db.models.fields.CharField', [], {'max_length': '32'}),
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '512'}),
+            'round_configuration': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'quiz_question_set'", 'to': "orm['core.RoundConfiguration']"})
+        },
         'core.roundconfiguration': {
             'Meta': {'ordering': "['experiment_configuration', 'sequence_number', 'date_created']", 'object_name': 'RoundConfiguration'},
             'date_created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
@@ -208,41 +269,26 @@ class Migration(SchemaMigration):
             'sequence_number': ('django.db.models.fields.PositiveIntegerField', [], {}),
             'template_name': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'})
         },
-        'spool.experimentsession': {
-            'Meta': {'object_name': 'ExperimentSession'},
-            'capacity': ('django.db.models.fields.PositiveIntegerField', [], {'default': '20'}),
-            'creator': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'experiment_session_set'", 'to': "orm['auth.User']"}),
-            'date_created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'experiment': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'experiment_session_set'", 'to': "orm['core.Experiment']"}),
+        'core.rounddata': {
+            'Meta': {'ordering': "['round_configuration']", 'object_name': 'RoundData'},
+            'elapsed_time': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
+            'experiment': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'round_data_set'", 'to': "orm['core.Experiment']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'scheduled_date': ('django.db.models.fields.DateTimeField', [], {}),
-            'scheduled_end_date': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'})
+            'round_configuration': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'round_data_set'", 'to': "orm['core.RoundConfiguration']"})
         },
-        'spool.invitation': {
-            'Meta': {'object_name': 'Invitation'},
+        'core.roundparametervalue': {
+            'Meta': {'object_name': 'RoundParameterValue'},
+            'boolean_value': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
             'date_created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'experiment_session': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['spool.ExperimentSession']"}),
+            'float_value': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'participant': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['core.Participant']"}),
-            'sender': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']"})
-        },
-        'spool.participantsignup': {
-            'Meta': {'object_name': 'ParticipantSignup'},
-            'attendance': ('django.db.models.fields.CharField', [], {'max_length': '1', 'null': 'True', 'blank': 'True'}),
-            'date_created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'invitation': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'signup_set'", 'to': "orm['spool.Invitation']"}),
-            'participant': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'signup_set'", 'to': "orm['core.Participant']"})
-        },
-        'spool.spoolparticipantstatistics': {
-            'Meta': {'object_name': 'SpoolParticipantStatistics'},
-            'absences': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
-            'discharges': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'invitations': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
-            'participant': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'spool_statistics_set'", 'to': "orm['core.Participant']"}),
-            'participations': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'})
+            'int_value': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
+            'last_modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
+            'parameter': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['core.Parameter']"}),
+            'round_configuration': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'round_parameter_value_set'", 'to': "orm['core.RoundConfiguration']"}),
+            'string_value': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'})
         }
     }
 
-    complete_apps = ['spool']
+    complete_apps = ['core']

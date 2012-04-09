@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.aggregates import Max
+from django.db.models.loading import get_model
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from django.utils.html import escape
@@ -23,30 +24,6 @@ logger = logging.getLogger(__name__)
 Contains all data models used in the core as well as a number of helper functions.
 FIXME: getting a bit monolithically unwieldy.  Consider splitting into models subdirectory
 """
-
-class EnumField(models.Field):
-    """
-    Copied from http://stackoverflow.com/questions/21454/specifying-a-mysql-enum-in-a-django-model
-
-    A field class that maps to MySQL's ENUM type.
-
-    Usage:
-
-    Class Card(models.Model):
-        suit = EnumField(values=('Clubs', 'Diamonds', 'Spades', 'Hearts'))
-
-    c = Card()
-    c.suit = 'Clubs'
-    c.save()
-    """
-    def __init__(self, *args, **kwargs):
-        self.values = kwargs.pop('values')
-        kwargs['choices'] = [(v, v) for v in self.values]
-        kwargs['default'] = self.values[0]
-        super(EnumField, self).__init__(*args, **kwargs)
-
-    def db_type(self):
-        return "enum({0})".format( ','.join("'%s'" % v for v in self.values) )
 
 @receiver(signals.minute_tick, sender=None)
 def minute_tick_handler(sender, time=None, **kwargs):
@@ -167,6 +144,7 @@ class ExperimentConfiguration(models.Model):
     creator = models.ForeignKey(Experimenter, related_name='experiment_configuration_set')
     name = models.CharField(max_length=255)
     max_number_of_participants = models.PositiveIntegerField(default=0)
+    invitation_text = models.TextField(null=True, blank=True, help_text='text to send out via email invitations')
 # FIXME: convert to DateTimeField uniformly
     date_created = models.DateField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -774,19 +752,21 @@ class ParameterManager(models.Manager):
         return self.get(name=name)
 
 class Parameter(models.Model):
-    PARAMETER_TYPES = (('int', 'Integer value'),
-                       ('string', 'String value'),
-                       ('float', 'Float value'),
+    PARAMETER_TYPES = (('int', 'Integer'),
+                       ('string', 'String'),
+                       ('foreignkey', 'Foreign key'),
+                       ('float', 'Floating-point number'),
                        ('boolean', (('True', True), ('False', False))),
                        ('enum', 'Enumeration'))
 
-    NONE_VALUES_DICT = dict(map(lambda x,y: (x[0], y), PARAMETER_TYPES, [0, '', 0.0, False, None]))
+    NONE_VALUES_DICT = dict(map(lambda x,y: (x[0], y), PARAMETER_TYPES, [0, '', -1, 0.0, False, None]))
     #dict(zip([parameter_type[0] for parameter_type in PARAMETER_TYPES], [0, '', 0.0, False, None]))
 
     CONVERTERS = {
             'int': int,
             'string':str,
             'float': float,
+            'foreignkey': int,
             'boolean': lambda x: bool(x) and str(x).lower() != 'false'
             }
     '''
@@ -813,6 +793,7 @@ class Parameter(models.Model):
     display_name = models.CharField(max_length=255, null=True, blank=True)
     description = models.CharField(max_length=512, null=True, blank=True)
     type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
+    class_name = models.CharField(max_length=64, null=True, blank=True, help_text='Model classname in the form of appname.modelname, e.g., "core.Experiment".  Only applicable for foreign key parameters.')
     default_value_string = models.CharField(max_length=255, null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -825,6 +806,8 @@ class Parameter(models.Model):
 
     @property
     def value_field_name(self):
+        if self.type == 'foreignkey':
+            return 'int_value'
         return '%s_value' % (self.type)
 
     @property
@@ -841,17 +824,25 @@ class Parameter(models.Model):
             return self.display_name
         return self.name.replace('_', ' ').title()
 
+    @property
     def is_integer_type(self):
         return self.type == 'int'
 
+    @property
     def is_boolean_type(self):
         return self.type == 'boolean'
 
+    @property
     def is_float_type(self):
         return self.type == 'float'
 
+    @property
     def is_string_type(self):
         return self.type == 'string'
+
+    @property
+    def is_foreign_key(self):
+        return self.type == 'foreignkey'
 
     def convert(self, value=None):
         converter = Parameter.CONVERTERS[self.type]
@@ -888,7 +879,13 @@ class ParameterizedValue(models.Model):
     @property
     def value(self):
         value = getattr(self, self.parameter.value_field_name, self.parameter.none_value)
-        return value if value is not None else self.parameter.none_value
+        if value is None:
+            return self.parameter.none_value
+        if self.parameter.is_foreign_key:
+            cls = get_model(*self.parameter.class_name.split('.'))
+            return cls.objects.get(pk=value)
+        else:
+            return value
 
     @value.setter
     def value(self, obj):
@@ -1413,6 +1410,37 @@ class GroupActivityLog(ActivityLog):
 class ExperimentActivityLog(ActivityLog):
     experiment = models.ForeignKey(Experiment, related_name='activity_log_set')
     round_configuration = models.ForeignKey(RoundConfiguration)
+
+
+class ExperimentSession(models.Model):
+    experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='experiment_session_set')
+    date_created = models.DateTimeField(auto_now_add=True)
+    scheduled_date = models.DateTimeField()
+    scheduled_end_date = models.DateTimeField(null=True, blank=True)
+    capacity = models.PositiveIntegerField(default=20)
+    creator = models.ForeignKey(User, related_name='experiment_session_set')
+# FIXME: this gets copied over from the ExperimentConfiguration?
+    invitation_text = models.TextField(null=True, blank=True)
+
+class Invitation(models.Model):
+    participant = models.ForeignKey(Participant)
+    experiment_session = models.ForeignKey(ExperimentSession)
+    date_created = models.DateTimeField(auto_now_add=True)
+    sender = models.ForeignKey(User)
+
+class ParticipantSignup(models.Model):
+    participant = models.ForeignKey(Participant, related_name='signup_set')
+    invitation = models.ForeignKey(Invitation, related_name='signup_set')
+    date_created = models.DateTimeField(auto_now_add=True)
+    attendance = models.PositiveIntegerField(max_length=1, null=True, blank=True, choices=((0, 'participated'), (1, 'turned away'), (2, 'absent')))
+
+class SpoolParticipantStatistics(models.Model):
+    participant = models.ForeignKey(Participant, related_name='spool_statistics_set')
+    absences = models.PositiveIntegerField(default=0)
+    discharges = models.PositiveIntegerField(default=0)
+    participations = models.PositiveIntegerField(default=0)
+    invitations = models.PositiveIntegerField(default=0)
+
 
 def is_experimenter(user, experimenter=None):
     """

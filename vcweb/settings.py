@@ -93,7 +93,6 @@ INSTALLED_APPS = (
         'vcweb.forestry',
         'vcweb.sanitation',
         'vcweb.lighterprints',
-        'vcweb.spool',
         'dajaxice',
         'djcelery',
         'djkombu',
