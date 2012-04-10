@@ -5,7 +5,7 @@ from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
         GroupRoundDataValue, ParticipantRoundDataValue, Parameter)
 from django.dispatch import receiver
 import collections
-import datetime
+from datetime import datetime, date, time, timedelta
 import logging
 logger = logging.getLogger(__name__)
 
@@ -121,7 +121,7 @@ def get_all_available_activities(participant_group_relationship, all_activities=
     return (flattened_activities, activity_by_level)
 
 def available_activities(activity=None):
-    current_time = datetime.datetime.now().time()
+    current_time = datetime.now().time()
     available_time_slot = dict(start_time__lte=current_time, end_time__gte=current_time)
     if activity is not None:
         available_time_slot['activity'] = activity
@@ -144,7 +144,7 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
         return ActivityStatus.UNAVAILABLE
     elif activity.available_all_day:
         # check if they've done it already today, check if the combine is necessary
-        today = datetime.datetime.combine(datetime.date.today(), datetime.time())
+        today = datetime.combine(date.today(), time())
         already_performed = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
                 participant_group_relationship=participant_group_relationship,
                 int_value=activity.id,
@@ -152,7 +152,7 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
         logger.debug("activity is available all day, was it already performed? %s", already_performed)
         return ActivityStatus.AVAILABLE if already_performed.count() == 0 else ActivityStatus.COMPLETED
     else:
-        now = datetime.datetime.now()
+        now = datetime.now()
         current_time = now.time()
         # FIXME: check if this participant has already participated in this activity within this particular interval (for all
         # day, today, for time slots, during this particular time slot). There should only be one availability
@@ -160,7 +160,7 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
             logger.debug("checking availability set %s", activity.availability_set.all())
             availabilities = activity.availability_set.filter(start_time__lte=current_time, end_time__gte=current_time)
             if availabilities.count() > 0:
-                earliest_start_time = datetime.datetime.combine(datetime.date.today(), availabilities[0].start_time)
+                earliest_start_time = datetime.combine(date.today(), availabilities[0].start_time)
                 logger.debug("earliest start time: %s", earliest_start_time)
                 already_performed = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
                         participant_group_relationship=participant_group_relationship,
@@ -222,13 +222,16 @@ def average_points_per_person(group):
 
 # returns a tuple of the average points per person and the total savings for
 # the given group
-def get_group_score(group):
+def get_group_score(group, start=None, end=None):
+    if start is None or end is None:
+        start = date.today()
+        end = start + timedelta(1)
+    # establish date range
     # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
-    today = datetime.date.today()
     total_points = 0
 # FIXME: is it possible to convert this into an aggregate Sum, e.g., Activity.objects.filter(id__in=[id1, id2, ...]).aggregate(Sum('points'))
 # we'd need to a subselect to generate the idlist though
-    for activity_performed_dv in group.get_participant_data_values(parameter=get_activity_performed_parameter()).filter(date_created__gte=today):
+    for activity_performed_dv in group.get_participant_data_values(parameter=get_activity_performed_parameter()).filter(date_created__range=(start, end)):
         activity = activity_performed_dv.value
         total_points += activity.points
     average = total_points / group.size

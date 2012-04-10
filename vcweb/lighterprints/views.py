@@ -361,6 +361,15 @@ def download_data(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     start_time = experiment.current_round_start_time
     today = datetime.today()
+    start = today.date()
+    end = today
+    while start > start_time.date():
+        prdvs = ParticipantRoundDataValue.objects.filter(round_data__experiment=experiment, date_created__range=(start, end))
+        prdvs.filter(parameter=get_activity_performed_parameter())
+        end = start
+        start = start - timedelta(1)
+
+
     increment = datetime.timedelta(1)
     start_time + datetime.timedelta(1)
 
