@@ -474,8 +474,8 @@ class Experiment(models.Model):
             logger.debug("%s: %s", self, log_message)
             self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message)
 
-    def data_file_name(self, file_ext='csv'):
-        return "%s_%s_%s.%s" % (slugify(self.experiment_metadata.title), self.pk, datetime.now().strftime("%d-%m-%y-%H%M"), file_ext)
+    def data_file_name(self, file_ext='.csv'):
+        return "%s_%s_%s%s" % (slugify(self.experiment_metadata.title), self.pk, datetime.now().strftime("%d-%m-%y-%H%M"), file_ext)
 
     def parameters(self, scope=None):
         parameter_set = self.experiment_metadata.parameter_set

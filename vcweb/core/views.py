@@ -1,6 +1,5 @@
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.db.models import Model
@@ -19,12 +18,13 @@ from django.views.generic.detail import SingleObjectMixin, DetailView
 from django.views.generic.edit import UpdateView
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
         RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm)
-from vcweb.core.models import (ChatMessage, Participant, ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
+from vcweb.core.models import (User, ChatMessage, Participant, ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
 import logging
+import mimetypes
 logger = logging.getLogger(__name__)
 
 class VcwebJSONEncoder(DjangoJSONEncoder):
@@ -297,10 +297,43 @@ def manage(request, pk=None):
         logger.warning("Tried to manage non-existent experiment with id %s", pk)
 
 
-class ExportDataView(ExperimenterSingleExperimentMixin):
-    def render_to_response(self, context, mimetype='test/csv', **response_kwargs):
+class ExportDataMixin(ExperimenterSingleExperimentMixin):
+    file_extension = '.csv'
+    def render_to_response(self, context, **response_kwargs):
+        experiment = self.get_object()
+        file_ext = self.file_extension
+        if file_ext in mimetypes.types_map:
+            mimetype = mimetypes.types_map[file_ext]
+        else:
+            mimetype = 'application/octet-stream'
         response = HttpResponse(mimetype=mimetype)
+        response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name(file_ext=file_ext)
+        self.export_data(response, experiment)
         return response
+
+class CsvDataExporter(ExportDataMixin):
+    def export_data(self, response, experiment):
+        writer = unicodecsv.UnicodeWriter(response)
+        writer.writerow(['Group', 'Members'])
+        for group in experiment.group_set.all():
+            writer.writerow(itertools.chain.from_iterable([[group], group.participant_set.all()]))
+        for round_data in experiment.round_data_set.all():
+            round_configuration = round_data.round_configuration
+        # write out group-wide and participant data values
+            writer.writerow(['Owner', 'Round', 'Data Parameter', 'Data Parameter Value', 'Created On', 'Last Modified'])
+            for data_value in itertools.chain(round_data.group_data_value_set.all(), round_data.participant_data_value_set.all()):
+                writer.writerow([data_value.owner, round_configuration, data_value.parameter.label,
+                    data_value.value, data_value.date_created, data_value.last_modified])
+            # write out all chat messages as a side bar
+            chat_messages = ChatMessage.objects.filter(round_data=round_data)
+            if chat_messages.count() > 0:
+                # sort by group first, then time
+                writer.writerow(['Chat Messages'])
+                writer.writerow(['Group', 'Participant', 'Message', 'Time', 'Round'])
+                for chat_message in chat_messages.order_by('participant_group_relationship__group', 'date_created'):
+                    writer.writerow([chat_message.group, chat_message.participant, chat_message.message,
+                        chat_message.date_created, round_configuration])
+
 
 # FIXME: add data converter objects to write to csv, excel, etc.
 @experimenter_required
