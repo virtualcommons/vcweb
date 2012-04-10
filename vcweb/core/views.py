@@ -301,47 +301,37 @@ class ExportDataView(ExperimenterSingleExperimentMixin):
     def render_to_response(self, context, mimetype='test/csv', **response_kwargs):
         response = HttpResponse(mimetype=mimetype)
         return response
-                
 
 # FIXME: add data converter objects to write to csv, excel, etc.
 @experimenter_required
 def download_data(request, pk=None, file_type='csv'):
-    try:
-        experiment = get_object_or_404(Experiment, pk=pk)
-        if experiment.experimenter != request.user.experimenter:
-            logger.warning("unauthorized access to %s from %s", experiment, request.user.experimenter)
-            raise PermissionDenied("You don't have access to this experiment")
-        response = HttpResponse(mimetype='text/csv')
-        response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
-        writer = unicodecsv.UnicodeWriter(response)
-        writer.writerow(['Group', 'Members'])
-        for group in experiment.group_set.all():
-            writer.writerow(itertools.chain.from_iterable([[group], group.participant_set.all()]))
-        for round_data in experiment.round_data_set.all():
-            round_configuration = round_data.round_configuration
-            # write out group-wide data values
-            writer.writerow(['Group', 'Round', 'Data Parameter', 'Data Parameter Value'])
-            for group_data_value in round_data.group_data_value_set.all():
-                writer.writerow([group_data_value.group, round_configuration,
-                    group_data_value.parameter.label, group_data_value.value])
-            # write out specific participant data values for this round
-            writer.writerow(['Participant', 'Round', 'Data Parameter', 'Data Parameter Value'])
-            for participant_data_value in round_data.participant_data_value_set.all():
-                writer.writerow([participant_data_value.participant_group_relationship, round_configuration,
-                    participant_data_value.parameter.label, participant_data_value.value])
-            chat_messages = ChatMessage.objects.filter(round_data=round_data)
-            if chat_messages.count() > 0:
-# sort by group first, then time
-                writer.writerow(['Group', 'Participant', 'Message', 'Time', 'Round'])
-                for chat_message in chat_messages.order_by('participant_group_relationship__group', 'date_created'):
-                    writer.writerow([chat_message.group, chat_message.participant, chat_message.message,
-                        chat_message.date_created, round_configuration])
-        return response
-    except Experiment.DoesNotExist:
-        error_message = "Tried to download non-existent experiment, id %s" % pk
-        logger.warning(error_message)
-        messages.warning(request, error_message)
-        return redirect('core:dashboard')
+    experiment = get_object_or_404(Experiment, pk=pk)
+    if experiment.experimenter != request.user.experimenter:
+        logger.warning("unauthorized access to %s from %s", experiment, request.user.experimenter)
+        raise PermissionDenied("You don't have access to this experiment")
+    response = HttpResponse(mimetype='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
+    writer = unicodecsv.UnicodeWriter(response)
+    writer.writerow(['Group', 'Members'])
+    for group in experiment.group_set.all():
+        writer.writerow(itertools.chain.from_iterable([[group], group.participant_set.all()]))
+    for round_data in experiment.round_data_set.all():
+        round_configuration = round_data.round_configuration
+        # write out group-wide and participant data values
+        writer.writerow(['Owner', 'Round', 'Data Parameter', 'Data Parameter Value', 'Created On', 'Last Modified'])
+        for data_value in itertools.chain(round_data.group_data_value_set.all(), round_data.participant_data_value_set.all()):
+            writer.writerow([data_value.owner, round_configuration, data_value.parameter.label,
+                data_value.value, data_value.date_created, data_value.last_modified])
+            # write out all chat messages as a side bar
+        chat_messages = ChatMessage.objects.filter(round_data=round_data)
+        if chat_messages.count() > 0:
+            # sort by group first, then time
+            writer.writerow(['Chat Messages'])
+            writer.writerow(['Group', 'Participant', 'Message', 'Time', 'Round'])
+            for chat_message in chat_messages.order_by('participant_group_relationship__group', 'date_created'):
+                writer.writerow([chat_message.group, chat_message.participant, chat_message.message,
+                    chat_message.date_created, round_configuration])
+    return response
 
 @experimenter_required
 def download_data_excel(request, pk=None):

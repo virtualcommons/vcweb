@@ -1151,6 +1151,10 @@ class GroupRoundDataValue(ParameterizedValue):
 
 
     @property
+    def owner(self):
+        return self.group
+
+    @property
     def round_configuration(self):
         return self.round_data.round_configuration
 
@@ -1299,6 +1303,10 @@ class ParticipantRoundDataValue(ParameterizedValue):
         if 'participant_group_relationship' in kwargs and not hasattr(self, 'round_data'):
             participant_group_relationship = kwargs['participant_group_relationship']
             self.round_data = participant_group_relationship.experiment.current_round_data
+
+    @property
+    def owner(self):
+        return self.participant_group_relationship
 
     @property
     def participant(self):

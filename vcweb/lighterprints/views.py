@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
+from vcweb.core import unicodecsv
 from vcweb.core.decorators import experimenter_required
 from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm)
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
@@ -369,17 +370,31 @@ def download_data(request, pk=None):
     today = datetime.today()
     start = today.date()
     end = today
+    writer.writerow(['Interval', 'Group', 'Total Points', 'Average Points', '# Members'])
     while start > experiment_start_time.date():
-        prdvs = ParticipantRoundDataValue.objects.filter(round_data__experiment=experiment, date_created__range=(start, end))
         for group in experiment.group_set.all():
             (average, total) = get_group_score(group, start=start, end=end)
-
-
-        prdvs.filter(parameter=get_activity_performed_parameter())
+            writer.writerow([map(unicode, (start, end)), group, total, average, group.size])
         end = start
         start = start - timedelta(1)
-
-
+    writer.writerow(['Interval', 'Participant', 'Activity', 'Points', 'Date created'])
+    start = today.date()
+    end = today
+    while start > experiment_start_time.date():
+        prdvs = ParticipantRoundDataValue.objects.filter(round_data__experiment=experiment, date_created__range=(start, end))
+        for prdv in prdvs.filter(parameter=get_activity_performed_parameter()).order_by('-date_created'):
+            writer.writerow([map(unicode, (start, end)), prdv.participant_group_relationship, prdv.value, prdv.value.points, prdv.date_created])
+        end = start
+        start = start - timedelta(1)
+    # write out participant summary
+    writer.writerow(['Participant', 'Total Points'])
+    for participant_group_relationship in experiment.participant_group_relationships:
+        performed_activities = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())
+        total_points = 0
+        for performed_activity in performed_activities:
+            total_points += performed_activity.value.points
+        writer.writerow([participant_group_relationship, total_points])
+    return response
 
 def participate(request, experiment_id=None):
     return redirect('http://vcweb.asu.edu/lighterfootprints')

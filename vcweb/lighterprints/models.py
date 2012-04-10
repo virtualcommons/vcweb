@@ -47,7 +47,7 @@ class Activity(models.Model):
         return activity_as_dict
 
     def __unicode__(self):
-        return u'%s (+%s)' % (self.label, self.savings)
+        return u'%s (+%s)' % (self.label, self.points)
 
     class Meta:
         ordering = ['level', 'name']

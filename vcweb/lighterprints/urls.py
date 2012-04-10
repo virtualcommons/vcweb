@@ -3,11 +3,12 @@ from django.views.decorators.cache import cache_page
 
 from vcweb.lighterprints.views import (ActivityDetailView, ActivityListView, MobileView, post_chat_message,
         post_comment, perform_activity, DiscussionBoardView, login, participate, group_activity, like,
-        get_notifications, update_notifications_since, group_score)
+        get_notifications, update_notifications_since, group_score, download_data)
 
 # handles all /lighterprints/* URL requests
 urlpatterns = patterns('vcweb.lighterprints.views',
     url(r'^mobile$', MobileView.as_view(), name='mobile'),
+    url(r'^(?P<pk>\d+)/data$', download_data, name='download-data'),
     url(r'^(?P<experiment_id>\d+)/configure$', 'configure', name='configure'),
     url(r'^((?P<experiment_id>\d+)/)?participate/?$', participate, name='participate'),
     url(r'^activity/list/?$', cache_page(60)(ActivityListView.as_view())),
