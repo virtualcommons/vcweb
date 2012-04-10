@@ -161,6 +161,11 @@ try:
 except ImportError:
     pass
 
+# after loading possibly overridden database, reset test database
+if 'test' in sys.argv:
+    DATABASES['default']['ENGINE'] = 'django.db.backends.sqlite3'
+    DATABASES['default']['NAME'] = path.join(DATA_DIR, 'vcweb.db')
+
 LOG_DIRECTORY = 'logs' if DEBUG else '/opt/vcweb/logs'
 try:
     makedirs(LOG_DIRECTORY)

@@ -205,7 +205,6 @@ def update_active_experiments(sender, time=None, **kwargs):
 @receiver(signals.round_started)
 def round_started_handler(sender, experiment=None, **kwargs):
     if sender != get_lighterprints_experiment_metadata().pk:
-        logger.debug("received invalid signal from sender %s", sender)
         return
     # FIXME: See if we can push this logic up to core..
     current_round_data = experiment.current_round_data
