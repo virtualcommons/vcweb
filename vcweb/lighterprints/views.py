@@ -11,8 +11,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
+from vcweb.core.decorators import experimenter_required
 from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm)
-from vcweb.core.models import (ChatMessage, Comment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
+from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token, json_response
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity,
@@ -215,9 +216,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
     if retrieve_all:
         number_of_activities = len(performed_activities)
     for activity_prdv in performed_activities[:number_of_activities]:
-        # FIXME: change this to activity name if we decide to use names instead of
-        # pks
-        activity = Activity.objects.get(pk=activity_prdv.value)
+        activity = activity_prdv.value
         activity_performed_dict = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
         activity_performed_dict['date_performed'] = activity_prdv.date_created
         pgr = activity_prdv.participant_group_relationship
@@ -356,6 +355,15 @@ def login(request):
     except Exception as e:
         logger.debug("Invalid login: %s", e)
     return HttpResponse(dumps({'success': False, 'message': "Invalid login"}), content_type='application/json')
+
+@experimenter_required
+def download_data(request, pk=None):
+    experiment = get_object_or_404(Experiment, pk=pk)
+    start_time = experiment.current_round_start_time
+    today = datetime.today()
+    increment = datetime.timedelta(1)
+    start_time + datetime.timedelta(1)
+
 
 
 def participate(request, experiment_id=None):

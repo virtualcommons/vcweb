@@ -485,6 +485,7 @@ class Experiment(models.Model):
         if not self.is_active:
             self.allocate_groups()
             self.status = 'ACTIVE'
+            self.start_date_time = datetime.now()
             self.save()
         return self
 
@@ -750,8 +751,17 @@ class QuizQuestion(models.Model):
 class ParameterManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
-
 class Parameter(models.Model):
+
+    def fk_converter(cls):
+        def converter(value):
+            if isinstance(value, (int, long)):
+                return value
+            elif isinstance(value, cls):
+                return value.pk
+            raise ValueError("can only convert integers or %s - received %s" % (cls, value))
+        return converter
+
     PARAMETER_TYPES = (('int', 'Integer'),
                        ('string', 'String'),
                        ('foreignkey', 'Foreign key'),
@@ -766,7 +776,7 @@ class Parameter(models.Model):
             'int': int,
             'string':str,
             'float': float,
-            'foreignkey': int,
+            'foreignkey': fk_converter,
             'boolean': lambda x: bool(x) and str(x).lower() != 'false'
             }
     '''
@@ -826,7 +836,7 @@ class Parameter(models.Model):
 
     @property
     def is_integer_type(self):
-        return self.type == 'int'
+        return self.type == 'int' or self.type == 'foreignkey'
 
     @property
     def is_boolean_type(self):
@@ -844,12 +854,22 @@ class Parameter(models.Model):
     def is_foreign_key(self):
         return self.type == 'foreignkey'
 
+    def lookup(self, pk=None):
+        return self.get_model_class().objects.get(pk=pk)
+
+    def get_model_class(self):
+        return get_model(*self.class_name.split('.'))
+
     def convert(self, value=None):
         converter = Parameter.CONVERTERS[self.type]
+        if self.type == 'foreignkey':
+            # FIXME: ugliness, special case curried converter for fk lookups that stores an int given a model instance
+            # or pk
+            converter = converter(self.get_model_class())
         try:
             return converter(value) if converter else value
         except ValueError:
-            if self.is_integer_type():
+            if self.is_integer_type:
                 # last-ditch effort, try converting to float first
                 return int(float(value))
             # FIXME: add more checks for other type conversion failures
@@ -882,8 +902,7 @@ class ParameterizedValue(models.Model):
         if value is None:
             return self.parameter.none_value
         if self.parameter.is_foreign_key:
-            cls = get_model(*self.parameter.class_name.split('.'))
-            return cls.objects.get(pk=value)
+            return self.parameter.lookup(pk=value)
         else:
             return value
 

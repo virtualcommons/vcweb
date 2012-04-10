@@ -80,7 +80,7 @@ def get_lighterprints_experiment_metadata():
 def create_activity_performed_parameter(experimenter=None):
     if experimenter is None:
         experimenter = Experimenter.objects.get(pk=1)
-    parameter, created = Parameter.objects.get_or_create(name='activity_performed', scope=Parameter.PARTICIPANT_SCOPE, type='int',
+    parameter, created = Parameter.objects.get_or_create(name='activity_performed', scope=Parameter.PARTICIPANT_SCOPE, type='foreignkey',
             creator=experimenter, experiment_metadata=get_lighterprints_experiment_metadata())
     if created: logger.debug("created activity performed parameter %s", parameter)
     return parameter
@@ -229,7 +229,7 @@ def get_group_score(group):
 # FIXME: is it possible to convert this into an aggregate Sum, e.g., Activity.objects.filter(id__in=[id1, id2, ...]).aggregate(Sum('points'))
 # we'd need to a subselect to generate the idlist though
     for activity_performed_dv in group.get_participant_data_values(parameter=get_activity_performed_parameter()).filter(date_created__gte=today):
-        activity = Activity.objects.get(pk=activity_performed_dv.value)
+        activity = activity_performed_dv.value
         total_points += activity.points
     average = total_points / group.size
     logger.debug("total carbon savings: %s divided by %s members = %s per person", total_points, group.size,
