@@ -370,20 +370,20 @@ def download_data(request, pk=None):
     today = datetime.today()
     start = today.date()
     end = today
-    writer.writerow(['Interval', 'Group', 'Total Points', 'Average Points', '# Members'])
+    writer.writerow(['Interval Start', 'Interval End', 'Group', 'Total Points', 'Average Points', '# Members'])
     while start > experiment_start_time.date():
         for group in experiment.group_set.all():
             (average, total) = get_group_score(group, start=start, end=end)
-            writer.writerow([map(unicode, (start, end)), group, total, average, group.size])
+            writer.writerow([start, end, group, total, average, group.size])
         end = start
         start = start - timedelta(1)
-    writer.writerow(['Interval', 'Participant', 'Activity', 'Points', 'Date created'])
+    writer.writerow(['Interval Start', 'Interval End', 'Participant', 'Activity', 'Points', 'Date created'])
     start = today.date()
     end = today
     while start > experiment_start_time.date():
         prdvs = ParticipantRoundDataValue.objects.filter(round_data__experiment=experiment, date_created__range=(start, end))
         for prdv in prdvs.filter(parameter=get_activity_performed_parameter()).order_by('-date_created'):
-            writer.writerow([map(unicode, (start, end)), prdv.participant_group_relationship, prdv.value, prdv.value.points, prdv.date_created])
+            writer.writerow([start, end, prdv.participant_group_relationship, prdv.value, prdv.value.points, prdv.date_created])
         end = start
         start = start - timedelta(1)
     # write out participant summary
