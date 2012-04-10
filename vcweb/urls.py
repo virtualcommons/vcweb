@@ -17,7 +17,7 @@ handler500 = views.handler500
 
 urlpatterns = patterns('',
     url(r'^$', TemplateView.as_view(template_name='index.html'), name='home'),
-    url(r'^about/$', cache_page(60*15)(TemplateView.as_view(template_name='about.html')), name='about'),
+    url(r'^about/$', TemplateView.as_view(template_name='about.html'), name='about'),
     url(r'^contact/$', cache_page(60*15)(TemplateView.as_view(template_name='contact.html')), name='contact'),
     # FIXME: customize password reset email and forms to not go through django admin?
     #url(r'^accounts/password_reset/$', 'django.contrib.auth.views.password_reset', {'template_name':'password_reset_form.html', 'email_template_name':'userpanel/password_reset_email.html'}),

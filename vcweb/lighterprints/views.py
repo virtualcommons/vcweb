@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -359,19 +359,25 @@ def login(request):
 @experimenter_required
 def download_data(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
-    start_time = experiment.current_round_start_time
+    if experiment.experimenter != request.user.experimenter:
+        logger.warning("unauthorized access to %s from %s", experiment, request.user.experimenter)
+        raise PermissionDenied("You don't have access to this experiment")
+    response = HttpResponse(mimetype='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
+    writer = unicodecsv.UnicodeWriter(response)
+    experiment_start_time = experiment.current_round_start_time
     today = datetime.today()
     start = today.date()
     end = today
-    while start > start_time.date():
+    while start > experiment_start_time.date():
         prdvs = ParticipantRoundDataValue.objects.filter(round_data__experiment=experiment, date_created__range=(start, end))
+        for group in experiment.group_set.all():
+            (average, total) = get_group_score(group, start=start, end=end)
+
+
         prdvs.filter(parameter=get_activity_performed_parameter())
         end = start
         start = start - timedelta(1)
-
-
-    increment = datetime.timedelta(1)
-    start_time + datetime.timedelta(1)
 
 
 

@@ -19,7 +19,7 @@ from django.views.generic.detail import SingleObjectMixin, DetailView
 from django.views.generic.edit import UpdateView
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
         RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm)
-from vcweb.core.models import (Participant, ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
+from vcweb.core.models import (ChatMessage, Participant, ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
@@ -297,6 +297,12 @@ def manage(request, pk=None):
         logger.warning("Tried to manage non-existent experiment with id %s", pk)
 
 
+class ExportDataView(ExperimenterSingleExperimentMixin):
+    def render_to_response(self, context, mimetype='test/csv', **response_kwargs):
+        response = HttpResponse(mimetype=mimetype)
+        return response
+                
+
 # FIXME: add data converter objects to write to csv, excel, etc.
 @experimenter_required
 def download_data(request, pk=None, file_type='csv'):
@@ -323,10 +329,11 @@ def download_data(request, pk=None, file_type='csv'):
             for participant_data_value in round_data.participant_data_value_set.all():
                 writer.writerow([participant_data_value.participant_group_relationship, round_configuration,
                     participant_data_value.parameter.label, participant_data_value.value])
-            if round_data.chat_messages.count() > 0:
+            chat_messages = ChatMessage.objects.filter(round_data=round_data)
+            if chat_messages.count() > 0:
 # sort by group first, then time
                 writer.writerow(['Group', 'Participant', 'Message', 'Time', 'Round'])
-                for chat_message in round_data.chat_messages.order_by('participant_group_relationship__group', 'date_created'):
+                for chat_message in chat_messages.order_by('participant_group_relationship__group', 'date_created'):
                     writer.writerow([chat_message.group, chat_message.participant, chat_message.message,
                         chat_message.date_created, round_configuration])
         return response
