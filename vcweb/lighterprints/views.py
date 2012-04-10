@@ -131,7 +131,7 @@ def get_notification_json(participant_group_relationship):
         target_data_value = user_action.target_data_value
         target_value = target_data_value.value
         if target_data_value.parameter == get_activity_performed_parameter():
-            target_value = Activity.objects.get(pk=target_data_value.value).display_name
+            target_value = target_data_value.value.display_name
         user_action_dict['target_pk'] = target_data_value.pk
         user_action_dict['target_value'] = target_value
         user_action_dict['target_type'] = target_data_value.parameter.name
