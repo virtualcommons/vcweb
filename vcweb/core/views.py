@@ -301,14 +301,17 @@ def manage(request, pk=None):
 @experimenter_required
 def download_data(request, pk=None, file_type='csv'):
     try:
-        experiment = Experiment.objects.get(pk=pk)
+        experiment = get_object_or_404(Experiment, pk=pk)
+        if experiment.experimenter != request.user.experimenter:
+            logger.warning("unauthorized access to %s from %s", experiment, request.user.experimenter)
+            raise PermissionDenied("You don't have access to this experiment")
         response = HttpResponse(mimetype='text/csv')
         response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
         writer = unicodecsv.UnicodeWriter(response)
         writer.writerow(['Group', 'Members'])
-        for group in experiment.groups.all():
+        for group in experiment.group_set.all():
             writer.writerow(itertools.chain.from_iterable([[group], group.participant_set.all()]))
-        for round_data in experiment.round_data.all():
+        for round_data in experiment.round_data_set.all():
             round_configuration = round_data.round_configuration
             # write out group-wide data values
             writer.writerow(['Group', 'Round', 'Data Parameter', 'Data Parameter Value'])
@@ -354,7 +357,7 @@ def download_data_excel(request, pk=None):
         group_sheet.write(current_row, 1, 'Round')
         group_sheet.write(current_row, 2, 'Data Parameter')
         group_sheet.write(current_row, 3, 'Data Parameter Value')
-        for group in experiment.groups.all():
+        for group in experiment.group_set.all():
             for data_value in group.data_value_set.all():
                 group_sheet.write(current_row, 0, group)
                 group_sheet.write(current_row, 1, data_value.round_configuration)
@@ -402,7 +405,8 @@ def experiment_controller(request, pk=None, experiment_action=None):
     messages.warning(request, error_message)
     return redirect('core:dashboard')
 
-def daily_report(request, pk=None):
+# FIXME: implement filters by round_data parameters
+def daily_report(request, pk=None, parameter_ids=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     round_data = experiment.current_round_data
 
