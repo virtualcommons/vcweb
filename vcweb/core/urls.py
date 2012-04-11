@@ -25,7 +25,7 @@ urlpatterns = patterns('vcweb.core.views',
 # experiment controller actions are the most general, needs to be matched at the very end
     url(r'^experiment/(?P<pk>\d+)/(?P<experiment_action>[\w-]+)$', experiment_controller, name='experiment_controller'),
     # deliberately match any prefix to api/2525/log
-    url(r'api/(?P<participant_group_id>\d+)/log$', api_logger, name='api-logger'),
+    url(r'api/log/(?P<participant_group_id>\d+)$', api_logger, name='api-logger'),
     )
 # add ajax actions
 urlpatterns += patterns('vcweb.core.ajax',
