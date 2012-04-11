@@ -435,13 +435,15 @@ def experiment_controller(request, pk=None, experiment_action=None):
     messages.warning(request, error_message)
     return redirect('core:dashboard')
 
-# FIXME: implement filters by round_data parameters
+# FIXME: unimplemented: add filters by round_data parameters
 def daily_report(request, pk=None, parameter_ids=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     round_data = experiment.current_round_data
+    pass
 
 def api_logger(request, participant_group_id=None):
     form = LogMessageForm(request.POST or None)
+    success = False
     if form.is_valid():
         try:
             participant_group_relationship = ParticipantGroupRelationship.objects.get(pk=participant_group_id)
@@ -449,11 +451,12 @@ def api_logger(request, participant_group_id=None):
             message = form.cleaned_data['message']
             logger.debug("client log from %s: %s - %s", participant_group_relationship, level, message)
             logger.log(form.cleaned_data['level'], "error from %s: %s", participant_group_relationship, form.cleaned_data['message'])
-            return
+            success = True
         except ParticipantGroupRelationship.DoesNotExist:
             logger.error("Couldn't locate a participant group relationship for request %s", request)
-
-    logger.error("Couldn't validate log message form %s", request)
+    else:
+        logger.error("Failed to validate log message form %s (%s)", request, form)
+    return json_response(request, dumps({'success': success}))
 
 
 def handler500(request):
