@@ -17,8 +17,8 @@ from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin, DetailView
 from django.views.generic.edit import UpdateView
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
-        RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm)
-from vcweb.core.models import (User, ChatMessage, Participant, ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
+        RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm, LogMessageForm)
+from vcweb.core.models import (User, ChatMessage, Participant, ParticipantGroupRelationship, ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
@@ -440,6 +440,20 @@ def daily_report(request, pk=None, parameter_ids=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     round_data = experiment.current_round_data
 
+def api_logger(request, participant_group_id=None):
+    form = LogMessageForm(request.POST or None)
+    if form.is_valid():
+        try:
+            participant_group_relationship = ParticipantGroupRelationship.objects.get(pk=participant_group_id)
+            level = form.cleaned_data['level']
+            message = form.cleaned_data['message']
+            logger.debug("client log from %s: %s - %s", participant_group_relationship, level, message)
+            logger.log(form.cleaned_data['level'], "error from %s: %s", participant_group_relationship, form.cleaned_data['message'])
+            return
+        except ParticipantGroupRelationship.DoesNotExist:
+            logger.error("Couldn't locate a participant group relationship for request %s", request)
+
+    logger.error("Couldn't validate log message form %s", request)
 
 
 def handler500(request):

@@ -2,10 +2,9 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.forms import widgets, ValidationError
-from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 
-from vcweb.core.models import (Participant, Experimenter, Institution)
+from vcweb.core.models import (Experimenter, Institution)
 
 from django.core.validators import email_re
 
@@ -128,8 +127,13 @@ class CommentForm(forms.Form):
     message = forms.CharField(required=True, max_length=512)
     target_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
     participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
-    def clean_message(self):
-        return self.cleaned_data['message']
+
+class LogMessageForm(forms.Form):
+    level = forms.ChoiceField(
+            required=True,
+            choices=[(getattr(logging, levelName), levelName) for levelName in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')]
+            )
+    message = forms.CharField(required=True)
 
 class QuizForm(forms.Form):
     name_question = forms.CharField(max_length=64, label="What is your name?")

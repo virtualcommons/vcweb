@@ -2,7 +2,8 @@ from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page
 from vcweb.core.views import (Dashboard, LoginView, LogoutView, RegistrationView, MonitorExperimentView, CloneExperimentView,
-        RegisterEmailListView, RegisterSimpleParticipantsView, ClearParticipantsExperimentView, add_experiment)
+        RegisterEmailListView, RegisterSimpleParticipantsView, ClearParticipantsExperimentView, add_experiment,
+        download_data, experiment_controller, api_logger)
 '''
 URLs defined by the core vcweb app.
 '''
@@ -20,9 +21,11 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^experiment/(?P<pk>\d+)/clone$', CloneExperimentView.as_view(), name='clone'),
     url(r'^experiment/(?P<pk>\d+)/clear-participants', ClearParticipantsExperimentView.as_view(), name='clear_participants'),
 #    url(r'^experiment/(?P<pk>\d+)/add-participants/(?P<count>[\d]+)$', 'add_participants', name='add_participants'),
-    url(r'^experiment/(?P<pk>\d+)/download/(?P<file_type>[\w]+)$', 'download_data', name='download_data'),
+    url(r'^experiment/(?P<pk>\d+)/download/(?P<file_type>[\w]+)$', download_data, name='download_data'),
 # experiment controller actions are the most general, needs to be matched at the very end
-    url(r'^experiment/(?P<pk>\d+)/(?P<experiment_action>[\w-]+)$', 'experiment_controller', name='experiment_controller'),
+    url(r'^experiment/(?P<pk>\d+)/(?P<experiment_action>[\w-]+)$', experiment_controller, name='experiment_controller'),
+    # deliberately match any prefix to api/2525/log
+    url(r'api/(?P<participant_group_id>\d+)/log$', api_logger, name='api-logger'),
     )
 # add ajax actions
 urlpatterns += patterns('vcweb.core.ajax',
