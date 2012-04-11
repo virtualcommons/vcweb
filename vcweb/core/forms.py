@@ -20,10 +20,10 @@ REQUIRED_ATTRIBUTES = { 'class' : 'required' }
 class BaseRegistrationForm(forms.Form):
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text='Please enter a valid email.  We will never share your email in any way shape or form.')
+    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way shape or form.'))
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     confirm_password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
-    institution = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES), help_text='The primary institution, if any, you are affiliated with.')
+    institution = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES), help_text=_('The primary institution, if any, you are affiliated with.'))
     def clean_email(self):
         email = self.cleaned_data['email'].lower()
         try:
@@ -40,7 +40,7 @@ class BaseRegistrationForm(forms.Form):
         raise forms.ValidationError(_("Please make sure your passwords match."))
 
 class RegistrationForm(BaseRegistrationForm):
-    experimenter = forms.BooleanField(required=False, help_text='Check this box if you would like to request experimenter access.')
+    experimenter = forms.BooleanField(required=False, help_text=_('Check this box if you would like to request experimenter access.'))
 
 class LoginForm(forms.Form):
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
@@ -81,13 +81,13 @@ class EmailListField(forms.CharField):
 
 class RegisterParticipantsForm(forms.ModelForm):
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
-    experiment_passcode = forms.CharField(min_length=3, label="Experiment passcode", help_text='The password used to login to your experiment.', initial='test')
+    experiment_passcode = forms.CharField(min_length=3, label="Experiment passcode", help_text=_('The password used to login to your experiment.', initial='test'))
     institution_name = forms.CharField(min_length=3, label="Institution name",
             required=False, initial='Arizona State University',
-            help_text='The name of the institution to be associated with these test participants')
+            help_text=_('The name of the institution to be associated with these test participants'))
     institution_url = forms.URLField(min_length=3, label='Institution URL',
             required=False, initial='http://www.asu.edu/',
-            verify_exists=True, help_text='A URL, if applicable, for the institution (e.g., http://www.asu.edu)')
+            verify_exists=True, help_text=_('A URL, if applicable, for the institution (e.g., http://www.asu.edu)'))
 
     def clean(self):
         institution_name = self.cleaned_data.get('institution_name')
@@ -103,11 +103,11 @@ class RegisterParticipantsForm(forms.ModelForm):
 
 class RegisterSimpleParticipantsForm(RegisterParticipantsForm):
     email_suffix = forms.CharField(min_length=3, initial='asu.edu',
-            help_text='An email suffix without the "@" symbol.  Generated participants will have usernames of the format s1..sn@email_suffix.  For example, if you register 20 participants with an email suffix of example.edu, the system will generate 20 participants with usernames ranging from s1@example.edu, s2@example.edu, s3@example.edu, ... s20@example.edu.')
-    number_of_participants = forms.IntegerField(min_value=1, help_text='The number of participants to register with this experiment.')
+            help_text=_('An email suffix without the "@" symbol.  Generated participants will have usernames of the format s1..sn@email_suffix.  For example, if you register 20 participants with an email suffix of example.edu, the system will generate 20 participants with usernames ranging from s1@example.edu, s2@example.edu, s3@example.edu, ... s20@example.edu.'))
+    number_of_participants = forms.IntegerField(min_value=1, help_text=_('The number of participants to register with this experiment.'))
 
 class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
-    participant_emails = EmailListField(label="Participant emails", help_text='A comma or newline delimited list of emails to register as participants for this experiment.')
+    participant_emails = EmailListField(label="Participant emails", help_text=_('A comma or newline delimited list of emails to register as participants for this experiment.'))
 
 class ChatForm(forms.Form):
     message = forms.CharField(required=True, max_length=512)
@@ -129,14 +129,22 @@ class CommentForm(forms.Form):
     participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
 
 class LogMessageForm(forms.Form):
+    log_levels = [(getattr(logging, levelName), levelName) for levelName in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')]
     level = forms.ChoiceField(
             required=True,
-            choices=[(getattr(logging, levelName), levelName) for levelName in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')]
+            choices=log_levels
             )
     message = forms.CharField(required=True)
 
+    def clean_level(self):
+        level = int(self.cleaned_data['level'])
+        if level in dict(self.log_levels):
+            return level
+        raise ValidationError(_("invalid log level %s" % level))
+
+
 class QuizForm(forms.Form):
-    name_question = forms.CharField(max_length=64, label="What is your name?")
+    name_question = forms.CharField(max_length=64, label=_("What is your name?"))
     def __init__(self, *args, **kwargs):
         quiz_questions = []
         try:
