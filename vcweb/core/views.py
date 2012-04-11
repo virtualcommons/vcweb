@@ -441,6 +441,7 @@ def daily_report(request, pk=None, parameter_ids=None):
     round_data = experiment.current_round_data
     pass
 
+@login_required
 def api_logger(request, participant_group_id=None):
     form = LogMessageForm(request.POST or None)
     success = False
