@@ -297,7 +297,7 @@ def manage(request, pk=None):
         logger.warning("Tried to manage non-existent experiment with id %s", pk)
 
 
-class ExportDataMixin(ExperimenterSingleExperimentMixin):
+class DataExportMixin(ExperimenterSingleExperimentMixin):
     file_extension = '.csv'
     def render_to_response(self, context, **response_kwargs):
         experiment = self.get_object()
@@ -311,7 +311,7 @@ class ExportDataMixin(ExperimenterSingleExperimentMixin):
         self.export_data(response, experiment)
         return response
 
-class CsvDataExporter(ExportDataMixin):
+class CsvDataExporter(DataExportMixin):
     def export_data(self, response, experiment):
         writer = unicodecsv.UnicodeWriter(response)
         writer.writerow(['Group', 'Members'])

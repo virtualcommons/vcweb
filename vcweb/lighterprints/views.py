@@ -12,10 +12,9 @@ from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
 from vcweb.core import unicodecsv
-from vcweb.core.decorators import experimenter_required
 from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm)
-from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
-from vcweb.core.views import JSONResponseMixin, dumps, set_authentication_token, json_response
+from vcweb.core.models import (ChatMessage, Comment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
+from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity,
         get_lighterprints_experiment_metadata, get_activity_performed_parameter, points_to_next_level,
@@ -357,44 +356,38 @@ def login(request):
         logger.debug("Invalid login: %s", e)
     return HttpResponse(dumps({'success': False, 'message': "Invalid login"}), content_type='application/json')
 
-@experimenter_required
-def download_data(request, pk=None):
-    experiment = get_object_or_404(Experiment, pk=pk)
-    if experiment.experimenter != request.user.experimenter:
-        logger.warning("unauthorized access to %s from %s", experiment, request.user.experimenter)
-        raise PermissionDenied("You don't have access to this experiment")
-    response = HttpResponse(mimetype='text/csv')
-    response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
-    writer = unicodecsv.UnicodeWriter(response)
-    experiment_start_time = experiment.current_round_start_time
-    today = datetime.today()
-    start = today.date()
-    end = today
-    writer.writerow(['Interval Start', 'Interval End', 'Group', 'Total Points', 'Average Points', '# Members'])
-    while start > experiment_start_time.date():
-        for group in experiment.group_set.all():
-            (average, total) = get_group_score(group, start=start, end=end)
-            writer.writerow([start, end, group, total, average, group.size])
-        end = start
-        start = start - timedelta(1)
-    writer.writerow(['Interval Start', 'Interval End', 'Participant', 'Activity', 'Points', 'Date created'])
-    start = today.date()
-    end = today
-    while start > experiment_start_time.date():
-        prdvs = ParticipantRoundDataValue.objects.filter(round_data__experiment=experiment, date_created__range=(start, end))
-        for prdv in prdvs.filter(parameter=get_activity_performed_parameter()).order_by('-date_created'):
-            writer.writerow([start, end, prdv.participant_group_relationship, prdv.value, prdv.value.points, prdv.date_created])
-        end = start
-        start = start - timedelta(1)
-    # write out participant summary
-    writer.writerow(['Participant', 'Total Points'])
-    for participant_group_relationship in experiment.participant_group_relationships:
-        performed_activities = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())
-        total_points = 0
-        for performed_activity in performed_activities:
-            total_points += performed_activity.value.points
-        writer.writerow([participant_group_relationship, total_points])
-    return response
+class CsvExportView(DataExportMixin, BaseDetailView):
+    def export_data(self, response, experiment):
+        logger.debug("exporting data for %s", experiment)
+        writer = unicodecsv.UnicodeWriter(response)
+        experiment_start_time = experiment.current_round_start_time
+        today = datetime.today()
+        start = today.date()
+        end = today
+        writer.writerow(['Interval Start', 'Interval End', 'Group', 'Total Points', 'Average Points', '# Members'])
+        while start > experiment_start_time.date():
+            for group in experiment.group_set.all():
+                (average, total) = get_group_score(group, start=start, end=end)
+                writer.writerow([start, end, group, total, average, group.size])
+            end = start
+            start = start - timedelta(1)
+        writer.writerow(['Interval Start', 'Interval End', 'Participant', 'Activity', 'Points', 'Date created'])
+        start = today.date()
+        end = today
+        while start > experiment_start_time.date():
+            prdvs = ParticipantRoundDataValue.objects.filter(round_data__experiment=experiment, date_created__range=(start, end))
+            for prdv in prdvs.filter(parameter=get_activity_performed_parameter()).order_by('-date_created'):
+                writer.writerow([start, end, prdv.participant_group_relationship, prdv.value, prdv.value.points, prdv.date_created])
+            end = start
+            start = start - timedelta(1)
+        # write out participant summary
+        writer.writerow(['Participant', 'Total Points'])
+        for participant_group_relationship in experiment.participant_group_relationships:
+            performed_activities = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())
+            total_points = 0
+            for performed_activity in performed_activities:
+                total_points += performed_activity.value.points
+            writer.writerow([participant_group_relationship, total_points])
 
 def participate(request, experiment_id=None):
     return redirect('http://vcweb.asu.edu/lighterfootprints')
