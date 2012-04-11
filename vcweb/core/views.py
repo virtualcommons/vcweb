@@ -449,8 +449,7 @@ def api_logger(request, participant_group_id=None):
             participant_group_relationship = ParticipantGroupRelationship.objects.get(pk=participant_group_id)
             level = form.cleaned_data['level']
             message = form.cleaned_data['message']
-            logger.debug("client log from %s: %s - %s", participant_group_relationship, level, message)
-            logger.log(form.cleaned_data['level'], "error from %s: %s", participant_group_relationship, form.cleaned_data['message'])
+            logger.log(level, "%s: %s", participant_group_relationship, message)
             success = True
         except ParticipantGroupRelationship.DoesNotExist:
             logger.error("Couldn't locate a participant group relationship for request %s", request)
