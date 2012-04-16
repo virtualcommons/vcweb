@@ -106,6 +106,34 @@ SOUTH_TESTS_MIGRATE = False
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
 
+# django social auth keys
+TWITTER_CONSUMER_KEY         = ''
+TWITTER_CONSUMER_SECRET      = ''
+FACEBOOK_APP_ID              = ''
+FACEBOOK_API_SECRET          = ''
+LINKEDIN_CONSUMER_KEY        = ''
+LINKEDIN_CONSUMER_SECRET     = ''
+GOOGLE_CONSUMER_KEY          = ''
+GOOGLE_CONSUMER_SECRET       = ''
+GOOGLE_OAUTH2_CLIENT_ID      = ''
+GOOGLE_OAUTH2_CLIENT_SECRET  = ''
+FOURSQUARE_CONSUMER_KEY      = ''
+FOURSQUARE_CONSUMER_SECRET   = ''
+GITHUB_APP_ID                = ''
+GITHUB_API_SECRET            = ''
+DROPBOX_APP_ID               = ''
+DROPBOX_API_SECRET           = ''
+FLICKR_APP_ID                = ''
+FLICKR_API_SECRET            = ''
+INSTAGRAM_CLIENT_ID          = ''
+INSTAGRAM_CLIENT_SECRET      = ''
+
+LOGIN_URL='/accounts/login'
+LOGIN_REDIRECT_URL='/dashboard'
+LOGIN_ERROR_URL='/accounts/login/error'
+SOCIAL_AUTH_COMPLETE_URL_NAME  = 'socialauth_complete'
+SOCIAL_AUTH_ASSOCIATE_URL_NAME = 'socialauth_associate_complete'
+
 # socket.io configuration
 SOCKET_IO_PORT = 8882;
 

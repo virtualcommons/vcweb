@@ -50,5 +50,10 @@ BROKER_USER = "vcweb"
 BROKER_VHOST = "vcweb.vhost"
 BROKER_PASSWORD = 'CUSTOMIZE_ME'
 
+
+# need to override this appropriately for foursquare geolocation queries
+FOURSQUARE_CONSUMER_KEY      = ''
+FOURSQUARE_CONSUMER_SECRET   = ''
+
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'CUSTOMIZE_ME'
