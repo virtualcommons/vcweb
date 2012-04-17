@@ -11,11 +11,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
-from vcweb import settings
 from vcweb.core import unicodecsv
 from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
 from vcweb.core.models import (ChatMessage, Comment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response
+from vcweb.core.urls import foursquare_venue_search_url
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity,
         get_lighterprints_experiment_metadata, get_activity_performed_parameter, points_to_next_level,
@@ -25,6 +25,7 @@ import collections
 import itertools
 import logging
 import urllib2
+import simplejson as json
 logger = logging.getLogger(__name__)
 
 class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
@@ -404,9 +405,11 @@ def checkin(request):
         logger.debug("%s checking at at (%s, %s)", participant_group_relationship, latitude, longitude)
         if request.user.participant == participant_group_relationship.participant:
 # perform checkin logic here, query foursquare API for nearest "green" venue
-            request_url = settings.foursquare_venue_search_url(ll="%s,%s" % (latitude, longitude))
-            foursquare_api_request = urllib2.Request(request_url)
-
+            request_url = foursquare_venue_search_url(ll="%s,%s" % (latitude, longitude))
+            api_request = urllib2.Request(request_url)
+            response = urllib2.urlopen(api_request)
+            venues = json.loads(response)
+            logger.debug("nearby venues: %s", venues)
             return HttpResponse(dumps({'success':True}))
         else:
             logger.warning("authenticated user %s tried to checkin at (%s, %s) for %s", request.user, latitude, longitude, participant_group_relationship)

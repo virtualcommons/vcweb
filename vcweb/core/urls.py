@@ -1,9 +1,12 @@
 from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page
+from vcweb import settings
 from vcweb.core.views import (Dashboard, LoginView, LogoutView, RegistrationView, MonitorExperimentView, CloneExperimentView,
         RegisterEmailListView, RegisterSimpleParticipantsView, ClearParticipantsExperimentView, add_experiment,
         download_data, experiment_controller, api_logger)
+
+import urllib
 '''
 URLs defined by the core vcweb app.
 '''
@@ -31,3 +34,10 @@ urlpatterns = patterns('vcweb.core.views',
 urlpatterns += patterns('vcweb.core.ajax',
     url(r'^ajax/(?P<pk>\d+)/(<?P<experiment_action[\w-]+)$', 'experiment_controller'),
     )
+
+def foursquare_venue_search_url(**kwargs):
+    auth_dict = dict(kwargs, client_id=settings.FOURSQUARE_CONSUMER_KEY, client_secret=settings.FOURSQUARE_CONSUMER_SECRET)
+    return "%s?%s" % (settings.FOURSQUARE_VENUE_SEARCH_ENDPOINT, urllib.urlencode(auth_dict))
+
+
+

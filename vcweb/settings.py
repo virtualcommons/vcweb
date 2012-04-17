@@ -220,11 +220,6 @@ try:
 except ImportError:
     pass
 
-def foursquare_venue_search_url(**kwargs):
-    auth_dict = dict(kwargs, client_id=FOURSQUARE_CONSUMER_KEY, client_secret=FOURSQUARE_CONSUMER_SECRET)
-    return "%s?%s" % (FOURSQUARE_VENUE_SEARCH_ENDPOINT, urllib.urlencode(auth_dict))
-
-
 # after loading possibly overridden database, reset test database
 if 'test' in sys.argv:
     DATABASES['default']['ENGINE'] = 'django.db.backends.sqlite3'
