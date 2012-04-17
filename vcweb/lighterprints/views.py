@@ -24,8 +24,6 @@ from vcweb.lighterprints.models import (Activity, get_all_available_activities, 
 import collections
 import itertools
 import logging
-import urllib2
-import simplejson as json
 logger = logging.getLogger(__name__)
 
 class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
@@ -405,12 +403,8 @@ def checkin(request):
         logger.debug("%s checking at at (%s, %s)", participant_group_relationship, latitude, longitude)
         if request.user.participant == participant_group_relationship.participant:
 # perform checkin logic here, query foursquare API for nearest "green" venu
-            venues = foursquare_venue_search(latitude=latitude, longitude=longitude)
-            if len(venues) == 0:
-                logger.debug("Nothing near the user")
-            else:
-                logger.debug("Found venues: %s", venues)
-
+            venues = foursquare_venue_search(latitude=latitude, longitude=longitude, category_ids=get_category_ids())
+            logger.debug("Found venues: %s", venues)
             return HttpResponse(dumps({'success':True}))
         else:
             logger.warning("authenticated user %s tried to checkin at (%s, %s) for %s", request.user, latitude, longitude, participant_group_relationship)

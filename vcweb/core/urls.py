@@ -6,7 +6,10 @@ from vcweb.core.views import (Dashboard, LoginView, LogoutView, RegistrationView
         RegisterEmailListView, RegisterSimpleParticipantsView, ClearParticipantsExperimentView, add_experiment,
         download_data, experiment_controller, api_logger)
 
+import logging
 import urllib
+
+logger = logging.getLogger(__name__)
 '''
 URLs defined by the core vcweb app.
 '''
@@ -39,12 +42,14 @@ def foursquare_auth_dict(**kwargs):
     return dict(kwargs, client_id=settings.FOURSQUARE_CONSUMER_KEY, client_secret=settings.FOURSQUARE_CONSUMER_SECRET, v=settings.FOURSQUARE_CONSUMER_DATE_VERIFIED)
 
 def foursquare_url(url, **kwargs):
-    return "%s?%s" % (url, urllib.urlencode(foursquare_auth_dict(**kwargs)))
+    url = "%s?%s" % (url, urllib.urlencode(foursquare_auth_dict(**kwargs)))
+    logger.debug("%s", url)
+    return url
 
 def foursquare_venue_search_url(**kwargs):
     return foursquare_url(settings.FOURSQUARE_VENUE_SEARCH_ENDPOINT, **kwargs)
 
 def foursquare_categories_url(**kwargs):
-    return foursquare_url(settings.FOURSQUARE_VENUE_SEARCH_ENDPOINT, **kwargs)
+    return foursquare_url(settings.FOURSQUARE_CATEGORIES_ENDPOINT, **kwargs)
 
 

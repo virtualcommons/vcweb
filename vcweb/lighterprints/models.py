@@ -3,6 +3,7 @@ from django.db.models import Q
 from vcweb.core import signals, simplecache, enum
 from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
         GroupRoundDataValue, ParticipantRoundDataValue, Parameter)
+from vcweb.core.services import fetch_foursquare_categories
 from django.dispatch import receiver
 import collections
 from datetime import datetime, date, time, timedelta
@@ -74,6 +75,12 @@ class ActivityAvailability(models.Model):
         ordering = ['activity', 'start_time']
 
 @simplecache
+def get_category_ids():
+    categories = fetch_foursquare_categories()
+    pass
+
+
+@simplecache
 def get_lighterprints_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace='lighterprints')
 
@@ -132,9 +139,8 @@ def available_activities(activity=None):
 
 
 def check_activity_availability(activity, participant_group_relationship, **kwargs):
-    ''' 
-    FIXME: complex, see if we can simplify or split up
-    
+    '''
+    FIXME: see if we can simplify or split up
     how often can a participant participate in an activity? whenever it falls within the ActivityAvailability schedule
     and if the participant hasn't already performed this activity during a one-day cycle (which begins at midnight)
     '''
