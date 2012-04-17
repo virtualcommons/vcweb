@@ -1,6 +1,7 @@
 from django.contrib import messages
 from os import path, makedirs
 import sys
+import urllib
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -199,7 +200,7 @@ STATICFILES_DIRS = (
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT = path.join(STATIC_ROOT, 'media')
- 
+
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
@@ -218,6 +219,11 @@ try:
     from settings_local import *
 except ImportError:
     pass
+
+def foursquare_venue_search_url(**kwargs):
+    auth_dict = dict(kwargs, client_id=FOURSQUARE_CONSUMER_KEY, client_secret=FOURSQUARE_CONSUMER_SECRET)
+    return "%s?%s" % (FOURSQUARE_VENUE_SEARCH_ENDPOINT, urllib.urlencode(auth_dict))
+
 
 # after loading possibly overridden database, reset test database
 if 'test' in sys.argv:

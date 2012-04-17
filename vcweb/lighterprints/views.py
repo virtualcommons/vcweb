@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
+from vcweb import settings
 from vcweb.core import unicodecsv
 from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
 from vcweb.core.models import (ChatMessage, Comment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
@@ -23,6 +24,7 @@ from vcweb.lighterprints.models import (Activity, get_all_available_activities, 
 import collections
 import itertools
 import logging
+import urllib2
 logger = logging.getLogger(__name__)
 
 class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
@@ -399,9 +401,12 @@ def checkin(request):
         latitude = form.cleaned_data['latitude']
         longitude = form.cleaned_data['longitude']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        logger.debug("%s checking at at (%s, %s)", participant_group_relationship, latitude, longitude)
         if request.user.participant == participant_group_relationship.participant:
 # perform checkin logic here, query foursquare API for nearest "green" venue
-            raise NotImplementedError("find nearest green venue at (%s, %s)" % (latitude, longitude))
+            request_url = settings.foursquare_venue_search_url(ll="%s,%s" % (latitude, longitude))
+            foursquare_api_request = urllib2.Request(request_url)
+
             return HttpResponse(dumps({'success':True}))
         else:
             logger.warning("authenticated user %s tried to checkin at (%s, %s) for %s", request.user, latitude, longitude, participant_group_relationship)
