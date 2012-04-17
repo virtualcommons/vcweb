@@ -12,7 +12,7 @@ from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
 from vcweb.core import unicodecsv
-from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm)
+from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
 from vcweb.core.models import (ChatMessage, Comment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response
 from vcweb.lighterprints.forms import ActivityForm
@@ -391,4 +391,20 @@ class CsvExportView(DataExportMixin, BaseDetailView):
 
 def participate(request, experiment_id=None):
     return redirect('http://vcweb.asu.edu/lighterfootprints')
+
+def checkin(request):
+    form = GeoCheckinForm(request.POST or None)
+    if form.is_valid():
+        participant_group_id = form.cleaned_data['participant_group_id']
+        latitude = form.cleaned_data['latitude']
+        longitude = form.cleaned_data['longitude']
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        if request.user.participant == participant_group_relationship.participant:
+# perform checkin logic here, query foursquare API for nearest "green" venue
+            raise NotImplementedError("find nearest green venue at (%s, %s)" % (latitude, longitude))
+            return HttpResponse(dumps({'success':True}))
+        else:
+            logger.warning("authenticated user %s tried to checkin at (%s, %s) for %s", request.user, latitude, longitude, participant_group_relationship)
+    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
+
 

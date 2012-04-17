@@ -415,7 +415,6 @@ def experiment_controller(request, pk=None, experiment_action=None):
             # FIXME: dangerous to expose all experiment methods, even if it's only to the experimenter, should expose
             # via experiment.invoke(action, experimenter) instead
             experiment_func = getattr(experiment, experiment_action.replace('-', '_'), None)
-# FIXME: change this condition
             if hasattr(experiment_func, '__call__'):
                 # pass params?  start_round() takes a sender for instance..
                 experiment_func()

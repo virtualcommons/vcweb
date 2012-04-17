@@ -34,6 +34,7 @@ urlpatterns = patterns('',
     url(r'^sanitation/', include('vcweb.sanitation.urls', namespace='sanitation', app_name='sanitation')),
     url(r'^lighterprints/', include('vcweb.lighterprints.urls', namespace='lighterprints', app_name='lighterprints')),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'', include('social_auth.urls')),
     # core catches everything else
     url(r'', include('vcweb.core.urls', namespace='core', app_name='core')),
 

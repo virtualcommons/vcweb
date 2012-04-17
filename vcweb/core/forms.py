@@ -119,22 +119,31 @@ class ChatForm(forms.Form):
 class ParticipantGroupIdForm(forms.Form):
     participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
 
+class GeoCheckinForm(forms.Form):
+    participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
+    latitude = forms.DecimalField(max_digits=8, decimal_places=5)
+    longitude = forms.DecimalField(max_digits=8, decimal_places=5)
+    accuracy = forms.FloatField(required=False)
+    altitude = forms.FloatField(required=False)
+    altitudeAccuracy = forms.FloatField(required=False)
+    heading = forms.FloatField(required=False)
+    speed = forms.FloatField(required=False)
+
+
+
 class LikeForm(forms.Form):
-    target_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
-    participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
+    target_id = forms.IntegerField(widget=forms.HiddenInput)
+    participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
 
 class CommentForm(forms.Form):
-    message = forms.CharField(required=True, max_length=512)
-    target_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
-    participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
+    message = forms.CharField(max_length=512)
+    target_id = forms.IntegerField(widget=forms.HiddenInput)
+    participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
 
 class LogMessageForm(forms.Form):
     log_levels = [(getattr(logging, levelName), levelName) for levelName in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')]
-    level = forms.ChoiceField(
-            required=True,
-            choices=log_levels
-            )
-    message = forms.CharField(required=True)
+    level = forms.ChoiceField(choices=log_levels)
+    message = forms.CharField()
 
     def clean_level(self):
         level = int(self.cleaned_data['level'])
