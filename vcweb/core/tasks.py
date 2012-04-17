@@ -3,6 +3,10 @@ from celery.schedules import crontab
 from datetime import datetime, timedelta
 from vcweb.core import signals
 
+'''
+celery tasks, currently disabled in favor of kronos (see cron.py)
+'''
+
 @periodic_task(run_every=timedelta(seconds=60), ignore_result=True)
 def every_minute():
     '''

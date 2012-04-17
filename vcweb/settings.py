@@ -1,7 +1,6 @@
 from django.contrib import messages
 from os import path, makedirs
 import sys
-import urllib
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -124,6 +123,7 @@ FOURSQUARE_CONSUMER_SECRET   = ''
 FOURSQUARE_OAUTH_ENDPOINT = 'https://foursquare.com/oauth2/authenticate'
 FOURSQUARE_OAUTH_ACCESS_TOKEN_ENDPOINT = 'https://foursquare.com/oauth2/access_token'
 FOURSQUARE_VENUE_SEARCH_ENDPOINT = 'https://api.foursquare.com/v2/venues/search'
+FOURSQUARE_CONSUMER_DATE_VERIFIED = '20120417'
 GITHUB_APP_ID                = ''
 GITHUB_API_SECRET            = ''
 DROPBOX_APP_ID               = ''

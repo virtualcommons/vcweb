@@ -35,9 +35,16 @@ urlpatterns += patterns('vcweb.core.ajax',
     url(r'^ajax/(?P<pk>\d+)/(<?P<experiment_action[\w-]+)$', 'experiment_controller'),
     )
 
-def foursquare_venue_search_url(**kwargs):
-    auth_dict = dict(kwargs, client_id=settings.FOURSQUARE_CONSUMER_KEY, client_secret=settings.FOURSQUARE_CONSUMER_SECRET)
-    return "%s?%s" % (settings.FOURSQUARE_VENUE_SEARCH_ENDPOINT, urllib.urlencode(auth_dict))
+def foursquare_auth_dict(**kwargs):
+    return dict(kwargs, client_id=settings.FOURSQUARE_CONSUMER_KEY, client_secret=settings.FOURSQUARE_CONSUMER_SECRET, v=settings.FOURSQUARE_CONSUMER_DATE_VERIFIED)
 
+def foursquare_url(url, **kwargs):
+    return "%s?%s" % (url, urllib.urlencode(foursquare_auth_dict(**kwargs)))
+
+def foursquare_venue_search_url(**kwargs):
+    return foursquare_url(settings.FOURSQUARE_VENUE_SEARCH_ENDPOINT, **kwargs)
+
+def foursquare_categories_url(**kwargs):
+    return foursquare_url(settings.FOURSQUARE_VENUE_SEARCH_ENDPOINT, **kwargs)
 
 
