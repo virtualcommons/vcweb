@@ -52,7 +52,8 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
         raise PermissionDenied("You must be authenticated to view all activities.")
 
     def render_to_response(self, context, **response_kwargs):
-        if self.request.GET.get('format', 'html') == 'json':
+        output_format = self.kwargs['format']
+        if output_format and output_format.endswith('json'):
             return JSONResponseMixin.render_to_response(self, context, context_key='flattened_activities')
         else:
             return MultipleObjectTemplateResponseMixin.render_to_response(self, context)
@@ -66,7 +67,7 @@ class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin
         # participant = self.request.user.participant
         participant_group_id = self.kwargs['participant_group_id']
 # FIXME: will change once we have proper auth set up
-        self.participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        self.participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=1), pk=participant_group_id)
         self.group = self.participant_group_relationship.group
         return ChatMessage.objects.filter(participant_group_relationship__group = self.group)
 
@@ -187,7 +188,7 @@ def group_score(request, participant_group_id):
 @cache_page(60)
 @login_required
 def group_activity(request, participant_group_id):
-    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=1), pk=participant_group_id)
     if request.user.participant == participant_group_relationship.participant:
         content = get_group_activity_json(participant_group_relationship)
         return json_response(request, content)
@@ -213,7 +214,8 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
             'likes': likes
             })
     group_activity = []
-    performed_activities = ParticipantRoundDataValue.objects.filter(participant_group_relationship__group=group, submitted=True, parameter=get_activity_performed_parameter()).order_by('-date_created')
+    performed_activities = ParticipantRoundDataValue.objects.filter(participant_group_relationship__group=group,
+            submitted=True, parameter=get_activity_performed_parameter()).order_by('-date_created')
     if retrieve_all:
         number_of_activities = len(performed_activities)
     for activity_prdv in performed_activities[:number_of_activities]:
