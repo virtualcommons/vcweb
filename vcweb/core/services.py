@@ -6,6 +6,9 @@ import urllib2
 logger = logging.getLogger(__name__)
 
 def foursquare_venue_search(latitude=33.41, longitude=-111.9, radius=800, **kwargs):
+    if latitude is None or longitude is None:
+        logger.warning('no lat/long specified, aborting')
+        return []
     request_url = foursquare_venue_search_url(ll='%s,%s' % (latitude, longitude), radius=radius)
     api_request = urllib2.Request(request_url)
     raw_response = urllib2.urlopen(api_request)

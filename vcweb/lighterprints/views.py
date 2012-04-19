@@ -239,23 +239,28 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
 @csrf_exempt
 @login_required
 def perform_activity(request):
-    logger.debug("performing activity")
     form = ActivityForm(request.POST or None)
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
         participant_group_id = form.cleaned_data['participant_group_id']
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-        if participant_group_relationship.participant != request.user.participant:
+        latitude = form.cleaned_data['latitude']
+        longitude = form.cleaned_data['longitude']
+        if participant_group_relationship.participant == request.user.participant:
+            activity = get_object_or_404(Activity, pk=activity_id)
+            performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
+# perform checkin logic here, query foursquare API for nearest "green" venu
+            venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
+                    category_ids=get_foursquare_category_ids())
+            logger.debug("Found venues: %s", venues)
+            if performed_activity is not None:
+                activity_dict = activity.to_dict()
+                activity_dict['date_created'] = performed_activity.date_created
+                activity_dict['performed_activity_id'] = performed_activity.pk
+                activity_dict['success'] = True
+                return HttpResponse(dumps(activity_dict), content_type='application/json')
+        else:
             logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id, participant_group_relationship)
-            return HttpResponse(dumps({'success': False, 'message': "Invalid request"}))
-        activity = get_object_or_404(Activity, pk=activity_id)
-        performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
-        if performed_activity is not None:
-            activity_dict = activity.to_dict()
-            activity_dict['date_created'] = performed_activity.date_created
-            activity_dict['performed_activity_id'] = performed_activity.pk
-            activity_dict['success'] = True
-            return HttpResponse(dumps(activity_dict), content_type='application/json')
     return HttpResponse(dumps({'success': False, 'response': "Could not perform activity"}), content_type='application/json')
 
 @csrf_exempt

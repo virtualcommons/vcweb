@@ -110,14 +110,14 @@ class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
     participant_emails = EmailListField(label="Participant emails", help_text=_('A comma or newline delimited list of emails to register as participants for this experiment.'))
 
 class ChatForm(forms.Form):
-    message = forms.CharField(required=True, max_length=512)
-    participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
+    message = forms.CharField(max_length=512)
+    participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
     target_participant_group_id = forms.IntegerField(widget=forms.HiddenInput, required=False)
     def clean_message(self):
         return self.cleaned_data['message']
 
 class ParticipantGroupIdForm(forms.Form):
-    participant_group_id = forms.IntegerField(required=True, widget=forms.HiddenInput)
+    participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
 
 class GeoCheckinForm(forms.Form):
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
