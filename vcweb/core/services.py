@@ -5,7 +5,7 @@ import simplejson as json
 import urllib2
 logger = logging.getLogger(__name__)
 
-def foursquare_venue_search(latitude=44.3, longitude=37.2, radius=1000, **kwargs):
+def foursquare_venue_search(latitude=33.41, longitude=-111.9, radius=800, **kwargs):
     request_url = foursquare_venue_search_url(ll='%s,%s' % (latitude, longitude), radius=radius)
     api_request = urllib2.Request(request_url)
     raw_response = urllib2.urlopen(api_request)
@@ -15,7 +15,7 @@ def foursquare_venue_search(latitude=44.3, longitude=37.2, radius=1000, **kwargs
 
 FOURSQUARE_CATEGORIES_KEY = 'foursquare_categories'
 
-def fetch_foursquare_categories(refresh=False, top_level_category_name=None):
+def fetch_foursquare_categories(refresh=False, parent_category_name=None):
     categories_json_string = cache.get(FOURSQUARE_CATEGORIES_KEY)
     if refresh or categories_json_string is None:
         api_request = urllib2.Request(foursquare_categories_url())
@@ -25,9 +25,9 @@ def fetch_foursquare_categories(refresh=False, top_level_category_name=None):
         cache.set(FOURSQUARE_CATEGORIES_KEY, categories_json_string, 604800)
     json_response = json.loads(categories_json_string)
     categories = json_response['response']['categories']
-    if top_level_category_name is not None:
+    if parent_category_name is not None:
         for category in categories:
-            if top_level_category_name in category['name']:
+            if parent_category_name in category['name']:
                 return category
     return categories
 

@@ -75,10 +75,11 @@ class ActivityAvailability(models.Model):
         ordering = ['activity', 'start_time']
 
 @simplecache
-def get_category_ids():
+def get_foursquare_category_ids(parent_category_name='Travel', subcategory_names=['Light Rail', 'Bike', 'Bus Station', 'Train Station']):
     categories = fetch_foursquare_categories()
-    pass
-
+    for parent_category in categories:
+        if parent_category_name in parent_category['name']:
+            return [subcategory['id'] for subcategory in parent_category['categories'] if subcategory['shortName'] in subcategory_names]
 
 @simplecache
 def get_lighterprints_experiment_metadata():

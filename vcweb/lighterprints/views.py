@@ -19,7 +19,7 @@ from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_auth
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity,
         get_lighterprints_experiment_metadata, get_activity_performed_parameter, points_to_next_level,
-        get_group_score, get_footprint_level)
+        get_group_score, get_footprint_level, get_foursquare_category_ids)
 
 import collections
 import itertools
@@ -405,7 +405,8 @@ def checkin(request):
         logger.debug("%s checking at at (%s, %s)", participant_group_relationship, latitude, longitude)
         if request.user.participant == participant_group_relationship.participant:
 # perform checkin logic here, query foursquare API for nearest "green" venu
-            venues = foursquare_venue_search(latitude=latitude, longitude=longitude, category_ids=get_category_ids())
+            venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
+                    category_ids=get_foursquare_category_ids())
             logger.debug("Found venues: %s", venues)
             return HttpResponse(dumps({'success':True}))
         else:
