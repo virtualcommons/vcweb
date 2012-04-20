@@ -250,6 +250,7 @@ def perform_activity(request):
             activity = get_object_or_404(Activity, pk=activity_id)
             performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
 # perform checkin logic here, query foursquare API for nearest "green" venu
+            logger.debug("searching venues at %s,%s", latitude, longitude)
             venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
                     category_ids=get_foursquare_category_ids())
             logger.debug("Found venues: %s", venues)

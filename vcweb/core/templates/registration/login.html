@@ -23,5 +23,8 @@ $(function() {
     </p>
     {% include "includes/form-as-div.html" %}
     <div><button type='submit' class='submit'>Login</button></div>
+    <div><a href="{% url socialauth_begin 'twitter' %}"><img src="https://dev.twitter.com/sites/default/files/images_documentation/sign-in-with-twitter_0.png"></a></div>
+    <div><a href="{% url socialauth_begin 'foursquare' %}"><img src="https://playfoursquare.s3.amazonaws.com/press/logo/connect-black.png"></a></div>
+
 {% endblock form %}
 
