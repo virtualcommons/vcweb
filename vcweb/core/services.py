@@ -5,7 +5,7 @@ import simplejson as json
 import urllib2
 logger = logging.getLogger(__name__)
 
-def foursquare_venue_search(latitude=33.41, longitude=-111.9, radius=800, **kwargs):
+def foursquare_venue_search(latitude=33.41, longitude=-111.9, radius=30, **kwargs):
     if latitude is None or longitude is None:
         logger.warning('no lat/long specified, aborting')
         return []
