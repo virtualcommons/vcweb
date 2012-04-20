@@ -55,5 +55,9 @@ BROKER_PASSWORD = 'CUSTOMIZE_ME'
 FOURSQUARE_CONSUMER_KEY      = ''
 FOURSQUARE_CONSUMER_SECRET   = ''
 
+# override these appropriately for fb connect
+FACEBOOK_APP_ID              = ''
+FACEBOOK_API_SECRET          = ''
+
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'CUSTOMIZE_ME'
