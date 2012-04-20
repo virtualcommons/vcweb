@@ -764,16 +764,19 @@ class QuizQuestion(models.Model):
 class ParameterManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
+
+
+def _fk_converter(fk_cls):
+    def converter(value):
+        if isinstance(value, (int, long)):
+            return value
+        elif isinstance(value, fk_cls):
+            return value.pk
+        raise ValueError("can only convert integers or %s - received %s" % (fk_cls, value))
+    return converter
+
 class Parameter(models.Model):
 
-    def fk_converter(cls):
-        def converter(value):
-            if isinstance(value, (int, long)):
-                return value
-            elif isinstance(value, cls):
-                return value.pk
-            raise ValueError("can only convert integers or %s - received %s" % (cls, value))
-        return converter
 
     PARAMETER_TYPES = (('int', 'Integer'),
                        ('string', 'String'),
@@ -789,7 +792,7 @@ class Parameter(models.Model):
             'int': int,
             'string':str,
             'float': float,
-            'foreignkey': fk_converter,
+            'foreignkey': _fk_converter,
             'boolean': lambda x: bool(x) and str(x).lower() != 'false'
             }
     '''
@@ -873,12 +876,13 @@ class Parameter(models.Model):
     def get_model_class(self):
         return get_model(*self.class_name.split('.'))
 
-    def convert(self, value=None):
+    def get_converter(self):
         converter = Parameter.CONVERTERS[self.type]
-        if self.type == 'foreignkey':
-            # FIXME: ugliness, special case curried converter for fk lookups that stores an int given a model instance
-            # or pk
-            converter = converter(self.get_model_class())
+        # FIXME: hacky special case curried converter for fk lookups that stores an int given a model instance or pk
+        return converter(self.get_model_class()) if self.type == 'foreignkey' else converter
+
+    def convert(self, value=None):
+        converter = self.get_converter()
         try:
             return converter(value) if converter else value
         except ValueError:
