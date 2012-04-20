@@ -252,7 +252,7 @@ def perform_activity(request):
 # perform checkin logic here, query foursquare API for nearest "green" venu
             logger.debug("searching venues at %s,%s", latitude, longitude)
             venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
-                    category_ids=get_foursquare_category_ids())
+                    categoryId=','.join(get_foursquare_category_ids()))
             logger.debug("Found venues: %s", venues)
             if performed_activity is not None:
                 activity_dict = activity.to_dict()
@@ -412,7 +412,7 @@ def checkin(request):
         if request.user.participant == participant_group_relationship.participant:
 # perform checkin logic here, query foursquare API for nearest "green" venu
             venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
-                    category_ids=get_foursquare_category_ids())
+                    categoryId=','.join(get_foursquare_category_ids()))
             logger.debug("Found venues: %s", venues)
             return HttpResponse(dumps({'success':True}))
         else:
