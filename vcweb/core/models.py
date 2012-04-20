@@ -152,6 +152,13 @@ class ExperimentConfiguration(models.Model):
     max_group_size = models.PositiveIntegerField(default=5)
 
     @property
+    def is_open(self):
+        '''
+        using max_group_size of 0 to signify an open experiment, add a dedicated boolean field later if necessary
+        '''
+        return self.max_group_size == 0
+
+    @property
     def final_sequence_number(self):
         # FIXME: or max round_configurations.sequence_number (degenerate data)
         return self.round_configuration_set.count()
@@ -491,6 +498,12 @@ class Experiment(models.Model):
             self.save()
         return self
 
+    def add_participant(self, participant, current_group=None):
+        if current_group is None:
+            current_group = self.group_set.reverse()[0]
+        return current_group.add_participant(participant)
+
+
     def allocate_groups(self, randomize=True):
         # clear out all existing groups
         # FIXME: record previous mappings in activity log.
@@ -504,9 +517,7 @@ class Experiment(models.Model):
             random.shuffle(participants)
 
         for p in participants:
-            if current_group.is_full:
-                current_group = current_group.create_next_group()
-            current_group.add_participant(p)
+            current_group = self.add_participant(p, current_group)
 
         # XXX: if there a performance hit here, should probably do a void return instead
         # or collect the groups as they are added
@@ -976,11 +987,11 @@ class Group(models.Model):
 
     @property
     def is_full(self):
-        return self.size >= self.max_size
+        return self.size >= self.max_size > 0
 
     @property
     def is_open(self):
-        return self.size < self.max_size
+        return not self.is_full
 
     @property
     def current_round_activity_log(self):
