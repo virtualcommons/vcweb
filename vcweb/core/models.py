@@ -8,6 +8,7 @@ from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from django.utils.html import escape
 from django.utils.timesince import timesince
+from django.utils.translation import ugettext_lazy as _
 from string import Template
 from vcweb.core import signals, simplecache
 
@@ -1182,10 +1183,21 @@ class GroupRoundDataValue(ParameterizedValue):
         ordering = [ 'round_data', 'group', 'parameter' ]
 
 
+class Address(models.Model):
+    street1 = models.CharField(_('Street'), max_length=256)
+    street2 = models.CharField(_('Street'), max_length=256)
+    city = models.CharField(_('City'), max_length=128, blank=True)
+    state = models.CharField(_('State'), max_length=128, blank=True)
+    zipcode = models.CharField(_('Zip code'), max_length=8, blank=True)
+
 class Participant(CommonsUser):
+    GENDER_CHOICES = (('M', 'Male'), ('F', 'Female'),)
     can_receive_invitations = models.BooleanField(default=False)
     groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participant_set')
     experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participant_set')
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
+    birthdate = models.DateField(null=True, blank=True)
+    address = models.ForeignKey(Address, null=True, blank=True)
 
     @property
     def active_experiments(self):
