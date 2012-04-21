@@ -185,6 +185,17 @@ label.error {
     padding-left: 16px;
     padding-right: 8px;
 }
+ul.authbadges {
+    list-style: none;
+    display: block;
+    text-decoration: none;
+    font-size: 0.9em;
+}
+ul.authbadges>li {
+    float: left;
+    margin: 6px 3px 0px 3px;
+    padding: 0;
+}
 ul.horizontal {
     list-style: none;
     display: block;
