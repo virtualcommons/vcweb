@@ -113,6 +113,14 @@ class CommonsUser(models.Model):
     def last_login(self):
         return self.user.last_login
 
+    @property
+    def username(self):
+        return self.user.username
+
+    @property
+    def is_active(self):
+        return self.user.is_active
+
     def is_authenticated(self):
         return self.user.is_authenticated()
 

@@ -135,15 +135,16 @@ FLICKR_API_SECRET            = ''
 INSTAGRAM_CLIENT_ID          = ''
 INSTAGRAM_CLIENT_SECRET      = ''
 
-LOGIN_REDIRECT_URL='/dashboard'
-LOGIN_ERROR_URL='/accounts/login/error'
-# callback urls
+LOGIN_REDIRECT_URL = '/dashboard'
+LOGIN_ERROR_URL    = '/login-error/'
+#LOGIN_REDIRECT_URL='/dashboard'
+#LOGIN_ERROR_URL='/accounts/login/error'
 SOCIAL_AUTH_COMPLETE_URL_NAME  = 'socialauth_complete'
 SOCIAL_AUTH_ASSOCIATE_URL_NAME = 'socialauth_associate_complete'
 
 SOCIAL_AUTH_RAISE_EXCEPTIONS = DEBUG
 
-SOCIAL_AUTH_USER_MODEL = 'core.Participant'
+#SOCIAL_AUTH_USER_MODEL = 'core.Participant'
 
 
 
