@@ -109,7 +109,7 @@ def set_authentication_token(user, authentication_token=None):
 
 class LoginView(FormView, AnonymousMixin):
     form_class = LoginForm
-    template_name = 'registration/login.html'
+    template_name = 'account/login.html'
     def form_valid(self, form):
         request = self.request
         user = form.user_cache
@@ -129,7 +129,7 @@ class LogoutView(TemplateView):
 
 class RegistrationView(FormView, AnonymousMixin):
     form_class = RegistrationForm
-    template_name = 'registration/register.html'
+    template_name = 'account/register.html'
     def form_valid(self, form):
         email = form.cleaned_data['email'].lower()
         password = form.cleaned_data['password']
@@ -166,7 +166,7 @@ def account_profile(request):
         form = ParticipantAccountForm()
     else:
         form = ExperimenterAccountForm(instance=user.experimenter)
-    return render_to_response('registration/profile.html', { 'form': form }, context_instance=RequestContext(request))
+    return render_to_response('account/profile.html', { 'form': form }, context_instance=RequestContext(request))
 
 ''' participant views '''
 class ParticipantMixin(object):
