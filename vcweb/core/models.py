@@ -11,6 +11,8 @@ from django.utils.timesince import timesince
 from django.utils.translation import ugettext_lazy as _
 from string import Template
 from vcweb.core import signals, simplecache
+from social_auth.backends.facebook import FacebookBackend
+import social_auth.signals 
 
 import base64
 import hashlib
@@ -166,6 +168,10 @@ class ExperimentConfiguration(models.Model):
         using max_group_size of 0 to signify an open experiment, add a dedicated boolean field later if necessary
         '''
         return self.max_group_size == 0
+
+    @is_open.setter
+    def is_open(self, value):
+        self.max_group_size = 0
 
     @property
     def final_sequence_number(self):
@@ -509,7 +515,11 @@ class Experiment(models.Model):
 
     def add_participant(self, participant, current_group=None):
         if current_group is None:
-            current_group = self.group_set.reverse()[0]
+            if self.group_set.count() > 0:
+# pick the last group in group_set
+                current_group = self.group_set.reverse()[0]
+            else:
+                current_group = self.group_set.create(number=1, max_size=self.experiment_configuration.max_group_size)
         return current_group.add_participant(participant)
 
 
@@ -1520,3 +1530,19 @@ def is_participant(user):
     returns true if user.participant exists and is a Participant instance.
     """
     return hasattr(user, 'participant') and isinstance(user.participant, Participant)
+
+# signal handlers for socialauth
+@receiver(social_auth.signals.socialauth_registered, sender=None)
+def handle_new_socialauth_user(sender, user, response, details, **kwargs):
+    logger.debug("new socialauth user: %s, %s, %s, %s", user, response, details, kwargs)
+    participant = Participant.objects.create(user=user)
+# add participant to each available open experiment
+    for experiment in Experiment.objects.filter(experiment_configuration__max_group_size=0):
+        experiment.add_participant(participant)
+
+
+@receiver(social_auth.signals.pre_update, sender=FacebookBackend)
+def facebook_extra_values(sender, user, response, details, **kwargs):
+    user.gender = response.get('gender')
+    return True
+

@@ -177,7 +177,7 @@ AUTHENTICATION_BACKENDS = (
         'social_auth.backends.twitter.TwitterBackend',
         'social_auth.backends.facebook.FacebookBackend',
 #        'social_auth.backends.google.GoogleOAuthBackend',
-#        'social_auth.backends.google.GoogleOAuth2Backend',
+        'social_auth.backends.google.GoogleOAuth2Backend',
         'social_auth.backends.google.GoogleBackend',
         'social_auth.backends.yahoo.YahooBackend',
 #        'social_auth.backends.browserid.BrowserIDBackend',
@@ -189,7 +189,7 @@ AUTHENTICATION_BACKENDS = (
 #        'social_auth.backends.contrib.dropbox.DropboxBackend',
         'social_auth.backends.contrib.flickr.FlickrBackend',
 #        'social_auth.backends.contrib.instagram.InstagramBackend',
-#        'social_auth.backends.OpenIDBackend',
+        'social_auth.backends.OpenIDBackend',
         "vcweb.core.auth.AuthenticationBackend",
         "django.contrib.auth.backends.ModelBackend",
         )
