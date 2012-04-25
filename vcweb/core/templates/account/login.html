@@ -26,7 +26,7 @@ $(function() {
     <br><br>
     You can also register or sign in using your other social accounts:
     <ul class="authbadges">
-        <li><a href="{% url socialauth_begin 'openid' %}">OpenID login</a></li>
+        <!-- <li><a href="{% url socialauth_begin 'openid' %}">OpenID login</a></li> -->
         <li><a href="{% url socialauth_begin 'twitter' %}"><img width="150", height="24" src="{{STATIC_URL}}images/oauth/sign-in-with-twitter_0.png"></a></li>
         <li><a href="{% url socialauth_begin 'foursquare' %}"><img src="{{STATIC_URL}}images/oauth/foursquare-connect-black.png"></a></li>
         <li><a href="{% url socialauth_begin 'facebook' %}"><img width="193", height="23" src="{{STATIC_URL}}images/oauth/facebook-connect-button.png"></a></li>
