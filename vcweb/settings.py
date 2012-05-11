@@ -95,8 +95,6 @@ INSTALLED_APPS = (
         'vcweb.sanitation',
         'vcweb.lighterprints',
         'dajaxice',
-        'djcelery',
-        'djkombu',
         'raven.contrib.django',
         'kronos',
         'south',

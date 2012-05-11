@@ -10,7 +10,12 @@ django-dajaxice
 #django-autocomplete
 PIL
 django-kronos
-#django-piston
+django-model-utils
+django-social-auth
+python-memcached
+pylibmc
+brabeion
+django-mptt
 #django-unittest-depth
 #redis
 #beanstalkc
@@ -18,11 +23,7 @@ django-kronos
 #pyyaml
 #pymongo
 # for sentry
-raven
 #gevent
-sentry
+raven
 feedparser
 feedcache
-django-model-utils
-brabeion
-django-mptt
