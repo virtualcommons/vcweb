@@ -23,3 +23,6 @@ raven
 sentry
 feedparser
 feedcache
+django-model-utils
+brabeion
+django-mptt

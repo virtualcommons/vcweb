@@ -1,18 +1,32 @@
 from django.db import models
 from django.db.models import Q
+from django.dispatch import receiver
+from model_utils.managers import PassThroughManager
 from vcweb.core import signals, simplecache, enum
 from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
         GroupRoundDataValue, ParticipantRoundDataValue, Parameter)
 from vcweb.core.services import fetch_foursquare_categories
-from django.dispatch import receiver
 import collections
 from datetime import datetime, date, time, timedelta
+from mptt.models import MPTTModel, TreeForeignKey
 import logging
 logger = logging.getLogger(__name__)
 
 ActivityStatus = enum('AVAILABLE', 'COMPLETED', 'UNAVAILABLE')
 
-class Activity(models.Model):
+class ActivityQuerySet(models.query.QuerySet):
+    """
+    for the moment, categorizing Activities as tiered or leveled.  Leveled activities are used in experiments, where
+    groups advance in level and each level comprises a set of activities.  Tiered activities are used in the open
+    lighterprints experiment, where mastering one activity can lead to another set of activities
+    """
+    def leveled(self):
+        return self.filter(level__gte=1)
+
+    def tiered(self):
+        return self.filter(level=0)
+
+class Activity(MPTTModel):
     name = models.CharField(max_length=32, unique=True)
     display_name = models.CharField(max_length=64, null=True, blank=True)
     summary = models.CharField(max_length=256)
@@ -28,6 +42,9 @@ class Activity(models.Model):
 # currently unused
     cooldown = models.PositiveIntegerField(default=1, null=True, blank=True, help_text='How much time, in hours, must elapse before this activity can become available again')
     icon = models.ImageField(upload_to='lighterprints/activity-icons/')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children_set')
+
+    objects = PassThroughManager.for_queryset_class(ActivityQuerySet)()
 
     @property
     def label(self):

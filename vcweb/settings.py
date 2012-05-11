@@ -101,6 +101,7 @@ INSTALLED_APPS = (
         'kronos',
         'south',
         'social_auth',
+        'mptt',
         )
 
 SOUTH_TESTS_MIGRATE = False

@@ -175,7 +175,7 @@ class ExperimentConfiguration(models.Model):
 
     @property
     def final_sequence_number(self):
-        # FIXME: or max round_configurations.sequence_number (degenerate data)
+        # FIXME: or max round_configurations.sequence_number (as currently implemented could fail in the face of degenerate data)
         return self.round_configuration_set.count()
 
     @property
