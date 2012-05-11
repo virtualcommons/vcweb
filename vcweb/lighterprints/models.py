@@ -8,7 +8,7 @@ from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
 from vcweb.core.services import fetch_foursquare_categories
 import collections
 from datetime import datetime, date, time, timedelta
-from mptt.models import MPTTModel, TreeForeignKey
+from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 import logging
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,10 @@ class ActivityQuerySet(models.query.QuerySet):
 
     def for_public(self):
         return self.filter(is_public=True)
+
+class ActivityManager(TreeManager, PassThroughManager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
 
 class Activity(MPTTModel):
     name = models.CharField(max_length=32, unique=True)
@@ -50,7 +54,7 @@ class Activity(MPTTModel):
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children_set')
     is_public = models.BooleanField(default=False)
 
-    objects = PassThroughManager.for_queryset_class(ActivityQuerySet)()
+    objects = ActivityManager.for_queryset_class(ActivityQuerySet)()
 
     @property
     def label(self):

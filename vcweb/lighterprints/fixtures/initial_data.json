@@ -157,6 +157,10 @@
             "points": 55,
             "icon": "lighterprints/activity-icons/93-thermometer_1.png",
             "personal_benefits": "Less energy used results in savings on an electric bill. ",
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
             "name": "adjust-thermostat"
         }
     },
@@ -176,6 +180,10 @@
             "points": 15,
             "icon": "lighterprints/activity-icons/80-shopping-cart_1.png",
             "personal_benefits": "Locally grown food often contains less preservatives and is fresher, making it a healthier and tastier choice. ",
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
             "name": "eat-local-lunch"
         }
     },
@@ -195,6 +203,10 @@
             "points": 10,
             "icon": "lighterprints/activity-icons/69-display_1.png",
             "personal_benefits": "Using the sleep function can save money on your electric bill. It also can reduce the heat produced by your computer, which may improve its lifetime. ",
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
             "name": "enable-computer-sleep"
         }
     },
@@ -214,6 +226,11 @@
             "points": 3,
             "icon": "lighterprints/activity-icons/51-recycle.png",
             "personal_benefits": null,
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
+            "parent": ["recycle-paper"]
             "name": "recycle"
         }
     },
@@ -233,6 +250,10 @@
             "points": 94,
             "icon": "lighterprints/activity-icons/81-dashboard_1.png",
             "personal_benefits": null,
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
             "name": "share-your-ride"
         }
     },
@@ -252,6 +273,11 @@
             "points": 75,
             "icon": "lighterprints/activity-icons/47-bicycle-to.png",
             "personal_benefits": null,
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "parent": ["share-your-ride"],
+            "is_public": true,
             "name": "bike-public-transport"
         }
     },
@@ -271,6 +297,9 @@
             "points": 8,
             "icon": "lighterprints/activity-icons/186-toothbrush_1.png",
             "personal_benefits": null,
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
             "name": "brushing-your-teeth"
         }
     },
@@ -290,6 +319,11 @@
             "points": 14,
             "icon": "lighterprints/activity-icons/126-moon_1.png",
             "personal_benefits": null,
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
+            "parent": ["enable-computer-sleep"],
             "name": "computer-off"
         }
     },
@@ -309,6 +343,10 @@
             "points": 43,
             "icon": "lighterprints/activity-icons/109-chicken_1.png",
             "personal_benefits": null,
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
             "name": "no-beef"
         }
     },
@@ -328,6 +366,10 @@
             "points": 6,
             "icon": "lighterprints/activity-icons/166-newspaper_1.png",
             "personal_benefits": null,
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
             "name": "recycle-paper"
         }
     },
@@ -347,6 +389,11 @@
             "points": 20,
             "icon": "lighterprints/activity-icons/67-tshirt_1.png",
             "personal_benefits": null,
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
+            "parent": ["wash-cold-water"],
             "name": "air-dry-clothes"
         }
     },
@@ -366,6 +413,11 @@
             "points": 14,
             "icon": "lighterprints/activity-icons/48-fork-and-knife_1.png",
             "personal_benefits": "You can save money by buying reusable containers and utensils once instead of buying disposable items regularly. ",
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
+            "parent": ["eat-local-lunch"],
             "name": "green-lunch"
         }
     },
@@ -385,6 +437,11 @@
             "points": 23,
             "icon": "lighterprints/activity-icons/84-lightbulb_1.png",
             "personal_benefits": "Turning lights off can save you money on your electric bill. Since lights give off heat, turning them off can also help keep rooms cooler. ",
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
+            "parent": ["adjust-thermostat"],
             "name": "lights-off"
         }
     },
@@ -404,6 +461,11 @@
             "points": 44,
             "icon": "lighterprints/activity-icons/125-food_1.png",
             "personal_benefits": null,
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
+            "parent": ["beef-poultry"],
             "name": "vegan-for-a-day"
         }
     },
@@ -423,6 +485,10 @@
             "points": 11,
             "icon": "lighterprints/activity-icons/24-washing-new.png",
             "personal_benefits": null,
+            "lft": 0,
+            "rght": 0,
+            "tree_id": 0,
+            "is_public": true,
             "name": "wash-cold-water"
         }
     },
