@@ -318,6 +318,6 @@ LOGGING = {
 
 # this is the last thing to happen so we can override django-celery configuration
 # settings
-import djcelery
-djcelery.setup_loader()
+#import djcelery
+#djcelery.setup_loader()
 

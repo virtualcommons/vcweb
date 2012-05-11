@@ -16,6 +16,7 @@ python-memcached
 pylibmc
 brabeion
 django-mptt
+south
 #django-unittest-depth
 #redis
 #beanstalkc
@@ -27,3 +28,4 @@ django-mptt
 raven
 feedparser
 feedcache
+neo4j-embedded
