@@ -4,7 +4,7 @@ from django.dispatch import receiver
 from model_utils.managers import PassThroughManager
 from vcweb.core import signals, simplecache, enum
 from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
-        GroupRoundDataValue, ParticipantRoundDataValue, Parameter)
+        GroupRoundDataValue, ParticipantRoundDataValue, Parameter, User)
 from vcweb.core.services import fetch_foursquare_categories
 import collections
 from datetime import datetime, date, time, timedelta
@@ -20,11 +20,11 @@ class ActivityQuerySet(models.query.QuerySet):
     groups advance in level and each level comprises a set of activities.  Tiered activities are used in the open
     lighterprints experiment, where mastering one activity can lead to another set of activities
     """
-    def leveled(self):
-        return self.filter(level__gte=1)
+    def for_experiment(self):
+        return self.filter(is_public=False)
 
-    def tiered(self):
-        return self.filter(level=0)
+    def for_public(self):
+        return self.filter(is_public=True)
 
 class Activity(MPTTModel):
     name = models.CharField(max_length=32, unique=True)
@@ -42,7 +42,13 @@ class Activity(MPTTModel):
 # currently unused
     cooldown = models.PositiveIntegerField(default=1, null=True, blank=True, help_text='How much time, in hours, must elapse before this activity can become available again')
     icon = models.ImageField(upload_to='lighterprints/activity-icons/')
+# for user submitted activities
+    creator = models.ForeignKey(User, null=True)
+    date_created = models.DateTimeField(default=datetime.now)
+    last_modified = models.DateTimeField(default=datetime.now)
+# for the "in-the-wild" app, activities unlock other sets of activities in a tree-like fashion
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children_set')
+    is_public = models.BooleanField(default=False)
 
     objects = PassThroughManager.for_queryset_class(ActivityQuerySet)()
 
