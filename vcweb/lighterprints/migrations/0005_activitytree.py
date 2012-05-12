@@ -14,7 +14,6 @@ class Migration(DataMigration):
         "Write your forwards methods here."
         # Note: Remember to use orm['appname.ModelName'] rather than "from appname.models..."
         from django.core.management import call_command
-        from vcweb.lighterprints.models import get_lighterprints_experiment_metadata
         Activity = orm['lighterprints.Activity']
         Activity.objects.all().delete()
         call_command('loaddata', 'activities.json')
