@@ -106,6 +106,12 @@ def get_foursquare_category_ids(parent_category_name='Travel', subcategory_names
             return [subcategory['id'] for subcategory in parent_category['categories'] if subcategory['shortName'] in subcategory_names]
 
 @simplecache
+def get_lighterprints_public_experiment():
+    # FIXME: hacky
+    return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
+            experiment_configuration__is_public=True)[0]
+
+@simplecache
 def get_lighterprints_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace='lighterprints')
 
@@ -276,4 +282,54 @@ def should_advance_level(group, level, max_level=3):
     if level < max_level:
         return average_points_per_person(group) >= points_to_next_level(level)
     return False
+
+def get_green_points(participant_group_relationship):
+    performed_activities = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())
+    total_points = 0
+    for activity_performed_dv in performed_activities:
+        total_points += activity_performed_dv.value.points
+    return total_points
+
+def get_level(points=0):
+    if points < 100:
+        return 1
+    elif points < 250:
+        return 2
+    elif points < 400:
+        return 3
+    elif points < 600:
+        return 4
+    elif points < 800:
+        return 5
+    elif points < 1000:
+        return 6
+    elif points < 1250:
+        return 7
+    elif points < 1500:
+        return 8
+    elif points < 2000:
+        return 9
+    elif points < 2500:
+        return 10
+    elif points < 3000:
+        return 11
+    elif points < 3500:
+        return 12
+    elif points < 4000:
+        return 13
+    elif points < 4500:
+        return 14
+    elif points < 5000:
+        return 15
+    elif points < 5500:
+        return 16
+    elif points < 6000:
+        return 17
+    elif points < 6500:
+        return 18
+    elif points < 7000:
+        return 19
+    else:
+        return 20
+
 

@@ -121,8 +121,8 @@
                "creator": 1,
                "class_name": "lighterprints.Activity",
                "type": "foreignkey",
-                "date_created": "2011-01-01 15:13:03",
-                "last_modified": "2011-07-07 15:13:03",
+               "date_created": "2011-01-01 15:13:03",
+               "last_modified": "2011-07-07 15:13:03",
                "scope": "participant"
         },
         "model": "core.parameter",

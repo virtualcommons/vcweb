@@ -18,8 +18,8 @@ from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity,
-        get_lighterprints_experiment_metadata, get_activity_performed_parameter, points_to_next_level,
-        get_group_score, get_footprint_level, get_foursquare_category_ids)
+        get_lighterprints_experiment_metadata, get_lighterprints_public_experiment, get_activity_performed_parameter,
+        points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids)
 
 import collections
 import itertools
@@ -398,14 +398,12 @@ class CsvExportView(DataExportMixin, BaseDetailView):
                 total_points += performed_activity.value.points
             writer.writerow([participant_group_relationship, total_points])
 
+
 @login_required
 def participate(request, experiment_id=None):
     participant = request.user.participant
-
     if experiment_id is None:
-        # FIXME: find the public experiment, hacky
-        experiment = Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
-                experiment_configuration__is_public=True)[0]
+        experiment = get_lighterprints_public_experiment()
         experiment.add_participant(participant)
         activities = Activity.objects.for_public_experiment()
     else:
