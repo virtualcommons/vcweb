@@ -7,10 +7,20 @@
 </script>
 {% endblock %}
 {% block title %}
-Participating in {{experiment.status_line}}
+Lighter Footprints
 {% endblock %}
 {% block content %}
-<h3>Lighter Footprints Public Challenge</h3>
+<h4>Lighter Footprints Public Challenge</h4>
 {% include "lighterprints/navmenu.html" %}
+<p>
+Welcome to the Lighter Footprints Challenge!  Your available activities are listed below.
+</p>
 
+<ul>
+    {% for activity in activities %}
+    <li>{{ activity }}</li>
+    {% empty %}
+    <li>No more available activities, please check back again tomorrow.</li>
+    {% endfor %}
+</ul>
 {% endblock content %}

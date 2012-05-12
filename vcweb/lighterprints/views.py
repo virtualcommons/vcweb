@@ -3,7 +3,7 @@ from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.html import escape
 from django.utils.timesince import timesince
 from django.views.decorators.cache import cache_page
@@ -399,7 +399,7 @@ class CsvExportView(DataExportMixin, BaseDetailView):
             writer.writerow([participant_group_relationship, total_points])
 
 def participate(request, experiment_id=None):
-    return redirect('http://vcweb.asu.edu/lighterfootprints')
+    return render(request, 'lighterprints/participate.html')
 
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)
