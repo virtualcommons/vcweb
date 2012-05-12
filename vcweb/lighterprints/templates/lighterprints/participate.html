@@ -1,0 +1,16 @@
+{% extends "participant/base.html" %}
+{% block head %}
+{{ block.super }}
+<script type="text/javascript">
+    $(function() {
+    });
+</script>
+{% endblock %}
+{% block title %}
+Participating in {{experiment.status_line}}
+{% endblock %}
+{% block content %}
+<h3>Lighter Footprints Public Challenge</h3>
+{% include "lighterprints/navmenu.html" %}
+
+{% endblock content %}
