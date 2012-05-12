@@ -11,12 +11,13 @@ logger = logging.getLogger(__name__)
 class Migration(DataMigration):
 
     def forwards(self, orm):
+        "Write your forwards methods here."
+        # Note: Remember to use orm['appname.ModelName'] rather than "from appname.models..."
         from django.core.management import call_command
+        from vcweb.lighterprints.models import get_lighterprints_experiment_metadata
         Activity = orm['lighterprints.Activity']
         Activity.objects.all().delete()
         call_command('loaddata', 'activities.json')
-        "Write your forwards methods here."
-        # Note: Remember to use orm['appname.ModelName'] rather than "from appname.models..."
         for (parent, child) in (
                 ("recycle-paper", "recycle-materials"),
                 ("share-your-ride", "bike-or-walk"),
@@ -30,6 +31,21 @@ class Migration(DataMigration):
             activity = Activity.objects.get(name=child)
             activity.parent = Activity.objects.get(name=parent)
             activity.save()
+        # should probably create a separate data migration for this but I'm lazy
+        # create lighter footprints public experiment configuration and experiment
+        Experiment = orm['core.Experiment']
+        ExperimentConfiguration = orm['core.ExperimentConfiguration']
+        Experimenter = orm['core.Experimenter']
+        ec = ExperimentConfiguration.objects.create(experiment_metadata=get_lighterprints_experiment_metadata(),
+                creator=Experimenter.objects.get(pk=1),
+                name="Lighter Footprints",
+                is_public=True,
+                max_group_size=0)
+        Experiment.objects.create(experiment_configuration=ec)
+
+
+
+
 
     def backwards(self, orm):
         "Write your backwards methods here."

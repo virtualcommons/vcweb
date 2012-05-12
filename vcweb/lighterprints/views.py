@@ -13,7 +13,7 @@ from django.views.generic.list import BaseListView, MultipleObjectTemplateRespon
 
 from vcweb.core import unicodecsv
 from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
-from vcweb.core.models import (ChatMessage, Comment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
+from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response
 from vcweb.lighterprints.forms import ActivityForm
@@ -398,8 +398,20 @@ class CsvExportView(DataExportMixin, BaseDetailView):
                 total_points += performed_activity.value.points
             writer.writerow([participant_group_relationship, total_points])
 
+@login_required
 def participate(request, experiment_id=None):
-    return render(request, 'lighterprints/participate.html')
+    participant = request.user.participant
+
+    if experiment_id is None:
+        # FIXME: find the public experiment, hacky
+        experiment = Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
+                experiment_configuration__is_public=True)[0]
+        experiment.add_participant(participant)
+        activities = Activity.objects.for_public_experiment()
+    else:
+        experiment = get_object_or_404(Experiment, pk=experiment_id)
+        activities = Activity.objects.all()
+    return render(request, 'lighterprints/participate.html', {'experiment': experiment, 'activities': activities })
 
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)

@@ -20,10 +20,7 @@ class ActivityQuerySet(models.query.QuerySet):
     groups advance in level and each level comprises a set of activities.  Tiered activities are used in the open
     lighterprints experiment, where mastering one activity can lead to another set of activities
     """
-    def for_experiment(self):
-        return self.filter(is_public=False)
-
-    def for_public(self):
+    def for_public_experiment(self):
         return self.filter(is_public=True)
 
 class ActivityManager(TreeManager, PassThroughManager):
