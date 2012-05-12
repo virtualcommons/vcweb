@@ -31,21 +31,6 @@ class Migration(DataMigration):
             activity = Activity.objects.get(name=child)
             activity.parent = Activity.objects.get(name=parent)
             activity.save()
-        # should probably create a separate data migration for this but I'm lazy
-        # create lighter footprints public experiment configuration and experiment
-        Experiment = orm['core.Experiment']
-        ExperimentConfiguration = orm['core.ExperimentConfiguration']
-        Experimenter = orm['core.Experimenter']
-        ec = ExperimentConfiguration.objects.create(experiment_metadata=get_lighterprints_experiment_metadata(),
-                creator=Experimenter.objects.get(pk=1),
-                name="Lighter Footprints",
-                is_public=True,
-                max_group_size=0)
-        Experiment.objects.create(experiment_configuration=ec)
-
-
-
-
 
     def backwards(self, orm):
         "Write your backwards methods here."
