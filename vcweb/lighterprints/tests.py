@@ -9,6 +9,7 @@ import simplejson as json
 logger = logging.getLogger(__name__)
 
 class BaseTest(BaseVcwebTest):
+    fixtures = [ 'activities' ]
     def setUp(self):
         super(BaseTest, self).setUp()
         experiment_metadata = get_lighterprints_experiment_metadata()
