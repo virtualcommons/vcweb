@@ -12,10 +12,11 @@ class Migration(DataMigration):
 
     def forwards(self, orm):
         from django.core.management import call_command
+        Activity = orm['lighterprints.Activity']
+        Activity.objects.all().delete()
         call_command('loaddata', 'activities.json')
         "Write your forwards methods here."
         # Note: Remember to use orm['appname.ModelName'] rather than "from appname.models..."
-        Activity = orm['lighterprints.Activity']
         for (parent, child) in (
                 ("recycle-paper", "recycle-materials"),
                 ("share-your-ride", "bike-or-walk"),
