@@ -10,10 +10,13 @@ class Migration(DataMigration):
 
     def forwards(self, orm):
         "Write your forwards methods here."
-        for activity_performed in ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter()):
-            activity_performed.type = 'foreignkey'
-            activity_performed.class_name = 'lighterprints.Activity'
-            activity_performed.save()
+        try:
+            for activity_performed in ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter()):
+                activity_performed.type = 'foreignkey'
+                activity_performed.class_name = 'lighterprints.Activity'
+                activity_performed.save()
+        except:
+            pass
 
 
     def backwards(self, orm):
