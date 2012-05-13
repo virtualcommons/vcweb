@@ -332,9 +332,11 @@ def login(request):
             set_authentication_token(user, request.session.session_key)
             participant = user.participant
             active_experiments = participant.experiments.filter(status__in=('ACTIVE', 'ROUND_IN_PROGRESS'), experiment_metadata=get_lighterprints_experiment_metadata())
-            # FIXME: assuming participant is only participating in one active experiment
-            # at a time..
-            active_experiment = active_experiments[0]
+            for e in active_experiments:
+                if e.is_public:
+                    active_experiment = e
+            if active_experiment is None:
+                active_experiment = active_experiments[-1]
             participant_group_relationship = participant.get_participant_group_relationship(active_experiment)
             return HttpResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.id}), content_type='application/json')
         else:
@@ -387,7 +389,8 @@ def participate(request, experiment_id=None):
         activities = unlock_activities(pgr)
     else:
         experiment = get_object_or_404(Experiment, pk=experiment_id)
-        activities = get_all_available_activities()
+        pgr = participant.get_participant_group_relationship(experiment)
+        activities = get_all_available_activities(pgr)
     return render(request, 'lighterprints/participate.html', {'experiment': experiment, 'activities': activities })
 
 def checkin(request):
