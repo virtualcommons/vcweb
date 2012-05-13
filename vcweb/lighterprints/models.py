@@ -47,7 +47,7 @@ class ActivityQuerySet(models.query.QuerySet):
     groups advance in level and each level comprises a set of activities.  Tiered activities are used in the open
     lighterprints experiment, where mastering one activity can lead to another set of activities
     """
-    def for_public_experiment(self):
+    def for_public_experiment(self, participant_group_relationship=None, **kwargs):
         return self.filter(is_public=True)
 
 class ActivityManager(TreeManager, PassThroughManager):
@@ -151,6 +151,10 @@ def create_activity_performed_parameter(experimenter=None):
     return parameter
 
 @simplecache
+def get_unlocked_activity_parameter():
+    return Parameter.objects.get(name='unlocked_activity')
+
+@simplecache
 def get_activity_performed_parameter():
     return Parameter.objects.get(name='activity_performed')
 
@@ -195,8 +199,26 @@ def available_activities(activity=None):
     activities.extend(Activity.objects.filter(available_all_day=True))
     return activities
 
+def check_public_activity_availability(activity, participant_group_relationship):
+    '''
+    in the public lighterprints game, an unlocked activity data value is created whenever a new activity is unlocked signifying that the given Activity is now available to
+    the user
+    '''
+    available_activity_ids = participant_group_relationship.participant_data_value_set.filter(parameter=get_unlocked_activity_parameter()).values_list('int_value', flat=True)
+    return activity.pk in available_activity_ids and not is_already_performed_today(activity, participant_group_relationship)
+
+def is_already_performed_today(activity, participant_group_relationship):
+    today = datetime.combine(date.today(), time())
+    already_performed = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter(),
+            int_value=activity.id,
+            date_created__gt=today)
+    return ActivityStatus.AVAILABLE if already_performed.count() == 0 else ActivityStatus.COMPLETED
+
 
 def check_activity_availability(activity, participant_group_relationship, **kwargs):
+    if participant_group_relationship.group.experiment.is_public:
+        return check_public_activity_availability(activity, participant_group_relationship)
+
     '''
     FIXME: see if we can simplify or split up
     how often can a participant participate in an activity? whenever it falls within the ActivityAvailability schedule
@@ -208,13 +230,9 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
         return ActivityStatus.UNAVAILABLE
     elif activity.available_all_day:
         # check if they've done it already today, check if the combine is necessary
-        today = datetime.combine(date.today(), time())
-        already_performed = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
-                participant_group_relationship=participant_group_relationship,
-                int_value=activity.id,
-                date_created__gt=today)
-        logger.debug("activity is available all day, was it already performed? %s", already_performed)
-        return ActivityStatus.AVAILABLE if already_performed.count() == 0 else ActivityStatus.COMPLETED
+        activity_status = is_already_performed_today(activity, participant_group_relationship)
+        logger.debug("activity is available all day, was it already performed? %s", activity_status)
+        return activity_status
     else:
         now = datetime.now()
         current_time = now.time()
