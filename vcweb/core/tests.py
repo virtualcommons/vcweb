@@ -260,7 +260,8 @@ class GroupTest(BaseVcwebTest):
         count = 0;
         logger.debug("self participants: %s (%s)", self.participants, len(self.participants))
         for p in self.participants:
-            g = g.add_participant(p)
+            pgr = g.add_participant(p)
+            g = pgr.group
             count += 1
             if count > 10:
                 count = count % 10
