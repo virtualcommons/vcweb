@@ -71,7 +71,7 @@
             "enum_choices": "",
             "is_required": false,
             "type": "string",
-            "description": "Facebook-like like (or google plus-like +1 or ...)"
+            "description": "Facebook-like like (or google plus-like +1 or ...).  The type and value is not used, target_data_value represents the 'liked' data value."
         }
     },
     {

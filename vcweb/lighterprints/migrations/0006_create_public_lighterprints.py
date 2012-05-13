@@ -13,6 +13,7 @@ class Migration(DataMigration):
         # Note: Remember to use orm['appname.ModelName'] rather than "from appname.models..."
         # should probably create a separate data migration for this but I'm lazy
         # create lighter footprints public experiment configuration and experiment
+        Activity = orm['lighterprints.Activity']
         Experiment = orm['core.Experiment']
         ExperimentConfiguration = orm['core.ExperimentConfiguration']
         Experimenter = orm['core.Experimenter']
@@ -20,28 +21,49 @@ class Migration(DataMigration):
         ParticipantExperimentRelationship = orm['core.ParticipantExperimentRelationship']
         ParticipantGroupRelationship = orm['core.ParticipantGroupRelationship']
         RoundConfiguration = orm['core.RoundConfiguration']
+        Parameter = orm['core.Parameter']
+        ParticipantRoundDataValue = orm['core.ParticipantRoundDataValue']
         lem = ExperimentMetadata.objects.get(namespace='lighterprints')
         experimenter = Experimenter.objects.get(pk=1)
+# create experiment + round configurations
         ec = ExperimentConfiguration.objects.create(experiment_metadata=lem,
                 creator=experimenter,
                 name="Lighter Footprints Public Challenge",
                 is_public=True,
                 max_group_size=0)
         rc = RoundConfiguration.objects.create(experiment_configuration=ec, sequence_number=1, display_number=1)
+# create experiment instance
         e = Experiment.objects.create(experiment_configuration=ec, experiment_metadata=lem, experimenter=experimenter,
                 is_experimenter_driven=False, status='ROUND_IN_PROGRESS', start_date_time=datetime.datetime.now(),
                 current_round_start_time=datetime.datetime.now())
+# create activity unlocked parameter
+        activity_unlocked_param = Parameter.objects.create(name="activity_unlocked",
+                display_name="Unlocked Activity",
+                experiment_metadata=lem,
+                creator=experimenter,
+                scope="participant",
+                type="foreignkey",
+                description="Signifies that the Activity referenced by this parameter has been unlocked for this participant",
+                class_name='lighterprints.Activity',
+                )
 # create round data
-        e.round_data_set.create(round_configuration=rc)
+        round_data = e.round_data_set.create(round_configuration=rc)
         group = e.group_set.create(number=1, max_size=e.experiment_configuration.max_group_size)
         Participant = orm['core.Participant']
         for i, participant in enumerate(Participant.objects.all()):
             ParticipantExperimentRelationship.objects.create(experiment=e, participant=participant,
                     sequential_participant_identifier=i, participant_identifier=i, created_by=experimenter.user)
-            ParticipantGroupRelationship.objects.create(participant=participant,
+            # create initial activity unlocked data values
+            activity_ids = Activity.objects.filter(name__in=('recycle-paper', 'share-your-ride',
+                'enable-sleep-on-computer')).values_list('id', flat=True)
+            pgr = ParticipantGroupRelationship.objects.create(participant=participant,
                     group=group,
                     round_joined=rc,
                     participant_number=i + 1)
+            for activity_id in activity_ids:
+                unlocked_activity_dv = ParticipantRoundDataValue.objects.create(parameter=activity_unlocked_param,
+                        participant_group_relationship=pgr, round_data=round_data)
+                unlocked_activity_dv.value = activity_id
 
     def backwards(self, orm):
         "Write your backwards methods here."

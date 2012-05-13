@@ -802,8 +802,6 @@ def _fk_converter(fk_cls):
     return converter
 
 class Parameter(models.Model):
-
-
     PARAMETER_TYPES = (('int', 'Integer'),
                        ('string', 'String'),
                        ('foreignkey', 'Foreign key'),
@@ -827,7 +825,6 @@ class Parameter(models.Model):
     NOTE: they expect already validated string data and will throw ValueErrors
     on invalid input.
     '''
-
     GROUP_SCOPE = 'group'
     GROUP_ROUND_SCOPE = 'group_round'
     PARTICIPANT_SCOPE = 'participant'
