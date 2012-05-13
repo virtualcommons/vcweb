@@ -205,9 +205,11 @@ def check_public_activity_availability(activity, participant_group_relationship)
     the user
     '''
     available_activity_ids = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_unlocked_parameter()).values_list('int_value', flat=True)
-    return activity.pk in available_activity_ids and not is_already_performed_today(activity, participant_group_relationship)
+    if activity.pk in available_activity_ids:
+        return check_already_performed_today(activity, participant_group_relationship)
+    return ActivityStatus.UNAVAILABLE
 
-def is_already_performed_today(activity, participant_group_relationship):
+def check_already_performed_today(activity, participant_group_relationship):
     today = datetime.combine(date.today(), time())
     already_performed = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter(),
             int_value=activity.id,
@@ -230,7 +232,7 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
         return ActivityStatus.UNAVAILABLE
     elif activity.available_all_day:
         # check if they've done it already today, check if the combine is necessary
-        activity_status = is_already_performed_today(activity, participant_group_relationship)
+        activity_status = check_already_performed_today(activity, participant_group_relationship)
         logger.debug("activity is available all day, was it already performed? %s", activity_status)
         return activity_status
     else:
