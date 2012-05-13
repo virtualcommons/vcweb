@@ -420,6 +420,10 @@ class Experiment(models.Model):
         return self.status != 'INACTIVE'
 
     @property
+    def is_public(self):
+        return self.experiment_configuration.is_public
+
+    @property
     def actions_help_text(self):
         if hasattr(self, 'custom_help_text'):
             return self.custom_help_text['actions']
@@ -519,15 +523,22 @@ class Experiment(models.Model):
 
     def add_participant(self, participant, current_group=None):
         # FIXME: simplify logic where possible
+        if participant not in self.participant_set.all():
+            logger.warning("participant %s not a member of this experiment %s, adding them", participant, self)
+            ParticipantExperimentRelationship.objects.create(participant=participant, experiment=self)
+        pgrs = ParticipantGroupRelationship.objects.filter(group__experiment=self, participant=participant)
+        # FIXME: full strictness should be pgrs.count() == 0
+        if pgrs.count() > 0:
+            # return this ParticipantGroupRelationship if this participant is already a member of a group in this experiment.
+            return pgrs.all()[0]
+
         if current_group is None:
-            if self.group_set.count() > 0:
-# pick the last group in group_set
-                current_group = self.group_set.reverse()[0]
-            else:
+            if self.group_set.count() == 0:
+                # create a new group
                 current_group = self.group_set.create(number=1, max_size=self.experiment_configuration.max_group_size)
-        if participant in self.participant_set.all():
-            logger.warning("participant %s is already a member of this experiment %s", participant, self)
-            return current_group
+            else:
+                # pick the last group in group_set
+                current_group = self.group_set.reverse()[0]
         return current_group.add_participant(participant)
 
     def allocate_groups(self, randomize=True):
@@ -543,7 +554,9 @@ class Experiment(models.Model):
             random.shuffle(participants)
 
         for p in participants:
-            current_group = self.add_participant(p, current_group)
+            pgr = self.add_participant(p, current_group)
+            current_group = pgr.group
+
 
         # XXX: if there a performance hit here, should probably do a void return instead
         # or collect the groups as they are added
@@ -1141,21 +1154,19 @@ class Group(models.Model):
 
     """
     Adds the given participant to this group or a new group if this group is is_full.
-    Returns the group the participant was added to.
-    If participant is invalid, returns this group as a no-op.
+    Returns the participant group relationship created by adding this participant or None if the participant is invalid.
     """
-    def add_participant(self, participant):
-        if not participant:
+    def add_participant(self, participant=None):
+        if participant is None:
             logger.warning("Trying to add invalid participant %s to group %s", participant, self)
-            return self
+            return None
 
         ''' add the participant to this group if there is room, otherwise create and add to a fresh group '''
         group = self if self.is_open else self.create_next_group()
-        ParticipantGroupRelationship.objects.create(participant=participant,
+        return ParticipantGroupRelationship.objects.create(participant=participant,
                 group=group,
                 round_joined=self.experiment.current_round,
                 participant_number=group.size + 1)
-        return group
 
     def __unicode__(self):
         return u"Group #{0}".format(self.number)

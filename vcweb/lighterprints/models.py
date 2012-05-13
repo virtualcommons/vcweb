@@ -151,8 +151,8 @@ def create_activity_performed_parameter(experimenter=None):
     return parameter
 
 @simplecache
-def get_unlocked_activity_parameter():
-    return Parameter.objects.get(name='unlocked_activity')
+def get_activity_unlocked_parameter():
+    return Parameter.objects.get(name='activity_unlocked')
 
 @simplecache
 def get_activity_performed_parameter():
@@ -204,7 +204,7 @@ def check_public_activity_availability(activity, participant_group_relationship)
     in the public lighterprints game, an unlocked activity data value is created whenever a new activity is unlocked signifying that the given Activity is now available to
     the user
     '''
-    available_activity_ids = participant_group_relationship.participant_data_value_set.filter(parameter=get_unlocked_activity_parameter()).values_list('int_value', flat=True)
+    available_activity_ids = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_unlocked_parameter()).values_list('int_value', flat=True)
     return activity.pk in available_activity_ids and not is_already_performed_today(activity, participant_group_relationship)
 
 def is_already_performed_today(activity, participant_group_relationship):

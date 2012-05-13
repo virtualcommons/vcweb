@@ -405,6 +405,7 @@ def participate(request, experiment_id=None):
     if experiment_id is None:
         experiment = get_lighterprints_public_experiment()
         experiment.add_participant(participant)
+
         activities = Activity.objects.for_public_experiment()
     else:
         experiment = get_object_or_404(Experiment, pk=experiment_id)
