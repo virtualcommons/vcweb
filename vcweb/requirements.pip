@@ -29,3 +29,4 @@ raven
 feedparser
 feedcache
 neo4j-embedded
+lxml

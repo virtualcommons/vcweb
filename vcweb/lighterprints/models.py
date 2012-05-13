@@ -9,10 +9,11 @@ from vcweb.core.services import fetch_foursquare_categories
 import collections
 from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
-import logging
-logger = logging.getLogger(__name__)
 from brabeion import badges
 from brabeion.base import Badge, BadgeAwarded
+
+import logging
+logger = logging.getLogger(__name__)
 
 ActivityStatus = enum('AVAILABLE', 'COMPLETED', 'UNAVAILABLE')
 
@@ -194,7 +195,7 @@ def create_activity_unlocked_data_values(participant_group_relationship, activit
         unlocked_activity_dv.value = activity_id
         unlocked_activity_dv.save()
 
-def unlock_activities(participant_group_relationship):
+def get_unlocked_activities(participant_group_relationship):
     # first check if they've performed any activities
     pdvs = participant_group_relationship.participant_data_value_set
     performed_activities = pdvs.filter(parameter=get_activity_performed_parameter())
@@ -263,7 +264,7 @@ def check_already_performed_today(activity, participant_group_relationship):
 
 
 def check_activity_availability(activity, participant_group_relationship, **kwargs):
-    if participant_group_relationship.group.experiment.is_public:
+    if participant_group_relationship.experiment.is_public:
         return check_public_activity_availability(activity, participant_group_relationship)
 
     '''

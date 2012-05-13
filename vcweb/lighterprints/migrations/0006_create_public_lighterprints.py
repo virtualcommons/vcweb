@@ -64,6 +64,7 @@ class Migration(DataMigration):
                 unlocked_activity_dv = ParticipantRoundDataValue.objects.create(parameter=activity_unlocked_param,
                         participant_group_relationship=pgr, round_data=round_data)
                 unlocked_activity_dv.value = activity_id
+                unlocked_activity_dv.save()
 
     def backwards(self, orm):
         "Write your backwards methods here."

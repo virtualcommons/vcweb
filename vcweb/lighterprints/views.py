@@ -20,7 +20,7 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity,
         get_lighterprints_experiment_metadata, get_lighterprints_public_experiment, get_activity_performed_parameter,
         points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids,
-        unlock_activities)
+        get_unlocked_activities)
 
 import collections
 import itertools
@@ -385,12 +385,12 @@ def participate(request, experiment_id=None):
     if experiment_id is None:
         experiment = get_lighterprints_public_experiment()
         pgr = experiment.add_participant(participant)
-        # need to explicitly unlock activities for this participant
-        activities = unlock_activities(pgr)
     else:
         experiment = get_object_or_404(Experiment, pk=experiment_id)
         pgr = participant.get_participant_group_relationship(experiment)
-        activities = get_all_available_activities(pgr)
+    # need to explicitly unlock activities for this participant
+    all_activities = get_unlocked_activities(pgr) if experiment.is_public else Activity.objects.all()
+    activities = get_all_available_activities(pgr, all_activities=all_activities)
     return render(request, 'lighterprints/participate.html', {'experiment': experiment, 'activities': activities })
 
 def checkin(request):
