@@ -49,6 +49,7 @@ class Migration(DataMigration):
 # create round data
         round_data = e.round_data_set.create(round_configuration=rc)
         group = e.group_set.create(number=1, max_size=e.experiment_configuration.max_group_size)
+# create group data values for footprint level
         Participant = orm['core.Participant']
         for i, participant in enumerate(Participant.objects.all()):
             ParticipantExperimentRelationship.objects.create(experiment=e, participant=participant,
@@ -61,10 +62,7 @@ class Migration(DataMigration):
                     round_joined=rc,
                     participant_number=i + 1)
             for activity_id in activity_ids:
-                unlocked_activity_dv = ParticipantRoundDataValue.objects.create(parameter=activity_unlocked_param,
-                        participant_group_relationship=pgr, round_data=round_data)
-                unlocked_activity_dv.value = activity_id
-                unlocked_activity_dv.save()
+                ParticipantRoundDataValue.objects.create(parameter=activity_unlocked_param, participant_group_relationship=pgr, round_data=round_data, int_value=activity_id)
 
     def backwards(self, orm):
         "Write your backwards methods here."

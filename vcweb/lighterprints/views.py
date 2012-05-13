@@ -20,9 +20,8 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity,
         get_lighterprints_experiment_metadata, get_lighterprints_public_experiment, get_activity_performed_parameter,
         points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids,
-        get_unlocked_activities)
+        get_participant_level, get_unlocked_activities)
 
-import collections
 import itertools
 import logging
 logger = logging.getLogger(__name__)
@@ -152,10 +151,10 @@ def group_score(request, participant_group_id):
         group = participant_group_relationship.group
         (average_points, total_points) = get_group_score(group)
         logger.debug("getting group score for: %s", group)
-        level = get_footprint_level(group).value
+        level = get_participant_level(participant_group_relationship) if group.experiment.is_public else get_footprint_level(group).value
         groups = []
         groups.append({
-            'group_level': level,
+            'level': level,
             'average_points_per_person': average_points,
             'total_points': total_points,
             'points_to_next_level': points_to_next_level(level)

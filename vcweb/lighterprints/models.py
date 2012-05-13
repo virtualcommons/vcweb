@@ -324,6 +324,9 @@ def get_performed_activity_ids(participant_group_relationship):
 def update_active_experiments(sender, time=None, **kwargs):
     logger.debug("updating active experiments")
     for experiment in get_active_experiments():
+        if experiment.is_public:
+            logger.debug("updating public experiment")
+            return
         # calculate total carbon savings and decide if they move on to the next level
         for group in experiment.group_set.all():
             footprint_level_grdv = get_footprint_level(group)
@@ -376,7 +379,7 @@ def should_advance_level(group, level, max_level=3):
         return average_points_per_person(group) >= points_to_next_level(level)
     return False
 
-def get_level(participant_group_relationship):
+def get_participant_level(participant_group_relationship):
     return points_to_level(get_green_points(participant_group_relationship))
 
 def get_green_points(participant_group_relationship):
