@@ -526,7 +526,8 @@ class Experiment(models.Model):
         # FIXME: simplify logic where possible
         if participant not in self.participant_set.all():
             logger.warning("participant %s not a member of this experiment %s, adding them", participant, self)
-            ParticipantExperimentRelationship.objects.create(participant=participant, experiment=self)
+            ParticipantExperimentRelationship.objects.create(participant=participant, experiment=self,
+                    created_by=participant.user)
         pgrs = ParticipantGroupRelationship.objects.filter(group__experiment=self, participant=participant)
         # FIXME: full strictness should be pgrs.count() == 0
         if pgrs.count() > 0:

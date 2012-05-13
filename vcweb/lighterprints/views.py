@@ -32,13 +32,11 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
 
     def get_context_data(self, **kwargs):
         context = super(ActivityListView, self).get_context_data(**kwargs)
-        all_activities = context['activity_list']
         user = self.request.user
         if user.is_authenticated():
             # authenticated request, figure out if this activity is available
             participant_group_id = self.request.GET.get('participant_group_id')
-            participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-            logger.debug("Retrieving activity list, about to check participants")
+            participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
             # XXX: we can only return a context dictionary or raise an exception
             # at this location
             if participant_group_relationship.participant != user.participant:
@@ -46,6 +44,9 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
                 context['success'] = False
                 context['flattened_activities'] = []
                 return context
+            experiment = participant_group_relationship.experiment
+            all_activities = Activity.objects.for_public_experiment() if experiment.is_public else context['activity_list']
+            logger.debug("all activities: %s", all_activities)
             (flattened_activities, activity_by_level) = get_all_available_activities(participant_group_relationship, all_activities)
             context['activity_by_level'] = dict(activity_by_level)
             context['flattened_activities'] = flattened_activities

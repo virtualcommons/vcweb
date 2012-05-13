@@ -2,13 +2,12 @@ from django.conf.urls.defaults import url, patterns
 from django.views.decorators.cache import cache_page
 from django.views.generic.base import TemplateView
 
-from vcweb.lighterprints.views import (ActivityDetailView, ActivityListView, MobileView, post_chat_message,
+from vcweb.lighterprints.views import (ActivityDetailView, ActivityListView, post_chat_message,
         post_comment, perform_activity, DiscussionBoardView, login, participate, group_activity, like,
         get_notifications, update_notifications_since, group_score, CsvExportView, checkin)
 
 # handles all /lighterprints/* URL requests
 urlpatterns = patterns('vcweb.lighterprints.views',
-    url(r'^mobile$', MobileView.as_view(), name='mobile'),
     url(r'^$', participate, name='participate'),
     url(r'^about$', TemplateView.as_view(template_name='lighterprints/about.html'), name='lighterprints-about'),
     url(r'^(?P<pk>\d+)/data$', CsvExportView.as_view(), name='export-data'),

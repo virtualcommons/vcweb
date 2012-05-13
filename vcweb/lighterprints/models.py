@@ -187,10 +187,12 @@ def initial_unlocked_activities():
 def create_activity_unlocked_data_values(participant_group_relationship, activity_ids=None):
     if activity_ids is None:
         return None
+    logger.debug("unlocking activities: %s", activity_ids)
     for activity_id in activity_ids:
-        unlocked_activity_dv = ParticipantGroupRelationship.objects.create(parameter=get_activity_unlocked_parameter(),
+        unlocked_activity_dv = ParticipantRoundDataValue.objects.create(parameter=get_activity_unlocked_parameter(),
                 participant_group_relationship=participant_group_relationship)
         unlocked_activity_dv.value = activity_id
+        unlocked_activity_dv.save()
 
 def unlock_activities(participant_group_relationship):
     # first check if they've performed any activities
