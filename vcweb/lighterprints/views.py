@@ -19,7 +19,8 @@ from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_auth
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity,
         get_lighterprints_experiment_metadata, get_lighterprints_public_experiment, get_activity_performed_parameter,
-        points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids)
+        points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids,
+        unlock_activities)
 
 import collections
 import itertools
@@ -87,30 +88,6 @@ class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin
 
 class ActivityDetailView(JSONResponseMixin, BaseDetailView):
     template_name = 'lighterprints/activity_detail.html'
-
-def get_available_activities(request):
-    # FIXME: currently stubbed out to return all activities. should move this to
-    # models.py and have it take a Participant?
-    return zip(Activity.objects.all(), MobileView.jqm_grid_columns)
-
-class MobileView(ActivityListView):
-    jqm_grid_columns = tuple("abcde")
-
-    def get_context_data(self, **kwargs):
-        context = super(MobileView, self).get_context_data(**kwargs)
-        activity_by_level = collections.defaultdict(list)
-        for index, activity in enumerate(context['activity_list']):
-            activity_by_level[activity.level].append((activity,
-                MobileView.jqm_grid_columns[index % 5]))
-        context['activity_by_level'] = dict(activity_by_level)
-
-        available_activities = get_available_activities(self.request)
-        context['grid_letter'] = MobileView.jqm_grid_columns[max(len(available_activities) - 2, 0)]
-        context['available_activities'] = available_activities
-        return context
-
-    def get_template_names(self):
-        return ['lighterprints/mobile/index.html']
 
 # FIXME: use persistent_messages instead where the user has to explicitly clear /
 # dismiss the messages.  additional fields would be target_id
@@ -404,12 +381,12 @@ def participate(request, experiment_id=None):
     participant = request.user.participant
     if experiment_id is None:
         experiment = get_lighterprints_public_experiment()
-        experiment.add_participant(participant)
-
-        activities = Activity.objects.for_public_experiment()
+        pgr = experiment.add_participant(participant)
+        # need to explicitly unlock activities for this participant
+        activities = unlock_activities(pgr)
     else:
         experiment = get_object_or_404(Experiment, pk=experiment_id)
-        activities = Activity.objects.all()
+        activities = get_all_available_activities()
     return render(request, 'lighterprints/participate.html', {'experiment': experiment, 'activities': activities })
 
 def checkin(request):

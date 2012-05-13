@@ -197,6 +197,7 @@ class ExperimentConfiguration(models.Model):
         ordering = ['experiment_metadata', 'creator', 'date_created']
 
 
+# FIXME: convert to ExperimentQuerySet PassThroughManager django-model-utils style
 class ExperimentManager(models.Manager):
     def get_all_active(self):
         return self.filter(status='ACTIVE')

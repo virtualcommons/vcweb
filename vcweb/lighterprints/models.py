@@ -166,9 +166,52 @@ def get_footprint_level(group):
     return GroupRoundDataValue.objects.get(group=group, parameter=get_footprint_level_parameter())
 
 def get_active_experiments():
-    return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
-            status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
+    # FIXME: add PassThroughManager to ExperimentManager
+    return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(), status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
 
+[u'adjust-thermostat', u'eat-local-lunch', u'enable-sleep-on-computer', u'recycle-materials', u'share-your-ride',
+u'bike-or-walk', u'computer-off-night', u'no-beef', u'recycle-paper', u'air-dry-clothes', u'cold-water-wash',
+u'eat-green-lunch', u'lights-off', u'vegan-for-a-day']
+
+_unlock_activity_levels = (
+        (1, ('recycle-paper', 'share-your-ride', 'enable-sleep-on-computer')),
+        (2, ('adjust-thermostat')),
+        (3, ('eat-local-lunch')),
+        (4, ('cold-water-wash')),
+        (5, ('no-beef'))
+        )
+
+def initial_unlocked_activities():
+    return Activity.objects.filter(name__in=('recycle-paper', 'share-your-ride', 'enable-sleep-on-computer'))
+
+def create_activity_unlocked_data_values(participant_group_relationship, activity_ids=None):
+    if activity_ids is None:
+        return None
+    for activity_id in activity_ids:
+        unlocked_activity_dv = ParticipantGroupRelationship.objects.create(parameter=get_activity_unlocked_parameter(),
+                participant_group_relationship=participant_group_relationship)
+        unlocked_activity_dv.value = activity_id
+
+def unlock_activities(participant_group_relationship):
+    # first check if they've performed any activities
+    pdvs = participant_group_relationship.participant_data_value_set
+    performed_activities = pdvs.filter(parameter=get_activity_performed_parameter())
+    unlocked_activities = pdvs.filter(parameter=get_activity_unlocked_parameter())
+    if performed_activities.count() == 0:
+        # check if they have any unlocked activities now
+        initial_unlocked_activity_ids = initial_unlocked_activities().values_list('id', flat=True)
+        if unlocked_activities.count() == 0:
+            # unlock the base set of activities for them
+            create_activity_unlocked_data_values(participant_group_relationship, initial_unlocked_activity_ids)
+        else:
+            logger.debug("participant %s hasn't performed any activities but has already unlocked activities: %s", participant_group_relationship, unlocked_activities)
+            # they have some unlocked activities already, make sure they are the same as the initial set eventually
+            # check which ones are already unlocked
+    else:
+        # they have performed some activities, perform the rest of the unlocking logic
+        logger.debug("participant %s has performed some activities %s and unlocked %s", participant_group_relationship,
+                performed_activities, unlocked_activities)
+    return [unlocked_activity.value for unlocked_activity in unlocked_activities]
 
 # returns a tuple of (flattened_activities list + activity_by_level dict)
 def get_all_available_activities(participant_group_relationship, all_activities=None):
@@ -330,6 +373,9 @@ def should_advance_level(group, level, max_level=3):
         return average_points_per_person(group) >= points_to_next_level(level)
     return False
 
+def get_level(participant_group_relationship):
+    return points_to_level(get_green_points(participant_group_relationship))
+
 def get_green_points(participant_group_relationship):
     performed_activities = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())
     total_points = 0
@@ -337,7 +383,7 @@ def get_green_points(participant_group_relationship):
         total_points += activity_performed_dv.value.points
     return total_points
 
-def get_level(points=0):
+def points_to_level(points=0):
     if points < 100:
         return 1
     elif points < 250:
