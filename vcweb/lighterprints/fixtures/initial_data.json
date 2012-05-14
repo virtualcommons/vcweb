@@ -125,7 +125,7 @@
                "scope": "participant"
         },
         "model": "core.parameter",
-        "pk": 15
+        "pk": 14
     },
     {
         "fields": {
@@ -142,7 +142,7 @@
         "pk": 9
     },
     {
-        "pk": 14,
+        "pk": 15,
         "model": "core.parameter",
         "fields": {
             "experiment_metadata": 3,

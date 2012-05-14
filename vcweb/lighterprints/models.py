@@ -368,15 +368,16 @@ def average_points_per_person(group):
 # returns a tuple of the average points per person and the total savings for
 # the given group
 def get_group_score(group, start=None, end=None):
-    if start is None or end is None:
-        start = date.today()
-        end = start + timedelta(1)
     # establish date range
     # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
     total_points = 0
-# FIXME: is it possible to convert this into an aggregate Sum, e.g., Activity.objects.filter(id__in=[id1, id2, ...]).aggregate(Sum('points'))
-# we'd need to a subselect to generate the idlist though
-    for activity_performed_dv in group.get_participant_data_values(parameter=get_activity_performed_parameter()).filter(date_created__range=(start, end)):
+    activities_performed_qs = group.get_participant_data_values(parameter=get_activity_performed_parameter())
+    if not group.experiment.is_public:
+        if start is None or end is None:
+            start = date.today()
+            end = start + timedelta(1)
+        activities_performed_qs = activities_performed_qs.filter(date_created__range=(start, end))
+    for activity_performed_dv in activities_performed_qs:
         activity = activity_performed_dv.value
         total_points += activity.points
     average = total_points / group.size
