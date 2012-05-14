@@ -185,15 +185,17 @@ class UnlockedActivityTest(BaseTest):
         self.assertTrue(e.is_public)
         for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
             self.assertEquals(get_unlocked_activities(pgr).count(), 3)
-            get_unlocked_activities(pgr)
             self.assertEquals(pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value, 1)
             self.assertEquals(get_participant_level(pgr), 1)
         self.perform_activities()
         for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
             self.assertEquals(get_unlocked_activities(pgr).count(), 3)
-            get_unlocked_activities(pgr)
             self.assertEquals(pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value, 1)
             self.assertEquals(get_participant_level(pgr), 2)
         update_public_experiment(e)
+        for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
+            self.assertEquals(get_unlocked_activities(pgr).count(), 4)
+            self.assertEquals(pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value, 2)
+            self.assertEquals(get_participant_level(pgr), 2)
 
 

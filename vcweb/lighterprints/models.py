@@ -179,12 +179,16 @@ def lookup_activities(activity_names):
     return Activity.objects.filter(name__in=activity_names)
 
 _levels_to_unlocked_activities = map (lambda x: partial(lookup_activities, x), (
-    ('recycle-paper', 'share-your-ride', 'enable-sleep-on-computer'),
-    ('adjust-thermostat'),
-    ('eat-local-lunch'),
-    ('cold-water-wash'),
-    ('no-beef')
+    ['recycle-paper', 'share-your-ride', 'enable-sleep-on-computer'],
+    ['adjust-thermostat'],
+    ['eat-local-lunch'],
+    ['cold-water-wash'],
+    ['no-beef']
     ))
+
+def get_unlocked_activities_by_level(level=0):
+    return _levels_to_unlocked_activities[level]()
+
 def initial_unlocked_activities():
     return Activity.objects.filter(name__in=('recycle-paper', 'share-your-ride', 'enable-sleep-on-computer'))
 
@@ -214,7 +218,7 @@ def get_unlocked_activities(participant_group_relationship):
             # they have some unlocked activities already, make sure they are the same as the initial set eventually
             # check which ones are already unlocked
     else:
-        logger.debug("participant %s has performed some activities %s and unlocked %s", participant_group_relationship,
+        logger.debug("participant %s has performed activities %s\nunlocked: %s", participant_group_relationship,
                 performed_activities, unlocked_activities)
     return unlocked_activities
 
@@ -400,8 +404,8 @@ def update_public_experiment(experiment):
             continue
         if current_level > previous_level:
             logger.debug("Participant %s has leveled from %d -> %d", pgr, previous_level, current_level)
-            if current_level < len(_levels_to_unlocked_activities):
-                unlocked_activities = _levels_to_unlocked_activities[current_level]()
+            if 0 < current_level < len(_levels_to_unlocked_activities):
+                unlocked_activities = _levels_to_unlocked_activities[current_level-1]()
                 logger.debug("unlocked activities for level %s: %s", current_level, unlocked_activities)
                 create_activity_unlocked_data_values(pgr, unlocked_activities.values_list('id', flat=True))
         else:
