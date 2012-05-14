@@ -389,8 +389,7 @@ def participate(request, experiment_id=None):
         pgr = participant.get_participant_group_relationship(experiment)
     # need to explicitly unlock activities for this participant
     all_activities = get_unlocked_activities(pgr) if experiment.is_public else Activity.objects.all()
-    activities = get_all_available_activities(pgr, all_activities=all_activities)
-    return render(request, 'lighterprints/participate.html', {'experiment': experiment, 'activities': activities })
+    return render(request, 'lighterprints/participate.html', {'experiment': experiment, 'activities': all_activities })
 
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)

@@ -3,8 +3,11 @@ from vcweb.core.models import ParticipantGroupRelationship
 from vcweb.lighterprints.views import *
 from vcweb.lighterprints.models import *
 
+from lxml import etree
+
 import logging
 import simplejson as json
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +138,24 @@ class DoActivityTest(BaseTest):
                 self.assertEqual(json_object['comment'], text)
 
 
+class GreenButtonDataTest(BaseTest):
+    test_filenames = [os.path.join('vcweb', 'lighterprints', 'fixtures', filename) for filename in ('decreasing_day1.xml', 'decreasing_day2.xml')]
+
+    def setUp(self):
+        super(GreenButtonDataTest, self).setUp()
+
+    def verify(self, xmltree):
+        logger.debug("xmltree: %s", xmltree)
+        interval_blocks = xmltree.xpath('//gb:IntervalBlock', namespaces={'gb': 'http://naesb.org/espi'})
+        self.assertEqual(len(interval_blocks), 1)
+        interval_readings = xmltree.xpath('//gb:IntervalReading', namespaces={'gb': 'http://naesb.org/espi'})
+        self.assertTrue(len(interval_readings) > 1)
+
+
+    def test_import(self):
+        for filename in self.test_filenames:
+            xmltree = etree.parse(open(filename))
+            self.verify(xmltree)
 
 
 

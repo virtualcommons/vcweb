@@ -24,6 +24,7 @@ class BaseVcwebTest(TestCase):
             experiment = self.create_new_experiment(experiment_metadata, **kwargs)
         if experiment.participant_set.count() == 0:
             experiment.setup_test_participants(email_suffix='asu.edu', count=10)
+        experiment.save()
         self.experiment = experiment
         return experiment
 

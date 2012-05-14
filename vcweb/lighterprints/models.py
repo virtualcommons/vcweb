@@ -326,7 +326,7 @@ def update_active_experiments(sender, time=None, **kwargs):
     for experiment in get_active_experiments():
         if experiment.is_public:
             logger.debug("updating public experiment")
-            return
+            continue
         # calculate total carbon savings and decide if they move on to the next level
         for group in experiment.group_set.all():
             footprint_level_grdv = get_footprint_level(group)

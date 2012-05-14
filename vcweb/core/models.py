@@ -163,7 +163,7 @@ class ExperimentConfiguration(models.Model):
     invitation_text = models.TextField(null=True, blank=True, help_text='text to send out via email invitations')
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
-    is_public = models.BooleanField(default=True)
+    is_public = models.BooleanField(default=False)
     max_group_size = models.PositiveIntegerField(default=5)
 
     @property
