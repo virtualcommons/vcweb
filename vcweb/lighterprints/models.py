@@ -1,10 +1,10 @@
 from django.db import models
 from django.dispatch import receiver
+from django.utils.translation import ugettext_lazy as _
 from functools import partial
 from model_utils.managers import PassThroughManager
 from vcweb.core import signals, simplecache, enum
-from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
-        GroupRoundDataValue, ParticipantGroupRelationship, ParticipantRoundDataValue, Parameter, User)
+from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, ParticipantGroupRelationship, ParticipantRoundDataValue, Parameter, User)
 from vcweb.core.services import fetch_foursquare_categories
 import collections
 from datetime import datetime, date, time, timedelta
@@ -41,6 +41,14 @@ class ActivityBadge(Badge):
 
 badges.register(ActivityBadge)
 
+class GreenButtonIntervalReading(models.Model):
+    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='gb_interval_reading_set')
+    date_created = models.DateTimeField(default=datetime.now)
+    date = models.DateTimeField()
+    seconds_from_epoch = models.PositiveIntegerField(_('Number of seconds from epoch from GB data, should be the same as date'))
+    watt_hours = models.PositiveIntegerField(_('Energy meter reading in watt-hours'))
+    millicents_per_wh = models.PositiveIntegerField(_('millicents per watt-hour'), null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
 
 class ActivityQuerySet(models.query.QuerySet):
     """
