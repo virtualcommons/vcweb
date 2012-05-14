@@ -426,7 +426,7 @@ def update_public_experiment(experiment):
         participant_level_dv.value = current_level
         participant_level_dv.save()
         # check activity performed conditions for other unlocked activities
-        counts = pgr.participant_data_value_set.values('int_value').order_by().annotate(count=models.Count('int_value'))
+        counts = pgr.participant_data_value_set.filter(parameter=activity_performed_parameter).values('int_value').order_by().annotate(count=models.Count('int_value'))
         unlocked_activity_ids = []
         for activity_count_dict in counts:
             activity_id = activity_count_dict['int_value']

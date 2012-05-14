@@ -171,12 +171,30 @@ class GreenButtonDataTest(BaseTest):
             xmltree = etree.parse(open(filename))
             self.verify(xmltree)
 
-class UnlockedActivityTest(ActivityTest):
+class ActivityUnlockingTest(ActivityTest):
 
     def setUp(self):
-        super(UnlockedActivityTest, self).setUp(is_public=True)
+        super(ActivityUnlockingTest, self).setUp(is_public=True)
 
-    def test_update_public_experiment(self):
+    def test_activity_performed_unlocking(self):
+        e = self.experiment
+        e.activate()
+        e.start_round()
+        activities = initial_unlocked_activities()
+        for pgr in self.participant_group_relationships:
+            for activity_id in activities.values_list('id', flat=True):
+                # do each activity 3 times
+                for _ in range(3):
+                    ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr,
+                            parameter=get_activity_performed_parameter(), int_value=activity_id)
+        update_public_experiment(e)
+        for pgr in self.participant_group_relationships:
+            self.assertEquals(get_green_points(pgr), 330)
+            unlocked_activities = get_unlocked_activities(pgr)
+            self.assertEquals(len(unlocked_activities), 7)
+            logger.debug("unlocked activities: %s", unlocked_activities)
+
+    def test_level_unlocking(self):
         e = self.experiment
         e.activate()
         e.start_round()
@@ -206,7 +224,7 @@ class GroupScoreTest(ActivityTest):
         self.perform_activities()
         for group in e.group_set.all():
             average_points_per_person, total_points = get_group_score(group)
-            self.assertEqual(average_points_per_person, 110)
-            self.assertEqual(total_points, 550)
+            self.assertEquals(average_points_per_person, 110)
+            self.assertEquals(total_points, 550)
 
 
