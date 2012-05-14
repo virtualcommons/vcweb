@@ -365,7 +365,7 @@ def round_started_handler(sender, experiment=None, **kwargs):
 def average_points_per_person(group):
     return get_group_score(group)[0]
 
-# returns a tuple of the average points per person and the total savings for
+# returns a tuple of the average points per person and the total points for
 # the given group
 def get_group_score(group, start=None, end=None):
     # establish date range

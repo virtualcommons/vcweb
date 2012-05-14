@@ -90,7 +90,22 @@ class GroupActivityTest(BaseTest):
         self.assertEqual(chat_messages[0]['message'], test_message)
         self.assertEqual(5, len(recent_activity))
 
-class DoActivityTest(BaseTest):
+class ActivityTest(BaseTest):
+    def perform_activities(self, activities=None):
+        for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=self.experiment):
+            activities = available_activities(participant_group_relationship)
+            participant = participant_group_relationship.participant
+            self.client.login(username=participant.email, password='test')
+            for activity in activities:
+                logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
+                expected_success = is_activity_available(activity, participant_group_relationship)
+                response = self.client.post('/lighterprints/api/do-activity', {
+                    'participant_group_id': participant_group_relationship.id,
+                    'activity_id': activity.pk
+                    })
+                self.assertEqual(response.status_code, 200)
+                json_object = json.loads(response.content)
+                self.assertEqual(expected_success, json_object['success'])
 
     def test_view(self):
         logger.debug("testing do activity view")
@@ -156,27 +171,10 @@ class GreenButtonDataTest(BaseTest):
             xmltree = etree.parse(open(filename))
             self.verify(xmltree)
 
-class UnlockedActivityTest(BaseTest):
+class UnlockedActivityTest(ActivityTest):
+
     def setUp(self):
         super(UnlockedActivityTest, self).setUp(is_public=True)
-
-    def perform_activities(self, activities=None):
-        if activities is None:
-            activities = available_activities()
-        for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=self.experiment):
-            activities = available_activities(participant_group_relationship)
-            participant = participant_group_relationship.participant
-            self.client.login(username=participant.email, password='test')
-            for activity in activities:
-                logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
-                expected_success = is_activity_available(activity, participant_group_relationship)
-                response = self.client.post('/lighterprints/api/do-activity', {
-                    'participant_group_id': participant_group_relationship.id,
-                    'activity_id': activity.pk
-                    })
-                self.assertEqual(response.status_code, 200)
-                json_object = json.loads(response.content)
-                self.assertEqual(expected_success, json_object['success'])
 
     def test_update_public_experiment(self):
         e = self.experiment
@@ -197,5 +195,18 @@ class UnlockedActivityTest(BaseTest):
             self.assertEquals(get_unlocked_activities(pgr).count(), 4)
             self.assertEquals(pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value, 2)
             self.assertEquals(get_participant_level(pgr), 2)
+
+class GroupScoreTest(ActivityTest):
+    def setUp(self):
+        super(GroupScoreTest, self).setUp(is_public=True)
+    def test_group_score(self):
+        e = self.experiment
+        e.activate()
+        e.start_round()
+        self.perform_activities()
+        for group in e.group_set.all():
+            average_points_per_person, total_points = get_group_score(group)
+            self.assertEqual(average_points_per_person, 110)
+            self.assertEqual(total_points, 550)
 
 
