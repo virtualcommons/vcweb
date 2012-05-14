@@ -116,6 +116,19 @@
     },
     {
         "fields": {
+               "name":"participant_level",
+               "experiment_metadata": [ "lighterprints" ],
+               "creator": 1,
+               "type": "int",
+               "date_created": "2011-01-01 15:13:03",
+               "last_modified": "2011-07-07 15:13:03",
+               "scope": "participant"
+        },
+        "model": "core.parameter",
+        "pk": 15
+    },
+    {
+        "fields": {
                "name":"activity_performed",
                "experiment_metadata": [ "lighterprints" ],
                "creator": 1,
@@ -128,7 +141,7 @@
         "model": "core.parameter",
         "pk": 9
     },
-    {  
+    {
         "pk": 14,
         "model": "core.parameter",
         "fields": {

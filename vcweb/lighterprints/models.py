@@ -148,14 +148,6 @@ def get_lighterprints_public_experiment():
 def get_lighterprints_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace='lighterprints')
 
-def create_activity_performed_parameter(experimenter=None):
-    if experimenter is None:
-        experimenter = Experimenter.objects.get(pk=1)
-    parameter, created = Parameter.objects.get_or_create(name='activity_performed', scope=Parameter.PARTICIPANT_SCOPE, type='foreignkey',
-            creator=experimenter, experiment_metadata=get_lighterprints_experiment_metadata())
-    if created: logger.debug("created activity performed parameter %s", parameter)
-    return parameter
-
 @simplecache
 def get_participant_level_parameter():
     return Parameter.objects.get(name='participant_level')
@@ -356,12 +348,13 @@ def round_started_handler(sender, experiment=None, **kwargs):
     # FIXME: See if we can push this logic up to core..
     current_round_data = experiment.current_round_data
     footprint_level_parameter = get_footprint_level_parameter()
-# only create the carbon footprint level parameter, the participant activity performed data values will be created each
-# time.
+    participant_level_parameter = get_participant_level_parameter()
+# only create the footprint level parameter, the participant activity performed data values will be created each time.
     for group in experiment.group_set.all():
-        footprint_level_grdv = current_round_data.group_data_value_set.create(group=group, parameter=footprint_level_parameter)
-        footprint_level_grdv.value = 1
-        footprint_level_grdv.save()
+        current_round_data.group_data_value_set.create(group=group, parameter=footprint_level_parameter, int_value=1)
+        for pgr in group.participant_group_relationship_set.all():
+            ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, parameter=participant_level_parameter, int_value=1)
+
 
 def average_points_per_person(group):
     return get_group_score(group)[0]
@@ -397,7 +390,7 @@ def should_advance_level(group, level, max_level=3):
 def update_public_experiment(experiment):
 # check levels for each participant in this experiment
     for pgr in experiment.participant_group_relationships:
-        participant_level_dv = pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value
+        participant_level_dv = pgr.participant_data_value_set.get(parameter=get_participant_level_parameter())
         previous_level = participant_level_dv.value
         current_level = get_participant_level(pgr)
         if current_level == previous_level:

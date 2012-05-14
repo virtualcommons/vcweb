@@ -37,11 +37,10 @@ class UpdateLevelTest(BaseTest):
         e.activate()
         e.start_round()
         current_round_data = e.current_round_data
-        activity_performed_parameter = create_activity_performed_parameter()
 # initialize participant carbon savings
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
             for activity in Activity.objects.filter(level=1):
-                activity_performed = participant_group_relationship.participant_data_value_set.create(round_data=current_round_data, parameter=activity_performed_parameter)
+                activity_performed = participant_group_relationship.participant_data_value_set.create(round_data=current_round_data, parameter=get_activity_performed_parameter())
                 activity_performed.value = activity.id
                 activity_performed.save()
         # FIXME: sender parameter doesn't really matter here, just pass self in as the sender
@@ -92,14 +91,14 @@ class GroupActivityTest(BaseTest):
         self.assertEqual(5, len(recent_activity))
 
 class DoActivityTest(BaseTest):
+
     def test_view(self):
         logger.debug("testing do activity view")
         e = self.experiment
         e.activate()
         e.start_round()
-
+        activities = available_activities()
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
-            activities = available_activities()
             logger.debug("all available activities: %s", activities)
             participant = participant_group_relationship.participant
             self.client.login(username=participant.email, password='test')
@@ -161,7 +160,29 @@ class UnlockedActivityTest(BaseTest):
     def setUp(self):
         super(UnlockedActivityTest, self).setUp(is_public=True)
 
+    def perform_activities(self, activities=None):
+        if activities is None:
+            activities = available_activities()
+        for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=self.experiment):
+            participant = participant_group_relationship.participant
+            self.client.login(username=participant.email, password='test')
+            for activity in activities:
+                logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
+                expected_success = is_activity_available(activity, participant_group_relationship)
+                response = self.client.post('/lighterprints/api/do-activity', {
+                    'participant_group_id': participant_group_relationship.id,
+                    'activity_id': activity.pk
+                    })
+                self.assertEqual(response.status_code, 200)
+                json_object = json.loads(response.content)
+                self.assertEqual(expected_success, json_object['success'])
+                logger.debug("Initial do activity response: %s", response)
+
     def test_update_public_experiment(self):
         e = self.experiment
+        e.activate()
+        e.start_round()
+        self.perform_activities()
         update_public_experiment(e)
+
 
