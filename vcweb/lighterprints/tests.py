@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 
 class BaseTest(BaseVcwebTest):
     fixtures = [ 'activities' ]
-    def setUp(self):
+    def setUp(self, **kwargs):
         super(BaseTest, self).setUp()
         experiment_metadata = get_lighterprints_experiment_metadata()
-        self.load_experiment(experiment_metadata=experiment_metadata)
+        self.load_experiment(experiment_metadata=experiment_metadata, **kwargs)
 
 class ActivityViewTest(BaseTest):
     def test_list(self):
@@ -142,7 +142,7 @@ class GreenButtonDataTest(BaseTest):
     test_filenames = [os.path.join('vcweb', 'lighterprints', 'fixtures', filename) for filename in ('decreasing_day1.xml', 'decreasing_day2.xml')]
 
     def setUp(self):
-        super(GreenButtonDataTest, self).setUp()
+        super(GreenButtonDataTest, self).setUp(is_public=True)
 
     def verify(self, xmltree):
         logger.debug("xmltree: %s", xmltree)
@@ -157,5 +157,11 @@ class GreenButtonDataTest(BaseTest):
             xmltree = etree.parse(open(filename))
             self.verify(xmltree)
 
+class UnlockedActivityTest(BaseTest):
+    def setUp(self):
+        super(UnlockedActivityTest, self).setUp(is_public=True)
 
+    def test_update_public_experiment(self):
+        e = self.experiment
+        update_public_experiment(e)
 

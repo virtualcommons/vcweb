@@ -17,11 +17,11 @@ class BaseVcwebTest(TestCase):
     """
     fixtures = ['test_users_participants', 'forestry_test_data']
 
-    def load_experiment(self, experiment_metadata=None, **kwargs):
+    def load_experiment(self, experiment_metadata=None, is_public=False, **kwargs):
         if experiment_metadata is None:
             experiment = Experiment.objects.all()[0].clone()
         else:
-            experiment = self.create_new_experiment(experiment_metadata, **kwargs)
+            experiment = self.create_new_experiment(experiment_metadata, is_public=is_public, **kwargs)
         if experiment.participant_set.count() == 0:
             experiment.setup_test_participants(email_suffix='asu.edu', count=10)
         experiment.save()
@@ -44,11 +44,11 @@ class BaseVcwebTest(TestCase):
     def participants(self):
         return self.experiment.participant_set.all()
 
-    def create_new_experiment(self, experiment_metadata, experimenter=None):
+    def create_new_experiment(self, experiment_metadata, experimenter=None, is_public=False):
         if experimenter is None:
             experimenter = Experimenter.objects.get(pk=1)
         experiment_configuration = ExperimentConfiguration.objects.create(experiment_metadata=experiment_metadata,
-                name='Test Experiment Configuration', creator=experimenter)
+                name='Test Experiment Configuration', creator=experimenter, is_public=is_public)
         for index in xrange(1, 10):
             experiment_configuration.round_configuration_set.create(sequence_number=index)
         return Experiment.objects.create(experimenter=self.experimenter,

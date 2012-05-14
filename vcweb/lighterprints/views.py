@@ -17,7 +17,7 @@ from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGrou
 from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response
 from vcweb.lighterprints.forms import ActivityForm
-from vcweb.lighterprints.models import (Activity, get_all_available_activities, do_activity,
+from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity,
         get_lighterprints_experiment_metadata, get_lighterprints_public_experiment, get_activity_performed_parameter,
         points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids,
         get_participant_level, get_unlocked_activities)
@@ -44,9 +44,9 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
                 context['flattened_activities'] = []
                 return context
             experiment = participant_group_relationship.experiment
-            all_activities = Activity.objects.for_public_experiment() if experiment.is_public else context['activity_list']
+            all_activities = Activity.objects.for_participant(participant_group_relationship) if experiment.is_public else context['activity_list']
             logger.debug("all activities: %s", all_activities)
-            (flattened_activities, activity_by_level) = get_all_available_activities(participant_group_relationship, all_activities)
+            (flattened_activities, activity_by_level) = get_all_activities_tuple(participant_group_relationship, all_activities)
             context['activity_by_level'] = dict(activity_by_level)
             context['flattened_activities'] = flattened_activities
             return context

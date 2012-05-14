@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import Q
 from django.dispatch import receiver
+from functools import partial
 from model_utils.managers import PassThroughManager
 from vcweb.core import signals, simplecache, enum
 from vcweb.core.models import (Experiment, ExperimentMetadata, Experimenter,
@@ -48,8 +49,12 @@ class ActivityQuerySet(models.query.QuerySet):
     groups advance in level and each level comprises a set of activities.  Tiered activities are used in the open
     lighterprints experiment, where mastering one activity can lead to another set of activities
     """
-    def for_public_experiment(self, participant_group_relationship=None, **kwargs):
-        return self.filter(is_public=True)
+    def for_participant(self, participant_group_relationship=None, **kwargs):
+        is_public = False
+        if participant_group_relationship is not None:
+            is_public = participant_group_relationship.experiment.is_public
+        return self.filter(is_public=is_public)
+
 
 class ActivityManager(TreeManager, PassThroughManager):
     def get_by_natural_key(self, name):
@@ -152,6 +157,10 @@ def create_activity_performed_parameter(experimenter=None):
     return parameter
 
 @simplecache
+def get_participant_level_parameter():
+    return Parameter.objects.get(name='participant_level')
+
+@simplecache
 def get_activity_unlocked_parameter():
     return Parameter.objects.get(name='activity_unlocked')
 
@@ -170,18 +179,21 @@ def get_active_experiments():
     # FIXME: add PassThroughManager to ExperimentManager
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(), status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
 
-[u'adjust-thermostat', u'eat-local-lunch', u'enable-sleep-on-computer', u'recycle-materials', u'share-your-ride',
-u'bike-or-walk', u'computer-off-night', u'no-beef', u'recycle-paper', u'air-dry-clothes', u'cold-water-wash',
-u'eat-green-lunch', u'lights-off', u'vegan-for-a-day']
+# all activity names:
+#[u'adjust-thermostat', u'eat-local-lunch', u'enable-sleep-on-computer', u'recycle-materials', u'share-your-ride',
+#u'bike-or-walk', u'computer-off-night', u'no-beef', u'recycle-paper', u'air-dry-clothes', u'cold-water-wash',
+#u'eat-green-lunch', u'lights-off', u'vegan-for-a-day']
 
-_unlock_activity_levels = (
-        (1, ('recycle-paper', 'share-your-ride', 'enable-sleep-on-computer')),
-        (2, ('adjust-thermostat')),
-        (3, ('eat-local-lunch')),
-        (4, ('cold-water-wash')),
-        (5, ('no-beef'))
-        )
+def lookup_activities(activity_names):
+    return Activity.objects.filter(name__in=activity_names)
 
+_levels_to_unlocked_activities = map (lambda x: partial(lookup_activities, x), (
+    ('recycle-paper', 'share-your-ride', 'enable-sleep-on-computer'),
+    ('adjust-thermostat'),
+    ('eat-local-lunch'),
+    ('cold-water-wash'),
+    ('no-beef')
+    ))
 def initial_unlocked_activities():
     return Activity.objects.filter(name__in=('recycle-paper', 'share-your-ride', 'enable-sleep-on-computer'))
 
@@ -211,13 +223,12 @@ def get_unlocked_activities(participant_group_relationship):
             # they have some unlocked activities already, make sure they are the same as the initial set eventually
             # check which ones are already unlocked
     else:
-        # they have performed some activities, perform the rest of the unlocking logic
         logger.debug("participant %s has performed some activities %s and unlocked %s", participant_group_relationship,
                 performed_activities, unlocked_activities)
     return [unlocked_activity.value for unlocked_activity in unlocked_activities]
 
-# returns a tuple of (flattened_activities list + activity_by_level dict)
-def get_all_available_activities(participant_group_relationship, all_activities=None):
+# returns a tuple of flattened_activities list, activity_by_level dict
+def get_all_activities_tuple(participant_group_relationship, all_activities=None):
     if all_activities is None:
         all_activities = Activity.objects.all()
     flattened_activities = []
@@ -235,7 +246,9 @@ def get_all_available_activities(participant_group_relationship, all_activities=
         flattened_activities.append(activity_as_dict)
     return (flattened_activities, activity_by_level)
 
-def available_activities(activity=None):
+def available_activities(participant_group_relationship=None, activity=None):
+    if participant_group_relationship is not None:
+        return [activity for activity in Activity.objects.for_participant(participant_group_relationship) if is_activity_available(activity, participant_group_relationship)]
     current_time = datetime.now().time()
     available_time_slot = dict(start_time__lte=current_time, end_time__gte=current_time)
     if activity is not None:
@@ -326,6 +339,7 @@ def update_active_experiments(sender, time=None, **kwargs):
     for experiment in get_active_experiments():
         if experiment.is_public:
             logger.debug("updating public experiment")
+            update_public_experiment(experiment)
             continue
         # calculate total carbon savings and decide if they move on to the next level
         for group in experiment.group_set.all():
@@ -378,6 +392,29 @@ def should_advance_level(group, level, max_level=3):
     if level < max_level:
         return average_points_per_person(group) >= points_to_next_level(level)
     return False
+
+# public experiment methods
+def update_public_experiment(experiment):
+# check levels for each participant in this experiment
+    for pgr in experiment.participant_group_relationships:
+        participant_level_dv = pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value
+        previous_level = participant_level_dv.value
+        current_level = get_participant_level(pgr)
+        if current_level == previous_level:
+            # nothing to do, continue with the next pgr
+            continue
+        if current_level > previous_level:
+            logger.debug("Participant %s has leveled from %d -> %d", pgr, previous_level, current_level)
+            if current_level < len(_levels_to_unlocked_activities):
+                unlocked_activities = _levels_to_unlocked_activities[current_level]()
+                logger.debug("unlocked activities for level %s: %s", current_level, unlocked_activities)
+                create_activity_unlocked_data_values(pgr, unlocked_activities.values_list('id', flat=True))
+        else:
+            logger.error("Something is very wrong, current level %d < previous level %d", current_level, previous_level)
+
+        participant_level_dv.value = current_level
+        participant_level_dv.save()
+
 
 def get_participant_level(participant_group_relationship):
     return points_to_level(get_green_points(participant_group_relationship))

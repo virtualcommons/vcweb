@@ -36,6 +36,15 @@ class Migration(DataMigration):
         e = Experiment.objects.create(experiment_configuration=ec, experiment_metadata=lem, experimenter=experimenter,
                 is_experimenter_driven=False, status='ROUND_IN_PROGRESS', start_date_time=datetime.datetime.now(),
                 current_round_start_time=datetime.datetime.now())
+# create participant level parameter
+        participant_level_param = Parameter.objects.create(name="participant_level",
+                display_name="Level",
+                experiment_metadata=lem,
+                creator=experimenter,
+                scope="participant",
+                type="int",
+                description="The participant's current level, updated nightly",
+                )
 # create activity unlocked parameter
         activity_unlocked_param = Parameter.objects.create(name="activity_unlocked",
                 display_name="Unlocked Activity",
@@ -61,6 +70,10 @@ class Migration(DataMigration):
                     group=group,
                     round_joined=rc,
                     participant_number=i + 1)
+# create initial participant level data value
+            ParticipantRoundDataValue.objects.create(parameter=participant_level_param,
+                    participant_group_relationship=pgr, round_Data=round_data, int_value=1)
+# create initial unlocked activity set data values
             for activity_id in activity_ids:
                 ParticipantRoundDataValue.objects.create(parameter=activity_unlocked_param, participant_group_relationship=pgr, round_data=round_data, int_value=activity_id)
 
