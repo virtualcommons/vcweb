@@ -20,8 +20,9 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity,
         get_lighterprints_experiment_metadata, get_lighterprints_public_experiment, get_activity_performed_parameter,
         points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids,
-        get_participant_level, get_unlocked_activities, available_activities)
+        get_participant_level, get_unlocked_activities, available_activities, get_activity_performed_counts)
 
+from collections import defaultdict
 import itertools
 import logging
 logger = logging.getLogger(__name__)
@@ -142,8 +143,34 @@ def update_notifications_since(request):
         else:
             logger.warning("authenticated user %s tried to update notifications since for %s", request.user, participant_group_relationship)
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
+'''
+[(4, u'adjust-thermostat'),
+ (2, u'eat-local-lunch'),
+  (1, u'enable-sleep-on-computer'),
+   (5, u'recycle-materials'),
+    (3, u'share-your-ride'),
+     (10, u'bike-or-walk'),
+      (7, u'computer-off-night'),
+       (9, u'no-beef'),
+        (8, u'recycle-paper'),
+         (14, u'air-dry-clothes'),
+          (15, u'cold-water-wash'),
+           (13, u'eat-green-lunch'),
+            (11, u'lights-off'),
+             (12, u'vegan-for-a-day')]
+             '''
+@login_required
+def activity_performed_counts(request, participant_group_id):
+    _activity_ids = (8, 3, 1, 9, 4, 15, 2, 5, 10, 7, 12, 11, 14, 13)
+    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+    if request.user.participant == participant_group_relationship.participant:
+        activity_performed_counts = get_activity_performed_counts(participant_group_relationship)
+        activity_counts_dict = defaultdict(int, [(d['int_value'], d['count']) for d in activity_performed_counts])
+        activity_counts = [activity_counts_dict[activity_id] for activity_id in _activity_ids]
+        logger.debug("activity counts: %s", activity_counts)
+        return HttpResponse(dumps({'success': True, 'activity_counts': activity_counts}))
+    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
-@cache_page(60)
 @login_required
 def group_score(request, participant_group_id):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group'), pk=participant_group_id)
@@ -162,7 +189,6 @@ def group_score(request, participant_group_id):
         return HttpResponse(dumps({'success':True, 'scores': groups }))
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
-@cache_page(60)
 @login_required
 def group_activity(request, participant_group_id):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=1), pk=participant_group_id)
@@ -173,7 +199,7 @@ def group_activity(request, participant_group_id):
         logger.warning("authenticated user %s tried to retrieve group activity for %s", request.user, participant_group_relationship)
         return HttpResponse(dumps({'success': False, 'message': 'Invalid authz request'}))
 
-def get_group_activity_json(participant_group_relationship, number_of_activities=5, retrieve_all=True):
+def get_group_activity_json(participant_group_relationship, number_of_activities=10, retrieve_all=False):
     group = participant_group_relationship.group
     chat_messages = []
     for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
