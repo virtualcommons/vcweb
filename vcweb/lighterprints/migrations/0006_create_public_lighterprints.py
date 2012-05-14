@@ -72,7 +72,7 @@ class Migration(DataMigration):
                     participant_number=i + 1)
 # create initial participant level data value
             ParticipantRoundDataValue.objects.create(parameter=participant_level_param,
-                    participant_group_relationship=pgr, round_Data=round_data, int_value=1)
+                    participant_group_relationship=pgr, round_data=round_data, int_value=1)
 # create initial unlocked activity set data values
             for activity_id in activity_ids:
                 ParticipantRoundDataValue.objects.create(parameter=activity_unlocked_param, participant_group_relationship=pgr, round_data=round_data, int_value=activity_id)
