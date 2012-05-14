@@ -20,7 +20,7 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity,
         get_lighterprints_experiment_metadata, get_lighterprints_public_experiment, get_activity_performed_parameter,
         points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids,
-        get_participant_level, get_unlocked_activities)
+        get_participant_level, get_unlocked_activities, available_activities)
 
 import itertools
 import logging
@@ -389,7 +389,9 @@ def participate(request, experiment_id=None):
         pgr = participant.get_participant_group_relationship(experiment)
     # need to explicitly unlock activities for this participant
     all_activities = get_unlocked_activities(pgr) if experiment.is_public else Activity.objects.all()
-    return render(request, 'lighterprints/participate.html', {'experiment': experiment, 'activities': all_activities })
+    activities = available_activities(pgr)
+    return render(request, 'lighterprints/participate.html', {'experiment': experiment, 'activities': activities,
+        'all_activities':all_activities })
 
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)
