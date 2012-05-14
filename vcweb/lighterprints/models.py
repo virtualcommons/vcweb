@@ -1,5 +1,4 @@
 from django.db import models
-from django.db.models import Q
 from django.dispatch import receiver
 from functools import partial
 from model_utils.managers import PassThroughManager
@@ -175,10 +174,10 @@ def get_active_experiments():
 #u'bike-or-walk', u'computer-off-night', u'no-beef', u'recycle-paper', u'air-dry-clothes', u'cold-water-wash',
 #u'eat-green-lunch', u'lights-off', u'vegan-for-a-day']
 
-def lookup_activities(activity_names):
+def _lookup_activities(activity_names):
     return Activity.objects.filter(name__in=activity_names)
 
-_levels_to_unlocked_activities = map (lambda x: partial(lookup_activities, x), (
+_levels_to_unlocked_activities = map (lambda x: partial(_lookup_activities, x), (
     ['recycle-paper', 'share-your-ride', 'enable-sleep-on-computer'],
     ['adjust-thermostat'],
     ['eat-local-lunch'],
@@ -189,6 +188,16 @@ _levels_to_unlocked_activities = map (lambda x: partial(lookup_activities, x), (
 def get_unlocked_activities_by_level(level=0):
     return _levels_to_unlocked_activities[level]()
 
+_unlocking_activities = {
+        'recycle-paper': (3, 'recycle-materials'),
+        'share-your-ride': (3, 'bike-or-walk'),
+        'enable-sleep-on-computer': (3, 'computer-off-night'),
+        'adjust-thermostat': (3, 'lights-off'),
+        'eat-local-lunch': (3, 'eat-green-lunch'),
+        'cold-water-wash': (1, 'air-dry-clothes'),
+        'beef-with-poultry': (3, 'vegan-for-a-day'),
+        }
+
 def initial_unlocked_activities():
     return Activity.objects.filter(name__in=('recycle-paper', 'share-your-ride', 'enable-sleep-on-computer'))
 
@@ -196,30 +205,27 @@ def create_activity_unlocked_data_values(participant_group_relationship, activit
     if activity_ids is None:
         return None
     logger.debug("unlocking activities: %s", activity_ids)
+    dvs = []
     for activity_id in activity_ids:
         unlocked_activity_dv = ParticipantRoundDataValue.objects.create(parameter=get_activity_unlocked_parameter(),
                 participant_group_relationship=participant_group_relationship)
         unlocked_activity_dv.value = activity_id
         unlocked_activity_dv.save()
+        dvs.append(unlocked_activity_dv)
+    return dvs
 
 def get_unlocked_activities(participant_group_relationship):
     # first check if they've performed any activities
     pdvs = participant_group_relationship.participant_data_value_set
     performed_activities = pdvs.filter(parameter=get_activity_performed_parameter())
     unlocked_activities = pdvs.filter(parameter=get_activity_unlocked_parameter())
-    if performed_activities.count() == 0:
+# FIXME: degenerate data check, remove if unnecessary
+    if performed_activities.count() == 0 and unlocked_activities.count() == 0:
         # check if they have any unlocked activities now
         initial_unlocked_activity_ids = initial_unlocked_activities().values_list('id', flat=True)
-        if unlocked_activities.count() == 0:
-            # unlock the base set of activities for them
-            create_activity_unlocked_data_values(participant_group_relationship, initial_unlocked_activity_ids)
-        else:
-            logger.debug("participant %s hasn't performed any activities but has already unlocked activities: %s", participant_group_relationship, unlocked_activities)
-            # they have some unlocked activities already, make sure they are the same as the initial set eventually
-            # check which ones are already unlocked
-    else:
-        logger.debug("participant %s has performed activities %s\nunlocked: %s", participant_group_relationship,
-                performed_activities, unlocked_activities)
+        # unlock the base set of activities for them
+        unlocked_activities = create_activity_unlocked_data_values(participant_group_relationship, initial_unlocked_activity_ids)
+    logger.debug("participant %s performed activities %s\nunlocked: %s", participant_group_relationship, performed_activities, unlocked_activities)
     return unlocked_activities
 
 # returns a tuple of flattened_activities list, activity_by_level dict
@@ -248,7 +254,7 @@ def available_activities(participant_group_relationship=None, activity=None):
     available_time_slot = dict(start_time__lte=current_time, end_time__gte=current_time)
     if activity is not None:
         available_time_slot['activity'] = activity
-    activities = [activity_availability.activity for activity_availability in ActivityAvailability.objects.select_related(depth=1).filter(Q(**available_time_slot))]
+    activities = [activity_availability.activity for activity_availability in ActivityAvailability.objects.select_related(depth=1).filter(models.Q(**available_time_slot))]
     logger.debug("activities: %s", activities)
     activities.extend(Activity.objects.filter(available_all_day=True))
     return activities
@@ -396,6 +402,11 @@ def should_advance_level(group, level, max_level=3):
 # public experiment methods
 def update_public_experiment(experiment):
 # check levels for each participant in this experiment
+    activity_performed_parameter = get_activity_performed_parameter()
+    activity_dict = {}
+    for activity in Activity.objects.filter(is_public=True):
+        activity_dict[activity.pk] = activity
+        activity_dict[activity.name] = activity
     for pgr in experiment.participant_group_relationships:
         participant_level_dv = pgr.participant_data_value_set.get(parameter=get_participant_level_parameter())
         previous_level = participant_level_dv.value
@@ -414,7 +425,19 @@ def update_public_experiment(experiment):
 
         participant_level_dv.value = current_level
         participant_level_dv.save()
-
+        # check activity performed conditions for other unlocked activities
+        counts = pgr.participant_data_value_set.values('int_value').order_by().annotate(count=models.Count('int_value'))
+        unlocked_activity_ids = []
+        for activity_count_dict in counts:
+            activity_id = activity_count_dict['int_value']
+            activity_performed_count = activity_count_dict['count']
+            activity = activity_dict[activity_id]
+            needed_count, unlocked_activity_name = _unlocking_activities[activity.name]
+            if activity_performed_count == needed_count:
+                unlocked_activity_ids.append(activity_dict[unlocked_activity_name].pk)
+        if unlocked_activity_ids:
+            logger.debug("unlocking activities with ids: %s", unlocked_activity_ids)
+            create_activity_unlocked_data_values(pgr, unlocked_activity_ids)
 
 def get_participant_level(participant_group_relationship):
     return points_to_level(get_green_points(participant_group_relationship))
