@@ -164,6 +164,7 @@ class UnlockedActivityTest(BaseTest):
         if activities is None:
             activities = available_activities()
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=self.experiment):
+            activities = available_activities(participant_group_relationship)
             participant = participant_group_relationship.participant
             self.client.login(username=participant.email, password='test')
             for activity in activities:
@@ -176,13 +177,23 @@ class UnlockedActivityTest(BaseTest):
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
                 self.assertEqual(expected_success, json_object['success'])
-                logger.debug("Initial do activity response: %s", response)
 
     def test_update_public_experiment(self):
         e = self.experiment
         e.activate()
         e.start_round()
+        self.assertTrue(e.is_public)
+        for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
+            self.assertEquals(get_unlocked_activities(pgr).count(), 3)
+            get_unlocked_activities(pgr)
+            self.assertEquals(pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value, 1)
+            self.assertEquals(get_participant_level(pgr), 1)
         self.perform_activities()
+        for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
+            self.assertEquals(get_unlocked_activities(pgr).count(), 3)
+            get_unlocked_activities(pgr)
+            self.assertEquals(pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value, 1)
+            self.assertEquals(get_participant_level(pgr), 2)
         update_public_experiment(e)
 
 

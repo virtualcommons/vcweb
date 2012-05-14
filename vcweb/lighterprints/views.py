@@ -388,7 +388,10 @@ def participate(request, experiment_id=None):
         experiment = get_object_or_404(Experiment, pk=experiment_id)
         pgr = participant.get_participant_group_relationship(experiment)
     # need to explicitly unlock activities for this participant
-    all_activities = get_unlocked_activities(pgr) if experiment.is_public else Activity.objects.all()
+    if experiment.is_public:
+        all_activities = [unlocked_activity_dv.value for unlocked_activity_dv in get_unlocked_activities(pgr)]
+    else:
+        all_activities = Activity.objects.all()
     activities = available_activities(pgr)
     return render(request, 'lighterprints/participate.html', {'experiment': experiment, 'activities': activities,
         'all_activities':all_activities })

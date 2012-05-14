@@ -49,8 +49,7 @@ class ActivityQuerySet(models.query.QuerySet):
     groups advance in level and each level comprises a set of activities.  Tiered activities are used in the open
     lighterprints experiment, where mastering one activity can lead to another set of activities
     """
-    def for_participant(self, participant_group_relationship=None, **kwargs):
-        is_public = False
+    def for_participant(self, participant_group_relationship=None, is_public=False, **kwargs):
         if participant_group_relationship is not None:
             is_public = participant_group_relationship.experiment.is_public
         return self.filter(is_public=is_public)
@@ -217,7 +216,7 @@ def get_unlocked_activities(participant_group_relationship):
     else:
         logger.debug("participant %s has performed some activities %s and unlocked %s", participant_group_relationship,
                 performed_activities, unlocked_activities)
-    return [unlocked_activity.value for unlocked_activity in unlocked_activities]
+    return unlocked_activities
 
 # returns a tuple of flattened_activities list, activity_by_level dict
 def get_all_activities_tuple(participant_group_relationship, all_activities=None):
@@ -353,7 +352,10 @@ def round_started_handler(sender, experiment=None, **kwargs):
     for group in experiment.group_set.all():
         current_round_data.group_data_value_set.create(group=group, parameter=footprint_level_parameter, int_value=1)
         for pgr in group.participant_group_relationship_set.all():
+            # create participant level data value for each participant
             ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, parameter=participant_level_parameter, int_value=1)
+            # create initial unlocked set of data values
+            get_unlocked_activities(pgr)
 
 
 def average_points_per_person(group):
@@ -417,6 +419,7 @@ def get_green_points(participant_group_relationship):
     total_points = 0
     for activity_performed_dv in performed_activities:
         total_points += activity_performed_dv.value.points
+    logger.debug("pgr %s has %s points", participant_group_relationship, total_points)
     return total_points
 
 def points_to_level(points=0):
