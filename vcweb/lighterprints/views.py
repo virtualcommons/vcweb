@@ -18,7 +18,7 @@ from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_auth
 from vcweb.lighterprints.forms import ActivityForm, GreenButtonUploadFileForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity,
         get_lighterprints_experiment_metadata, get_lighterprints_public_experiment, get_activity_performed_parameter,
-        points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids, GreenButtonParser
+        points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids, GreenButtonParser,
         get_participant_level, get_unlocked_activities, available_activities, get_activity_performed_counts)
 
 from collections import defaultdict
@@ -412,7 +412,7 @@ def handle_uploaded_file(f, participant_group_relationship):
 
 
 @login_required
-def upload_greenbutton_file(request):
+def upload_greenbutton_data(request):
     if request.method == 'POST':
         form = GreenButtonUploadFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -423,7 +423,7 @@ def upload_greenbutton_file(request):
     form = GreenButtonUploadFileForm()
     experiment = get_lighterprints_public_experiment()
     participant_group_relationship = request.user.participant.get_participant_group_relationship(experiment)
-    return render('lighterprints/greenbutton-upload.html', {
+    return render(request, 'lighterprints/greenbutton-upload.html', {
         'experiment': experiment,
         'participant_group_relationship': participant_group_relationship
         })
