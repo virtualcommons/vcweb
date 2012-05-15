@@ -1,13 +1,13 @@
 {% extends "lighterprints/base.html" %}
 {% block page %}
-<div class='entry'>
-    You can upload <a href='http://greenbuttondata.org'>Green Button Data</a> from your participating energy provider
-    for additional green points.  Verifying your energy footprint provides a 50% boost to all green points earned for
+<div class='alert alert-info'>
+    You can upload <a class='external' href='http://greenbuttondata.org'>Green Button Data</a> from your participating energy provider
+    for additional green points.  Verifying your energy footprint gives a <b>50% boost</b> to all green points earned for
     the reporting period.
 </div>
-<div class='alert alert-info infoIcon'>
+<div class='alert alert-error infoIcon'>
     At the moment we can process daily Green Button data with <b>1 hour interval readings in watt-hours</b>.  If your
-    data does not conform we probably won't be able to aggregate it properly.
+    data does not conform we won't be able to aggregate it properly.
 </div>
 <h3>Green Button Data Upload</h3>
 <form id='vcweb-form' action='' method='post' enctype='multipart/form-data' class='form-horizontal'>

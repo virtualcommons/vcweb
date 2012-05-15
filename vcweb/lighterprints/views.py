@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.html import escape
@@ -451,12 +452,14 @@ def handle_uploaded_file(f, participant_group_relationship):
 def greenbutton_summary(request, participant_group_id):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
     if request.user.participant == participant_group_relationship.participant:
-        return HttpResponse(dumps({ 'success': True,
-            'summary': [
-                { 'day': '2012-05-03 00:00:00', 'watt_hours': 38356, 'total_cost_millicents': 4691, },
-                { 'day': '2012-05-04 00:00:00', 'watt_hours': 37243, 'total_cost_millicents': 3719, },
-                ]
-            }))
+        interval_blocks = participant_group_relationship.gb_interval_block_set.all()
+        summary = []
+        for interval_block in interval_blocks:
+            day_aggregate = interval_block.interval_reading_set.aggregate(watt_hours=Sum('watt_hours'), total_cost_millicents=Sum('millicents'))
+            day_aggregate['day'] = interval_block.date
+            summary.append(day_aggregate)
+        logger.debug("summaries: %s", summary)
+        return HttpResponse(dumps({ 'success': True, 'summary': summary }))
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
 @login_required

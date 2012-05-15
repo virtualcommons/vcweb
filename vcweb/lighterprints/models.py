@@ -135,7 +135,7 @@ class GreenButtonParser(object):
     def get_interval_reading_data(self, interval_reading_node):
         time_period = self.find('gb:timePeriod', interval_reading_node)
         data = self.extract(time_period, exprs=['duration', 'start'])
-        data.update(self.extract(interval_reading_node, exprs=['value']))
+        data.update(self.extract(interval_reading_node, exprs=['value', 'cost']))
         return data
 
     def create_interval_block(self, participant_group_relationship):
