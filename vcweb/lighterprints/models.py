@@ -41,8 +41,15 @@ class ActivityBadge(Badge):
 
 badges.register(ActivityBadge)
 
+class GreenButtonIntervalBlock(models.Model):
+    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='gb_interval_block_set')
+    date_created = models.DateTimeField(default=datetime.now)
+    date = models.DateTimeField()
+    start = models.PositiveIntegerField(_('Seconds from epoch from GB data'))
+    total_duration = models.PositiveIntegerField(_('Total duration for this interval block'))
+
 class GreenButtonIntervalReading(models.Model):
-    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='gb_interval_reading_set')
+    interval_block = models.ForeignKey(GreenButtonIntervalBlock, name='interval_reading_set')
     date_created = models.DateTimeField(default=datetime.now)
     date = models.DateTimeField()
     seconds_from_epoch = models.PositiveIntegerField(_('Number of seconds from epoch from GB data, should be the same as date'))

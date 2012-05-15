@@ -8,10 +8,21 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # Adding model 'GreenButtonIntervalBlock'
+        db.create_table('lighterprints_greenbuttonintervalblock', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('participant_group_relationship', self.gf('django.db.models.fields.related.ForeignKey')(related_name='gb_interval_block_set', to=orm['core.ParticipantGroupRelationship'])),
+            ('date_created', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
+            ('date', self.gf('django.db.models.fields.DateTimeField')()),
+            ('start', self.gf('django.db.models.fields.PositiveIntegerField')()),
+            ('total_duration', self.gf('django.db.models.fields.PositiveIntegerField')()),
+        ))
+        db.send_create_signal('lighterprints', ['GreenButtonIntervalBlock'])
+
         # Adding model 'GreenButtonIntervalReading'
         db.create_table('lighterprints_greenbuttonintervalreading', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('participant_group_relationship', self.gf('django.db.models.fields.related.ForeignKey')(related_name='gb_interval_reading_set', to=orm['core.ParticipantGroupRelationship'])),
+            ('interval_reading_set', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['lighterprints.GreenButtonIntervalBlock'])),
             ('date_created', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
             ('date', self.gf('django.db.models.fields.DateTimeField')()),
             ('seconds_from_epoch', self.gf('django.db.models.fields.PositiveIntegerField')()),
@@ -23,6 +34,9 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
+        # Deleting model 'GreenButtonIntervalBlock'
+        db.delete_table('lighterprints_greenbuttonintervalblock')
+
         # Deleting model 'GreenButtonIntervalReading'
         db.delete_table('lighterprints_greenbuttonintervalreading')
 
@@ -229,14 +243,23 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'start_time': ('django.db.models.fields.TimeField', [], {'null': 'True', 'blank': 'True'})
         },
+        'lighterprints.greenbuttonintervalblock': {
+            'Meta': {'object_name': 'GreenButtonIntervalBlock'},
+            'date': ('django.db.models.fields.DateTimeField', [], {}),
+            'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'participant_group_relationship': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'gb_interval_block_set'", 'to': "orm['core.ParticipantGroupRelationship']"}),
+            'start': ('django.db.models.fields.PositiveIntegerField', [], {}),
+            'total_duration': ('django.db.models.fields.PositiveIntegerField', [], {})
+        },
         'lighterprints.greenbuttonintervalreading': {
             'Meta': {'object_name': 'GreenButtonIntervalReading'},
             'date': ('django.db.models.fields.DateTimeField', [], {}),
             'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'interval_reading_set': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['lighterprints.GreenButtonIntervalBlock']"}),
             'millicents_per_wh': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'participant_group_relationship': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'gb_interval_reading_set'", 'to': "orm['core.ParticipantGroupRelationship']"}),
             'seconds_from_epoch': ('django.db.models.fields.PositiveIntegerField', [], {}),
             'watt_hours': ('django.db.models.fields.PositiveIntegerField', [], {})
         }

@@ -160,10 +160,18 @@ class GreenButtonDataTest(BaseTest):
 
     def verify(self, xmltree):
         logger.debug("xmltree: %s", xmltree)
-        interval_blocks = xmltree.xpath('//gb:IntervalBlock', namespaces={'gb': 'http://naesb.org/espi'})
-        self.assertEqual(len(interval_blocks), 1)
-        interval_readings = xmltree.xpath('//gb:IntervalReading', namespaces={'gb': 'http://naesb.org/espi'})
+        ns = { 'gb': 'http://naesb.org/espi' }
+        interval_block = xmltree.find('//gb:IntervalBlock', namespaces=ns)
+        interval_data = interval_block.find('gb:interval', namespaces=ns)
+        total_interval_duration = int(interval_data.find('gb:duration', namespaces=ns).text)
+        interval_start_from_epoch = int(interval_data.find('gb:start', namespaces=ns).text)
+        interval_readings = interval_block.findall('gb:IntervalReading', namespaces=ns)
         self.assertTrue(len(interval_readings) > 1)
+        for interval_reading in interval_readings:
+            time_period = interval_reading.find('gb:timePeriod', namespaces=ns)
+            duration = time_period.find('gb:duration', namespaces=ns)
+            self.assertEquals(int(duration.text), 3600)
+
 
 
     def test_import(self):
