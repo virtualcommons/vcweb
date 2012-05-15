@@ -21,8 +21,10 @@ $(function() {
     <br>
     If you've forgotten your password, you can <a href='{% url password-reset %}'>request a new one</a>.
     </p>
-    {% include "includes/form-as-div.html" %}
-    <div><button type='submit' class='submit'>Login</button></div>
+    {% include "includes/bootstrap-form.html" %}
+    <div class='form-actions'>
+        <button type='submit' class='btn btn-primary'>Login</button>
+    </div>
     <br><br>
     You can also register or sign in using your other social accounts:
     <ul class="authbadges">

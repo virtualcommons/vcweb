@@ -39,9 +39,9 @@ $(document).ready(function() {
 <p>
 Already have an account?  You can <a href='{% url core:login %}'>login here</a> or <a href='{% url password-reset %}'>retrieve your password</a>.
 </p>
-{% include "includes/form-as-div.html" %}
-<div>
-    <button class='submit'>Register</button>
+{% include "includes/bootstrap-form.html" %}
+<div class='form-actions'>
+    <button type='submit' class='btn btn-primary'>Submit</button>
 </div>
     <br><br>
     You can also register or sign in using your other social accounts:

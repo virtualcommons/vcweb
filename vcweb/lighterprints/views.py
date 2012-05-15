@@ -445,7 +445,7 @@ def handle_uploaded_file(f, participant_group_relationship):
         for chunk in f.chunks():
             dst.write(chunk)
         parser = GreenButtonParser(fh=dst)
-        parser.create_models(participant_group_relationship)
+        return parser.create_models(participant_group_relationship)
 
 @login_required
 def greenbutton_summary(request, participant_group_id):
@@ -460,6 +460,12 @@ def greenbutton_summary(request, participant_group_id):
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
 @login_required
+def upload_greenbutton_success(request, models=None):
+    return render(request, 'lighterprints/greenbutton-upload-success.html', {
+        'models': models,
+        })
+
+@login_required
 def upload_greenbutton_data(request):
     if request.method == 'POST':
         form = GreenButtonUploadFileForm(request.POST, request.FILES)
@@ -467,9 +473,9 @@ def upload_greenbutton_data(request):
             participant = request.user.participant
             experiment = get_lighterprints_public_experiment()
             participant_group_relationship = participant.get_participant_group_relationship(experiment)
-            logger.debug("request files: %s", request.FILES)
-            handle_uploaded_file(request.FILES['file'], participant_group_relationship)
-            return redirect('upload/successful')
+            logger.debug("participant %s sending file: %s", participant_group_relationship, request.FILES)
+            models = handle_uploaded_file(request.FILES['file'], participant_group_relationship)
+            return redirect('upload_greenbutton_success', models=models)
     form = GreenButtonUploadFileForm()
     experiment = get_lighterprints_public_experiment()
     participant_group_relationship = request.user.participant.get_participant_group_relationship(experiment)

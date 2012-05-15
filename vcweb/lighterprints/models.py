@@ -154,14 +154,14 @@ class GreenButtonParser(object):
                 date=datetime.fromtimestamp(start),
                 seconds_from_epoch=start,
                 watt_hours=data['value'],
-                millicents_per_wh=data['cost'])
+                millicents=data['cost'])
         return interval_reading_node, gb_interval_reading
 
     def create_models(self, participant_group_relationship):
         interval_block_node, gb_interval_block = self.create_interval_block(participant_group_relationship)
         models = [gb_interval_block]
         for interval_reading_node in self.interval_readings(interval_block_node):
-            gb_interval_reading = self.create_interval_reading(interval_reading_node, gb_interval_block) 
+            gb_interval_reading = self.create_interval_reading(interval_reading_node, gb_interval_block)
             models.append(gb_interval_reading)
         return models
 
