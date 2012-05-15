@@ -9,6 +9,7 @@ from django.template.defaultfilters import slugify
 from django.utils.html import escape
 from django.utils.timesince import timesince
 from django.utils.translation import ugettext_lazy as _
+from model_utils.managers import PassThroughManager
 from string import Template
 from vcweb.core import signals, simplecache
 from social_auth.backends.facebook import FacebookBackend
@@ -197,11 +198,11 @@ class ExperimentConfiguration(models.Model):
         ordering = ['experiment_metadata', 'creator', 'date_created']
 
 
-# FIXME: convert to ExperimentQuerySet PassThroughManager django-model-utils style
-class ExperimentManager(models.Manager):
-    def get_all_active(self):
+class ExperimentQuerySet(models.query.QuerySet):
+    def public(self):
+        return self.filter(experiment_configuration__is_public=True)
+    def active(self):
         return self.filter(status='ACTIVE')
-
     def increment_elapsed_time(self, status='ROUND_IN_PROGRESS', amount=60):
         if status is not None:
             es = self.filter(status=status)
@@ -271,7 +272,7 @@ class Experiment(models.Model):
     slug = models.SlugField(max_length=32, unique=True, null=True, blank=True)
     ''' short slug to use instead of experiment pk, currently unimplemented '''
 
-    objects = ExperimentManager()
+    objects = PassThroughManager.for_queryset_class(ExperimentQuerySet)()
 
     @property
     def is_time_expired(self):

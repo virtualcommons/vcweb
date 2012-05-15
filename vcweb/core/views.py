@@ -150,6 +150,8 @@ class RegistrationView(FormView, AnonymousMixin):
         request = self.request
         auth.login(request, auth.authenticate(username=email, password=password))
         set_authentication_token(user, request.session.session_key)
+        for experiment in Experiment.objects.public():
+            experiment.add_participant(participant)
         return super(RegistrationView, self).form_valid(form)
 
     def get_success_url(self):
