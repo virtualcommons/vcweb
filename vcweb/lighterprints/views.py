@@ -6,7 +6,6 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.html import escape
 from django.utils.timesince import timesince
-from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
@@ -16,15 +15,16 @@ from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, Partic
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response
-from vcweb.lighterprints.forms import ActivityForm
+from vcweb.lighterprints.forms import ActivityForm, GreenButtonUploadFileForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity,
         get_lighterprints_experiment_metadata, get_lighterprints_public_experiment, get_activity_performed_parameter,
-        points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids,
+        points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids, GreenButtonParser
         get_participant_level, get_unlocked_activities, available_activities, get_activity_performed_counts)
 
 from collections import defaultdict
 import itertools
 import logging
+import tempfile
 logger = logging.getLogger(__name__)
 
 class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
@@ -403,6 +403,30 @@ class CsvExportView(DataExportMixin, BaseDetailView):
                 total_points += performed_activity.value.points
             writer.writerow([participant_group_relationship, total_points])
 
+def handle_uploaded_file(f, participant_group_relationship):
+    with tempfile.TemporaryFile() as dst:
+        for chunk in f.chunks():
+            dst.write(chunk)
+        parser = GreenButtonParser(file=dst)
+        parser.create_models(participant_group_relationship)
+
+
+@login_required
+def upload_greenbutton_file(request):
+    if request.method == 'POST':
+        form = GreenButtonUploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            participant_group_id = form.cleaned_data['participant_group_id']
+            participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+            handle_uploaded_file(request.FILES['file'], participant_group_relationship)
+            return redirect('upload/successful')
+    form = GreenButtonUploadFileForm()
+    experiment = get_lighterprints_public_experiment()
+    participant_group_relationship = request.user.participant.get_participant_group_relationship(experiment)
+    return render('lighterprints/greenbutton-upload.html', {
+        'experiment': experiment,
+        'participant_group_relationship': participant_group_relationship
+        })
 
 @login_required
 def participate(request, experiment_id=None):

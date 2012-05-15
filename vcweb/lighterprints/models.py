@@ -96,8 +96,13 @@ class GreenButtonIntervalReading(models.Model):
 class GreenButtonParser(object):
     xmlns = { 'gb': 'http://naesb.org/espi' }
 
-    def __init__(self, xmltree, *args, **kwargs):
-        self.xmltree = xmltree
+    def __init__(self, xmltree=None, file=None, **kwargs):
+        if xmltree is not None:
+            self.xmltree = xmltree
+        elif file is not None:
+            self.xmltree = etree.parse(file)
+        else:
+            logger.warning("parser initialized without valid xmltree, make sure you set it before using any methods.")
 
     def find(self, expr, node=None, **kwargs):
         if node is None:
