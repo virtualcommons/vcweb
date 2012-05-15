@@ -125,6 +125,12 @@ class GreenButtonParser(object):
         interval_data = self.interval_data(node)
         return self.extract(interval_data, exprs=['duration', 'start'])
 
+    def get_interval_reading_data(self, interval_reading):
+        time_period = self.find('gb:timePeriod', interval_reading)
+        data = self.extract(time_period, exprs=['duration', 'start'])
+        data.update(self.extract(interval_reading, exprs=['value']))
+        return data
+
 class ActivityQuerySet(models.query.QuerySet):
     """
     for the moment, categorizing Activities as tiered or leveled.  Leveled activities are used in experiments, where

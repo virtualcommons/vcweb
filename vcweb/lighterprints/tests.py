@@ -214,7 +214,7 @@ class GreenButtonDataTest(BaseTest):
         super(GreenButtonDataTest, self).setUp(is_public=True)
 
     def verify(self, xmltree):
-        logger.debug("xmltree: %s", etree.tostring(xmltree))
+        #logger.debug("xmltree: %s", etree.tostring(xmltree))
         parser = GreenButtonParser(xmltree)
         interval_block = parser.interval_block()
         interval_data_node = parser.interval_data(interval_block)
@@ -228,11 +228,17 @@ class GreenButtonDataTest(BaseTest):
         self.assertTrue(len(interval_readings) > 1)
         total = 0
         for interval_reading in interval_readings:
+            reading_data = parser.get_interval_reading_data(interval_reading)
+            logger.debug("interval reading data: %s", reading_data)
             time_period = interval_reading.find('gb:timePeriod', namespaces=GreenButtonParser.xmlns)
             duration = int(time_period.find('gb:duration', namespaces=GreenButtonParser.xmlns).text)
-            total += duration
+            self.assertEquals(reading_data['duration'], duration)
             self.assertEquals(duration, 3600)
+            total += duration
             start = int(time_period.find('gb:start', namespaces=GreenButtonParser.xmlns).text)
+            self.assertEquals(reading_data['start'], start)
+            value = int(interval_reading.find('gb:value', namespaces=GreenButtonParser.xmlns).text)
+            self.assertEquals(reading_data['value'], value)
             self.assertTrue(datetime.fromtimestamp(start))
         self.assertEquals(total, total_interval_duration)
 
