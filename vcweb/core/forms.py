@@ -41,17 +41,17 @@ class BaseRegistrationForm(BootstrapForm):
         raise forms.ValidationError(_("Please make sure your passwords match."))
 
 class RegistrationForm(BaseRegistrationForm):
-    class Meta:
-        layout = {
-                Fieldset("", "first_name", "last_name", "email", "password", "confirm_password", "institution",'experimenter')
-                }
     experimenter = forms.BooleanField(required=False, help_text=_('Check this box if you would like to request experimenter access.'))
+    class Meta:
+        layout = (
+                Fieldset("", "first_name", "last_name", "email", "password", "confirm_password", "institution",'experimenter'),
+                )
 
 class LoginForm(BootstrapForm):
     class Meta:
-        layout = {
-                Fieldset("vcweb login", 'email', 'password')
-                }
+        layout = (
+                Fieldset("vcweb login", 'email', 'password'),
+                )
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
 
