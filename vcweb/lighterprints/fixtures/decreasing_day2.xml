@@ -4,7 +4,7 @@
   <updated>2012-05-02T00:00:00.000Z</updated>
   <entry>
     <id/>
-    <title>816 Rando St, Anytown, AZ 85156</title>
+    <title>894 Rando St, Anytown, AZ 85143</title>
     <updated>2012-05-02T00:00:00.000Z</updated>
     <published>2012-05-02T00:00:00.000Z</published>
     <content type="xml">
@@ -42,13 +42,15 @@
           <start>1335942000</start>
         </interval>
         <IntervalReading>
+          <cost>02700</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335942000</start>
           </timePeriod>
-          <value>189</value>
+          <value>225</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>04212</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335945600</start>
@@ -56,158 +58,180 @@
           <value>351</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>04764</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335949200</start>
           </timePeriod>
-          <value>428</value>
+          <value>397</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>06264</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335952800</start>
           </timePeriod>
-          <value>507</value>
+          <value>522</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>06996</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335956400</start>
           </timePeriod>
-          <value>627</value>
+          <value>583</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>08208</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335960000</start>
           </timePeriod>
-          <value>701</value>
+          <value>684</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>09084</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335963600</start>
           </timePeriod>
-          <value>758</value>
+          <value>757</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>10620</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335967200</start>
           </timePeriod>
-          <value>832</value>
+          <value>885</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>11448</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335970800</start>
           </timePeriod>
-          <value>909</value>
+          <value>954</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>12012</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335974400</start>
           </timePeriod>
-          <value>1053</value>
+          <value>1001</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>13260</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335978000</start>
           </timePeriod>
-          <value>1089</value>
+          <value>1105</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>14076</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335981600</start>
           </timePeriod>
-          <value>1206</value>
+          <value>1173</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>13188</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335985200</start>
           </timePeriod>
-          <value>1131</value>
+          <value>1099</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>11988</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335988800</start>
           </timePeriod>
-          <value>1033</value>
+          <value>999</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>11076</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335992400</start>
           </timePeriod>
-          <value>981</value>
+          <value>923</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>09768</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335996000</start>
           </timePeriod>
-          <value>860</value>
+          <value>814</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>09192</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1335999600</start>
           </timePeriod>
-          <value>808</value>
+          <value>766</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>08292</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1336003200</start>
           </timePeriod>
-          <value>688</value>
+          <value>691</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>06924</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1336006800</start>
           </timePeriod>
-          <value>609</value>
+          <value>577</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>05508</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1336010400</start>
           </timePeriod>
-          <value>490</value>
+          <value>459</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>04344</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1336014000</start>
           </timePeriod>
-          <value>383</value>
+          <value>362</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>03912</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1336017600</start>
           </timePeriod>
-          <value>271</value>
+          <value>326</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>02964</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1336021200</start>
           </timePeriod>
-          <value>255</value>
+          <value>247</value>
         </IntervalReading>
         <IntervalReading>
+          <cost>02064</cost>
           <timePeriod>
             <duration>3600</duration>
             <start>1336024800</start>
           </timePeriod>
-          <value>164</value>
+          <value>172</value>
         </IntervalReading>
       </IntervalBlock>
     </content>
