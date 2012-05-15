@@ -169,9 +169,9 @@ class ActivityUnlockingTest(ActivityTest):
                             parameter=get_activity_performed_parameter(), int_value=activity_id)
         update_public_experiment(e)
         for pgr in self.participant_group_relationships:
-            self.assertEquals(get_green_points(pgr), 330)
+            self.assertEqual(get_green_points(pgr), 330)
             unlocked_activities = get_unlocked_activities(pgr)
-            self.assertEquals(len(unlocked_activities), 7)
+            self.assertEqual(len(unlocked_activities), 7)
             logger.debug("unlocked activities: %s", unlocked_activities)
 
     def test_level_unlocking(self):
@@ -180,19 +180,19 @@ class ActivityUnlockingTest(ActivityTest):
         e.start_round()
         self.assertTrue(e.is_public)
         for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
-            self.assertEquals(get_unlocked_activities(pgr).count(), 3)
-            self.assertEquals(pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value, 1)
-            self.assertEquals(get_participant_level(pgr), 1)
+            self.assertEqual(get_unlocked_activities(pgr).count(), 3)
+            self.assertEqual(pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value, 1)
+            self.assertEqual(get_participant_level(pgr), 1)
         self.perform_activities()
         for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
-            self.assertEquals(get_unlocked_activities(pgr).count(), 3)
-            self.assertEquals(pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value, 1)
-            self.assertEquals(get_participant_level(pgr), 2)
+            self.assertEqual(get_unlocked_activities(pgr).count(), 3)
+            self.assertEqual(pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value, 1)
+            self.assertEqual(get_participant_level(pgr), 2)
         update_public_experiment(e)
         for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
-            self.assertEquals(get_unlocked_activities(pgr).count(), 4)
-            self.assertEquals(pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value, 2)
-            self.assertEquals(get_participant_level(pgr), 2)
+            self.assertEqual(get_unlocked_activities(pgr).count(), 4)
+            self.assertEqual(pgr.participant_data_value_set.get(parameter=get_participant_level_parameter()).value, 2)
+            self.assertEqual(get_participant_level(pgr), 2)
 
 class GroupScoreTest(ActivityTest):
     def setUp(self):
@@ -204,8 +204,8 @@ class GroupScoreTest(ActivityTest):
         self.perform_activities()
         for group in e.group_set.all():
             average_points_per_person, total_points = get_group_score(group)
-            self.assertEquals(average_points_per_person, 110)
-            self.assertEquals(total_points, 550)
+            self.assertEqual(average_points_per_person, 110)
+            self.assertEqual(total_points, 550)
 
 class GreenButtonDataTest(BaseTest):
     test_filenames = [os.path.join('vcweb', 'lighterprints', 'fixtures', filename) for filename in ('decreasing_day1.xml', 'decreasing_day2.xml', 'decreasing_day3.xml')]
@@ -229,18 +229,24 @@ class GreenButtonDataTest(BaseTest):
         total = 0
         for interval_reading in interval_readings:
             reading_data = parser.get_interval_reading_data(interval_reading)
-            logger.debug("interval reading data: %s", reading_data)
             time_period = interval_reading.find('gb:timePeriod', namespaces=GreenButtonParser.xmlns)
             duration = int(time_period.find('gb:duration', namespaces=GreenButtonParser.xmlns).text)
-            self.assertEquals(reading_data['duration'], duration)
-            self.assertEquals(duration, 3600)
+            self.assertEqual(reading_data['duration'], duration)
+            self.assertEqual(duration, 3600)
             total += duration
             start = int(time_period.find('gb:start', namespaces=GreenButtonParser.xmlns).text)
-            self.assertEquals(reading_data['start'], start)
+            self.assertEqual(reading_data['start'], start)
             value = int(interval_reading.find('gb:value', namespaces=GreenButtonParser.xmlns).text)
-            self.assertEquals(reading_data['value'], value)
+            self.assertEqual(reading_data['value'], value)
             self.assertTrue(datetime.fromtimestamp(start))
-        self.assertEquals(total, total_interval_duration)
+        self.assertEqual(total, total_interval_duration)
+        e = self.experiment
+        e.activate()
+        e.start_round()
+        for pgr in self.participant_group_relationships:
+            models = parser.create_models(pgr)
+            logger.debug("created %s models", len(models))
+            self.assertTrue(models)
 
     def test_import(self):
         for filename in self.test_filenames:

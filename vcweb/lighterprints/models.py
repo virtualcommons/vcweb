@@ -11,6 +11,7 @@ from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 from brabeion import badges
 from brabeion.base import Badge, BadgeAwarded
+from lxml import etree
 
 import logging
 logger = logging.getLogger(__name__)
@@ -84,7 +85,7 @@ class GreenButtonIntervalBlock(models.Model):
     total_duration = models.PositiveIntegerField(_('Total duration for this interval block'))
 
 class GreenButtonIntervalReading(models.Model):
-    interval_block = models.ForeignKey(GreenButtonIntervalBlock, name='interval_reading_set')
+    interval_block = models.ForeignKey(GreenButtonIntervalBlock, related_name='interval_reading_set')
     date_created = models.DateTimeField(default=datetime.now)
     date = models.DateTimeField()
     seconds_from_epoch = models.PositiveIntegerField(_('Number of seconds from epoch from GB data, should be the same as date'))
@@ -119,17 +120,44 @@ class GreenButtonParser(object):
 
     def extract(self, node, exprs=None, converter=int):
         ''' returns a dict of expr -> value for each expr '''
-        return dict([(expr, converter(self.find('gb:%s' % expr, node).text)) for expr in exprs])
+        return collections.defaultdict(lambda: None, [(expr, converter(self.find('gb:%s' % expr, node).text)) for expr in exprs])
 
     def get_interval_data(self, node=None):
         interval_data = self.interval_data(node)
         return self.extract(interval_data, exprs=['duration', 'start'])
 
-    def get_interval_reading_data(self, interval_reading):
-        time_period = self.find('gb:timePeriod', interval_reading)
+    def get_interval_reading_data(self, interval_reading_node):
+        time_period = self.find('gb:timePeriod', interval_reading_node)
         data = self.extract(time_period, exprs=['duration', 'start'])
-        data.update(self.extract(interval_reading, exprs=['value']))
+        data.update(self.extract(interval_reading_node, exprs=['value']))
         return data
+
+    def create_interval_block(self, participant_group_relationship):
+        interval_block = self.interval_block()
+        interval_data = self.get_interval_data(interval_block)
+        start = interval_data['start']
+        total_duration = interval_data['duration']
+        gb_interval_block = GreenButtonIntervalBlock.objects.create(date=datetime.fromtimestamp(start), start=start,
+                total_duration=total_duration, participant_group_relationship=participant_group_relationship)
+        return interval_block, gb_interval_block
+
+    def create_interval_reading(self, interval_reading_node, gb_interval_block):
+        data = self.get_interval_reading_data(interval_reading_node)
+        start = data['start']
+        gb_interval_reading = gb_interval_block.interval_reading_set.create(
+                date=datetime.fromtimestamp(start),
+                seconds_from_epoch=start,
+                watt_hours=data['value'],
+                millicents_per_wh=data['cost'])
+        return interval_reading_node, gb_interval_reading
+
+    def create_models(self, participant_group_relationship):
+        interval_block_node, gb_interval_block = self.create_interval_block(participant_group_relationship)
+        models = [gb_interval_block]
+        for interval_reading_node in self.interval_readings(interval_block_node):
+            gb_interval_reading = self.create_interval_reading(interval_reading_node, gb_interval_block) 
+            models.append(gb_interval_reading)
+        return models
 
 class ActivityQuerySet(models.query.QuerySet):
     """
