@@ -100,6 +100,7 @@ INSTALLED_APPS = (
         'south',
         'social_auth',
         'mptt',
+        'bootstrap',
         )
 
 SOUTH_TESTS_MIGRATE = False

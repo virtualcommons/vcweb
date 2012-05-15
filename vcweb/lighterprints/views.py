@@ -451,18 +451,13 @@ def handle_uploaded_file(f, participant_group_relationship):
 def greenbutton_summary(request, participant_group_id):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
     if request.user.participant == participant_group_relationship.participant:
-        return HttpResponse(dumps({ 'success': True, 
-            'summary': [ 
-                {  'day': '2012-05-03 00:00:00', 'watt_hours': 38356, 'total_cost_millicents': 4691, },
-                { 'day': '2012-05-04 00:00:00', 'watt_hours': 37243, 'total_costs_millicents': 3719, },
+        return HttpResponse(dumps({ 'success': True,
+            'summary': [
+                { 'day': '2012-05-03 00:00:00', 'watt_hours': 38356, 'total_cost_millicents': 4691, },
+                { 'day': '2012-05-04 00:00:00', 'watt_hours': 37243, 'total_cost_millicents': 3719, },
                 ]
             }))
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
-
-
-
-
-
 
 @login_required
 def upload_greenbutton_data(request):
@@ -478,6 +473,7 @@ def upload_greenbutton_data(request):
     participant_group_relationship = request.user.participant.get_participant_group_relationship(experiment)
     return render(request, 'lighterprints/greenbutton-upload.html', {
         'experiment': experiment,
-        'participant_group_relationship': participant_group_relationship
+        'participant_group_relationship': participant_group_relationship,
+        'form': form,
         })
 
