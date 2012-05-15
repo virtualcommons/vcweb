@@ -1,0 +1,25 @@
+{% extends "lighterprints/base.html" %}
+{% block page %}
+<div class='alert alert-success infoIcon'>
+    Data successfully uploaded.  Any activities you perform today will now receive a 50% bonus!
+    Click <a href='https://vcweb.asu.edu/devfoot'>here</a> to return to the Lighter Footprints app.
+</div>
+<div class='entry'>
+    Your submitted data:
+
+    <table class='table-striped table-bordered'>
+        <thead>
+            <th>Day</th><th>Total kwH usage</th><th>Total Cost</th>
+        </thead>
+        <tbody>
+            {% for interval_block in interval_blocks %}
+            <tr>
+                <td>{{interval_block}}</td>
+                <td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock page %}
