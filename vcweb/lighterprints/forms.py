@@ -11,7 +11,7 @@ class ActivityForm(forms.Form):
 class GreenButtonUploadFileForm(BootstrapForm):
     class Meta:
         layout = {
-                Fieldset("Please enter your zipcode and a Green Button Data file from your energy provider",
+                Fieldset("Please enter your zipcode and a Green Button Data file from your energy provider.",
                     "zipcode", "file",
                     ),
                 }

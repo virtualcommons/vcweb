@@ -444,7 +444,7 @@ def handle_uploaded_file(f, participant_group_relationship):
     with tempfile.TemporaryFile() as dst:
         for chunk in f.chunks():
             dst.write(chunk)
-        parser = GreenButtonParser(file=dst)
+        parser = GreenButtonParser(fh=dst)
         parser.create_models(participant_group_relationship)
 
 @login_required
@@ -464,8 +464,10 @@ def upload_greenbutton_data(request):
     if request.method == 'POST':
         form = GreenButtonUploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            participant_group_id = form.cleaned_data['participant_group_id']
-            participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+            participant = request.user.participant
+            experiment = get_lighterprints_public_experiment()
+            participant_group_relationship = participant.get_participant_group_relationship(experiment)
+            logger.debug("request files: %s", request.FILES)
             handle_uploaded_file(request.FILES['file'], participant_group_relationship)
             return redirect('upload/successful')
     form = GreenButtonUploadFileForm()
