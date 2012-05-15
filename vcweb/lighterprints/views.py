@@ -199,7 +199,7 @@ def group_activity(request, participant_group_id):
         logger.warning("authenticated user %s tried to retrieve group activity for %s", request.user, participant_group_relationship)
         return HttpResponse(dumps({'success': False, 'message': 'Invalid authz request'}))
 
-def get_group_activity_json(participant_group_relationship, number_of_activities=10, retrieve_all=False):
+def get_group_activity_json(participant_group_relationship, number_of_activities=10, retrieve_all=True):
     group = participant_group_relationship.group
     chat_messages = []
     for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
@@ -403,29 +403,6 @@ class CsvExportView(DataExportMixin, BaseDetailView):
                 total_points += performed_activity.value.points
             writer.writerow([participant_group_relationship, total_points])
 
-def handle_uploaded_file(f, participant_group_relationship):
-    with tempfile.TemporaryFile() as dst:
-        for chunk in f.chunks():
-            dst.write(chunk)
-        parser = GreenButtonParser(file=dst)
-        parser.create_models(participant_group_relationship)
-
-@login_required
-def upload_greenbutton_data(request):
-    if request.method == 'POST':
-        form = GreenButtonUploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            participant_group_id = form.cleaned_data['participant_group_id']
-            participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-            handle_uploaded_file(request.FILES['file'], participant_group_relationship)
-            return redirect('upload/successful')
-    form = GreenButtonUploadFileForm()
-    experiment = get_lighterprints_public_experiment()
-    participant_group_relationship = request.user.participant.get_participant_group_relationship(experiment)
-    return render(request, 'lighterprints/greenbutton-upload.html', {
-        'experiment': experiment,
-        'participant_group_relationship': participant_group_relationship
-        })
 
 @login_required
 def participate(request, experiment_id=None):
@@ -463,4 +440,44 @@ def checkin(request):
             logger.warning("authenticated user %s tried to checkin at (%s, %s) for %s", request.user, latitude, longitude, participant_group_relationship)
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
+def handle_uploaded_file(f, participant_group_relationship):
+    with tempfile.TemporaryFile() as dst:
+        for chunk in f.chunks():
+            dst.write(chunk)
+        parser = GreenButtonParser(file=dst)
+        parser.create_models(participant_group_relationship)
+
+@login_required
+def greenbutton_summary(request, participant_group_id):
+    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+    if request.user.participant == participant_group_relationship.participant:
+        return HttpResponse(dumps({ 'success': True, 
+            'summary': [ 
+                {  'day': '2012-05-03 00:00:00', 'watt_hours': 38356, 'total_cost_millicents': 4691, },
+                { 'day': '2012-05-04 00:00:00', 'watt_hours': 37243, 'total_costs_millicents': 3719, },
+                ]
+            }))
+    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
+
+
+
+
+
+
+@login_required
+def upload_greenbutton_data(request):
+    if request.method == 'POST':
+        form = GreenButtonUploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            participant_group_id = form.cleaned_data['participant_group_id']
+            participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+            handle_uploaded_file(request.FILES['file'], participant_group_relationship)
+            return redirect('upload/successful')
+    form = GreenButtonUploadFileForm()
+    experiment = get_lighterprints_public_experiment()
+    participant_group_relationship = request.user.participant.get_participant_group_relationship(experiment)
+    return render(request, 'lighterprints/greenbutton-upload.html', {
+        'experiment': experiment,
+        'participant_group_relationship': participant_group_relationship
+        })
 

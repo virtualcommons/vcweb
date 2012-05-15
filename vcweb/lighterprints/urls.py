@@ -5,7 +5,7 @@ from django.views.generic.base import TemplateView
 from vcweb.lighterprints.views import (ActivityDetailView, ActivityListView, post_chat_message,
         post_comment, perform_activity, DiscussionBoardView, login, participate, group_activity, like,
         get_notifications, update_notifications_since, group_score, CsvExportView, checkin,
-        activity_performed_counts, upload_greenbutton_data)
+        activity_performed_counts, upload_greenbutton_data, greenbutton_summary)
 
 # handles all /lighterprints/* URL requests
 urlpatterns = patterns('vcweb.lighterprints.views',
@@ -28,5 +28,6 @@ urlpatterns = patterns('vcweb.lighterprints.views',
     url(r'^api/notifications/clear', update_notifications_since),
     url(r'^api/notifications/(?P<participant_group_id>\d+)', get_notifications),
     url(r'^api/checkin', checkin),
+    url(r'^api/greenbutton-summary/(?P<participant_group_id>\d+)', greenbutton_summary),
     url(r'^api/activity-performed-counts/(?P<participant_group_id>\d+)', activity_performed_counts),
 )
