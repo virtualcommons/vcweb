@@ -90,7 +90,7 @@ class GreenButtonIntervalReading(models.Model):
     date = models.DateTimeField()
     seconds_from_epoch = models.PositiveIntegerField(_('Number of seconds from epoch from GB data, should be the same as date'))
     watt_hours = models.PositiveIntegerField(_('Energy meter reading in watt-hours'))
-    millicents_per_wh = models.PositiveIntegerField(_('millicents per watt-hour'), null=True, blank=True)
+    millicents = models.PositiveIntegerField(_('total millicents cost for this interval'), null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
 
 class GreenButtonParser(object):

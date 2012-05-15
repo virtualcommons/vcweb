@@ -410,7 +410,6 @@ def handle_uploaded_file(f, participant_group_relationship):
         parser = GreenButtonParser(file=dst)
         parser.create_models(participant_group_relationship)
 
-
 @login_required
 def upload_greenbutton_data(request):
     if request.method == 'POST':

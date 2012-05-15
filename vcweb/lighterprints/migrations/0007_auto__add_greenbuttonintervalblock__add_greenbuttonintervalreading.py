@@ -22,12 +22,12 @@ class Migration(SchemaMigration):
         # Adding model 'GreenButtonIntervalReading'
         db.create_table('lighterprints_greenbuttonintervalreading', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('interval_reading_set', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['lighterprints.GreenButtonIntervalBlock'])),
+            ('interval_block', self.gf('django.db.models.fields.related.ForeignKey')(related_name='interval_reading_set', to=orm['lighterprints.GreenButtonIntervalBlock'])),
             ('date_created', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
             ('date', self.gf('django.db.models.fields.DateTimeField')()),
             ('seconds_from_epoch', self.gf('django.db.models.fields.PositiveIntegerField')()),
             ('watt_hours', self.gf('django.db.models.fields.PositiveIntegerField')()),
-            ('millicents_per_wh', self.gf('django.db.models.fields.PositiveIntegerField')(null=True, blank=True)),
+            ('millicents', self.gf('django.db.models.fields.PositiveIntegerField')(null=True, blank=True)),
             ('notes', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
         ))
         db.send_create_signal('lighterprints', ['GreenButtonIntervalReading'])
@@ -257,8 +257,8 @@ class Migration(SchemaMigration):
             'date': ('django.db.models.fields.DateTimeField', [], {}),
             'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'interval_reading_set': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['lighterprints.GreenButtonIntervalBlock']"}),
-            'millicents_per_wh': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'interval_block': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'interval_reading_set'", 'to': "orm['lighterprints.GreenButtonIntervalBlock']"}),
+            'millicents': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'seconds_from_epoch': ('django.db.models.fields.PositiveIntegerField', [], {}),
             'watt_hours': ('django.db.models.fields.PositiveIntegerField', [], {})
