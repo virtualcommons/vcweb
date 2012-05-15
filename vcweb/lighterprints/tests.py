@@ -151,34 +151,6 @@ class ActivityTest(BaseTest):
                 logger.debug("json: %s", json_object)
                 self.assertEqual(json_object['comment'], text)
 
-
-class GreenButtonDataTest(BaseTest):
-    test_filenames = [os.path.join('vcweb', 'lighterprints', 'fixtures', filename) for filename in ('decreasing_day1.xml', 'decreasing_day2.xml')]
-
-    def setUp(self):
-        super(GreenButtonDataTest, self).setUp(is_public=True)
-
-    def verify(self, xmltree):
-        logger.debug("xmltree: %s", xmltree)
-        ns = { 'gb': 'http://naesb.org/espi' }
-        interval_block = xmltree.find('//gb:IntervalBlock', namespaces=ns)
-        interval_data = interval_block.find('gb:interval', namespaces=ns)
-        total_interval_duration = int(interval_data.find('gb:duration', namespaces=ns).text)
-        interval_start_from_epoch = int(interval_data.find('gb:start', namespaces=ns).text)
-        interval_readings = interval_block.findall('gb:IntervalReading', namespaces=ns)
-        self.assertTrue(len(interval_readings) > 1)
-        for interval_reading in interval_readings:
-            time_period = interval_reading.find('gb:timePeriod', namespaces=ns)
-            duration = time_period.find('gb:duration', namespaces=ns)
-            self.assertEquals(int(duration.text), 3600)
-
-
-
-    def test_import(self):
-        for filename in self.test_filenames:
-            xmltree = etree.parse(open(filename))
-            self.verify(xmltree)
-
 class ActivityUnlockingTest(ActivityTest):
 
     def setUp(self):
@@ -235,4 +207,34 @@ class GroupScoreTest(ActivityTest):
             self.assertEquals(average_points_per_person, 110)
             self.assertEquals(total_points, 550)
 
+class GreenButtonDataTest(BaseTest):
+    test_filenames = [os.path.join('vcweb', 'lighterprints', 'fixtures', filename) for filename in ('decreasing_day1.xml', 'decreasing_day2.xml', 'decreasing_day3.xml')]
+
+    def setUp(self):
+        super(GreenButtonDataTest, self).setUp(is_public=True)
+
+    def verify(self, xmltree):
+        logger.debug("xmltree: %s", etree.tostring(xmltree))
+        ns = { 'gb': 'http://naesb.org/espi' }
+        interval_block = xmltree.find('//gb:IntervalBlock', namespaces=ns)
+        interval_data = interval_block.find('gb:interval', namespaces=ns)
+        total_interval_duration = int(interval_data.find('gb:duration', namespaces=ns).text)
+        interval_start_from_epoch = int(interval_data.find('gb:start', namespaces=ns).text)
+        self.assertTrue(datetime.fromtimestamp(interval_start_from_epoch))
+        interval_readings = interval_block.findall('gb:IntervalReading', namespaces=ns)
+        self.assertTrue(len(interval_readings) > 1)
+        total = 0
+        for interval_reading in interval_readings:
+            time_period = interval_reading.find('gb:timePeriod', namespaces=ns)
+            duration = int(time_period.find('gb:duration', namespaces=ns).text)
+            total += duration
+            self.assertEquals(duration, 3600)
+            start = int(time_period.find('gb:start', namespaces=ns).text)
+            self.assertTrue(datetime.fromtimestamp(start))
+        self.assertEquals(total, total_interval_duration)
+
+    def test_import(self):
+        for filename in self.test_filenames:
+            xmltree = etree.parse(open(filename))
+            self.verify(xmltree)
 
