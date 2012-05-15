@@ -460,9 +460,11 @@ def greenbutton_summary(request, participant_group_id):
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
 @login_required
-def upload_greenbutton_success(request, models=None):
+def upload_greenbutton_success(request, participant_group_id=None):
+    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+    interval_blocks = participant_group_relationship.gb_interval_block_set.all()
     return render(request, 'lighterprints/greenbutton-upload-success.html', {
-        'models': models,
+        'interval_blocks': interval_blocks,
         })
 
 @login_required
@@ -474,8 +476,8 @@ def upload_greenbutton_data(request):
             experiment = get_lighterprints_public_experiment()
             participant_group_relationship = participant.get_participant_group_relationship(experiment)
             logger.debug("participant %s sending file: %s", participant_group_relationship, request.FILES)
-            models = handle_uploaded_file(request.FILES['file'], participant_group_relationship)
-            return redirect('upload_greenbutton_success', models=models)
+            handle_uploaded_file(request.FILES['file'], participant_group_relationship)
+            return redirect('lighterprints:gb-upload-success', participant_group_id=participant_group_relationship.pk)
     form = GreenButtonUploadFileForm()
     experiment = get_lighterprints_public_experiment()
     participant_group_relationship = request.user.participant.get_participant_group_relationship(experiment)
