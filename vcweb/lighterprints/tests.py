@@ -215,21 +215,24 @@ class GreenButtonDataTest(BaseTest):
 
     def verify(self, xmltree):
         logger.debug("xmltree: %s", etree.tostring(xmltree))
-        ns = { 'gb': 'http://naesb.org/espi' }
-        interval_block = xmltree.find('//gb:IntervalBlock', namespaces=ns)
-        interval_data = interval_block.find('gb:interval', namespaces=ns)
-        total_interval_duration = int(interval_data.find('gb:duration', namespaces=ns).text)
-        interval_start_from_epoch = int(interval_data.find('gb:start', namespaces=ns).text)
+        parser = GreenButtonParser(xmltree)
+        interval_block = parser.interval_block()
+        interval_data_node = parser.interval_data(interval_block)
+        interval_data = parser.get_interval_data(interval_block)
+        total_interval_duration = int(interval_data_node.find('gb:duration', namespaces=GreenButtonParser.xmlns).text)
+        interval_start_from_epoch = int(interval_data_node.find('gb:start', namespaces=GreenButtonParser.xmlns).text)
+        self.assertEqual(interval_data['duration'], total_interval_duration)
+        self.assertEqual(interval_data['start'], interval_start_from_epoch)
         self.assertTrue(datetime.fromtimestamp(interval_start_from_epoch))
-        interval_readings = interval_block.findall('gb:IntervalReading', namespaces=ns)
+        interval_readings = interval_block.findall('gb:IntervalReading', namespaces=GreenButtonParser.xmlns)
         self.assertTrue(len(interval_readings) > 1)
         total = 0
         for interval_reading in interval_readings:
-            time_period = interval_reading.find('gb:timePeriod', namespaces=ns)
-            duration = int(time_period.find('gb:duration', namespaces=ns).text)
+            time_period = interval_reading.find('gb:timePeriod', namespaces=GreenButtonParser.xmlns)
+            duration = int(time_period.find('gb:duration', namespaces=GreenButtonParser.xmlns).text)
             total += duration
             self.assertEquals(duration, 3600)
-            start = int(time_period.find('gb:start', namespaces=ns).text)
+            start = int(time_period.find('gb:start', namespaces=GreenButtonParser.xmlns).text)
             self.assertTrue(datetime.fromtimestamp(start))
         self.assertEquals(total, total_interval_duration)
 

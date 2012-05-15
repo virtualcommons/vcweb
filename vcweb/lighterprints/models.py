@@ -15,6 +15,41 @@ from brabeion.base import Badge, BadgeAwarded
 import logging
 logger = logging.getLogger(__name__)
 
+# signal handlers for midnight tick + round_started
+@receiver(signals.midnight_tick)
+def update_active_experiments(sender, time=None, **kwargs):
+    logger.debug("updating active experiments")
+    for experiment in get_active_experiments():
+        if experiment.is_public:
+            logger.debug("updating public experiment")
+            update_public_experiment(experiment)
+            continue
+        # calculate total carbon savings and decide if they move on to the next level
+        for group in experiment.group_set.all():
+            footprint_level_grdv = get_footprint_level(group)
+            if should_advance_level(group, footprint_level_grdv.value):
+# advance group level
+                footprint_level_grdv.value = min(footprint_level_grdv.value + 1, 3)
+                footprint_level_grdv.save()
+
+@receiver(signals.round_started)
+def round_started_handler(sender, experiment=None, **kwargs):
+    if sender != get_lighterprints_experiment_metadata().pk:
+        return
+    # FIXME: See if we can push this logic up to core..
+    current_round_data = experiment.current_round_data
+    footprint_level_parameter = get_footprint_level_parameter()
+    participant_level_parameter = get_participant_level_parameter()
+# only create the footprint level parameter, the participant activity performed data values will be created each time.
+    for group in experiment.group_set.all():
+        current_round_data.group_data_value_set.create(group=group, parameter=footprint_level_parameter, int_value=1)
+        for pgr in group.participant_group_relationship_set.all():
+            # create participant level data value for each participant
+            ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, parameter=participant_level_parameter, int_value=1)
+            # create initial unlocked set of data values
+            get_unlocked_activities(pgr)
+
+
 ActivityStatus = enum('AVAILABLE', 'COMPLETED', 'UNAVAILABLE')
 
 class ActivityBadge(Badge):
@@ -56,6 +91,39 @@ class GreenButtonIntervalReading(models.Model):
     watt_hours = models.PositiveIntegerField(_('Energy meter reading in watt-hours'))
     millicents_per_wh = models.PositiveIntegerField(_('millicents per watt-hour'), null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
+
+class GreenButtonParser(object):
+    xmlns = { 'gb': 'http://naesb.org/espi' }
+
+    def __init__(self, xmltree, *args, **kwargs):
+        self.xmltree = xmltree
+
+    def find(self, expr, node=None, **kwargs):
+        if node is None:
+            node = self.xmltree
+        return node.find(expr, namespaces=self.xmlns)
+
+    def findall(self, expr, node=None, **kwargs):
+        if node is None:
+            node = self.xmltree
+        return node.findall(expr, namespaces=self.xmlns)
+
+    def interval_block(self):
+        return self.find('//gb:IntervalBlock')
+
+    def interval_readings(self, node=None):
+        return self.findall('gb:IntervalReading', node)
+
+    def interval_data(self, node=None):
+        return self.find('gb:interval', node)
+
+    def extract(self, node, exprs=None, converter=int):
+        ''' returns a dict of expr -> value for each expr '''
+        return dict([(expr, converter(self.find('gb:%s' % expr, node).text)) for expr in exprs])
+
+    def get_interval_data(self, node=None):
+        interval_data = self.interval_data(node)
+        return self.extract(interval_data, exprs=['duration', 'start'])
 
 class ActivityQuerySet(models.query.QuerySet):
     """
@@ -348,39 +416,6 @@ def do_activity(activity, participant_group_relationship):
 
 def get_performed_activity_ids(participant_group_relationship):
     return [prdv.pk for prdv in participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())]
-
-@receiver(signals.midnight_tick)
-def update_active_experiments(sender, time=None, **kwargs):
-    logger.debug("updating active experiments")
-    for experiment in get_active_experiments():
-        if experiment.is_public:
-            logger.debug("updating public experiment")
-            update_public_experiment(experiment)
-            continue
-        # calculate total carbon savings and decide if they move on to the next level
-        for group in experiment.group_set.all():
-            footprint_level_grdv = get_footprint_level(group)
-            if should_advance_level(group, footprint_level_grdv.value):
-# advance group level
-                footprint_level_grdv.value = min(footprint_level_grdv.value + 1, 3)
-                footprint_level_grdv.save()
-
-@receiver(signals.round_started)
-def round_started_handler(sender, experiment=None, **kwargs):
-    if sender != get_lighterprints_experiment_metadata().pk:
-        return
-    # FIXME: See if we can push this logic up to core..
-    current_round_data = experiment.current_round_data
-    footprint_level_parameter = get_footprint_level_parameter()
-    participant_level_parameter = get_participant_level_parameter()
-# only create the footprint level parameter, the participant activity performed data values will be created each time.
-    for group in experiment.group_set.all():
-        current_round_data.group_data_value_set.create(group=group, parameter=footprint_level_parameter, int_value=1)
-        for pgr in group.participant_group_relationship_set.all():
-            # create participant level data value for each participant
-            ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, parameter=participant_level_parameter, int_value=1)
-            # create initial unlocked set of data values
-            get_unlocked_activities(pgr)
 
 
 def average_points_per_person(group):
