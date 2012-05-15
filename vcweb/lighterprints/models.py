@@ -143,6 +143,10 @@ class GreenButtonParser(object):
         interval_data = self.get_interval_data(interval_block)
         start = interval_data['start']
         total_duration = interval_data['duration']
+        existing_interval_blocks = GreenButtonIntervalBlock.objects.filter(start=start)
+        if existing_interval_blocks.count() > 0:
+            logger.warning("green button data already exists, deleting existing set: %s", existing_interval_blocks)
+            existing_interval_blocks.delete()
         gb_interval_block = GreenButtonIntervalBlock.objects.create(date=datetime.fromtimestamp(start), start=start,
                 total_duration=total_duration, participant_group_relationship=participant_group_relationship)
         return interval_block, gb_interval_block
@@ -540,8 +544,15 @@ def get_participant_level(participant_group_relationship):
 def get_green_points(participant_group_relationship):
     performed_activities = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())
     total_points = 0
+    greenbutton_interval_blocks = participant_group_relationship.gb_interval_block_set.all()
+    gb_dates = greenbutton_interval_blocks.values_list('date', flat=True)
     for activity_performed_dv in performed_activities:
-        total_points += activity_performed_dv.value.points
+        points = activity_performed_dv.value.points
+        activity_performed_date = datetime.combine(activity_performed_dv.date_created.date(), time())
+        if activity_performed_date in gb_dates:
+            points = 1.5 * points
+            logger.debug("50% bonus for %s on %s: %s points", activity_performed_dv, activity_performed_date, points)
+        total_points += points
     logger.debug("pgr %s has %s points", participant_group_relationship, total_points)
     return total_points
 
