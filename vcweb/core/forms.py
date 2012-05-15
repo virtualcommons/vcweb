@@ -19,11 +19,6 @@ REQUIRED_EMAIL_ATTRIBUTES = { 'class' : 'required email' }
 REQUIRED_ATTRIBUTES = { 'class' : 'required' }
 
 class BaseRegistrationForm(BootstrapForm):
-    class Meta:
-        layout = {
-                Fieldset("", "first_name", "last_name", "email", "password", "confirm_password", "institution",)
-                }
-
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way shape or form.'))
