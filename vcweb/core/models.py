@@ -602,7 +602,7 @@ class Experiment(models.Model):
         #sender = self.namespace.encode('utf-8')
         # notify registered game handlers
         logger.debug("About to send round started signal with sender %s", sender)
-        return signals.round_started.send(sender, experiment=self, time=datetime.now(), round_configuration=self.current_round)
+        return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(), round_configuration=self.current_round)
 
     def end_round(self, sender=None):
         self.status = 'ACTIVE'
@@ -612,7 +612,7 @@ class Experiment(models.Model):
         sender = self.experiment_metadata.pk if sender is None else sender
         #sender = self.namespace.encode('utf-8')
         logger.debug("about to send round ended signal with sender %s", sender)
-        return signals.round_ended.send(sender, experiment=self, round_configuration=self.current_round)
+        return signals.round_ended.send_robust(sender, experiment=self, round_configuration=self.current_round)
 
     def stop(self):
         self.log("Stopping experiment and flagging as inactive.")
@@ -1166,10 +1166,12 @@ class Group(models.Model):
 
         ''' add the participant to this group if there is room, otherwise create and add to a fresh group '''
         group = self if self.is_open else self.create_next_group()
-        return ParticipantGroupRelationship.objects.create(participant=participant,
+        pgr = ParticipantGroupRelationship.objects.create(participant=participant,
                 group=group,
                 round_joined=self.experiment.current_round,
                 participant_number=group.size + 1)
+        signals.participant_added.send_robust(self, experiment=self.experiment, time=datetime.now(), participant_group_relationship=pgr)
+        return pgr
 
     def __unicode__(self):
         return u"Group #{0}".format(self.number)
@@ -1555,7 +1557,7 @@ def handle_new_socialauth_user(sender, user, response, details, **kwargs):
     logger.debug("new socialauth user: %s, %s, %s, %s", user, response, details, kwargs)
     participant = Participant.objects.create(user=user)
 # add participant to each available open experiment
-    for experiment in Experiment.objects.filter(experiment_configuration__max_group_size=0):
+    for experiment in Experiment.objects.public():
         experiment.add_participant(participant)
 
 
