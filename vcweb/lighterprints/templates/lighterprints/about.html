@@ -1,14 +1,17 @@
 {% extends "lighterprints/base.html" %}
-{% block content %}
-<p>
-Welcome to the Lighter Footprints Challenge!  Our goal is to help you learn about and put into practice alternative
-activities and concrete actions you can take to reduce your environmental footprint.  You can earn green points that are
-scaled to the relative impact of a particular alternative activity and unlock badges and more activities and actions by
-participating in the challenge.
-</p>
+{% block page %}
+<div class='hero-unit'>
+    <h2>Welcome!</h2>
+    <p>Our goal is to help you learn about and put into practice alternative activities and sustainable actions you can take to reduce your environmental footprint.</p>
+    <p>
+    You can earn green points that are scaled to the relative impact of a particular alternative activity and unlock badges and more activities and actions by
+    participating in the challenge.
+    </p>
+    <p>
+    If these activities are already a part of your daily life, good for you!  You can still participate and compare your
+    environmental footprint with your friends.  If you'd like to get involved or have any comments or suggestions, please <a
+        href='/contact'>feel free to contact us</a>.
+    </p>
 
-<p>
-If these activities are already a part of your daily life, good for you!  You can still participate and compare your
-environmental footprint with your friends.  If you'd like to get involved, please <a href='/contact'>feel free to contact us</a>.
-</p>
-{% endblock content %}
+</div>
+{% endblock page %}

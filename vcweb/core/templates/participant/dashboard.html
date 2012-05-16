@@ -10,8 +10,8 @@ Virtual Commons Web Participant Dashboard
 {% block page %}
 <div id='experiments'>
     {% if experiments.items %}
-    <div class='info infoIcon ui-corner-all'>
-        Welcome, {{request.user.participant}}.  Experiments you're participating in are listed below.
+    <div class='alert alert-info'>
+        Hi, {{request.user.participant}}.  Experiments you can participate in are listed below.
     </div>
     {% endif %}
     {% for experiment_metadata, experiment_status_dict in experiments.items %}
