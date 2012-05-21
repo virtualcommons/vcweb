@@ -10,21 +10,26 @@
 {% url 'core:profile' as profile %}
 {% url 'core:dashboard' as dashboard %}
 
-<div id='menu'>
-<ul>
-	<li class='{% active request home %}' ><a href='{{ home }}' class='first'>Home</a></li>
-	<li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
-	<li class='{% active request contact %}'><a href='{{ contact }}'>Contact us</a></li>
-	{% if request.user.is_authenticated %}
-	<li class='{% active request logout %}'><a href='{{ logout }}'>Logout</a></li>
-	{% else %}
-    <li class='{% active request login %} {% active request register %}'>
-    {% if debug_mode %}
-    <a href='{{ login }}'>Login/Register</a>
-    {% else %}
-    <a href='https://{{request.get_host}}{{ login }}'>Login/Register</a>
-    {% endif %}
-    </li>
-	{% endif %}
-</ul>
+<div class='navbar navbar-fixed-top'>
+    <div class='navbar-inner'>
+        <div class='container'>
+            <ul class='nav'>
+                <li class='{% active request home %}' ><a href='{{ home }}' class='first'>Home</a></li>
+                <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
+                <li class='{% active request contact %}'><a href='{{ contact }}'>Contact us</a></li>
+                {% if request.user.is_authenticated %}
+                <li class='{% active request logout %}'><a href='{{ logout }}'>Logout</a></li>
+                {% else %}
+                <li class='{% active request login %} {% active request register %}'>
+                {% if debug_mode %}
+                <a href='{{ login }}'>Login/Register</a>
+                {% else %}
+                <a href='https://{{request.get_host}}{{ login }}'>Login/Register</a>
+                {% endif %}
+                </li>
+                {% endif %}
+            </ul>
+
+        </div>
+    </div>
 </div>

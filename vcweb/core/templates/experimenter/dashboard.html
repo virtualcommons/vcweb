@@ -32,47 +32,33 @@
 {% comment%}
 FIXME: replace these links eventually.
 {% endcomment %}
-<div id='navmenu'>
-    <a href='/experiment/add'>add / configure an experiment</a>
-    <a href='/contact'>report a bug</a>
-</div>
-<div class='ui-state-highlight ui-corner-all'>
-    <span class='ui-icon ui-icon-info icon-left'></span>
-    Welcome to the experimenter dashboard.  You are logged in as {{request.user.experimenter}}.
+<div class='alert alert-message'>
+    <i class='icon-info-sign'></i> Welcome to the experimenter dashboard.  You are logged in as {{request.user.experimenter}}.
 </div>
 <h3>Your experiments</h3>
 <div id="post">
     {% for e in experiments %}
-    <div class='notice ui-corner-all'>
+    <div class='alert alert-info'>
         {{e.status_line}} 
         <span style='float:right; padding: 3px;' class='ui-state-highlight'><b>{{e.participant_set.count}} registered participants</b></span>
-        <ul class='horizontal experiment-menu'>
-            <li><a title='Monitor and control this experiment' 
-                href='{{e.monitor_url}}'>
-                <img src='{{STATIC_URL}}images/famfamfam/zoom.png' alt='General experiment monitoring interface'/> monitor</a></li>
-            <li>
-            <a class='confirm-experiment-action' title='Creates a new copy of this experiment with the exact same configuration but no registered participants.'
-                href='{{e.clone_url}}'><img src='{{STATIC_URL}}images/famfamfam/page_copy.png' alt='Clone experiment'/> clone</a></li>
+        <div class='btn-group'>
+            <a class='btn' href='{{e.monitor_url}}'><img src='{{STATIC_URL}}images/famfamfam/zoom.png' alt='General experiment monitoring interface'/> monitor</a></li>
+            <a class='btn confirm-experiment-action' title='Creates a new copy of this experiment with the exact same configuration but no registered participants.'
+                href='{{e.clone_url}}'><img src='{{STATIC_URL}}images/famfamfam/page_copy.png' alt='Clone experiment'/> clone</a>
             {% if e.participant_set.count == 0  %}
-            <li>
-            <a title='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'><img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> register participants</a>
-            </li>
-            <li>
+            <a class='btn' title='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'><img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> register participants</a>
             <a title='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.' 
-                href='{{e.controller_url}}/register-simple'>
+                class='btn' href='{{e.controller_url}}/register-simple'>
                 <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> test participants</a>
-            </li>
             {% else %}
-            <li><a title='clear all participants' href='{{e.controller_url}}/clear-participants' class='confirm-experiment-action'><img src='{{STATIC_URL}}images/famfamfam/group_delete.png' alt=''/> clear all participants</a></li>
+            <a title='clear all participants' href='{{e.controller_url}}/clear-participants' class='btn confirm-experiment-action'><img src='{{STATIC_URL}}images/famfamfam/group_delete.png' alt=''/> clear all participants</a></li>
             {% endif %}
             {% if e.is_active %}
-            <li><a title='stop this experiment' href='{{e.stop_url}}' class='confirm-experiment-action'><img src='{{STATIC_URL}}images/famfamfam/stop.png' alt=''/> stop</a></li>
+            <a title='stop this experiment' href='{{e.stop_url}}' class='btn confirm-experiment-action'><img src='{{STATIC_URL}}images/famfamfam/stop.png' alt=''/> stop</a>
             {% else %}
-            <li>
-            <a title='Configure this experiment (sanitation)' href='{{e.configure_url}}'><img src='{{STATIC_URL}}images/famfamfam/wrench.png' alt='configure' /> configure</a>
-            </li>
+            <a class='btn' title='Configure this experiment (sanitation)' href='{{e.configure_url}}'><img src='{{STATIC_URL}}images/famfamfam/wrench.png' alt='configure' /> configure</a>
             {% endif %}
-        </ul>
+        </div>
     </div>
     {% empty %}
     <div class='info infoIcon ui-corner-all'>
