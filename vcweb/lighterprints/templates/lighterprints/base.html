@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load tags %}
 {% block head %}
 {{ block.super }}
 <script type="text/javascript">
@@ -9,10 +10,11 @@
 {% block title %}
 The Lighter Footprints Challenge
 {% endblock %}
-{% block header %}
-{% include "lighterprints/navmenu.html" %}
-<div style='margin-top: 3em;'>
-<h2>The Lighter Footprints Challenge</h2>
-</div>
+{% block headerlinks %}
+<li class='{% active request home %}'><a href='{{ home }}' class='first'>Home</a></li>
+<li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
+<li class='{% active_re request about %}'><a href='/lighterprints/about'>About</a></li>
+<li><a href='https://vcweb.asu.edu/lightfoot'>App</a></li>
+<li><a href='/lighterprints/greenbutton/upload'>Submit Green Button Data</a></li>
 {% endblock %}
 
