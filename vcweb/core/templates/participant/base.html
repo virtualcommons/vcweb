@@ -1,4 +1,11 @@
 {% extends "base.html" %}
+{% load tags %}
+
+{% url home as home %}
+{% url core:dashboard as dashboard %}
+{% url core:login as login %}
+{% url core:logout as logout %}
+{% url core:profile as profile %}
 
 {% block head %}
     {{block.super}}
@@ -18,8 +25,15 @@
 {% block title %}
     Virtual Commons Web Participant Interface
 {% endblock %}
-{% block header %}
-    {% include "includes/participant-nav-menu.html" %}
+{% block headerlinks %}
+<li class='{% active request home %}' ><a href='{{ home }}' class='first'>Home</a></li>
+<li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
+{% if "participate" in request.path or "wait" in request.path %}
+<li class='{% active_re request "participate" %} {% active_re request "wait" %}'><a href='#'>Participate</a></li>
+{% else %}
+<li class='{% active request profile %}'><a href='{{ profile }}'>Profile</a></li>
+{% endif %}
+<li><a href='{{ logout }}'>Logout</a></li>
 {% endblock %}
 
 
