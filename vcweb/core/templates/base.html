@@ -34,6 +34,11 @@
         {% endblock %}
     </head>
     <body>
+        <div id='header'>
+            {% block header %}
+            {% include "includes/nav-menu.html" %}
+            {% endblock %}
+        </div>
         <div id='logo'>
             <div style='clear: none; position:relative;float:right; left:-930px; padding: 5px;'>
                 <img src='{{STATIC_URL}}images/vcweb-logo.png' alt='vcweb logo'/>
@@ -43,11 +48,6 @@
                 virtual commons web environment
                 {% endblock %}
             </h1>
-        </div>
-        <div id='header'>
-            {% block header %}
-            {% include "includes/nav-menu.html" %}
-            {% endblock %}
         </div>
         <div id='page'>
             <noscript>
