@@ -17,6 +17,7 @@
                 <li class='{% active request home %}' ><a href='{{ home }}' class='first'>Home</a></li>
                 <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
                 <li class='{% active request contact %}'><a href='{{ contact }}'>Contact us</a></li>
+                <li><a href='https://bitbucket.org/virtualcommons/vcweb/issues'>Report a Bug</a></li>
                 {% if request.user.is_authenticated %}
                 <li class='{% active request logout %}'><a href='{{ logout }}'>Logout</a></li>
                 {% else %}

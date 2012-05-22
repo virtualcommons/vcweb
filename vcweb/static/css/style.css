@@ -322,3 +322,6 @@ ul.horizontal>li {
 	color: #ff0000;
 	cursor: pointer;
 }
+div.entry {
+    line-height: 1.2em;
+}
