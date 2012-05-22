@@ -1,15 +1,12 @@
 {% extends "base.html" %}
 {% load tags %}
 {% load url from future %}
-{% block title %}
-The Lighter Footprints Challenge
-{% endblock %}
 {% block headerlinks %}
-<li class='{% active request home %}'><a href='{{ home }}' class='first'>Home</a></li>
-<li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
-<li class='{% active_re request about %}'><a href="{% url 'lighterprints:about' %}">About</a></li>
-<li class='{% active_re request participate %}'><a href='{{ participate }}'>Participate</a></li>
+<li class='{% active request 'home' %}'><a href='{{ home }}' class='first'>Home</a></li>
+<li class='{% active_re request 'dashboard' %}'><a href='{{ dashboard }}'>Dashboard</a></li>
+<li class='{% active_re request 'about' %}'><a href="{% url 'lighterprints:about' %}">About</a></li>
+<li class='{% active_re request 'participate' %}'><a href='{% url 'lighterprints:participate' %}'>Participate</a></li>
 <li><a href='https://vcweb.asu.edu/lightfoot'>App</a></li>
-<li><a href='/lighterprints/greenbutton/upload'>Submit Green Button Data</a></li>
+<li class='{% active_re request 'greenbutton/upload' %}'><a href='/lighterprints/greenbutton/upload'>Submit Green Button Data</a></li>
 {% endblock %}
 
