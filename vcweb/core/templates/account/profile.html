@@ -12,11 +12,8 @@
 
 {% block title %}Your Account{% endblock %}
 
-{% block page %}
-<form id='profileForm' action='' method='post'>
-    <h3>{{ request.user.get_full_name }}</h3>
-    {% include "includes/form-as-div.html" %}
-</form>
-
+{% block form %}
+<h3>{{ request.user.get_full_name }}</h3>
+{% include "includes/bootstrap-form.html" %}
 {% endblock %}
 

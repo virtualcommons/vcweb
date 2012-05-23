@@ -28,10 +28,10 @@
 {% block headerlinks %}
 <li class='{% active request home %}' ><a href='{{ home }}' class='first'>Home</a></li>
 <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
+<li class='{% active request contact %}'><a href='{{ contact }}'>Contact us</a></li>
+<li><a href='https://bitbucket.org/virtualcommons/vcweb/issues'>Report a Bug</a></li>
 {% if "participate" in request.path or "wait" in request.path %}
 <li class='{% active_re request "participate" %} {% active_re request "wait" %}'><a href='#'>Participate</a></li>
-{% else %}
-<li class='{% active request profile %}'><a href='{{ profile }}'>Profile</a></li>
 {% endif %}
 <li><a href='{{ logout }}'>Logout</a></li>
 {% endblock %}
