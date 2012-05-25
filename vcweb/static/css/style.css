@@ -1,6 +1,7 @@
 body {
     font-family: /*"Lucida Grande", "Trebuchet MS",*/ Arial, Verdana, Tahoma, Helvetica, sans-serif;
     font-size: 1.1em;
+    line-height: 1.1em;
 }
 a.external {
     background: url(../images/external.png) center right no-repeat;
@@ -67,12 +68,6 @@ li.warning {
 .icon-right {
     float: right;
     margin: 0.32em;
-}
-.float-left {
-    float: left;
-}
-.float-right {
-    float:right;
 }
 .vcweb-ui-icon {
     display:inline;
@@ -321,7 +316,4 @@ ul.horizontal>li {
 	font-size: 10px;
 	color: #ff0000;
 	cursor: pointer;
-}
-div.entry {
-    line-height: 1.2em;
 }

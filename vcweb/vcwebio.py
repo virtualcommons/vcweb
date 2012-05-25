@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 import tornado.web
-from tornadio import SocketConnection, get_router, server
+import tornadio2
 from tornado.escape import xhtml_escape
+from itertools import chain
 import os
 import sys
 import logging
 import simplejson
 
-sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath('.'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
 from vcweb.core.models import ParticipantExperimentRelationship, ParticipantGroupRelationship, ChatMessage, Experimenter, Experiment
@@ -159,7 +160,7 @@ def to_event(message):
 # connection manager for experimenters + participants
 connection_manager = ConnectionManager()
 # FIXME: move to a core tornado module?
-class ExperimenterHandler(SocketConnection):
+class ExperimenterHandler(tornadio2.SocketConnection):
     # FIXME: add authentication
     def on_open(self, *args, **kwargs):
         try:
@@ -192,7 +193,7 @@ class ExperimenterHandler(SocketConnection):
         logger.debug("removing experimenter connection %s", self)
         connection_manager.remove_experimenter(self)
 
-class ParticipantHandler(SocketConnection):
+class ParticipantHandler(tornadio2.SocketConnection):
     # FIXME: on_open authenticates or prepares the session
     def on_open(self, *args, **kwargs):
         # FIXME: verify user auth tokens
@@ -272,23 +273,25 @@ class ParticipantHandler(SocketConnection):
 def main(argv=None):
     if argv is None:
         argv = sys.argv
-    participantRouter = get_router(ParticipantHandler, resource="participant", extra_re=r'\d+', extra_sep='/')
+    participantRouter = tornadio2.TornadioRouter(ParticipantHandler)
+    # get_router(ParticipantHandler, resource="participant", extra_re=r'\d+', extra_sep='/')
     # router w/ auth hash..
     #participantRouter = tornadio.get_router(ChatHandler, resource="chat", extra_re=r'[\w._=]+', extra_sep='/')
-    experimenterRouter = get_router(ExperimenterHandler, resource="experimenter", extra_re=r'\d+', extra_sep='/')
+    #experimenterRouter = get_router(ExperimenterHandler, resource="experimenter", extra_re=r'\d+', extra_sep='/')
+    experimenterRouter = tornadio2.TornadioRouter(ExperimenterHandler)
     #configure the Tornado application
     # currently only allow one command-line argument, the port to run on.
     port = int(argv[1]) if (len(argv) > 1) else settings.SOCKET_IO_PORT
 
     application = tornado.web.Application(
-            [participantRouter.route(), experimenterRouter.route(), ],
+            list(chain.from_iterable([participantRouter.urls, experimenterRouter.urls, ])),
             flash_policy_port=8043,
             flash_policy_file='/etc/nginx/flashpolicy.xml',
             socket_io_port=port,
             # only needed for standalone testing
 #            static_path=os.path.join(os.path.dirname(__file__), "static"),
             )
-    return server.SocketServer(application)
+    return tornadio2.server.SocketServer(application)
 
 if __name__ == "__main__":
     sys.exit(main())
