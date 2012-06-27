@@ -32,13 +32,10 @@
 {% comment%}
 FIXME: replace these links eventually.
 {% endcomment %}
-<div class='alert alert-message'>
-    <i class='icon-info-sign'></i> Welcome to the experimenter dashboard.  You are logged in as {{request.user.experimenter}}.
-</div>
 <h3>Your experiments</h3>
 <div id="post">
     {% for e in experiments %}
-    <div class='alert alert-info'>
+    <div class='alert alert-message'>
         {{e.status_line}} 
         <span style='float:right; padding: 3px;' class='ui-state-highlight'><b>{{e.participant_set.count}} registered participants</b></span>
         <div class='btn-group'>
