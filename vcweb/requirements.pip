@@ -30,5 +30,7 @@ feedparser
 feedcache
 neo4j-embedded
 lxml
+sockjs-tornado
+tornado-redis
 # install django-bootstrap from github
 # pip install -e git+git://github.com/earle/django-bootstrap.git#egg=bootstrap

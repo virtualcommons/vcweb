@@ -148,8 +148,8 @@ SOCIAL_AUTH_RAISE_EXCEPTIONS = DEBUG
 
 
 
-# socket.io configuration
-SOCKET_IO_PORT = 8882;
+# websockets configuration
+WEBSOCKET_PORT = 8882;
 
 # celerybeat configuration
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'

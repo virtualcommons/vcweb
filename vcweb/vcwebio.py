@@ -281,7 +281,7 @@ def main(argv=None):
     experimenterRouter = tornadio2.TornadioRouter(ExperimenterHandler)
     #configure the Tornado application
     # currently only allow one command-line argument, the port to run on.
-    port = int(argv[1]) if (len(argv) > 1) else settings.SOCKET_IO_PORT
+    port = int(argv[1]) if (len(argv) > 1) else settings.WEBSOCKET_PORT
 
     application = tornado.web.Application(
             list(chain.from_iterable([participantRouter.urls, experimenterRouter.urls, ])),

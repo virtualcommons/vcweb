@@ -1,9 +1,15 @@
 from django.core.cache import cache
+from vcweb.core.models import ExperimentMetadata
 from vcweb.core.urls import foursquare_venue_search_url, foursquare_categories_url
 import logging
 import simplejson as json
 import urllib2
 logger = logging.getLogger(__name__)
+
+class ExperimentService(object):
+    namespace = None
+    def get_experiment_metadata(self):
+        return ExperimentMetadata.objects.get(namespace=self.namespace)
 
 def foursquare_venue_search(latitude=33.41, longitude=-111.9, radius=30, **kwargs):
     if latitude is None or longitude is None:
