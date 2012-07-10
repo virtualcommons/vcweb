@@ -31,8 +31,8 @@ urlpatterns = patterns('',
     # ExperimentMetadata instance and using their namespace (e.g., replace all
     # instances of forestry with ExperimentMetadata.namespace)
     url(r'^forestry/', include('vcweb.forestry.urls', namespace='forestry', app_name='forestry')),
-    url(r'^sanitation/', include('vcweb.sanitation.urls', namespace='sanitation', app_name='sanitation')),
-    url(r'^lighterprints/', include('vcweb.lighterprints.urls', namespace=u'lighterprints', app_name=u'lighterprints')),
+    url(r'^boundaries/', include('vcweb.boundaries.urls', namespace='boundaries', app_name='boundaries')),
+    url(r'^lighterprints/', include('vcweb.lighterprints.urls', namespace='lighterprints', app_name='lighterprints')),
     url(r'^admin/', include(admin.site.urls)),
     # social auth urls for logging in via fb, google, foursquare, etc.
     url(r'', include('social_auth.urls')),

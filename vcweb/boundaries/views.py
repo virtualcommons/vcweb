@@ -14,8 +14,5 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def tutorial(request):
-    pass
-
 def participate(request):
     pass

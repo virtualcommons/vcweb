@@ -13,7 +13,7 @@ function connect(resource) {
         console.log("Tried to connect to invalid host, connecting to vcweb.asu.edu instead.");
         host = "vcweb.asu.edu";
     }
-    var port = {{SOCKET_IO_PORT}};
+    var port = {{WEBSOCKET_PORT}};
     if ( !port ) {
         console.log("using default port: " + defaultPort);
         port = defaultPort;

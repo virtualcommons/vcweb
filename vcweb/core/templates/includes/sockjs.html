@@ -2,7 +2,7 @@
 <!--<script type="text/javascript" src="http://cdn.sockjs.org/sockjs-0.3.min.js"></script>-->
 <!--<script type="text/javascript" src="{{STATIC_URL}}js/sockjs-0.3.min.js"></script>-->
 <script type="text/javascript">
-var cachedSocket;
+var socket;
 var defaultPort = 8882;
 function connect(uri) {
     var port = {{WEBSOCKET_PORT}};
@@ -16,29 +16,22 @@ function connect(uri) {
         host = "vcweb.asu.edu";
     }
     var sockjsServer = host + ":" + port + "/" + uri;
-    console.log("Establishing connection to " + host + ":" + port + "/" + uri);
-    cachedSocket = new SockJS(host);
-    cachedSocket.onopen = function() {
+    console.log("Establishing connection to " + sockjsServer);
+    socket = new SockJS(sockjsServer);
+    socket.onopen = function() {
         console.log('default vcweb sockjs open');
-        cachedSocket.send(createConnectionEvent());
+        socket.send(createConnectionEvent());
     };
-    cachedSocket.onmessage = function(e) {
+    socket.onmessage = function(e) {
         console.log('received message', e.data);
     };
-    cachedSocket.onclose = function() {
+    socket.onclose = function() {
         console.log('default vcweb sockjs closed');
     };
     console.log("connecting to " + host + ":" + port + "/" + uri);
-    /*
-    cachedSocket.on('disconnect', function(data) {
-        console.log("received disconnect, reconnecting.");
-        cachedSocket.connect();
-        cachedSocket.send(createReconnectionEvent());
-    });
-    */
-    return cachedSocket;
+    return socket;
 }
-function getCachedSocket() {
-    return cachedSocket;
+function getWebSocket() {
+    return socket;
 }
 </script>

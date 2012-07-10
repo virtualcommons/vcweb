@@ -1,4 +1,5 @@
 from django.conf.urls.defaults import url, patterns
+from django.views.generic import TemplateView
 
 urlpatterns = patterns('vcweb.boundaries.views',
     url(r'^$', 'index', name='index'),
@@ -8,6 +9,6 @@ urlpatterns = patterns('vcweb.boundaries.views',
     url(r'^(?P<experiment_id>\d+)/consent$', 'consent', name='consent'),
     url(r'^(?P<experiment_id>\d+)/survey$', 'survey', name='survey'),
     url(r'^(?P<experiment_id>\d+)/quiz$', 'quiz', name='quiz'),
-    url(r'^(?P<experiment_id>\d+)/play$', 'play', name='play'),
+    url(r'^tutorial$', TemplateView.as_view(template_name='boundaries/tutorial.html'), name='tutorial'),
     url(r'^(?P<experiment_id>\d+)/instructions$', 'instructions', name='instructions'),
 )

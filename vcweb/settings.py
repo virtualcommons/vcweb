@@ -59,7 +59,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
         'django.core.context_processors.static',
         'django.contrib.auth.context_processors.auth',
         'django.contrib.messages.context_processors.messages',
-        'vcweb.core.context_processors.socket_io',
+        'vcweb.core.context_processors.websocket',
         'vcweb.core.context_processors.debug_mode',
         )
 
@@ -92,8 +92,9 @@ INSTALLED_APPS = (
         'django.contrib.staticfiles',
         'vcweb.core',
         'vcweb.forestry',
-        'vcweb.sanitation',
         'vcweb.lighterprints',
+        'vcweb.boundaries',
+#        'vcweb.sanitation',
         'dajaxice',
         'raven.contrib.django',
         'kronos',
