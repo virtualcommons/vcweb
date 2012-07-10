@@ -98,11 +98,17 @@ def test():
     with cd(env.project_path):
         _virtualenv(local, '%(python)s manage.py test %(apps)s' % env)
 
+def sockjs(ip="127.0.0.1", port=None):
+    from vcweb import settings as vcweb_settings
+    if port is None:
+        port = vcweb_settings.WEBSOCKET_PORT
+    _virtualenv(local, "{python} vcweb/sockjs.py {port}".format(python=env.python, port=port), capture=False)
+
 def tornadio(ip="127.0.0.1", port=None):
     from vcweb import settings as vcweb_settings
     if port is None:
-        port = vcweb_settings.SOCKET_IO_PORT
-    _virtualenv(local, "{python} vcweb/vcwebio.py {port}".format(python=env.python, **locals()), capture=False)
+        port = vcweb_settings.WEBSOCKET_PORT
+    _virtualenv(local, "{python} vcweb/vcwebio.py {port}".format(python=env.python, port=port), capture=False)
 
 
 def server(ip="127.0.0.1", port=8000):
