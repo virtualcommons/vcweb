@@ -155,7 +155,7 @@ class ForestryParametersTest(BaseVcwebTest):
             self.assertEqual(func(), func())
             self.assertEqual(id(func()), id(func()))
         caching_funcs = (get_harvest_decision_parameter, get_group_harvest_parameter, get_regrowth_parameter,
-                get_resource_level_parameter, get_forestry_experiment_metadata)
+                get_resource_level_parameter, get_experiment_metadata)
         for i in range(0, 25):
             for func in caching_funcs:
                 verify_cached_data(func)
@@ -169,7 +169,7 @@ class ForestryParametersTest(BaseVcwebTest):
             self.assertEqual(a, b)
 
         caching_funcs = (get_harvest_decision_parameter, get_group_harvest_parameter, get_regrowth_parameter,
-                get_resource_level_parameter, get_forestry_experiment_metadata)
+                get_resource_level_parameter, get_experiment_metadata)
         for i in range(0, 25):
             for func in caching_funcs:
                 verify_refreshed_data(func)

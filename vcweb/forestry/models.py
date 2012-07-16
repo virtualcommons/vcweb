@@ -64,32 +64,32 @@ def get_max_harvest_decision(resource_level):
         return 0
 
 @simplecache
-def get_forestry_experiment_metadata(refresh=False):
+def get_experiment_metadata(refresh=False):
     return ExperimentMetadata.objects.get(namespace='forestry')
 
 @simplecache
 def get_resource_level_parameter(refresh=False):
     return Parameter.objects.get(name='resource_level',
             scope=Parameter.GROUP_SCOPE,
-            experiment_metadata=get_forestry_experiment_metadata())
+            experiment_metadata=get_experiment_metadata())
 
 @simplecache
 def get_regrowth_parameter(refresh=False):
     return Parameter.objects.get(name='group_regrowth',
             scope=Parameter.GROUP_SCOPE,
-            experiment_metadata=get_forestry_experiment_metadata())
+            experiment_metadata=get_experiment_metadata())
 
 @simplecache
 def get_group_harvest_parameter(refresh=False):
     return Parameter.objects.get(name='group_harvest',
             scope=Parameter.GROUP_SCOPE,
-            experiment_metadata=get_forestry_experiment_metadata())
+            experiment_metadata=get_experiment_metadata())
 
 @simplecache
 def get_harvest_decision_parameter(refresh=False):
     return Parameter.objects.get(name='harvest_decision',
             scope=Parameter.PARTICIPANT_SCOPE,
-            experiment_metadata=get_forestry_experiment_metadata())
+            experiment_metadata=get_experiment_metadata())
 
 def set_harvest_decision(participant_group_relationship=None, value=None):
     participant_group_relationship.set_data_value(parameter=get_harvest_decision_parameter(), value=value)

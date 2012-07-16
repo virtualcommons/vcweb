@@ -140,16 +140,17 @@ class ExperimentConfigurationTest(BaseVcwebTest):
 
 class ExperimentTest(BaseVcwebTest):
     def round_started_test_handler(self, experiment=None, time=None, round_configuration=None, **kwargs):
-        logger.debug("invoking round started test handler with args experiment:%s time:%s round_configuration_id:%s", experiment, time, round_configuration)
+        logger.debug("invoking round started test handler with args experiment:%s time:%s round configuration:%s", experiment, time, round_configuration)
         self.assertEqual(experiment, self.experiment)
         self.assertEqual(round_configuration, self.experiment.current_round)
         self.assertTrue(time, "time should be set")
-        raise AssertionError
+        logger.debug("done with assertions, about to raise")
+# this ValueError shouldn't bubble up since we're using send_robust now
+        raise ValueError
 
     def test_start_round(self):
         signals.round_started.connect(self.round_started_test_handler, sender=self)
-        with self.assertRaises(AssertionError):
-            self.experiment.start_round(sender=self)
+        self.experiment.start_round(sender=self)
         self.assertTrue(self.experiment.is_active)
 
     def test_group_allocation(self):

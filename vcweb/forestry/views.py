@@ -10,7 +10,7 @@ from vcweb.core.decorators import participant_required, experimenter_required
 from vcweb.core.forms import QuizForm
 from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.views import ParticipantSingleExperimentMixin
-from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision, get_harvest_decision, get_group_harvest, get_regrowth
+from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_experiment_metadata, set_harvest_decision, get_harvest_decision, get_group_harvest, get_regrowth
 from vcweb.forestry.forms import HarvestDecisionForm
 import logging
 from collections import deque
@@ -33,14 +33,14 @@ def index(request):
 @experimenter_required
 def experimenter_index(request):
     experimenter = request.user.experimenter
-    experiments = experimenter.experiment_set.filter(experiment_metadata=get_forestry_experiment_metadata())
+    experiments = experimenter.experiment_set.filter(experiment_metadata=get_experiment_metadata())
     return render_to_response('forestry/experimenter-index.html', locals(), context_instance=RequestContext(request))
 
 @participant_required
 def participant_index(request):
     participant = request.user.participant
     experiment_dict = {}
-    for experiment in participant.experiments.filter(experiment_metadata=get_forestry_experiment_metadata()):
+    for experiment in participant.experiments.filter(experiment_metadata=get_experiment_metadata()):
         status = experiment.get_status_display()
         if not status in experiment_dict:
             experiment_dict[status] = list()
@@ -124,7 +124,7 @@ def participate(request, experiment_id=None):
     logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
     try:
         experiment = get_object_or_404(Experiment.objects.select_related(), pk=experiment_id)
-        if experiment.experiment_metadata != get_forestry_experiment_metadata():
+        if experiment.experiment_metadata != get_experiment_metadata():
             raise Http404
         current_round = experiment.current_round
         participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)

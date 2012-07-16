@@ -21,7 +21,7 @@ env.project_path = os.path.dirname(__file__)
 env.hosts = ['localhost']
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
 env.apache = 'httpd'
-env.applist = ['core', 'forestry', 'sanitation', 'lighterprints']
+env.applist = ['core', 'forestry', 'boundaries', 'lighterprints']
 env.apps = ' '.join(env.applist)
 
 # django integration for access to settings, etc.
