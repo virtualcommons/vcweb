@@ -1,104 +1,4 @@
 {% extends "experimenter/base.html" %}
-{% block head %}
-{{ block.super }}
-{% include "includes/experimenter.events.html" %}
-{% include "includes/socket.io.html" %}
-<script type='text/javascript'>
-    function update(json) {
-        if (json == Dajaxice.EXCEPTION) {
-            console.error("dajaxice error: " + json);
-        }
-        else {
-            if (json.should_transition) {
-                console.log("Transitioning participants to " + json.transition_url);
-                getCachedSocket().send(createGotoEvent(json.transition_url));
-            }
-            $('#statusDiv').html(json.status);
-            $('#experimentData').accordion("destroy");
-            $('#experimentData').html(json.experimentData);
-            if (json.error_message) {
-                addExperimentMessage(json.error_message)
-            }
-            registerCallbacks(json.round_data_count, json.active_round_number);
-        }
-    }
-    function registerCallbacks(round_data_count, active_round_number) {
-        $('.confirm-experiment-action').each(function() {
-            var confirmable = $(this);
-            var description = confirmable.attr("title");
-            var action= $(this).attr("name");
-            confirmable.click(function() {
-                confirmable.fastConfirm({
-                    questionText: description + " - continue?",
-                    onProceed: function(trigger) {
-                        Dajaxice.vcweb.core.experiment_controller(update, {'pk': {{experiment.pk}}, 'action':action});
-                        $('#statusDiv').hide('fast');
-                        $('#experimentData').hide('fast');
-                        $('#statusSpinner').show('fast');
-                        $(trigger).fastConfirm('close');
-                    },
-                    onCancel: function(trigger) {
-                        $(trigger).fastConfirm('close');
-                    }
-                });
-                return false;
-            });
-        });
-        $('#statusSpinner').hide();
-        $('#statusDiv [title]').qtip(qtipOptions);
-        $('#statusDiv').show('fast');
-        $('#experimentData').show('fast');
-        console.log("active round number: " + active_round_number);
-        if (round_data_count > 0) {
-            $('#experimentData').accordion({
-                autoHeight: false
-            });
-        }
-    }
-    function addExperimentMessage(message) {
-        if (message) {
-            console.debug("adding message " + message + " to experiment messages div");
-            $("#experiment-messages").append($("<div style='font-size: 0.8em;line-height:0.9em;padding:3px;' class='ui-state-highlight' />").append(message));
-        }
-    }
-    $(function() {
-            var experimentMessageDiv = document.getElementById('experiment-messages');
-            registerCallbacks({{ experiment.round_data_set.count }}, {{ experiment.current_round.sequence_number }});
-            // socket.io connection
-            // FIXME: add auth
-            var s = connect('experimenter/{{request.user.experimenter.pk}}');
-            s.on('message', function(json_string) {
-                console.log("Received message: " + json_string);
-                var json = jQuery.parseJSON(json_string);
-                switch (json.message_type) {
-                case 'info':
-                    addExperimentMessage(json.message);
-                    break;
-                case 'chat':
-                    addChatMessage('chat-div-' + json.round_data_pk, json, json.date_created + " " + json.participant, qtipOptions);
-                    break;
-                case 'submit':
-                    $('#participant_data_value_' + json.participant_data_value_pk).html(json.message).effect("highlight", {}, 5000);
-                    addExperimentMessage("Participant " + json.participant_number + " (Group #" + json.participant_group + ") submit a harvest decision of " + json.message);
-                    break;
-                default:
-                }
-                scrollToBottom(experimentMessageDiv);
-            });
-            $('#refreshAllParticipants').click(function(evt) {
-                console.log("sending refresh event");
-                s.send(createRefreshEvent());
-                return false;
-            });
-            $('#transitionAllParticipants').click(function(evt) {
-                console.log("sending goto event");
-                s.send(createGotoEvent());
-                return false;
-            });
-            scrollToBottom(experimentMessageDiv);
-        });
-</script>
-{% endblock %}
 {% block title %}
 #{{ experiment.pk }}: {{ experiment.experiment_metadata }}
 {% endblock %}
@@ -265,3 +165,104 @@
     {% endblock data %}
 </div>
 {% endblock page %}
+{% block javascript %}
+{{ block.super }}
+{% include "includes/experimenter.events.html" %}
+{% include "includes/sockjs.html" %}
+<script type='text/javascript'>
+    function update(json) {
+        if (json == Dajaxice.EXCEPTION) {
+            console.error("dajaxice error: " + json);
+        }
+        else {
+            if (json.should_transition) {
+                console.log("Transitioning participants to " + json.transition_url);
+                getCachedSocket().send(createGotoEvent(json.transition_url));
+            }
+            $('#statusDiv').html(json.status);
+            $('#experimentData').accordion("destroy");
+            $('#experimentData').html(json.experimentData);
+            if (json.error_message) {
+                addExperimentMessage(json.error_message)
+            }
+            registerCallbacks(json.round_data_count, json.active_round_number);
+        }
+    }
+    function registerCallbacks(round_data_count, active_round_number) {
+        $('.confirm-experiment-action').each(function() {
+            var confirmable = $(this);
+            var description = confirmable.attr("title");
+            var action= $(this).attr("name");
+            confirmable.click(function() {
+                confirmable.fastConfirm({
+                    questionText: description + " - continue?",
+                    onProceed: function(trigger) {
+                        Dajaxice.vcweb.core.experiment_controller(update, {'pk': {{experiment.pk}}, 'action':action});
+                        $('#statusDiv').hide('fast');
+                        $('#experimentData').hide('fast');
+                        $('#statusSpinner').show('fast');
+                        $(trigger).fastConfirm('close');
+                    },
+                    onCancel: function(trigger) {
+                        $(trigger).fastConfirm('close');
+                    }
+                });
+                return false;
+            });
+        });
+        $('#statusSpinner').hide();
+        $('#statusDiv [title]').qtip(qtipOptions);
+        $('#statusDiv').show('fast');
+        $('#experimentData').show('fast');
+        console.log("active round number: " + active_round_number);
+        if (round_data_count > 0) {
+            $('#experimentData').accordion({
+                autoHeight: false
+            });
+        }
+    }
+    function addExperimentMessage(message) {
+        if (message) {
+            console.debug("adding message " + message + " to experiment messages div");
+            $("#experiment-messages").append($("<div style='font-size: 0.8em;line-height:0.9em;padding:3px;' class='ui-state-highlight' />").append(message));
+        }
+    }
+    $(function() {
+            var experimentMessageDiv = document.getElementById('experiment-messages');
+            registerCallbacks({{ experiment.round_data_set.count }}, {{ experiment.current_round.sequence_number }});
+            // websocket connection
+            // FIXME: add auth
+            var s = connect('sockjs/experimenter/{{request.user.experimenter.pk}}');
+            s.onmessage = function(json_string) {
+                console.log("Received message: " + json_string);
+                var json = jQuery.parseJSON(json_string);
+                switch (json.message_type) {
+                case 'info':
+                    addExperimentMessage(json.message);
+                    break;
+                case 'chat':
+                    addChatMessage('chat-div-' + json.round_data_pk, json, json.date_created + " " + json.participant, qtipOptions);
+                    break;
+                case 'submit':
+                    $('#participant_data_value_' + json.participant_data_value_pk).html(json.message).effect("highlight", {}, 5000);
+                    addExperimentMessage("Participant " + json.participant_number + " (Group #" + json.participant_group + ") submit a harvest decision of " + json.message);
+                    break;
+                default:
+                }
+                scrollToBottom(experimentMessageDiv);
+            };
+            $('#refreshAllParticipants').click(function(evt) {
+                console.log("sending refresh event");
+                s.send(createRefreshEvent());
+                return false;
+            });
+            $('#transitionAllParticipants').click(function(evt) {
+                console.log("sending goto event");
+                s.send(createGotoEvent());
+                return false;
+            });
+            scrollToBottom(experimentMessageDiv);
+        });
+</script>
+{% endblock %}
+
