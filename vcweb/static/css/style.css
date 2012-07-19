@@ -1,7 +1,6 @@
 body {
-    font-family: /*"Lucida Grande", "Trebuchet MS",*/ Arial, Verdana, Tahoma, Helvetica, sans-serif;
     font-size: 1.1em;
-    line-height: 1.1em;
+    line-height: 1.2em;
 }
 a.external {
     background: url(../images/external.png) center right no-repeat;
@@ -13,6 +12,7 @@ h1, h2, h3, h4, h5 {
     color: #549900;
     font-family: Georgia, serif;
     line-height: 1.2;
+    padding-top:.2em;
     padding-bottom:.2em;
 }
 h2, h3, h4, h5 {
