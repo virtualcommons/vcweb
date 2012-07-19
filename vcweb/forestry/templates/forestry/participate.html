@@ -1,7 +1,58 @@
 {% extends "participant/base.html" %}
-{% block head %}
-{{ block.super }}
-{% comment %}{% include "includes/jquery.confirm.html" %} {%endcomment%}
+{% block title %}
+{{ experiment.status_line }}
+{% endblock %}
+{% block content %}
+<h3>Forestry round number {{ experiment.current_round.round_number }}</h3>
+{% if max_harvest_decision > 0 %}
+<div style="background: url('{{STATIC_URL}}images/forestry/{{tree.name}}.png'); width:{{max_width}}px; height: {{max_height}}px;">
+    &nbsp;
+</div>
+{% if resource_width > 0 %}
+<div style="background: url('{{STATIC_URL}}images/forestry/pine-tree.png') repeat-x; width:{{resource_width}}px; height: {{tree.height}}px;">
+    &nbsp;
+</div>
+{% endif %}
+
+{% else %}
+<div style='padding: 8px; margin: auto; border: solid 1px; background: #E8E8E8 url({{STATIC_URL}}images/forestry/deforestation.jpg) no-repeat center; height: 282px; width:425px;'>
+    &nbsp;
+</div>
+{% endif %}
+
+<div style='padding: 5px; margin: 8px 0px;' class='ui-state-highlight'>
+    <span class='icon-left ui-icon ui-icon-info'>&nbsp;</span>
+    There are <b>{{ resource_level.value }}</b> trees left.
+</div>
+
+{% if harvest_decision.submitted %}
+<div class='alert alertIcon ui-corner-all'>
+    You have already made a harvest decision of <b>{{ harvest_decision.value }}</b>.  You may change your decision until
+    the experimenter ends the round.
+</div>
+{% endif %}
+
+{% if max_harvest_decision > 0 %}
+<form id='forestry-form' action='' method='post'>
+    {% csrf_token %}
+    <div class='field'>
+        <label for='harvest-decision-id'>How many trees will you harvest this round? <br/>
+            <span>Enter a number between 0 and {{ max_harvest_decision }}</span>:
+        </label>
+        <input id='harvest-decision-id' style='width: 2em; text-align: right;' type="text" name='harvest_decision' class='required digits' maxlength='1'/>
+    </div>
+    <div>
+        <button id='submit-harvest' type='submit'>Harvest</button>
+    </div>
+</form>
+{% else %}
+<div class='alert ui-corner-all'>
+    <span class='ui-icon ui-icon-alert icon-left'></span>
+    There are no longer enough trees to harvest. Please wait until the next round begins.
+</div>
+{% endif %}
+{% endblock content %}
+{% block javascript %}
 <script type="text/javascript">
     $(function() {
         $("#forestry-form").validate({
@@ -57,56 +108,4 @@
     });
 </script>
 {% endblock %}
-{% block title %}
-{{ experiment.status_line }}
-{% endblock %}
-{% block content %}
-<h3>Forestry round number {{ experiment.current_round.round_number }}</h3>
-{% if max_harvest_decision > 0 %}
-<div style="background: url('{{STATIC_URL}}images/forestry/{{tree.name}}.png'); width:{{max_width}}px; height: {{max_height}}px;">
-    &nbsp;
-</div>
-{% if resource_width > 0 %}
-<div style="background: url('{{STATIC_URL}}images/forestry/pine-tree.png') repeat-x; width:{{resource_width}}px; height: {{tree.height}}px;">
-    &nbsp;
-</div>
-{% endif %}
 
-{% else %}
-<div style='padding: 8px; margin: auto; border: solid 1px; background: #E8E8E8 url({{STATIC_URL}}images/forestry/deforestation.jpg) no-repeat center; height: 282px; width:425px;'>
-    &nbsp;
-</div>
-{% endif %}
-
-<div style='padding: 5px; margin: 8px 0px;' class='ui-state-highlight'>
-    <span class='icon-left ui-icon ui-icon-info'>&nbsp;</span>
-    There are <b>{{ resource_level.value }}</b> trees left.
-</div>
-
-{% if harvest_decision.submitted %}
-<div class='alert alertIcon ui-corner-all'>
-    You have already made a harvest decision of <b>{{ harvest_decision.value }}</b>.  You may change your decision until
-    the experimenter ends the round.
-</div>
-{% endif %}
-
-{% if max_harvest_decision > 0 %}
-<form id='forestry-form' action='' method='post'>
-    {% csrf_token %}
-    <div class='field'>
-        <label for='harvest-decision-id'>How many trees will you harvest this round? <br/>
-            <span>Enter a number between 0 and {{ max_harvest_decision }}</span>:
-        </label>
-        <input id='harvest-decision-id' style='width: 2em; text-align: right;' type="text" name='harvest_decision' class='required digits' maxlength='1'/>
-    </div>
-    <div>
-        <button id='submit-harvest' type='submit'>Harvest</button>
-    </div>
-</form>
-{% else %}
-<div class='alert ui-corner-all'>
-    <span class='ui-icon ui-icon-alert icon-left'></span>
-    There are no longer enough trees to harvest. Please wait until the next round begins.
-</div>
-{% endif %}
-{% endblock content %}

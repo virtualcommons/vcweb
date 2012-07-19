@@ -1,35 +1,7 @@
 {% extends "participant/base.html" %}
-{% block head %}
-{{ block.super }}
-{% include "includes/tablesorter.html" %}
-<script type="text/javascript">
-    $(function() {
-        $('#participant-history').tablesorter({widgets: ['zebra'],
-            headers: { 0: {sorter: false}, 1: {sorter: false} }
-        });
-        var s = getCachedSocket();
-        s.on('message', function(json_string) {
-            var json = jQuery.parseJSON(json_string);
-            switch (json.message_type) {
-            case 'update':
-                console.log("updating data");
-                break;
-            case 'goto':
-                console.log("going to " + json.url);
-                window.location.href = json.url;
-                break;
-            case 'refresh':
-                window.location.reload(true);
-                break;
-            }
-        });
-    });
-</script>
-{% endblock %}
 {% block title %}
 Forestry Experiment Round {{ experiment.current_round.round_number }}
 {% endblock %}
-
 {% block page %}
 <h3>Waiting for the next round to start</h3>
 <p>
@@ -88,3 +60,31 @@ Please wait, the facilitator will start the next round when every participant is
     {% endif %}
 </div>
 {% endblock %}
+{% block footer %}
+{{ block.super }}
+{% include "includes/tablesorter.html" %}
+<script type="text/javascript">
+    $(function() {
+        $('#participant-history').tablesorter({widgets: ['zebra'],
+            headers: { 0: {sorter: false}, 1: {sorter: false} }
+        });
+        var s = getCachedSocket();
+        s.on('message', function(json_string) {
+            var json = jQuery.parseJSON(json_string);
+            switch (json.message_type) {
+            case 'update':
+                console.log("updating data");
+                break;
+            case 'goto':
+                console.log("going to " + json.url);
+                window.location.href = json.url;
+                break;
+            case 'refresh':
+                window.location.reload(true);
+                break;
+            }
+        });
+    });
+</script>
+{% endblock %}
+

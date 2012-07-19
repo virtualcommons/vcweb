@@ -1,6 +1,36 @@
 {% extends "participant/base.html" %}
-{% block head %}
-{{ block.super }}
+{% block title %}
+Communication Round: {{experiment}}
+{% endblock %}
+
+{% block page %}
+<h3 style='margin-top: -30px;'>Communication Round Instructions</h3>
+    <div class='alert alertIcon ui-corner-all' style='font-size: 0.8em; line-height: 1.0em;'>
+            You are <b>participant {{ participant_group_relationship.participant_number }}.</b>
+            You can chat about any aspect of the experiment with the other members of your group with two restrictions:
+            <ol style='margin-left: 15px;margin-bottom: 0;'>
+            <li>You cannot promise side payments after the experiment is completed 
+            <li>You cannot threaten any member of your group with any consequences after the experiment is completed
+            </ol>
+            We are monitoring the chat traffic and if we detect any violation
+            of these rules you will be removed from the experiment.
+        </b>
+    </div>
+    <div id='chat-div' class='chat notice ui-corner-all'>
+        {% for chat_message in chat_messages %}
+        <div class='ui-state-highlight'>
+            <a class='dark-yellow-highlight' name='{{chat_message.pk}}'>{{chat_message.date_created|date:"G:i:s"}}</a> | {{chat_message}}
+        </div>
+        {% endfor %}
+    </div>
+    <form id="chatform">
+        <input id='chatText' type="text" />
+        <div>
+            <button type='submit'>Send</button>
+        </div>
+    </form>
+{% endblock %}
+{% block javascript %}
 <script type="text/javascript">
     $(function() {
         var chatDiv = document.getElementById('chat-div');
@@ -43,34 +73,4 @@
     });
 </script>
 {% endblock %}
-{% block title %}
-Communication Round: {{experiment}}
-{% endblock %}
 
-{% block page %}
-<h3 style='margin-top: -30px;'>Communication Round Instructions</h3>
-    <div class='alert alertIcon ui-corner-all' style='font-size: 0.8em; line-height: 1.0em;'>
-            You are <b>participant {{ participant_group_relationship.participant_number }}.</b>
-            You can chat about any aspect of the experiment with the other members of your group with two restrictions:
-            <ol style='margin-left: 15px;margin-bottom: 0;'>
-            <li>You cannot promise side payments after the experiment is completed 
-            <li>You cannot threaten any member of your group with any consequences after the experiment is completed
-            </ol>
-            We are monitoring the chat traffic and if we detect any violation
-            of these rules you will be removed from the experiment.
-        </b>
-    </div>
-    <div id='chat-div' class='chat notice ui-corner-all'>
-        {% for chat_message in chat_messages %}
-        <div class='ui-state-highlight'>
-            <a class='dark-yellow-highlight' name='{{chat_message.pk}}'>{{chat_message.date_created|date:"G:i:s"}}</a> | {{chat_message}}
-        </div>
-        {% endfor %}
-    </div>
-    <form id="chatform">
-        <input id='chatText' type="text" />
-        <div>
-            <button type='submit'>Send</button>
-        </div>
-    </form>
-{% endblock %}

@@ -26,23 +26,6 @@
         <link href="{{STATIC_URL}}css/guarantee/style.css" rel="stylesheet" type="text/css" media="screen" />
         <link href="{{STATIC_URL}}css/style.css" rel="stylesheet" type="text/css" media="screen" />
         <!-- vcweb common js -->
-        <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
-        <script type='text/javascript' src='{{STATIC_URL}}js/jquery.qtip-1.0.0-rc3.min.js'></script>
-        <script type='text/javascript' src='{{STATIC_URL}}js/common.js'></script>
-        {% include "includes/jquery.ui.html" %}
-        {% if debug_mode %}
-        {% load dajaxice_templatetags %}
-        {% dajaxice_js_import %}
-        {% else %}
-        <script type='text/javascript' src='{{STATIC_URL}}js/dajaxice.core.js' charset='utf-8'></script>
-        {% endif %}
-        <script type='text/javascript'>
-            <!-- sets all external links to open up in new windows and jquery-ui buttonifies all buttons-->
-            $(function() {
-                $('a.external').attr({ target: "_blank" });
-                $('button').button();
-            });
-        </script>
         {% endblock %}
     </head>
     <body>
@@ -125,6 +108,26 @@
             Copyright (c) {% now "Y" %} Arizona Board of Regents.  <br/>
             <br />
             </p>
+            <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
+            <script type='text/javascript' src='{{STATIC_URL}}js/knockout.min.js'></script>
+            <script type='text/javascript' src='{{STATIC_URL}}js/jquery.qtip-1.0.0-rc3.min.js'></script>
+            <script type='text/javascript' src='{{STATIC_URL}}js/common.js'></script>
+            {% include "includes/jquery.ui.html" %}
+            {% if debug_mode %}
+                {% load dajaxice_templatetags %}
+                {% dajaxice_js_import %}
+            {% else %}
+                <script type='text/javascript' src='{{STATIC_URL}}js/dajaxice.core.js' charset='utf-8'></script>
+            {% endif %}
+            <script type='text/javascript'>
+                <!-- sets all external links to open up in new windows and jquery-ui buttonifies all buttons-->
+                $(function() {
+                    $('a.external').attr({ target: "_blank" });
+                    $('button').button();
+                });
+            </script>
+            {% block javascript %}
+            {% endblock %}
             {% endblock footer %}
         </div>
     </body>

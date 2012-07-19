@@ -7,21 +7,6 @@
 {% url core:logout as logout %}
 {% url core:profile as profile %}
 
-{% block head %}
-    {{block.super}}
-    <script type='text/javascript' src='{{STATIC_URL}}js/jquery.validate.min.js'></script>
-    {% block participant_socket_io %}
-    {% include "includes/participant.events.html" %}
-    {% include "includes/sockjs.html" %}
-    <script type='text/javascript'>
-        var qtipOptions = {position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'green', tip: 'bottomMiddle'} };
-        $(function() {
-            connect('sockjs');
-            $('[title]').qtip(qtipOptions);
-        });
-    </script>
-    {% endblock %}
-{% endblock %}
 {% block title %}
     Virtual Commons Web Participant Interface
 {% endblock %}
@@ -35,6 +20,18 @@
 {% endif %}
 <li><a href='{{ logout }}'>Logout</a></li>
 {% endblock %}
-
-
+{% block javascript %}
+    <script type='text/javascript' src='{{STATIC_URL}}js/jquery.validate.min.js'></script>
+    {% block websockets %}
+    {% include "includes/participant.events.html" %}
+    {% include "includes/sockjs.html" %}
+    <script type='text/javascript'>
+        var qtipOptions = {position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'green', tip: 'bottomMiddle'} };
+        $(function() {
+            connect('sockjs');
+            $('[title]').qtip(qtipOptions);
+        });
+    </script>
+    {% endblock %}
+{% endblock %}
 

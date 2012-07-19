@@ -1,37 +1,7 @@
 {% extends "experimenter/base.html" %}
 {% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
-{% block head %}
-{{ block.super }}
-<script type='text/javascript'>
-    $(function() {
-        $('.confirm-experiment-action').each(function() {
-            var confirmable = $(this);
-            var description = confirmable.attr("title");
-            confirmable.click(function() {
-                confirmable.fastConfirm({
-                    questionText: description + " - continue?",
-                    onProceed: function(trigger) {
-                        $(trigger).fastConfirm('close');
-                        window.location = $(trigger).attr("href");
-                    },
-                    onCancel: function(trigger) {
-                        $(trigger).fastConfirm('close');
-                    }
-                });
-                return false;
-            });
-        });
-        $('.experiment-menu').each(function() {
-            $(this).find('li:last a').attr('style', 'background-image: none;');
-        });
-    });
-</script>
-{% endblock %}
 {% block page %}
 {{ block.super }}
-{% comment%}
-FIXME: replace these links eventually.
-{% endcomment %}
 <h3>Your experiments</h3>
 <div id="post">
     {% for e in experiments %}
@@ -64,3 +34,31 @@ FIXME: replace these links eventually.
     {% endfor %}
 </div>
 {% endblock page %}
+{% block footer %}
+{{ block.super }}
+<script type='text/javascript'>
+    $(function() {
+        $('.confirm-experiment-action').each(function() {
+            var confirmable = $(this);
+            var description = confirmable.attr("title");
+            confirmable.click(function() {
+                confirmable.fastConfirm({
+                    questionText: description + " - continue?",
+                    onProceed: function(trigger) {
+                        $(trigger).fastConfirm('close');
+                        window.location = $(trigger).attr("href");
+                    },
+                    onCancel: function(trigger) {
+                        $(trigger).fastConfirm('close');
+                    }
+                });
+                return false;
+            });
+        });
+        $('.experiment-menu').each(function() {
+            $(this).find('li:last a').attr('style', 'background-image: none;');
+        });
+    });
+</script>
+{% endblock %}
+
