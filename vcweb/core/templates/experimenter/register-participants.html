@@ -1,7 +1,20 @@
 {% extends "experimenter/base.html" %}
 
 {% block title %}Register participants for {{ experiment }} {% endblock %}
-{% block head %}
+{% block page %}
+<form id='vcweb-form' action='' method='post' class='form-horizontal'>
+    {% csrf_token %}
+    <h3>Register participants</h3>
+    <p>Registering participants for <span style='padding:1px;' class='info'>{{experiment}}</span>.</p>
+    <p><span style='padding: 3px;' class='ui-state-highlight'><b>There are currently {{experiment.participant_set.count}} registered participants.</b></span></p>
+    {% include "includes/bootstrap-form.html" %}
+    <div class='form-actions'>
+        <button class='btn btn-primary' type='submit'>Register</button>
+        <button class='btn'><a href='/dashboard'>Cancel</a></button>
+    </div>
+</form>
+{% endblock page %}
+{% block javascript %}
 {{ block.super }}
 {% include "includes/jquery.forms.html" %}
 <script type='text/javascript'>
@@ -20,17 +33,4 @@
     });
 </script>
 {% endblock %}
-{% block page %}
-<form id='register-participants-form' action='' method='post'>
-    <h3>Register participants</h3>
-    <p>Registering participants for <span style='padding:1px;' class='info'>{{experiment}}</span>.
-    </p>
-    <p>
-    <span style='padding: 3px;' class='ui-state-highlight'><b>There are currently {{experiment.participant_set.count}} registered participants.</b></span>
-    {% include "includes/form-as-div.html" %}
-    <div>
-        <button class='submit' type='submit'>Register</button>
-        <button><a href='/dashboard'>Cancel</a></button>
-    </div>
-</form>
-{% endblock page %}
+

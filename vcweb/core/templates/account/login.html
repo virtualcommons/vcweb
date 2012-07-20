@@ -2,17 +2,6 @@
 
 {% block title %}Virtual Commons Web Login{% endblock %}
 
-{% block head %}
-{{ block.super }}
-
-<script type='text/javascript'>
-$(function() {
-    $(':input').addClass('required');
-    $('#vcweb-form').validate();
-    $('#id_email').focus();
-});
-</script>
-{% endblock head %}
 
 {% block form %}
     <h3>Returning User</h3>
@@ -33,6 +22,16 @@ $(function() {
         <li><a href="{% url socialauth_begin 'foursquare' %}"><img src="{{STATIC_URL}}images/oauth/foursquare-connect-black.png"></a></li>
         <li><a href="{% url socialauth_begin 'facebook' %}"><img width="193", height="23" src="{{STATIC_URL}}images/oauth/facebook-connect-button.png"></a></li>
     </ul>
-
 {% endblock form %}
+
+{% block javascript %}
+{{ block.super }}
+<script type='text/javascript'>
+$(function() {
+    $(':input').addClass('required');
+    $('#vcweb-form').validate();
+    $('#id_email').focus();
+});
+</script>
+{% endblock %}
 

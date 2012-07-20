@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
-from bootstrap.forms import BootstrapForm, Fieldset
+from bootstrap.forms import BootstrapForm, BootstrapMixin, Fieldset
 
 from vcweb.core.models import (Experimenter, Institution)
 
@@ -88,9 +88,9 @@ class EmailListField(forms.CharField):
                 raise ValidationError(_(u'%s is not a valid email address.' % email))
         return emails
 
-class RegisterParticipantsForm(forms.ModelForm):
+class RegisterParticipantsForm(BootstrapMixin, forms.ModelForm):
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
-    experiment_passcode = forms.CharField(min_length=3, label="Experiment passcode", help_text=_('The password used to login to your experiment.', initial='test'))
+    experiment_passcode = forms.CharField(min_length=3, label="Experiment passcode", help_text=_('The password used to login to your experiment.'), initial='test')
     institution_name = forms.CharField(min_length=3, label="Institution name",
             required=False, initial='Arizona State University',
             help_text=_('The name of the institution to be associated with these test participants'))

@@ -247,6 +247,8 @@ class RegisterEmailListView(ExperimenterSingleExperimentMixin, UpdateView):
         experiment.register_participants(emails=emails, institution=institution,
                 password=experiment.authentication_code)
         return super(RegisterEmailListView, self).form_valid(form)
+    def get_success_url(self):
+        return reverse('core:dashboard')
 
 class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, UpdateView):
     form_class = RegisterSimpleParticipantsForm

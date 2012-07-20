@@ -1,9 +1,5 @@
 {% extends "base.html" %}
 
-{% block head %}
-    {{ block.super }}
-    {% include "includes/jquery.forms.html" %}
-{% endblock head %}
 
 {% block page %}
 <form id='vcweb-form' action='' method='post' class='form-horizontal'>
@@ -13,3 +9,8 @@
 {% endblock form %}
 </form>
 {% endblock page %}
+{% block javascript %}
+    {{ block.super }}
+    {% include "includes/jquery.forms.html" %}
+{% endblock %}
+
