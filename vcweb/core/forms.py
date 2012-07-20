@@ -69,7 +69,7 @@ class LoginForm(BootstrapForm):
 class ParticipantAccountForm(BaseRegistrationForm):
     pass
 
-class ExperimenterAccountForm(forms.ModelForm):
+class ExperimenterAccountForm(BootstrapMixin, forms.ModelForm):
     class Meta:
         model = Experimenter
         exclude = ('user',)
@@ -138,8 +138,6 @@ class GeoCheckinForm(forms.Form):
     heading = forms.FloatField(required=False)
     speed = forms.FloatField(required=False)
 
-
-
 class LikeForm(forms.Form):
     target_id = forms.IntegerField(widget=forms.HiddenInput)
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
@@ -159,7 +157,6 @@ class LogMessageForm(forms.Form):
         if level in dict(self.log_levels):
             return level
         raise ValidationError(_("invalid log level %s" % level))
-
 
 class QuizForm(forms.Form):
     name_question = forms.CharField(max_length=64, label=_("What is your name?"))
