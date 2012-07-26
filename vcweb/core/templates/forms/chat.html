@@ -16,12 +16,11 @@ Communication Round: {{experiment}}
     We are monitoring the chat traffic and if we detect any violation of these rules you will be removed from the experiment.
 </div>
 {% endblock instructions %}
+<!-- begin knockout template -->
 <div id='chat-div' class='chat notice alert alert-message'>
-    {% for chat_message in chat_messages %}
-    <div class='alert alert-message'>
-        <a class='chat-message' name='{{chat_message.pk}}'>{{chat_message.date_created|date:"G:i:s"}}</a> | {{chat_message}}
+    <div class='alert alert-message' data-bind="foreach: messages">
+        <a class='chat-message' data-bind="attr: { name: pk }, text: date_created"></a><span data-bind="text: message"></span>
     </div>
-    {% endfor %}
 </div>
 <form id="chatform" class='form-horizontal'>
     <input id='chatText' type="text" />
@@ -32,52 +31,52 @@ Communication Round: {{experiment}}
 {% endblock %}
 
 {% block javascript %}
-<!-- knockout template -->
-<script type="text/html" id="chat-template">
-    <div class='alert alert-message' data-bind="foreach: messages">
-        <a class='chat-message' data-bind="text: date_created" name='{{pk}}'></a><span data-bind="text: message"></span>
-    </div>
-</script>
 <script type="text/javascript">
-    $(function() {
-        var chatDiv = document.getElementById('chat-div');
-        var s = getCachedSocket();
-        s.on('message', function(json_string) {
-            var json = jQuery.parseJSON(json_string);
-            switch (json.message_type) {
+function ChatMessage(jsonData) {
+    this.message = ko.observable(jsonData.message);
+    this.date_created = ko.observable(jsonData.date_created);
+    this.sender = ko.observable(jsonData.sender);
+}
+function ChatMessagesViewModel() {
+    var self = this;
+    self.messages = ko.observableArray([]);
+    {% for chat_message in chat_messages %}
+        self.messages.push(new ChatMessage({ message: {{chat_message.message}}, date_created: {{chat_message.date_created}}, sender: {{chat_message.sender}} }));
+    {% endfor %}
+    self.addMessage = function(json) {
+        self.messages.push(new ChatMessage(json));
+    }
+}
+
+$(function() {
+    var chatMessagesViewModel = new ChatMessagesViewModel();
+    ko.applyBindings(chatMessagesViewModel);
+    getWebSocket().onmessage = function(json_string) {
+        var json = jQuery.parseJSON(json_string);
+        // FIXME: switch to single page app model..?
+        switch (json.message_type) {
             case 'chat':
-                addChatMessage('chat-div', json);
-                /*
-                $("#chat-div").append(
-                    $("<div class='ui-state-highlight' />")
-                        .append($("<a />").attr("name", "" + json.pk)
-                            .text("" + json.date_created))
-                        .append(" | ")
-                        .append(json.message));
-                // scroll to bottom
-                scrollToBottom(chatDiv);
-                */
-                break;
+                chatMessagesViewModel.addChatMessage(json);
+            break;
             case 'refresh':
                 location.reload(true);
-                break;
+            break;
             case 'goto':
                 location.href = json.url;
-                break;
-            }
-        });
-        //send the message when submit is clicked
-        $('#chatform').submit(function (evt) {
-            var line = $('#chatText').val()
-            if (line) {
-                $('#chatText').val('')
-                s.send(createMessageEvent(line));
-            }
-            return false;
-        });
-        $('#chatText').focus();
-        chatDiv.scrollTop = chatDiv.scrollHeight;
+            break;
+        }
+    };
+    //send the message when submit is clicked
+    $('#chatform').submit(function (evt) {
+        var line = $('#chatText').val()
+        if (line) {
+            $('#chatText').val('')
+            s.send(createMessageEvent(line));
+        }
+        return false;
     });
+    $('#chatText').focus();
+});
 </script>
 {% endblock %}
 
