@@ -241,7 +241,7 @@ class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, Templa
 class MonitorExperimentView(ExperimenterSingleExperimentMixin, DetailView):
     template_name = 'experimenter/monitor.html'
 
-class RegisterEmailListView(ExperimenterSingleExperimentMixin, UpdateView):
+class RegisterEmailListView(ExperimenterSingleExperimentMixin, FormView):
     form_class = RegisterEmailListParticipantsForm
     template_name = 'experimenter/register-email-participants.html'
     def form_valid(self, form):
