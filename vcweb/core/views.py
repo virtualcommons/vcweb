@@ -198,6 +198,12 @@ class SingleExperimentMixin(SingleObjectMixin):
     model = Experiment
     context_object_name = 'experiment'
 
+# FIXME: is this the right place for this?  Useful when a form mixes this class in.
+    def get_initial(self):
+        logger.debug("invoking get form with class")
+        self.object = self.get_object()
+        return { "experiment_pk" : self.object.pk }
+
     def process(self):
         pass
     def check_user(self, user, experiment):
@@ -217,6 +223,7 @@ class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
         raise PermissionDenied("You do not have access to %s" % experiment)
 
 class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin):
+
     def check_user(self, experiment):
         user = self.request.user
         if is_experimenter(user, experiment.experimenter):
@@ -250,9 +257,10 @@ class RegisterEmailListView(ExperimenterSingleExperimentMixin, UpdateView):
     def get_success_url(self):
         return reverse('core:dashboard')
 
-class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, UpdateView):
+class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, FormView):
     form_class = RegisterSimpleParticipantsForm
     template_name = 'experimenter/register-simple-participants.html'
+
     def form_valid(self, form):
         number_of_participants = form.cleaned_data.get('number_of_participants')
         email_suffix = form.cleaned_data.get('email_suffix')

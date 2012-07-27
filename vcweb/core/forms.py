@@ -74,7 +74,6 @@ class ExperimenterAccountForm(BootstrapMixin, forms.ModelForm):
         model = Experimenter
         exclude = ('user',)
 
-
 email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
 class EmailListField(forms.CharField):
     widget = forms.Textarea
@@ -88,7 +87,7 @@ class EmailListField(forms.CharField):
                 raise ValidationError(_(u'%s is not a valid email address.' % email))
         return emails
 
-class RegisterParticipantsForm(BootstrapMixin, forms.ModelForm):
+class RegisterParticipantsForm(BootstrapForm):
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
     experiment_passcode = forms.CharField(min_length=3, label="Experiment passcode", help_text=_('The password used to login to your experiment.'), initial='test')
     institution_name = forms.CharField(min_length=3, label="Institution name",

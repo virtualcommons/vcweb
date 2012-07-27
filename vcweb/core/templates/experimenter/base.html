@@ -17,17 +17,5 @@
 {% endblock %}
 
 {% block javascript %}
-<script type='text/javascript'>
-    function getQtipOptions(style) {
-        if (! style) {
-            style = "dark";
-        }
-        return {position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: style, tip: 'bottomMiddle'} };
-    }
-    var qtipOptions = getQtipOptions();
-    $(function() {
-        $('[title]').qtip(qtipOptions);
-    });
-</script>
 {% include "includes/jquery.confirm.html" %}
 {% endblock %}
