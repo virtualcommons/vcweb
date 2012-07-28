@@ -211,7 +211,6 @@
             });
         });
         $('#statusSpinner').hide();
-        $('#statusDiv [title]').qtip(qtipOptions);
         $('#statusDiv').show('fast');
         $('#experimentData').show('fast');
         console.log("active round number: " + active_round_number);
@@ -228,6 +227,7 @@
         }
     }
     $(function() {
+        // FIXME: replace with knockout..
             var experimentMessageDiv = document.getElementById('experiment-messages');
             registerCallbacks({{ experiment.round_data_set.count }}, {{ experiment.current_round.sequence_number }});
             // websocket connection
