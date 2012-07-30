@@ -15,7 +15,11 @@ function connect(uri) {
         console.log("Tried to connect to null host, defaulting to vcweb.asu.edu instead.");
         host = "vcweb.asu.edu";
     }
-    var sockjsServer = "http://" + host + ":" + port + "/" + uri;
+    if ( !uri ) {
+        console.log("no uri specified, defaulting to /sockjs");
+        uri = "/sockjs";
+    }
+    var sockjsServer = "http://" + host + ":" + port + uri;
     console.log("Establishing connection to " + sockjsServer);
     socket = new SockJS(sockjsServer);
     socket.onopen = function() {

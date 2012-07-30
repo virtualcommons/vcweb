@@ -1,6 +1,6 @@
 {% extends "forms/base.html" %}
 
-{% block title %}Register with vcweb{% endblock %}
+{% block title %}VCWEB Account Registration{% endblock %}
 {% block form %}
 <h3>New User</h3>
 <p>
@@ -40,11 +40,9 @@ $(document).ready(function() {
             if (! labelTitle) {
                 return;
             }
-            $(val).qtip({ content: labelTitle,
-                position: { corner: {target: 'topRight', tooltip: 'bottomLeft'}},
-                style: { name: 'cream', tip: 'bottomLeft'},
-                show: { when: { event: 'mouseover focus'} },
-                hide: { when: { event: 'mouseout blur' } }
+            console.debug("creating popover with content " + labelTitle);
+            $(val).popover({ 
+                content: labelTitle,
             });
         });
 });

@@ -22,11 +22,11 @@
 <fieldset class='small ui-corner-all'>
     <legend>Experiment management</legend>
     <ul class='actions'>
-        <li><span id='refreshAllParticipants' title='Sends a page refresh to all connected participants.' class='clickable' >
+        <li><span id='refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' class='clickable' >
             <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/arrow_refresh.png);'></span>
             refresh all participants</span>
         </li>
-        <li><span id='transitionAllParticipants' title='Moves all connected participants from waiting page to active page.' class='clickable' >
+        <li><span id='transitionAllParticipants' data-content='Moves all connected participants from waiting page to active page.' class='clickable' >
             <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/arrow_right.png);'></span>
             transition all participants to next round</span>
         </li>
@@ -55,13 +55,13 @@
             <ul id='actions' class='actions'>
                 {% if experiment.is_active %}
                     {% if experiment.is_round_in_progress %}
-                    <li><a class='confirm-experiment-action' name='end_round' href='end-round' title='Stops the current round.'>
+                    <li><a class='confirm-experiment-action' name='end_round' href='end-round' data-content='Stops the current round.'>
                         <span class='vcweb-icon icon-left ui-icon' style='background: url({{STATIC_URL}}images/famfamfam/control_stop_blue.png);' ></span>end round</a></li>
                     {% else %}
-                    <li><a class='confirm-experiment-action' name='start_round' href='start-round' title='Starts the round.'>
+                    <li><a class='confirm-experiment-action' name='start_round' href='start-round' data-content='Starts the round.'>
                         <span class='ui-icon vcweb-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/control_play_blue.png);' ></span>start round</a></li>
                     {% endif %}
-                    <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round' title='Stops the current round if necessary and advances to the next round.'>
+                    <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round' data-content='Stops the current round if necessary and advances to the next round.'>
                         <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/control_fastforward_blue.png);' ></span>advance to next round</a></li>
                 {% else %}
                 {% if participant_count == 0 %}
@@ -69,7 +69,7 @@
                     There are no registered participants.  Please <a href='{% url core:dashboard %}'>return to the dashboard to register participants.</a>
                 </div>
                 {% else %}
-                <li><a title='You must first activate an experiment before you can run it.' class='confirm-experiment-action' name='activate'
+                <li><a data-content='You must first activate an experiment before you can run it.' class='confirm-experiment-action' name='activate'
                     href='activate'><span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/cog_go.png);' ></span>activate</a>
                 </li>
                 {%endif%}
@@ -77,11 +77,11 @@
             </ul>
             <br/>
             <ul class='messages'>
-                <li title='{{experiment.actions_help_text}}'>{{ experiment.sequence_label }}, {{experiment.get_status_display}}</li>
+                <li data-content='{{experiment.actions_help_text}}'>{{ experiment.sequence_label }}, {{experiment.get_status_display}}</li>
                 <li>Type: {{ experiment.current_round.get_round_type_display }}</li>
                 <li>Round started on {{ experiment.current_round_start_time }}</li>
                 <li>Time remaining: {{ experiment.time_remaining }}</li>
-                <li title='{{experiment.participant_set.all|join:" "}}'>Registered participants: <b>{{participant_count}}</b>
+                <li data-content='{{experiment.participant_set.all|join:" "}}'>Registered participants: <b>{{participant_count}}</b>
                 </li>
             </ul>
         </fieldset>
@@ -104,7 +104,7 @@
                 {% for group_data_value in round_data.group_data_value_set.all %}
                 <tr>
                     <td>
-                        <a class='dark-yellow-highlight' title='{{ group_data_value.group.all_participants_str }}'>
+                        <a class='dark-yellow-highlight' data-content='{{ group_data_value.group.all_participants_str }}'>
                             {{ group_data_value.group }}
                         </a>
                     </td>
@@ -130,7 +130,7 @@
                 {% for participant_data_value in round_data.participant_data_value_set.all %}
                 <tr>
                     <td>
-                        <a class='dark-yellow-highlight' title='{{participant_data_value.participant}}'>
+                        <a class='dark-yellow-highlight' data-content='{{participant_data_value.participant}}'>
                             {{ participant_data_value.participant_number }} ({{ participant_data_value.group }})
                         </a>
                     </td>
@@ -151,7 +151,7 @@
             {% autoescape on %}
             {% for chat_message in round_data.chat_messages.all %}
             <div class='ui-state-highlight' style='line-height: 1.5em;'>
-                <a class='dark-yellow-highlight' name='{{chat_message.pk}}' title='{{chat_message.date_created}} {{chat_message.participant}}'>
+                <a class='dark-yellow-highlight' name='{{chat_message.pk}}' data-content='{{chat_message.date_created}} {{chat_message.participant}}'>
                     {{chat_message.date_created|date:"G:i:s"}}</a> | {{chat_message}}
             </div>
             {% endfor %}
@@ -191,7 +191,7 @@
     function registerCallbacks(round_data_count, active_round_number) {
         $('.confirm-experiment-action').each(function() {
             var confirmable = $(this);
-            var description = confirmable.attr("title");
+            var description = confirmable.attr("data-content");
             var action= $(this).attr("name");
             confirmable.click(function() {
                 confirmable.fastConfirm({
@@ -211,7 +211,7 @@
             });
         });
         $('#statusSpinner').hide();
-        $('#statusDiv [title]').tooltip(qtipOptions);
+        $('#statusDiv [data-content]').popover();
         $('#statusDiv').show('fast');
         $('#experimentData').show('fast');
         console.log("active round number: " + active_round_number);
@@ -232,7 +232,7 @@
             registerCallbacks({{ experiment.round_data_set.count }}, {{ experiment.current_round.sequence_number }});
             // websocket connection
             // FIXME: add auth
-            var s = connect('sockjs/experimenter/{{request.user.experimenter.pk}}');
+            var s = connect();
             s.onmessage = function(json_string) {
                 console.log("Received message: " + json_string);
                 var json = jQuery.parseJSON(json_string);
@@ -241,7 +241,8 @@
                     addExperimentMessage(json.message);
                     break;
                 case 'chat':
-                    addChatMessage('chat-div-' + json.round_data_pk, json, json.date_created + " " + json.participant, qtipOptions);
+                    // FIXME: replace with knockout
+                    // addChatMessage('chat-div-' + json.round_data_pk, json, json.date_created + " " + json.participant);
                     break;
                 case 'submit':
                     $('#participant_data_value_' + json.participant_data_value_pk).html(json.message).effect("highlight", {}, 5000);
@@ -265,4 +266,3 @@
         });
 </script>
 {% endblock %}
-

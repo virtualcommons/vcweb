@@ -15,6 +15,9 @@ Communication Round: {{experiment}}
     </ol>
     We are monitoring the chat traffic and if we detect any violation of these rules you will be removed from the experiment.
 </div>
+{% block custom_instructions %}
+{{ custom_instructions }}
+{% endblock %}
 {% endblock instructions %}
 <!-- begin knockout template -->
 <div id='chat-div' class='chat notice alert alert-message'>
@@ -51,7 +54,8 @@ function ChatMessagesViewModel() {
 $(function() {
     var chatMessagesViewModel = new ChatMessagesViewModel();
     ko.applyBindings(chatMessagesViewModel);
-    getWebSocket().onmessage = function(json_string) {
+    var s = connect();
+    s.onmessage = function(json_string) {
         var json = jQuery.parseJSON(json_string);
         // FIXME: switch to single page app model..?
         switch (json.message_type) {

@@ -26,10 +26,9 @@
     {% include "includes/participant.events.html" %}
     {% include "includes/sockjs.html" %}
     <script type='text/javascript'>
-        var qtipOptions = {position: { corner: {target: 'topMiddle', tooltip: 'bottomMiddle'}}, style: { name: 'green', tip: 'bottomMiddle'} };
         $(function() {
             connect('sockjs');
-            $('[title]').qtip(qtipOptions);
+            // $('[data-content]').popover();
         });
     </script>
     {% endblock %}
