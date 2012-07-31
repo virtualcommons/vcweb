@@ -1,0 +1,85 @@
+{% extends "participant/base.html" %}
+{% block title %}{{experiment.status_line}}{% endblock %}
+
+{% block content %}
+<h3>Round number {{ experiment.current_round.round_number }}</h3>
+{% if max_harvest_decision > 0 %}
+    <div style="background: url('{{STATIC_URL}}images/forestry/{{tree.name}}.png'); width:{{max_width}}px; height: {{max_height}}px;">
+        &nbsp;
+    </div>
+    {% if resource_width > 0 %}
+    <div style="background: url('{{STATIC_URL}}images/forestry/pine-tree.png') repeat-x; width:{{resource_width}}px; height: {{tree.height}}px;">
+        &nbsp;
+    </div>
+    {% endif %}
+{% else %}
+    <div style='padding: 8px; margin: auto; border: solid 1px; background: #E8E8E8 url({{STATIC_URL}}images/forestry/deforestation.jpg) no-repeat center; height: 282px; width:425px;'>
+        &nbsp;
+    </div>
+{% endif %}
+
+<div class='alert alert-message'>
+    You require {{ survival_cost }} to survive and you currently have {{ storage }} resources stored.  
+    There are <b>{{ resource_level.value }}</b> resources left for your entire group.
+</div>
+
+{% if harvest_decision.submitted %}
+<div class='alert alertIcon ui-corner-all'>
+    You have already made a decision to harvest <b>{{ harvest_decision.value }}</b> resources.  You may change your
+    decision until the experimenter ends the round.
+</div>
+{% endif %}
+
+{% if max_harvest_decision > 0 %}
+<form id='vcweb-form' action='' method='post'>
+    {% csrf_token %}
+    <div class='field'>
+        <label for='harvest-decision-id'>How many resources will you harvest this round? <br/>
+            <span>Enter a number between 0 and {{ max_harvest_decision }}</span>:
+        </label>
+        <input id='harvest-decision-id' style='width: 2em; text-align: right;' type="text" name='harvest_decision' class='required digits' maxlength='1'/>
+    </div>
+    <div>
+        <button id='submit-harvest' type='submit'>Harvest</button>
+    </div>
+</form>
+{% else %}
+<div class='alert ui-corner-all'>
+    <span class='ui-icon ui-icon-alert icon-left'></span>
+    There are no longer enough trees to harvest. Please wait until the next round begins.
+</div>
+{% endif %}
+{% endblock content %}
+{% block javascript %}
+{{ block.super }}
+<script type="text/javascript">
+    $(function() {
+        $("#vcweb-form").validate({
+                rules: {
+                    harvest_decision: {
+                        required: true,
+                        range: [0, {{max_harvest_decision}}]
+                    }
+                },
+                messages: {
+                    harvest_decision: {
+                        required: "Please enter a harvest decision",
+                        range: "Please enter a number between 0 and {{ max_harvest_decision }}"
+                    }
+                },
+        });
+        $('#harvest-decision-id').focus(function() {
+            this.select();
+        });
+        $('#harvest-decision-id').focus();
+        var s = connect();
+        s.onmessage = function(json_string) {
+            var json = jQuery.parseJSON(json_string);
+            switch (json.message_type) {
+            case 'goto':
+                console.log("going to " + json.url);
+                window.location.href = json.url;
+                break;
+            }
+        };
+{% endblock %}

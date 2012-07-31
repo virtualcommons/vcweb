@@ -1,12 +1,11 @@
 from django.db import models
 from vcweb.core import simplecache
-from vcweb.core.services import ExperimentService
+from vcweb.core.models import ExperimentMetadata
 
-# Create your models here.
 
 @simplecache
-def get_experiment_metadata_name():
-    return 'bound'
+def get_experiment_metadata():
+    return ExperimentMetadata.objects.get(namespace='bound')
 
 
 

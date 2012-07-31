@@ -10,9 +10,21 @@ from vcweb.core.decorators import participant_required, experimenter_required
 from vcweb.core.forms import QuizForm
 from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.views import ParticipantSingleExperimentMixin
+from vcweb.boundaries.models import get_experiment_metadata
 import logging
 
 logger = logging.getLogger(__name__)
 
-def participate(request):
-    pass
+def participate(request, experiment_id=None):
+    participant = request.user.participant
+    logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
+    experiment = get_object_or_404(Experiment.objects.select_related(), pk=experiment_id)
+    if experiment.experiment_metadata != get_experiment_metadata():
+        raise Http404
+    participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
+    return render_to_response(experiment.current_round_template, {
+        'participant_experiment_relationship': participant_experiment_relationship,
+        'next_round_instructions': experiment.next_round_instructions
+        },
+        context_instance=RequestContext(request))
+
