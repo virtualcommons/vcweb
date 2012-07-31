@@ -1,29 +1,4 @@
 {% extends "participant/base.html" %}
-{% block head %}
-    {{ block.super }}
-    <script type="text/javascript">
-        $(function() {
-                var s = getCachedSocket();
-                s.on('message', function(json_string) {
-                    var json = jQuery.parseJSON(json_string);
-                    console.log("received json string: " + json_string);
-                    switch (json.message_type) {
-                    case 'refresh':
-                        console.log("refreshing..");
-                        window.location.reload(true);
-                        break;
-                    case 'goto':
-                        console.log("goto " + json.url);
-                        window.location.href = json.url;
-                        break;
-                    default:
-                        console.log("unhandled json message type: " + json.message_type + ":" + json.message);
-                        break;
-                    }
-                });
-        });
-    </script>
-{% endblock %}
 {% block title %}Forestry Instructions{% endblock %}
 {% block content %}
 <h3>Forestry</h3>
@@ -49,3 +24,29 @@ can harvest a maximum of 5 units and a minimum of 0 units from the resource.
 {% block sidebar %}
 {% include "forestry/includes/harvest-table.html" %}
 {% endblock sidebar %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript">
+$(function() {
+    var s = connect();
+    s.onmessage = function(json_string) {
+        var json = jQuery.parseJSON(json_string);
+        console.log("received json string: " + json_string);
+        switch (json.message_type) {
+            case 'refresh':
+                console.log("refreshing..");
+            window.location.reload(true);
+            break;
+            case 'goto':
+                console.log("goto " + json.url);
+            window.location.href = json.url;
+            break;
+            default:
+                console.log("unhandled json message type: " + json.message_type + ":" + json.message);
+            break;
+        }
+    };
+});
+    </script>
+    {% endblock %}
+

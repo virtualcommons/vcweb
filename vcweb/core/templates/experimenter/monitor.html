@@ -177,7 +177,7 @@
         else {
             if (json.should_transition) {
                 console.log("Transitioning participants to " + json.transition_url);
-                getCachedSocket().send(createGotoEvent(json.transition_url));
+                getWebSocket().send(createGotoEvent(json.transition_url));
             }
             $('#statusDiv').html(json.status);
             $('#experimentData').accordion("destroy");

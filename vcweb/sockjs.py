@@ -3,12 +3,14 @@ import logging
 import os
 import sys
 import tornadoredis
+import simplejson as json
 from tornado import web, ioloop
 from sockjs.tornado import SockJSRouter, SockJSConnection
 
 sys.path.append(os.path.abspath('.'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
+from vcweb.core.models import Experiment, ParticipantGroupRelationship, Experimenter
 from vcweb import settings
 
 logger = logging.getLogger(__name__)
@@ -25,9 +27,14 @@ class VcwebConnection(SockJSConnection):
         logger.debug("opening connection %s", info)
         #self.client.listen(self.on_chan_message)
 
-    def on_message(self, message):
-        # incoming message from client
-        logger.debug("received message %s", message)
+    def on_message(self, json_string):
+        logger.debug("received: " + json_string)
+        message_dict = json.loads(json_string)
+        logger.debug("received message %s", message_dict)
+        experiment_id = message_dict['experiment_id']
+        auth_token = message_dict['auth_token']
+        experiment = Experiment.objects.get(pk=experiment_id)
+        
 
     def on_close(self):
         #self.client.unsubscribe(self.default_channel)

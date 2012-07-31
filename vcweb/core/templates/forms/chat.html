@@ -34,6 +34,7 @@ Communication Round: {{experiment}}
 {% endblock %}
 
 {% block javascript %}
+{{ block.super }}
 <script type="text/javascript">
 function ChatMessage(jsonData) {
     this.message = ko.observable(jsonData.message);

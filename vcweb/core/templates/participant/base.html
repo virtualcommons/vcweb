@@ -25,12 +25,6 @@
     {% block websockets %}
     {% include "includes/participant.events.html" %}
     {% include "includes/sockjs.html" %}
-    <script type='text/javascript'>
-        $(function() {
-            connect('sockjs');
-            // $('[data-content]').popover();
-        });
-    </script>
     {% endblock %}
 {% endblock %}
 

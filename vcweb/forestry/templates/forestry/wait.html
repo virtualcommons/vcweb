@@ -68,8 +68,8 @@ Please wait, the facilitator will start the next round when every participant is
         $('#participant-history').tablesorter({widgets: ['zebra'],
             headers: { 0: {sorter: false}, 1: {sorter: false} }
         });
-        var s = getCachedSocket();
-        s.on('message', function(json_string) {
+        var s = connect();
+        s.onmessage = function(json_string) {
             var json = jQuery.parseJSON(json_string);
             switch (json.message_type) {
             case 'update':
@@ -83,7 +83,7 @@ Please wait, the facilitator will start the next round when every participant is
                 window.location.reload(true);
                 break;
             }
-        });
+        };
     });
 </script>
 {% endblock %}

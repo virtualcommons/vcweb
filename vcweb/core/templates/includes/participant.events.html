@@ -1,27 +1,29 @@
 <script type="text/javascript">
 function createConnectionEvent() {
-   return createMessageEvent("Initial connection", "connect");
+    return createMessageEvent("Initial connection", "connect");
 }
 function createReconnectionEvent() {
-   return createMessageEvent("Reconnecting from disconnect", "reconnect");
+    return createMessageEvent("Reconnecting from disconnect", "reconnect");
 }
 function createMessageEvent(payload, event_type) {
-   if (! event_type) {
-      event_type = "chat";
-   }
-   return {
-      "message_type": event_type,
-{% if participant_group_relationship %}
-      "participant_group_relationship_id": {{participant_group_relationship.pk}},
-{% endif %}
-{% if participant_experiment_relationship %}
-      "participant_experiment_relationship_id": {{participant_experiment_relationship.pk}},
-{% endif %}
-      "message": payload
-   };
+    if (! event_type) {
+        event_type = "chat";
+    }
+    return JSON.stringify({
+        "message_type": event_type,
+        "auth_token": {{ authentication_token }},
+        "experiment_id": {{experiment.pk}},
+        {% if participant_group_relationship %}
+            "participant_group_relationship_id": {{participant_group_relationship.pk}},
+        {% endif %}
+        {% if participant_experiment_relationship %}
+            "participant_experiment_relationship_id": {{participant_experiment_relationship.pk}},
+        {% endif %}
+        "message": payload
+    });
 }
 function createChatEvent(payload) {
-   return createMessageEvent(payload);
+    return createMessageEvent(payload);
 }
 function createSubmitEvent(payload) {
     return createMessageEvent(payload, "submit");

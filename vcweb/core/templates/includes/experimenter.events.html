@@ -1,5 +1,4 @@
 <script type="text/javascript">
-
 function createRefreshEvent() {
     return createMessageEvent("Refresh all clients", "refresh");
 }
@@ -10,23 +9,24 @@ function createGotoEvent(url) {
     return createMessageEvent(url, "goto");
 }
 function createConnectionEvent() {
-   return createMessageEvent("Initial connection", "connect");
+    return createMessageEvent("Initial connection", "connect");
 }
 function createReconnectionEvent() {
-   return createMessageEvent("Reconnecting from disconnect", "reconnect");
+    return createMessageEvent("Reconnecting from disconnect", "reconnect");
 }
 function createMessageEvent(message, event_type) {
-   if (! event_type) {
-      event_type = "experimenter";
-   }
-   return {
-      "message_type": event_type,
-      "experimenter_id": {{request.user.experimenter.pk}},
-      "experiment_id": {{experiment.pk}},
-      "message": message
-   };
+    if (! event_type) {
+        event_type = "experimenter";
+    }
+    return JSON.stringify({
+        "message_type": event_type,
+        "experimenter_id": {{request.user.experimenter.pk}},
+        "experiment_id": {{experiment.pk}},
+        "auth_token": {{ authentication_token }},
+        "message": message
+    });
 }
 function createChatEvent(message) {
-   return createMessageEvent(message);
+    return createMessageEvent(message);
 }
 </script>
