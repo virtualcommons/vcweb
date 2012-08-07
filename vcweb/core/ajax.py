@@ -89,8 +89,8 @@ def _render_experiment_monitor_block(block, experiment, request):
 def experiment_controller(request, pk, action=''):
     experiment = _get_experiment(request, pk)
     error_message = None
-# FIXME: this is convenient but dangerous.  
-# dashes become underscores for function invocation.  
+# FIXME: this is convenient but dangerous.
+# dashes become underscores for function invocation.
     try:
         experiment_func = getattr(experiment, action.replace('-', '_'))
         experiment_func()

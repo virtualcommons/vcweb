@@ -211,7 +211,7 @@
             });
         });
         $('#statusSpinner').hide();
-        $('#statusDiv [data-content]').popover();
+        $('[data-content]', $('#statusDiv')).popover();
         $('#statusDiv').show('fast');
         $('#experimentData').show('fast');
         console.log("active round number: " + active_round_number);
@@ -229,6 +229,7 @@
     }
     $(function() {
             var experimentMessageDiv = document.getElementById('experiment-messages');
+            // FIXME: most of this should go away once we finish migrating to knockout
             registerCallbacks({{ experiment.round_data_set.count }}, {{ experiment.current_round.sequence_number }});
             // websocket connection
             // FIXME: add auth
