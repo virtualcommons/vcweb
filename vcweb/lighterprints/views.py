@@ -311,8 +311,11 @@ def like(request):
         logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         logger.debug("target: %s", target)
-        (like, created) = Like.objects.get_or_create(participant_group_relationship=participant_group_relationship, target_data_value=target)
-        logger.debug("Participant %s liked %s (new? %s)", participant_group_relationship, target, created)
+        # FIXME: either needs a uniqueness constraint to ensure that duplicates don't get created or add guards when we
+        # retrieve them to only send back the latest one (feels hacky).  See
+        # https://bitbucket.org/virtualcommons/vcweb/issue/59/get_or_create-issues-for-likes
+        Like.objects.create(participant_group_relationship=participant_group_relationship, target_data_value=target)
+        logger.debug("Participant %s liked %s", participant_group_relationship, target)
         return HttpResponse(dumps({'success': True}))
     else:
         logger.debug("invalid form: %s from request: %s", form, request)

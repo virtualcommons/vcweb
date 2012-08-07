@@ -38,6 +38,9 @@ syncdb_commands = [
         '%(python)s manage.py loaddata slovakia' % env,
         ]
 
+def shellp():
+    local("{python} manage.py shell_plus".format(python=env.python), capture=False)
+
 def shell():
     local("{python} manage.py shell".format(python=env.python), capture=False)
 

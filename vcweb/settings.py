@@ -100,6 +100,7 @@ INSTALLED_APPS = (
         'kronos',
         'south',
         'social_auth',
+        'django_extensions',
         'mptt',
         'bootstrap',
         )
