@@ -1,4 +1,8 @@
 body {
+    margin: 0;
+    padding: 0;
+    background: #FFFFFF url(guarantee/images/img01.gif) repeat-x left top;
+    color: #8A8A8A;
     font-size: 1.1em;
     line-height: 1.2em;
 }
@@ -6,6 +10,26 @@ body {
     width: 940px;
     height: 120px;
     margin: 0 auto;
+}
+#logo h1 {
+    padding-top: .5em;
+    font-size: 2.3em;
+    margin: .8em auto;
+    line-height: normal;
+    text-transform: lowercase;
+    text-decoration: none;
+    color: #FFFFFF;
+    font-weight: normal;
+}
+#logo p {
+    margin-top: -4px;
+    text-transform: lowercase;
+    font-size: 1.4em;
+    color: #FFA25D;
+}
+#logo a {
+    text-decoration: none;
+    color: #FFA25D;
 }
 a.external {
     background: url(../images/external.png) center right no-repeat;
@@ -15,7 +39,6 @@ h1, h2, h3, h4, h5 {
     margin: 0;
     font-weight: normal;
     color: #549900;
-    font-family: Georgia, serif;
     line-height: 1.2;
     padding-top:.2em;
     padding-bottom:.2em;
@@ -146,10 +169,6 @@ label.error {
 #experimentData a {
     text-decoration: none;
 }
-.dark-yellow-highlight {
-    background-color: #F9E275;
-    text-decoration: none;
-}
 #experiments a {
     text-decoration: none;
     color: #06C;
@@ -214,53 +233,10 @@ ul.horizontal>li {
     margin: 6px 0px 0px 0px;
     padding: 0;
 }
-#navmenu {
-    background: #4A3226;
-    float: left;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-}
-#navmenu li {
-    float: left;
-    font: 67.5% "Lucida Sans Unicode", "Bitstream Vera Sans", "Trebuchet Unicode MS", "Lucida Grande", Verdana, Helvetica, sans-serif;
-    margin: 0;
-    padding: 0;
-}
-#navmenu a {
-    background: #4A3226 url("../images/separator.gif") bottom right no-repeat;
-    color: #ccc;
-    display: block;
-    float: left;
-    margin: 0;
-    padding: 8px 12px;
-    text-decoration: none;
-    font-weight:normal;
-}
-#navmenu a:hover {
-    background: #2580a2 url("../images/hover.gif") bottom center no-repeat;
-    color: #fff;
-    padding-bottom: 8px;
-}
 #timeRemaining span {
     background: url('../images/famfamfam/clock.png') bottom center no-repeat;
     margin-left: 8px;
     margin-right: 8px;
-}
-#experimenter-sidebar {
-    float: right;
-}
-#experimenter-sidebar h5 {
-    padding: 0;
-    margin: -20px 0px 8px 0;
-}
-.experimenter-sidebar-messages {
-    display:block;
-    height: 14em;
-    width: 31em;
-    overflow:auto;
-    float:right; 
 }
 .chat {
     height: 20em;
@@ -269,56 +245,24 @@ ul.horizontal>li {
 #chatText {
     width: 100%;
 }
-#jqDialog_box {
-	background: #f5f5f5;
-	position: absolute;
-	width: 450px;
-	height: 150px;
-	font-family: Arial;
-	border-width: 1px 3px 3px 1px;
-	border-style: solid;
-	border-color: #ccc;
-	-moz-border-radius: 6px;
-	-webkit-border-radius: 6px;
-	-khtml-border-radius: 6px;
-	border-radius: 6px;
-	-moz-box-shadow: 0 0 30px #e6e6e6;
+/* footer css from guarantee */
+#footer {
+    width: 100%;
+    height: 100px;
+    margin: 0 auto;
+    padding: 0;
+    background: url(guarantee/images/img02.gif) repeat-x left top;
 }
-#jqDialog_content {
-	margin: 10px;
-	font-weight: bold;
-	font-size: 12px;
-	height: 90px;
-	overflow: hidden;
+#footer p {
+    margin: 0;
+    padding: 15px 0px 0px 0px;
+    text-align: center;
+    line-height: normal;
+    text-transform: uppercase;
+    font-size: .8em;
+    color: #7B1605;
 }
-#jqDialog_options {
-	margin: 10px;
-	text-align: center;
-}
-#jqDialog_options button {
-	font-family: Arial;
-	margin-right: 5px;
-	background: #000;
-	border: 0px;
-	font-size: 1.5em;
-	color: #fff;
-	width: auto;
-	cursor: pointer;
-	-moz-border-radius: 3px;
-	-webkit-border-radius: 3px;
-	-khtml-border-radius: 3px;
-	border-radius: 3px;
-}
-#jqDialog_input {
-	padding: 4px;
-	width: 250px;
-}
-#jqDialog_close {
-	background: none;
-	border: none;
-	float: right;
-	font-weight: bold;
-	font-size: 10px;
-	color: #ff0000;
-	cursor: pointer;
+#footer a {
+    color: #36241B;
+    text-decoration: underline;
 }

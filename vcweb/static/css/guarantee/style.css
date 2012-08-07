@@ -140,16 +140,12 @@ img.right {
     margin: 0 auto;
     padding: 40px 0px 0px 0px;
 }
-
-
 /** LOGO */
-
 #logo {
     width: 940px;
     height: 94px;
     margin: 0 auto;
 }
-
 #logo h1, #logo p {
     margin: 0px;
     line-height: normal;
