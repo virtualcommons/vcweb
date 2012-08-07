@@ -2,6 +2,11 @@ body {
     font-size: 1.1em;
     line-height: 1.2em;
 }
+#logo {
+    width: 940px;
+    height: 120px;
+    margin: 0 auto;
+}
 a.external {
     background: url(../images/external.png) center right no-repeat;
     padding-right: 13px;

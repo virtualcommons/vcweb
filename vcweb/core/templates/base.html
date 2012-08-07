@@ -59,7 +59,7 @@
             {% endblock %}
         </div>
         <div id='logo'>
-            <div style='clear: none; position:relative;float:right; left:-930px; padding: 5px;'>
+            <div style='clear:none; position:relative;float:right; left:-930px; padding: 5px;'>
                 <img src='{{STATIC_URL}}images/vcweb-logo.png' alt='vcweb logo'/>
             </div>
             <h1>
@@ -68,21 +68,21 @@
                 {% endblock %}
             </h1>
         </div>
-        <div id='page'>
+        <div class='container-fluid'>
             <noscript>
                 <div class='alert alertIcon ui-corner-all'>
-                    Please <b>enable JavaScript</b> before using this site.  <br/>Our
-                    experiments are highly interactive and <b>will not function properly</b> without JavaScript.
+                    Please <b>enable JavaScript</b> before using this site.  <br/>Our experiments are interactive and
+                    <b>will not function properly</b> without JavaScript.
                 </div>
             </noscript>
             {% if messages %}
-            <h3>Notifications</h3>
-            <ul id='messages' class="messages">
-                {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
-                <span class='icon-left ui-icon ui-icon-alert'></span>{{ message }}</li>
-                {% endfor %}
-            </ul>
+            <h3>Messages</h3>
+            {% for message in messages %}
+            <div class='alert'>
+                <button class='close' data-dismiss='alert'>x</button>
+                {{message}}
+            </div>
+            {% endfor %}
             {% endif %}
             {% block page %}
             <div id="content">
