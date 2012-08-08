@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import authenticate
+from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
@@ -46,6 +47,11 @@ class RegistrationForm(BaseRegistrationForm):
         layout = (
                 Fieldset("", "first_name", "last_name", "email", "password", "confirm_password", "institution",'experimenter'),
                 )
+
+class VcwebPasswordResetForm(BootstrapMixin, PasswordResetForm):
+    def __init__(self, *args, **kwargs):
+        logger.debug("creating vcweb password reset form: %s %s", args, kwargs)
+        super(VcwebPasswordResetForm, self).__init__(*args, **kwargs)
 
 class LoginForm(BootstrapForm):
     class Meta:
