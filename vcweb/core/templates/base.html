@@ -22,44 +22,47 @@
 {% endblock %}
 </head>
 <body>
-<div id='header'>
-    {% block header %}
-    <div class='navbar navbar-fixed-top'>
-        <div class='navbar-inner'>
-            <div class='container'>
-                <ul class='nav'>
-                    {% block headerlinks %}
-                    <li class='{% active request home %}' ><a href='{{ home }}' class='first'>Home</a></li>
-                    <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
-                    <li class='{% active request contact %}'><a href='{{ contact }}'>Contact us</a></li>
-                    <li><a href='https://bitbucket.org/virtualcommons/vcweb/issues'>Report a Bug</a></li>
-                    {% if request.user.is_authenticated %}
+{% block header %}
+<div class='navbar navbar-fixed-top'>
+    <div class='navbar-inner'>
+        <div class='container'>
+            <ul class='nav'>
+                {% block headerlinks %}
+                <li class='{% active request home %}' ><a href='{{ home }}' class='first'>Home</a></li>
+                <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
+                <li class='{% active request contact %}'><a href='{{ contact }}'>Contact us</a></li>
+                <li><a href='https://bitbucket.org/virtualcommons/vcweb/issues'>Report a Bug</a></li>
+                {% if request.user.is_authenticated %}
                     <li class='{% active request logout %}'><a href='{{ logout }}'>Logout</a></li>
                     {% else %}
                     <li class='{% active request login %} {% active request register %}'>
-                    {% if debug_mode %}
-                    <a href='{{ login }}'>Login/Register</a>
-                    {% else %}
-                    <a href='https://{{request.get_host}}{{ login }}'>Login/Register</a>
-                    {% endif %}
+                        {% if debug_mode %}
+                            <a href='{{ login }}'>Login/Register</a>
+                        {% else %}
+                            <a href='https://{{request.get_host}}{{ login }}'>Login/Register</a>
+                        {% endif %}
                     </li>
-                    {% endif %}
-                    {% endblock %}
-                </ul>
-            </div>
+                {% endif %}
+                {% endblock %}
+            </ul>
         </div>
     </div>
-    {% endblock %}
 </div>
+{% endblock %}
+<br>
 <div id='logo'>
-    <div style='clear:none; position:relative;float:right; left:-930px; padding: 5px;'>
+{% block logo %}
+<div class='row-fluid'>
+    <div class='span4'>
         <img src='{{STATIC_URL}}images/vcweb-logo.png' alt='vcweb logo'/>
     </div>
-    <h1>
-        {% block logo %}
-        virtual commons web environment
-        {% endblock %}
-    </h1>
+    <div class='span8'>
+        <h1>
+            the virtual commons web environment
+        </h1>
+    </div>
+</div>
+{% endblock %}
 </div>
 <div class='container'>
     <noscript>

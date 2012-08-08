@@ -1,6 +1,6 @@
 body {
     margin: 0;
-    padding: 0;
+    padding: 20px;
     background: #FFFFFF url(guarantee/images/img01.gif) repeat-x left top;
     color: #8A8A8A;
 }
@@ -10,24 +10,13 @@ body {
     margin: 0 auto;
 }
 #logo h1 {
-    padding-top: .5em;
     font-size: 2.3em;
-    margin: .8em auto;
+    margin: .7em auto;
     line-height: normal;
     text-transform: lowercase;
     text-decoration: none;
     color: #FFFFFF;
     font-weight: normal;
-}
-#logo p {
-    margin-top: -4px;
-    text-transform: lowercase;
-    font-size: 1.4em;
-    color: #FFA25D;
-}
-#logo a {
-    text-decoration: none;
-    color: #FFA25D;
 }
 a.external {
     background: url(../images/external.png) center right no-repeat;
