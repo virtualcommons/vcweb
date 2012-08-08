@@ -8,7 +8,8 @@
 <div class='row-fluid'>
     <div class='span6'>
         <ul class='nav nav-list'>
-            <li class='nav-header'>Experiment management</li>
+            <li class='nav-header'>experiment management</li>
+            <li><a href='{% url core:dashboard %}'>Return to the dashboard</a></li>
             <li><a href='javascript:void()' id='refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' >
                 <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/arrow_refresh.png);'></span>
                 refresh all participants</a>
@@ -17,9 +18,41 @@
                 <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/arrow_right.png);'></span>
                 transition all participants to next round</a>
             </li>
-            <li class='nav-header'>Download Data</li>
+            {% if experiment.is_active %}
+                {% if experiment.is_round_in_progress %}
+                    <li><a class='confirm-experiment-action' name='end_round' href='end-round' data-content='Stops the current round.'>
+                    <span class='vcweb-icon icon-left ui-icon' style='background: url({{STATIC_URL}}images/famfamfam/control_stop_blue.png);' ></span>end round</a></li>
+                {% else %}
+                    <li><a class='confirm-experiment-action' name='start_round' href='start-round' data-content='Starts the round.'>
+                        <span class='ui-icon vcweb-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/control_play_blue.png);' ></span>start round</a></li>
+                {% endif %}
+                <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round' data-content='Stops the current round if necessary and advances to the next round.'>
+                    <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/control_fastforward_blue.png);' ></span>advance to next round</a>
+                </li>
+            {% else %}
+                {% if participant_count == 0 %}
+                    <div class='alert'>
+                        There are no registered participants.  Please <a href='{% url core:dashboard %}'>return to the dashboard to register participants.</a>
+                    </div>
+                {% else %}
+                    <li><a data-content='You must first activate an experiment before you can run it.' class='confirm-experiment-action' name='activate'
+                        href='activate'><span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/cog_go.png);' ></span>activate</a>
+                    </li>
+                {%endif%}
+            {% endif %}
+            <li class='divider'></li>
+            <li class='nav-header'>download data</li>
             <li><a href='download/csv'><img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' style='margin: 5px 0 0 0;' alt='' />csv</a></li>
             <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' style='margin: 5px 0 0 0;' alt=''/>xls</a><li>
+            {% with participant_count=experiment.participant_set.count %}
+            <li class='divider'></li>
+            <li class='nav-header'>round status</li>
+            <li data-content='{{experiment.actions_help_text}}'>{{ experiment.sequence_label }}, {{experiment.get_status_display}}</li>
+            <li>Type: {{ experiment.current_round.get_round_type_display }}</li>
+            <li>Round started on {{ experiment.current_round_start_time }}</li>
+            <li>Time remaining: {{ experiment.time_remaining }}</li>
+            <li data-content='{{experiment.participant_set.all|join:" "}}'>Registered participants: <b>{{participant_count}}</b></li>
+            {% endwith %}
         </ul>
     </div>
     <div class='span6'>
@@ -37,57 +70,9 @@
         </div>
     </div>
 </div>
-<div class='experiment-dashboard'>
-    {% comment %}
-    FIXME: Improve this so that we can just inject a new round_configuration
-    JSON object in and everything auto-updates.
-    {% endcomment %}
-    <div id='statusSpinner' style='display:none;'>
-        <img src='{{STATIC_URL}}images/squares-circle-ajax-loader.gif' alt='... working ...' />
-    </div>
-    <div id='statusDiv'>
-        {% block status %}
-        {% with participant_count=experiment.participant_set.count %}
-        <fieldset class='small ui-corner-all'>
-            <legend>round status</legend>
-            <ul id='actions' class='actions'>
-                {% if experiment.is_active %}
-                    {% if experiment.is_round_in_progress %}
-                    <li><a class='confirm-experiment-action' name='end_round' href='end-round' data-content='Stops the current round.'>
-                        <span class='vcweb-icon icon-left ui-icon' style='background: url({{STATIC_URL}}images/famfamfam/control_stop_blue.png);' ></span>end round</a></li>
-                    {% else %}
-                    <li><a class='confirm-experiment-action' name='start_round' href='start-round' data-content='Starts the round.'>
-                        <span class='ui-icon vcweb-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/control_play_blue.png);' ></span>start round</a></li>
-                    {% endif %}
-                    <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round' data-content='Stops the current round if necessary and advances to the next round.'>
-                        <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/control_fastforward_blue.png);' ></span>advance to next round</a></li>
-                {% else %}
-                {% if participant_count == 0 %}
-                <div class='alert alertIcon ui-corner-all'>
-                    There are no registered participants.  Please <a href='{% url core:dashboard %}'>return to the dashboard to register participants.</a>
-                </div>
-                {% else %}
-                <li><a data-content='You must first activate an experiment before you can run it.' class='confirm-experiment-action' name='activate'
-                    href='activate'><span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/cog_go.png);' ></span>activate</a>
-                </li>
-                {%endif%}
-                {% endif %}
-            </ul>
-            <br/>
-            <ul class='messages'>
-                <li data-content='{{experiment.actions_help_text}}'>{{ experiment.sequence_label }}, {{experiment.get_status_display}}</li>
-                <li>Type: {{ experiment.current_round.get_round_type_display }}</li>
-                <li>Round started on {{ experiment.current_round_start_time }}</li>
-                <li>Time remaining: {{ experiment.time_remaining }}</li>
-                <li data-content='{{experiment.participant_set.all|join:" "}}'>Registered participants: <b>{{participant_count}}</b>
-                </li>
-            </ul>
-        </fieldset>
-        {% endwith %}
-        {% endblock status %}
-    </div>
-</div>
-<div id='experimentData'>
+<div class='row-fluid'>
+    <div class='span12' id='experiment-data'>
+    <h4>Data</h4>
     {% block data %}
     {% for round_data in experiment.round_data_set.all reversed %}
     <h3><a href='#'>{{ round_data }}</a></h3>
@@ -158,7 +143,7 @@
         {% endif %}
     </div>
     {% empty %}
-    <div class='alert ui-state-highlight ui-corner-all'><span class='ui-icon ui-icon-alert icon-left'></span>Round data is not yet available.</div>
+    <div class='alert alert-info'><i class='icon-info-sign'></i>There is currently no round data to report.</div>
     {% endfor %}
     {% endblock data %}
 </div>
@@ -177,7 +162,6 @@
                 console.log("Transitioning participants to " + json.transition_url);
                 getWebSocket().send(createGotoEvent(json.transition_url));
             }
-            $('#statusDiv').html(json.status);
             $('#experimentData').accordion("destroy");
             $('#experimentData').html(json.experimentData);
             if (json.error_message) {
@@ -196,7 +180,6 @@
                     questionText: description + " - continue?",
                     onProceed: function(trigger) {
                         Dajaxice.vcweb.core.experiment_controller(update, {'pk': {{experiment.pk}}, 'action':action});
-                        $('#statusDiv').hide('fast');
                         $('#experimentData').hide('fast');
                         $('#statusSpinner').show('fast');
                         $(trigger).fastConfirm('close');
@@ -209,8 +192,7 @@
             });
         });
         $('#statusSpinner').hide();
-        $('[data-content]', $('#statusDiv')).popover();
-        $('#statusDiv').show('fast');
+        $('[data-content]').popover();
         $('#experimentData').show('fast');
         console.log("active round number: " + active_round_number);
         if (round_data_count > 0) {
