@@ -27,8 +27,8 @@
                 <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' style='margin: 5px 0 0 0;' alt=''/>xls</a><li>
             {% else %}
                 {% if participant_count == 0 %}
-                    <div class='alert alert-error'>
-                        There are no registered participants. You can <a href='{{experiment.controller_url}}/register-email-list'>register bulk emails</a> or 
+                    <div class='alert alert-error alert-block'>
+                        <i class='icon-warning-sign'></i>There are no registered participants. You can <a href='{{experiment.controller_url}}/register-email-list'>register participants by email</a> or 
                         <a href='{{experiment.controller_url}}/register-simple'>test participants</a>
                     </div>
                 {% else %}
@@ -39,11 +39,11 @@
             {% endif %}
             <li class='divider'></li>
             <li class='nav-header'>round status</li>
-            <li data-content='{{experiment.actions_help_text}}'>{{ experiment.sequence_label }}, {{experiment.get_status_display}}</li>
-            <li>Type: {{ experiment.current_round.get_round_type_display }}</li>
-            <li>Round started on {{ experiment.current_round_start_time }}</li>
-            <li>Time remaining: {{ experiment.time_remaining }}</li>
-            <li data-content='{{experiment.participant_set.all|join:" "}}'>Registered participants: <b>{{participant_count}}</b></li>
+            <li data-bind='text:roundStatusDisplay' data-content='{{experiment.actions_help_text}}'>{{ experiment.sequence_label }}, {{experiment.get_status_display}}</li>
+            <li data-bind='text:roundTypeDisplay'>{{ experiment.current_round.get_round_type_display }}</li>
+            <li data-bind='text:roundStartTime'>Round started on {{ experiment.current_round_start_time }}</li>
+            <li data-bind='text:timeRemaining'>Time remaining: {{ experiment.time_remaining }}</li>
+            <li data-bind='text:registeredParticipants' data-content='{{experiment.participant_set.all|join:" "}}'><span class='badge badge-info'>{{participant_count}}</span> registered participants</li>
         </ul>
     </div>
     <div class='span6'>
@@ -52,11 +52,13 @@
             {% for group in experiment.groups.all %}
                 {% for activity_log in group.current_round_activity_log %}
                 <div class='alert'>
+                    <button class="close" data-dismiss="alert">x</button>
                     {{activity_log}}
                 </div>
                 {% endfor %}
             {% empty %}
                 <div class='alert'>
+                    <button class="close" data-dismiss="alert">x</button>
                     No activity yet.
                 </div>
             {% endfor %}
@@ -72,6 +74,7 @@
     <h3><a href='#'>{{ round_data }}</a></h3>
     <div id='round_data_{{forloop.counter}}'>
         {% if round_data.group_data_value_set.count > 0 %}
+        {% comment %} FIXME: migrate tables to bootstrap tables {% endcomment %}
         <h4 class='collapsible'>Group data</h4>
         <table>
             <thead>
@@ -92,9 +95,7 @@
             </tbody>
         </table>
         {% else %}
-        <div class='info ui-corner-all'>
-            <span class='ui-icon ui-icon-info icon-left'></span>No group data for this round.
-        </div>
+        <div class='alert alert-info'><i class='icon-info-sign'></i>No group data for this round.</div>
         {% endif %}
         {% comment %} participant data values {% endcomment %}
         {% if round_data.participant_data_value_set.count > 0 %}
@@ -119,7 +120,7 @@
             </tbody>
         </table>
         {% else %}
-        <div class='info ui-corner-all'><span class='ui-icon ui-icon-info icon-left'></span>No participant data for this round.</div>
+        <div class='alert alert-info'><i class='icon-info-sign'></i>No participant data for this round has been collected yet.</div>
         {% endif %}
         {% comment %} participant chats {% endcomment %}
         {% if round_data.round_configuration.is_chat_round %}
