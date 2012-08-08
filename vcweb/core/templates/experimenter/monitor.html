@@ -5,46 +5,38 @@
 {% block page %}
 {{block.super}}
 <h3>{{experiment}}</h3>
+{% with participant_count=experiment.participant_set.count %}
 <div class='row-fluid'>
     <div class='span6'>
         <ul class='nav nav-list'>
             <li class='nav-header'>experiment management</li>
-            <li><a href='{% url core:dashboard %}'>Return to the dashboard</a></li>
-            <li><a href='javascript:void()' id='refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' >
-                <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/arrow_refresh.png);'></span>
-                refresh all participants</a>
-            </li>
-            <li><a href='javascript:void()' id='transitionAllParticipants' data-content='Moves all connected participants from waiting page to active page.' >
-                <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/arrow_right.png);'></span>
-                transition all participants to next round</a>
-            </li>
+            <li><a href='{% url core:dashboard %}'><i class='icon-chevron-left'></i>return to the dashboard</a></li>
             {% if experiment.is_active %}
                 {% if experiment.is_round_in_progress %}
-                    <li><a class='confirm-experiment-action' name='end_round' href='end-round' data-content='Stops the current round.'>
-                    <span class='vcweb-icon icon-left ui-icon' style='background: url({{STATIC_URL}}images/famfamfam/control_stop_blue.png);' ></span>end round</a></li>
+                    <li><a class='confirm-experiment-action' name='end_round' href='end-round' data-content='Stops the current round.'><i class='icon-stop'></i>end round</a></li>
                 {% else %}
                     <li><a class='confirm-experiment-action' name='start_round' href='start-round' data-content='Starts the round.'>
-                        <span class='ui-icon vcweb-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/control_play_blue.png);' ></span>start round</a></li>
+                        <i class='icon-play'></i>start round</a></li>
                 {% endif %}
-                <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round' data-content='Stops the current round if necessary and advances to the next round.'>
-                    <span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/control_fastforward_blue.png);' ></span>advance to next round</a>
+                <li><a class='confirm-experiment-action' name='advance_to_next_round' href='advance-to-next-round' data-content='Stops the current round if necessary and advances to the next round.'><i class='icon-step-forward'></i>advance to next round</a>
                 </li>
+                <li><a href='javascript:void()' id='refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i>refresh all participants</a></li>
+                <li class='divider'></li>
+                <li class='nav-header'>download data</li>
+                <li><a href='download/csv'><img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' style='margin: 5px 0 0 0;' alt='' />csv</a></li>
+                <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' style='margin: 5px 0 0 0;' alt=''/>xls</a><li>
             {% else %}
                 {% if participant_count == 0 %}
-                    <div class='alert'>
-                        There are no registered participants.  Please <a href='{% url core:dashboard %}'>return to the dashboard to register participants.</a>
+                    <div class='alert alert-error'>
+                        There are no registered participants. You can <a href='{{experiment.controller_url}}/register-email-list'>register bulk emails</a> or 
+                        <a href='{{experiment.controller_url}}/register-simple'>test participants</a>
                     </div>
                 {% else %}
-                    <li><a data-content='You must first activate an experiment before you can run it.' class='confirm-experiment-action' name='activate'
-                        href='activate'><span class='vcweb-icon ui-icon icon-left' style='background:url({{STATIC_URL}}images/famfamfam/cog_go.png);' ></span>activate</a>
+                    <li><a data-content='You must first activate an experiment before you can run it.' class='confirm-experiment-action' name='activate' href='activate'>
+                        <i class='icon-off'></i>activate</a>
                     </li>
                 {%endif%}
             {% endif %}
-            <li class='divider'></li>
-            <li class='nav-header'>download data</li>
-            <li><a href='download/csv'><img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' style='margin: 5px 0 0 0;' alt='' />csv</a></li>
-            <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' style='margin: 5px 0 0 0;' alt=''/>xls</a><li>
-            {% with participant_count=experiment.participant_set.count %}
             <li class='divider'></li>
             <li class='nav-header'>round status</li>
             <li data-content='{{experiment.actions_help_text}}'>{{ experiment.sequence_label }}, {{experiment.get_status_display}}</li>
@@ -52,24 +44,26 @@
             <li>Round started on {{ experiment.current_round_start_time }}</li>
             <li>Time remaining: {{ experiment.time_remaining }}</li>
             <li data-content='{{experiment.participant_set.all|join:" "}}'>Registered participants: <b>{{participant_count}}</b></li>
-            {% endwith %}
         </ul>
     </div>
     <div class='span6'>
         <h5>Activity Log</h5>
-        <div id='experiment-messages' class='alert alert-message'>
+        <div id='experiment-messages'>
             {% for group in experiment.groups.all %}
                 {% for activity_log in group.current_round_activity_log %}
-                <div style='font-size: 0.75em; line-height: 1.0em;padding:3px;' class='ui-state-highlight'>
+                <div class='alert'>
                     {{activity_log}}
                 </div>
                 {% endfor %}
             {% empty %}
-                No activity yet.
+                <div class='alert'>
+                    No activity yet.
+                </div>
             {% endfor %}
         </div>
     </div>
 </div>
+{% endwith %}
 <div class='row-fluid'>
     <div class='span12' id='experiment-data'>
     <h4>Data</h4>
@@ -162,8 +156,6 @@
                 console.log("Transitioning participants to " + json.transition_url);
                 getWebSocket().send(createGotoEvent(json.transition_url));
             }
-            $('#experimentData').accordion("destroy");
-            $('#experimentData').html(json.experimentData);
             if (json.error_message) {
                 addExperimentMessage(json.error_message)
             }

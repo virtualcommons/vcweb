@@ -4,9 +4,10 @@
 {% block page %}
 <form id='vcweb-form' action='' method='post' class='form-horizontal'>
     {% csrf_token %}
-    <h3>Register participants</h3>
-    <p>Registering participants for <span style='padding:1px;' class='info'>{{experiment}}</span>.</p>
-    <p><span style='padding: 3px;' class='ui-state-highlight'><b>There are currently {{experiment.participant_set.count}} registered participants.</b></span></p>
+    {% block participant_registration_header %}
+    <h3>Participant registration</h3>
+    {% endblock %}
+    <p><b>{{experiment}}</b> currently has <span class='badge badge-info'>{{experiment.participant_set.count}}</span> <b>registered participants</b></p>
     {% include "includes/bootstrap-form.html" %}
     <div class='form-actions'>
         <button class='btn btn-primary' type='submit'>Register</button>
