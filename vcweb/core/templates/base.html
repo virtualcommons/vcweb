@@ -80,7 +80,18 @@
     </div>
     {% endfor %}
     {% endif %}
+
     {% block page %}
+    <div class='row'>
+        <div class='span8'>
+            {% block content %}
+            {% endblock %}
+        </div>
+        <div class='span4'>
+            {% block sidebar %}
+            {% endblock %}
+        </div>
+    </div>
     {% endblock page %}
     <div style='clear: both;'>&nbsp;</div>
     <!--  end #page -->
