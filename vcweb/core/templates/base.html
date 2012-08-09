@@ -75,7 +75,7 @@
     <h3>Messages</h3>
     {% for message in messages %}
     <div class='alert'>
-        <button class='close' data-dismiss='alert'>x</button>
+        <button class='close' data-dismiss='alert'>&times;</button>
         {{message}}
     </div>
     {% endfor %}
@@ -118,11 +118,15 @@
         {% else %}
         <script type='text/javascript' src='{{STATIC_URL}}js/dajaxice.core.js' charset='utf-8'></script>
         {% endif %}
+        {% block startupjs %}
         <script type='text/javascript'>
-$(function() {
-    $('a.external').attr({ target: "_blank" });
-});
+
+//$(function() {
+//    $('a.external').attr({ target: "_blank" });
+//    $('.alert').alert();
+//});
         </script>
+        {% endblock %}
         {% block javascript %}
         {% endblock %}
         {% endblock footer %}

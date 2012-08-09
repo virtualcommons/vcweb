@@ -22,7 +22,7 @@ function createMessageEvent(message, event_type) {
         "message_type": event_type,
         "experimenter_id": {{request.user.experimenter.pk}},
         "experiment_id": {{experiment.pk}},
-        "auth_token": {{ authentication_token }},
+        "auth_token": {{ request.user.experimenter.authentication_token }},
         "message": message
     });
 }

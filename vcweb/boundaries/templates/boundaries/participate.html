@@ -1,7 +1,7 @@
 {% extends "participant/base.html" %}
 {% block title %}{{experiment.status_line}}{% endblock %}
 
-{% block content %}
+{% block page %}
 <h3>Round number {{ experiment.current_round.round_number }}</h3>
 {% if max_harvest_decision > 0 %}
     <div style="background: url('{{STATIC_URL}}images/forestry/{{tree.name}}.png'); width:{{max_width}}px; height: {{max_height}}px;">
@@ -49,7 +49,7 @@
     There are no longer enough trees to harvest. Please wait until the next round begins.
 </div>
 {% endif %}
-{% endblock content %}
+{% endblock %}
 {% block javascript %}
 {{ block.super }}
 <script type="text/javascript">

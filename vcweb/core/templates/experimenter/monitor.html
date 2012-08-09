@@ -202,6 +202,7 @@
     }
     $(function() {
             var experimentMessageDiv = document.getElementById('experiment-messages');
+            $('.collapsible').collapse();
             // FIXME: most of this should go away once we finish migrating to knockout
             registerCallbacks({{ experiment.round_data_set.count }}, {{ experiment.current_round.sequence_number }});
             // websocket connection

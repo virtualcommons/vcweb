@@ -11,7 +11,7 @@ function createMessageEvent(payload, event_type) {
     }
     return JSON.stringify({
         "message_type": event_type,
-        "auth_token": {{ authentication_token }},
+        "auth_token": {{ request.user.participant.authentication_token }},
         "experiment_id": {{experiment.pk}},
         {% if participant_group_relationship %}
             "participant_group_relationship_id": {{participant_group_relationship.pk}},
