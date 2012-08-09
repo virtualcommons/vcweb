@@ -6,15 +6,6 @@
 {% url core:logout as logout %}
 {% url core:profile as profile %}
 {% block title %}Virtual Commons Web Experimenter Interface{% endblock %}
-{% block headerlinks %}
-<li class='{% active request home %}' ><a href='{{ home }}' class='first'>Home</a></li>
-<li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'>Dashboard</a></li>
-{% if "experiment" in request.path %}
-<li class='{% active_re request "experiment" %}'><a name='experiment'>Experiment</a></li>
-{% endif %}
-<li><a href='https://bitbucket.org/virtualcommons/vcweb/issues'>Report a Bug</a></li>
-<li><a href='{{ logout }}'>Logout ({{request.user.experimenter.email}})</a></li>
-{% endblock %}
 
 {% block javascript %}
 {% include "includes/jquery.confirm.html" %}
