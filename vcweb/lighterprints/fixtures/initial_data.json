@@ -1,20 +1,5 @@
 [
     {
-        "pk": 3,
-        "model": "core.experimentmetadata",
-        "fields": {
-            "description": "A mobile-ready HTML5 experiment / game that educates and examines how groups of people coordinate to reach carbon emission targets.",
-            "short_name": null,
-            "title": "Lighter Footprints",
-            "namespace": "lighterprints",
-            "default_configuration": null,
-            "last_modified": "2012-04-02T00:21:45.161",
-            "date_created": "2012-04-02",
-            "logo_url": null,
-            "about_url": "http://commons.asu.edu"
-        }
-    },
-    {
         "pk": 14,
         "model": "auth.user",
         "fields": {
