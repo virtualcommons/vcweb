@@ -11,24 +11,26 @@ Virtual Commons Web Participant Dashboard
 <div id='experiments'>
     {% if experiments.items %}
     <div class='alert alert-info'>
-        Hi, {{request.user.participant}}.  Experiments you can participate in are listed below.
+        <i class='icon-info-sign'></i>Welcome back, {{request.user.participant}}.  Available experiments are listed below.
     </div>
     {% endif %}
     {% for experiment_metadata, experiment_status_dict in experiments.items %}
         <h3> {{ experiment_metadata.title }} </h3>
         {% for experiment_status, experiments in experiment_status_dict.items %}
             {% if experiments %}
-            <h4>{{experiments.0.get_status_display}}</h4>
+            <br>
+            <h4><i {{experiments.0.get_status_display}}</h4>
             {% for experiment in experiments %}
-                <div style='padding: 10px;' class='ui-state-highlight'>
-                    <a title='This experiment is being run by {{experiment.experimenter}}' href='{{ experiment.participant_url }}'><span class='icon-left ui-icon {{experiment_status|lower}}'></span>{{ experiment.status_line }}, started {{experiment.current_round_start_time}}</a>
+                <div class='alert alert-message alert-block'>
+                    <a data-content='This experiment is being run by {{experiment.experimenter}}.' href='{{ experiment.participant_url }}'>
+                        {{ experiment.status_line }}</a>
                 </div>
             {% endfor %}
             {% endif %}
         {% endfor %}
     {% empty %}
-    <div class='info alertIcon ui-corner-all'>
-        You aren't participating in any experiments at the moment.  
+    <div class='alert alert-block alert-error'>
+        <i class='icon-warning-sign'></i>You aren't participating in any experiments at the moment.  
     </div>
     {% endfor %}
 </div>

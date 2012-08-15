@@ -41,9 +41,10 @@
             <li class='nav-header'>round status</li>
             <li data-bind='text:roundStatusDisplay' data-content='{{experiment.actions_help_text}}'>{{ experiment.sequence_label }}, {{experiment.get_status_display}}</li>
             <li data-bind='text:roundTypeDisplay'>{{ experiment.current_round.get_round_type_display }}</li>
-            <li data-bind='text:roundStartTime'>Round started on {{ experiment.current_round_start_time }}</li>
-            <li data-bind='text:timeRemaining'>Time remaining: {{ experiment.time_remaining }}</li>
-            <li data-bind='text:registeredParticipants' data-content='{{experiment.participant_set.all|join:" "}}'><span class='badge badge-info'>{{participant_count}}</span> registered participants</li>
+            <li>Round started on {{ experiment.current_round_start_time }}</li>
+            <li>Time remaining: <span data-bind='text:timeRemaining'>{{ experiment.time_remaining }}</span></li>
+            <li><span data-bind='text:participantCount' class='badge badge-info'>{{participant_count}}</span> registered participants</li>
+            <li><button onclick="addMessage()">Add message</button></li>
         </ul>
     </div>
     <div class='span6'>
@@ -66,20 +67,13 @@
     </div>
 </div>
 {% endwith %}
-<div class='row-fluid'>
-    <div class='span12' id='experiment-data'>
-    <h4>Data</h4>
-    {% block data %}
-    {% for round_data in experiment.round_data_set.all reversed %}
-    <h3><a href='#'>{{ round_data }}</a></h3>
-    <div id='round_data_{{forloop.counter}}'>
-        {% if round_data.group_data_value_set.count > 0 %}
-        {% comment %} FIXME: migrate tables to bootstrap tables {% endcomment %}
-        <h4 class='collapsible'>Group data</h4>
-        <table>
-            <thead>
-                <tr><th>Group</th><th>Parameter Name</th><th>Value</th></tr>
-            </thead>
+<script type='text/html' id='group-round-data-template'>
+    <h4 class='collapsible'>Group data</h4>
+    <table>
+        <thead>
+            <tr><th>Group</th><th>Parameter Name</th><th>Value</th></tr>
+        </thead>
+            <!-- FIXME: needs to be reworked for Knockout -->
             <tbody>
                 {% for group_data_value in round_data.group_data_value_set.all %}
                 <tr>
@@ -94,18 +88,13 @@
                 {% endfor %}
             </tbody>
         </table>
-        {% else %}
         <div class='alert alert-info'><i class='icon-info-sign'></i>No group data for this round.</div>
-        {% endif %}
-        {% comment %} participant data values {% endcomment %}
-        {% if round_data.participant_data_value_set.count > 0 %}
         <h4>Participant data</h4>
         <table>
             <thead>
                 <tr><th>Participant</th><th>Parameter name</th><th>Value</th><th>Type</th></tr>
             </thead>
             <tbody>
-                {% for participant_data_value in round_data.participant_data_value_set.all %}
                 <tr>
                     <td>
                         <a class='dark-yellow-highlight' data-content='{{participant_data_value.participant}}'>
@@ -116,12 +105,19 @@
                     <td id='participant_data_value_{{participant_data_value.pk}}'>{{ participant_data_value.value }}</td>
                     <td>{{ participant_data_value.parameter.type }}</td>
                 </tr>
-                {% endfor %}
             </tbody>
         </table>
-        {% else %}
         <div class='alert alert-info'><i class='icon-info-sign'></i>No participant data for this round has been collected yet.</div>
-        {% endif %}
+</script>
+
+<div class='row-fluid'>
+    <div class='span12' id='experiment-data'>
+    <h4>Data</h4>
+    {% block data %}
+    {% for round_data in experiment.round_data_set.all reversed %}
+    <h3><a href='#' onscript='loadRoundData({{round_data.pk}})'>{{ round_data }}</a></h3>
+    <div id='round_data_{{forloop.counter}}'>
+        {% comment %} FIXME: migrate tables to bootstrap tables and add hooks for knockout to auto-update asynchronously instead of loading them all at once {% endcomment %}
         {% comment %} participant chats {% endcomment %}
         {% if round_data.round_configuration.is_chat_round %}
         <h4 class='collapsible'>Chat data</h4>
@@ -148,21 +144,6 @@
 {% include "includes/experimenter.events.html" %}
 {% include "includes/sockjs.html" %}
 <script type='text/javascript'>
-    function update(json) {
-        if (json == Dajaxice.EXCEPTION) {
-            console.error("dajaxice error: " + json);
-        }
-        else {
-            if (json.should_transition) {
-                console.log("Transitioning participants to " + json.transition_url);
-                getWebSocket().send(createGotoEvent(json.transition_url));
-            }
-            if (json.error_message) {
-                addExperimentMessage(json.error_message)
-            }
-            registerCallbacks(json.round_data_count, json.active_round_number);
-        }
-    }
     function registerCallbacks(round_data_count, active_round_number) {
         $('.confirm-experiment-action').each(function() {
             var confirmable = $(this);
@@ -194,50 +175,69 @@
             });
         }
     }
-    function addExperimentMessage(message) {
-        if (message) {
-            console.debug("adding message " + message + " to experiment messages div");
-            $("#experiment-messages").append($("<div style='font-size: 0.8em;line-height:0.9em;padding:3px;' class='ui-state-highlight' />").append(message));
-        }
-    }
     $(function() {
-            var experimentMessageDiv = document.getElementById('experiment-messages');
-            $('.collapsible').collapse();
-            // FIXME: most of this should go away once we finish migrating to knockout
-            registerCallbacks({{ experiment.round_data_set.count }}, {{ experiment.current_round.sequence_number }});
-            // websocket connection
-            // FIXME: add auth
-            var s = connect();
-            s.onmessage = function(json_string) {
-                console.log("Received message: " + json_string);
-                var json = jQuery.parseJSON(json_string);
-                switch (json.message_type) {
+        function addMessage() {
+            addExperimentMessage({message: "This is a message" });
+        }
+        function addExperimentMessage(json) {
+            if (json && json.message) {
+                console.debug("adding message " + json + " to experiment messages div");
+                experimentModel.messages.push(json.message);
+            }
+        }
+        function ChatMessage(json) {
+            var self = this;
+            self.message = json.message;
+            self.date_created = json.date_created;
+            // participant group relationship id
+            self.pgrid = json.participant_group_relationship_id;
+            self.participant = json.participant;
+            self.id = json.id;
+        }
+        function ExperimentModel() { 
+            this.chatMessages = ko.observableArray(["No chat messages to show."]);
+            this.messages = ko.observableArray([new ChatMessage({message: "No messages at this time."})]);
+            this.roundStatusDisplay = ko.observable('No round status available.');
+            this.roundTypeDisplay = ko.observable('Inactive');
+            this.timeRemaining = ko.observable('No duration specified.');
+            this.participantCount = ko.observable(0);
+        }
+        var experimentModel = new ExperimentModel();
+        ko.applyBindings(experimentModel);
+        var s = connect();
+        s.onmessage = function(json_string) {
+            console.log("Received message: " + json_string);
+            var json = jQuery.parseJSON(json_string);
+            addExperimentMessage(json);
+            /*
+            switch (json.message_type) {
+                case 'submit':
                 case 'info':
-                    addExperimentMessage(json.message);
+                    addExperimentMessage(json);
+
                     break;
                 case 'chat':
-                    // FIXME: replace with knockout
+                    experimentModel.chatMessages.push(new ChatMessage(json));
                     // addChatMessage('chat-div-' + json.round_data_pk, json, json.date_created + " " + json.participant);
                     break;
                 case 'submit':
-                    $('#participant_data_value_' + json.participant_data_value_pk).html(json.message).effect("highlight", {}, 5000);
-                    addExperimentMessage("Participant " + json.participant_number + " (Group #" + json.participant_group + ") submit a harvest decision of " + json.message);
+                    addExperimentMessage(json);
+                    // addExperimentMessage("Participant " + json.participant_number + " (Group #" + json.participant_group + ") submit a harvest decision of " + json.message);
                     break;
                 default:
-                }
-                scrollToBottom(experimentMessageDiv);
-            };
-            $('#refreshAllParticipants').click(function(evt) {
-                console.log("sending refresh event");
-                s.send(createRefreshEvent());
-                return false;
-            });
-            $('#transitionAllParticipants').click(function(evt) {
-                console.log("sending goto event");
-                s.send(createGotoEvent());
-                return false;
-            });
-            scrollToBottom(experimentMessageDiv);
+            }
+            */
+        };
+        $('#refreshAllParticipants').click(function(evt) {
+            console.log("sending refresh event");
+            s.send(createRefreshEvent());
+            return false;
         });
+        $('#transitionAllParticipants').click(function(evt) {
+            console.log("sending goto event");
+            s.send(createGotoEvent());
+            return false;
+        });
+    });
 </script>
 {% endblock %}
