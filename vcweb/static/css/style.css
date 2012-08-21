@@ -248,3 +248,7 @@ ul.horizontal>li {
     color: #36241B;
     text-decoration: underline;
 }
+#experiment-messages {
+    height: 230px;
+    overflow: auto;
+}

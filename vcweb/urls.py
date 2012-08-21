@@ -7,7 +7,7 @@ from django.views.generic.base import TemplateView
 from vcweb import settings
 from vcweb.core.forms import VcwebPasswordResetForm
 
-from dajaxice.core import dajaxice_autodiscover
+from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 # set up dajaxice URLs
 dajaxice_autodiscover()
 # set up admin URLs
@@ -23,7 +23,7 @@ urlpatterns = patterns('',
     url(r'^accounts/password_reset/done/$', 'django.contrib.auth.views.password_reset_done', { 'template_name': 'account/password_reset_done.html' }),
     url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$', 'django.contrib.auth.views.password_reset_confirm'),
     url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete'),
-    url(r'^%s/' % settings.DAJAXICE_MEDIA_PREFIX, include('dajaxice.urls')),
+    url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
 
     # FIXME: ideally this should be set up dynamically by iterating through each
     # ExperimentMetadata instance and using their namespace (e.g., replace all

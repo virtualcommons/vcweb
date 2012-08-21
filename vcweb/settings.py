@@ -109,6 +109,12 @@ SOUTH_TESTS_MIGRATE = False
 
 DAJAXICE_MEDIA_PREFIX = "dajaxice"
 
+STATICFILES_FINDERS = (
+        'django.contrib.staticfiles.finders.FileSystemFinder',
+        'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+        'dajaxice.finders.DajaxiceFinder',
+        )
+
 # django social auth keys
 TWITTER_CONSUMER_KEY         = ''
 TWITTER_CONSUMER_SECRET      = ''

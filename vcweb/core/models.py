@@ -437,6 +437,12 @@ class Experiment(models.Model):
         pdvs = self.current_round_data.participant_data_value_set
         return pdvs.filter(submitted=False).count() == 0
 
+    def invoke(self, action):
+        if action in ('advance_to_next_round', 'end_round', 'start_round'):
+            getattr(self, action)()
+        else:
+            raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action, self))
+
     def register_participants(self, users=None, emails=None, institution=None, password=None):
         if self.participant_set.count() > 0:
             logger.warning("This experiment %s already has %d participants - aborting", self, self.participant_set.count())

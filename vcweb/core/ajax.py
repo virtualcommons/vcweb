@@ -1,11 +1,11 @@
 from django.http import HttpResponse
 from django.template.loader_tags import BlockNode, ExtendsNode
 from django.template import loader, Context, RequestContext
+from django.shortcuts import get_object_or_404
 
 from vcweb.core.decorators import experimenter_required, dajaxice_register
 from vcweb.core.models import Experiment
-
-import simplejson
+from vcweb.core.views import dumps
 
 import logging
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ def direct_block_to_template(request, template, block, extra_context=None, mimet
     return HttpResponse(render_template_block(t, block, c), mimetype=mimetype)
 
 def _get_experiment(request, pk):
-    experiment = Experiment.objects.get(pk=pk)
+    experiment = get_object_or_404(Experiment, pk=pk)
     if request.user.experimenter == experiment.experimenter:
         return experiment
     raise Experiment.DoesNotExist("Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter, pk))
@@ -88,18 +88,14 @@ def _render_experiment_monitor_block(block, experiment, request):
 @dajaxice_register
 def experiment_controller(request, pk, action=''):
     experiment = _get_experiment(request, pk)
-    error_message = None
-# FIXME: this is convenient but dangerous.
-# dashes become underscores for function invocation.
     try:
-        experiment_func = getattr(experiment, action.replace('-', '_'))
-        experiment_func()
-    except TypeError as e:
-        logger.warning("action %s wasn't callable on experiment %s (%s)", action, experiment.status_line, e)
-        error_message = "Couldn't call %s" % action
+        experiment.invoke(action)
     except AttributeError as e:
         logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
-        error_message = "No such attribute %s on Experiment" % action
+    return dumps({
+        'experiment': experiment,
+        })
+    """
     status_block = _render_experiment_monitor_block('status', experiment, request)
     data_block = _render_experiment_monitor_block('data', experiment, request)
     transition_url = None
@@ -115,3 +111,4 @@ def experiment_controller(request, pk, action=''):
         'round_data_count': experiment.round_data_set.count(),
         'error_message': error_message,
         })
+    """

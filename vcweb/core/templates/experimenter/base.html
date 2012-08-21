@@ -8,5 +8,6 @@
 {% block title %}Virtual Commons Web Experimenter Interface{% endblock %}
 
 {% block javascript %}
-{% include "includes/jquery.confirm.html" %}
+{{ block.super }}
+<script type='text/javascript' src='{{STATIC_URL}}/js/bootbox.min.js'></script>
 {% endblock %}
