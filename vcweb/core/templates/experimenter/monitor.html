@@ -187,7 +187,7 @@
         }
         var experimentModel = new ExperimentModel();
         ko.applyBindings(experimentModel);
-        var s = connect();
+        var s = connect("/experimenter");
         s.onmessage = function(json_string) {
             console.log("Received message: " + json_string);
             var json = jQuery.parseJSON(json_string);

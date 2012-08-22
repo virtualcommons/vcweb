@@ -3,12 +3,12 @@
 <!--<script type="text/javascript" src="{{STATIC_URL}}js/sockjs-0.3.min.js"></script>-->
 <script type="text/javascript">
 var socket;
-var defaultPort = 8882;
-function connect(uri) {
-    var port = {{WEBSOCKET_PORT}};
+var DEFAULT_PORT = {{WEBSOCKET_PORT|default_if_none:8882}};
+var DEFAULT_URI = "/participant"
+function connect(uri, port) {
     if ( !port ) {
-        console.log("using default port: " + defaultPort);
-        port = defaultPort;
+        console.log("no port specified, using default port: " + DEFAULT_PORT);
+        port = DEFAULT_PORT;
     }
     var host = window.location.hostname;
     if ( !host ) {
@@ -17,7 +17,7 @@ function connect(uri) {
     }
     if ( !uri ) {
         console.log("no uri specified, defaulting to /sockjs");
-        uri = "/sockjs";
+        uri = DEFAULT_URI;
     }
     var sockjsServer = "http://" + host + ":" + port + uri;
     console.log("Establishing connection to " + sockjsServer);
@@ -32,7 +32,7 @@ function connect(uri) {
     socket.onclose = function() {
         console.log('default vcweb sockjs closed');
     };
-    console.log("connecting to " + host + ":" + port + "/" + uri);
+    console.log("connecting to " + host + ":" + port + uri);
     return socket;
 }
 function getWebSocket() {
