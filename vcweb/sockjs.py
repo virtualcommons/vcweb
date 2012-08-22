@@ -13,7 +13,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 from vcweb.core.models import Experiment, ParticipantGroupRelationship, Experimenter
 from vcweb import settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('sockjs.vcweb')
 
 class VcwebConnection(SockJSConnection):
     default_channel = 'vcweb.websocket'
@@ -34,7 +34,6 @@ class VcwebConnection(SockJSConnection):
         experiment_id = message_dict['experiment_id']
         auth_token = message_dict['auth_token']
         experiment = Experiment.objects.get(pk=experiment_id)
-        
 
     def on_close(self):
         #self.client.unsubscribe(self.default_channel)

@@ -244,7 +244,7 @@ except OSError:
 
 # logging configuration
 VCWEB_LOG_FILENAME = 'vcweb.log'
-TORNADIO_LOG_FILENAME = 'tornadio.log'
+TORNADO_LOG_FILENAME = 'tornadio.log'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
@@ -286,11 +286,11 @@ LOGGING = {
             'backupCount': 6,
             'maxBytes': 10000000,
         },
-        'tornadio.file': {
+        'tornado.file': {
             'level': 'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
             'formatter': 'vcweb_verbose',
-            'filename': path.join(LOG_DIRECTORY, TORNADIO_LOG_FILENAME),
+            'filename': path.join(LOG_DIRECTORY, TORNADO_LOG_FILENAME),
             'backupCount': 6,
             'maxBytes': 10000000,
         },
@@ -316,8 +316,8 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': False,
         },
-        'tornadio.vcweb': {
-            'handlers': ['tornadio.file', 'console'],
+        'sockjs.vcweb': {
+            'handlers': ['tornado.file', 'console'],
             'level': 'DEBUG',
             'propagate': False,
         },

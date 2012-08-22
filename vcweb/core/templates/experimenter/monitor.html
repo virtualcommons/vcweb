@@ -39,7 +39,10 @@
             {% endif %}
             <li class='divider'></li>
             <li class='nav-header'>round status</li>
-            <li data-bind='text:roundStatusDisplay' data-content='{{experiment.actions_help_text}}'></li>
+            <li data-content='{{experiment.actions_help_text}}'>
+            <span data-bind='text:roundSequenceLabel'></span>, 
+            <span data-bind='text:roundStatusLabel'></span>
+            </li>
             <li>Experiment started on: {{ experiment.current_round_start_time|default_if_none:"Not active"}}</li>
             <li>Time remaining: <span data-bind='text:timeRemaining'>{{ experiment.time_remaining }}</span></li>
             <li>Registered participants: <span class='badge badge-info'>{{participant_count}}</span></li>
@@ -135,7 +138,7 @@
 <script type='text/javascript'>
     $(function() {
         function update(json) {
-            console.debug("UPDATING MODELS (NEEDS IMPLEMENTING)");
+
             console.debug(json);
         }
         function ChatMessage(json) {
@@ -151,8 +154,9 @@
             var self = this;
             self.chatMessages = ko.observableArray([new ChatMessage({message: "No messages at this time."})]);
             self.messages = ko.observableArray(["No messages"]);
-            self.roundStatusDisplay = ko.observable('{{ experiment.sequence_label }}, {{experiment.get_status_display}}');
-            self.timeRemaining = ko.observable('No duration specified.');
+            self.roundSequenceLabel = ko.observable('{{ experiment.sequence_label }}');
+            self.roundStatusLabel = ko.observable('{{ experiment.get_status_display }}');
+            self.timeRemaining = ko.observable('{{ experiment.time_remaining }}');
             self.roundData = ko.observable([]);
             self.addRoundData = function(json) {
                 self.roundData.push(new RoundData(json));
@@ -188,8 +192,6 @@
             console.log("Received message: " + json_string);
             var json = jQuery.parseJSON(json_string);
             experimentModel.addMessage(json);
-            /*
-            */
         };
         $('a.confirm').click(function(e) {
             e.preventDefault();
@@ -204,8 +206,10 @@
             });
         });
         $('#refreshAllParticipants').click(function(evt) {
-            console.log("sending refresh event");
-            s.send(createRefreshEvent());
+            evt.preventDefault();
+            var refreshEvent = createRefreshEvent();
+            console.log("sending refresh event: " + refreshEvent);
+            getWebSocket().send(refreshEvent);
             return false;
         });
         $('#transitionAllParticipants').click(function(evt) {
