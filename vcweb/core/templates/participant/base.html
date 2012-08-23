@@ -8,13 +8,14 @@
 {% url core:profile as profile %}
 
 {% block title %}
-    Virtual Commons Web Participant Interface
+Virtual Commons Web Participant Interface
 {% endblock %}
 {% block javascript %}
-    <script type='text/javascript' src='{{STATIC_URL}}js/jquery.validate.min.js'></script>
-    {% block websockets %}
-    {% include "includes/participant.events.html" %}
-    {% include "includes/sockjs.html" %}
-    {% endblock %}
+{{ block.super }}
+<script type='text/javascript' src='{{STATIC_URL}}js/jquery.validate.min.js'></script>
+{% block websockets %}
+{% include "includes/participant.events.html" %}
+{% include "includes/sockjs.html" %}
+{% endblock %}
 {% endblock %}
 

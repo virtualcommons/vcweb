@@ -48,6 +48,11 @@ class ConnectionManager:
         experiment_id = int(incoming_experiment_pk)
         experimenter_tuple = (experimenter_pk, experiment_id)
         logger.debug("registering experimenter %s with connection %s", experimenter_pk, connection)
+# prune old connections
+        existing_connection = self.experimenter_to_connection[experimenter_tuple]
+        if existing_connection:
+            del self.connection_to_experimenter[connection]
+
         if connection in self.connection_to_experimenter:
             logger.debug("this experimenter has an existing connection (%s <-> %s) ",
                     self.connection_to_experimenter[connection], experimenter_tuple)

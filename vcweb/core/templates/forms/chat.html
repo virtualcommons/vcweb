@@ -36,29 +36,28 @@ Communication Round: {{experiment}}
 {% block javascript %}
 {{ block.super }}
 <script type="text/javascript">
-function ChatMessage(jsonData) {
-    this.message = ko.observable(jsonData.message);
-    this.date_created = ko.observable(jsonData.date_created);
-    this.sender = ko.observable(jsonData.sender);
-}
-function ChatMessagesViewModel() {
-    var self = this;
-    self.messages = ko.observableArray([]);
-    {% for chat_message in chat_messages %}
-        self.messages.push(new ChatMessage({ message: {{chat_message.message}}, date_created: {{chat_message.date_created}}, sender: {{chat_message.sender}} }));
-    {% endfor %}
-    self.addMessage = function(json) {
-        self.messages.push(new ChatMessage(json));
-    }
-}
-
 $(function() {
+    function ChatMessage(jsonData) {
+        this.message = ko.observable(jsonData.message);
+        this.date_created = ko.observable(jsonData.date_created);
+        this.sender = ko.observable(jsonData.sender);
+    }
+    function ChatMessagesViewModel() {
+        var self = this;
+        self.messages = ko.observableArray([]);
+        self.addMessage = function(json) {
+            self.messages.push(new ChatMessage(json));
+        }
+    }
     var chatMessagesViewModel = new ChatMessagesViewModel();
+    {% for chat_message in chat_messages %}
+        chatMessagesViewModel.addMessage({ message: {{chat_message.message}}, date_created: {{chat_message.date_created}}, sender: {{chat_message.sender}} });
+    {% endfor %}
     ko.applyBindings(chatMessagesViewModel);
-    var s = connect();
+    var s = connect('/participant');
     s.onmessage = function(json_string) {
         var json = jQuery.parseJSON(json_string);
-        // FIXME: switch to single page app model..?
+        // FIXME: should switch to single page app model..?
         switch (json.message_type) {
             case 'chat':
                 chatMessagesViewModel.addChatMessage(json);

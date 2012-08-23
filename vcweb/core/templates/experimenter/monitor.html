@@ -161,28 +161,8 @@
             self.addRoundData = function(json) {
                 self.roundData.push(new RoundData(json));
             }
-            self.addTestMessage = function() {
-                self.messages.push("This is a test!");
-            }
-            self.addMessage = function(json) {
-                switch (json.message_type) {
-                    case 'submit':
-                    case 'info':
-                        console.debug("adding message " + json + " to experiment messages div");
-                        self.messages.push(json.message);
-                    break;
-                    case 'chat':
-                        self.chatMessages.push(new ChatMessage(json));
-                    // addChatMessage('chat-div-' + json.round_data_pk, json, json.date_created + " " + json.participant);
-                    break;
-                    case 'submit':
-                        self.messages.push(json.message);
-                    break;
-                    default:
-                        console.debug("unhandled json message: " + json);
-                    break;
-                }
-                self.messages.push(json.message);
+            self.addMessage = function(event) {
+                self.messages.push(event.message);
             }
         }
         var experimentModel = new ExperimentModel();
@@ -190,8 +170,7 @@
         var s = connect("/experimenter");
         s.onmessage = function(json_string) {
             console.log("Received message: " + json_string);
-            var json = jQuery.parseJSON(json_string);
-            experimentModel.addMessage(json);
+            experimentModel.addMessage(jQuery.parseJSON(json_string.data));
         };
         $('a.confirm').click(function(e) {
             e.preventDefault();
