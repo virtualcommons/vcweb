@@ -3,7 +3,9 @@ from fabric.contrib.console import confirm
 from fabric.contrib import django
 from fabric.context_managers import settings as fab_settings
 
-import os, sys, shutil
+import os, sys, shutil, logging
+
+logger = logging.getLogger(__name__)
 
 # needed to push vcweb.settings onto the path.
 sys.path.append(os.path.abspath('.'))
@@ -26,7 +28,6 @@ env.apps = ' '.join(env.applist)
 
 # django integration for access to settings, etc.
 django.project(env.project_name)
-
 
 """
 this currently only works for sqlite3 development database.  do it by hand with
@@ -56,9 +57,9 @@ def syncdb(**kwargs):
 def setup_virtualenv():
     """ Setup a fresh virtualenv """
     try:
-	os.makedirs("%(virtualenv_path)s" % env)
+        os.makedirs("%(virtualenv_path)s" % env)
     except OSError:
-	pass
+        pass
     local('virtualenv -p %(python)s --no-site-packages %(virtualenv_path)s' % env)
 
 def clear_rabbitmq_db():

@@ -21,10 +21,24 @@ DATA_DIR = 'data'
 
 DATABASES = {
         'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'vcweb',
+            'USER': 'vcweb',
+            'PASSWORD': '',
+            },
+        'dev': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': path.join(DATA_DIR, 'vcweb.db')
-            }
+            },
+
         }
+
+#DATABASES = {
+#        'default': {
+#            'ENGINE': 'django.db.backends.sqlite3',
+#            'NAME': path.join(DATA_DIR, 'vcweb.db')
+#            }
+#        }
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
@@ -154,6 +168,12 @@ SOCIAL_AUTH_RAISE_EXCEPTIONS = DEBUG
 
 #SOCIAL_AUTH_USER_MODEL = 'core.Participant'
 
+try:
+    import south
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules([], ["^social_auth\.fields\.JSONField"])
+except:
+    pass
 
 
 # websockets configuration
@@ -164,16 +184,6 @@ CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 CELERYBEAT_MAX_LOOP_INTERVAL = 5
 CELERYBEAT_LOG_FILE = 'celerybeat.log'
 CELERYBEAT_LOG_LEVEL = 'ERROR'
-
-# simplest celery transport that uses Django database (djkombu_messages)
-BROKER_BACKEND = "djkombu.transport.DatabaseTransport"
-# django celery integration
-# celery rabbitmq/amqp configuration
-BROKER_HOST = "localhost"
-BROKER_PORT = 5672
-BROKER_USER = "vcweb"
-BROKER_VHOST = "vcweb.vhost"
-BROKER_PASSWORD = 'CUSTOMIZE_ME'
 
 # activation window
 ACCOUNT_ACTIVATION_DAYS = 30
@@ -227,7 +237,8 @@ MESSAGE_TAGS = {
 GRAPH_DATABASE_PATH=path.join(DATA_DIR, 'neo4j-store')
 
 try:
-    from settings_local import *
+    from vcweb.settings_local import *
+    print("XXX: databases are %s" % DATABASES)
 except ImportError:
     pass
 

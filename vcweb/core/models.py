@@ -9,6 +9,7 @@ from django.template.defaultfilters import slugify
 from django.utils.html import escape
 from django.utils.timesince import timesince
 from django.utils.translation import ugettext_lazy as _
+from model_utils import Choices
 from model_utils.managers import PassThroughManager
 from string import Template
 from vcweb.core import signals, simplecache
@@ -219,12 +220,13 @@ class Experiment(models.Model):
     Experiment instances are a concrete parameterization of an ExperimentMetadata record, with associated
     ExperimentConfiguration, Experimenter, etc.  In other words, they represent an actual experiment run.
     """
-    STATUS_CHOICES = (('INACTIVE', 'Not active'),
-                      ('ACTIVE', 'Active, no round in progress'),
-                      ('PAUSED', 'Paused'),
-                      ('ROUND_IN_PROGRESS', 'Round in progress'),
-                      ('COMPLETED', 'Completed'))
-    (INACTIVE, ACTIVE, PAUSED, ROUND_IN_PROGRESS, COMPLETED) = [ choice[0] for choice in STATUS_CHOICES ]
+    STATUS = Choices(
+            ('INACTIVE', _('Not active')),
+            ('ACTIVE', _('Active, no round in progress')),
+            ('PAUSED', _('Paused')),
+            ('ROUND_IN_PROGRESS', _('Round in progress')),
+            ('COMPLETED', _('Completed')))
+    (INACTIVE, ACTIVE, PAUSED, ROUND_IN_PROGRESS, COMPLETED) = [ choice[0] for choice in STATUS ]
     authentication_code = models.CharField(max_length=32, default="vcweb.auth.code")
     """
     currently unused, but kept here in the event that we want to allow participants to authenticate with this
@@ -239,13 +241,15 @@ class Experiment(models.Model):
     """ the experiment metadata object that this experiment instance represents """
     experiment_configuration = models.ForeignKey(ExperimentConfiguration)
     """ the configuration parameters in use for this experiment run. """
-    status = models.CharField(max_length=32, choices=STATUS_CHOICES,
-                              default='INACTIVE')
+# FIXME: consider using django-model-utils but need to verify that it works with South
+# status = StatusField() 
+    status = models.CharField(max_length=32, choices=STATUS, default=STATUS.INACTIVE)
     """
     the status of an experiment can be either INACTIVE, ACTIVE, PAUSED, ROUND_IN_PROGRESS, or COMPLETED
     """
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
+# FIXME: inherit from TimeFramedModel instead?
     start_date_time = models.DateTimeField(null=True, blank=True)
     # how long this experiment should run in a date format
     # 1w2d = 1 week 2 days = 9d
@@ -809,11 +813,6 @@ class QuizQuestion(models.Model):
     def __unicode__(self):
         return u'%s' % self.label
 
-class ParameterManager(models.Manager):
-    def get_by_natural_key(self, name):
-        return self.get(name=name)
-
-
 def _fk_converter(fk_cls):
     def converter(value):
         if isinstance(value, (int, long)):
@@ -822,6 +821,22 @@ def _fk_converter(fk_cls):
             return value.pk
         raise ValueError("can only convert integers or %s - received %s" % (fk_cls, value))
     return converter
+
+
+class ParameterQuerySet(models.query.QuerySet):
+    def participant(self):
+        return self.filter(scope=Parameter.PARTICIPANT_SCOPE)
+
+    def group(self):
+        return self.filter(scope=Parameter.GROUP_SCOPE)
+
+    def group_round(self):
+        return self.filter(scope=Parameter.GROUP_ROUND_SCOPE)
+
+
+class ParameterPassThroughManager(PassThroughManager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
 
 class Parameter(models.Model):
     PARAMETER_TYPES = (('int', 'Integer'),
@@ -873,7 +888,7 @@ class Parameter(models.Model):
     enum_choices = models.TextField(null=True, blank=True)
     is_required = models.BooleanField(default=False)
 
-    objects = ParameterManager()
+    objects = ParameterPassThroughManager.for_queryset_class(ParameterQuerySet)()
 
     @property
     def value_field_name(self):

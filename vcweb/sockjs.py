@@ -2,16 +2,17 @@
 import logging
 import os
 import sys
-import tornadoredis
 import simplejson 
-from tornado import web, ioloop
-from sockjs.tornado import SockJSRouter, SockJSConnection
 from itertools import chain
+from sockjs.tornado import SockJSRouter, SockJSConnection
+from tornado import web, ioloop
+from tornado.escape import xhtml_escape
+import tornadoredis
 
 sys.path.append(os.path.abspath('.'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
-from vcweb.core.models import Experiment, ParticipantGroupRelationship, Experimenter
+from vcweb.core.models import Experiment, ParticipantGroupRelationship, Participant, Experimenter, ChatMessage
 from vcweb import settings
 
 logger = logging.getLogger('sockjs.vcweb')
@@ -156,17 +157,25 @@ connection_manager = ConnectionManager()
 def create_message_event(message, message_type='info'):
     return simplejson.dumps({ 'message': message, 'message_type': message_type})
 
+# replace with namedtuple
+class Struct:
+    def __init__(self, **attributes):
+        self.__dict__.update(attributes)
+
+def to_event(message):
+    return Struct(**message)
+
 class ParticipantConnection(SockJSConnection):
     default_channel = 'vcweb.participant.websocket'
     def __init__(self, *args, **kwargs):
         super(ParticipantConnection, self).__init__(*args, **kwargs)
-        self.client = tornadoredis.Client()
+        #self.client = tornadoredis.Client()
         #self.client.connect()
         #self.client.subscribe(self.default_channel)
 
     def on_open(self, info):
         logger.debug("opening connection %s", info)
-        #connection_manager.add_participant(self)
+        connection_manager.add_participant(self)
         #self.client.listen(self.on_chan_message)
 
     def on_message(self, json_string):
@@ -175,7 +184,62 @@ class ParticipantConnection(SockJSConnection):
         logger.debug("received message %s", message_dict)
         experiment_id = message_dict['experiment_id']
         auth_token = message_dict['auth_token']
-        experiment = Experiment.objects.get(pk=experiment_id)
+        experiment = Experiment.objects.select_related(depth=1).get(pk=experiment_id)
+        # could handle connection here or in on_open, revisit
+        message_type = message_dict['message_type']
+# verify auth token
+        event = to_event(message_dict)
+        (participant_pk, experiment_pk) = connection_manager.get_participant_experiment_tuple(self)
+        participant = Participant.objects.get(pk=participant_pk)
+        if participant.authentication_token != auth_token:
+            self.send(create_message_event("Your do not appear to be authorized to perform this action.  If this problem persists, please contact us."))
+            logger.warning("participant %s auth tokens didn't match [%s <=> %s]", participant,
+                    participant.authentication_token, auth_token)
+            return
+        if message_type == 'submit':
+            logger.debug("processing participant submission for participant %s and experiment %s", participant_pk, experiment)
+            # sanity check, make sure this is a data round.
+            if experiment.is_data_round_in_progress:
+                # FIXME: forward the submission to the experimenter
+                experimenter_tuple = (experiment.experimenter.pk, experiment.pk)
+                event.participant_pk = participant_pk
+                pgr_pk = event.participant_group_relationship_id
+                participant_group_relationship = ParticipantGroupRelationship.objects.get(pk=pgr_pk)
+
+                prdv = experiment.current_round_data.participant_data_value_set.get(participant_group_relationship__pk=pgr_pk)
+                event.participant_data_value_pk = prdv.pk
+                event.participant_number = participant_group_relationship.participant_number
+                event.participant_group = participant_group_relationship.group_number
+                json = simplejson.dumps(event.__dict__)
+                logger.debug("submit event json: %s", json)
+                connection_manager.send_to_experimenter(experimenter_tuple, json)
+                if experiment.all_participants_have_submitted:
+                    connection_manager.send_to_experimenter(
+                            experimenter_tuple,
+                            create_message_event('All participants have submitted a decision.'))
+            else:
+                logger.debug("No data round in progress, received late submit event: %s", event)
+
+        elif message_type == 'chat':
+            try:
+                participant_group_relationship = connection_manager.get_participant_group_relationship(self)
+                current_round_data = participant_group_relationship.group.experiment.current_round_data
+# FIXME:  escape on output instead of input
+                chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
+                        value=xhtml_escape(event.message),
+                        round_data=current_round_data
+                        )
+                chat_json = simplejson.dumps({
+                    "pk": chat_message.pk,
+                    'round_data_pk': current_round_data.pk,
+                    'participant': unicode(participant_group_relationship.participant),
+                    "date_created": chat_message.date_created.strftime("%H:%M:%S"),
+                    "message" : xhtml_escape(unicode(chat_message)),
+                    "message_type": 'chat',
+                    })
+                connection_manager.send_to_group(participant_group_relationship.group, chat_json)
+            except:
+                logger.warning("Couldn't find a participant group relationship using connection %s with connection manager %s", self, self.connection_manager)
 
     def on_close(self):
         #self.client.unsubscribe(self.default_channel)
@@ -185,7 +249,7 @@ class ExperimenterConnection(SockJSConnection):
     default_channel = 'vcweb.experimenter.websocket'
     def __init__(self, *args, **kwargs):
         super(ExperimenterConnection, self).__init__(*args, **kwargs)
-        self.client = tornadoredis.Client()
+        #self.client = tornadoredis.Client()
 
     def on_open(self, info):
         logger.debug("opening connection %s", info)

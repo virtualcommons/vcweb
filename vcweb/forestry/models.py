@@ -87,8 +87,8 @@ def get_group_harvest_parameter(refresh=False):
 
 @simplecache
 def get_harvest_decision_parameter(refresh=False):
-    return Parameter.objects.get(name='harvest_decision',
-            scope=Parameter.PARTICIPANT_SCOPE,
+    # FIXME: replace with something like Parameter.objects.for_participant(name='harvest_decision')
+    return Parameter.objects.get(name='harvest_decision', scope=Parameter.PARTICIPANT_SCOPE,
             experiment_metadata=get_experiment_metadata())
 
 def set_harvest_decision(participant_group_relationship=None, value=None):

@@ -34,7 +34,7 @@ class ConnectionManager:
     We use participant_pk + experiment_pk tuples as keys in these bidimaps because
     groups may not have formed yet.
     FIXME: consider refactoring core so that an "all" group always exists in an
-    experiment.  
+    experiment.
     '''
     refresh_json = simplejson.dumps({ 'message_type': 'refresh' })
 

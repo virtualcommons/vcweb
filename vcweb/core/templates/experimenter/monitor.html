@@ -150,10 +150,10 @@
             self.participant = json.participant;
             self.id = json.id;
         }
-        function ExperimentModel() { 
+        function ExperimentModel() {
             var self = this;
-            self.chatMessages = ko.observableArray([new ChatMessage({message: "No messages at this time."})]);
-            self.messages = ko.observableArray(["No messages"]);
+            self.chatMessages = ko.observableArray([]);
+            self.messages = ko.observableArray([]);
             self.roundSequenceLabel = ko.observable('{{ experiment.sequence_label }}');
             self.roundStatusLabel = ko.observable('{{ experiment.get_status_display }}');
             self.timeRemaining = ko.observable('{{ experiment.time_remaining }}');
@@ -168,9 +168,9 @@
         var experimentModel = new ExperimentModel();
         ko.applyBindings(experimentModel);
         var s = connect("/experimenter");
-        s.onmessage = function(json_string) {
-            console.log("Received message: " + json_string);
-            experimentModel.addMessage(jQuery.parseJSON(json_string.data));
+        s.onmessage = function(event) {
+            console.log("Received event: " + event);
+            experimentModel.addMessage(jQuery.parseJSON(event.data));
         };
         $('a.confirm').click(function(e) {
             e.preventDefault();

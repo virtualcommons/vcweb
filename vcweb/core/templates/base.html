@@ -113,7 +113,7 @@
         Copyright (c) {% now "Y" %} Arizona Board of Regents.  <br/>
         <br />
         </p>
-        <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
+        <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js'></script>
         <script type='text/javascript' src='{{STATIC_URL}}bootstrap/js/bootstrap.min.js'></script>
         <script type='text/javascript' src='{{STATIC_URL}}js/knockout.min.js'></script>
         <script type='text/javascript' src='{{STATIC_URL}}js/common.js'></script>
@@ -125,13 +125,6 @@
         <script type='text/javascript' src='{{STATIC_URL}}js/dajaxice.core.js' charset='utf-8'></script>
         {% endif %}
         {% block startupjs %}
-        <script type='text/javascript'>
-
-//$(function() {
-//    $('a.external').attr({ target: "_blank" });
-//    $('.alert').alert();
-//});
-        </script>
         {% endblock %}
         {% block javascript %}
         {% endblock %}
