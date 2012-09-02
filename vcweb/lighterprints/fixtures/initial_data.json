@@ -130,7 +130,7 @@
         "pk": 15,
         "model": "core.parameter",
         "fields": {
-            "experiment_metadata": 3,
+            "experiment_metadata": [ "lighterprints" ],
             "display_name": "Unlocked Activity",
             "name": "activity_unlocked",
             "creator": 1,
