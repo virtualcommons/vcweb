@@ -238,14 +238,13 @@ GRAPH_DATABASE_PATH=path.join(DATA_DIR, 'neo4j-store')
 
 try:
     from vcweb.settings_local import *
-    print("XXX: databases are %s" % DATABASES)
 except ImportError:
     pass
 
 # after loading possibly overridden database, reset test database
-if 'test' in sys.argv:
-    DATABASES['default']['ENGINE'] = 'django.db.backends.sqlite3'
-    DATABASES['default']['NAME'] = path.join(DATA_DIR, 'vcweb.db')
+#if 'test' in sys.argv:
+#    DATABASES['default']['ENGINE'] = 'django.db.backends.sqlite3'
+#    DATABASES['default']['NAME'] = path.join(DATA_DIR, 'vcweb.db')
 
 LOG_DIRECTORY = 'logs' if DEBUG else '/opt/vcweb/logs'
 try:

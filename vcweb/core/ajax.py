@@ -86,6 +86,19 @@ def _render_experiment_monitor_block(block, experiment, request):
 
 @experimenter_required
 @dajaxice_register
+def get_experiment_model(request, pk):
+    experiment = _get_experiment(request, pk)
+    return dumps({
+        'roundStatusLabel': experiment.get_status_display(),
+        'roundSequenceLabel': experiment.sequence_label,
+        'timeRemaining': experiment.time_remaining,
+        'roundData': experiment.round_data_set.all(),
+        'chatMessages': experiment.all_chat_messages.all(),
+        'messages': experiment.activity_log_set.all(),
+        })
+
+@experimenter_required
+@dajaxice_register
 def experiment_controller(request, pk, action=''):
     experiment = _get_experiment(request, pk)
     try:

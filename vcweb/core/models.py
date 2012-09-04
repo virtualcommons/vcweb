@@ -384,6 +384,10 @@ class Experiment(models.Model):
                 round_configuration__sequence_number__lte=self.current_round_sequence_number)
 
     @property
+    def all_chat_messages(self):
+        return ChatMessage.objects.filter(round_data__experiment=self)
+
+    @property
     def all_quiz_questions(self):
         # FIXME: use generator expression?
         quiz_questions = list(self.default_quiz_questions.all())
@@ -442,7 +446,7 @@ class Experiment(models.Model):
         return pdvs.filter(submitted=False).count() == 0
 
     def invoke(self, action):
-        if action in ('advance_to_next_round', 'end_round', 'start_round'):
+        if action in ('advance_to_next_round', 'end_round', 'start_round', 'activate'):
             getattr(self, action)()
         else:
             raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action, self))
@@ -824,15 +828,14 @@ def _fk_converter(fk_cls):
 
 
 class ParameterQuerySet(models.query.QuerySet):
-    def participant(self):
-        return self.filter(scope=Parameter.PARTICIPANT_SCOPE)
+    def for_participant(self, **kwargs):
+        return self.filter(scope=Parameter.PARTICIPANT_SCOPE, **kwargs)
 
-    def group(self):
-        return self.filter(scope=Parameter.GROUP_SCOPE)
+    def for_group(self, **kwargs):
+        return self.filter(scope=Parameter.GROUP_SCOPE, **kwargs)
 
-    def group_round(self):
-        return self.filter(scope=Parameter.GROUP_ROUND_SCOPE)
-
+    def for_group_round(self, **kwargs):
+        return self.filter(scope=Parameter.GROUP_ROUND_SCOPE, **kwargs)
 
 class ParameterPassThroughManager(PassThroughManager):
     def get_by_natural_key(self, name):
