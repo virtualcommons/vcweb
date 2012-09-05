@@ -446,7 +446,7 @@ class Experiment(models.Model):
         return pdvs.filter(submitted=False).count() == 0
 
     def invoke(self, action):
-        if action in ('advance_to_next_round', 'end_round', 'start_round', 'activate'):
+        if action in ('advance_to_next_round', 'end_round', 'start_round'):
             getattr(self, action)()
         else:
             raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action, self))

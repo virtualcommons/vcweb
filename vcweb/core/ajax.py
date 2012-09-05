@@ -1,7 +1,8 @@
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.template.loader_tags import BlockNode, ExtendsNode
 from django.template import loader, Context, RequestContext
-from django.shortcuts import get_object_or_404
+from django.utils.html import escape
 
 from vcweb.core.decorators import experimenter_required, dajaxice_register
 from vcweb.core.models import Experiment
@@ -88,13 +89,17 @@ def _render_experiment_monitor_block(block, experiment, request):
 @dajaxice_register
 def get_experiment_model(request, pk):
     experiment = _get_experiment(request, pk)
+    return to_json(experiment)
+
+def to_json(experiment):
     return dumps({
         'roundStatusLabel': experiment.get_status_display(),
         'roundSequenceLabel': experiment.sequence_label,
         'timeRemaining': experiment.time_remaining,
+        # FIXME: round_data needs to be tweaked
         'roundData': experiment.round_data_set.all(),
-        'chatMessages': experiment.all_chat_messages.all(),
-        'messages': experiment.activity_log_set.all(),
+        'chatMessages': [escape(chat_message) for chat_message in experiment.all_chat_messages.all()],
+        'messages': [escape(log) for log in experiment.activity_log_set.all()],
         })
 
 @experimenter_required
@@ -105,23 +110,4 @@ def experiment_controller(request, pk, action=''):
         experiment.invoke(action)
     except AttributeError as e:
         logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
-    return dumps({
-        'experiment': experiment,
-        })
-    """
-    status_block = _render_experiment_monitor_block('status', experiment, request)
-    data_block = _render_experiment_monitor_block('data', experiment, request)
-    transition_url = None
-    should_transition = action in ('start_round', 'end_round', 'advance_to_next_round')
-    if should_transition:
-        transition_url = 'wait' if action == 'end_round' else 'participate'
-    return simplejson.dumps({
-        'should_transition': should_transition,
-        'transition_url': transition_url,
-        'status': status_block,
-        'experimentData': data_block,
-        'active_round_number': experiment.current_round_sequence_number,
-        'round_data_count': experiment.round_data_set.count(),
-        'error_message': error_message,
-        })
-    """
+    return to_json(experiment)

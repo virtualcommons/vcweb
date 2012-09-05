@@ -32,7 +32,7 @@
                         <a href='{{experiment.controller_url}}/register-simple'>test participants</a>
                     </div>
                 {% else %}
-                    <li><a data-content='You must first activate an experiment before you can run it.' class='confirm' name='activate' href='activate'>
+                    <li><a data-content='Activate an experiment after you have registered participants and are ready to run it.' class='confirm' name='activate' href='activate'>
                         <i class='icon-off'></i>activate</a>
                     </li>
                 {%endif%}
@@ -138,46 +138,50 @@
 <script type='text/javascript'>
     $(function() {
         function update(experimentModel) {
+            return function(data) {
+                console.debug("updating experimentModel with incoming data: ");
+                console.debug(data);
+                ko.mapping.fromJS(experimentModel, data);
+            }
         }
-        Dajaxice.vcweb.core.get_experiment_model(function(json) {
+        function initialize(experimentModelJson) {
             var mapping = {
                 create: function(options) {
-                    var experimentModel = ko.mapping.fromJS(options.data);
-                    experimentModel.addMessage = function(evt) {
-                        experimentModel.messages.push(evt.message);
+                    var model = ko.mapping.fromJS(options.data);
+                    model.addMessage = function(evt) {
+                        console.debug("adding message: ");
+                        console.debug(evt.message);
+                        console.debug(model.messages.push(evt.message));
+                        console.debug(ko.utils.unwrapObservable(model.messages));
                     };
-                    return experimentModel;
+                    return model;
                 }
             };
-            var experimentModel = ko.mapping.fromJS(json, mapping);
+            var experimentModel = ko.mapping.fromJS(experimentModelJson, mapping);
             // var experimentModel = new ExperimentModel();
             ko.applyBindings(experimentModel);
+            console.debug("experiment model is: ");
+            console.debug(experimentModel);
             var s = connect("/experimenter");
-            s.onmessage = function(event) {
-                console.log("Received event: " + event);
-                experimentModel.addMessage(jQuery.parseJSON(event.data));
+            s.onmessage = function(evt) {
+                console.log("Received event: " + evt);
+                experimentModel.addMessage(jQuery.parseJSON(evt.data));
             };
-            $('a.confirm').click(function(e) {
-                e.preventDefault();
+            $('a.confirm').click(function(evt) {
+                evt.preventDefault();
                 var self = $(this);
                 var description = self.attr("data-content");
                 var action = self.attr("name");
-                console.debug("confirming action: " + action + " with description: " + description);
                 bootbox.confirm(description + "  Continue?", function(confirmed) {
                     if (confirmed) {
-                        Dajaxice.vcweb.core.experiment_controller(
-                        function(data) {
-                            ko.mapping.fromJS(experimentModel, data);
-                        },
-                        {'pk': {{experiment.pk}}, 'action':action});
+                        Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {'pk': {{experiment.pk}}, 'action':action});
                     }
+                    return false;
                 });
             });
             $('#refreshAllParticipants').click(function(evt) {
                 evt.preventDefault();
-                var refreshEvent = createRefreshEvent();
-                console.log("sending refresh event: " + refreshEvent);
-                getWebSocket().send(refreshEvent);
+                getWebSocket().send(createRefreshEvent());
                 return false;
             });
             $('#transitionAllParticipants').click(function(evt) {
@@ -185,10 +189,11 @@
                 s.send(createGotoEvent());
                 return false;
             });
-
-        },
-        { 'pk': {{ experiment.pk}} });
+            console.debug(experimentModel.messages);
+        }
         $('[data-content]').popover();
+        // retrieve the experiment model JSON from the server and initialize ko models
+        Dajaxice.vcweb.core.get_experiment_model(initialize, { 'pk': {{ experiment.pk}} });
     });
 </script>
 {% endblock %}

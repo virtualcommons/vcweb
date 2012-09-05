@@ -108,29 +108,29 @@ class ConnectionManager(object):
             if participant_tuple in self.participant_to_connection:
                 yield (participant_group_relationship.pk, self.participant_to_connection[participant_tuple])
 
-    def all_participants(self, connection, experiment):
-        if connection in self.connection_to_experimenter:
-            (experimenter_pk, experiment_pk) = self.connection_to_experimenter[connection]
-            if experiment.pk == experiment_pk:
-                for group in experiment.group_set.all():
-                    for participant_group_pk, connection in self.connections(group):
-                        yield (participant_group_pk, connection)
-            else:
-                logger.warning("Experimenter %s tried to refresh experiment %s", experimenter_pk, experiment)
+    def all_participants(self, experimenter, experiment):
+        experimenter_key = (experimenter.pk, experiment.pk)
+        if experimenter_key in self.experimenter_to_connection:
+            for group in experiment.group_set.all():
+                for participant_group_relationship_id, connection in self.connections(group):
+                    yield (participant_group_relationship_id, connection)
         else:
-            logger.warning("No experimenter available for connection %s", connection)
+            logger.warning("No experimenter available in experimenter_to_connection %s", self.experimenter_to_connection)
     '''
     experimenter functions
     '''
-    def send_refresh(self, connection, experiment, experimenter_id=None):
-        for (participant_group_pk, connection) in self.all_participants(connection, experiment):
+    def send_refresh(self, experimenter, experiment):
+        participant_connections = []
+        for (participant_group_pk, connection) in self.all_participants(experimenter, experiment):
             logger.debug("sending refresh to %s, %s", participant_group_pk, connection)
+            participant_connections.append(participant_group_pk)
             connection.send(ConnectionManager.REFRESH_EVENT)
+        return participant_connections
 
-    def send_goto(self, connection, experiment, url):
+    def send_goto(self, experimenter, experiment, url):
         notified_participants = []
         json = simplejson.dumps({'message_type': 'goto', 'url': url})
-        for (participant_group_pk, connection) in self.all_participants(connection, experiment):
+        for (participant_group_pk, connection) in self.all_participants(experimenter, experiment):
             connection.send(json)
             notified_participants.append(participant_group_pk)
         return notified_participants
@@ -179,9 +179,7 @@ class ParticipantConnection(SockJSConnection):
         #self.client.listen(self.on_chan_message)
 
     def on_message(self, json_string):
-        logger.debug("received: " + json_string)
         message_dict = simplejson.loads(json_string)
-        logger.debug("received message %s", message_dict)
         experiment_id = message_dict['experiment_id']
         auth_token = message_dict['auth_token']
         experiment = Experiment.objects.select_related(depth=1).get(pk=experiment_id)
@@ -256,18 +254,33 @@ class ExperimenterConnection(SockJSConnection):
         #self.client.listen(self.on_chan_message)
 
     def on_message(self, json_string):
-        logger.debug("received: " + json_string)
         message_dict = simplejson.loads(json_string)
-        logger.debug("received message %s", message_dict)
-        experiment_id = message_dict['experiment_id']
         auth_token = message_dict['auth_token']
         experimenter_id = message_dict['experimenter_id']
         experimenter = Experimenter.objects.get(pk=experimenter_id)
-        if (experimenter.authentication_token == auth_token):
-            connection_manager.add_experimenter(self, experimenter_id, experiment_id)
-        else:
-            logger.warning("experimenter %s auth tokens didn't match: [%s <=> %s]", auth_token, experimenter.authentication_token)
-        self.send(create_message_event('Experimenter %s connected.' % experimenter))
+        if experimenter.authentication_token == auth_token:
+            event = to_event(message_dict)
+            experiment = Experiment.objects.get(pk=event.experiment_id)
+            lexical_handler = 'handle_' + event.message_type
+            handler = getattr(self, lexical_handler, None)
+            logger.debug("invoking handler %s (lexical: %s)", handler, lexical_handler)
+            if not handler:
+                handler = self.default_handler
+            handler(experimenter, experiment, event)
+            return
+        logger.warning("experimenter %s auth tokens didn't match: [%s <=> %s]", auth_token, experimenter.authentication_token)
+        self.send(create_message_event('Your session has expired, please try logging in again.  If this problem persists, please contact us.'))
+
+    def default_handler(self, experimenter, experiment, event):
+        logger.warning("unhandled message: %s", event)
+
+    def handle_connect(self, experimenter, experiment, event):
+        connection_manager.add_experimenter(self, event.experimenter_id, event.experiment_id)
+        self.send(create_message_event("Experimenter %s connected." % experimenter))
+
+    def handle_refresh(self, experimenter, experiment, event):
+        notified_participants = connection_manager.send_refresh(experimenter, experiment)
+        self.send(create_message_event("Refreshed %s participants" % notified_participants))
 
     def on_close(self):
         #self.client.unsubscribe(self.default_channel)
