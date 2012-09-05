@@ -96,6 +96,10 @@ def to_json(experiment):
         'roundStatusLabel': experiment.get_status_display(),
         'roundSequenceLabel': experiment.sequence_label,
         'timeRemaining': experiment.time_remaining,
+        'currentRoundStartTime': experiment.current_round_start_time,
+        'participantCount': experiment.participant_set.count(),
+        'isRoundInProgress': experiment.is_round_in_progress,
+        'isActive': experiment.is_active,
         # FIXME: round_data needs to be tweaked
         'roundData': experiment.round_data_set.all(),
         'chatMessages': [escape(chat_message) for chat_message in experiment.all_chat_messages.all()],
