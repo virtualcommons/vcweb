@@ -88,23 +88,7 @@ def _render_experiment_monitor_block(block, experiment, request):
 @experimenter_required
 @dajaxice_register
 def get_experiment_model(request, pk):
-    experiment = _get_experiment(request, pk)
-    return to_json(experiment)
-
-def to_json(experiment):
-    return dumps({
-        'roundStatusLabel': experiment.get_status_display(),
-        'roundSequenceLabel': experiment.sequence_label,
-        'timeRemaining': experiment.time_remaining,
-        'currentRoundStartTime': experiment.current_round_start_time,
-        'participantCount': experiment.participant_set.count(),
-        'isRoundInProgress': experiment.is_round_in_progress,
-        'isActive': experiment.is_active,
-        # FIXME: round_data needs to be tweaked
-        'roundData': experiment.round_data_set.all(),
-        'chatMessages': [escape(chat_message) for chat_message in experiment.all_chat_messages.all()],
-        'messages': [escape(log) for log in experiment.activity_log_set.all()],
-        })
+    return _get_experiment(request, pk).to_json()
 
 @experimenter_required
 @dajaxice_register
@@ -114,4 +98,4 @@ def experiment_controller(request, pk, action=''):
         experiment.invoke(action)
     except AttributeError as e:
         logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
-    return to_json(experiment)
+    return experiment.to_json()

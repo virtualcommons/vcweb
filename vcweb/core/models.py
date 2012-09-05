@@ -637,13 +637,19 @@ class Experiment(models.Model):
         if self.is_timed_round and self.is_time_expired:
             self.end_round()
 
-    def to_json(self, *args):
+    def to_json(self, *args, **kwargs):
         return simplejson.dumps({
-            'experiment': {
-                'pk': self.pk,
-                'is_active': self.is_active,
-                'is_round_in_progress': self.is_round_in_progress,
-                },
+            'roundStatusLabel': self.get_status_display(),
+            'roundSequenceLabel': self.sequence_label,
+            'timeRemaining': self.time_remaining,
+            'currentRoundStartTime': self.current_round_start_time,
+            'participantCount': self.participant_set.count(),
+            'isRoundInProgress': self.is_round_in_progress,
+            'isActive': self.is_active,
+            # FIXME: round_data needs to be tweaked
+            'roundData': self.round_data_set.all(),
+            'chatMessages': [escape(chat_message) for chat_message in self.all_chat_messages],
+            'messages': [escape(log) for log in self.activity_log_set.order_by('-date_created')],
             })
 
     """ returns a fresh copy of this experiment with configuration / metadata intact """

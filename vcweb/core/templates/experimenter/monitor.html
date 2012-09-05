@@ -13,7 +13,7 @@
                 <li><a class='confirm' name='advance_to_next_round' href='javascript:void()' data-content='Stops the current round if necessary and advances to the next round.'><i class='icon-step-forward'></i>advance to next round</a></li>
                 <li data-bind="ifnot: isRoundInProgress"><a class='confirm' name='start_round' href='start-round' data-content='Starts the round.'><i class='icon-play'></i>start round</a></li>
                 <li data-bind="if: isRoundInProgress"><a class='confirm' name='end_round' href='end-round' data-content='Stops the current round.'><i class='icon-stop'></i>end round</a></li>
-                <li><a href='javascript:void()' id='refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i>refresh all participants</a></li>
+                <li><a href='javascript:void();' id='refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i>refresh all participants</a></li>
                 <li class='divider'></li>
                 <li class='nav-header'>download data</li>
                 <li><a href='download/csv'><img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' style='margin: 5px 0 0 0;' alt='' />csv</a></li>
@@ -139,25 +139,21 @@
 {% include "includes/sockjs.html" %}
 <script type='text/javascript'>
     $(function() {
+        function ExperimentModel (experimentModelJson) {
+            var self = this;
+            var model = ko.mapping.fromJS(experimentModelJson);
+            model.addMessage = function (evt) {
+                model.messages.unshift(evt.message);
+            }
+            return model;
+        }
         function update(experimentModel) {
             return function(data) {
                 ko.mapping.fromJS(data, experimentModel);
             }
         }
         function initialize(experimentModelJson) {
-            var mapping = {
-                create: function(options) {
-                    var model = ko.mapping.fromJS(options.data);
-                    model.addMessage = function(evt) {
-                        console.debug("adding message: ");
-                        console.debug(evt.message);
-                        console.debug(model.messages.push(evt.message));
-                        console.debug(ko.utils.unwrapObservable(model.messages));
-                    };
-                    return model;
-                }
-            };
-            var experimentModel = ko.mapping.fromJS(experimentModelJson, mapping);
+            var experimentModel = new ExperimentModel(experimentModelJson);
             // var experimentModel = new ExperimentModel();
             ko.applyBindings(experimentModel);
             // establish sockjs websocket connection
@@ -180,12 +176,14 @@
             });
             $('#refreshAllParticipants').click(function(evt) {
                 evt.preventDefault();
+                // FIXME: replace with sendRefreshEvent()
                 getWebSocket().send(createRefreshEvent());
                 return false;
             });
             $('#transitionAllParticipants').click(function(evt) {
                 console.log("sending goto event");
-                s.send(createGotoEvent());
+                // FIXME: replace with sendGotoEvent()
+                getWebSocket().send(createGotoEvent());
                 return false;
             });
             console.debug(experimentModel.messages);
