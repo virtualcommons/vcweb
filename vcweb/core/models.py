@@ -445,11 +445,11 @@ class Experiment(models.Model):
         pdvs = self.current_round_data.participant_data_value_set
         return pdvs.filter(submitted=False).count() == 0
 
-    def invoke(self, action):
-        if action in ('advance_to_next_round', 'end_round', 'start_round'):
-            getattr(self, action)()
+    def invoke(self, action_name):
+        if action_name in ('advance_to_next_round', 'end_round', 'start_round', 'activate'):
+            getattr(self, action_name)()
         else:
-            raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action, self))
+            raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action_name, self))
 
     def register_participants(self, users=None, emails=None, institution=None, password=None):
         if self.participant_set.count() > 0:

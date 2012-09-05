@@ -2,7 +2,7 @@
 import logging
 import os
 import sys
-import simplejson 
+import simplejson
 from itertools import chain
 from sockjs.tornado import SockJSRouter, SockJSConnection
 from tornado import web, ioloop

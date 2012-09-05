@@ -139,9 +139,7 @@
     $(function() {
         function update(experimentModel) {
             return function(data) {
-                console.debug("updating experimentModel with incoming data: ");
-                console.debug(data);
-                ko.mapping.fromJS(experimentModel, data);
+                ko.mapping.fromJS(data, experimentModel);
             }
         }
         function initialize(experimentModelJson) {
@@ -160,8 +158,7 @@
             var experimentModel = ko.mapping.fromJS(experimentModelJson, mapping);
             // var experimentModel = new ExperimentModel();
             ko.applyBindings(experimentModel);
-            console.debug("experiment model is: ");
-            console.debug(experimentModel);
+            // establish sockjs websocket connection
             var s = connect("/experimenter");
             s.onmessage = function(evt) {
                 console.log("Received event: " + evt);
