@@ -105,27 +105,28 @@
 </script>
 
 <div class='row-fluid'>
+    <div class='span12' id='experiment.chats'>
+        <h4>Chat messages</h4>
+        <div id='experiment-chat-messages' class='scrollable-messages alert' data-bind='foreach: chatMessages'>
+            <div>
+                <button class='close' data-dismiss='alert'>&times;</button>
+                <span data-bind='text: $data'></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class='row-fluid'>
     <div class='span12' id='experiment-data'>
     <h4>Data</h4>
     {% block data %}
     {% for round_data in experiment.round_data_set.all reversed %}
-    <h3><a href='#' onscript='loadRoundData({{round_data.pk}})'>{{ round_data }}</a></h3>
+    <h3><a href='#' onclick='loadRoundData({{round_data.pk}})'>{{ round_data }}</a></h3>
     <div id='round_data_{{forloop.counter}}'>
-        {% comment %} FIXME: migrate tables to bootstrap tables and add hooks for knockout to auto-update asynchronously instead of loading them all at once {% endcomment %}
-        {% comment %} participant chats {% endcomment %}
-        {% if round_data.round_configuration.is_chat_round %}
-        <h4 class='collapsible'>Chat data</h4>
-        <div id='chat-div-{{round_data.pk}}' class='chat notice ui-corner-all'>
-            {% autoescape on %}
-            {% for chat_message in round_data.chat_messages.all %}
-            <div class='ui-state-highlight' style='line-height: 1.5em;'>
-                <a class='dark-yellow-highlight' name='{{chat_message.pk}}' data-content='{{chat_message.date_created}} {{chat_message.participant}}'>
-                    {{chat_message.date_created|date:"G:i:s"}}</a> | {{chat_message}}
-            </div>
-            {% endfor %}
-            {% endautoescape %}
-        </div>
-        {% endif %}
+        {% comment %}
+        FIXME: migrate to knockout and bootstrap
+        {% endcomment %}
     </div>
     {% empty %}
     <div class='alert alert-info'><i class='icon-info-sign'></i>There is currently no round data to report.</div>

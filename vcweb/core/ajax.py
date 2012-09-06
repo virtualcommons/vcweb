@@ -6,6 +6,7 @@ from django.utils.html import escape
 
 from vcweb.core.decorators import experimenter_required, dajaxice_register
 from vcweb.core.models import Experiment
+from vcweb.core.json import dumps
 
 import logging
 logger = logging.getLogger(__name__)
@@ -91,10 +92,16 @@ def get_experiment_model(request, pk):
 
 @experimenter_required
 @dajaxice_register
-def experiment_controller(request, pk, action=''):
+def experiment_controller(request, pk, action=None):
     experiment = _get_experiment(request, pk)
-    try:
-        experiment.invoke(action)
-    except AttributeError as e:
-        logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
-    return experiment.to_json()
+    if experiment.experimenter == request.user.experimenter:
+        try:
+            experiment.invoke(action)
+            return experiment.to_json()
+        except AttributeError as e:
+            logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
+
+    return dumps({
+        'success': False,
+        'message': 'Invalid experiment action %s' % action
+        })

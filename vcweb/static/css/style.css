@@ -248,6 +248,10 @@ ul.horizontal>li {
     color: #36241B;
     text-decoration: underline;
 }
+.scrollable-messages {
+    overflow: auto;
+    height: 370px;
+}
 #experiment-messages {
     height: 230px;
     overflow: auto;
