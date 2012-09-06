@@ -12,16 +12,17 @@ from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
 from model_utils.managers import PassThroughManager
 from string import Template
-from vcweb.core import signals, simplecache
 from social_auth.backends.facebook import FacebookBackend
 import social_auth.signals
+
+from vcweb.core import signals, simplecache
+from vcweb.core.json import dumps
 
 import base64
 import hashlib
 import logging
 import random
 import re
-import simplejson
 
 logger = logging.getLogger(__name__)
 
@@ -638,7 +639,7 @@ class Experiment(models.Model):
             self.end_round()
 
     def to_json(self, *args, **kwargs):
-        return simplejson.dumps({
+        return dumps({
             'roundStatusLabel': self.get_status_display(),
             'roundSequenceLabel': self.sequence_label,
             'timeRemaining': self.time_remaining,

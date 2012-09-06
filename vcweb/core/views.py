@@ -2,41 +2,26 @@ from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
-from django.db.models import Model
-from django.db.models.query import QuerySet
-from django.core.serializers import serialize
-from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context import RequestContext
 from django.utils.decorators import method_decorator
-from django.utils.functional import curry
-from django.utils.simplejson import loads, dumps
 from django.views.generic import ListView, FormView, TemplateView
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin, DetailView
 from django.views.generic.edit import UpdateView
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
         RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm, LogMessageForm)
+from vcweb.core import unicodecsv
+from vcweb.core.json import dumps
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantGroupRelationship, ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
-from vcweb.core import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
 import logging
 import mimetypes
 logger = logging.getLogger(__name__)
 
-class VcwebJSONEncoder(DjangoJSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, QuerySet):
-            return loads(serialize('json', obj))
-        elif isinstance(obj, Model):
-            return loads(serialize('json', [obj]))[0]
-        else:
-            return DjangoJSONEncoder.default(self, obj)
-
-dumps = curry(dumps, cls=VcwebJSONEncoder)
 
 def json_response(request, content, **http_response_kwargs):
     "Construct an `HttpResponse` object."

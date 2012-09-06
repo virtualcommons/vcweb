@@ -6,7 +6,6 @@ from django.utils.html import escape
 
 from vcweb.core.decorators import experimenter_required, dajaxice_register
 from vcweb.core.models import Experiment
-from vcweb.core.views import dumps
 
 import logging
 logger = logging.getLogger(__name__)
