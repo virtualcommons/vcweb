@@ -74,7 +74,7 @@ class Dashboard(ListView, TemplateResponseMixin):
             experiment_dict = {}
             for experiment in user.participant.experiments.exclude(status__in=(Experiment.INACTIVE, Experiment.PAUSED, Experiment.COMPLETED)):
                 if not experiment.experiment_metadata in experiment_dict:
-                    experiment_dict[experiment.experiment_metadata] = dict([(choice[0], list()) for choice in Experiment.STATUS_CHOICES])
+                    experiment_dict[experiment.experiment_metadata] = dict([(choice[0], list()) for choice in Experiment.STATUS])
                 experiment_dict[experiment.experiment_metadata][experiment.status].append(experiment)
                 logger.info("experiment_dict %s", experiment_dict)
             return experiment_dict
