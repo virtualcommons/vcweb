@@ -7,7 +7,6 @@ from django.template.context import RequestContext
 from django.views.generic import View
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from vcweb.core.decorators import participant_required
-from vcweb.core.forms import QuizForm
 from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.views import ParticipantSingleExperimentMixin
 from vcweb.boundaries.models import get_experiment_metadata
@@ -29,4 +28,5 @@ def participate(request, experiment_id=None):
         'next_round_instructions': experiment.next_round_instructions
         },
         context_instance=RequestContext(request))
+
 

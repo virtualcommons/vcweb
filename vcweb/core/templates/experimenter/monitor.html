@@ -88,7 +88,7 @@
                         <a class='dark-yellow-highlight' data-content='{{participant_data_value.participant}}'>
                             {{ participant_data_value.participant_number }} ({{ participant_data_value.group }})
                         </a>
-                    </td>
+                    sh /td>
                     <td>{{ participant_data_value.parameter.label }}</td>
                     <td id='participant_data_value_{{participant_data_value.pk}}'>{{ participant_data_value.value }}</td>
                     <td>{{ participant_data_value.parameter.type }}</td>
@@ -133,7 +133,7 @@
 {% include "includes/experimenter.events.html" %}
 {% include "includes/sockjs.html" %}
 <script type='text/javascript'>
-    var data = $.parseJSON("{{ experiment.to_json|escapejs }}");
+    var initialData = $.parseJSON("{{ experiment.to_json|escapejs }}");
     $(function() {
         function ExperimentModel (experimentModelJson) {
             var self = this;
@@ -184,9 +184,8 @@
             });
         }
         $('[data-content]').popover();
-        // retrieve the experiment model JSON from the server and initialize ko models
-        initialize(data);
-        // Dajaxice.vcweb.core.get_experiment_model(initialize, { 'pk': {{ experiment.pk}} });
+        // initialize experiment model JSON from experiment model
+        initialize(initialData);
     });
 </script>
 {% endblock %}

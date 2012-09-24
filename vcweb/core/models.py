@@ -304,6 +304,9 @@ class Experiment(models.Model):
         return "%s.%s" % (self.namespace, self.pk)
 
     @property
+    def status_label(self):
+        return u"%s, %s" % (self.get_status_display(), self.current_round.get_round_type_display())
+    @property
     def sequence_label(self):
         return u"Round %s of %s" % (self.current_round_sequence_number, self.experiment_configuration.final_sequence_number)
 
@@ -640,7 +643,7 @@ class Experiment(models.Model):
 
     def to_json(self, *args, **kwargs):
         return dumps({
-            'roundStatusLabel': self.get_status_display(),
+            'roundStatusLabel': self.status_label,
             'roundSequenceLabel': self.sequence_label,
             'timeRemaining': self.time_remaining,
             'currentRoundStartTime': self.current_round_start_time,

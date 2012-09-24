@@ -3,7 +3,7 @@ from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Sum
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.html import escape
 from django.utils.timesince import timesince
@@ -37,6 +37,8 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
         if user.is_authenticated():
             # authenticated request, figure out if this activity is available
             participant_group_id = self.request.GET.get('participant_group_id')
+            if not participant_group_id:
+                raise Http404
             participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
             # XXX: we can only return a context dictionary or raise an exception
             # at this location
