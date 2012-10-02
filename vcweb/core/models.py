@@ -641,6 +641,34 @@ class Experiment(models.Model):
         if self.is_timed_round and self.is_time_expired:
             self.end_round()
 
+    def all_round_data(self):
+        all_round_data = []
+        for round_data in self.round_data_set.reverse():
+            group_data_values = []
+# FIXME: is there a better way to convert these?
+            for gdv in round_data.group_data_value_set.all():
+                group_data_values.append({
+                    'group': unicode(gdv.group),
+                    'parameter': gdv.parameter.label,
+                    'value': gdv.value
+                    })
+            participant_data_values = []
+            for pdv in round_data.participant_data_value_set.all():
+                participant_data_values.append({
+                    'participantLabel': unicode(pdv.participant_group_relationship),
+                    'parameter': pdv.parameter.label,
+                    'value': pdv.value
+                    })
+            all_round_data.append({
+                'roundDataId': "roundData_%s" % round_data.pk,
+                'roundType': round_data.round_configuration.get_round_type_display(),
+                'roundNumber': round_data.round_configuration.round_number,
+                'groupDataValues': group_data_values,
+                'participantDataValues': participant_data_values
+                })
+        logger.debug("all round data: %s", dumps(all_round_data))
+        return all_round_data
+
     def to_json(self, *args, **kwargs):
         return dumps({
             'roundStatusLabel': self.status_label,
@@ -650,8 +678,7 @@ class Experiment(models.Model):
             'participantCount': self.participant_set.count(),
             'isRoundInProgress': self.is_round_in_progress,
             'isActive': self.is_active,
-            # FIXME: round_data needs to be tweaked
-            'roundData': self.round_data_set.all(),
+            'allRoundData': self.all_round_data(),
             'chatMessages': [escape(chat_message) for chat_message in self.all_chat_messages],
             'messages': [escape(log) for log in self.activity_log_set.order_by('-date_created')],
             })
