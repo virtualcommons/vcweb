@@ -9,7 +9,7 @@ from vcweb.core.models import *
 
 models = (
         Parameter, RoundParameterValue, ExperimentConfiguration, RoundConfiguration,
-        Experimenter, Participant, Group, Experiment, Address,
+        Experimenter, Participant, Group, Experiment, ExperimentMetadata, Address,
         ParticipantExperimentRelationship, ParticipantGroupRelationship,
         GroupRoundDataValue, ParticipantRoundDataValue, GroupActivityLog,
         ChatMessage, QuizQuestion, Comment, Like
