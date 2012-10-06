@@ -740,6 +740,7 @@ class RoundConfiguration(models.Model):
     instructions = models.TextField(null=True, blank=True)
     """ debriefing, if any, to display after the round ends """
     debriefing = models.TextField(null=True, blank=True)
+# FIXME: replace with model_utils Choices
     round_type = models.CharField(max_length=32,
                                   choices=ROUND_TYPE_CHOICES,
                                   default=REGULAR)
