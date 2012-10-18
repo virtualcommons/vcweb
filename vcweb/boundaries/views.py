@@ -22,6 +22,8 @@ def participate(request, experiment_id=None):
     if experiment.experiment_metadata != get_experiment_metadata():
         raise Http404
     participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
+# FIXME: this should always render the participate.html template and expose a
+# JSON RoundConfiguration object to the page so the template knows what to render..?
     return render_to_response(experiment.current_round_template, {
         'auth_token': participant.authentication_token,
         'participant_experiment_relationship': participant_experiment_relationship,

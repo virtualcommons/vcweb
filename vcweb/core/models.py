@@ -645,7 +645,7 @@ class Experiment(models.Model):
         all_round_data = []
         for round_data in self.round_data_set.reverse():
             group_data_values = []
-# FIXME: is there a better way to convert these?
+# FIXME: is there a better way to convert these to json?
             for gdv in round_data.group_data_value_set.all():
                 group_data_values.append({
                     'group': unicode(gdv.group),
@@ -829,6 +829,11 @@ class RoundConfiguration(models.Model):
 
     def __unicode__(self):
         return u"%s (%s)" % (self.display_label, self.sequence_label)
+
+    def to_json(self):
+        return dumps({
+
+            })
 
     @property
     def display_label(self):

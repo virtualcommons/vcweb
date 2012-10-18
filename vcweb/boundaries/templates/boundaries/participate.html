@@ -1,55 +1,69 @@
 {% extends "participant/base.html" %}
-{% block title %}{{experiment.status_line}}{% endblock %}
+{% block title %}<span data-bind='text: experimentStatusLabel'></span>{% endblock %}
 
 {% block page %}
-<h3>Round number {{ experiment.current_round.round_number }}</h3>
-{% if max_harvest_decision > 0 %}
+<script type='text/html' id='tutorial-template'>
+<h3>Tutorial</h3>
+<p class='lead'>
+Welcome.  This experiment will begin shortly after everyone has been assigned a station.  Please <b>wait quietly and do
+not close this window, open any other applications, or communicate with any of the other participants</b>.  Thank you
+for your cooperation. Please also make sure to turn off any mobile devices before the experiment begins.
+More instructions to follow here (Need clarification from Tim).
+</p>
+</script>
+<script type='text/html' id='wait-template'>
+</script>
+<script type='text/html' id='play-round-template'>
+<h3 data-bind='text: roundSequenceLabel'></h3>
+<div data-bind="if: maxHarvestDecision > 0">
     <div style="background: url('{{STATIC_URL}}images/forestry/{{tree.name}}.png'); width:{{max_width}}px; height: {{max_height}}px;">
         &nbsp;
     </div>
-    {% if resource_width > 0 %}
-    <div style="background: url('{{STATIC_URL}}images/forestry/pine-tree.png') repeat-x; width:{{resource_width}}px; height: {{tree.height}}px;">
-        &nbsp;
-    </div>
-    {% endif %}
-{% else %}
+</div>
+<div data-bind="ifnot: maxHarvestDecision > 0">
     <div style='padding: 8px; margin: auto; border: solid 1px; background: #E8E8E8 url({{STATIC_URL}}images/forestry/deforestation.jpg) no-repeat center; height: 282px; width:425px;'>
         &nbsp;
     </div>
-{% endif %}
-
+</div>
 <div class='alert alert-message'>
-    You require {{ survival_cost }} to survive and you currently have {{ storage }} resources stored.  
-    There are <b>{{ resource_level.value }}</b> resources left for your entire group.
+    You require <span class='badge badge-important' data-bind='text:survivalCost'></span> to survive and you currently have <span class='badge badge-success' data-bind='text: storedResources'></span> resources stored.  
+    There are <span class='badge badge-warning' data-bind='text: resourceLevel'></span> resources left for your entire group.
 </div>
 
-{% if harvest_decision.submitted %}
-<div class='alert alertIcon ui-corner-all'>
+<div data-bind='if: alreadySubmittedDecision'>
+<div class='alert alert-error'>
     You have already made a decision to harvest <b>{{ harvest_decision.value }}</b> resources.  You may change your
     decision until the experimenter ends the round.
 </div>
-{% endif %}
+</div>
 
-{% if max_harvest_decision > 0 %}
-<form id='vcweb-form' action='' method='post'>
+<div data-bind='if: maxHarvestDecision > 0'>
+<form id='vcweb-form' action='' method='post' class='form-horizontal'>
     {% csrf_token %}
-    <div class='field'>
-        <label for='harvest-decision-id'>How many resources will you harvest this round? <br/>
-            <span>Enter a number between 0 and {{ max_harvest_decision }}</span>:
+    <div class='control-group'>
+        How many resources will you harvest this round? <br/>        
+        <label class='control-label' for='harvestDecision'>
+            Enter a number between 0 and <span class='badge badge-info' data-bind='text:maxHarvestDecision'></span>:
         </label>
-        <input id='harvest-decision-id' style='width: 2em; text-align: right;' type="text" name='harvest_decision' class='required digits' maxlength='1'/>
+        <div class='controls'>
+            <input id='harvestDecision' style='width: 2em; text-align: right;' type="text" name='harvest_decision' class='required digits' maxlength='1' placeholder="Enter a number" />
+        </div>
     </div>
-    <div>
-        <button id='submit-harvest' type='submit'>Harvest</button>
+    <div class='control-group'>
+        <div class='controls'>
+            <button id='submitButton' type='submit' class='btn'>Harvest</button>
+        </div>
     </div>
 </form>
-{% else %}
-<div class='alert ui-corner-all'>
-    <span class='ui-icon ui-icon-alert icon-left'></span>
+</div>
+<div data-bind='if: maxHarvestDecision == 0'>
+<div class='alert alert-error'>
     There are no longer enough trees to harvest. Please wait until the next round begins.
 </div>
-{% endif %}
-{% endblock %}
+</div>
+</script>
+
+{% endblock page %}
 {% block javascript %}
 {{ block.super }}
 <script type="text/javascript">
