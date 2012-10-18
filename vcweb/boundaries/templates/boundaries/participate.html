@@ -2,13 +2,27 @@
 {% block title %}<span data-bind='text: experimentStatusLabel'></span>{% endblock %}
 
 {% block page %}
+<script type='text/html' id='welcome-template'>
+    <p class='lead'>
+    Welcome.  This experiment will begin shortly after everyone has been assigned a station.  Please <b>wait quietly and do
+    not close this window, open any other applications, or communicate with any of the other participants</b>.  Thank you
+    for your cooperation. Please also make sure to turn off any mobile devices before the experiment begins.
+    More instructions to follow here (from Tim).
+    </p>
+</script>
+<script type='text/html' id='chat-template'>
+</script>
 <script type='text/html' id='tutorial-template'>
 <h3>Tutorial</h3>
 <p class='lead'>
-Welcome.  This experiment will begin shortly after everyone has been assigned a station.  Please <b>wait quietly and do
-not close this window, open any other applications, or communicate with any of the other participants</b>.  Thank you
-for your cooperation. Please also make sure to turn off any mobile devices before the experiment begins.
-More instructions to follow here (Need clarification from Tim).
+In this experiment you will be sharing a forest with <span class='badge badge-info' data-bind='text:participantsPerGroup'></span> other participants.  The experiment is divided into
+<span class='badge badge-important' data-bind='text:numberOfRounds'></span>
+rounds.  In each round you will make a decision of how many resources to harvest.  The resources will regenerate at a rate of <span data-bind='text: resourceRegenerationRate'></span> each round.  
+Over the course of the experiment you will accumulate, or store resources.
+Each round you must have <b>at least</b> <span class='badge badge-important' data-bind='text: survivalCost'></span> resources in your storage to survive.
+</p>
+<p>
+To better illustrate, we will first participate in two practice rounds.  These rounds will not contribute to your earnings.
 </p>
 </script>
 <script type='text/html' id='wait-template'>
