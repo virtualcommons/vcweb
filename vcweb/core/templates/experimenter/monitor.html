@@ -116,8 +116,7 @@
 {% include "includes/experimenter.events.html" %}
 {% include "includes/sockjs.html" %}
 <script type='text/javascript'>
-    var initialData = $.parseJSON("{{ experiment.to_json|escapejs }}");
-    console.log("initial data: " + initialData);
+    var experimentModelJson = $.parseJSON("{{ experiment.to_json|escapejs }}");
     $(function() {
         function ExperimentModel (experimentModelJson) {
             var self = this;
@@ -169,7 +168,7 @@
         }
         $('[data-content]').popover();
         // initialize experiment model JSON from experiment model
-        initialize(initialData);
+        initialize(experimentModelJson);
     });
 </script>
 {% endblock %}
