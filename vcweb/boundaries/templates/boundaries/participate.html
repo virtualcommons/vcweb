@@ -61,7 +61,7 @@ To better illustrate, we will first participate in two practice rounds.  These r
 <form id='vcweb-form' action='' method='post' class='form-horizontal'>
     {% csrf_token %}
     <div class='control-group'>
-        How many resources will you harvest this round? <br/>        
+        How many resources will you harvest this round? <br/> 
         <label class='control-label' for='harvestDecision'>
             Enter a number between 0 and <span class='badge badge-info' data-bind='text:maxHarvestDecision'></span>:
         </label>
@@ -83,12 +83,16 @@ To better illustrate, we will first participate in two practice rounds.  These r
 </div>
 </script>
 <script type="text/javascript">
+    var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
     $(function() {
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
             model.roundTypeTemplate = function (data) {
                 console.log(data);
+                switch (data.roundType) {
+
+                }
             };
             return model;
         }
@@ -101,6 +105,7 @@ To better illustrate, we will first participate in two practice rounds.  These r
             var experimentModel = new ExperimentModel(experimentModelJson);
             ko.applyBindings(experimentModel);
             // FIXME: needs to be updated for KO
+            /*
             $("#vcweb-form").validate({
                 rules: {
                     harvest_decision: {
@@ -119,16 +124,14 @@ To better illustrate, we will first participate in two practice rounds.  These r
                 this.select();
             });
             $('#harvest-decision-id').focus();
+            */
             var s = connect();
             s.onmessage = function(json_string) {
                 var json = jQuery.parseJSON(json_string);
-                switch (json.message_type) {
-                    case 'goto':
-                        console.log("going to " + json.url);
-                    window.location.href = json.url;
-                    break;
-                }
+                console.debug(json);
+                update(json);
             };
         }
+        initialize(experimentModelJson);
     };
 {% endblock %}

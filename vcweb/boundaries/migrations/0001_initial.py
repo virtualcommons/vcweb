@@ -29,11 +29,13 @@ class Migration(DataMigration):
                 authentication_code='DEFAULT_BOUNDARIES',
                 experimenter=Experimenter.objects.get(pk=1),
                 is_experimenter_driven=True)
-        # XXX: set up parameters as well in the migration?
+        # XXX: set up parameters and configuration as well in the migration?
+        RoundConfiguration = orm['core.RoundConfiguration']
         rc = RoundConfiguration.objects.create(
                 experiment_configuration=ec,
                 instructions='Welcome to the boundary effects experiment.',
                 round_type=RoundConfiguration.INSTRUCTIONS
+                )
 
     def backwards(self, orm):
         ExperimentMetadata = orm['core.ExperimentMetadata']

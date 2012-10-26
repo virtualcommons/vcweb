@@ -641,11 +641,12 @@ class Experiment(models.Model):
         if self.is_timed_round and self.is_time_expired:
             self.end_round()
 
+# FIXME: figure out a better way to convert these to json that doesn't involve manual remapping of attribute names...
+# or be consistent so that things on the client side are named the same as the server side
     def all_round_data(self):
         all_round_data = []
         for round_data in self.round_data_set.reverse():
             group_data_values = []
-# FIXME: is there a better way to convert these to json?
             for gdv in round_data.group_data_value_set.all():
                 group_data_values.append({
                     'group': unicode(gdv.group),
@@ -669,19 +670,24 @@ class Experiment(models.Model):
         logger.debug("all round data: %s", dumps(all_round_data))
         return all_round_data
 
-    def to_json(self, *args, **kwargs):
-        return dumps({
-            'roundStatusLabel': self.status_label,
-            'roundSequenceLabel': self.sequence_label,
-            'timeRemaining': self.time_remaining,
-            'currentRoundStartTime': self.current_round_start_time,
-            'participantCount': self.participant_set.count(),
-            'isRoundInProgress': self.is_round_in_progress,
-            'isActive': self.is_active,
-            'allRoundData': self.all_round_data(),
-            'chatMessages': [escape(chat_message) for chat_message in self.all_chat_messages],
-            'messages': [escape(log) for log in self.activity_log_set.order_by('-date_created')],
-            })
+    def as_dict(self, include_round_data=True, *args, **kwargs):
+        experiment_dict = {
+                'roundStatusLabel': self.status_label,
+                'roundSequenceLabel': self.sequence_label,
+                'timeRemaining': self.time_remaining,
+                'currentRoundStartTime': self.current_round_start_time,
+                'participantCount': self.participant_set.count(),
+                'isRoundInProgress': self.is_round_in_progress,
+                'isActive': self.is_active,
+                }
+        if include_round_data:
+            experiment_dict['allRoundData'] = self.all_round_data()
+            experiment_dict['chatMessages'] = [escape(chat_message) for chat_message in self.all_chat_messages],
+            experiment_dict['messages'] = [escape(log) for log in self.activity_log_set.order_by('-date_created')]
+        return experiment_dict
+
+    def to_json(self, include_round_data=True, *args, **kwargs):
+        return dumps(self.as_dict(include_round_data, *args, **kwargs))
 
     """ returns a fresh copy of this experiment with configuration / metadata intact """
     def clone(self, experimenter=None):
@@ -829,11 +835,6 @@ class RoundConfiguration(models.Model):
 
     def __unicode__(self):
         return u"%s (%s)" % (self.display_label, self.sequence_label)
-
-    def to_json(self):
-        return dumps({
-
-            })
 
     @property
     def display_label(self):

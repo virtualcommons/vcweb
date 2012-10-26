@@ -7,6 +7,7 @@ from django.template.context import RequestContext
 from django.views.generic import View
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from vcweb.core.decorators import participant_required
+from vcweb.core.json import dumps
 from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.views import ParticipantSingleExperimentMixin
 from vcweb.boundaries.models import get_experiment_metadata
@@ -27,8 +28,16 @@ def participate(request, experiment_id=None):
     return render_to_response(experiment.current_round_template, {
         'auth_token': participant.authentication_token,
         'participant_experiment_relationship': participant_experiment_relationship,
-        'next_round_instructions': experiment.next_round_instructions
+        'experimentModelJson': to_json(experiment),
         },
         context_instance=RequestContext(request))
 
+def to_json(experiment):
+    ec = experiment.experiment_configuration
+    current_round = experiment.current_round
+    experiment_model_dict = experiment.as_dict(include_round_data=False, attrs={})
+    experiment_model_dict['participantsPerGroup'] = ec.max_group_size
+    experiment_model_dict['numberOfRounds'] = ec.final_sequence_number
+    experiment_model_dict['roundType'] = current_round.round_type
+    return dumps(experiment_model_dict)
 
