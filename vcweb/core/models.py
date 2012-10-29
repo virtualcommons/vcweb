@@ -893,6 +893,8 @@ class Parameter(models.Model):
                        ('boolean', (('True', True), ('False', False))),
                        ('enum', 'Enumeration'))
 
+    # FIXME: arcane, see if we can encapsulate this better.  used to provide sane default values for each parameter type
+    # when the parameter is null
     NONE_VALUES_DICT = dict(map(lambda x,y: (x[0], y), PARAMETER_TYPES, [0, '', -1, 0.0, False, None]))
     #dict(zip([parameter_type[0] for parameter_type in PARAMETER_TYPES], [0, '', 0.0, False, None]))
 
