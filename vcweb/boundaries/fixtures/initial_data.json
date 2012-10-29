@@ -1,0 +1,144 @@
+[
+    {
+        "pk": 6,
+        "model": "core.experimentmetadata",
+        "fields": {
+            "description": "The boundary effect experiment manipulates the resource flows and information connections between social groups and ecological resources.",
+            "short_name": null,
+            "title": "Boundary Effects Experiment",
+            "namespace": "bound",
+            "default_configuration": 5,
+            "last_modified": "2012-10-29T16:42:20.880",
+            "date_created": "2012-10-29T16:42:20.874",
+            "logo_url": null,
+            "about_url": "http://commons.asu.edu"
+        }
+    },
+    {
+        "pk": 16,
+        "model": "core.parameter",
+        "fields": {
+            "experiment_metadata": 6,
+            "display_name": "Player status",
+            "name": "player_status",
+            "creator": 1,
+            "class_name": null,
+            "default_value_string": null,
+            "last_modified": "2012-10-29T16:42:20.897",
+            "date_created": "2012-10-29T16:42:20.897",
+            "scope": "participant",
+            "enum_choices": null,
+            "is_required": false,
+            "type": "boolean",
+            "description": "Player status (true = alive, false = dead)"
+        }
+    },
+    {
+        "pk": 18,
+        "model": "core.parameter",
+        "fields": {
+            "experiment_metadata": 6,
+            "display_name": "Storage",
+            "name": "storage",
+            "creator": 1,
+            "class_name": null,
+            "default_value_string": null,
+            "last_modified": "2012-10-29T16:42:20.942",
+            "date_created": "2012-10-29T16:42:20.942",
+            "scope": "participant",
+            "enum_choices": null,
+            "is_required": false,
+            "type": "int",
+            "description": "The number of resources this player has accumulated."
+        }
+    },
+    {
+        "pk": 17,
+        "model": "core.parameter",
+        "fields": {
+            "experiment_metadata": 6,
+            "display_name": "Survival cost",
+            "name": "survival_cost",
+            "creator": 1,
+            "class_name": null,
+            "default_value_string": null,
+            "last_modified": "2012-10-29T16:42:20.941",
+            "date_created": "2012-10-29T16:42:20.941",
+            "scope": "round",
+            "enum_choices": null,
+            "is_required": false,
+            "type": "int",
+            "description": "The minimum number of resources each player needs to have in storage each round to survive"
+        }
+    },
+    {
+        "pk": 8,
+        "model": "core.experiment",
+        "fields": {
+            "experiment_metadata": 6,
+            "status": "INACTIVE",
+            "start_date_time": null,
+            "current_round_elapsed_time": 0,
+            "tick_duration": null,
+            "slug": null,
+            "authentication_code": "DEFAULT_BOUNDARIES",
+            "total_elapsed_time": 0,
+            "current_round_start_time": null,
+            "last_modified": "2012-10-29T16:42:20.881",
+            "experimenter": 1,
+            "current_round_sequence_number": 1,
+            "duration": null,
+            "date_created": "2012-10-29T16:42:20.881",
+            "experiment_configuration": 5,
+            "is_experimenter_driven": true,
+            "amqp_exchange_name": "vcweb.default.exchange"
+        }
+    },
+    {
+        "pk": 43,
+        "model": "core.roundconfiguration",
+        "fields": {
+            "round_type": "INSTRUCTIONS",
+            "template_name": null,
+            "debriefing": null,
+            "duration": 0,
+            "last_modified": "2012-10-29T16:42:20.943",
+            "display_number": 0,
+            "date_created": "2012-10-29T16:42:20.942",
+            "experiment_configuration": 5,
+            "sequence_number": 1,
+            "instructions": "Welcome to the boundary effects experiment."
+        }
+    },
+    {
+        "pk": 44,
+        "model": "core.roundconfiguration",
+        "fields": {
+            "round_type": "PRACTICE",
+            "template_name": null,
+            "debriefing": null,
+            "duration": 0,
+            "last_modified": "2012-10-29T16:42:20.969",
+            "display_number": 1,
+            "date_created": "2012-10-29T16:42:20.969",
+            "experiment_configuration": 5,
+            "sequence_number": 2,
+            "instructions": "This is the first practice round."
+        }
+    },
+    {
+        "pk": 5,
+        "model": "core.experimentconfiguration",
+        "fields": {
+            "experiment_metadata": 6,
+            "name": "Boundary Effects Default Configuration",
+            "creator": 1,
+            "max_number_of_participants": 0,
+            "invitation_text": null,
+            "last_modified": "2012-10-29T16:42:20.878",
+            "is_public": true,
+            "date_created": "2012-10-29T16:42:20.878",
+            "max_group_size": 10
+        }
+    }
+]

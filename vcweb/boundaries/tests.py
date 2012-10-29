@@ -1,16 +1,19 @@
 """
-This file demonstrates writing tests using the unittest module. These will pass
-when you run "manage.py test".
-
-Replace this with more appropriate tests for your application.
+Tests for boundaries experiment
 """
 
 from django.test import TestCase
 
+from vcweb.boundaries.models import *
 
-class SimpleTest(TestCase):
-    def test_basic_addition(self):
-        """
-        Tests that 1 + 1 always equals 2.
-        """
-        self.assertEqual(1 + 1, 2)
+class InitialDataTest(TestCase):
+    def test_experiment_metadata(self):
+        self.assertIsNotNone(get_experiment_metadata())
+
+    def test_parameters(self):
+        ps = Parameter.objects.filter(experiment_metadata=get_experiment_metadata())
+        expected_parameter_names = ('survival_cost', 'storage', 'player_status')
+        for p in ps:
+            self.assertTrue(p.name in expected_parameter_names)
+            
+
