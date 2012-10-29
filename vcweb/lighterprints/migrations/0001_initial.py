@@ -36,13 +36,6 @@ class Migration(SchemaMigration):
             ('end_time', self.gf('django.db.models.fields.TimeField')(null=True, blank=True)),
         ))
         db.send_create_signal('lighterprints', ['ActivityAvailability'])
-        ExperimentMetadata.objects.create(namespace='lighterprints',
-                description="A mobile-ready HTML5 experiment / game that educates and examines how groups of people coordinate to reach carbon emission targets.",
-                title="Lighter Footprints",
-                last_modified="2012-04-02T00:21:45.161",
-                date_created="2012-04-02",
-                about_url="http://commons.asu.edu",
-                )
 
 
     def backwards(self, orm):
