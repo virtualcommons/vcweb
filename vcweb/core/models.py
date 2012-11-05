@@ -206,6 +206,7 @@ class ExperimentQuerySet(models.query.QuerySet):
     def active(self):
         return self.filter(status='ACTIVE')
     def increment_elapsed_time(self, status='ROUND_IN_PROGRESS', amount=60):
+        logger.debug("filtering on status %s", status)
         if status is not None:
             es = self.filter(status=status)
             es.update(current_round_elapsed_time=models.F('current_round_elapsed_time') + amount,

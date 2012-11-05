@@ -188,6 +188,7 @@ class ExperimentTest(BaseVcwebTest):
 
     def test_increment_elapsed_time(self):
         experiment = self.experiment
+        experiment.activate()
         current_round_elapsed_time = experiment.current_round_elapsed_time
         self.assertTrue(current_round_elapsed_time == 0)
         total_elapsed_time = experiment.total_elapsed_time
