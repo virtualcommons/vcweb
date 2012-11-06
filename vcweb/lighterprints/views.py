@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
-from minidetector import detect_mobile
+from vcweb.core.middleware import detect_mobile
 
 from vcweb.core import unicodecsv
 from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
@@ -412,9 +412,9 @@ class CsvExportView(DataExportMixin, BaseDetailView):
             writer.writerow([participant_group_relationship, total_points])
 
 
-@detect_mobile
 @login_required
 def participate(request, experiment_id=None):
+    detect_mobile(request)
     participant = request.user.participant
     if experiment_id is None:
         experiment = get_lighterprints_public_experiment()

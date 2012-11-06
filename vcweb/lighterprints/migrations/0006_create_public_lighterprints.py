@@ -36,7 +36,7 @@ class Migration(DataMigration):
         rc = RoundConfiguration.objects.create(experiment_configuration=ec, sequence_number=1, display_number=1)
 # create experiment instance
         e = Experiment.objects.create(experiment_configuration=ec, experiment_metadata=lem, experimenter=experimenter,
-                is_experimenter_driven=False, status='ROUND_IN_PROGRESS', start_date_time=datetime.datetime.now(),
+                is_experimenter_driven=False, start_date_time=datetime.datetime.now(),
                 current_round_start_time=datetime.datetime.now())
 # create participant level parameter
         participant_level_param = Parameter.objects.get(name="participant_level")

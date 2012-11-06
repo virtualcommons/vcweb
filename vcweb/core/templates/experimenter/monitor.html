@@ -19,13 +19,13 @@
             <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' style='margin: 5px 0 0 0;' alt=''/>xls</a><li>
         </ul>
         <div data-bind="ifnot: isActive">
-            <div data-bind="if: participantCount == 0">
+            <div data-bind="ifnot: hasParticipants()">
                 <div class='alert alert-error alert-block'>
-                    <i class='icon-warning-sign'></i>There are no registered participants. You can <a href='{{experiment.controller_url}}/register-email-list'>register participants by email</a> or 
-                    <a href='{{experiment.controller_url}}/register-simple'>test participants</a>
+                    <i class='icon-warning-sign'></i>There are no registered participants. You can <a href='{{experiment.controller_url}}/register-email-list'>register email addresses for participants</a> or 
+                    <a href='{{experiment.controller_url}}/register-simple'>add test participants</a>
                 </div>
             </div>
-            <div data-bind="ifnot: participantCount == 0">
+            <div data-bind="if: hasParticipants()">
                 <div class='alert alert-info alert-block'>
                     This experiment is currently inactive.  Please activate the experiment
                     after you have registered all participants and are ready to start the experiment run. You have registered <span data-bind='text:participantCount'
@@ -123,6 +123,10 @@
             var model = ko.mapping.fromJS(experimentModelJson);
             model.addMessage = function (evt) {
                 model.messages.unshift(evt.message);
+            }
+            model.hasParticipants = function() {
+                console.log("participant count: " + model.participantCount);
+                return model.participantCount > 0;
             }
             return model;
         }

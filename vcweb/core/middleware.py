@@ -3,10 +3,15 @@ from django.contrib import messages
 from django.shortcuts import redirect
 import traceback
 import sys
+from minidetector import Middleware as minidetector_middleware
 
 import logging
 
 logger = logging.getLogger(__name__)
+
+def detect_mobile(request):
+    minidetector_middleware.process_request(request)
+    return request
 
 class ExceptionHandlingMiddleware(object):
     def process_exception(self, request, exception):
