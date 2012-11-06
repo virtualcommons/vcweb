@@ -83,6 +83,8 @@ MIDDLEWARE_CLASSES = (
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'vcweb.core.middleware.ExceptionHandlingMiddleware',
+        # FIXME: add to middleware if we want to add mobile detection to every view
+        #        'minidetector.Middleware',
         )
 
 ROOT_URLCONF = 'vcweb.urls'

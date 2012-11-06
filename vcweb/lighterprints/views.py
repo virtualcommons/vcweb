@@ -11,6 +11,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
+from minidetector import detect_mobile
+
 from vcweb.core import unicodecsv
 from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
@@ -410,6 +412,7 @@ class CsvExportView(DataExportMixin, BaseDetailView):
             writer.writerow([participant_group_relationship, total_points])
 
 
+@detect_mobile
 @login_required
 def participate(request, experiment_id=None):
     participant = request.user.participant
@@ -425,8 +428,9 @@ def participate(request, experiment_id=None):
     else:
         all_activities = Activity.objects.all()
     activities = available_activities(pgr)
-    return render(request, 'lighterprints/participate.html', {'experiment': experiment, 'activities': activities,
-        'all_activities':all_activities })
+    if request.mobile:
+        return redirect('https://vcweb.asu.edu/dev')
+    return render(request, 'lighterprints/participate.html', {'experiment': experiment, 'activities': activities, 'all_activities':all_activities })
 
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)

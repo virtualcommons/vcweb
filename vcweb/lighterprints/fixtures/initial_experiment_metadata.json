@@ -122,6 +122,8 @@
                "type": "int",
                "date_created": "2011-01-01 15:13:03",
                "last_modified": "2011-07-07 15:13:03",
+               "description": "This participant's current level, updated nightly",
+               "display_name": "Level",
                "scope": "participant"
         },
         "model": "core.parameter",
@@ -134,6 +136,7 @@
                "creator": 1,
                "class_name": "lighterprints.Activity",
                "type": "foreignkey",
+               "description": "Signifies that the Activity referenced by this parameter has been performed by this participant",
                "date_created": "2011-01-01 15:13:03",
                "last_modified": "2011-07-07 15:13:03",
                "scope": "participant"

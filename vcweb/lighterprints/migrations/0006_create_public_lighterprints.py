@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 class Migration(DataMigration):
     def forwards(self, orm):
+        from django.core.management import call_command
+        call_command("loaddata", "initial_experiment_metadata.json")
         "Write your forwards methods here."
         # Note: Remember to use orm['appname.ModelName'] rather than "from appname.models..."
         # should probably create a separate data migration for this but I'm lazy
@@ -37,24 +39,9 @@ class Migration(DataMigration):
                 is_experimenter_driven=False, status='ROUND_IN_PROGRESS', start_date_time=datetime.datetime.now(),
                 current_round_start_time=datetime.datetime.now())
 # create participant level parameter
-        participant_level_param = Parameter.objects.create(name="participant_level",
-                display_name="Level",
-                experiment_metadata=lem,
-                creator=experimenter,
-                scope="participant",
-                type="int",
-                description="The participant's current level, updated nightly",
-                )
+        participant_level_param = Parameter.objects.get(name="participant_level")
 # create activity unlocked parameter
-        activity_unlocked_param = Parameter.objects.create(name="activity_unlocked",
-                display_name="Unlocked Activity",
-                experiment_metadata=lem,
-                creator=experimenter,
-                scope="participant",
-                type="foreignkey",
-                description="Signifies that the Activity referenced by this parameter has been unlocked for this participant",
-                class_name='lighterprints.Activity',
-                )
+        activity_unlocked_param = Parameter.objects.get(name="activity_unlocked")
 # create round data
         round_data = e.round_data_set.create(round_configuration=rc)
         group = e.group_set.create(number=1, max_size=e.experiment_configuration.max_group_size)
