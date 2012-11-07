@@ -5,7 +5,7 @@ from django.views.generic.base import TemplateView
 from vcweb.lighterprints.views import (ActivityDetailView, ActivityListView, post_chat_message,
         post_comment, perform_activity, DiscussionBoardView, login, participate, group_activity, like,
         get_notifications, update_notifications_since, group_score, CsvExportView, checkin,
-        activity_performed_counts, upload_greenbutton_data, upload_greenbutton_success, greenbutton_summary)
+        activity_performed_counts, upload_greenbutton_data, group_view, upload_greenbutton_success, greenbutton_summary)
 
 # handles all /lighterprints/* URL requests
 urlpatterns = patterns('vcweb.lighterprints.views',
@@ -13,6 +13,7 @@ urlpatterns = patterns('vcweb.lighterprints.views',
     url(r'^about$', TemplateView.as_view(template_name='lighterprints/about.html'), name='about'),
     url(r'^(?P<pk>\d+)/data$', CsvExportView.as_view(), name='export-data'),
     url(r'^((?P<experiment_id>\d+)/)?participate/?$', participate, name='participate'),
+    url(r'^(?P<experiment_id>\d+)/group/?$', group_view, name='group'),
     url(r'^activity/list(?P<format>.html|.json)?/?$', ActivityListView.as_view()),
     url(r'^activity/(?P<activity_id>\d+)$', cache_page(60*15)(ActivityDetailView.as_view())),
     url(r'^discussion/(?P<experiment_id>\d+)/(?P<participant_id>\d+)', DiscussionBoardView.as_view()),

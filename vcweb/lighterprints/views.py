@@ -14,6 +14,7 @@ from django.views.generic.list import BaseListView, MultipleObjectTemplateRespon
 from vcweb.core.middleware import detect_mobile
 
 from vcweb.core import unicodecsv
+from vcweb.core.decorators import participant_required
 from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.services import foursquare_venue_search
@@ -49,9 +50,7 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
                 context['success'] = False
                 context['flattened_activities'] = []
                 return context
-            experiment = participant_group_relationship.experiment
-            all_activities = Activity.objects.for_participant(participant_group_relationship) if experiment.is_public else context['activity_list']
-            logger.debug("all activities: %s", all_activities)
+            all_activities = context['activity_list']
             (flattened_activities, activity_by_level) = get_all_activities_tuple(participant_group_relationship, all_activities)
             context['activity_by_level'] = dict(activity_by_level)
             context['flattened_activities'] = flattened_activities
@@ -415,7 +414,7 @@ class CsvExportView(DataExportMixin, BaseDetailView):
             writer.writerow([participant_group_relationship, total_points])
 
 
-@login_required
+@participant_required
 def participate(request, experiment_id=None):
     detect_mobile(request)
     participant = request.user.participant
@@ -425,15 +424,40 @@ def participate(request, experiment_id=None):
     else:
         experiment = get_object_or_404(Experiment, pk=experiment_id)
         pgr = participant.get_participant_group_relationship(experiment)
-    # need to explicitly unlock activities for this participant
+    # need to explicitly unlock activities for the public experiments if they are a newly added participant
     if experiment.is_public:
         all_activities = [unlocked_activity_dv.value for unlocked_activity_dv in get_unlocked_activities(pgr)]
     else:
         all_activities = Activity.objects.all()
     activities = available_activities(pgr)
+    group_level = get_footprint_level(pgr.group).value
+    (average_points, total_points) = get_group_score(pgr.group)
+    points_needed = points_to_next_level(group_level)
     if request.mobile:
+        # FIXME: change this to look up templates in a mobile templates directory?
         return redirect('https://vcweb.asu.edu/dev')
-    return render(request, 'lighterprints/participate.html', {'experiment': experiment, 'activities': activities, 'all_activities':all_activities })
+    return render(request, 'lighterprints/participate.html', {
+        'experiment': experiment, 'activities': activities, 'all_activities':all_activities, 'participant_group_relationship': pgr,
+        'group_level': group_level,
+        'total_points': total_points,
+        'average_points': average_points,
+        'points_to_next_level': points_needed,
+        })
+
+@participant_required
+def group_view(request, experiment_id=None):
+    detect_mobile(request)
+    participant = request.user.participant
+    if experiment_id is None:
+        experiment = get_lighterprints_public_experiment()
+        pgr = experiment.add_participant(participant)
+    else:
+        experiment = get_object_or_404(Experiment, pk=experiment_id)
+        pgr = participant.get_participant_group_relationship(experiment)
+
+    return render(request, 'lighterprints/group.html', {'experiment': experiment})
+
+
 
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)

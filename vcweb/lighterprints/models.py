@@ -183,13 +183,22 @@ class ActivityQuerySet(models.query.QuerySet):
     groups advance in level and each level comprises a set of activities.  Tiered activities are used in the open
     lighterprints experiment, where mastering one activity can lead to another set of activities
     """
-    def for_participant(self, participant_group_relationship=None, is_public=False, **kwargs):
-        if participant_group_relationship is not None:
-            is_public = participant_group_relationship.experiment.is_public
-        return self.filter(is_public=is_public)
+    def at_level(self, level=1, **kwargs):
+        return self.filter(level=level)
+
 
 
 class ActivityManager(TreeManager, PassThroughManager):
+    def currently_available(self, level=1, **kwargs):
+        current_time = datetime.now().time()
+        available_time_slot = dict(start_time__lte=current_time, end_time__gte=current_time)
+# find all activities with time slots that fall within current time
+        activities = [activity_availability.activity for activity_availability in ActivityAvailability.objects.select_related(depth=1).filter(models.Q(**available_time_slot))]
+# add activities that are available all day
+        activities.extend(Activity.objects.filter(available_all_day=True))
+# only include activities that are at this level
+        return filter(lambda a: a.level == level, activities)
+
     def get_by_natural_key(self, name):
         return self.get(name=name)
 
@@ -230,6 +239,10 @@ class Activity(MPTTModel):
     @property
     def icon_url(self):
         return self.icon.url if self.icon else ""
+
+    @property
+    def time_slots(self):
+        return ','.join([availability.time_slot for availability in self.availability_set.all()])
 
     def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'icon_url', 'personal_benefits', 'points')):
         activity_as_dict = {}
@@ -360,7 +373,7 @@ def get_unlocked_activities(participant_group_relationship):
         initial_unlocked_activity_ids = initial_unlocked_activities().values_list('id', flat=True)
         # unlock the base set of activities for them
         unlocked_activities = create_activity_unlocked_data_values(participant_group_relationship, initial_unlocked_activity_ids)
-    logger.debug("participant %s performed activities %s\nunlocked: %s", participant_group_relationship, performed_activities, unlocked_activities)
+    #logger.debug("participant %s performed activities %s\nunlocked: %s", participant_group_relationship, performed_activities, unlocked_activities)
     return unlocked_activities
 
 # returns a tuple of flattened_activities list, activity_by_level dict
@@ -382,17 +395,22 @@ def get_all_activities_tuple(participant_group_relationship, all_activities=None
         flattened_activities.append(activity_as_dict)
     return (flattened_activities, activity_by_level)
 
-def available_activities(participant_group_relationship=None, activity=None):
-    if participant_group_relationship is not None:
-        return [activity for activity in Activity.objects.for_participant(participant_group_relationship) if is_activity_available(activity, participant_group_relationship)]
-    current_time = datetime.now().time()
-    available_time_slot = dict(start_time__lte=current_time, end_time__gte=current_time)
-    if activity is not None:
-        available_time_slot['activity'] = activity
-    activities = [activity_availability.activity for activity_availability in ActivityAvailability.objects.select_related(depth=1).filter(models.Q(**available_time_slot))]
-    logger.debug("activities: %s", activities)
-    activities.extend(Activity.objects.filter(available_all_day=True))
-    return activities
+def available_activities(participant_group_relationship=None):
+    logger.debug("requesting available activities for pgr %s (%d)", participant_group_relationship, participant_group_relationship.id)
+    if participant_group_relationship is None:
+        logger.warn("asking for available activities with no participant, returning all activities")
+        return Activity.objects.all()
+    else:
+        # FIXME: push this logic into the manager / queryset?
+        group_level = get_footprint_level(participant_group_relationship.group).value
+        today = datetime.combine(date.today(), time())
+        available_activities = Activity.objects.currently_available(participant_group_relationship=participant_group_relationship, level=group_level)
+# filter out all activities that have already been performed today (activities may only be performed once a day)
+        performed_activity_data_values = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter(),
+                int_value__in=[activity.id for activity in available_activities],
+                date_created__gt=today)
+        performed_activity_ids = [padv.value for padv in performed_activity_data_values]
+        return [activity for activity in available_activities if activity.id not in performed_activity_ids]
 
 def check_public_activity_availability(activity, participant_group_relationship):
     '''
@@ -413,9 +431,6 @@ def check_already_performed_today(activity, participant_group_relationship):
 
 
 def check_activity_availability(activity, participant_group_relationship, **kwargs):
-    if participant_group_relationship.experiment.is_public:
-        return check_public_activity_availability(activity, participant_group_relationship)
-
     '''
     FIXME: see if we can simplify or split up
     how often can a participant participate in an activity? whenever it falls within the ActivityAvailability schedule

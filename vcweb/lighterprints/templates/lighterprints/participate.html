@@ -1,11 +1,35 @@
 {% extends "lighterprints/base.html" %}
 {% block page %}
-<div class='alert-info alert'>
-    Available activities for <b>{{ request.user.participant }}</b>:
-</div>
+<hr>
+<p class='lead'>
+Welcome to the {{ experiment.display_name }} experiment.
+</p>
+<hr>
+<p>
+You have been randomly placed in a group of <span class='badge badge-info'>{{ participant_group_relationship.group.size }}</span> participants.
+In this experiment you can perform virtual actions that represent <span class='text-success'>green alternatives</span>
+to some common daily activities.  Some of these activities are available all day, and others are only available at
+specific times.  You can learn more about them by clicking on the "All Activities" tab and selecting an activity.
+</p>
+<h3>Activities, Green Points, and Levels</h3>
+<p>
+Each activity has a number of green points associated with it.  For example, 
+<span class='text-success'>eating locally grown food for lunch</span> (which is only available from 12 PM to 2 PM) is worth <span class='badge badge-success'>15</span> green points.
+In order to perform this activity you must login to the application between 12 PM and 2 PM, select the activity from the
+list below, and click the "Perform this activity" button.
+</p>
+<p>
+Your group is currently <span class='badge badge-important'>level {{ group_level }}</span> and has accumulated <span
+    class='badge badge-important'>{{average_points}} average points</span>.  In order to
+advance in level and unlock more activities the <strong>average number of points contributed by each member of your
+group</strong> must be equal to or greater than <span class='badge badge-info'>{{points_to_next_level}}</span>.  In order to
+reach this target <span class='text-warning'>you and a majority of the members of your group</span> must perform
+high point activities when they are available.
+</p>
+<h3>Available activities for {{request.user.participant}}</h3>
 <ul>
     {% for activity in activities %}
-    <li>{{ activity }}</li>
+    <li>{{ activity }}, {{ activity.time_slots }}</li>
     {% empty %}
     <li>No more available activities, please check back again tomorrow.</li>
     {% endfor %}
