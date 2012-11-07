@@ -8,7 +8,7 @@ class Migration(DataMigration):
 
     def forwards(self, orm):
         from django.core.management import call_command
-        call_command("loaddata", "initial_experiment_metadata.json")
+        call_command("loaddata", "boundaries_experiment_metadata.json")
 
     def backwards(self, orm):
         pass

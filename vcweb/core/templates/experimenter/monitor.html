@@ -125,8 +125,8 @@
                 model.messages.unshift(evt.message);
             }
             model.hasParticipants = function() {
-                console.log("participant count: " + model.participantCount);
-                return model.participantCount > 0;
+                console.log("participant count: " + model.participantCount());
+                return model.participantCount() > 0;
             }
             return model;
         }

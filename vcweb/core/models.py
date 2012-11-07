@@ -720,7 +720,7 @@ class Experiment(models.Model):
 
 class RoundConfiguration(models.Model):
 # maps round type name to (description, default_template_name)
-    ROUND_TYPES_DICT = dict(REGULAR=('Regular interactive experiment round', 'participate.html'),
+    ROUND_TYPES_DICT = dict(REGULAR=('Regular experiment round', 'participate.html'),
             CHAT=('Chat round', 'chat.html'),
             DEBRIEFING=('Debriefing round', 'debriefing.html'),
             INSTRUCTIONS=('Instructions round', 'instructions.html'),

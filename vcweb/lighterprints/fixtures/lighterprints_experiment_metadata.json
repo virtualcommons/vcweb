@@ -112,7 +112,7 @@
             "sequence_number": 1
         },
         "model": "core.roundconfiguration",
-        "pk": 44
+        "pk": 88
     },
     {
         "fields": {

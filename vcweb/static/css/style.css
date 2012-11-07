@@ -22,7 +22,7 @@ a.external {
     background: url(../images/external.png) center right no-repeat;
     padding-right: 13px;
 }
-h1, h2, h3, h4, h5 {
+h1, h2, h3 {
     color: #549900;
 }
 h2, h3, h4, h5 {

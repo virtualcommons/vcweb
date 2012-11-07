@@ -10,8 +10,7 @@ logger = logging.getLogger(__name__)
 class Migration(DataMigration):
     def forwards(self, orm):
         from django.core.management import call_command
-        call_command("loaddata", "initial_experiment_metadata.json")
-        "Write your forwards methods here."
+        call_command("loaddata", "lighterprints_experiment_metadata.json")
         # Note: Remember to use orm['appname.ModelName'] rather than "from appname.models..."
         # should probably create a separate data migration for this but I'm lazy
         # create lighter footprints public experiment configuration and experiment
