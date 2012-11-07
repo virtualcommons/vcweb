@@ -365,11 +365,14 @@ def login(request):
             set_authentication_token(user, request.session.session_key)
             participant = user.participant
             active_experiments = participant.experiments.filter(status__in=('ACTIVE', 'ROUND_IN_PROGRESS'), experiment_metadata=get_lighterprints_experiment_metadata())
+            if not active_experiments:
+                logger.debug("No experiments available for user: %s", user)
+                return HttpResponse(dumps({ 'success': False, 'message': 'No experiments available' }), content_type='application/json')
+# FIXME: defaulting to first active experiment... need to revisit this.
+            active_experiment = active_experiments[-1]
             for e in active_experiments:
                 if e.is_public:
                     active_experiment = e
-            if active_experiment is None:
-                active_experiment = active_experiments[-1]
             participant_group_relationship = participant.get_participant_group_relationship(active_experiment)
             return HttpResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.id}), content_type='application/json')
         else:

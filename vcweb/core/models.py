@@ -668,7 +668,6 @@ class Experiment(models.Model):
                 'groupDataValues': group_data_values,
                 'participantDataValues': participant_data_values
                 })
-        logger.debug("all round data: %s", dumps(all_round_data))
         return all_round_data
 
     def as_dict(self, include_round_data=True, *args, **kwargs):
