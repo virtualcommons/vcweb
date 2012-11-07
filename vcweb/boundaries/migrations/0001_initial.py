@@ -9,6 +9,71 @@ class Migration(DataMigration):
     def forwards(self, orm):
         from django.core.management import call_command
         call_command("loaddata", "boundaries_experiment_metadata.json")
+        ExperimentMetadata = orm['core.ExperimentMetadata']
+        em = ExperimentMetadata.objects.get(namespace='bound')
+        ExperimentConfiguration = orm['core.ExperimentConfiguration']
+        Experimenter = orm['core.Experimenter']
+        experimenter = Experimenter.objects.get(pk=1)
+        ec = ExperimentConfiguration.objects.create(
+                experiment_metadata=em,
+                is_public=True,
+                max_group_size=10,
+                name='Boundary Effects Default Configuration',
+                creator=experimenter,
+                )
+        em.default_configuration = ec
+        em.save()
+        Experiment = orm['core.Experiment']
+        e = Experiment.objects.create(
+                experiment_metadata=em,
+                authentication_code='DEFAULT_BOUNDARIES',
+                experimenter=experimenter,
+                experiment_configuration=ec,
+                is_experimenter_driven=True)
+        # XXX: set up parameters and configuration as well in this migration
+        Parameter = orm['core.Parameter']
+        Parameter.objects.create(
+                name='player_status',
+                type='boolean',
+                experiment_metadata=em,
+                scope='participant',
+                display_name='Player status',
+                description='Player status (true = alive, false = dead)',
+                creator=experimenter,
+                )
+        Parameter.objects.create(
+                name='survival_cost',
+                type='int',
+                experiment_metadata=em,
+                scope='round',
+                display_name='Survival cost',
+                description='The minimum number of resources each player needs to have in storage each round to survive',
+                creator=experimenter,
+                )
+        Parameter.objects.create(
+                name='storage',
+                type='int',
+                experiment_metadata=em,
+                scope='participant',
+                display_name='Storage',
+                description='The number of resources this player has accumulated.',
+                creator=experimenter,
+                )
+# create round configurations
+        RoundConfiguration = orm['core.RoundConfiguration']
+        RoundConfiguration.objects.create(
+                experiment_configuration=ec,
+                instructions='Welcome to the boundary effects experiment.',
+                round_type='INSTRUCTIONS',
+                sequence_number=1,
+                )
+        RoundConfiguration.objects.create(
+                experiment_configuration=ec,
+                instructions='This is the first practice round.',
+                round_type='PRACTICE',
+                sequence_number=2,
+                display_number=1,
+                )
 
     def backwards(self, orm):
         pass
