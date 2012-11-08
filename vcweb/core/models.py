@@ -719,13 +719,15 @@ class Experiment(models.Model):
 
 class RoundConfiguration(models.Model):
 # maps round type name to (description, default_template_name)
-    ROUND_TYPES_DICT = dict(REGULAR=('Regular experiment round', 'participate.html'),
+    ROUND_TYPES_DICT = dict(
+            WELCOME=('Initial welcome round', 'welcome.html'),
+            REGULAR=('Regular experiment round', 'participate.html'),
             CHAT=('Chat round', 'chat.html'),
             DEBRIEFING=('Debriefing round', 'debriefing.html'),
             INSTRUCTIONS=('Instructions round', 'instructions.html'),
             PRACTICE=('Practice round', 'practice.html'),
             QUIZ=('Quiz round', 'quiz.html'))
-    ROUND_TYPES = (CHAT, DEBRIEFING, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR) = sorted(ROUND_TYPES_DICT.keys())
+    ROUND_TYPES = (CHAT, DEBRIEFING, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR, WELCOME) = sorted(ROUND_TYPES_DICT.keys())
 
     ROUND_TYPE_CHOICES = [(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES]
     PLAYABLE_ROUND_CONFIGURATIONS = (PRACTICE, REGULAR)
@@ -873,13 +875,16 @@ def _fk_converter(fk_cls):
 
 class ParameterQuerySet(models.query.QuerySet):
     def for_participant(self, **kwargs):
-        return self.filter(scope=Parameter.PARTICIPANT_SCOPE, **kwargs)
+        return self.get(scope=Parameter.PARTICIPANT_SCOPE, **kwargs)
 
     def for_group(self, **kwargs):
-        return self.filter(scope=Parameter.GROUP_SCOPE, **kwargs)
+        return self.get(scope=Parameter.GROUP_SCOPE, **kwargs)
 
     def for_group_round(self, **kwargs):
-        return self.filter(scope=Parameter.GROUP_ROUND_SCOPE, **kwargs)
+        return self.get(scope=Parameter.GROUP_ROUND_SCOPE, **kwargs)
+
+    def for_round(self, **kwargs):
+        return self.get(scope=Parameter.ROUND_SCOPE, **kwargs)
 
 class ParameterPassThroughManager(PassThroughManager):
     def get_by_natural_key(self, name):

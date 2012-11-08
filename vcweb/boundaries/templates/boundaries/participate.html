@@ -2,38 +2,42 @@
 {% block title %}<span data-bind='text: experimentStatusLabel'></span>{% endblock %}
 
 {% block page %}
-<div data-bind='template: { name: roundTypeTemplate }'>
+<div data-bind='template: { name: roundType() }'>
 </div>
 {% endblock page %}
 {% block javascript %}
 {{ block.super }}
 <!-- ko templates -->
-<script type='text/html' id='welcome-template'>
-    <p class='lead'>
-    Welcome.  This experiment will begin shortly after everyone has been assigned a station.  Please <b>wait quietly and do
-    not close this window, open any other applications, or communicate with any of the other participants</b>.  Thank you
-    for your cooperation. Please also make sure to turn off any mobile devices before the experiment begins.
-    More instructions to follow here (from Tim).
-    </p>
+<script type='text/html' id='CHAT'>
 </script>
-<script type='text/html' id='chat-template'>
-</script>
-<script type='text/html' id='tutorial-template'>
-<h3>Tutorial</h3>
+<script type='text/html' id='WELCOME'>
+<h3>Welcome</h3>
 <p class='lead'>
-In this experiment you will be sharing a forest with <span class='badge badge-info' data-bind='text:participantsPerGroup'></span> other participants.  The experiment is divided into
-<span class='badge badge-important' data-bind='text:numberOfRounds'></span>
-rounds.  In each round you will make a decision of how many resources to harvest.  The resources will regenerate at a rate of <span data-bind='text: resourceRegenerationRate'></span> each round.  
-Over the course of the experiment you will accumulate, or store resources.
+    Welcome.  This experiment will begin shortly after everyone has been assigned a station.  Please <strong>wait quietly and do
+    not close this window, open any other applications, or communicate with any of the other participants</strong>.  Thank you
+    for your cooperation. Please also make sure to turn off any mobile devices before the experiment begins.
+</p>
+</script>
+<script type='text/html' id='INSTRUCTIONS'>
+<h3>Instructions</h3>
+<p>
+You have been randomly assigned to a group of size <span class='badge badge-info' data-bind='text:participantsPerGroup'></span>.
+In this experiment you will be sharing a forest with the other members of your group.  The experiment is divided into
+<span class='badge badge-important' data-bind='text:numberOfRounds'></span> rounds.  In each round you will make a
+decision of how many resources to harvest.  The resources will regenerate at a rate of <span data-bind='text:
+resourceRegenerationRate'></span> each round.  Over the course of the experiment you will accumulate, or store
+resources.
+</p>
+<h4>Survival</h4>
 Each round you must have <b>at least</b> <span class='badge badge-important' data-bind='text: survivalCost'></span> resources in your storage to survive.
 </p>
 <p>
 To better illustrate, we will first participate in two practice rounds.  These rounds will not contribute to your earnings.
 </p>
 </script>
-<script type='text/html' id='wait-template'>
+<script type='text/html' id='WAIT'>
 </script>
-<script type='text/html' id='play-round-template'>
+<script type='text/html' id='REGULAR'>
 <h3 data-bind='text: roundSequenceLabel'></h3>
 <div data-bind="if: maxHarvestDecision > 0">
     <div style="background: url('{{STATIC_URL}}images/forestry/{{tree.name}}.png'); width:{{max_width}}px; height: {{max_height}}px;">
@@ -88,12 +92,6 @@ To better illustrate, we will first participate in two practice rounds.  These r
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
-            model.roundTypeTemplate = function (data) {
-                console.log(data);
-                switch (data.roundType) {
-
-                }
-            };
             return model;
         }
         function update(experimentModel) {
@@ -133,5 +131,6 @@ To better illustrate, we will first participate in two practice rounds.  These r
             };
         }
         initialize(experimentModelJson);
-    };
+    });
+</script>
 {% endblock %}

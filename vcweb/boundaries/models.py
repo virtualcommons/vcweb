@@ -2,7 +2,7 @@ from django.db import models
 from vcweb.core import simplecache
 from vcweb.core.models import ExperimentMetadata, Parameter, ParticipantRoundDataValue
 from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision,
-        get_regrowth_parameter, get_group_harvest_parameter)
+        get_regrowth_rate, get_group_harvest_parameter)
 
 
 @simplecache
@@ -15,7 +15,7 @@ def get_player_status_parameter():
 
 @simplecache
 def get_survival_cost_parameter():
-    return Parameter.objects.participant(name='survival_cost')
+    return Parameter.objects.for_participant(name='survival_cost')
 
 # players can either be dead or alive
 def get_player_status_dv(participant_group_relationship_id):

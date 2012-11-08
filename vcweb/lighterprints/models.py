@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 # signal handlers for midnight tick + round_started
 @receiver(signals.participant_added)
 def new_participant(sender, experiment=None, participant_group_relationship=None, **kwargs):
-    logger.debug("handling new participant signal: %s, %s", experiment, participant_group_relationship)
     if experiment.is_public and experiment.experiment_metadata == get_lighterprints_experiment_metadata():
         logger.debug("new participant %s for public experiment %s", participant_group_relationship, experiment)
         if participant_group_relationship is not None:
