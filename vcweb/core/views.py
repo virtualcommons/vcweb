@@ -104,13 +104,14 @@ class LoginView(FormView, AnonymousMixin):
 
     def get_success_url(self):
         return_url = self.request.GET.get('next')
-        participant = self.request.user.participant
-        pers = ParticipantExperimentRelationship.objects.active(participant=participant)
-        logger.debug("pers are %s", pers)
+        user = self.request.user
         success_url = reverse('core:dashboard')
-        if pers:
-            logger.debug("using first active experiment %s for participant %s", pers[0], participant)
-            success_url = pers[0].experiment.participant_url
+        if is_participant(user):
+            participant = self.request.user.participant
+            pers = ParticipantExperimentRelationship.objects.active(participant=participant)
+            if pers:
+                logger.debug("using first active experiment %s for participant %s", pers[0], participant)
+                success_url = pers[0].experiment.participant_url
         return return_url if return_url else success_url
 
 class LogoutView(TemplateView):
