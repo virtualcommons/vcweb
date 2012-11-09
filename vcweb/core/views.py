@@ -14,7 +14,7 @@ from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountFor
         RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm, LogMessageForm)
 from vcweb.core import unicodecsv
 from vcweb.core.json import dumps
-from vcweb.core.models import (User, ChatMessage, Participant, ParticipantGroupRelationship, ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
+from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
@@ -101,9 +101,17 @@ class LoginView(FormView, AnonymousMixin):
         auth.login(request, user)
         set_authentication_token(user, request.session.session_key)
         return super(LoginView, self).form_valid(form)
+
     def get_success_url(self):
         return_url = self.request.GET.get('next')
-        return return_url if return_url else reverse('core:dashboard')
+        participant = self.request.user.participant
+        pers = ParticipantExperimentRelationship.objects.active(participant=participant)
+        logger.debug("pers are %s", pers)
+        success_url = reverse('core:dashboard')
+        if pers:
+            logger.debug("using first active experiment %s for participant %s", pers[0], participant)
+            success_url = pers[0].experiment.participant_url
+        return return_url if return_url else success_url
 
 class LogoutView(TemplateView):
     def get(self, request, *args, **kwargs):

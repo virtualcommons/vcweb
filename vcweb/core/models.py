@@ -201,10 +201,10 @@ class ExperimentConfiguration(models.Model):
 
 
 class ExperimentQuerySet(models.query.QuerySet):
-    def public(self):
-        return self.filter(experiment_configuration__is_public=True)
-    def active(self):
-        return self.filter(status='ACTIVE')
+    def public(self, **kwargs):
+        return self.filter(experiment_configuration__is_public=True, **kwargs)
+    def active(self, **kwargs):
+        return self.filter(status__in=('ACTIVE', 'ROUND_IN_PROGRESS'), **kwargs)
     def increment_elapsed_time(self, status='ROUND_IN_PROGRESS', amount=60):
         logger.debug("filtering on status %s", status)
         if status is not None:
@@ -1337,6 +1337,10 @@ class Participant(CommonsUser):
         ordering = ['user']
 
 
+class ParticipantExperimentRelationshipQuerySet(models.query.QuerySet):
+    def active(self, **kwargs):
+        return self.filter(experiment__status__in=('ACTIVE', 'ROUND_IN_PROGRESS'), **kwargs)
+
 class ParticipantExperimentRelationship(models.Model):
     """
     Many-to-many relationship entity storing a participant and the experiment they are participating in.
@@ -1351,6 +1355,8 @@ class ParticipantExperimentRelationship(models.Model):
     current_location = models.CharField(max_length=64, null=True, blank=True)
 # arbitrary JSON-encoded data
     additional_data = models.TextField(null=True, blank=True)
+
+    objects = PassThroughManager.for_queryset_class(ParticipantExperimentRelationshipQuerySet)()
 
     def __init__(self, *args, **kwargs):
         super(ParticipantExperimentRelationship, self).__init__(*args, **kwargs)

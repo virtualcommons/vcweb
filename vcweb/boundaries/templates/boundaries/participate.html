@@ -1,5 +1,4 @@
 {% extends "participant/base.html" %}
-{% block title %}<span data-bind='text: experimentStatusLabel'></span>{% endblock %}
 
 {% block page %}
 <div data-bind='template: { name: roundType() }'>
@@ -21,18 +20,17 @@
 <script type='text/html' id='INSTRUCTIONS'>
 <h3>Instructions</h3>
 <p>
-You have been randomly assigned to a group of size <span class='badge badge-info' data-bind='text:participantsPerGroup'></span>.
-In this experiment you will be sharing a forest with the other members of your group.  The experiment is divided into
+You have been randomly assigned to a group of size <strong data-bind='text:participantsPerGroup'></strong>.
+In this experiment you will be sharing a resource (forest?) with the other members of your group.  The experiment consists of 
 <span class='badge badge-important' data-bind='text:numberOfRounds'></span> rounds.  In each round you will make a
-decision of how many resources to harvest.  The resources will regenerate at a rate of <span data-bind='text:
-resourceRegenerationRate'></span> each round.  Over the course of the experiment you will accumulate, or store
+decision of how many resources to harvest.  Resources regenerate at a rate of <.  Over the course of the experiment you will accumulate, or store
 resources.
 </p>
 <h4>Survival</h4>
 Each round you must have <b>at least</b> <span class='badge badge-important' data-bind='text: survivalCost'></span> resources in your storage to survive.
 </p>
 <p>
-To better illustrate, we will first participate in two practice rounds.  These rounds will not contribute to your earnings.
+To better illustrate, we will begin with two practice rounds.  These rounds will not contribute to your earnings.
 </p>
 </script>
 <script type='text/html' id='WAIT'>

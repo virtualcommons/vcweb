@@ -18,8 +18,12 @@ def get_group_harvest(group, round_data=None):
     ''' returns the collective group harvest data parameter '''
     return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data, default=0)
 
+# returns the number of resources regenerated for the given group in the given round
 def get_regrowth(group, round_data=None):
     return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0)
+
+def get_regrowth_rate(current_round):
+    return current_round.get_parameter_value('regrowth_rate', default=0.1)
 
 def has_resource_level(group=None):
     return group.has_data_parameter(parameter=get_resource_level_parameter())
@@ -72,8 +76,8 @@ def get_resource_level_parameter(refresh=False):
     return Parameter.objects.for_group(name='resource_level')
 
 @simplecache
-def get_regrowth_rate(refresh=False):
-    return Parameter.objects.for_round(name='regrowth_rate')
+def get_regrowth_rate_parameter(refresh=False):
+    return Parameter.objects.for_group(name='regrowth_rate')
 
 # parameter for the amount of resources that were regrown at the end of the given round for the given group
 @simplecache

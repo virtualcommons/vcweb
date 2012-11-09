@@ -8,7 +8,28 @@
 {% url core:profile as profile %}
 
 {% block title %}
-Virtual Commons Web Participant Interface
+{{ experiment.display_name }}
+{% endblock %}
+{% block headerlinks %}
+<li><a href='https://bitbucket.org/virtualcommons/vcweb/issues'>Report a bug</a></li>
+<li class='{% active request contact %}'><a href='{{ contact }}'>Contact us</a></li>
+{% if "participate" in request.path or "wait" in request.path %}
+<li class='{% active_re request "participate" %}'><a href='#'>Experiment</a></li>
+{% endif %}
+{% if request.user.is_authenticated %}
+<li class='{% active request logout %}'><a href='{{ logout }}'>Logout ({{request.user.email}})</a></li>
+{% else %}
+<li class='{% active request login %} {% active request register %}'>
+{% if debug_mode %}
+<a href='{{ login }}'>Sign In</a>
+{% else %}
+<a href='https://{{request.get_host}}{{ login }}'>Sign In</a>
+{% endif %}
+</li>
+{% endif %}
+{% endblock %}
+{% block logo %}
+<h1>{{experiment.display_name}}</h1>
 {% endblock %}
 {% block javascript %}
 {{ block.super }}

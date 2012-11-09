@@ -39,6 +39,6 @@ def to_json(experiment):
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
     experiment_model_dict['numberOfRounds'] = ec.final_sequence_number
     experiment_model_dict['roundType'] = current_round.round_type
-    experiment_model_dict['resourceRegenerationRate'] = get_regrowth_rate(current_round)
+    experiment_model_dict['regrowthRate'] = get_regrowth_rate(current_round)
     return dumps(experiment_model_dict)
 
