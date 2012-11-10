@@ -61,8 +61,9 @@ To better illustrate, we will begin with two practice rounds.  These rounds will
 </script>
 <script type='text/html' id='WAIT'>
 <h1>Not implemented yet, not sure if we need this template.</h1>
-<p class='lead'>
-Do we need a waiting page after participants enter their decisions?
+<p>
+Do we need a waiting page after participants enter their decision or just return to the same form that shows the harvest
+decision?
 </p>
 </script>
 <script type='text/html' id='REGULAR'>
@@ -89,7 +90,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
     There are <span class='badge badge-warning' data-bind='text: resourceLevel'></span> resources left for your entire group.
 </div>
 
-<div data-bind='if: alreadySubmittedDecision'>
+<div data-bind='if: hasSubmit'>
 <div class='alert alert-error'>
     You have already made a decision to harvest <b>{{ harvest_decision.value }}</b> resources.  You may change your
     decision until the experimenter ends the round.
@@ -105,12 +106,13 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             Enter a number between 0 and <span class='badge badge-info' data-bind='text:maxHarvestDecision'></span>:
         </label>
         <div class='controls'>
-            <input id='harvestDecision' style='width: 2em; text-align: right;' type="text" name='harvest_decision' class='required digits' maxlength='1' placeholder="0" />
+            <input id='harvestDecision' type="text" name='harvest_decision' class='required digits' maxlength='1' placeholder="0" />
+            <input id='participantGroupId' type='hidden' name='participant_group_id' />
         </div>
     </div>
     <div class='control-group'>
         <div class='controls'>
-            <button id='submitButton' type='submit' class='btn'>Harvest</button>
+            <button id='submitHarvestDecision' type='submit' class='btn'>Harvest</button>
         </div>
     </div>
 </form>
@@ -158,6 +160,14 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             });
             $('#harvest-decision-id').focus();
             */
+            $('#vcweb-form').submit(function(evt) {
+                // make ajax post with data, update experiment model
+                $.post("participate", $('#vcweb-form').serialize(), function(data) {
+                    alert("submit vcweb form back to participate");
+                    experimentModel.hasSubmit(true);
+                });
+
+            });
             var s = connect();
             s.onmessage = function(json_string) {
                 var json = jQuery.parseJSON(json_string);
