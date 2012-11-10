@@ -1,6 +1,30 @@
 {% extends "participant/base.html" %}
 
 {% block page %}
+<fieldset>
+    <legend>Status</legend>
+    <table class='table table-bordered table-condensed'>
+        <thead><tr><th>Storage</th><th>Survival cost</th><th>Resources left</th></tr></thead>
+        <tbody>
+        <tr class='info'>
+            <td data-bind='text: storedResources'></td>
+            <td data-bind='text: survivalCost'></td>
+            <td data-bind='text: resourceLevel'></td>
+        </tr>
+        </tbody>
+    </table>
+</ul>
+
+<label for='pick-template'>
+    Select the round template to display:
+</label>
+<select id='pick-template'>
+    <option value='WELCOME'>Welcome</option>
+    <option value='INSTRUCTIONS'>Instructions</option>
+    <option value='CHAT'>Chat</option>
+    <option value='WAIT'>Waiting room</option>
+    <option value='REGULAR'>Actual round</option>
+</select>
 <div data-bind='template: { name: roundType() }'>
 </div>
 {% endblock page %}
@@ -23,8 +47,8 @@
 You have been randomly assigned to a group of size <strong data-bind='text:participantsPerGroup'></strong>.
 In this experiment you will be sharing a resource (forest?) with the other members of your group.  The experiment consists of 
 <span class='badge badge-important' data-bind='text:numberOfRounds'></span> rounds.  In each round you will make a
-decision of how many resources to harvest.  Resources regenerate at a rate of <.  Over the course of the experiment you will accumulate, or store
-resources.
+decision of how many resources to harvest.  The resources can regenerate over time as long as there some left, at a rate
+of (do we describe the regrowth rate here?).  The resources you collect will be put into your <b>storage</b>
 </p>
 <h4>Survival</h4>
 Each round you must have <b>at least</b> <span class='badge badge-important' data-bind='text: survivalCost'></span> resources in your storage to survive.
@@ -37,12 +61,12 @@ To better illustrate, we will begin with two practice rounds.  These rounds will
 </script>
 <script type='text/html' id='REGULAR'>
 <h3 data-bind='text: roundSequenceLabel'></h3>
-<div data-bind="if: maxHarvestDecision > 0">
-    <div style="background: url('{{STATIC_URL}}images/forestry/{{tree.name}}.png'); width:{{max_width}}px; height: {{max_height}}px;">
+<div data-bind="if: maxHarvestDecision() > 0">
+    <div style="background: url('{{STATIC_URL}}images/forestry/pine-tree.png'); width:{{max_width}}px; height: {{max_height}}px;">
         &nbsp;
     </div>
 </div>
-<div data-bind="ifnot: maxHarvestDecision > 0">
+<div data-bind="ifnot: maxHarvestDecision() > 0">
     <div style='padding: 8px; margin: auto; border: solid 1px; background: #E8E8E8 url({{STATIC_URL}}images/forestry/deforestation.jpg) no-repeat center; height: 282px; width:425px;'>
         &nbsp;
     </div>
@@ -59,7 +83,7 @@ To better illustrate, we will begin with two practice rounds.  These rounds will
 </div>
 </div>
 
-<div data-bind='if: maxHarvestDecision > 0'>
+<div data-bind='if: maxHarvestDecision() > 0'>
 <form id='vcweb-form' action='' method='post' class='form-horizontal'>
     {% csrf_token %}
     <div class='control-group'>
@@ -68,7 +92,7 @@ To better illustrate, we will begin with two practice rounds.  These rounds will
             Enter a number between 0 and <span class='badge badge-info' data-bind='text:maxHarvestDecision'></span>:
         </label>
         <div class='controls'>
-            <input id='harvestDecision' style='width: 2em; text-align: right;' type="text" name='harvest_decision' class='required digits' maxlength='1' placeholder="Enter a number" />
+            <input id='harvestDecision' style='width: 2em; text-align: right;' type="text" name='harvest_decision' class='required digits' maxlength='1' placeholder="0" />
         </div>
     </div>
     <div class='control-group'>
@@ -127,6 +151,11 @@ To better illustrate, we will begin with two practice rounds.  These rounds will
                 console.debug(json);
                 update(json);
             };
+            $('#pick-template').change(function() {
+                var templateName = $(this).val();
+                console.debug("switching to template: " + templateName);
+                experimentModel.roundType(templateName);
+            });
         }
         initialize(experimentModelJson);
     });
