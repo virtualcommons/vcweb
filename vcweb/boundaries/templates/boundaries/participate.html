@@ -112,7 +112,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
     </div>
     <div class='control-group'>
         <div class='controls'>
-            <button id='submitHarvestDecision' type='submit' class='btn'>Harvest</button>
+            <button id='submitDecision' type='submit' class='btn'>Harvest</button>
         </div>
     </div>
 </form>
@@ -160,14 +160,6 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             });
             $('#harvest-decision-id').focus();
             */
-            $('#vcweb-form').submit(function(evt) {
-                // make ajax post with data, update experiment model
-                $.post("participate", $('#vcweb-form').serialize(), function(data) {
-                    alert("submit vcweb form back to participate");
-                    experimentModel.hasSubmit(true);
-                });
-
-            });
             var s = connect();
             s.onmessage = function(json_string) {
                 var json = jQuery.parseJSON(json_string);
@@ -184,7 +176,21 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 else if (templateName === "REGULAR") {
                     experimentModel.practiceRound(false);
                 }
+                else {
+                    experimentModel.roundType(templateName);
+                    return false;
+                }
                 experimentModel.roundType(templateName);
+                $('#submitDecision').click(function(evt) {
+                    evt.preventDefault();
+                    // make ajax post with data, update experiment model
+                    $.post("participate", $('#vcweb-form').serialize()).success(function(data) {
+                        console.log("setting hasSubmit to true.");
+                        alert("submit vcweb form back to participate");
+                        experimentModel.hasSubmit(true);
+                    });
+                    return false;
+                });
             });
         }
         initialize(experimentModelJson);
