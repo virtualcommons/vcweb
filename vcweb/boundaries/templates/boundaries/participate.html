@@ -21,9 +21,10 @@
 <select id='pick-template'>
     <option value='WELCOME'>Welcome</option>
     <option value='INSTRUCTIONS'>Instructions</option>
+    <option value='PRACTICE'>Practice round</option>
+    <option value='REGULAR'>Actual round</option>
     <option value='CHAT'>Chat</option>
     <option value='WAIT'>Waiting room</option>
-    <option value='REGULAR'>Actual round</option>
 </select>
 <div data-bind='template: { name: roundType() }'>
 </div>
@@ -32,6 +33,7 @@
 {{ block.super }}
 <!-- ko templates -->
 <script type='text/html' id='CHAT'>
+{% include "forms/chat-template.html" %}
 </script>
 <script type='text/html' id='WELCOME'>
 <h3>Welcome</h3>
@@ -58,9 +60,20 @@ To better illustrate, we will begin with two practice rounds.  These rounds will
 </p>
 </script>
 <script type='text/html' id='WAIT'>
+<h1>Not implemented yet, not sure if we need this template.</h1>
+<p class='lead'>
+Do we need a waiting page after participants enter their decisions?
+</p>
 </script>
 <script type='text/html' id='REGULAR'>
 <h3 data-bind='text: roundSequenceLabel'></h3>
+<div data-bind='if: practiceRound'>
+<div class='alert alert-error alert-block'>
+<h4>NOTE</h4>
+This is a practice round.  The decisions you make in this round will <b>NOT</b> contribute to your earnings.
+</div>
+</div>
+
 <div data-bind="if: maxHarvestDecision() > 0">
     <div style="background: url('{{STATIC_URL}}images/forestry/pine-tree.png'); width:{{max_width}}px; height: {{max_height}}px;">
         &nbsp;
@@ -87,7 +100,7 @@ To better illustrate, we will begin with two practice rounds.  These rounds will
 <form id='vcweb-form' action='' method='post' class='form-horizontal'>
     {% csrf_token %}
     <div class='control-group'>
-        How many resources will you harvest this round? <br/> 
+        How many resources will you harvest this round? <br/>
         <label class='control-label' for='harvestDecision'>
             Enter a number between 0 and <span class='badge badge-info' data-bind='text:maxHarvestDecision'></span>:
         </label>
@@ -154,10 +167,26 @@ To better illustrate, we will begin with two practice rounds.  These rounds will
             $('#pick-template').change(function() {
                 var templateName = $(this).val();
                 console.debug("switching to template: " + templateName);
+                if (templateName === "PRACTICE") {
+                    templateName = "REGULAR";
+                    experimentModel.practiceRound(true);
+                }
+                else if (templateName === "REGULAR") {
+                    experimentModel.practiceRound(false);
+                }
                 experimentModel.roundType(templateName);
             });
         }
         initialize(experimentModelJson);
+        //send the message when submit is clicked
+        $('#chatform').submit(function (evt) {
+            var line = $('#chatText').val()
+            if (line) {
+                $('#chatText').val('')
+                s.send(createMessageEvent(line));
+            }
+            return false;
+        });
     });
 </script>
 {% endblock %}

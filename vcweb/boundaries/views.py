@@ -59,9 +59,11 @@ def to_json(experiment, participant):
     experiment_model_dict['roundType'] = current_round.round_type
     experiment_model_dict['regrowthRate'] = get_regrowth_rate(current_round)
     experiment_model_dict['survivalCost'] = get_survival_cost(current_round)
+    experiment_model_dict['participantNumber'] = pgr.participant_number
 # FIXME: hard coded for now
     experiment_model_dict['maxHarvestDecision'] = 10
     experiment_model_dict['storedResources'] = 20
     experiment_model_dict['resourceLevel'] = 100
     experiment_model_dict['alreadySubmittedDecision'] = False
+    experiment_model_dict['practiceRound'] = False
     return dumps(experiment_model_dict)

@@ -1,0 +1,25 @@
+<h1>Communication Round Instructions</h1>
+<div class='alert alert-info'>You are <b>participant <span data-bind='text: participantNumber'></span>.</b></div>
+<div class='alert alert-message'>
+    You can chat about any aspect of the experiment with the other members of your group with two restrictions:
+    <ol>
+        <li>You cannot promise side payments after the experiment is completed 
+        <li>You cannot threaten any member of your group with any consequences after the experiment is completed
+    </ol>
+    We are monitoring the chat traffic and if we detect any violation of these rules you will be removed from the experiment.
+</div>
+<!-- begin knockout template -->
+<div id='chat-div' class='chat notice alert alert-message'>
+    <!--
+    <div class='alert alert-message' data-bind="foreach: messages">
+        <a class='chat-message' data-bind="attr: { name: pk }, text: date_created"></a><span data-bind="text: message"></span>
+    </div>
+    -->
+</div>
+<form id="chatform" class='form-horizontal'>
+    <input id='chatText' type="text" />
+    <div class='form-actions'>
+        <button type='submit'>Send</button>
+    </div>
+</form>
+
