@@ -62,7 +62,7 @@ def to_json(experiment, participant):
     experiment_model_dict['participantNumber'] = pgr.participant_number
 # FIXME: hard coded for now
     experiment_model_dict['maxHarvestDecision'] = 10
-    experiment_model_dict['storedResources'] = 20
+    experiment_model_dict['storage'] = 20
     experiment_model_dict['resourceLevel'] = 100
     experiment_model_dict['hasSubmit'] = False
     experiment_model_dict['practiceRound'] = False

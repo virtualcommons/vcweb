@@ -1,31 +1,62 @@
 {% extends "participant/base.html" %}
 
 {% block page %}
-<fieldset>
-    <legend>Status</legend>
-    <table class='table table-bordered table-condensed'>
-        <thead><tr><th>Storage</th><th>Survival cost</th><th>Resources left</th></tr></thead>
-        <tbody>
-        <tr class='info'>
-            <td data-bind='text: storedResources'></td>
-            <td data-bind='text: survivalCost'></td>
-            <td data-bind='text: resourceLevel'></td>
-        </tr>
-        </tbody>
-    </table>
-</ul>
-
-<label for='pick-template'>
-    Select the round template to display:
-</label>
-<select id='pick-template'>
-    <option value='WELCOME'>Welcome</option>
-    <option value='INSTRUCTIONS'>Instructions</option>
-    <option value='PRACTICE'>Practice round</option>
-    <option value='REGULAR'>Actual round</option>
-    <option value='CHAT'>Chat</option>
-    <option value='WAIT'>Waiting room</option>
-</select>
+<form class='form-horizontal'>
+    <h4>Experimenter Panel</h4>
+    <div class='control-group'>
+        <label class='control-label' for='set-resource-level'>Resource level</label>
+        <div class='controls'>
+            0 <input type='range' id='set-resource-level' data-bind='value: resourceLevel' min='0' max='100' /> 100
+        </div>
+    </div>
+    <div class='control-group'>
+        <label class='control-label' for='set-survival-cost'>Survival cost</label>
+        <div class='controls'>
+            <input class='input-small' type='number' id='set-survival-cost' data-bind='value:survivalCost' />
+        </div>
+    </div>
+    <div class='control-group'>
+        <label class='control-label' for='set-storage'>Storage</label>
+        <div class='controls'>
+            <input class='input-small' type='number' id='set-storage' data-bind='value:storage' />
+        </div>
+    </div>
+    <div class='control-group'>
+        <label class='control-label' for='set-regrowth-rate'>Regrowth rate</label>
+        <div class='controls'>
+            <input class='input-small' type='number' id='set-regrowth-rate' data-bind='value:regrowthRate' />
+        </div>
+    </div>
+    <div class='control-group'>
+        <label class='control-label' for='pick-template'>Round template to display</label>
+        <div class='controls'>
+            <select id='pick-template'>
+                <option value='WELCOME'>Welcome</option>
+                <option value='INSTRUCTIONS'>Instructions</option>
+                <option value='PRACTICE'>Practice round</option>
+                <option value='REGULAR'>Actual round</option>
+                <option value='CHAT'>Chat</option>
+                <option value='WAIT'>Waiting room</option>
+            </select>
+        </div>
+    </div>
+</fieldset>
+</form>
+<h4>Template Preview</h4>
+<table class='table table-bordered table-condensed'>
+    <caption>Status</caption>
+    <thead>
+        <tr><th>Resources left</th><th>Storage</th><th>Survival cost</th><th>Regrowth rate</th></tr>
+    </thead>
+    <tbody>
+    <tr class='success'>
+        <td data-bind='text: resourceLevel'></td>
+        <td data-bind='text: storage'></td>
+        <td data-bind='text: survivalCost'></td>
+        <td data-bind='text: regrowthRate'></td>
+    </tr>
+    </tbody>
+</table>
 <div data-bind='template: { name: roundType() }'>
 </div>
 {% endblock page %}
@@ -86,7 +117,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
     </div>
 </div>
 <div class='alert alert-message'>
-    You require <span class='badge badge-important' data-bind='text:survivalCost'></span> to survive and you currently have <span class='badge badge-success' data-bind='text: storedResources'></span> resources stored.  
+    You require <span class='badge badge-important' data-bind='text:survivalCost'></span> to survive and you currently have <span class='badge badge-success' data-bind='text: storage'></span> resources stored.  
     There are <span class='badge badge-warning' data-bind='text: resourceLevel'></span> resources left for your entire group.
 </div>
 
