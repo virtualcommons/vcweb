@@ -27,7 +27,6 @@ def participate(request, experiment_id=None):
     tree = trees['pine']
     resource_level = 100
     max_height = (resource_level / number_of_trees_per_row) * tree['height']
-    number_of_resource_divs = range(0, resource_level / number_of_trees_per_row)
     resource_width = (resource_level % number_of_trees_per_row) * 30
 # FIXME: this should always render the participate.html template and expose a
 # JSON RoundConfiguration object to the page so the template knows what to render..?

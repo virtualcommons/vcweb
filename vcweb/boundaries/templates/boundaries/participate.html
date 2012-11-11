@@ -106,15 +106,17 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
 </div>
 </div>
 
-<div data-bind="ifnot: isResourceEmpty()">
-    <div data-bind='style: { width: resourceWidth, height: resourceHeight, background-image: "url(\'{{STATIC_URL}}images/forestry/pine-tree.png\')"resourceIconUrl }" >
+<div data-bind="ifnot: isResourceEmpty()" id='resourceDisplay'>
+    <div data-bind='style: { width: resourceWidth(), height: "79px", background: resourceImageUrl() }'>
         &nbsp;
     </div>
+    <div class='alert alert-info'><h4>Note</h4>Displaying <strong data-bind='text:resourcesToDisplay()'></strong> resource(s) of <strong data-bind='text:resourceLevel'></strong></div>
 </div>
 <div data-bind="if: isResourceEmpty()">
-    <div style='padding: 8px; margin: auto; border: solid 1px; background-image: url({{STATIC_URL}}images/forestry/deforestation.jpg) no-repeat center; height: 282px; width:425px;'>
+    <div style='padding: 8px; margin: auto; border: solid 1px; background: url("{{STATIC_URL}}images/forestry/deforestation.jpg") no-repeat center; height: 282px; width:425px;'>
         &nbsp;
     </div>
+    <div class='alert alert-error'>There are no more resources to harvest. Please wait quietly until the next round begins.</div>
 </div>
 <div class='alert alert-message'>
     You require <span class='badge badge-important' data-bind='text:survivalCost'></span> to survive and you currently have <span class='badge badge-success' data-bind='text: storage'></span> resources stored.  
@@ -147,18 +149,13 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
     </div>
 </form>
 </div>
-<div data-bind='if: isResourceEmpty()'>
-<div class='alert alert-error'>
-    There are no longer enough trees to harvest. Please wait until the next round begins.
-</div>
-</div>
 </script>
 <script type="text/javascript">
-    var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
     $(function() {
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
+            model.numberOfTreesPerRow = 10;
             model.isResourceEmpty = function() {
                 return model.resourceLevel() == 0;
             }
@@ -167,6 +164,15 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                     return Math.min(model.resourceLevel(), 20);
                 }
                 return 0;
+            }
+            model.resourceImageUrl = function() {
+                return "url('{{STATIC_URL}}images/forestry/pine-tree.png')";
+            }
+            model.resourceWidth = function() { 
+                return model.resourcesToDisplay() * 30 + "px"; 
+            }
+            model.resourceHeight = function() {
+                return "79px;"
             }
             return model;
         }
@@ -211,7 +217,6 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 });
             });
         }
-        initialize(experimentModelJson);
         //send the message when submit is clicked
         $('#chatform').submit(function (evt) {
             var line = $('#chatText').val()
@@ -221,6 +226,8 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             }
             return false;
         });
+        var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
+        initialize(experimentModelJson);
     });
 </script>
 {% endblock %}
