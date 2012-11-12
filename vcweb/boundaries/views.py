@@ -9,7 +9,8 @@ from vcweb.core.decorators import participant_required
 from vcweb.core.json import dumps
 from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.views import ParticipantSingleExperimentMixin
-from vcweb.boundaries.models import get_experiment_metadata, get_regrowth_rate, get_survival_cost
+from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_survival_cost, get_resource_level,
+        get_all_storage)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,20 +23,12 @@ def participate(request, experiment_id=None):
     if experiment.experiment_metadata != get_experiment_metadata():
         raise Http404
     participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
-    number_of_trees_per_row = 20
-    max_width = number_of_trees_per_row * 30
-    tree = trees['pine']
-    resource_level = 100
-    max_height = (resource_level / number_of_trees_per_row) * tree['height']
-    resource_width = (resource_level % number_of_trees_per_row) * 30
 # FIXME: this should always render the participate.html template and expose a
 # JSON RoundConfiguration object to the page so the template knows what to render..?
     return render_to_response('boundaries/participate.html', {
         'auth_token': participant.authentication_token,
         'participant_experiment_relationship': participant_experiment_relationship,
         'experiment': experiment,
-        'max_width': max_width,
-        'max_height': max_height,
         'experimentModelJson': to_json(experiment, participant),
         },
         context_instance=RequestContext(request))
@@ -53,11 +46,24 @@ def to_json(experiment, participant):
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
     experiment_model_dict = experiment.as_dict(include_round_data=False, attrs={})
+    group_data = []
+    regrowth_rate = get_regrowth_rate(current_round)
+    survival_cost = get_survival_cost(current_round)
+    for group in experiment.group_set.all():
+        group_data.append({
+            'groupId': unicode(group),
+            'resourceLevel': get_resource_level(group),
+            'allStorage': get_all_storage(group),
+            'regrowthRate': regrowth_rate,
+            'survivalCost': survival_cost,
+            })
+
+    experiment_model_dict['groupData'] = group_data
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
     experiment_model_dict['numberOfRounds'] = ec.final_sequence_number
     experiment_model_dict['roundType'] = current_round.round_type
-    experiment_model_dict['regrowthRate'] = get_regrowth_rate(current_round)
-    experiment_model_dict['survivalCost'] = get_survival_cost(current_round)
+    experiment_model_dict['regrowthRate'] = regrowth_rate
+    experiment_model_dict['survivalCost'] = survival_cost
     experiment_model_dict['participantNumber'] = pgr.participant_number
 # FIXME: hard coded for now
     experiment_model_dict['maxHarvestDecision'] = 10

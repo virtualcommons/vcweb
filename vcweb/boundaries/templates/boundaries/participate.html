@@ -43,14 +43,15 @@
 </form>
 <h4>Template Preview</h4>
 <table class='table table-bordered table-condensed'>
-    <caption>Status</caption>
+    <caption>Group Status</caption>
     <thead>
-        <tr><th>Resources left</th><th>Storage</th><th>Survival cost</th><th>Regrowth rate</th></tr>
+        <tr><th>Group</th><th>Resources left</th><th>Storage</th><th>Survival cost</th><th>Regrowth rate</th></tr>
     </thead>
-    <tbody>
+    <tbody data-bind='foreach: groupData'>
     <tr class='success'>
+        <td data-bind='text: groupId'></td>
         <td data-bind='text: resourceLevel'></td>
-        <td data-bind='text: storage'></td>
+        <td data-bind='text: allStorage'></td>
         <td data-bind='text: survivalCost'></td>
         <td data-bind='text: regrowthRate'></td>
     </tr>
@@ -99,7 +100,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
 </div>
 
 <div data-bind="ifnot: isResourceEmpty()" id='resourceDisplay'>
-    <div data-bind='style: { width: resourceWidth(), height: "79px", background: resourceImageUrl() }'>
+    <div data-bind='style: { width: resourceImageWidth(), height: resourceImageHeight(), background: resourceImageUrl() }'>
         &nbsp;
     </div>
     <div class='alert alert-info'><h4>Note</h4>Displaying <strong data-bind='text:resourcesToDisplay()'></strong> resource(s) of <strong data-bind='text:resourceLevel'></strong></div>
@@ -108,7 +109,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
     <div style='padding: 8px; margin: auto; border: solid 1px; background: url("{{STATIC_URL}}images/forestry/deforestation.jpg") no-repeat center; height: 282px; width:425px;'>
         &nbsp;
     </div>
-    <div class='alert alert-error'>There are no more resources to harvest. Please wait quietly until the next round begins.</div>
+    <div class='alert alert-error'>There are no more resources to harvest. Please wait until the next round begins.</div>
 </div>
 <div class='alert alert-message'>
     You require <span class='badge badge-important' data-bind='text:survivalCost'></span> to survive and you currently have <strong data-bind='text: storage'></strong> resources stored.  
@@ -119,7 +120,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
 <div data-bind='if: hasSubmit'>
 <div class='alert alert-error'>
     You have submitted a decision to harvest <span class='badge badge-important' data-bind='text: harvestDecision'></span> resources.  You may change your
-    decision until the experimenter ends the round.
+    decision until the experimenter ends the round. (TIM: is this ok?)
 </div>
 </div>
 
@@ -162,10 +163,10 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             model.resourceImageUrl = function() {
                 return "url('{{STATIC_URL}}images/forestry/pine-tree.png')";
             }
-            model.resourceWidth = function() { 
+            model.resourceImageWidth = function() { 
                 return model.resourcesToDisplay() * 30 + "px"; 
             }
-            model.resourceHeight = function() {
+            model.resourceImageHeight = function() {
                 return "79px;"
             }
             return model;
