@@ -138,7 +138,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
     </div>
     <div class='control-group'>
         <div class='controls'>
-            <button id='submitDecision' type='submit' class='btn'>Harvest</button>
+            <button id='submitDecision' data-bind='click: submitDecision' type='submit' class='btn'>Harvest</button>
         </div>
     </div>
 </form>
@@ -169,6 +169,19 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             model.resourceImageHeight = function() {
                 return "79px";
             }
+            model.submitDecision = function(data, evt) {
+                evt.preventDefault();
+                console.log("clicking submit decision");
+                // make ajax post with data, update experiment model
+                /*
+                   $.post("participate", $('#vcweb-form').serialize(), function(data) {
+                   console.log("successfully posted form.");
+                   });
+                 */
+                model.hasSubmit(true);
+                return false;
+            }
+
             return model;
         }
         function update(experimentModel) {
@@ -200,20 +213,8 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                     return false;
                 }
                 experimentModel.roundType(templateName);
-                $('#submitDecision').click(function(evt) {
-                    console.log("CLICKED");
-                    evt.preventDefault();
-                    // make ajax post with data, update experiment model
-                    /*
-                    $.post("participate", $('#vcweb-form').serialize(), function(data) {
-                        console.log("successfully posted form.");
-                    });
-                    */
-                    experimentModel.hasSubmit(true);
-                    console.log("set hassubmit to true");
-                    return false;
-                });
             });
+
         }
         //send the message when submit is clicked
         $('#chatform').submit(function (evt) {
