@@ -10,16 +10,14 @@
 </div>
 <!-- begin knockout template -->
 <div id='chat-div' class='chat notice alert alert-message'>
-    <!--
-    <div class='alert alert-message' data-bind="foreach: messages">
-        <a class='chat-message' data-bind="attr: { name: pk }, text: date_created"></a><span data-bind="text: message"></span>
+    <div class='alert alert-message' data-bind="foreach: chatMessages">
+        #<b data-bind="text: participant"></b>: <span data-bind="text: message"></span><br>
     </div>
-    -->
 </div>
 <form id="chatform" class='form-horizontal'>
     <input id='chatText' type="text" />
     <div class='form-actions'>
-        <button type='submit'>Send</button>
+        <button type='submit' data-bind='click: submitChatMessage'>Send</button>
     </div>
 </form>
 

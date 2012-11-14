@@ -150,6 +150,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
             model.harvestDecision = ko.observable(0);
+            model.chatMessages = ko.observableArray([]);
             model.numberOfTreesPerRow = 10;
             model.isResourceEmpty = function() {
                 return model.resourceLevel() == 0;
@@ -181,7 +182,18 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 model.hasSubmit(true);
                 return false;
             }
-
+            model.submitChatMessage = function(data, evt) {
+                evt.preventDefault();
+                console.log("clicking chat message");
+                var line = $('#chatText').val();
+                if (line) {
+                    $('#chatText').val('');
+                    model.chatMessages.unshift({ participant: model.participantNumber(), message: line, dateCreated: new Date() });
+                    getWebSocket().send(createMessageEvent(line));
+                    $('#chatText').focus();
+                }
+                return false;
+            }
             return model;
         }
         function update(experimentModel) {
@@ -217,14 +229,6 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
 
         }
         //send the message when submit is clicked
-        $('#chatform').submit(function (evt) {
-            var line = $('#chatText').val()
-            if (line) {
-                $('#chatText').val('')
-                s.send(createMessageEvent(line));
-            }
-            return false;
-        });
         var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
         initialize(experimentModelJson);
     });
