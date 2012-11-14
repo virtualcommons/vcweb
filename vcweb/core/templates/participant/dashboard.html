@@ -1,17 +1,16 @@
 {% extends "participant/base.html" %}
-{% block participant_socket_io %}
-{% endblock %}
-{% block head %}
-{{block.super}}
-{% endblock %}
 {% block title %}
-Virtual Commons Web Participant Dashboard
+Participant Dashboard
 {% endblock %}
+{% block logo %}
+<h1>Dashboard</h1>
+{% endblock %}
+
 {% block page %}
 <div id='experiments'>
     {% if experiments.items %}
     <div class='alert alert-info'>
-        <i class='icon-info-sign'></i>Welcome back, {{request.user.participant}}.  Available experiments are listed below.
+        Welcome back, {{request.user.participant}}.  Your available experiments are listed below.
     </div>
     {% endif %}
     {% for experiment_metadata, experiment_status_dict in experiments.items %}
@@ -19,11 +18,10 @@ Virtual Commons Web Participant Dashboard
         {% for experiment_status, experiments in experiment_status_dict.items %}
             {% if experiments %}
             <br>
-            <h4><i {{experiments.0.get_status_display}}</h4>
             {% for experiment in experiments %}
                 <div class='alert alert-message alert-block'>
                     <a data-content='This experiment is being run by {{experiment.experimenter}}.' href='{{ experiment.participant_url }}'>
-                        {{ experiment.status_line }}</a>
+                        <i class='icon-play'></i>{{ experiment.status_line }}</a>
                 </div>
             {% endfor %}
             {% endif %}

@@ -62,7 +62,13 @@ class Dashboard(ListView, TemplateResponseMixin):
     context_object_name = 'experiments'
     def get_template_names(self):
         user = self.request.user
-        return ['experimenter/dashboard.html'] if is_experimenter(user) else ['participant/dashboard.html']
+# FIXME: need to replace participant dashboard with a landing page that displays only the active experiment they can
+# participate in.
+        if is_experimenter(user):
+            return [ 'experimenter/dashboard.html' ]
+        else:
+            return [ 'participant/dashboard.html' ]
+
     def get_queryset(self):
         user = self.request.user
         if is_experimenter(user):
@@ -92,6 +98,14 @@ def set_authentication_token(user, authentication_token=None):
     commons_user.authentication_token = authentication_token
     commons_user.save()
 
+def get_active_experiment(participant):
+    pers = ParticipantExperimentRelationship.objects.active(participant=participant)
+    if pers:
+        logger.debug("using first active experiment %s for participant %s", pers[0], participant)
+        return pers[0].experiment
+    return None
+
+
 class LoginView(FormView, AnonymousMixin):
     form_class = LoginForm
     template_name = 'account/login.html'
@@ -108,10 +122,9 @@ class LoginView(FormView, AnonymousMixin):
         success_url = reverse('core:dashboard')
         if is_participant(user):
             participant = self.request.user.participant
-            pers = ParticipantExperimentRelationship.objects.active(participant=participant)
-            if pers:
-                logger.debug("using first active experiment %s for participant %s", pers[0], participant)
-                success_url = pers[0].experiment.participant_url
+            active_experiment = get_active_experiment(participant)
+            if active_experiment:
+                success_url = active_experiment.participant_url
         return return_url if return_url else success_url
 
 class LogoutView(TemplateView):
