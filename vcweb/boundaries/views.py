@@ -65,6 +65,7 @@ def to_json(experiment, participant):
     experiment_model_dict['regrowthRate'] = regrowth_rate
     experiment_model_dict['survivalCost'] = survival_cost
     experiment_model_dict['participantNumber'] = pgr.participant_number
+    experiment_model_dict['participantGroupId'] = pgr.pk
 # FIXME: hard coded for now
     experiment_model_dict['maxHarvestDecision'] = 10
     experiment_model_dict['storage'] = 20

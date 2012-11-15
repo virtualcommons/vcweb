@@ -60,6 +60,7 @@
 <div data-bind='template: { name: roundType() }'>
 </div>
 {% endblock page %}
+
 {% block javascript %}
 {{ block.super }}
 <!-- ko templates -->
@@ -133,7 +134,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
         </label>
         <div class='controls'>
             <input id='harvestDecision' placeholder='0' type="number" name='harvest_decision' class='required' min="0" data-bind="value: harvestDecision, attr: { max: maxHarvestDecision }" /> 
-            <input id='participantGroupId' type='hidden' name='participant_group_id' />
+            <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
         </div>
     </div>
     <div class='control-group'>
@@ -173,14 +174,10 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             model.submitDecision = function(data, evt) {
                 evt.preventDefault();
                 console.log("clicking submit decision");
-                // make ajax post with data, update experiment model
-                /*
-                   $.post("participate", $('#vcweb-form').serialize(), function(data) {
-                   console.log("successfully posted form.");
-                   });
-                 */
-                model.hasSubmit(true);
-                return false;
+                jQuery.post("participate", $('#vcweb-form').serialize(), function(data) {
+                    console.log("successfully posted form.");
+                    model.hasSubmit(true);
+                });
             }
             model.submitChatMessage = function(data, evt) {
                 evt.preventDefault();
@@ -192,7 +189,6 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                     getWebSocket().send(createMessageEvent(line));
                     $('#chatText').focus();
                 }
-                return false;
             }
             return model;
         }
