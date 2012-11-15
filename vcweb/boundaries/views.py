@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context import RequestContext
 from django.views.generic import View
@@ -9,6 +9,7 @@ from vcweb.core.decorators import participant_required
 from vcweb.core.json import dumps
 from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.views import ParticipantSingleExperimentMixin
+from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_survival_cost, get_resource_level,
         get_all_storage)
 import logging
@@ -17,11 +18,19 @@ logger = logging.getLogger(__name__)
 
 @participant_required
 def participate(request, experiment_id=None):
+    form = HarvestDecisionForm(request.POST or None)
     participant = request.user.participant
     logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
     experiment = get_object_or_404(Experiment.objects.select_related(), pk=experiment_id)
     if experiment.experiment_metadata != get_experiment_metadata():
         raise Http404
+    if form.is_valid():
+        logger.debug("handing POST request, cleaned data: %s", form.cleaned_data)
+        # set harvest decision for participant
+        # FIXME: is it bad practice to have GET return HTML and POST return JSON?
+        # send updated experiment json?
+        return HttpResponse(dumps({ 'success': True, 'experimentModelJson': to_json(experiment, participant, hasSubmit=True)}))
+
     participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
 # FIXME: this should always render the participate.html template and expose a
 # JSON RoundConfiguration object to the page so the template knows what to render..?
@@ -40,7 +49,7 @@ trees = {
         'pine': {'name': 'pine-tree', 'height': 79 },
         }
 
-def to_json(experiment, participant):
+def to_json(experiment, participant, **kwargs):
     pgr = participant.get_participant_group_relationship(experiment)
     group = pgr.group
     ec = experiment.experiment_configuration
@@ -66,10 +75,11 @@ def to_json(experiment, participant):
     experiment_model_dict['survivalCost'] = survival_cost
     experiment_model_dict['participantNumber'] = pgr.participant_number
     experiment_model_dict['participantGroupId'] = pgr.pk
-# FIXME: hard coded for now
+# FIXME: defaults hard coded in for now
     experiment_model_dict['maxHarvestDecision'] = 10
     experiment_model_dict['storage'] = 20
     experiment_model_dict['resourceLevel'] = 100
     experiment_model_dict['hasSubmit'] = False
     experiment_model_dict['practiceRound'] = False
+    experiment_model_dict.update(**kwargs)
     return dumps(experiment_model_dict)

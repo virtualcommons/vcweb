@@ -165,8 +165,8 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             model.resourceImageUrl = function() {
                 return "url('{{STATIC_URL}}images/forestry/pine-tree.png')";
             }
-            model.resourceImageWidth = function() { 
-                return model.resourcesToDisplay() * 30 + "px"; 
+            model.resourceImageWidth = function() {
+                return model.resourcesToDisplay() * 30 + "px";
             }
             model.resourceImageHeight = function() {
                 return "79px";
@@ -174,8 +174,14 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             model.submitDecision = function(data, evt) {
                 evt.preventDefault();
                 console.log("clicking submit decision");
-                jQuery.post("participate", $('#vcweb-form').serialize(), function(data) {
-                    console.log("successfully posted form.");
+                var formData = $('#vcweb-form').serialize();
+                console.log("form data: " + formData);
+                $.post('', formData, function(jsonString) {
+                    var data = jQuery.parseJSON(jsonString);
+                    console.log(data);
+                    // FIXME: should probably update the entire model after we remove the test panel
+                    // update(data.experimentModelJson);
+                    // ko.mapping.fromJSON(data.experimentModelJson, model);
                     model.hasSubmit(true);
                 });
             }
@@ -204,6 +210,10 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             s.onmessage = function(json_string) {
                 var json = jQuery.parseJSON(json_string);
                 console.debug(json);
+                // FIXME: implement sockjs messaging
+                switch (json.message_type) {
+
+                }
                 update(json);
             };
             $('#pick-template').change(function() {
