@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 class ForestryRoundSignalTest(BaseVcwebTest):
 
     def verify_resource_level(self, group, value=100):
-        self.assertEqual(get_resource_level(group).value, value)
+        self.assertEqual(get_resource_level(group), value)
 
     def test_round_ended_signal(self):
         e = self.test_round_started_signal()
@@ -84,7 +84,7 @@ class TransferParametersTest(BaseVcwebTest):
             if current_round_configuration.is_playable_round:
                 max_harvest_decision = get_max_harvest_decision(expected_resource_level)
                 for pgr in e.participant_group_relationships:
-                    self.assertEquals(get_resource_level(pgr.group).value, expected_resource_level)
+                    self.assertEquals(get_resource_level(pgr.group), expected_resource_level)
                     set_harvest_decision(pgr, max_harvest_decision)
 
                 expected_resource_level = calculate_expected_resource_level(expected_resource_level, max_harvest_decision * 5)
@@ -92,7 +92,7 @@ class TransferParametersTest(BaseVcwebTest):
             e.end_round()
             for group in e.group_set.all():
                 logger.debug("checking group: %s", group)
-                self.assertEquals(get_resource_level(group).value, expected_resource_level)
+                self.assertEquals(get_resource_level(group), expected_resource_level)
 
             if e.has_next_round:
                 e.advance_to_next_round()
@@ -177,24 +177,18 @@ class ForestryParametersTest(BaseVcwebTest):
     def test_get_set_resource_level(self):
         e = self.advance_to_data_round()
         e.start_round()
+# should initially be 100
         for group in e.group_set.all():
             resource_level = get_resource_level(group)
-            self.assertTrue(resource_level.pk > 0)
-            self.assertEqual(resource_level.value, 100)
-            resource_level.value = 3
-            resource_level.save()
+            self.assertEqual(resource_level, 100)
 
         for group in e.group_set.all():
-            resource_level = get_resource_level(group)
-            self.assertEqual(resource_level.value, 3)
+            set_resource_level(group, 3)
+            self.assertEqual(get_resource_level(group), 3)
 
         for group in e.group_set.all():
-            set_resource_level(group, 100)
-            self.assertEqual(get_resource_level(group).value, 100)
-
-        for group in e.group_set.all():
-            resource_level = get_resource_level(group)
-            self.assertEqual(resource_level.value, 100)
+            set_resource_level(group, 77)
+            self.assertEqual(get_resource_level(group), 77)
 
     def test_group_round_data(self):
         data_round_number = 1

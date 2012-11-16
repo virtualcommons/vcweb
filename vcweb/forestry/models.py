@@ -10,19 +10,21 @@ def forestry_second_tick():
     check all forestry experiments.
     '''
 
-def get_resource_level(group, round_data=None):
-    ''' returns the group resource level data value '''
-    if round_data is None:
-        round_data = group.current_round
+def get_resource_level_dv(group, round_data=None):
     return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data, default=0)
 
+
+def get_resource_level(group, round_data=None):
+    ''' returns the group resource level data value scalar '''
+    return get_resource_level_dv(group, round_data=round_data)[0]
+
 def get_group_harvest(group, round_data=None):
-    ''' returns the collective group harvest data parameter '''
-    return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data, default=0)
+    ''' returns the collective group harvest data value '''
+    return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data, default=0)[0]
 
 # returns the number of resources regenerated for the given group in the given round
 def get_regrowth(group, round_data=None):
-    return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0)
+    return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0)[0]
 
 def get_regrowth_rate(current_round):
     return current_round.get_parameter_value('regrowth_rate', default=0.1)
@@ -139,32 +141,33 @@ def round_teardown(experiment, **kwargs):
         # FIXME: simplify logic
         logger.debug("group %s has resource level", group)
         if has_resource_level(group):
-            current_resource_level = get_resource_level(group)
+            current_resource_level_dv = get_resource_level_dv(group)[1]
+            current_resource_level = current_resource_level_dv.value
             if current_round_configuration.is_playable_round:
                 total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
                 logger.debug("total harvest for playable round: %d", total_harvest)
-                if current_resource_level.value > 0 and total_harvest > 0:
-                    group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level.value))
+                if current_resource_level > 0 and total_harvest > 0:
+                    group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level))
                     set_group_harvest(group, total_harvest)
-                    current_resource_level.value = max(current_resource_level.value - total_harvest, 0)
+                    current_resource_level = max(current_resource_level - total_harvest, 0)
                     # implements regrowth function inline
                     # FIXME: parameterize regrowth rate.
-                    regrowth = current_resource_level.value / 10
-                    group.log("Regrowth: adding %s to current resource level %s" % (regrowth, current_resource_level.value))
+                    regrowth = current_resource_level / 10
+                    group.log("Regrowth: adding %s to current resource level %s" % (regrowth, current_resource_level))
                     set_regrowth(group, regrowth)
-                    current_resource_level.value = min(current_resource_level.value + regrowth, max_resource_level)
-                    current_resource_level.save()
+                    current_resource_level_dv.value = min(current_resource_level + regrowth, max_resource_level)
+                    current_resource_level_dv.save()
             ''' transfer resource levels across chat and quiz rounds if they exist '''
             if experiment.has_next_round:
                 ''' set group round data resource_level for each group + regrowth '''
-                group.log("Transferring resource level %s to next round" % get_resource_level(group))
-                group.transfer_parameter(current_resource_level.parameter, current_resource_level.value)
+                group.log("Transferring resource level %s to next round" % current_resource_level_dv.value)
+                group.copy_to_next_round(current_resource_level_dv)
 
 '''
 FIXME: figure out a better way to tie these signal handlers to a specific
 ExperimentMetadata instance.  Using ExperimentMetadata.namespace is problematic
 due to the python builtin id used by dispatcher.py and utf-8 strings...
-for an example, try 
+for an example, try
 e = Experiment.objects.get(pk=1)
 id(e.namespace)
 id(u'forestry')

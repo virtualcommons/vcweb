@@ -1146,29 +1146,35 @@ class Group(models.Model):
         except:
             return False
 
-    def get_scalar_data_value(self, parameter=None, parameter_name=None):
-        return self.get_data_value(parameter=parameter, parameter_name=parameter_name).value
+    def get_scalar_data_value(self, parameter=None, **kwargs):
+        return self.get_data_value(parameter=parameter, **kwargs)[0]
 
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None, default=None):
+        ''' returns a tuple of (scalar data value, entity DataValue).  if no entity data value exists, returns (default value, None) '''
+
+        if round_data is None:
+            round_data = self.current_round_data
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         try:
-            return self.data_value_set.get(**criteria)
+            dv = self.data_value_set.get(**criteria)
+            return (dv.value, dv)
         except GroupRoundDataValue.DoesNotExist as e:
             logger.warning("No data value found for criteria %s", criteria)
             if default is None:
                 raise e
             else:
-                return default
+                return (default, None)
 
-    def set_data_value(self, parameter_name=None, parameter=None, value=None):
+    def set_data_value(self, parameter=None, value=None, **kwargs):
         '''
         Not as efficient as a simple SQL update because we need to do some type
         conversion / processing to put the value into the appropriate field.
         '''
-        data_value = self.get_data_value(parameter_name=parameter_name, parameter=parameter)
+        data_value = self.get_data_value(parameter=parameter, **kwargs)[1]
         data_value.value = value
         self.log("setting parameter %s = %s" % (parameter, value))
         data_value.save()
+        return data_value
 
 
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
@@ -1207,6 +1213,10 @@ class Group(models.Model):
                 self.transfer_parameter(p, value)
         else:
             self.transfer_parameter(parameter, value)
+
+    def copy_to_next_round(self, data_value):
+        ''' copies the given data value to the next round if it exists and returns the newly created group data value'''
+        return self.transfer_parameter(data_value.parameter, data_value.value)
 
     def transfer_parameter(self, parameter, value):
         if self.experiment.is_last_round:

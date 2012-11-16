@@ -395,11 +395,11 @@ def get_all_activities_tuple(participant_group_relationship, all_activities=None
     return (flattened_activities, activity_by_level)
 
 def available_activities(participant_group_relationship=None):
-    logger.debug("requesting available activities for pgr %s (%d)", participant_group_relationship, participant_group_relationship.id)
     if participant_group_relationship is None:
         logger.warn("asking for available activities with no participant, returning all activities")
         return Activity.objects.all()
     else:
+        logger.debug("requesting available activities for pgr %s (%d)", participant_group_relationship, participant_group_relationship.pk)
         # FIXME: push this logic into the manager / queryset?
         group_level = get_footprint_level(participant_group_relationship.group).value
         today = datetime.combine(date.today(), time())

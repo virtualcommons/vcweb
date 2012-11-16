@@ -12,7 +12,7 @@ import os
 logger = logging.getLogger(__name__)
 
 class BaseTest(BaseVcwebTest):
-    fixtures = [ 'initial_experiment_metadata', 'activities' ]
+    fixtures = [ 'lighterprints_experiment_metadata', 'activities' ]
     def setUp(self, **kwargs):
         super(BaseTest, self).setUp()
         experiment_metadata = get_lighterprints_experiment_metadata()
