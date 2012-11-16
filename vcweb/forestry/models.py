@@ -11,7 +11,9 @@ def forestry_second_tick():
     '''
 
 def get_resource_level(group, round_data=None):
-    ''' returns the group resource level data parameter '''
+    ''' returns the group resource level data value '''
+    if round_data is None:
+        round_data = group.current_round
     return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data, default=0)
 
 def get_group_harvest(group, round_data=None):

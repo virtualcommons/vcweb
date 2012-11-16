@@ -11,7 +11,7 @@ from vcweb.core.models import is_participant, is_experimenter, Experiment
 from vcweb.core.views import ParticipantSingleExperimentMixin
 from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_survival_cost, get_resource_level,
-        get_all_storage)
+        get_total_storage)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -32,8 +32,7 @@ def participate(request, experiment_id=None):
         return HttpResponse(dumps({ 'success': True, 'experimentModelJson': to_json(experiment, participant, hasSubmit=True)}))
 
     participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
-# FIXME: this should always render the participate.html template and expose a
-# JSON RoundConfiguration object to the page so the template knows what to render..?
+# sends view model JSON to the template to be processed by knockout
     return render_to_response('boundaries/participate.html', {
         'auth_token': participant.authentication_token,
         'participant_experiment_relationship': participant_experiment_relationship,
@@ -41,13 +40,6 @@ def participate(request, experiment_id=None):
         'experimentModelJson': to_json(experiment, participant),
         },
         context_instance=RequestContext(request))
-
-
-# FIXME: figure out the appropriate place for this
-trees = {
-        'deciduous': { 'name': 'deciduous-tree', 'height': 32 },
-        'pine': {'name': 'pine-tree', 'height': 79 },
-        }
 
 def to_json(experiment, participant, **kwargs):
     pgr = participant.get_participant_group_relationship(experiment)
@@ -62,7 +54,7 @@ def to_json(experiment, participant, **kwargs):
         group_data.append({
             'groupId': unicode(group),
             'resourceLevel': get_resource_level(group),
-            'allStorage': get_all_storage(group),
+            'totalStorage': get_total_storage(group),
             'regrowthRate': regrowth_rate,
             'survivalCost': survival_cost,
             })

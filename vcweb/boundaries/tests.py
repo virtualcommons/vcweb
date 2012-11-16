@@ -1,12 +1,14 @@
 """
 Tests for boundaries experiment
 """
-
 from django.test import TestCase
+from vcweb.core.models import Parameter
+from vcweb.boundaries.models import get_experiment_metadata
 
-from vcweb.boundaries.models import *
+class BaseTest(TestCase):
+    fixtures = [ 'boundaries_experiment_metadata' ]
 
-class InitialDataTest(TestCase):
+class InitialDataTest(BaseTest):
     def test_experiment_metadata(self):
         self.assertIsNotNone(get_experiment_metadata())
 

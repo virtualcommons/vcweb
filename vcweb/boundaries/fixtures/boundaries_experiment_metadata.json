@@ -7,7 +7,6 @@
             "short_name": null,
             "title": "Boundary Effects Experiment",
             "namespace": "bound",
-            "default_configuration": 5,
             "last_modified": "2012-10-29T16:42:20.880",
             "date_created": "2012-10-29T16:42:20.874",
             "logo_url": null,

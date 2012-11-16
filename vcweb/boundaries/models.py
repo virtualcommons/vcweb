@@ -32,19 +32,11 @@ def get_survival_cost(current_round):
     return current_round.get_parameter_value('survival_cost', default=5)
 
 def set_storage(participant_group_relationship, value=0):
-    prdv = ParticipantRoundDataValue.objects.create(parameter=get_storage_parameter(),
-            participant_group_relationship=participant_group_relationship,
-            round_data=participant_group_relationship.current_round_data,
-            value=value
-            )
-    logger.debug("created storage variable: %s", prdv)
-    return prdv
+    storage_dv = participant_group_relationship.set_data_value(parameter=get_storage_parameter(), value=value)
+    logger.debug("created storage variable: %s", storage_dv)
+    return storage_dv
 
-
-def get_all_storage(group):
+# returns the sum of all stored resources for each member in the group
+def get_total_storage(group):
     # FIXME: use django queryset aggregation for this?
-    all_storage = 0
-    for pdv in group.get_participant_data_values(parameter=get_storage_parameter()):
-        all_storage += pdv.value
-    return all_storage
-
+    return sum([pdv.value for pdv in group.get_participant_data_values(parameter=get_storage_parameter())])

@@ -1427,6 +1427,7 @@ class ParticipantGroupRelationship(models.Model):
             # FIXME: parameterize / make explicit?
             participant_data_value.submitted = True
             participant_data_value.save()
+            return participant_data_value
         else:
             logger.warning("Unable to set data value %s on round data %s for %s", value, current_round_data, parameter)
 
