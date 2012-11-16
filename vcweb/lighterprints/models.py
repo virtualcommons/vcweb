@@ -28,15 +28,11 @@ def new_participant(sender, experiment=None, participant_group_relationship=None
 def update_active_experiments(sender, time=None, **kwargs):
     logger.debug("updating active experiments")
     for experiment in get_active_experiments():
-        if experiment.is_public:
-            logger.debug("updating public experiment")
-            update_public_experiment(experiment)
-            continue
         # calculate total carbon savings and decide if they move on to the next level
         for group in experiment.group_set.all():
-            footprint_level_grdv = get_footprint_level(group)
+            footprint_level_grdv = get_footprint_level_dv(group)
             if should_advance_level(group, footprint_level_grdv.value):
-# advance group level
+                # advance group level
                 footprint_level_grdv.value = min(footprint_level_grdv.value + 1, 3)
                 footprint_level_grdv.save()
 
@@ -182,10 +178,11 @@ class ActivityQuerySet(models.query.QuerySet):
     groups advance in level and each level comprises a set of activities.  Tiered activities are used in the open
     lighterprints experiment, where mastering one activity can lead to another set of activities
     """
-    def at_level(self, level=1, **kwargs):
-        return self.filter(level=level)
-
-
+    def at_level(self, level=1, include_lower_levels=True, **kwargs):
+        if include_lower_levels:
+            return self.filter(level__lte=level)
+        else:
+            return self.filter(level=level)
 
 class ActivityManager(TreeManager, PassThroughManager):
     def currently_available(self, level=1, **kwargs):
@@ -309,8 +306,11 @@ def get_activity_performed_parameter():
 def get_footprint_level_parameter():
     return Parameter.objects.get(name='footprint_level')
 
+def get_footprint_level_dv(group):
+    return group.get_data_value(parameter=get_footprint_level_parameter())[1]
+
 def get_footprint_level(group):
-    return GroupRoundDataValue.objects.get(group=group, parameter=get_footprint_level_parameter())
+    return get_footprint_level_dv(group).value
 
 def get_active_experiments():
     # FIXME: add PassThroughManager to ExperimentManager
@@ -394,14 +394,21 @@ def get_all_activities_tuple(participant_group_relationship, all_activities=None
         flattened_activities.append(activity_as_dict)
     return (flattened_activities, activity_by_level)
 
-def available_activities(participant_group_relationship=None):
+def get_activities(level=1):
+    return Activity.objects.at_level(level)
+
+def get_available_activities(participant_group_relationship=None, ignore_time=False):
     if participant_group_relationship is None:
         logger.warn("asking for available activities with no participant, returning all activities")
         return Activity.objects.all()
     else:
         logger.debug("requesting available activities for pgr %s (%d)", participant_group_relationship, participant_group_relationship.pk)
         # FIXME: push this logic into the manager / queryset?
-        group_level = get_footprint_level(participant_group_relationship.group).value
+        group_level = get_footprint_level(participant_group_relationship.group)
+        if ignore_time:
+            # don't worry about the time, just return all activities at this participant's group level
+            return Activity.objects.at_level(group_level)
+
         today = datetime.combine(date.today(), time())
         available_activities = Activity.objects.currently_available(participant_group_relationship=participant_group_relationship, level=group_level)
 # filter out all activities that have already been performed today (activities may only be performed once a day)
@@ -435,7 +442,7 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
     how often can a participant participate in an activity? whenever it falls within the ActivityAvailability schedule
     and if the participant hasn't already performed this activity during a one-day cycle (which begins at midnight)
     '''
-    level = get_footprint_level(participant_group_relationship.group).value
+    level = get_footprint_level(participant_group_relationship.group)
     if activity.level > level:
         logger.debug("activity %s had larger level (%s) than group level (%s)", activity, activity.level, level)
         return ActivityStatus.UNAVAILABLE
@@ -503,12 +510,17 @@ def get_group_score(group, start=None, end=None):
         activity = activity_performed_dv.value
         total_points += activity.points
     average = total_points / group.size
-    logger.debug("total carbon savings: %s divided by %s members = %s per person", total_points, group.size,
-            average)
+    logger.debug("total carbon savings: %s divided by %s members = %s per person", total_points, group.size, average)
     return (average, total_points)
 
-def points_to_next_level(level, level_multiplier=100):
-    return level * level_multiplier
+def points_to_next_level(current_level):
+    ''' returns the number of average points needed to advance to the next level '''
+    if current_level == 1:
+        return 50
+    elif current_level == 2:
+        return 125
+    elif current_level == 3:
+        return 225
 
 def should_advance_level(group, level, max_level=3):
     if level < max_level:
@@ -519,103 +531,3 @@ def get_activity_performed_counts(participant_group_relationship, activity_perfo
     if activity_performed_parameter is None:
         activity_performed_parameter = get_activity_performed_parameter()
     return participant_group_relationship.participant_data_value_set.filter(parameter=activity_performed_parameter).values('int_value').order_by().annotate(count=models.Count('int_value'))
-
-# public experiment methods
-def update_public_experiment(experiment):
-# check levels for each participant in this experiment
-    activity_performed_parameter = get_activity_performed_parameter()
-    activity_dict = {}
-    for activity in Activity.objects.filter(is_public=True):
-        activity_dict[activity.pk] = activity
-        activity_dict[activity.name] = activity
-    for pgr in experiment.participant_group_relationships:
-        participant_level_dv = pgr.participant_data_value_set.get(parameter=get_participant_level_parameter())
-        previous_level = participant_level_dv.value
-        current_level = get_participant_level(pgr)
-        if current_level == previous_level:
-            # nothing to do, continue with the next pgr
-            continue
-        if current_level > previous_level:
-            logger.debug("Participant %s has leveled from %d -> %d", pgr, previous_level, current_level)
-            if 0 < current_level < len(_levels_to_unlocked_activities):
-                unlocked_activities = _levels_to_unlocked_activities[current_level-1]()
-                logger.debug("unlocked activities for level %s: %s", current_level, unlocked_activities)
-                create_activity_unlocked_data_values(pgr, unlocked_activities.values_list('id', flat=True))
-        else:
-            logger.error("Something is very wrong, current level %d < previous level %d", current_level, previous_level)
-
-        participant_level_dv.value = current_level
-        participant_level_dv.save()
-        # check activity performed conditions for other unlocked activities
-        counts = get_activity_performed_counts(pgr, activity_performed_parameter)
-        unlocked_activity_ids = []
-        for activity_count_dict in counts:
-            activity_id = activity_count_dict['int_value']
-            activity_performed_count = activity_count_dict['count']
-            activity = activity_dict[activity_id]
-            needed_count, unlocked_activity_name = _unlocking_activities[activity.name]
-            if activity_performed_count == needed_count:
-                unlocked_activity_ids.append(activity_dict[unlocked_activity_name].pk)
-        if unlocked_activity_ids:
-            logger.debug("unlocking activities with ids: %s", unlocked_activity_ids)
-            create_activity_unlocked_data_values(pgr, unlocked_activity_ids)
-
-def get_participant_level(participant_group_relationship):
-    return points_to_level(get_green_points(participant_group_relationship))
-
-def get_green_points(participant_group_relationship):
-    performed_activities = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())
-    total_points = 0
-    greenbutton_interval_blocks = participant_group_relationship.gb_interval_block_set.all()
-    gb_dates = greenbutton_interval_blocks.values_list('date', flat=True)
-    for activity_performed_dv in performed_activities:
-        points = activity_performed_dv.value.points
-        activity_performed_date = datetime.combine(activity_performed_dv.date_created.date(), time())
-        if activity_performed_date in gb_dates:
-            points = 1.5 * points
-            logger.debug("50% bonus for %s on %s: %s points", activity_performed_dv, activity_performed_date, points)
-        total_points += points
-    logger.debug("pgr %s has %s points", participant_group_relationship, total_points)
-    return total_points
-
-def points_to_level(points=0):
-    if points < 100:
-        return 1
-    elif points < 250:
-        return 2
-    elif points < 400:
-        return 3
-    elif points < 600:
-        return 4
-    elif points < 800:
-        return 5
-    elif points < 1000:
-        return 6
-    elif points < 1250:
-        return 7
-    elif points < 1500:
-        return 8
-    elif points < 2000:
-        return 9
-    elif points < 2500:
-        return 10
-    elif points < 3000:
-        return 11
-    elif points < 3500:
-        return 12
-    elif points < 4000:
-        return 13
-    elif points < 4500:
-        return 14
-    elif points < 5000:
-        return 15
-    elif points < 5500:
-        return 16
-    elif points < 6000:
-        return 17
-    elif points < 6500:
-        return 18
-    elif points < 7000:
-        return 19
-    else:
-        return 20

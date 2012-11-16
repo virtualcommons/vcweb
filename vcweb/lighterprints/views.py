@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import Sum
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.html import escape
@@ -19,16 +18,16 @@ from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, Partic
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response
-from vcweb.lighterprints.forms import ActivityForm, GreenButtonUploadFileForm
+from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity,
         get_lighterprints_experiment_metadata, get_lighterprints_public_experiment, get_activity_performed_parameter,
-        points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids, GreenButtonParser,
-        get_participant_level, get_unlocked_activities, available_activities, get_activity_performed_counts)
+        points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids,
+        get_unlocked_activities, get_available_activities, get_activity_performed_counts)
 
 from collections import defaultdict
 import itertools
 import logging
-import tempfile
+#import tempfile
 logger = logging.getLogger(__name__)
 
 class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
@@ -182,7 +181,7 @@ def group_score(request, participant_group_id):
         group = participant_group_relationship.group
         (average_points, total_points) = get_group_score(group)
         logger.debug("getting group score for: %s", group)
-        level = get_participant_level(participant_group_relationship) if group.experiment.is_public else get_footprint_level(group).value
+        level = get_footprint_level(group)
         groups = []
         groups.append({
             'level': level,
@@ -429,13 +428,13 @@ def participate(request, experiment_id=None):
         all_activities = [unlocked_activity_dv.value for unlocked_activity_dv in get_unlocked_activities(pgr)]
     else:
         all_activities = Activity.objects.all()
-    activities = available_activities(pgr)
+    activities = get_available_activities(pgr)
     group_level = get_footprint_level(pgr.group).value
     (average_points, total_points) = get_group_score(pgr.group)
     points_needed = points_to_next_level(group_level)
     if request.mobile:
         # FIXME: change this to look up templates in a mobile templates directory?
-        return redirect('https://vcweb.asu.edu/dev')
+        return redirect('https://vcweb.asu.edu/lfpdev')
     return render(request, 'lighterprints/participate.html', {
         'experiment': experiment, 'activities': activities, 'all_activities':all_activities, 'participant_group_relationship': pgr,
         'group_level': group_level,
@@ -454,10 +453,7 @@ def group_view(request, experiment_id=None):
     else:
         experiment = get_object_or_404(Experiment, pk=experiment_id)
         pgr = participant.get_participant_group_relationship(experiment)
-
     return render(request, 'lighterprints/group.html', {'experiment': experiment})
-
-
 
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)
@@ -476,53 +472,3 @@ def checkin(request):
         else:
             logger.warning("authenticated user %s tried to checkin at (%s, %s) for %s", request.user, latitude, longitude, participant_group_relationship)
     return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
-
-def handle_uploaded_file(f, participant_group_relationship):
-    with tempfile.TemporaryFile() as dst:
-        for chunk in f.chunks():
-            dst.write(chunk)
-        parser = GreenButtonParser(fh=dst)
-        return parser.create_models(participant_group_relationship)
-
-@login_required
-def greenbutton_summary(request, participant_group_id):
-    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-    if request.user.participant == participant_group_relationship.participant:
-        interval_blocks = participant_group_relationship.gb_interval_block_set.all()
-        summary = []
-        for interval_block in interval_blocks:
-            day_aggregate = interval_block.interval_reading_set.aggregate(watt_hours=Sum('watt_hours'), total_cost_millicents=Sum('millicents'))
-            day_aggregate['day'] = interval_block.date
-            summary.append(day_aggregate)
-        logger.debug("summaries: %s", summary)
-        return HttpResponse(dumps({ 'success': True, 'summary': summary }))
-    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
-
-@login_required
-def upload_greenbutton_success(request, participant_group_id=None):
-    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-    interval_blocks = participant_group_relationship.gb_interval_block_set.all()
-    return render(request, 'lighterprints/greenbutton-upload-success.html', {
-        'interval_blocks': interval_blocks,
-        })
-
-@login_required
-def upload_greenbutton_data(request):
-    if request.method == 'POST':
-        form = GreenButtonUploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            participant = request.user.participant
-            experiment = get_lighterprints_public_experiment()
-            participant_group_relationship = participant.get_participant_group_relationship(experiment)
-            logger.debug("participant %s sending file: %s", participant_group_relationship, request.FILES)
-            handle_uploaded_file(request.FILES['file'], participant_group_relationship)
-            return redirect('lighterprints:gb-upload-success', participant_group_id=participant_group_relationship.pk)
-    form = GreenButtonUploadFileForm()
-    experiment = get_lighterprints_public_experiment()
-    participant_group_relationship = request.user.participant.get_participant_group_relationship(experiment)
-    return render(request, 'lighterprints/greenbutton-upload.html', {
-        'experiment': experiment,
-        'participant_group_relationship': participant_group_relationship,
-        'form': form,
-        })
-
