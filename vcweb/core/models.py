@@ -1627,7 +1627,6 @@ class SpoolParticipantStatistics(models.Model):
     participations = models.PositiveIntegerField(default=0)
     invitations = models.PositiveIntegerField(default=0)
 
-
 def is_experimenter(user, experimenter=None):
     """
     returns true if user.experimenter exists and is an Experimenter instance.  If an experimenter is passed in as a
@@ -1642,6 +1641,9 @@ def is_participant(user):
     returns true if user.participant exists and is a Participant instance.
     """
     return hasattr(user, 'participant') and isinstance(user.participant, Participant)
+
+def get_active_experiment(participant):
+    pass
 
 # signal handlers for socialauth
 @receiver(social_auth.signals.socialauth_registered, sender=None)

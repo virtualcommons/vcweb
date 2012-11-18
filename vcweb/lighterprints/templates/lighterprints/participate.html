@@ -46,7 +46,7 @@
             <h3>All activities</h3>
             <ul>
                 {% for activity in all_activities %}
-                <li>Level {{activity.level}} - {{activity}}, {{activity.time_slots}}</li>
+                <li><a href='{{activity.detail_url}}'>Level {{activity.level}} - {{activity}}, {{activity.time_slots}}</a></li>
                 {% endfor %}
             </ul>
         </div>

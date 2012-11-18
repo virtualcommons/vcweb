@@ -368,9 +368,6 @@ def login(request):
                 return HttpResponse(dumps({ 'success': False, 'message': 'No experiments available' }), content_type='application/json')
 # FIXME: defaulting to first active experiment... need to revisit this.
             active_experiment = active_experiments[0]
-#            for e in active_experiments:
-#                if e.is_public:
-#                    active_experiment = e
             participant_group_relationship = participant.get_participant_group_relationship(active_experiment)
             return HttpResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.id}), content_type='application/json')
         else:
@@ -417,19 +414,11 @@ class CsvExportView(DataExportMixin, BaseDetailView):
 def participate(request, experiment_id=None):
     detect_mobile(request)
     participant = request.user.participant
-    if experiment_id is None:
-        experiment = get_lighterprints_public_experiment()
-        pgr = experiment.add_participant(participant)
-    else:
-        experiment = get_object_or_404(Experiment, pk=experiment_id)
-        pgr = participant.get_participant_group_relationship(experiment)
-    # need to explicitly unlock activities for the public experiments if they are a newly added participant
-    if experiment.is_public:
-        all_activities = [unlocked_activity_dv.value for unlocked_activity_dv in get_unlocked_activities(pgr)]
-    else:
-        all_activities = Activity.objects.all()
+    experiment = get_object_or_404(Experiment, pk=experiment_id)
+    pgr = participant.get_participant_group_relationship(experiment)
+    all_activities = Activity.objects.all()
     activities = get_available_activities(pgr)
-    group_level = get_footprint_level(pgr.group).value
+    group_level = get_footprint_level(pgr.group)
     (average_points, total_points) = get_group_score(pgr.group)
     points_needed = points_to_next_level(group_level)
     if request.mobile:
