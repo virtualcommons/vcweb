@@ -425,6 +425,8 @@ def participate(request, experiment_id=None):
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     pgr = participant.get_participant_group_relationship(experiment)
     all_activities = Activity.objects.all()
+    for activity in all_activities:
+        activity.available_now = is_activity_available(activity, pgr)
     activities = get_available_activities(pgr)
     group_level = get_footprint_level(pgr.group)
     (average_points, total_points) = get_group_score(pgr.group)

@@ -12,7 +12,6 @@
 {% endblock %}
 {% block headerlinks %}
 <li><a href='https://bitbucket.org/virtualcommons/vcweb/issues'>Report a bug</a></li>
-<li class='{% active request contact %}'><a href='{{ contact }}'>Contact us</a></li>
 {% if "participate" in request.path or "wait" in request.path %}
 <li class='{% active_re request "participate" %}'><a href='#'>Experiment</a></li>
 {% endif %}

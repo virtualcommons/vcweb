@@ -42,12 +42,45 @@
             </ul>
         </div>
         <div class='tab-pane' id='all-activities'>
-            <h3>All activities</h3>
-            <ul>
-                {% for activity in all_activities %}
-                <li><a href='/lighterprints/activity/{{activity.pk}}'>Level {{activity.level}} - {{activity}}, {{activity.time_slots}}</a></li>
+            {% regroup all_activities by level as activities_by_level %}
+            {% for activity_group in activities_by_level %}
+            <div class='accordion' id='accordion-level{{activity_group.grouper}}'>
+                <h4>Level {{activity_group.grouper}} Activities</h4>
+                {% for activity in activity_group.list %}
+                <div class='accordion-group alert alert-message'>
+                    <div class='accordion-heading'>
+                        <a class='accordion-toggle' data-toggle='collapse' data-parent='#accordion-level{{activity_group.grouper}}'
+                            href='#activity{{activity.pk}}'>{{activity.display_name}} <i class='icon-chevron-right'></i><span class='pull-right text-info'>{{activity.time_slots}}</span>
+                        </a>                    
+                    </div>
+                    <div id='activity{{activity.pk}}' class='accordion-body collapse'>
+                        <div class='accordion-inner'>
+                            <table class='table table-condensed table-bordered table-striped'>
+                                <thead>
+                                    <tr><th>Summary</th><th>Availability</th><th>Points</th></tr>
+                                </thead>
+                                <tbody>
+                                <tr><td>{{ activity.summary }}</td><td><b>{{activity.time_slots}}</b></td><td><span class='badge badge-success'>{{activity.points}}</span></td></tr>
+                            </table>
+                            <p>{{ activity.description }}</p>
+                            <p>For more info, please visit <a target="_blank" href='{{activity.url}}'>{{activity.url}}</a></p>
+                            {% if not activity.available_now %}
+                            <div class='alert alert-error'>
+                                <i class='icon-exclamation-sign'></i>This activity is not available right now.  Please check again later.
+                            </div>
+                            {% endif %}
+                            <form class='form-horizontal' method='post' id='activityform{{activity.pk}}'>
+                                <input type='hidden' name='activity_id' value='{{activity.pk}}' />
+                                <input type='hidden' name='participant_group_id' value='{{participant_group_id}}' />
+                                <a class='btn {% if not activity.available_now %} disabled {% endif %}' 
+                                    href='#'><i class='{% if activity.available_now %} icon-ok {% else %} icon-remove {% endif %}'></i> <span class='text-success'> Perform this activity</span></a>
+                            </form>
+                        </div>
+                    </div>
+                </div>
                 {% endfor %}
-            </ul>
+            </div>
+            {% endfor %}
         </div>
         <div class='tab-pane' id='group-wall'>
             <h3>not implemented yet</h3>
