@@ -39,7 +39,7 @@
                 <li class='{% active_re request "experiment" %}'><a name='experiment'>Experiment</a></li>
                 {% endif %}
                 {% if request.user.is_authenticated %}
-                <li class='{% active request logout %}'><a href='{{ logout }}'>Logout ({{request.user.email}})</a></li>
+                <li><a href='{{ logout }}'>Logout ({{request.user.email}})</a></li>
                     {% else %}
                     <li class='{% active request login %} {% active request register %}'>
                         {% if debug_mode %}
