@@ -60,7 +60,7 @@
                                     <tr><th>Summary</th><th>Availability</th><th>Points</th></tr>
                                 </thead>
                                 <tbody>
-                                <tr><td>{{ activity.summary }}</td><td><b>{{activity.time_slots}}</b></td><td><span class='badge badge-success'>{{activity.points}}</span></td></tr>
+                                <tr><td>{{ activity.summary }}</td><td><span class='text-info'>{{activity.time_slots}}</span></td><td><span class='badge badge-success'>{{activity.points}}</span></td></tr>
                             </table>
                             <p>{{ activity.description }}</p>
                             <p>For more info, please visit <a target="_blank" href='{{activity.url}}'>{{activity.url}}</a></p>
@@ -71,8 +71,8 @@
                             {% endif %}
                             <form class='form-horizontal' method='post' id='activityform{{activity.pk}}'>
                                 <input type='hidden' name='activity_id' value='{{activity.pk}}' />
-                                <input type='hidden' name='participant_group_id' value='{{participant_group_id}}' />
-                                <a class='btn {% if not activity.available_now %} disabled {% endif %}' 
+                                <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
+                                <a data-activity-id='{{activity.pk}}' class='btn activity-action {% if not activity.available_now %} disabled {% endif %}' 
                                     href='#'><i class='{% if activity.available_now %} icon-ok {% else %} icon-remove {% endif %}'></i> <span class='text-success'> Perform this activity</span></a>
                             </form>
                         </div>
@@ -88,5 +88,34 @@
     </div>
 </div>
 {% endblock page %}
-{% block footer %}
+{% block javascript %}
+{{ block.super }}
+<script type='text/javascript'>
+function performActivity(activityId) {
+    var formData = $('#activityform' + activityId).serialize();
+    alert("posting activity form " + formData);
+    $.post('/lighterprints/api/do-activity', formData, function(data) {
+        console.log(data);
+        alert("Successfully performed activity.");
+    });
+    return false;
+}
+$(function() {
+    $('#all-activities a.activity-action:not(.disabled)').click(function(evt) {
+        var activityId = $(this).attr("data-activity-id");
+        var formData = $('#activityform' + activityId).serialize();
+        var self = $(this);
+        $.post('/lighterprints/api/do-activity', formData, function(data) {
+            console.log(data);
+            if (data.success) {
+                self.addClass('disabled').off('click');
+                alert("successfully performed activity.");
+            }
+            else {
+                alert("unable to perform activity: " + data.message);
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

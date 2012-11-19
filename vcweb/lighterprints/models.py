@@ -418,7 +418,10 @@ def get_available_activities(participant_group_relationship=None, ignore_time=Fa
         performed_activity_data_values = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter(),
                 int_value__in=[activity.id for activity in available_activities],
                 date_created__gt=today)
-        performed_activity_ids = [padv.value for padv in performed_activity_data_values]
+        # XXX: data value's int_value stores the fk directly, using .value does a fk lookup to restore the full entity
+        # which we don't need
+        performed_activity_ids = [padv.int_value for padv in performed_activity_data_values]
+        logger.debug("performed activity ids: %s", performed_activity_ids)
         return [activity for activity in available_activities if activity.id not in performed_activity_ids]
 
 def check_public_activity_availability(activity, participant_group_relationship):

@@ -9,10 +9,9 @@ from vcweb.lighterprints.views import (ActivityDetailView, ActivityListView, pos
 
 # handles all /lighterprints/* URL requests
 urlpatterns = patterns('vcweb.lighterprints.views',
-    url(r'^$', participate, name='participate'),
     url(r'^about$', TemplateView.as_view(template_name='lighterprints/about.html'), name='about'),
     url(r'^(?P<pk>\d+)/data$', CsvExportView.as_view(), name='export-data'),
-    url(r'^((?P<experiment_id>\d+)/)?participate/?$', participate, name='participate'),
+    url(r'^(?P<experiment_id>\d+)/participate/?$', participate, name='participate'),
     url(r'^(?P<experiment_id>\d+)/group/?$', group_view, name='group'),
     url(r'^activity/list(?P<format>.html|.json)?/?$', ActivityListView.as_view()),
     url(r'^activity/(?P<pk>\d+)$', ActivityDetailView.as_view(), name='activity-detail'),

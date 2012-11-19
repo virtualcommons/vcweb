@@ -5,7 +5,7 @@
 {% load tags %}
 {% load url from future %}
 {% block headerlinks %}
-<li class='{% active_re request 'participate' %}'><a href='{% url 'lighterprints:participate' %}'>Participate</a></li>
+<li class='{% active_re request 'participate' %}'><a href='{% url 'lighterprints:participate' experiment_id=experiment.id %}'>Participate</a></li>
 <li><a href='http://vcweb.asu.edu/devfoot'>Mobile</a></li>
 {% endblock %}
 
