@@ -59,10 +59,10 @@
 <div id='logo'>
 {% block logo %}
 <div class='row-fluid'>
-    <div class='span2'>
+    <div class='span3'>
         <img class='logo' src='{{STATIC_URL}}images/vcweb-logo.png' width='120' height='90' alt='vcweb logo'/>
     </div>
-    <div class='span10'>
+    <div class='span9'>
         <h1>
             the virtual commons web environment
         </h1>
@@ -111,6 +111,7 @@
         Copyright (c) {% now "Y" %} Arizona Board of Regents.  <br/>
         <br />
         </p>
+        {% endblock footer %}
         {% with jquery_version="1.8.2" %}
         <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/{{jquery_version}}/jquery.min.js'></script>
         {% endwith %}
@@ -125,11 +126,8 @@
         {% else %}
         <script type='text/javascript' src='{{STATIC_URL}}js/dajaxice.core.js' charset='utf-8'></script>
         {% endif %}
-        {% block startupjs %}
-        {% endblock %}
         {% block javascript %}
         {% endblock %}
-        {% endblock footer %}
     </footer>
 </div>
 </body>

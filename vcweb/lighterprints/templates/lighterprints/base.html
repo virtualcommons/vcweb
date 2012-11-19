@@ -1,8 +1,11 @@
-{% extends "base.html" %}
+{% extends "participant/base.html" %}
+{% block logo %}
+{% endblock %}
+
 {% load tags %}
 {% load url from future %}
 {% block headerlinks %}
-<li class='{% active_re request 'participate' %}'><a href='{% url 'lighterprints:participate' %}'>Full</a></li>
-<li><a href='https://vcweb.asu.edu/dev'>Mobile</a></li>
+<li class='{% active_re request 'participate' %}'><a href='{% url 'lighterprints:participate' %}'>Participate</a></li>
+<li><a href='http://vcweb.asu.edu/devfoot'>Mobile</a></li>
 {% endblock %}
 

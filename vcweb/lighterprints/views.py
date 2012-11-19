@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.html import escape
 from django.utils.timesince import timesince
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic.detail import BaseDetailView
+from django.views.generic.detail import DetailView, BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
 from vcweb.core.middleware import detect_mobile
@@ -90,8 +90,15 @@ class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin
         return context
 
 
-class ActivityDetailView(JSONResponseMixin, BaseDetailView):
+class ActivityDetailView(DetailView):
+    model = Activity
     template_name = 'lighterprints/activity_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ActivityDetailView, self).get_context_data(**kwargs)
+        return context
+
+
 
 # FIXME: use persistent_messages instead where the user has to explicitly clear /
 # dismiss the messages.  additional fields would be target_id
@@ -423,13 +430,10 @@ def participate(request, experiment_id=None):
     points_needed = points_to_next_level(group_level)
     if request.mobile:
         # FIXME: change this to look up templates in a mobile templates directory?
-        return redirect('https://vcweb.asu.edu/lfpdev')
+        return redirect('https://vcweb.asu.edu/devfoot')
     return render(request, 'lighterprints/participate.html', {
         'experiment': experiment, 'activities': activities, 'all_activities':all_activities, 'participant_group_relationship': pgr,
-        'group_level': group_level,
-        'total_points': total_points,
-        'average_points': average_points,
-        'points_to_next_level': points_needed,
+        'group_level': group_level, 'total_points': total_points, 'average_points': average_points, 'points_to_next_level': points_needed,
         })
 
 @participant_required

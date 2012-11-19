@@ -1,17 +1,16 @@
 {% extends "lighterprints/base.html" %}
+{% block logo %}
+<h1>Welcome to the {{ experiment.display_name }} experiment</h1>
+{% endblock %}
 {% block page %}
 <div class='tabbable'>
     <ul class='nav nav-tabs'>
-        <li class='active'><a href='#welcome' data-toggle='tab'>Welcome</a></li>
+        <li class='active'><a href='#home' data-toggle='tab'>Home</a></li>
         <li><a href='#group-wall' data-toggle='tab'>Group Wall</a></li>
         <li><a href='#all-activities' data-toggle='tab'>All activities</a></li>
     </ul>
     <div class='tab-content'>
-        <div class='tab-pane active' id='welcome'>
-            <p class='lead'>
-            Welcome to the {{ experiment.display_name }} experiment.
-            </p>
-            <hr>
+        <div class='tab-pane active' id='home'>
             <p>
             You have been randomly placed in a group of <span class='badge badge-info'>{{ participant_group_relationship.group.size }}</span> participants.
             In this experiment you can perform virtual actions that represent <span class='text-success'>green alternatives</span>
@@ -56,3 +55,5 @@
     </div>
 </div>
 {% endblock page %}
+{% block footer %}
+{% endblock %}

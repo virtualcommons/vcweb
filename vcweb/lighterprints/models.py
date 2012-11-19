@@ -238,7 +238,10 @@ class Activity(MPTTModel):
 
     @property
     def time_slots(self):
-        return ','.join([availability.time_slot for availability in self.availability_set.all()])
+        if self.available_all_day:
+            return 'available all day'
+        else:
+            return ','.join([availability.time_slot for availability in self.availability_set.all()])
 
     def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'icon_url', 'personal_benefits', 'points')):
         activity_as_dict = {}
