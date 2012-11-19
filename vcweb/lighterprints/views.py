@@ -17,12 +17,12 @@ from vcweb.core.decorators import participant_required
 from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.services import foursquare_venue_search
-from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response
+from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response, get_active_experiment
 from vcweb.lighterprints.forms import ActivityForm
-from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity,
+from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, is_activity_available,
         get_lighterprints_experiment_metadata, get_lighterprints_public_experiment, get_activity_performed_parameter,
         points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids,
-        get_unlocked_activities, get_available_activities, get_activity_performed_counts)
+        get_available_activities, get_activity_performed_counts)
 
 from collections import defaultdict
 import itertools
@@ -96,6 +96,11 @@ class ActivityDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(ActivityDetailView, self).get_context_data(**kwargs)
+        participant = self.request.user.participant
+        experiment = get_active_experiment(participant, experiment_metadata=get_lighterprints_experiment_metadata())
+        context['experiment'] = experiment
+        context['available'] = is_activity_available(context['activity'], participant.get_participant_group_relationship(experiment))
+        logger.debug("checking availability for %s: %s", context['activity'], context['available'])
         return context
 
 
@@ -369,12 +374,8 @@ def login(request):
             auth.login(request, user)
             set_authentication_token(user, request.session.session_key)
             participant = user.participant
-            active_experiments = participant.experiments.filter(status__in=('ACTIVE', 'ROUND_IN_PROGRESS'), experiment_metadata=get_lighterprints_experiment_metadata())
-            if not active_experiments:
-                logger.debug("No experiments available for user: %s", user)
-                return HttpResponse(dumps({ 'success': False, 'message': 'No experiments available' }), content_type='application/json')
 # FIXME: defaulting to first active experiment... need to revisit this.
-            active_experiment = active_experiments[0]
+            active_experiment = get_active_experiment(participant, experiment_metadata=get_lighterprints_experiment_metadata())
             participant_group_relationship = participant.get_participant_group_relationship(active_experiment)
             return HttpResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.id}), content_type='application/json')
         else:

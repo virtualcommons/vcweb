@@ -98,8 +98,12 @@ def set_authentication_token(user, authentication_token=None):
     commons_user.authentication_token = authentication_token
     commons_user.save()
 
-def get_active_experiment(participant):
-    pers = ParticipantExperimentRelationship.objects.active(participant=participant)
+def get_active_experiment(participant, experiment_metadata=None, **kwargs):
+    pers = []
+    if experiment_metadata is not None:
+        pers = ParticipantExperimentRelationship.objects.active(participant=participant, experiment__experiment_metadata=experiment_metadata, **kwargs)
+    else:
+        pers = ParticipantExperimentRelationship.objects.active(participant=participant, **kwargs)
     if pers:
         logger.debug("using first active experiment %s for participant %s", pers[0], participant)
         return pers[0].experiment

@@ -1,6 +1,36 @@
-{% extends "base.html" %}
+{% extends "lighterprints/base.html" %}
+{% block logo %}<h1>{{ activity.display_name }}</h1>{% endblock %}
+{% block page %}
+<div class='alert alert-info'>
+<h3>Summary</h3>
+<p>
+{{ activity.summary }}
+</p>
+<h3>Description</h3>
+<p>
+{{ activity.description }}
+</p>
+</div>
+<div class='alert alert-success'>
+<h3>Availability</h3>
+{{ activity.time_slots }}
+</div>
+<div class='alert alert-warning'>
+    <h3>Actions</h3>
+    <div class='btn-group'>
+        {% if available %}
+        <a class='btn'><i class='icon-ok'></i>Perform activity</a>
+        {% endif %}
+        <a href='{{experiment.participant_url}}' class='btn'>Return to participant page</a>
+    </div>
+    {% if not available %}
+    <div class='alert alert-error'>
+        <i class='icon-exclamation-sign'></i>This activity is not currently available for you to perform.
+    </div>
+    {% endif %}
+</div>
+<h3>
 
-{% block content %}
 
 
-{% endblock content %}
+{% endblock page %}
