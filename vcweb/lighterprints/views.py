@@ -416,6 +416,8 @@ def participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     pgr = participant.get_participant_group_relationship(experiment)
+    if pgr is None:
+        raise Http404("You do not appear to be participating in this experiment.")
     all_activities = Activity.objects.all()
     for activity in all_activities:
         activity.available_now = is_activity_available(activity, pgr)
