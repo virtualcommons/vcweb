@@ -253,8 +253,9 @@ ul.horizontal>li {
     text-decoration: underline;
 }
 .scrollable-messages {
+    height: 20em;
     overflow: auto;
-    height: 370px;
+    margin-bottom: 10px;
 }
 #experiment-messages {
     height: 230px;

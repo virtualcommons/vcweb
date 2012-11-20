@@ -121,17 +121,21 @@
             </table>
         </div>
         <div class='tab-pane' id='group-wall'>
-            <h3>Recent activity</h3>
-            <div data-bind='foreach: recent_activity'>
-                <div class='alert alert-info'>
-                    <span data-bind='text: participant_name'></span> performed <span data-bind='text: display_name'></span>,
-                    earning <span class='badge badge-success' data-bind='text:points'></span> green points.
-                    <b class='pull-right'><span data-bind='text: date_created'></span> ago</b>
-
-                </div>
-            </div>
             <h3>Chat messages</h3>
-            <div id='chat-div' class='chat notice'>
+            <form id='chat-form' class='form-horizontal' data-bind='submit: submitChatMessage'>
+                <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.id}}'/>
+                <div class='control-group'>
+                    <label class='control-label' for='chatText'>Chat</label>
+                    <div class='controls'>
+                        <input type='text' id='chatText' name='message' placeholder='Send a message to your group' />
+                    </div>
+                </div>
+                <div class='control-group'>
+                    <div class='controls'><a class='btn' data-bind='click: submitChatMessage'>Send</a></div>
+                </div>
+            </form>
+
+            <div id='chat-div' class='scrollable-messages'>
                 <div data-bind='ifnot: hasChatMessages() '>
                     <div class='alert alert-warning'>
                         No chat messages have been posted yet.
@@ -146,18 +150,15 @@
                     </div>
                 </div>
             </div>
-            <form id='chat-form' class='form-horizontal' data-bind='submit: submitChatMessage'>
-                <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.id}}'/>
-                <div class='control-group'>
-                    <label class='control-label' for='chatText'>Chat</label>
-                    <div class='controls'>
-                        <input type='text' id='chatText' name='message' placeholder='Send a message to your group' />
-                    </div>
+            <h3>Recent activity</h3>
+            <div data-bind='foreach: recent_activity' class='scrollable-messages'>
+                <div class='alert alert-info'>
+                    <span data-bind='text: participant_name'></span> performed <span data-bind='text: display_name'></span>,
+                    earning <span class='badge badge-success' data-bind='text:points'></span> green points.
+                    <b class='pull-right'><span data-bind='text: date_created'></span> ago</b>
+
                 </div>
-                <div class='control-group'>
-                    <div class='controls'><a class='btn' data-bind='click: submitChatMessage'>Send</a></div>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
