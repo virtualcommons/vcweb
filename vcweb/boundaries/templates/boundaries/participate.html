@@ -173,9 +173,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             }
             model.submitDecision = function(data, evt) {
                 evt.preventDefault();
-                console.log("clicking submit decision");
                 var formData = $('#vcweb-form').serialize();
-                console.log("form data: " + formData);
                 $.post('', formData, function(jsonString) {
                     var data = jQuery.parseJSON(jsonString);
                     console.log(data);

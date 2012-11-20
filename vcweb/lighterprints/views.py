@@ -103,8 +103,6 @@ class ActivityDetailView(DetailView):
         logger.debug("checking availability for %s: %s", context['activity'], context['available'])
         return context
 
-
-
 # FIXME: use persistent_messages instead where the user has to explicitly clear /
 # dismiss the messages.  additional fields would be target_id
 def get_notification_json(participant_group_relationship):
@@ -224,7 +222,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         chat_messages.append({
             'pk': chat_message.pk,
             'date_created': timesince(chat_message.date_created),
-            'message': escape(chat_message.value),
+            'message': chat_message.value,
             'participant_name': escape(pgr.participant.full_name),
             'participant_number': pgr.participant_number,
             'participant_group_id':pgr.pk,
@@ -239,6 +237,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
     for activity_prdv in performed_activities[:number_of_activities]:
         activity = activity_prdv.value
         activity_performed_dict = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
+        activity_performed_dict['date_created'] = timesince(activity_prdv.date_created)
         activity_performed_dict['date_performed'] = activity_prdv.date_created
         pgr = activity_prdv.participant_group_relationship
         activity_performed_dict['participant_number'] = pgr.participant_number
@@ -297,13 +296,6 @@ def post_chat_message(request):
                 'value': message,
                 'participant_group_relationship': participant_group_relationship
                 }
-        logger.debug("about to check target participant")
-# FIXME: causing errors, need to check logic
-#        if 'target_participant_group_id' in form.cleaned_data:
-#            target_participant_group_id = form.cleaned_data['target_participant_group_id']
-#            target_participant = ParticipantGroupRelationship.objects.get(pk=target_participant_group_id)
-#            chat_message_parameters['target_participant'] = target_participant
-        logger.debug("creating chat message")
         chat_message = ChatMessage.objects.create(**chat_message_parameters)
         logger.debug("Participant %s created chat message %s", participant_group_relationship.participant, chat_message)
         content = get_group_activity_json(participant_group_relationship)
@@ -431,12 +423,21 @@ def participate(request, experiment_id=None):
     group_level = get_footprint_level(pgr.group)
     (average_points, total_points) = get_group_score(pgr.group)
     points_needed = points_to_next_level(group_level)
+    group_activity = get_group_activity_json(pgr)
+    group_score_json = dumps({
+        'groupLevel': group_level,
+        'pointsToNextLevel': points_needed,
+        'averagePoints': average_points,
+        'totalPoints': total_points,
+        })
     if request.mobile:
         # FIXME: change this to look up templates in a mobile templates directory?
         return redirect('https://vcweb.asu.edu/devfoot')
     return render(request, 'lighterprints/participate.html', {
         'experiment': experiment, 'activities': activities, 'all_activities':all_activities, 'participant_group_relationship': pgr,
         'group_level': group_level, 'total_points': total_points, 'average_points': average_points, 'points_to_next_level': points_needed,
+        'group_activity_json': group_activity,
+        'group_score_json': group_score_json,
         })
 
 @participant_required
