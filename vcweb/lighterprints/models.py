@@ -243,7 +243,7 @@ class Activity(MPTTModel):
         else:
             return ','.join([availability.time_slot for availability in self.availability_set.all()])
 
-    def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'icon_url', 'personal_benefits', 'points')):
+    def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'icon_url', 'personal_benefits', 'points', 'time_slots')):
         activity_as_dict = {}
         for attr_name in attrs:
             activity_as_dict[attr_name] = getattr(self, attr_name, None)
@@ -378,7 +378,9 @@ def get_unlocked_activities(participant_group_relationship):
     #logger.debug("participant %s performed activities %s\nunlocked: %s", participant_group_relationship, performed_activities, unlocked_activities)
     return unlocked_activities
 
+
 # returns a tuple of flattened_activities list, activity_by_level dict
+# FIXME: needs a better name
 def get_all_activities_tuple(participant_group_relationship, all_activities=None):
     if all_activities is None:
         all_activities = Activity.objects.all()
@@ -397,9 +399,6 @@ def get_all_activities_tuple(participant_group_relationship, all_activities=None
         flattened_activities.append(activity_as_dict)
     return (flattened_activities, activity_by_level)
 
-def get_activities(level=1):
-    return Activity.objects.at_level(level)
-
 def get_available_activities(participant_group_relationship=None, ignore_time=False):
     if participant_group_relationship is None:
         logger.warn("asking for available activities with no participant, returning all activities")
@@ -417,22 +416,12 @@ def get_available_activities(participant_group_relationship=None, ignore_time=Fa
 # filter out all activities that have already been performed today (activities may only be performed once a day)
         performed_activity_data_values = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter(),
                 int_value__in=[activity.id for activity in available_activities],
-                date_created__gt=today)
+                date_created__gte=today)
         # XXX: data value's int_value stores the fk directly, using .value does a fk lookup to restore the full entity
         # which we don't need
         performed_activity_ids = [padv.int_value for padv in performed_activity_data_values]
         logger.debug("performed activity ids: %s", performed_activity_ids)
         return [activity for activity in available_activities if activity.id not in performed_activity_ids]
-
-def check_public_activity_availability(activity, participant_group_relationship):
-    '''
-    in the public lighterprints game, an unlocked activity data value is created whenever a new activity is unlocked signifying that the given Activity is now available to
-    the user
-    '''
-    available_activity_ids = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_unlocked_parameter()).values_list('int_value', flat=True)
-    if activity.pk in available_activity_ids:
-        return check_already_performed_today(activity, participant_group_relationship)
-    return ActivityStatus.UNAVAILABLE
 
 def check_already_performed_today(activity, participant_group_relationship):
     today = datetime.combine(date.today(), time())

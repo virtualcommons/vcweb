@@ -36,16 +36,10 @@
             To begin participating, click on the "All activities" tab, and select an activity you'd like to perform.
             Available activities will be marked with an exclamation point: <i class='icon-exclamation-sign'></i>
             </p>
-            <!--
             <h3>Available activities for {{request.user.participant}}</h3>
-            <ul>
-                {% for activity in activities %}
-                <li><a href='/lighterprints/activity/{{activity.pk}}'>{{ activity }}, {{ activity.time_slots }}</a></li>
-                {% empty %}
-                <li>No more available activities, please check back again tomorrow.</li>
-                {% endfor %}
+            <ul data-bind='foreach: availableActivities()'>
+                <li data-bind='text: display_name'></li>
             </ul>
-            -->
         </div>
         <div class='tab-pane' id='all-activities'>
             <p>
@@ -142,7 +136,7 @@
                     </div>
                 </div>
                 <div data-bind='if: hasChatMessages()'>
-                    <div data-bind='foreach: chat_messages'>
+                    <div data-bind='foreach: chatMessages'>
                         <div class='alert alert-message chat-message'>
                             <strong data-bind='text: participant_name'></strong>: <em><span data-bind='text: message'></span></em>
                             <b class='pull-right' ><span data-bind='text: date_created'></span> ago</b>
@@ -151,7 +145,7 @@
                 </div>
             </div>
             <h3>Recent activity</h3>
-            <div data-bind='foreach: recent_activity' class='scrollable-messages'>
+            <div data-bind='foreach: groupActivity' class='scrollable-messages'>
                 <div class='alert alert-info'>
                     <span data-bind='text: participant_name'></span> performed <span data-bind='text: display_name'></span>,
                     earning <span class='badge badge-success' data-bind='text:points'></span> green points.
@@ -160,6 +154,22 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+<div id='activityPerformedModal' class='modal hide fade' tabindex='-1' role='dialog'
+    aria-labelledby='activityPerformedModalLabel'
+    aria-hidden='true'>
+    <div class='modal-header'>
+        <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>x</button>
+        <h3 id='activityPerformedModalLabel'>Successfully performed activity</h3>
+    </div>
+    <div class='modal-body'>
+        <p>
+        You have successfully performed  
+        </p>
+    </div>
+    <div class='modal-fotter'>
+        <button class='btn' data-dismiss='modal' aria-hidden='true'>Continue</button>
     </div>
 </div>
 {% endblock page %}
@@ -178,7 +188,7 @@ $(function() {
             if (data.success) {
                 self.addClass('disabled').off('click');
                 $('#activity-available-sign-' + activityId).remove();
-                alert("successfully performed activity.");
+                $('#activityPerformedModal').modal();
             }
             else {
                 alert("unable to perform activity: " + data.message);
@@ -193,11 +203,11 @@ $(function() {
     $('.nav-tabs a').on('shown', function(evt) {
         window.location.hash = evt.target.hash;
     });
-    function GroupWallModel(groupActivityJson) {
+    function LighterFootprintsModel(modelJson) {
         var self = this;
-        var model = ko.mapping.fromJS(groupActivityJson);
+        var model = ko.mapping.fromJS(modelJson);
         model.hasChatMessages = function() {
-            return model.chat_messages().length > 0;
+            return model.chatMessages().length > 0;
         }
         model.submitChatMessage = function() {
             var formData = $('#chat-form').serialize();
@@ -207,21 +217,19 @@ $(function() {
             $('#chatText').val('');
             return false;
         }
+        model.availableActivities = ko.computed(function() {
+            var availables = ko.utils.arrayFilter(model.activities(), function(activity) { return activity.available_now() });
+            console.log(availables);
+            return availables;
+        });
         return model;
     }
-    function GroupScoreModel(groupScoreJson) {
-        var self = this;
-        var model = ko.mapping.fromJS(groupScoreJson);
-        return model;
-    }
-    // set up KO bindings for group wall
-    var groupActivityJson = $.parseJSON("{{ group_activity_json|escapejs }}");
-    var groupWallModel = new GroupWallModel(groupActivityJson);
-    ko.applyBindings(groupWallModel, document.getElementById('group-wall'));
-    // set up KO bindings for group score
-    var groupScoreJson = $.parseJSON("{{ group_score_json|escapejs }}");
-    var groupScoreModel = new GroupScoreModel(groupScoreJson);
-    ko.applyBindings(groupScoreModel, document.getElementById('group-score'));
+    // set up KO binding, using one master view model
+    var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
+    console.log(viewModelData);
+    var viewModel = new LighterFootprintsModel(viewModelData);
+    console.log(viewModel);
+    ko.applyBindings(viewModel);
 });
 </script>
 {% endblock %}

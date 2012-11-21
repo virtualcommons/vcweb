@@ -212,7 +212,7 @@ def group_activity(request, participant_group_id):
         logger.warning("authenticated user %s tried to retrieve group activity for %s", request.user, participant_group_relationship)
         return HttpResponse(dumps({'success': False, 'message': 'Invalid authz request'}))
 
-def get_group_activity_json(participant_group_relationship, number_of_activities=10, retrieve_all=True):
+def get_group_activity_tuple(participant_group_relationship, number_of_activities=10, retrieve_all=True):
     group = participant_group_relationship.group
     chat_messages = []
     for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
@@ -247,6 +247,11 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         activity_performed_dict['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=activity_prdv.pk)]
         activity_performed_dict['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=activity_prdv.pk)]
         group_activity.append(activity_performed_dict)
+    return (chat_messages, group_activity)
+
+def get_group_activity_json(participant_group_relationship, number_of_activities=10, retrieve_all=True):
+    (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship, number_of_activities,
+            retrieve_all)
     return dumps({
         'success': True,
         'chat_messages': chat_messages,
@@ -298,7 +303,7 @@ def post_chat_message(request):
                 }
         chat_message = ChatMessage.objects.create(**chat_message_parameters)
         logger.debug("Participant %s created chat message %s", participant_group_relationship.participant, chat_message)
-        content = get_group_activity_json(participant_group_relationship)
+        content = get_view_model_json(participant_group_relationship)
         return HttpResponse(content, content_type='application/json')
     return HttpResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
 
@@ -409,6 +414,29 @@ class CsvExportView(DataExportMixin, BaseDetailView):
                 total_points += performed_activity.value.points
             writer.writerow([participant_group_relationship, total_points])
 
+def get_view_model_json(participant_group_relationship, activities=None):
+    if activities is None:
+        activities = Activity.objects.all()
+    available_activities = get_available_activities(participant_group_relationship)
+    logger.debug("currently available activities: %s", available_activities)
+    available_activity_ids = [activity.pk for activity in available_activities]
+    activity_dict_list = [activity.to_dict() for activity in activities]
+    for activity in activity_dict_list:
+        activity['available_now'] = activity['pk'] in available_activity_ids
+    group_level = get_footprint_level(participant_group_relationship.group)
+    (average_points, total_points) = get_group_score(participant_group_relationship.group)
+    points_needed = points_to_next_level(group_level)
+    (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
+    return dumps({
+        'groupLevel': group_level,
+        'pointsToNextLevel': points_needed,
+        'averagePoints': average_points,
+        'totalPoints': total_points,
+        'chatMessages': chat_messages,
+        'groupActivity': group_activity,
+        'activities': activity_dict_list,
+        })
+
 
 @participant_required
 def participate(request, experiment_id=None):
@@ -416,30 +444,18 @@ def participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     pgr = participant.get_participant_group_relationship(experiment)
+    all_activities = Activity.objects.all()
+    view_model_json = get_view_model_json(pgr, all_activities)
     if pgr is None:
         raise Http404("You do not appear to be participating in this experiment.")
-    all_activities = Activity.objects.all()
-    for activity in all_activities:
-        activity.available_now = is_activity_available(activity, pgr)
-    activities = get_available_activities(pgr)
-    group_level = get_footprint_level(pgr.group)
-    (average_points, total_points) = get_group_score(pgr.group)
-    points_needed = points_to_next_level(group_level)
-    group_activity = get_group_activity_json(pgr)
-    group_score_json = dumps({
-        'groupLevel': group_level,
-        'pointsToNextLevel': points_needed,
-        'averagePoints': average_points,
-        'totalPoints': total_points,
-        })
     if request.mobile:
         # FIXME: change this to look up templates in a mobile templates directory?
         return redirect('https://vcweb.asu.edu/devfoot')
     return render(request, 'lighterprints/participate.html', {
-        'experiment': experiment, 'activities': activities, 'all_activities':all_activities, 'participant_group_relationship': pgr,
-        'group_level': group_level, 'total_points': total_points, 'average_points': average_points, 'points_to_next_level': points_needed,
-        'group_activity_json': group_activity,
-        'group_score_json': group_score_json,
+        'experiment': experiment,
+        'participant_group_relationship': pgr,
+        'view_model_json': view_model_json,
+        'all_activities': all_activities,
         })
 
 @participant_required

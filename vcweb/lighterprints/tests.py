@@ -92,7 +92,7 @@ class GroupActivityTest(BaseTest):
 
 class ActivityTest(BaseTest):
     def perform_activities(self, activities=None):
-        activities = get_activities(level=1)
+        activities = Activity.objects.at_level(level=1)
         performed_activities = set()
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=self.experiment):
             participant = participant_group_relationship.participant
