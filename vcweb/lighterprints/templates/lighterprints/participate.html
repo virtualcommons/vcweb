@@ -44,16 +44,17 @@
         <div class='tab-pane' id='all-activities'>
             <p>
             Activities are divided up into 3 levels.  In order to unlock higher level activities your group must earn
-            enough points so that the <strong>average number of points</strong> per participant is greater than 
+            enough points so that the <strong>average number of points</strong> per participant is greater than
             <span data-bind='text:pointsToNextLevel' class='badge badge-info'>{{points_to_next_level}}</span>.
             </p>
             <p>
             Currently available activities are marked with a <i class='icon-exclamation-sign'></i>.  You can click on
             any activity's name to learn more information about it.
             </p>
+            {% comment %} FIXME: rewrite this to use KO instead of django templating if possible {% endcomment %}
             {% regroup all_activities by level as activities_by_level %}
             {% for activity_group in activities_by_level %}
-            <div class='accordion' id='accordion-level{{activity_group.grouper}}'>
+            <div  class='accordion' id='accordion-level{{activity_group.grouper}}'>
                 <h4>Level {{activity_group.grouper}} Activities</h4>
                 {% for activity in activity_group.list %}
                 <div class='accordion-group alert alert-message'>

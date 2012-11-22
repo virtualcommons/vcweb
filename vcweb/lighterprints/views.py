@@ -417,12 +417,7 @@ class CsvExportView(DataExportMixin, BaseDetailView):
 def get_view_model_json(participant_group_relationship, activities=None):
     if activities is None:
         activities = Activity.objects.all()
-    available_activities = get_available_activities(participant_group_relationship)
-    logger.debug("currently available activities: %s", available_activities)
-    available_activity_ids = [activity.pk for activity in available_activities]
-    activity_dict_list = [activity.to_dict() for activity in activities]
-    for activity in activity_dict_list:
-        activity['available_now'] = activity['pk'] in available_activity_ids
+    (activity_dict_list, level_activity_dict) = get_all_activities_tuple(participant_group_relationship, activities)
     group_level = get_footprint_level(participant_group_relationship.group)
     (average_points, total_points) = get_group_score(participant_group_relationship.group)
     points_needed = points_to_next_level(group_level)
@@ -435,8 +430,8 @@ def get_view_model_json(participant_group_relationship, activities=None):
         'chatMessages': chat_messages,
         'groupActivity': group_activity,
         'activities': activity_dict_list,
+        'activitiesByLevel': level_activity_dict,
         })
-
 
 @participant_required
 def participate(request, experiment_id=None):

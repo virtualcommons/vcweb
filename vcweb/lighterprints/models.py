@@ -379,25 +379,30 @@ def get_unlocked_activities(participant_group_relationship):
     return unlocked_activities
 
 
-# returns a tuple of flattened_activities list, activity_by_level dict
-# FIXME: needs a better name
-def get_all_activities_tuple(participant_group_relationship, all_activities=None):
-    if all_activities is None:
-        all_activities = Activity.objects.all()
-    flattened_activities = []
-    activity_by_level = collections.defaultdict(list)
+# returns a tuple of a (list of activity objects converted to dicts and an activity_by_level list of lists (level -> list of activity
+# objects converted to dicts).
+def get_all_activities_tuple(participant_group_relationship, activities=None):
+    if activities is None:
+        activities = Activity.objects.all()
+    activity_dict_list = []
+    level_activity_list = []
+    available_activities = get_available_activities(participant_group_relationship)
+    available_activity_ids = [activity.pk for activity in available_activities]
 
-    for activity in all_activities:
-        activity_by_level[activity.level].append(activity)
-        activity_as_dict = activity.to_dict()
+    for activity in activities:
+        activity_dict = activity.to_dict()
         try:
-            activity_as_dict['availabilities'] = [availability.to_dict() for availability in ActivityAvailability.objects.filter(activity=activity)]
-            activity_as_dict['available'] = is_activity_available(activity, participant_group_relationship)
-            activity_as_dict['time_slots'] = ','.join([av.time_slot for av in activity.availability_set.all()])
+            activity_dict['availabilities'] = [availability.to_dict() for availability in ActivityAvailability.objects.filter(activity=activity)]
+            activity_dict['available_now'] = activity.pk in available_activity_ids
         except Exception as e:
             logger.debug("failed to get authenticated activity list: %s", e)
-        flattened_activities.append(activity_as_dict)
-    return (flattened_activities, activity_by_level)
+        activity_dict_list.append(activity_dict)
+        level = activity.level
+        # XXX: assumes activity list is ordered by level
+        if level > len(level_activity_list):
+            level_activity_list.append([])
+        level_activity_list[level-1].append(activity_dict)
+    return (activity_dict_list, level_activity_list)
 
 def get_available_activities(participant_group_relationship=None, ignore_time=False):
     if participant_group_relationship is None:
