@@ -54,8 +54,8 @@
             {% comment %} FIXME: rewrite this to use KO instead of django templating if possible {% endcomment %}
             {% regroup all_activities by level as activities_by_level %}
             {% for activity_group in activities_by_level %}
-            <div  class='accordion' id='accordion-level{{activity_group.grouper}}'>
-                <h4>Level {{activity_group.grouper}} Activities</h4>
+            <div data-bind='attr: {id: accordionLevelId() }' class='accordion' id='accordion-level{{activity_group.grouper}}'>
+                <h4>Level {{activity_grsup.grouper}} Activities</h4>
                 {% for activity in activity_group.list %}
                 <div class='accordion-group alert alert-message'>
                     <div class='accordion-heading'>
@@ -105,7 +105,7 @@
             majority of the members of your group</span> must perform high point activities when they are available.
             <table class='table table-bordered'>
                 <thead><tr><th>Level</th><th>Points to next level</th><th>Average number of points</th><th>Total points</th></tr></thead>
-                <tbody>
+                <tbody data-bind='foreach: groupData'>
                 <tr>
                     <td data-bind='text: groupLevel'></td>
                     <td data-bind='text: pointsToNextLevel'></td>

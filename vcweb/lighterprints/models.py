@@ -309,6 +309,10 @@ def get_activity_performed_parameter():
 def get_footprint_level_parameter():
     return Parameter.objects.get(name='footprint_level')
 
+@simplecache
+def get_treatment_type_parameter():
+    return Parameter.objects.get(name='treatment_type')
+
 def get_footprint_level_dv(group):
     return group.get_data_value(parameter=get_footprint_level_parameter())[1]
 

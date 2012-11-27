@@ -908,7 +908,8 @@ class Parameter(models.Model):
             'string':str,
             'float': float,
             'foreignkey': _fk_converter,
-            'boolean': lambda x: bool(x) and str(x).lower() != 'false'
+            'boolean': lambda x: bool(x) and str(x).lower() != 'false',
+            'enum': str,
             }
     '''
     all converters are one-arg functions that convert string input into
@@ -1423,9 +1424,15 @@ class ParticipantGroupRelationship(models.Model):
     @property
     def experiment(self):
         return self.group.experiment
+
     @property
     def group_number(self):
         return self.group.number
+
+    def get_round_configuration_value(self, parameter=None):
+        if parameter is None:
+            raise ValueError("No parameter specified, can't find an appropriate round configuration value.")
+        return self.group.current_round.round_parameter_value_set.get(parameter=parameter)
 
     def set_data_value(self, parameter=None, value=None):
         current_round_data = self.current_round_data
