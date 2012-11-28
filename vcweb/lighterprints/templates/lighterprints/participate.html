@@ -105,7 +105,7 @@
             group</strong> must be equal to or greater than <span data-bind='text: pointsToNextLevel' class='badge badge-info'>{{points_to_next_level}}</span>.  In order to reach this target <span class='text-warning'>you and a
             majority of the members of your group</span> must perform high point activities when they are available.
             <table class='table table-bordered'>
-                <thead><tr><th>Level</th><th>Points to next level</th><th>Average number of points</th><th>Total points</th></tr></thead>
+                <thead><tr><th>Level</th><th>Points needed to reach the next level</th><th>Average number of points</th><th>Total points</th></tr></thead>
                 <tbody data-bind='foreach: groupData'>
                 <tr>
                     <td data-bind='text: groupLevel'></td>
@@ -115,6 +115,28 @@
                 </tr>
                 </tbody>
             </table>
+        </div>
+        <div class='tab-pane' id='faq'>
+            <h2>Frequently Asked Questions</h2>
+            <div class='well'>
+                <h4>Why do the activities performed in the previous day not count for today?</h4>
+                <p>
+                In order to advance in level and unlock more activities you must reach an average level of points in your
+                group during one day, starting at 0.00AM.  Every day at midnight the server will check your group's average number of
+                points and determine whether or not you should move on to the next level.
+                If your group advances in level your group will once again start at 0 points with the additional unlocked
+                activities for that level available to perform. If your group did not reach the next level, your group
+                will start with 0 points at the same level with the same activities available as the previous day.
+                </p>
+            </div>
+            <div class='well'>
+                <h4>I don't have a car or anyone to carpool with, so how can I carpool?</h4>
+                <p>
+                You don't have to actually perform the activity in the real world to click on "perform this activity" -
+                these are just virtual activities at the moment. In the future we plan to include options to gain points by
+                actually performing these activities.
+                </p>
+            </div>
         </div>
         <div class='tab-pane' id='group-wall'>
             <h3>Chat messages</h3>
@@ -167,7 +189,7 @@
     </div>
     <div class='modal-body'>
         <p>
-        You have successfully performed  
+        You have successfully performed <span class='text-success' data-bind='text:lastPerformedActivity'></span>.
         </p>
     </div>
     <div class='modal-fotter'>
@@ -197,7 +219,7 @@ $(function() {
             }
         });
     });
-    // set up bootstrap nav-tabs to be semi-refresh friendly
+    // FIXME: set up bootstrap nav-tabs to be semi-refresh friendly, remove in production
     var url = document.location.toString();
     if (url.match('#')) {
         $('.nav-tabs a[href=#'+url.split('#')[1]+']').tab('show');
