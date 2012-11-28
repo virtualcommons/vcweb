@@ -201,24 +201,6 @@
 {{ block.super }}
 <script type='text/javascript'>
 $(function() {
-    // set up perform activity click handlers on any activity-actions that aren't disabled
-    // FIXME: a lot of this DOM manipulation could be cleaned up using KO, refactor after the pretest
-    $('#all-activities a.activity-action:not(.disabled)').click(function(evt) {
-        var activityId = $(this).attr("data-activity-id");
-        var formData = $('#activityform' + activityId).serialize();
-        var self = $(this);
-        $.post('/lighterprints/api/do-activity', formData, function(data) {
-            console.log(data);
-            if (data.success) {
-                self.addClass('disabled').off('click');
-                $('#activity-available-sign-' + activityId).remove();
-                $('#activityPerformedModal').modal();
-            }
-            else {
-                alert("unable to perform activity: " + data.message);
-            }
-        });
-    });
     // FIXME: set up bootstrap nav-tabs to be semi-refresh friendly, remove in production
     var url = document.location.toString();
     if (url.match('#')) {
@@ -230,6 +212,7 @@ $(function() {
     function LighterFootprintsModel(modelJson) {
         var self = this;
         var model = ko.mapping.fromJS(modelJson);
+        model.lastPerformedActivity = ko.observable('None');
         model.hasChatMessages = function() {
             return model.chatMessages().length > 0;
         }
@@ -255,6 +238,26 @@ $(function() {
     var viewModel = new LighterFootprintsModel(viewModelData);
     console.log(viewModel);
     ko.applyBindings(viewModel);
+    // set up perform activity click handlers on any activity-actions that aren't disabled
+    // FIXME: a lot of this DOM manipulation could be cleaned up using KO, refactor after the pretest
+    $('#all-activities a.activity-action:not(.disabled)').click(function(evt) {
+        var activityId = $(this).attr("data-activity-id");
+        var formData = $('#activityform' + activityId).serialize();
+        var self = $(this);
+        $.post('/lighterprints/api/do-activity', formData, function(data) {
+            console.log(data);
+            if (data.success) {
+                self.addClass('disabled').off('click');
+                $('#activity-available-sign-' + activityId).remove();
+                viewModel.lastPerformedActivity(data.display_name);
+                $('#activityPerformedModal').modal();
+            }
+            else {
+                alert("unable to perform activity: " + data.message);
+            }
+        });
+    });
+
 });
 </script>
 {% endblock %}
