@@ -1150,6 +1150,21 @@ class Group(models.Model):
     def get_scalar_data_value(self, parameter=None, **kwargs):
         return self.get_data_value(parameter=parameter, **kwargs)[0]
 
+    def get_round_configuration_value(self, parameter=None, name=None, current_round_configuration=None, **kwargs):
+        if current_round_configuration is None:
+            current_round_configuration = self.current_round
+        round_configuration_value = None
+        try:
+            if parameter is not None:
+                round_configuration_value = RoundParameterValue.objects.get(parameter=parameter, round_configuration=current_round_configuration)
+            elif name is not None:
+                round_configuration_value = RoundParameterValue.objects.get(parameter__name=name, round_configuration=current_round_configuration)
+            else:
+                logger.warn("No parameter or parameter name specified: %s", **kwargs)
+        except:
+            logger.debug("no round configuration value found for round: %s", current_round_configuration)
+        return round_configuration_value
+
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None, default=None):
         ''' returns a tuple of (scalar data value, entity DataValue).  if no entity data value exists, returns (default value, None) '''
 
@@ -1429,10 +1444,8 @@ class ParticipantGroupRelationship(models.Model):
     def group_number(self):
         return self.group.number
 
-    def get_round_configuration_value(self, parameter=None):
-        if parameter is None:
-            raise ValueError("No parameter specified, can't find an appropriate round configuration value.")
-        return self.group.current_round.round_parameter_value_set.get(parameter=parameter)
+    def get_round_configuration_value(self, **kwargs):
+        return self.group.get_round_configuration_value(**kwargs)
 
     def set_data_value(self, parameter=None, value=None):
         current_round_data = self.current_round_data

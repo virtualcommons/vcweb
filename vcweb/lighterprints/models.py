@@ -319,6 +319,9 @@ def get_footprint_level_dv(group):
 def get_footprint_level(group):
     return get_footprint_level_dv(group).value
 
+def get_treatment_type(group):
+    return group.get_round_configuration_value(name='treatment_type')
+
 def get_active_experiments():
     # FIXME: add PassThroughManager to ExperimentManager
     return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(), status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))

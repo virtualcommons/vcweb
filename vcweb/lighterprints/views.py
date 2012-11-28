@@ -20,9 +20,9 @@ from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response, get_active_experiment
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, is_activity_available,
-        get_lighterprints_experiment_metadata, get_lighterprints_public_experiment, get_activity_performed_parameter,
-        points_to_next_level, get_group_score, get_footprint_level, get_foursquare_category_ids,
-        get_available_activities, get_activity_performed_counts)
+        get_treatment_type, get_lighterprints_experiment_metadata, get_lighterprints_public_experiment,
+        get_activity_performed_parameter, points_to_next_level, get_group_score, get_footprint_level,
+        get_foursquare_category_ids, get_available_activities, get_activity_performed_counts)
 
 from collections import defaultdict
 import itertools
@@ -420,7 +420,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
     (activity_dict_list, level_activity_dict) = get_all_activities_tuple(participant_group_relationship, activities)
     group = participant_group_relationship.group
 # FIXME: move to model API
-    treatment_type = group.current_round.get_parameter_value('treatment_type').value
+    treatment_type = get_treatment_type(group)
     group_data = []
     for group in group.experiment.group_set.all():
         (average_points, total_points) = get_group_score(group)

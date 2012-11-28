@@ -8,7 +8,6 @@ from django.utils.translation import ugettext_lazy as _
 class Migration(DataMigration):
 
     def forwards(self, orm):
-        "Write your forwards methods here."
         # Note: Remember to use orm['appname.ModelName'] rather than "from appname.models..."
         ExperimentMetadata = orm['core.ExperimentMetadata']
         Parameter = orm['core.Parameter']
@@ -27,7 +26,8 @@ class Migration(DataMigration):
                 )
 
     def backwards(self, orm):
-        "Write your backwards methods here."
+        Parameter = orm['core.Parameter']
+        Parameter.objects.get(name='treatment_type').delete()
 
     models = {
         'auth.group': {
