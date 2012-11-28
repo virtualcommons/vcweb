@@ -5,13 +5,14 @@
 {% block page %}
 <div class='tabbable'>
     <ul class='nav nav-tabs'>
-        <li class='active'><a href='#home' data-toggle='tab'>Home</a></li>
+        <li class='active'><a href='#instructions' data-toggle='tab'>Instructions</a></li>
         <li><a href='#group-wall' data-toggle='tab'>Group Wall</a></li>
         <li><a href='#group-score' data-toggle='tab'>Score</a></li>
         <li><a href='#all-activities' data-toggle='tab'>All activities</a></li>
+        <li><a href='#faq' data-toggle='tab'>FAQ</a></li>
     </ul>
     <div class='tab-content'>
-        <div class='tab-pane active' id='home'>
+        <div class='tab-pane active' id='instructions'>
             <p>
             You have been randomly placed in a group of <span class='badge badge-info'>{{ participant_group_relationship.group.size }}</span> participants.
             In this experiment you can perform virtual actions that represent <span class='text-success'>green alternatives</span>
@@ -54,7 +55,7 @@
             {% comment %} FIXME: rewrite this to use KO instead of django templating if possible {% endcomment %}
             {% regroup all_activities by level as activities_by_level %}
             {% for activity_group in activities_by_level %}
-            <div data-bind='attr: {id: accordionLevelId() }' class='accordion' id='accordion-level{{activity_group.grouper}}'>
+            <div class='accordion' id='accordion-level{{activity_group.grouper}}'>
                 <h4>Level {{activity_grsup.grouper}} Activities</h4>
                 {% for activity in activity_group.list %}
                 <div class='accordion-group alert alert-message'>
@@ -219,6 +220,7 @@ $(function() {
             return false;
         }
         model.availableActivities = ko.computed(function() {
+            console.log(model.activities());
             var availables = ko.utils.arrayFilter(model.activities(), function(activity) { return activity.available_now() });
             console.log(availables);
             return availables;

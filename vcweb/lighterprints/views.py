@@ -418,24 +418,32 @@ def get_view_model_json(participant_group_relationship, activities=None):
     if activities is None:
         activities = Activity.objects.all()
     (activity_dict_list, level_activity_dict) = get_all_activities_tuple(participant_group_relationship, activities)
-    group = participant_group_relationship.group
+    own_group = participant_group_relationship.group
 # FIXME: move to model API
-    treatment_type = get_treatment_type(group)
+    treatment_type = get_treatment_type(own_group)
     group_data = []
-    for group in group.experiment.group_set.all():
+    for group in own_group.experiment.group_set.all():
         (average_points, total_points) = get_group_score(group)
         group_level = get_footprint_level(group)
+        pointsToNextLevel = points_to_next_level(group_level)
+        if group == own_group:
+            own_group_level = group_level
+            own_average_points = average_points
+            own_points_to_next_level = pointsToNextLevel
         group_data.append({
             'group': group,
-            'group_level': group_level,
+            'groupLevel': group_level,
             'averagePoints': average_points,
             'totalPoints': total_points,
-            'pointsToNextLevel': points_to_next_level(group_level)
+            'pointsToNextLevel': pointsToNextLevel
             })
 
     (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
     return dumps({
         'groupData': group_data,
+        'groupLevel': own_group_level,
+        'averagePoints': own_average_points,
+        'pointsToNextLevel': own_points_to_next_level,
         'chatMessages': chat_messages,
         'groupActivity': group_activity,
         'activities': activity_dict_list,
