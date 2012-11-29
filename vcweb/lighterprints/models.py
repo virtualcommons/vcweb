@@ -395,6 +395,7 @@ def get_all_activities_tuple(participant_group_relationship, activities=None):
     level_activity_list = []
     available_activities = get_available_activities(participant_group_relationship)
     available_activity_ids = [activity.pk for activity in available_activities]
+    logger.debug("available activity ids: %s", available_activity_ids)
 
     for activity in activities:
         activity_dict = activity.to_dict()

@@ -105,9 +105,10 @@
             group</strong> must be equal to or greater than <span data-bind='text: pointsToNextLevel' class='badge badge-info'>{{points_to_next_level}}</span>.  In order to reach this target <span class='text-warning'>you and a
             majority of the members of your group</span> must perform high point activities when they are available.
             <table class='table table-bordered'>
-                <thead><tr><th>Level</th><th>Points needed to reach the next level</th><th>Average number of points</th><th>Total points</th></tr></thead>
+                <thead><tr><th>Group</th><th>Level</th><th>Points needed to reach the next level</th><th>Average number of points</th><th>Total points</th></tr></thead>
                 <tbody data-bind='foreach: groupData'>
                 <tr>
+                    <td data-bind='text: group'></td>
                     <td data-bind='text: groupLevel'></td>
                     <td data-bind='text: pointsToNextLevel'></td>
                     <td data-bind='text: averagePoints'></td>

@@ -259,7 +259,7 @@ def get_group_activity_json(participant_group_relationship, number_of_activities
         })
 
 @csrf_exempt
-@login_required
+@participant_required
 def perform_activity(request):
     form = ActivityForm(request.POST or None)
     if form.is_valid():
@@ -431,7 +431,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
             own_average_points = average_points
             own_points_to_next_level = pointsToNextLevel
         group_data.append({
-            'group': group,
+            'group': "Group #%s" % group.number,
             'groupLevel': group_level,
             'averagePoints': average_points,
             'totalPoints': total_points,
