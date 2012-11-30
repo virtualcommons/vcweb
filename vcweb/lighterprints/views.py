@@ -433,6 +433,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
         group_data.append({
             'group': "Group #%s" % group.number,
             'groupLevel': group_level,
+            'groupSize': group.size,
             'averagePoints': average_points,
             'totalPoints': total_points,
             'pointsToNextLevel': pointsToNextLevel
