@@ -22,7 +22,7 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, is_activity_available,
         get_treatment_type, get_lighterprints_experiment_metadata, get_lighterprints_public_experiment,
         get_activity_performed_parameter, points_to_next_level, get_group_score, get_footprint_level,
-        get_foursquare_category_ids, get_available_activities, get_activity_performed_counts)
+        get_foursquare_category_ids, get_activity_performed_counts)
 
 from collections import defaultdict
 import itertools
@@ -277,11 +277,11 @@ def perform_activity(request):
                     categoryId=','.join(get_foursquare_category_ids()))
             logger.debug("Found venues: %s", venues)
             if performed_activity is not None:
-                activity_dict = activity.to_dict()
-                activity_dict['date_created'] = performed_activity.date_created
-                activity_dict['performed_activity_id'] = performed_activity.pk
-                activity_dict['success'] = True
-                return HttpResponse(dumps(activity_dict), content_type='application/json')
+                return HttpResponse(dumps({
+                    'success': True,
+                    'viewModel':get_view_model_json(participant_group_relationship)
+                    }),
+                    content_type='application/json')
         else:
             logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id, participant_group_relationship)
     return HttpResponse(dumps({'success': False, 'response': "Could not perform activity"}), content_type='application/json')
@@ -417,7 +417,7 @@ class CsvExportView(DataExportMixin, BaseDetailView):
 def get_view_model_json(participant_group_relationship, activities=None):
     if activities is None:
         activities = Activity.objects.all()
-    (activity_dict_list, level_activity_dict) = get_all_activities_tuple(participant_group_relationship, activities)
+    (activity_dict_list, level_activity_list) = get_all_activities_tuple(participant_group_relationship, activities)
     own_group = participant_group_relationship.group
 # FIXME: move to model API
     treatment_type = get_treatment_type(own_group)
@@ -447,7 +447,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
         'chatMessages': chat_messages,
         'groupActivity': group_activity,
         'activities': activity_dict_list,
-        'activitiesByLevel': level_activity_dict,
+        'activitiesByLevel': level_activity_list,
         })
 
 @participant_required
