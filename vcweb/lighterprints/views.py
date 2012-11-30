@@ -189,14 +189,14 @@ def group_score(request, participant_group_id):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group'), pk=participant_group_id)
     if request.user.participant == participant_group_relationship.participant:
         group = participant_group_relationship.group
-        (average_points, total_points) = get_group_score(group)
-        logger.debug("getting group score for: %s", group)
+        (average_points, total_points, total_participant_points) = get_group_score(group, participant_group_relationship=participant_group_relationship)
         level = get_footprint_level(group)
         groups = []
         groups.append({
             'level': level,
             'average_points_per_person': average_points,
             'total_points': total_points,
+            'total_participant_points': total_participant_points,
             'points_to_next_level': points_to_next_level(level)
             })
         return HttpResponse(dumps({'success':True, 'scores': groups }))
@@ -392,7 +392,7 @@ class CsvExportView(DataExportMixin, BaseDetailView):
         writer.writerow(['Interval Start', 'Interval End', 'Group', 'Total Points', 'Average Points', '# Members'])
         while start > experiment_start_time.date():
             for group in experiment.group_set.all():
-                (average, total) = get_group_score(group, start=start, end=end)
+                (average, total, total_participant_points) = get_group_score(group, start=start, end=end)
                 writer.writerow([start, end, group, total, average, group.size])
             end = start
             start = start - timedelta(1)
@@ -423,7 +423,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
     treatment_type = get_treatment_type(own_group)
     group_data = []
     for group in own_group.experiment.group_set.all():
-        (average_points, total_points) = get_group_score(group)
+        (average_points, total_points, total_participant_points) = get_group_score(group, participant_group_relationship=participant_group_relationship)
         group_level = get_footprint_level(group)
         pointsToNextLevel = points_to_next_level(group_level)
         if group == own_group:
@@ -436,6 +436,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
             'groupSize': group.size,
             'averagePoints': average_points,
             'totalPoints': total_points,
+            'totalParticipantPoints': total_participant_points,
             'pointsToNextLevel': pointsToNextLevel
             })
 

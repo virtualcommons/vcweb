@@ -504,22 +504,25 @@ def average_points_per_person(group):
 
 # returns a tuple of the average points per person and the total points for
 # the given group
-def get_group_score(group, start=None, end=None):
+def get_group_score(group, start=None, end=None, participant_group_relationship=None):
     # establish date range
     # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
-    total_points = 0
+    total_group_points = 0
+    total_participant_points = 0
     activities_performed_qs = group.get_participant_data_values(parameter=get_activity_performed_parameter())
-    if not group.experiment.is_public:
-        if start is None or end is None:
-            start = date.today()
-            end = start + timedelta(1)
-        activities_performed_qs = activities_performed_qs.filter(date_created__range=(start, end))
+    if start is None or end is None:
+        start = date.today()
+        end = start + timedelta(1)
+    activities_performed_qs = activities_performed_qs.filter(date_created__range=(start, end))
     for activity_performed_dv in activities_performed_qs:
         activity = activity_performed_dv.value
-        total_points += activity.points
-    average = total_points / group.size
-    logger.debug("total carbon savings: %s divided by %s members = %s per person", total_points, group.size, average)
-    return (average, total_points)
+        total_group_points += activity.points
+        if activity_performed_dv.participant_group_relationship == participant_group_relationship:
+            total_participant_points += activity.points
+
+    average = total_group_points / group.size
+    logger.debug("total carbon savings: %s divided by %s members = %s per person", total_group_points, group.size, average)
+    return (average, total_group_points, total_participant_points)
 
 def points_to_next_level(current_level):
     ''' returns the number of average points needed to advance to the next level '''
