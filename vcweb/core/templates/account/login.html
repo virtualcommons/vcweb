@@ -14,6 +14,9 @@
     <div class='form-actions'>
         <button type='submit' class='btn btn-primary'>Login</button>
     </div>
+    {% comment %}
+    FIXME: disabling social auth until its more thoroughly debugged (and we know what social platforms we want to
+    integrate with)
     <br><br>
     You can also register or sign in using your other social accounts:
     <ul class="authbadges">
@@ -22,6 +25,7 @@
         <li><a href="{% url socialauth_begin 'foursquare' %}"><img src="{{STATIC_URL}}images/oauth/foursquare-connect-black.png"></a></li>
         <li><a href="{% url socialauth_begin 'facebook' %}"><img width="193", height="23" src="{{STATIC_URL}}images/oauth/facebook-connect-button.png"></a></li>
     </ul>
+    {% endcomment %}
 {% endblock form %}
 
 {% block javascript %}

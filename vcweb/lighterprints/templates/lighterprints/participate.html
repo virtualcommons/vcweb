@@ -65,7 +65,7 @@
                 <div class='accordion' data-bind='attr: {id: "accordion-level" + $index()}'>
                     <h4>Level <span data-bind='text: $index() + 1'></span> Activities</h4>
                     <div data-bind='foreach: $data'>
-                        <div class='accordion-group alert alert-message'>
+                        <div data-bind='css: { "alert-error": ! available_now(), "alert-success": available_now() }' class='accordion-group alert'>
                             <div class='accordion-heading'>
                                 <a class='accordion-toggle' data-toggle='collapse'
                                     data-bind='attr: {"data-parent": "#accordion-level" + $parentContext.$index(), href: "#activity" + pk()}'><i class='icon-chevron-right'></i>
@@ -78,7 +78,7 @@
                                     </span>
                                 </a>
                             </div>
-                            <div data-bind='attr: {id: "activity" + pk()}' id='activity{{activity.pk}}' class='accordion-body collapse'>
+                            <div data-bind='css: { disabled: ! available_now() }, attr: {id: "activity" + pk()}' class='accordion-body collapse'>
                                 <div class='accordion-inner'>
                                     <table class='table table-condensed table-bordered table-striped'>
                                         <thead>
@@ -94,11 +94,11 @@
                                             <i class='icon-warning-sign'></i>This activity is not available right now.  Please check again later.
                                         </div>
                                     </div>
-                                    <form data-bind='attr: { id: "activityform" + pk() }' class='form-horizontal' method='post' id='activityform{{activity.pk}}'>
+                                    <form data-bind='attr: { id: "activityform" + pk() }' class='form-horizontal' method='post'>
                                         <input data-bind='value: pk' type='hidden' name='activity_id' />
                                         <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
-                                        <a data-bind='click: $root.performActivity' class='btn activity-action'
-                                            href='#'><span class='text-success'> Perform this activity</span></a>
+                                        <a data-bind='css: { disabled: ! available_now() }, click: $root.performActivity' class='btn activity-action'
+                                            href='#'><span data-bind='css: { "text-warning": !available_now(), "text-success": available_now() }'> Perform this activity</span></a>
                                     </form>
                                 </div>
                             </div>
