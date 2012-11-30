@@ -6,8 +6,8 @@
 <div class='tabbable'>
     <ul class='nav nav-tabs'>
         <li class='active'><a href='#instructions' data-toggle='tab'>Instructions</a></li>
+        <li><a href='#dashboard' data-toggle='tab'>Dashboard</a></li>
         <li><a href='#group-wall' data-toggle='tab'>Group Wall</a></li>
-        <li><a href='#group-score' data-toggle='tab'>Score</a></li>
         <li><a href='#all-activities' data-toggle='tab'>All activities</a></li>
         <li><a href='#faq' data-toggle='tab'>FAQ</a></li>
     </ul>
@@ -37,18 +37,6 @@
             To begin participating, click on the "All activities" tab, and select an activity you'd like to perform.
             Available activities will be marked with an exclamation point: <i class='icon-exclamation-sign'></i>
             </p>
-            <div data-bind='if: hasAvailableActivities()'>
-                <h3>Available activities for {{request.user.participant}}</h3>
-                <ul data-bind='foreach: availableActivities()'>
-                    <li data-bind='text: display_name'></li>
-                </ul>
-            </div>
-            <div data-bind='ifnot: hasAvailableActivities()'>
-                <div class='alert alert-error'>
-                    <i class='icon-info-sign'></i>
-                    There are no available activities at this time.  Please try again later.
-                </div>
-            </div>
         </div>
         <div class='tab-pane' id='all-activities'>
             <p>
@@ -64,51 +52,13 @@
             <div data-bind='foreach: activitiesByLevel'>
                 <div class='accordion' data-bind='attr: {id: "accordion-level" + $index()}'>
                     <h4>Level <span data-bind='text: $index() + 1'></span> Activities</h4>
-                    <div data-bind='foreach: $data'>
-                        <div data-bind='css: { "alert-error": ! available_now(), "alert-success": available_now() }' class='accordion-group alert'>
-                            <div class='accordion-heading'>
-                                <a class='accordion-toggle' data-toggle='collapse'
-                                    data-bind='attr: {"data-parent": "#accordion-level" + $parentContext.$index(), href: "#activity" + pk()}'><i class='icon-chevron-right'></i>
-                                    <span data-bind='text: display_name'></span>
-                                    <span class='pull-right text-info'>
-                                        <span data-bind='if: available_now'>
-                                            <i class='icon-exclamation-sign'></i>
-                                        </span>
-                                        <span data-bind='text: time_slots'></span>
-                                    </span>
-                                </a>
-                            </div>
-                            <div data-bind='css: { disabled: ! available_now() }, attr: {id: "activity" + pk()}' class='accordion-body collapse'>
-                                <div class='accordion-inner'>
-                                    <table class='table table-condensed table-bordered table-striped'>
-                                        <thead>
-                                            <tr><th>Summary</th><th>Availability</th><th>Points</th></tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr><td data-bind='text: summary'></td><td><span data-bind='text: time_slots' class='text-info'></span></td><td><span data-bind='text: points' class='badge badge-success'></span></td></tr>
-                                    </table>
-                                    <p data-bind='text: description'></p>
-                                    <p>For more info, please visit <a data-bind='text: url, attr: { href: url }' target="_blank"></a></p>
-                                    <div data-bind='ifnot: available_now'>
-                                        <div class='alert alert-error'>
-                                            <i class='icon-warning-sign'></i>This activity is not available right now.  Please check again later.
-                                        </div>
-                                    </div>
-                                    <form data-bind='attr: { id: "activityform" + pk() }' class='form-horizontal' method='post'>
-                                        <input data-bind='value: pk' type='hidden' name='activity_id' />
-                                        <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
-                                        <a data-bind='css: { disabled: ! available_now() }, click: $root.performActivity' class='btn activity-action'
-                                            href='#'><span data-bind='css: { "text-warning": !available_now(), "text-success": available_now() }'> Perform this activity</span></a>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
+                    <div data-bind='template: { name: "activity-accordion-template", data: { parentId: "accordion-level" + $index(), activities: $data } }'>
                     </div>
                 </div>
             </div>
         </div>
-        <div class='tab-pane' id='group-score'>
-            <h3>Group Score Summary</h3>
+        <div class='tab-pane' id='dashboard'>
+            <h3>Dashboard Summary</h3>
             Your group is currently <span class='badge badge-important'>level <span data-bind='text:groupLevel'>{{ group_level }}</span></span> 
             and has accumulated <span class='badge badge-important'><span data-bind='text:averagePoints'>{{average_points}}</span> average points</span>.  
             In order to advance in level and unlock more activities the <strong>average number of points contributed by each member of your
@@ -126,6 +76,19 @@
                 </tr>
                 </tbody>
             </table>
+            <div data-bind='if: hasAvailableActivities()'>
+                <div class='accordion' id='available-activities-accordion'>
+                    <h3>Available activities for {{request.user.participant}}</h3>
+                    <div data-bind="template: { name: 'activity-accordion-template', data: { parentId: 'available-activities-accordion', activities: availableActivities() } }"></div>
+                </div>
+            </div>
+            <div data-bind='ifnot: hasAvailableActivities()'>
+                <div class='alert alert-error'>
+                    <i class='icon-info-sign'></i>
+                    There are no available activities at this time.  Please try again later.
+                </div>
+            </div>
+
         </div>
         <div class='tab-pane' id='faq'>
             <h2>Frequently Asked Questions</h2>
@@ -270,10 +233,9 @@ $(function() {
         });
         model.performActivity = function(activityModel) {
             if (! activityModel.available_now()) {
-                console.debug("trying to perform unavailable activity");
-                console.debug(activityModel);
-                model.errorMessage("The activity " + activityModel.display_name() + " is not currently available.");
-                $('#activityUnavailableModal').modal();
+                // FIXME: modal is slow, no feedback on this for now
+                // model.errorMessage("The activity " + activityModel.display_name() + " is not currently available.");
+                // $('#activityUnavailableModal').modal();
                 return;
             }
             var activityId = activityModel.pk();
@@ -302,5 +264,39 @@ $(function() {
     console.log(viewModel);
     ko.applyBindings(viewModel);
 });
+</script>
+<script type='text/html' id='activity-accordion-template'>
+<div data-bind='foreach: activities'>
+    <div data-bind='css: { "alert-error": ! available_now(), "alert-success": available_now() }' class='accordion-group alert'>
+    <div class='accordion-heading'>
+        <a class='accordion-toggle' data-toggle='collapse'
+            data-bind='attr: {"data-parent": "#" + $parent.parentId, href: "#activity" + $parent.parentId + pk()}'><i class='icon-chevron-right'></i>
+            <span data-bind='text: display_name'></span>
+            <span class='pull-right text-info'><span data-bind='if: available_now'><i class='icon-exclamation-sign'></i></span><span data-bind='text: time_slots'></span></span>
+        </a>
+    </div>
+    <div data-bind='css: { in: available_now() }, attr: {id: "activity" + $parent.parentId + pk()}' class='accordion-body collapse'>
+        <div class='accordion-inner'>
+            <table class='table table-condensed table-bordered table-striped'>
+                <thead><tr><th>Summary</th><th>Availability</th><th>Points</th></tr></thead>
+                <tbody>
+                    <tr><td data-bind='text: summary'></td><td><span data-bind='text: time_slots' class='text-info'></span></td><td><span data-bind='text: points' class='badge badge-success'></span></td></tr>
+            </table>
+            <p data-bind='text: description'></p>
+            <p>For more info, please visit <a data-bind='text: url, attr: { href: url }' target="_blank"></a></p>
+            <div data-bind='ifnot: available_now'>
+                <div class='alert alert-error'>
+                    <i class='icon-warning-sign'></i>This activity is not available right now.  Please check again later.
+                </div>
+            </div>
+            <form data-bind='attr: { id: "activityform" + pk() }' class='form-horizontal' method='post'>
+                <input data-bind='value: pk' type='hidden' name='activity_id' />
+                <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
+                <a data-bind='css: { disabled: ! available_now() }, click: $root.performActivity' class='btn activity-action'
+                    href='#'><span data-bind='css: { "text-warning": !available_now(), "text-success": available_now() }'> Perform this activity</span></a>
+            </form>
+        </div>
+    </div>
+</div>
 </script>
 {% endblock %}
