@@ -1428,6 +1428,7 @@ class ParticipantGroupRelationship(models.Model):
     round_joined = models.ForeignKey(RoundConfiguration)
     date_created = models.DateTimeField(default=datetime.now)
     active = models.BooleanField(default=True)
+    first_visit = models.BooleanField(default=True)
     notifications_since = models.DateTimeField(default=datetime.now, null=True, blank=True)
 
     objects = ParticipantGroupRelationshipManager()

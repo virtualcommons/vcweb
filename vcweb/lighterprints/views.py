@@ -440,8 +440,13 @@ def get_view_model_json(participant_group_relationship, activities=None):
             })
 
     (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
+    first_visit = participant_group_relationship.first_visit
+    if first_visit:
+        participant_group_relationship.first_visit = False
+        participant_group_relationship.save()
     return dumps({
         'groupData': group_data,
+        'firstVisit': first_visit,
         'groupLevel': own_group_level,
         'averagePoints': own_average_points,
         'pointsToNextLevel': own_points_to_next_level,

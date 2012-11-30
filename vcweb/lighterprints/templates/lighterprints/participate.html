@@ -5,8 +5,8 @@
 {% block page %}
 <div class='tabbable'>
     <ul class='nav nav-tabs'>
-        <li class='active'><a href='#instructions' data-toggle='tab'>Instructions</a></li>
-        <li><a href='#dashboard' data-toggle='tab'>Dashboard</a></li>
+        <li data-bind='css: { active: firstVisit }'><a href='#instructions' data-toggle='tab'>Instructions</a></li>
+        <li data-bind='css: { active: ! firstVisit }'><a href='#dashboard' data-toggle='tab'>Dashboard</a></li>
         <li><a href='#group-wall' data-toggle='tab'>Group Wall</a></li>
         <li><a href='#all-activities' data-toggle='tab'>All activities</a></li>
         <li><a href='#faq' data-toggle='tab'>FAQ</a></li>
@@ -26,9 +26,10 @@
             list below, and click the "Perform this activity" button.
             </p>
             <p>
-            Your group is currently <span class='badge badge-important'>level <span data-bind='text:groupLevel'>{{ group_level }}</span></span> and has accumulated 
-            <span class='badge badge-important'><span data-bind='text:averagePoints'>{{average_points}}</span> average points</span>.  In order to
-            advance in level and unlock more activities the <strong>average number of points contributed by each member of your group</strong> must be equal to or greater than <span data-bind='text: pointsToNextLevel' class='badge badge-info'>{{points_to_next_level}}</span>.  In order to
+            Your group is currently <span class='badge badge-important'>level <span data-bind='text:groupLevel'></span></span> and has accumulated 
+            <span class='badge badge-important'><span data-bind='text:averagePoints'></span> average points</span>.  In order to
+            advance in level and unlock more activities the <strong>average number of points contributed by each member of your group</strong> must be equal to or greater than 
+            <span data-bind='text: pointsToNextLevel' class='badge badge-info'></span>.  In order to
             reach this target <span class='text-warning'>you and a majority of the members of your group</span> must perform
             high point activities when they are available.
             </p>
@@ -59,10 +60,10 @@
         </div>
         <div class='tab-pane' id='dashboard'>
             <h3>Dashboard Summary</h3>
-            Your group is currently <span class='badge badge-important'>level <span data-bind='text:groupLevel'>{{ group_level }}</span></span> 
-            and has accumulated <span class='badge badge-important'><span data-bind='text:averagePoints'>{{average_points}}</span> average points</span>.  
+            Your group is currently <span class='badge badge-important'>level <span data-bind='text:groupLevel'></span></span>
+            and has accumulated <span class='badge badge-important'><span data-bind='text:averagePoints'></span> average points</span>.
             In order to advance in level and unlock more activities the <strong>average number of points contributed by each member of your
-            group</strong> must be equal to or greater than <span data-bind='text: pointsToNextLevel' class='badge badge-info'>{{points_to_next_level}}</span>.  In order to reach this target <span class='text-warning'>you and a
+            group</strong> must be equal to or greater than <span data-bind='text: pointsToNextLevel' class='badge badge-info'></span>.  In order to reach this target <span class='text-warning'>you and a
             majority of the members of your group</span> must perform high point activities when they are available.
             <table class='table table-bordered table-striped'>
                 <caption>Group Score Summary</caption>
@@ -195,7 +196,8 @@
 {{ block.super }}
 <script type='text/javascript'>
 $(function() {
-    // FIXME: set up bootstrap nav-tabs to be semi-refresh friendly, remove in production
+    // XXX: set up bootstrap nav-tabs to be semi-refresh friendly, remove in production
+    /*
     var url = document.location.toString();
     if (url.match('#')) {
         $('.nav-tabs a[href=#'+url.split('#')[1]+']').tab('show');
@@ -203,6 +205,7 @@ $(function() {
     $('.nav-tabs a').on('shown', function(evt) {
         window.location.hash = evt.target.hash;
     });
+    */
     function LighterFootprintsModel(modelJson) {
         var self = this;
         var model = ko.mapping.fromJS(modelJson);
@@ -261,9 +264,7 @@ $(function() {
     }
     // set up KO binding, using one master view model
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
-    console.log(viewModelData);
     var viewModel = new LighterFootprintsModel(viewModelData);
-    console.log(viewModel);
     ko.applyBindings(viewModel);
 });
 </script>

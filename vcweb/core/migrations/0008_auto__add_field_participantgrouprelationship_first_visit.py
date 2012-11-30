@@ -1,33 +1,23 @@
 # -*- coding: utf-8 -*-
 import datetime
 from south.db import db
-from south.v2 import DataMigration
+from south.v2 import SchemaMigration
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
 
-class Migration(DataMigration):
+
+class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Note: Remember to use orm['appname.ModelName'] rather than "from appname.models..."
-        ExperimentMetadata = orm['core.ExperimentMetadata']
-        Parameter = orm['core.Parameter']
-        Experimenter = orm['core.Experimenter']
-        em = ExperimentMetadata.objects.get(namespace='lighterprints')
-        experimenter = Experimenter.objects.get(pk=1)
-        parameter = Parameter.objects.create(
-                name='treatment_type',
-                type='enum',
-                enum_choices='POSITIVE_COMPARE_OWN_GROUP,POSITIVE_COMPARE_OTHER_GROUP,NEGATIVE_COMPARE_OWN_GROUP, NEGATIVE_COMPARE_OTHER_GROUP',
-                experiment_metadata=em,
-                scope='round',
-                display_name=_('Lighter Footprints Treatment Type'),
-                description=_('The four treatment types for the Spring 2013 Lighter Footprints Experiment vary the information displayed to a participant. 0. How you are doing compared to your own group, how you are doing compared to the other groups, and positive/negative reinforcement crossed against those.'),
-                creator=experimenter,
-                )
+        # Adding field 'ParticipantGroupRelationship.first_visit'
+        db.add_column('core_participantgrouprelationship', 'first_visit',
+                      self.gf('django.db.models.fields.BooleanField')(default=True),
+                      keep_default=False)
+
 
     def backwards(self, orm):
-        Parameter = orm['core.Parameter']
-        Parameter.objects.get(name='treatment_type').delete()
+        # Deleting field 'ParticipantGroupRelationship.first_visit'
+        db.delete_column('core_participantgrouprelationship', 'first_visit')
+
 
     models = {
         'auth.group': {
@@ -266,6 +256,7 @@ class Migration(DataMigration):
             'Meta': {'ordering': "['group', 'participant_number']", 'object_name': 'ParticipantGroupRelationship'},
             'active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
+            'first_visit': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'group': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'participant_group_relationship_set'", 'to': "orm['core.Group']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'notifications_since': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now', 'null': 'True', 'blank': 'True'}),
@@ -349,60 +340,7 @@ class Migration(DataMigration):
             'invitations': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'participant': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'spool_statistics_set'", 'to': "orm['core.Participant']"}),
             'participations': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'})
-        },
-        'lighterprints.activity': {
-            'Meta': {'ordering': "['level', 'name']", 'object_name': 'Activity'},
-            'available_all_day': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'cooldown': ('django.db.models.fields.PositiveIntegerField', [], {'default': '1', 'null': 'True', 'blank': 'True'}),
-            'creator': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'null': 'True'}),
-            'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'description': ('django.db.models.fields.TextField', [], {}),
-            'display_name': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'}),
-            'group_activity': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'icon': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_public': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'last_modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'level': ('django.db.models.fields.PositiveIntegerField', [], {'default': '1'}),
-            'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '32'}),
-            'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'children_set'", 'null': 'True', 'to': "orm['lighterprints.Activity']"}),
-            'personal_benefits': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'points': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
-            'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'savings': ('django.db.models.fields.DecimalField', [], {'default': '0.0', 'max_digits': '5', 'decimal_places': '2'}),
-            'summary': ('django.db.models.fields.CharField', [], {'max_length': '256'}),
-            'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'url': ('django.db.models.fields.URLField', [], {'max_length': '200'})
-        },
-        'lighterprints.activityavailability': {
-            'Meta': {'ordering': "['activity', 'start_time']", 'object_name': 'ActivityAvailability'},
-            'activity': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'availability_set'", 'to': "orm['lighterprints.Activity']"}),
-            'end_time': ('django.db.models.fields.TimeField', [], {'null': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'start_time': ('django.db.models.fields.TimeField', [], {'null': 'True', 'blank': 'True'})
-        },
-        'lighterprints.greenbuttonintervalblock': {
-            'Meta': {'object_name': 'GreenButtonIntervalBlock'},
-            'date': ('django.db.models.fields.DateTimeField', [], {}),
-            'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'participant_group_relationship': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'gb_interval_block_set'", 'to': "orm['core.ParticipantGroupRelationship']"}),
-            'start': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'total_duration': ('django.db.models.fields.PositiveIntegerField', [], {})
-        },
-        'lighterprints.greenbuttonintervalreading': {
-            'Meta': {'object_name': 'GreenButtonIntervalReading'},
-            'date': ('django.db.models.fields.DateTimeField', [], {}),
-            'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'interval_block': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'interval_reading_set'", 'to': "orm['lighterprints.GreenButtonIntervalBlock']"}),
-            'millicents': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'seconds_from_epoch': ('django.db.models.fields.PositiveIntegerField', [], {}),
-            'watt_hours': ('django.db.models.fields.PositiveIntegerField', [], {})
         }
     }
 
-    complete_apps = ['core', 'lighterprints']
-    symmetrical = True
+    complete_apps = ['core']
