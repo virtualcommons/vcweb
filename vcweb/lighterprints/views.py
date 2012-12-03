@@ -50,8 +50,8 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
                 context['flattened_activities'] = []
                 return context
             all_activities = context['activity_list']
-            (flattened_activities, activity_by_level) = get_all_activities_tuple(participant_group_relationship, all_activities)
-            context['activity_by_level'] = dict(activity_by_level)
+            (flattened_activities, level_activity_list) = get_all_activities_tuple(participant_group_relationship, all_activities)
+            context['activity_by_level'] = level_activity_list
             context['flattened_activities'] = flattened_activities
             return context
         raise PermissionDenied("You must be authenticated to view all activities.")
@@ -470,7 +470,8 @@ def participate(request, experiment_id=None):
         raise Http404("You do not appear to be participating in this experiment.")
     if request.mobile:
         # FIXME: change this to look up templates in a mobile templates directory?
-        return redirect('https://vcweb.asu.edu/devfoot')
+        logger.warning("mobile request detected by %s, but we're not ready for mobile apps", participant)
+        #return redirect('https://vcweb.asu.edu/devfoot')
     return render(request, 'lighterprints/participate.html', {
         'experiment': experiment,
         'participant_group_relationship': pgr,
