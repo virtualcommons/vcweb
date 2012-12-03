@@ -431,7 +431,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
             own_average_points = average_points
             own_points_to_next_level = pointsToNextLevel
         group_data.append({
-            'group': "Group #%s" % group.number,
+            'groupNumber': group.number,
             'groupLevel': group_level,
             'groupSize': group.size,
             'averagePoints': average_points,
@@ -453,6 +453,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
         'pointsToNextLevel': own_points_to_next_level,
         'chatMessages': chat_messages,
         'groupActivity': group_activity,
+        'groupNumber': own_group.number,
         'activities': activity_dict_list,
         'activitiesByLevel': level_activity_list,
         })

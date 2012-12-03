@@ -73,7 +73,7 @@
             </div>
             <h3>Dashboard Summary</h3>
             <p>
-            Your group is currently <span class='badge badge-important'>level <span data-bind='text:groupLevel'></span></span>
+            Your group (# <span data-bind='text: groupNumber'></span>) is currently <span class='badge badge-important'>level <span data-bind='text:groupLevel'></span></span>
             and has accumulated <span class='badge badge-important'><span data-bind='text:averagePoints'></span> average points</span>.
             In order to advance in level and unlock more activities the <strong>average number of points contributed by each member of your
                 group</strong> must be greater than or equal to <span data-bind='text: pointsToNextLevel' class='badge badge-info'></span>.  
@@ -91,14 +91,14 @@
                 <caption>Today's Group Score Summary <strong>(point totals reset starting from {% now "m/d/Y" %} 12:00 AM)</strong></caption>
                 <thead><tr><th>Group</th><th>Level</th><th>Total points earned by you</th><th>Total group points</th><th>Group size</th><th>Group average points</th><th>Group average points needed to reach the next level</th></tr></thead>
                 <tbody data-bind='foreach: groupData'>
-                <tr>
-                    <td data-bind='text: group'></td>
+                <tr data-bind='css: { "alert-success": groupNumber() == $root.groupNumber()}'>
+                    <td>Group #<span data-bind='text: groupNumber'></span></td>
                     <td data-bind='text: groupLevel'></td>
                     <td data-bind='text: totalParticipantPoints'></td>
                     <td data-bind='text: totalPoints'></td>
                     <td data-bind='text: groupSize'></td>
                     <td data-bind='text: averagePoints'></td>
-                    <td class='text-success' data-bind='text: pointsToNextLevel'></td>
+                    <td data-bind='text: pointsToNextLevel'></td>
                 </tr>
                 </tbody>
             </table>
