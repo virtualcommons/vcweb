@@ -62,7 +62,7 @@ class LoginForm(BootstrapForm):
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
 
     def clean(self):
-        email = self.cleaned_data.get('email')
+        email = self.cleaned_data.get('email').lower()
         password = self.cleaned_data.get('password')
         if email and password:
             self.user_cache = authenticate(username=email, password=password)

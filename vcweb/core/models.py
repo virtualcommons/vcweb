@@ -473,11 +473,13 @@ class Experiment(models.Model):
                     logger.debug("invalid participant data: %s", email)
                     continue
                 # XXX: handle incoming firstname lastname email data
-                data = email.split()
+                data = email.strip().split()
                 first_name = ''
                 last_name = ''
                 if len(data) == 3:
                     (first_name, last_name, email) = data
+# convert all usernames/email addresses to lowercase internally
+                email = email.lower()
                 try:
                     u = User.objects.get(username=email)
                 except User.DoesNotExist:
