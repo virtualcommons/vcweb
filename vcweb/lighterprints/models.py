@@ -191,7 +191,7 @@ class Activity(MPTTModel):
     cooldown = models.PositiveIntegerField(default=1, null=True, blank=True, help_text='How much time, in hours, must elapse before this activity can become available again')
     icon = models.ImageField(upload_to='lighterprints/activity-icons/')
 # for user submitted activities
-    creator = models.ForeignKey(User, null=True)
+    creator = models.ForeignKey(User, null=True, blank=True)
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = models.DateTimeField(default=datetime.now)
 # for the "in-the-wild" app, activities unlock other sets of activities in a tree-like fashion
