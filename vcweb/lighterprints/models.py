@@ -9,8 +9,6 @@ from vcweb.core.services import fetch_foursquare_categories
 import collections
 from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
-from brabeion import badges
-from brabeion.base import Badge, BadgeAwarded
 from lxml import etree
 
 import logging
@@ -55,30 +53,6 @@ def round_started_handler(sender, experiment=None, **kwargs):
 
 
 ActivityStatus = enum('AVAILABLE', 'COMPLETED', 'UNAVAILABLE')
-
-class ActivityBadge(Badge):
-    slug = "activity"
-    levels = ["Bronze", "Silver", "Gold"]
-    events = [ "activity_performed", ]
-    multiple = False
-    def award(self, **state):
-        user = state["user"]
-        activity = state["activity"]
-        participant_group_relationship = ParticipantGroupRelationship.objects.get(group__experiment=get_lighterprints_public_experiment(),
-                participant=user.participant)
-        number_of_times_performed = participant_group_relationship.participant_data_value_set.filter(
-                parameter=get_activity_performed_parameter()).count()
-        if number_of_times_performed < 3:
-            return None
-        elif number_of_times_performed == 3:
-            level = 1
-        elif number_of_times_performed == 8:
-            level = 2
-        elif number_of_times_performed == 15:
-            level = 3
-        return BadgeAwarded(level=level, slug=activity.name, name=activity.name, description=activity.description)
-
-badges.register(ActivityBadge)
 
 class GreenButtonIntervalBlock(models.Model):
     participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='gb_interval_block_set')

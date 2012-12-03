@@ -472,14 +472,14 @@ class Experiment(models.Model):
                 try:
                     u = User.objects.get(username=email)
                 except User.DoesNotExist:
+                    logger.debug("created new user %s", email)
                     u = User.objects.create_user(username=email, email=email, password=password)
                     # perform a password reset programmatically ala
                     # http://stackoverflow.com/questions/5594197/trigger-password-reset-email-in-django-without-browser
-                    reset_password(email)
-
                 users.append(u)
         for user in users:
             #logger.debug("registering user %s", user)
+            # FIXME: unsafe for concurrent usage, but only one experimenter at a time should be invoking this
             (p, created) = Participant.objects.get_or_create(user=user)
             # FIXME: instead of asking for the email suffix, perhaps we just append the institution URL to keep it simpler?
             if institution and p.institution != institution:
@@ -687,7 +687,7 @@ class Experiment(models.Model):
                 }
         if include_round_data:
             experiment_dict['allRoundData'] = self.all_round_data()
-            experiment_dict['chatMessages'] = [escape(chat_message) for chat_message in self.all_chat_messages],
+            experiment_dict['chatMessages'] = [unicode(chat_message) for chat_message in self.all_chat_messages],
             experiment_dict['messages'] = [escape(log) for log in self.activity_log_set.order_by('-date_created')]
         return experiment_dict
 
@@ -1688,8 +1688,8 @@ def facebook_extra_values(sender, user, response, details, **kwargs):
 
 def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):
     """
-    Reset the password for all (active) users with given E-Mail adress
+    Reset the password for all (active) users with given E-Mail address
     """
-    form = PasswordResetForm({'email': email})
+    form = PasswordResetForm({'email': email, })
     return form.save(from_email=from_email, email_template_name=template)
 

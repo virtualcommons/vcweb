@@ -169,6 +169,7 @@ SOCIAL_AUTH_ASSOCIATE_URL_NAME = 'socialauth_associate_complete'
 SOCIAL_AUTH_RAISE_EXCEPTIONS = DEBUG
 
 #SOCIAL_AUTH_USER_MODEL = 'core.Participant'
+#AUTH_USER_MODEL = 'models.User'
 
 try:
     import south

@@ -211,7 +211,6 @@ class SingleExperimentMixin(SingleObjectMixin):
 
 # FIXME: is this the right place for this?  Useful when a form mixes this class in.
     def get_initial(self):
-        logger.debug("invoking get form with class")
         self.object = self.get_object()
         return { "experiment_pk" : self.object.pk }
 

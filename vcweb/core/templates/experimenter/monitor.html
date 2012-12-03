@@ -95,22 +95,19 @@
         </div>
     </div>
 </div>
-<div class='accordion' id='chat-accordion'>
+<div class='accordion' id='experiment-chat-accordion'>
     <div class='accordion-group'>
         <div class='accordion-heading'>
-            <a class='accordion-toggle' data-toggle='collapse' data-parent='#chat-accordion' href='#experiment-chat-messages'>Chat Messages</a>
+            <a class='accordion-toggle' data-toggle='collapse' data-parent='#experiment-chat-accordion' href='#experiment-chat-messages'>All Chat Messages</a>
         </div>
-        <div id='experiment-chat-messages' class='scrollable-messages alert accordion-body collapse' data-bind='foreach: chatMessages'>
-            <div>
-                <button class='close' data-dismiss='alert'>&times;</button>
-                <span data-bind='text: $data'></span>
+        <div id='experiment-chat-messages' class='scrollable-messages accordion-body collapse'>
+            <div data-bind='foreach: chatMessages'>
+                <div class='alert alert-message' data-bind='text: $data'></div>
             </div>
         </div>
     </div>
 </div>
-
 {% endblock page %}
-
 {% block javascript %}
 {{ block.super }}
 {% include "includes/experimenter.events.html" %}
