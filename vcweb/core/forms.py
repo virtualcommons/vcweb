@@ -85,13 +85,22 @@ class EmailListField(forms.CharField):
     widget = forms.Textarea
     def clean(self, value):
         super(EmailListField, self).clean(value)
-        emails = email_separator_re.split(value)
-        if not emails:
+        lines = value.split('\n')
+        #emails = email_separator_re.split(value)
+        if not lines:
             raise ValidationError(_(u'You must enter at least one email address.'))
-        for email in emails:
-            if not email_re.match(email):
-                raise ValidationError(_(u'%s is not a valid email address.' % email))
-        return emails
+        for line in lines:
+            # try to split by spaces first, expect first name last name email
+            data = line.split()
+            if len(data) == 1:
+                if not email_re.match(data):
+                    raise ValidationError(_(u'%s is not a valid email address.' % data))
+            elif len(data) == 3:
+                (first_name, last_name, email) = data
+                logger.debug("first name %s, last name %s, email %s", first_name, last_name, email)
+                if not email_re.match(email):
+                    raise ValidationError(_(u'%s is not a valid email address.' % email))
+        return lines
 
 class RegisterParticipantsForm(BootstrapForm):
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
@@ -121,7 +130,10 @@ class RegisterSimpleParticipantsForm(RegisterParticipantsForm):
     number_of_participants = forms.IntegerField(min_value=1, help_text=_('The number of participants to register with this experiment.'))
 
 class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
-    participant_emails = EmailListField(label="Participant emails", help_text=_('A comma or newline delimited list of emails to register as participants for this experiment.'))
+    participant_emails = EmailListField(label="Participant emails", help_text=_('A newline delimited list of emails to register as participants for this experiment.'))
+
+class RegisterExcelParticipantsForm(RegisterParticipantsForm):
+    file = forms.FileField()
 
 class ChatForm(forms.Form):
     message = forms.CharField(max_length=512)

@@ -469,11 +469,24 @@ class Experiment(models.Model):
             if password is None:
                 password = self.authentication_code
             for email in emails:
+                if not email:
+                    logger.debug("invalid participant data: %s", email)
+                    continue
+                # XXX: handle incoming firstname lastname email data
+                data = email.split()
+                first_name = ''
+                last_name = ''
+                if len(data) == 3:
+                    (first_name, last_name, email) = data
                 try:
                     u = User.objects.get(username=email)
                 except User.DoesNotExist:
-                    logger.debug("created new user %s", email)
                     u = User.objects.create_user(username=email, email=email, password=password)
+                    if first_name and last_name:
+                        logger.debug("setting first name [%s] and last name [%s]", first_name, last_name)
+                        u.first_name = first_name
+                        u.last_name = last_name
+                        u.save()
                     # perform a password reset programmatically ala
                     # http://stackoverflow.com/questions/5594197/trigger-password-reset-email-in-django-without-browser
                 users.append(u)
@@ -1167,7 +1180,7 @@ class Group(models.Model):
             else:
                 logger.warn("No parameter or parameter name specified: %s", **kwargs)
         except:
-            logger.debug("no round configuration value found for round: %s", current_round_configuration)
+            logger.debug("no round configuration value found for parameter (%s, %s) in round: %s", parameter, name, current_round_configuration)
         return round_configuration_value
 
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None, default=None):

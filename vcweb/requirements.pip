@@ -34,6 +34,7 @@ sockjs-tornado
 tornado-redis
 django-extensions
 fabric
-minidetector
+xlrd
+xlwt
 # install django-bootstrap from github
 # pip install -e git+git://github.com/earle/django-bootstrap.git#egg=bootstrap

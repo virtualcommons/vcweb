@@ -11,7 +11,7 @@ from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin, DetailView
 from django.views.generic.edit import UpdateView
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
-        RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm, LogMessageForm)
+        RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm, RegisterExcelParticipantsForm, LogMessageForm)
 from vcweb.core import unicodecsv
 from vcweb.core.json import dumps
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
@@ -20,6 +20,7 @@ from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
 import logging
 import mimetypes
+import tempfile
 logger = logging.getLogger(__name__)
 
 
@@ -250,6 +251,21 @@ class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, Templa
 
 class MonitorExperimentView(ExperimenterSingleExperimentMixin, DetailView):
     template_name = 'experimenter/monitor.html'
+
+def upload_excel_participants_file(request):
+    if request.method == 'POST':
+        form = RegisterExcelParticipantsForm(request.POST, request.FILES)
+        if form.is_valid():
+            import xlrd
+            participant = request.user.participant
+            experiment_id = form.cleaned_data.get('experiment_pk')
+            experiment = get_object_or_404(Experiment, pk=experiment_id)
+            uploaded_file = request.FILES['file']
+            with tempfile.NamedTemporaryFile() as dst:
+                for chunk in uploaded_file.chunks():
+                    dst.write(chunk)
+                workbook = xlrd.open_workbook(filename=dst.name)
+                logger.debug("workbook: %s", workbook)
 
 class RegisterEmailListView(ExperimenterSingleExperimentMixin, FormView):
     form_class = RegisterEmailListParticipantsForm
