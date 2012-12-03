@@ -241,7 +241,7 @@ def get_group_activity_tuple(participant_group_relationship, number_of_activitie
         activity_performed_dict['date_performed'] = activity_prdv.date_created
         pgr = activity_prdv.participant_group_relationship
         activity_performed_dict['participant_number'] = pgr.participant_number
-        activity_performed_dict['participant_name'] = pgr.participant.full_name
+        activity_performed_dict['participant_name'] = 'You' if pgr == participant_group_relationship else pgr.participant.full_name 
         activity_performed_dict['participant_group_id'] = pgr.pk
         activity_performed_dict['activity_performed_id'] = activity_prdv.pk
         activity_performed_dict['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=activity_prdv.pk)]

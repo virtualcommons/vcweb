@@ -187,7 +187,7 @@
     </div>
     <div class='modal-body'>
         <div class='alert alert-error'>
-        <span class='text-error' data-bind='text:errorMessage'></span>
+            <span class='text-error' data-bind='text:errorMessage'></span>
         </div>
     </div>
     <div class='modal-footer'>
@@ -198,18 +198,20 @@
     aria-labelledby='activityPerformedModalLabel'
     aria-hidden='true'>
     <div class='modal-header'>
-        <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>x</button>
-        <h3 id='activityPerformedModalLabel'>Successfully performed activity</h3>
+        <h3 id='activityPerformedModalLabel'>Performing activity</h3>
     </div>
     <div class='modal-body'>
-        <p>
+        <div class="progress progress-striped active">
+            <div class="bar" style="width: 100%;"></div>
+        </div>
+        <p id='activityPerformedModalText' class='hide'>
         You have successfully performed <span class='text-success' data-bind='text:lastPerformedActivity'></span>,
         earning <span class='badge badge-success' data-bind='text: lastPerformedActivityPoints'></span> green points for
         your group.
         </p>
     </div>
     <div class='modal-footer'>
-        <button class='btn' data-dismiss='modal' aria-hidden='true'>Continue</button>
+        <button class='btn disabled' data-dismiss='modal' aria-hidden='true'>Continue</button>
     </div>
 </div>
 {% endblock page %}
@@ -262,6 +264,7 @@ $(function() {
                 // $('#activityUnavailableModal').modal();
                 return;
             }
+            $('#activityPerformedModal').modal();
             var activityId = activityModel.pk();
             var formData = $('#activityform' + activityId).serialize();
             $.post('/lighterprints/api/do-activity', formData, function(data) {
@@ -270,8 +273,11 @@ $(function() {
                     console.debug("successfully performed activity");
                     model.lastPerformedActivity(activityModel.display_name());
                     model.lastPerformedActivityPoints(activityModel.points());
-                    $('#activityPerformedModal').modal();
-                }
+                    $('#activityPerformedModal .bar').css('width', '100%');
+                    $('#activityPerformedModal .progress').addClass('hide');
+                    $('#activityPerformedModalText').removeClass('hide');
+                    $('#activityPerformedModal .btn').removeClass('disabled');
+    }
                 else {
                     model.errorMessage("Unable to perform activity: " + data.message);
                     $('#activityUnavailableModal').modal();

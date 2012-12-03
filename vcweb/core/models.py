@@ -1,4 +1,5 @@
 from datetime import datetime
+from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
@@ -472,6 +473,10 @@ class Experiment(models.Model):
                     u = User.objects.get(username=email)
                 except User.DoesNotExist:
                     u = User.objects.create_user(username=email, email=email, password=password)
+                    # perform a password reset programmatically ala
+                    # http://stackoverflow.com/questions/5594197/trigger-password-reset-email-in-django-without-browser
+                    reset_password(email)
+
                 users.append(u)
         for user in users:
             #logger.debug("registering user %s", user)
@@ -1680,4 +1685,11 @@ def handle_new_socialauth_user(sender, user, response, details, **kwargs):
 def facebook_extra_values(sender, user, response, details, **kwargs):
     user.gender = response.get('gender')
     return True
+
+def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):
+    """
+    Reset the password for all (active) users with given E-Mail adress
+    """
+    form = PasswordResetForm({'email': email})
+    return form.save(from_email=from_email, email_template_name=template)
 
