@@ -51,9 +51,12 @@
             Currently available activities are marked with a <i class='icon-exclamation-sign'></i> and <span
                 class='alert-success'>highlighted in green</span>.  You can click on any activity to learn more about it.
             </p>
+            <!-- this would need to be updated via setTimeout / javascript to stay up-to-date otherwise it's just the
+                 time when they last refreshed the page
             <div class='alert alert-info'>
                 <i class='icon-time'></i> The time is now <strong>{% now "P" %}</strong>
             </div>
+            -->
             {% comment %} FIXME: rewrite this to use KO instead of django templating if possible {% endcomment %}
             <div data-bind='foreach: activitiesByLevel'>
                 <div class='accordion' data-bind='attr: {id: "accordion-level" + $index()}'>
@@ -264,6 +267,10 @@ $(function() {
                 // $('#activityUnavailableModal').modal();
                 return;
             }
+            // FIXME: hacky
+            $('#activityPerformedModal .progress').removeClass('hide');
+            $('#activityPerformedModalText').addClass('hide');
+            $('#activityPerformedModal .btn').addClass('disabled');
             $('#activityPerformedModal').modal();
             var activityId = activityModel.pk();
             var formData = $('#activityform' + activityId).serialize();
@@ -273,11 +280,11 @@ $(function() {
                     console.debug("successfully performed activity");
                     model.lastPerformedActivity(activityModel.display_name());
                     model.lastPerformedActivityPoints(activityModel.points());
-                    $('#activityPerformedModal .bar').css('width', '100%');
+                    // FIXME: hacky
                     $('#activityPerformedModal .progress').addClass('hide');
                     $('#activityPerformedModalText').removeClass('hide');
                     $('#activityPerformedModal .btn').removeClass('disabled');
-    }
+                }
                 else {
                     model.errorMessage("Unable to perform activity: " + data.message);
                     $('#activityUnavailableModal').modal();
@@ -310,7 +317,7 @@ $(function() {
             <table class='table table-condensed table-bordered table-hover'>
                 <thead><tr><th>Summary</th><th>Availability</th><th>Points</th></tr></thead>
                 <tbody>
-                    <tr><td data-bind='text: summary'></td><td><i class='icon-time'></i><strong><span data-bind='text: time_slots' class='text-info'></span></strong></td><td><span data-bind='text: points' class='badge badge-success'></span></td></tr>
+                    <tr><td data-bind='text: summary'></td><td><i class='icon-time'></i><span data-bind='text: time_slots' class='text-info'></span></td><td><span data-bind='text: points' class='badge badge-success'></span></td></tr>
             </table>
             <p data-bind='text: description'></p>
             <p>For more info, please visit <a data-bind='text: url, attr: { href: url }' target="_blank"></a></p>

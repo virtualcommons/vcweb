@@ -46,6 +46,8 @@ def round_started_handler(sender, experiment=None, **kwargs):
     for group in experiment.group_set.all():
         current_round_data.group_data_value_set.create(group=group, parameter=footprint_level_parameter, int_value=1)
         for pgr in group.participant_group_relationship_set.all():
+            # FIXME: these aren't used by the current experiment version, are artifacts from the public lighter
+            # footprints green button app.  remove if unused for too long
             # create participant level data value for each participant
             ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, parameter=participant_level_parameter, int_value=1)
             # create initial unlocked set of data values

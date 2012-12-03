@@ -46,8 +46,11 @@ class UpdateLevelTest(BaseTest):
         # FIXME: sender parameter doesn't really matter here, just pass self in as the sender
         update_active_experiments(self)
         for group in e.group_set.all():
+            logger.debug("all levels should be 2 now")
             self.assertEqual(get_footprint_level(group), 2)
             self.assertEqual(average_points_per_person(group), 177)
+            for pgr in group.participant_group_relationship_set.all():
+                logger.debug("available activities: %s", get_available_activities(pgr))
 
 class GroupActivityTest(BaseTest):
     def test_group_activity_json(self):
@@ -167,7 +170,7 @@ class GroupScoreTest(ActivityTest):
         performed_activities = self.perform_activities()
         expected_avg_points_per_person = sum([activity.points for activity in performed_activities])
         for group in e.group_set.all():
-            average_points_per_person, total_points = get_group_score(group)
+            (average_points_per_person, total_points, total_participant_points) = get_group_score(group)
             self.assertEqual(average_points_per_person, expected_avg_points_per_person)
             self.assertEqual(total_points, expected_avg_points_per_person * group.size)
 
