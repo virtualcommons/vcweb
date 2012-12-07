@@ -23,13 +23,15 @@ def new_participant(sender, experiment=None, participant_group_relationship=None
             get_unlocked_activities(participant_group_relationship)
 
 @receiver(signals.midnight_tick)
-def update_active_experiments(sender, time=None, **kwargs):
-    logger.debug("updating active experiments")
+def update_active_experiments(sender, time=None, end=None, **kwargs):
+# since this happens at midnight we need to look at the previous day
+    start = date.today() - timedelta(1);
+    logger.debug("updating active experiments for %s", start)
     for experiment in get_active_experiments():
         # calculate total carbon savings and decide if they move on to the next level
         for group in experiment.group_set.all():
             footprint_level_grdv = get_footprint_level_dv(group)
-            if should_advance_level(group, footprint_level_grdv.value):
+            if should_advance_level(group, footprint_level_grdv.value, start):
                 # advance group level
                 footprint_level_grdv.value = min(footprint_level_grdv.value + 1, 3)
                 footprint_level_grdv.save()
@@ -475,8 +477,8 @@ def get_performed_activity_ids(participant_group_relationship):
     return [prdv.pk for prdv in participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())]
 
 
-def average_points_per_person(group):
-    return get_group_score(group)[0]
+def average_points_per_person(group, start=None, end=None):
+    return get_group_score(group, start=start, end=end)[0]
 
 # returns a tuple of the average points per person and the total points for
 # the given group
@@ -486,8 +488,9 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
     total_group_points = 0
     total_participant_points = 0
     activities_performed_qs = group.get_participant_data_values(parameter=get_activity_performed_parameter())
-    if start is None or end is None:
+    if start is None:
         start = date.today()
+    if end is None:
         end = start + timedelta(1)
     activities_performed_qs = activities_performed_qs.filter(date_created__range=(start, end))
     for activity_performed_dv in activities_performed_qs:
@@ -509,9 +512,10 @@ def points_to_next_level(current_level):
     elif current_level == 3:
         return 225
 
-def should_advance_level(group, level, max_level=3):
+def should_advance_level(group, level, start=None, end=None, max_level=3):
+    logger.debug("checking if group %s at level %s should advance in level on %s", group, level, start)
     if level < max_level:
-        return average_points_per_person(group) >= points_to_next_level(level)
+        return average_points_per_person(group, start=start, end=end) >= points_to_next_level(level)
     return False
 
 def get_activity_performed_counts(participant_group_relationship, activity_performed_parameter=None):
