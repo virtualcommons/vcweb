@@ -702,7 +702,7 @@ class Experiment(models.Model):
                 }
         if include_round_data:
             experiment_dict['allRoundData'] = self.all_round_data()
-            experiment_dict['chatMessages'] = [unicode(chat_message) for chat_message in self.all_chat_messages],
+            experiment_dict['chatMessages'] = [chat_message.as_dict for chat_message in self.all_chat_messages]
             experiment_dict['messages'] = [escape(log) for log in self.activity_log_set.order_by('-date_created')]
         return experiment_dict
 
@@ -1568,6 +1568,15 @@ class ChatMessage(ParticipantRoundDataValue):
     def round_configuration(self):
         return self.round_data.round_configuration
 
+    @property
+    def as_dict(self):
+        return {
+                'message': unicode(self),
+                'participant_group_id': self.participant_group_relationship.pk,
+                'group': unicode(self.participant_group_relationship.group),
+                'participant_number': self.participant_group_relationship.participant_number,
+                'date_created': self.date_created,
+                }
     @property
     def as_html(self):
         return "<a name='{0}'>{1}</a> | {2}".format(self.pk,

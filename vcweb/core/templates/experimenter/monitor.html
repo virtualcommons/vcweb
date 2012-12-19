@@ -59,7 +59,7 @@
 <div class='accordion' id='round-data-accordion' data-bind='foreach: allRoundData'>
     <div class='accordion-group'>
         <div class='accordion-heading'>
-            <a class='accordion-toggle' data-toggle='collapse' data-parent='#round-data-accordion' 
+            <a class='accordion-toggle' data-toggle='collapse' data-parent='#round-data-accordion'
                 data-bind='attr: { href: "#" + roundDataId() }'>
                 <span class='label label-success' data-bind='text: roundType'></span>Round <span data-bind='text: roundNumber'></span></a>
         </div>
@@ -100,9 +100,9 @@
         <div class='accordion-heading'>
             <a class='accordion-toggle' data-toggle='collapse' data-parent='#experiment-chat-accordion' href='#experiment-chat-messages'>All Chat Messages</a>
         </div>
-        <div id='experiment-chat-messages' class='scrollable-messages accordion-body collapse'>
-            <div data-bind='foreach: chatMessages'>
-                <div class='alert alert-message' data-bind='text: $data'></div>
+        <div id='experiment-chat-messages' class='scrollable-messages accordion-body collapse' data-bind='foreach: chatMessages'>
+            <div class='alert alert-message'>
+                (<span data-bind='text: group'></span>) <span data-bind='text: message'></span>
             </div>
         </div>
     </div>
@@ -122,9 +122,20 @@
                 model.messages.unshift(evt.message);
             }
             model.hasParticipants = function() {
-                console.log("participant count: " + model.participantCount());
                 return model.participantCount() > 0;
             }
+            model.confirmExperimentAction = function(evt) {
+                evt.preventDefault();
+                var self = $(this);
+                var description = self.attr("data-content");
+                var action = self.attr("name");
+                bootbox.confirm(description + "  Continue?", function(confirmed) {
+                    if (confirmed) {
+                        Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {'pk': {{experiment.pk}}, 'action':action});
+                    }
+                    return false;
+                });
+            };
             return model;
         }
         function update(experimentModel) {
@@ -142,6 +153,7 @@
                 console.log("Received event: " + evt);
                 experimentModel.addMessage(jQuery.parseJSON(evt.data));
             };
+            // FIXME: replace these with click data-binding
             $('a.confirm').live("click", function(evt) {
                 evt.preventDefault();
                 var self = $(this);
@@ -166,6 +178,7 @@
                 getWebSocket().send(createGotoEvent());
                 return false;
             });
+            return experimentModel;
         }
         $('[data-content]').popover();
         // initialize experiment model JSON from experiment model
