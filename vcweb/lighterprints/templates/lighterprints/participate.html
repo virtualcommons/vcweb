@@ -220,6 +220,7 @@
 {% endblock page %}
 {% block javascript %}
 {{ block.super }}
+<script type='text/javascript' src='{{STATIC_URL}}js/lighterprints/model.js'></script>
 <script type='text/javascript'>
 $(function() {
     // XXX: set up bootstrap nav-tabs to be semi-refresh friendly, remove in production
@@ -232,70 +233,44 @@ $(function() {
         window.location.hash = evt.target.hash;
     });
     */
-    function LighterFootprintsModel(modelJson) {
-        var self = this;
-        var model = ko.mapping.fromJS(modelJson);
-        // FIXME: hacky, figure out if there is a way to pass the observable in directly from the model object we get in
-        // performActivity
-        model.lastPerformedActivity = ko.observable();
-        model.lastPerformedActivityPoints = ko.observable();
-        model.errorMessage = ko.observable();
-        model.activateAllActivitiesTab = function() {
-            $('#lfp-navtabs a[href="#all-activities"]').tab('show');
+    // set up KO binding, using one master view model
+    var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
+    var viewModel = new LighterFootprintsModel(viewModelData);
+    viewModel.activateAllActivitiesTab = function() {
+        $('#lfp-navtabs a[href="#all-activities"]').tab('show');
+    };
+    viewModel.performActivity = function(activityModel) {
+        if (! activityModel.available_now()) {
+            // FIXME: modal is slow, no feedback on this for now
+            // model.errorMessage("The activity " + activityModel.display_name() + " is not currently available.");
+            // $('#activityUnavailableModal').modal();
+            return;
         }
-        model.hasChatMessages = function() {
-            return model.chatMessages().length > 0;
-        }
-        model.submitChatMessage = function() {
-            var formData = $('#chat-form').serialize();
-            $.post('/lighterprints/api/message', formData, function(data) {
-                ko.mapping.fromJS(data, model);
-            });
-            $('#chatText').val('');
-            return false;
-        }
-        model.availableActivities = ko.computed(function() {
-            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.available_now() });
-        });
-        model.hasAvailableActivities = ko.computed(function() {
-            return model.availableActivities().length > 0;
-        });
-        model.performActivity = function(activityModel) {
-            if (! activityModel.available_now()) {
-                // FIXME: modal is slow, no feedback on this for now
-                // model.errorMessage("The activity " + activityModel.display_name() + " is not currently available.");
-                // $('#activityUnavailableModal').modal();
-                return;
-            }
-            // FIXME: hacky
-            $('#activityPerformedModal .progress').removeClass('hide');
-            $('#activityPerformedModalText').addClass('hide');
-            $('#activityPerformedModal .btn').addClass('disabled');
-            $('#activityPerformedModal').modal();
-            var activityId = activityModel.pk();
-            var formData = $('#activityform' + activityId).serialize();
-            $.post('/lighterprints/api/do-activity', formData, function(data) {
+        // FIXME: hacky
+        $('#activityPerformedModal .progress').removeClass('hide');
+        $('#activityPerformedModalText').addClass('hide');
+        $('#activityPerformedModal .btn').addClass('disabled');
+        $('#activityPerformedModal').modal();
+        var activityId = activityModel.pk();
+        var formData = $('#activityform' + activityId).serialize();
+        $.post('/lighterprints/api/do-activity', formData, function(data) {
                 if (data.success) {
-                    ko.mapping.fromJSON(data.viewModel, model);
+                    ko.mapping.fromJSON(data.viewModel, viewModel);
                     console.debug("successfully performed activity");
-                    model.lastPerformedActivity(activityModel.display_name());
-                    model.lastPerformedActivityPoints(activityModel.points());
+                    viewModel.lastPerformedActivity(activityModel.display_name());
+                    viewModel.lastPerformedActivityPoints(activityModel.points());
                     // FIXME: hacky
                     $('#activityPerformedModal .progress').addClass('hide');
                     $('#activityPerformedModalText').removeClass('hide');
                     $('#activityPerformedModal .btn').removeClass('disabled');
                 }
                 else {
-                    model.errorMessage("Unable to perform activity: " + data.message);
+                    viewModel.errorMessage("Unable to perform activity: " + data.message);
                     $('#activityUnavailableModal').modal();
                 }
             });
-        };
-        return model;
-    }
-    // set up KO binding, using one master view model
-    var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
-    var viewModel = new LighterFootprintsModel(viewModelData);
+    };
+
     if (! viewModel.firstVisit()) {
         $('#lfp-navtabs a[href="#dashboard"]').tab('show');
     }
