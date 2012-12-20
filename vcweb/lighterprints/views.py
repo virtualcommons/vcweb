@@ -141,7 +141,7 @@ def get_notifications(request, participant_group_id):
     else:
         logger.warning("authenticated user %s tried to retrieve notifications for %s", request.user,
                 participant_group_relationship)
-        return HttpResponse(dumps({'success':False, 'message': 'Invalid authz request'}))
+        return HttpResponse(dumps({'success':False, 'message': 'Invalid authz request'}), content_type='application/json')
 
 @login_required
 def update_notifications_since(request):
@@ -152,10 +152,10 @@ def update_notifications_since(request):
         if request.user.participant == participant_group_relationship.participant:
             participant_group_relationship.notifications_since = datetime.now()
             participant_group_relationship.save()
-            return HttpResponse(dumps({'success':True}))
+            return HttpResponse(dumps({'success':True}), content_type='application/json')
         else:
             logger.warning("authenticated user %s tried to update notifications since for %s", request.user, participant_group_relationship)
-    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
+    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}), content_type='application/json')
 '''
 [(4, u'adjust-thermostat'),
  (2, u'eat-local-lunch'),
@@ -181,8 +181,8 @@ def activity_performed_counts(request, participant_group_id):
         activity_counts_dict = defaultdict(int, [(d['int_value'], d['count']) for d in activity_performed_counts])
         activity_counts = [activity_counts_dict[activity_id] for activity_id in _activity_ids]
         logger.debug("activity counts: %s", activity_counts)
-        return HttpResponse(dumps({'success': True, 'activity_counts': activity_counts}))
-    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
+        return HttpResponse(dumps({'success': True, 'activity_counts': activity_counts}), content_type='application/json')
+    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}), content_type='application/json')
 
 @login_required
 def group_score(request, participant_group_id):
@@ -199,8 +199,8 @@ def group_score(request, participant_group_id):
             'total_participant_points': total_participant_points,
             'points_to_next_level': points_to_next_level(level)
             })
-        return HttpResponse(dumps({'success':True, 'scores': groups }))
-    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
+        return HttpResponse(dumps({'success':True, 'scores': groups }), content_type='application/json')
+    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}), content_type='application/json')
 
 @login_required
 def group_activity(request, participant_group_id):
@@ -210,7 +210,7 @@ def group_activity(request, participant_group_id):
         return json_response(request, content)
     else:
         logger.warning("authenticated user %s tried to retrieve group activity for %s", request.user, participant_group_relationship)
-        return HttpResponse(dumps({'success': False, 'message': 'Invalid authz request'}))
+        return HttpResponse(dumps({'success': False, 'message': 'Invalid authz request'}), content_type='application/json')
 
 def get_group_activity_tuple(participant_group_relationship, number_of_activities=10, retrieve_all=True):
     group = participant_group_relationship.group
@@ -459,6 +459,20 @@ def get_view_model_json(participant_group_relationship, activities=None):
         })
 
 @participant_required
+def get_view_model(request, participant_group_id=None):
+    if participant_group_id is None:
+        # check in the request query parameters as well
+        participant_group_id = request.GET.get('participant_group_id')
+    pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+    if pgr.participant != request.user.participant:
+        # security check to ensure that the authenticated participant is the same as the participant whose data is
+        # being requested
+        logger.warning("user %s tried to access view model for %s", request.user.participant, pgr)
+        raise PermissionDenied("Access denied.")
+    view_model_json = get_view_model_json(pgr)
+    return HttpResponse(dumps({'success': True, 'view_model_json': view_model_json}), content_type='application/json')
+
+@participant_required
 def participate(request, experiment_id=None):
     detect_mobile(request)
     participant = request.user.participant
@@ -479,18 +493,6 @@ def participate(request, experiment_id=None):
         'all_activities': all_activities,
         })
 
-@participant_required
-def group_view(request, experiment_id=None):
-    detect_mobile(request)
-    participant = request.user.participant
-    if experiment_id is None:
-        experiment = get_lighterprints_public_experiment()
-        pgr = experiment.add_participant(participant)
-    else:
-        experiment = get_object_or_404(Experiment, pk=experiment_id)
-        pgr = participant.get_participant_group_relationship(experiment)
-    return render(request, 'lighterprints/group.html', {'experiment': experiment})
-
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)
     if form.is_valid():
@@ -504,7 +506,7 @@ def checkin(request):
             venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
                     categoryId=','.join(get_foursquare_category_ids()))
             logger.debug("Found venues: %s", venues)
-            return HttpResponse(dumps({'success':True}))
+            return HttpResponse(dumps({'success':True}), content_type='application/json')
         else:
             logger.warning("authenticated user %s tried to checkin at (%s, %s) for %s", request.user, latitude, longitude, participant_group_relationship)
-    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}))
+    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}), content_type='application/json')
