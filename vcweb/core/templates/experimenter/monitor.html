@@ -124,18 +124,6 @@
             model.hasParticipants = function() {
                 return model.participantCount() > 0;
             }
-            model.confirmExperimentAction = function(evt) {
-                evt.preventDefault();
-                var self = $(this);
-                var description = self.attr("data-content");
-                var action = self.attr("name");
-                bootbox.confirm(description + "  Continue?", function(confirmed) {
-                    if (confirmed) {
-                        Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {'pk': {{experiment.pk}}, 'action':action});
-                    }
-                    return false;
-                });
-            };
             return model;
         }
         function update(experimentModel) {
@@ -153,7 +141,6 @@
                 console.log("Received event: " + evt);
                 experimentModel.addMessage(jQuery.parseJSON(evt.data));
             };
-            // FIXME: replace these with click data-binding
             $('a.confirm').live("click", function(evt) {
                 evt.preventDefault();
                 var self = $(this);
@@ -166,16 +153,10 @@
                     return false;
                 });
             });
+            // FIXME: replace these with click data-binding
             $('#refreshAllParticipants').click(function(evt) {
                 evt.preventDefault();
-                // FIXME: replace with sendRefreshEvent()
-                getWebSocket().send(createRefreshEvent());
-                return false;
-            });
-            $('#transitionAllParticipants').click(function(evt) {
-                console.log("sending goto event");
-                // FIXME: replace with sendGotoEvent()
-                getWebSocket().send(createGotoEvent());
+                sendRefreshEvent();
                 return false;
             });
             return experimentModel;

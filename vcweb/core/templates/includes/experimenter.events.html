@@ -29,4 +29,13 @@ function createMessageEvent(message, event_type) {
 function createChatEvent(message) {
     return createMessageEvent(message);
 }
+function sendRefreshEvent() {
+    var webSocket = getWebSocket();
+    if (webSocket) {
+        webSocket.send(createRefreshEvent());
+    }
+    else {
+        console.debug("no web socket available, ignoring");
+    }
+}
 </script>
