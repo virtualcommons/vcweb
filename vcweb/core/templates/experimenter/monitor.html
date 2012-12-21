@@ -9,14 +9,11 @@
     <div class='span6'>
         <ul class='nav nav-list' data-bind="if: isActive">
             <li class='nav-header'>round management</li>
-            <li><a class='confirm' name='advance_to_next_round' href='javascript:void()' data-content='Stops the current round if necessary and advances to the next round.'><i class='icon-step-forward'></i>advance to next round</a></li>
-            <li data-bind="ifnot: isRoundInProgress"><a class='confirm' name='start_round' href='start-round' data-content='Starts the round.'><i class='icon-play'></i>start round</a></li>
-            <li data-bind="if: isRoundInProgress"><a class='confirm' name='end_round' href='end-round' data-content='Stops the current round.'><i class='icon-stop'></i>end round</a></li>
+            <li><a class='confirm-experiment-action' name='advance_to_next_round' href='javascript:void()' data-content='Stops the current round if necessary and advances to the next round.'><i class='icon-step-forward'></i>advance to next round</a></li>
+            <li data-bind="ifnot: isRoundInProgress"><a class='confirm-experiment-action' name='start_round' href='start-round' data-content='Starts the round.'><i class='icon-play'></i>start round</a></li>
+            <li data-bind="if: isRoundInProgress"><a class='confirm-experiment-action' name='end_round' href='end-round' data-content='Stops the current round.'><i class='icon-stop'></i>end round</a></li>
             <li><a href='javascript:void();' id='refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i>refresh all participants</a></li>
             <li class='divider'></li>
-            <li class='nav-header'>download data</li>
-            <li><a href='download/csv'><img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' style='margin: 5px 0 0 0;' alt='' />csv</a></li>
-            <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' style='margin: 5px 0 0 0;' alt=''/>xls</a><li>
         </ul>
         <div data-bind="ifnot: isActive">
             <div data-bind="ifnot: hasParticipants()">
@@ -33,7 +30,7 @@
                 </div>
                 <ul class='nav nav-list'>
                     <li><a data-content='Activate an experiment after you have registered participants and are ready to start it.' 
-                        class='confirm' name='activate' href='activate'><i class='icon-off'></i>activate</a></li>
+                        class='confirm-experiment-action' name='activate' href='activate'><i class='icon-off'></i>activate</a></li>
                 </ul>
             </div>
         </div>
@@ -44,6 +41,10 @@
             <li>Time remaining: <span data-bind='text:timeRemaining'></span></li>
             <li>Registered participants: <span data-bind='text:participantCount' class='badge badge-info'></span></li>
         </ul>
+        <div class='alert alert-message alert-block'>
+            <h4><i class='icon-download'></i> Download Experiment Data</h4>
+             You can download all the experiment data as <a href='download/csv'><img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' alt='csv' />csv</a> or <a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/>xls</a>
+        </div>
     </div>
     <div class='span6'>
         <h4>Experiment Log</h4>
@@ -56,6 +57,7 @@
     </div>
 </div>
 <h3>Experiment Data</h3>
+
 <div class='accordion' id='round-data-accordion' data-bind='foreach: allRoundData'>
     <div class='accordion-group'>
         <div class='accordion-heading'>
@@ -141,7 +143,7 @@
                 console.log("Received event: " + evt);
                 experimentModel.addMessage(jQuery.parseJSON(evt.data));
             };
-            $('a.confirm').live("click", function(evt) {
+            $('a.confirm-experiment-action').live("click", function(evt) {
                 evt.preventDefault();
                 var self = $(this);
                 var description = self.attr("data-content");
