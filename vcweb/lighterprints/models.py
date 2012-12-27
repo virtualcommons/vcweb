@@ -23,9 +23,10 @@ def new_participant(sender, experiment=None, participant_group_relationship=None
             get_unlocked_activities(participant_group_relationship)
 
 @receiver(signals.midnight_tick)
-def update_active_experiments(sender, time=None, end=None, **kwargs):
+def update_active_experiments(sender, time=None, start=None, **kwargs):
 # since this happens at midnight we need to look at the previous day
-    start = date.today() - timedelta(1);
+    if start is None:
+        start = date.today() - timedelta(1);
     logger.debug("updating active experiments for %s", start)
     for experiment in get_active_experiments():
         # calculate total carbon savings and decide if they move on to the next level

@@ -451,12 +451,6 @@ class Experiment(models.Model):
         pdvs = self.current_round_data.participant_data_value_set
         return pdvs.filter(submitted=False).count() == 0
 
-    def invoke(self, action_name):
-        if action_name in ('advance_to_next_round', 'end_round', 'start_round', 'activate'):
-            getattr(self, action_name)()
-        else:
-            raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action_name, self))
-
     def register_participants(self, users=None, emails=None, institution=None, password=None):
         if self.participant_set.count() > 0:
             logger.warning("This experiment %s already has %d participants - aborting", self, self.participant_set.count())
@@ -502,8 +496,7 @@ class Experiment(models.Model):
                 p.save()
             ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=self.experimenter.user)
 
-
-    ''' hardcoded defaults for the slovakia pretest '''
+    ''' FIXME: get rid of hardcoded defaults for the slovakia pretest '''
     def setup_test_participants(self, count=20, institution=None, email_suffix='sav.sk', password='test'):
         if self.participant_set.count() > 0:
             logger.warning("This experiment %s already has %d participants - aborting", self, self.participant_set.count())
@@ -553,14 +546,6 @@ class Experiment(models.Model):
     def parameters(self, scope=None):
         parameter_set = self.experiment_metadata.parameter_set
         return parameter_set.filter(scope=scope) if scope else parameter_set
-
-    def activate(self):
-        if not self.is_active:
-            self.allocate_groups()
-            self.status = 'ACTIVE'
-            self.start_date_time = datetime.now()
-            self.save()
-        return self
 
     def add_participant(self, participant, current_group=None):
         # FIXME: simplify logic where possible
@@ -618,6 +603,12 @@ class Experiment(models.Model):
         self.current_round_sequence_number = max(self.current_round_sequence_number - 1, 1)
         self.save()
 
+    def invoke(self, action_name):
+        if action_name in ('advance_to_next_round', 'end_round', 'start_round', 'activate', 'complete'):
+            getattr(self, action_name)()
+        else:
+            raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action_name, self))
+
     def advance_to_next_round(self):
         if self.is_round_in_progress:
             self.end_round()
@@ -652,6 +643,19 @@ class Experiment(models.Model):
         #sender = self.namespace.encode('utf-8')
         logger.debug("about to send round ended signal with sender %s", sender)
         return signals.round_ended.send_robust(sender, experiment=self, round_configuration=self.current_round)
+
+    def activate(self):
+        if not self.is_active:
+            self.allocate_groups()
+            self.status = 'ACTIVE'
+            self.start_date_time = datetime.now()
+            self.save()
+        return self
+
+    def complete(self):
+        self.log("Marking as COMPLETED") 
+        self.status = 'COMPLETED'
+        self.save()
 
     def stop(self):
         self.log("Stopping experiment and flagging as inactive.")

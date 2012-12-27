@@ -15,21 +15,26 @@
             <li><a href='javascript:void();' id='refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i>refresh all participants</a></li>
             <li class='divider'></li>
         </ul>
+        {% comment %} should offer different actions (start + reset) to experiments that has already been activated / started {% endcomment %}
         <div data-bind="ifnot: isActive">
             <div data-bind="ifnot: hasParticipants()">
                 <div class='alert alert-error alert-block'>
-                    <i class='icon-warning-sign'></i>There are no registered participants. You can <a href='{{experiment.controller_url}}/register-email-list'>register email addresses for participants</a> or 
-                    <a href='{{experiment.controller_url}}/register-simple'>add test participants</a>
+                    <h4>No participants</h4>
+                    <i class='icon-warning-sign'></i><a href='{{experiment.controller_url}}/register-email-list'>Register email addresses for participants</a> or 
+                    <a href='{{experiment.controller_url}}/register-simple'>add test participants</a>?
                 </div>
             </div>
             <div data-bind="if: hasParticipants()">
                 <div class='alert alert-info alert-block'>
-                    This experiment is currently inactive.  Please activate the experiment
-                    after you have registered all participants and are ready to start the experiment run. You have registered <span data-bind='text:participantCount'
-                        class='badge badge-info' data-content='{{experiment.participant_set}}'></span> participants.
+                    <h3>Inactive Experiment</h3>
+                    <p>
+                    There are <span data-bind='text:participantCount' class='badge badge-info'></span> registered participants.
+                    Activate the experiment whenever you are ready to collect data. (NOTE: this will wipe away any
+                    existing data).
+                    </p>
                 </div>
                 <ul class='nav nav-list'>
-                    <li><a data-content='Activate an experiment after you have registered participants and are ready to start it.' 
+                    <li><a data-content='Activate this experiment after all participants have been registered and you are ready to collect data.' 
                         class='confirm-experiment-action' name='activate' href='activate'><i class='icon-off'></i>activate</a></li>
                 </ul>
             </div>
@@ -43,7 +48,7 @@
         </ul>
         <div class='alert alert-message alert-block'>
             <h4><i class='icon-download'></i> Download Experiment Data</h4>
-             You can download all the experiment data as <a href='download/csv'><img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' alt='csv' />csv</a> or <a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/>xls</a>
+            <a href='download/csv'><img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' alt='csv' />csv</a> | <a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/>xls</a>
         </div>
     </div>
     <div class='span6'>

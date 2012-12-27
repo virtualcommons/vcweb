@@ -1,8 +1,10 @@
 Django
 psycopg2
 #celery
-tornadio
+#tornadio
 tornado
+sockjs-tornado
+tornado-redis
 #django-celery
 #kombu
 #django-kombu
@@ -14,7 +16,7 @@ django-model-utils
 django-social-auth
 python-memcached
 pylibmc
-brabeion
+#brabeion
 django-mptt
 south
 #django-unittest-depth
@@ -30,8 +32,6 @@ feedparser
 feedcache
 neo4j-embedded
 lxml
-sockjs-tornado
-tornado-redis
 django-extensions
 fabric
 xlrd
