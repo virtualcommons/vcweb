@@ -6,12 +6,13 @@
 <div id="experiment-list">
     {% for e in experiments %}
     <div>
-        <h5>{{e.status_line}}</h5>
+        <h5>{{e.status_line}} <span class='pull-right'><span class='badge badge-important'>{{e.participant_set.count}}</span> participants</span></h5>
+        
+
         <div class='well well-small'>
-            <span class='badge badge-important'>{{e.participant_set.count}}</span> registered participants
             <div class='btn-group'>
                 <a class='btn' href='{{e.monitor_url}}'><img src='{{STATIC_URL}}images/famfamfam/zoom.png' alt='General experiment monitoring interface'/> monitor</a></li>
-                <a class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the exact same configuration but no registered participants.'
+                <a class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
                     href='{{e.clone_url}}'><img src='{{STATIC_URL}}images/famfamfam/page_copy.png' alt='Clone experiment'/> clone</a>
                 {% if e.participant_set.count == 0  %}
                 <a class='btn' data-content='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'>

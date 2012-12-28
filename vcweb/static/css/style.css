@@ -25,7 +25,7 @@ a.external {
 h1, h2, h3 {
     color: #549900;
 }
-h2, h3, h4, h5 {
+h2, h3 {
     border-bottom:1px solid #333;
 }
 h1 { font-size: 1.8em; }

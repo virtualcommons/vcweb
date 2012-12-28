@@ -41,14 +41,18 @@
         </div>
         <ul class='nav nav-list'>
             <li class='nav-header'>round status</li>
-            <li data-content='{{experiment.actions_help_text}}'><span data-bind='text:roundSequenceLabel'></span>, <span data-bind='text:roundStatusLabel'></span></li>
+            <li><span data-bind='text:roundSequenceLabel'></span></li>
+            <li><span data-bind='text:roundStatusLabel'></span></li>
             <li>Experiment started on: <span data-bind='text:currentRoundStartTime'></span></li>
             <li>Time remaining: <span data-bind='text:timeRemaining'></span></li>
             <li>Registered participants: <span data-bind='text:participantCount' class='badge badge-info'></span></li>
         </ul>
         <div class='alert alert-message alert-block'>
             <h4><i class='icon-download'></i> Download Experiment Data</h4>
-            <a href='download/csv'><img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' alt='csv' />csv</a> | <a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/>xls</a>
+            <ul class='inline'>
+                <li><a href='download/csv'><img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' alt='csv' />csv</a></li>
+                <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/>xls</a></li>
+            </ul>
         </div>
     </div>
     <div class='span6'>
@@ -107,9 +111,11 @@
         <div class='accordion-heading'>
             <a class='accordion-toggle' data-toggle='collapse' data-parent='#experiment-chat-accordion' href='#experiment-chat-messages'>All Chat Messages</a>
         </div>
-        <div id='experiment-chat-messages' class='scrollable-messages accordion-body collapse' data-bind='foreach: chatMessages'>
-            <div class='alert alert-message'>
-                (<span data-bind='text: group'></span>) <span data-bind='text: message'></span>
+        <div id='experiment-chat-messages' class='scrollable-messages accordion-body collapse'>
+            <div class='alert' data-bind='foreach: chatMessages'>
+                <div>
+                    (<span data-bind='text: group'></span>) <span data-bind='text: message'></span>
+                </div>
             </div>
         </div>
     </div>

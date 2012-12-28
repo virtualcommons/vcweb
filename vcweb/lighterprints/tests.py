@@ -43,7 +43,6 @@ class UpdateLevelTest(BaseTest):
                 activity_performed = participant_group_relationship.participant_data_value_set.create(round_data=current_round_data, parameter=get_activity_performed_parameter())
                 activity_performed.value = activity.id
                 activity_performed.save()
-        # FIXME: sender parameter doesn't really matter here, just pass self in as the sender
         update_active_experiments(self, start=date.today())
         for group in e.group_set.all():
             logger.debug("all levels should be 2 now")
