@@ -785,6 +785,8 @@ class RoundConfiguration(models.Model):
                                             help_text='''The name of the template to use to render when executing this round.
                                             This file should exist in your templates directory as your-experiment-namespace/template-name.html,
                                             e.g., if set to foo.html, vcweb will look for templates/forestry/foo.html''')
+    """ survey url """
+    survey_url = models.URLField(null=True, blank=True)
 
     @property
     def custom_template_name(self):
