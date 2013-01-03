@@ -1,12 +1,15 @@
 from datetime import datetime
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
+from django.core.mail import EmailMultiAlternatives
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.aggregates import Max
 from django.db.models.loading import get_model
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
+from django.template import Context
+from django.template.loader import select_template
 from django.utils.html import escape
 from django.utils.timesince import timesince
 from django.utils.translation import ugettext_lazy as _
@@ -468,10 +471,12 @@ class Experiment(models.Model):
                     continue
                 # XXX: handle incoming firstname lastname email data
                 data = email.strip().split()
-                first_name = ''
-                last_name = ''
-                if len(data) == 3:
-                    (first_name, last_name, email) = data
+                first_name = None
+                last_name = None
+                if len(data) >= 3:
+                    email = data.pop()
+                    last_name = data.pop()
+                    first_name = ' '.join(data)
 # convert all usernames/email addresses to lowercase internally
                 email = email.lower()
                 try:
@@ -494,7 +499,29 @@ class Experiment(models.Model):
             if institution and p.institution != institution:
                 p.institution = institution
                 p.save()
-            ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=self.experimenter.user)
+
+            # FIXME: send a registered for experiment email explicitly or use a django post_save signal handler?
+            per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=self.experimenter.user)
+            self.send_registration_email(per)
+
+    def send_registration_email(self, participant_experiment_relationship):
+        '''
+        Override the email template by creating <experiment-namespace>/registration-email(txt|html) template files
+        '''
+        plaintext_template = select_template(['%s/registration-email.txt' % self.namespace, 'experimenter/registration-email.txt'])
+        html_template = select_template('%s/registration-email.html' % self.namespace, 'experimenter/registration-email.html')
+        c = Context({
+            'participant_experiment_relationship': participant_experiment_relationship,
+            })
+        plaintext_content = plaintext_template.render(c)
+        html_content = html_template.render(c)
+        subject = 'Experiment registration: %s' % self.title
+        to_address = participant_experiment_relationship.participant.email
+        msg = EmailMultiAlternatives(subject, plaintext_content, self.experimenter.email, [ to_address ])
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+
+
 
     ''' FIXME: get rid of hardcoded defaults for the slovakia pretest '''
     def setup_test_participants(self, count=20, institution=None, email_suffix='sav.sk', password='test'):
@@ -850,6 +877,12 @@ class RoundConfiguration(models.Model):
             return self.round_parameter_value_set.get(parameter__name=name).value
         except RoundParameterValue.DoesNotExist:
             return default
+
+    def is_survey_enabled(self):
+        try:
+            return self.survey_url is not None
+        except:
+            return False
 
     def get_debriefing(self, participant_id=None, **kwargs):
         return self.templatize(self.debriefing, participant_id, kwargs)
