@@ -504,18 +504,23 @@ class Experiment(models.Model):
             per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=self.experimenter.user)
             self.send_registration_email(per)
 
-    def send_registration_email(self, participant_experiment_relationship):
+    def send_registration_email(self, participant_experiment_relationship, subject=None):
         '''
         Override the email template by creating <experiment-namespace>/registration-email(txt|html) template files
         '''
         plaintext_template = select_template(['%s/registration-email.txt' % self.namespace, 'experimenter/registration-email.txt'])
         html_template = select_template('%s/registration-email.html' % self.namespace, 'experimenter/registration-email.html')
+        experiment = participant_experiment_relationship.experiment
+        participant = participant_experiment_relationship.participant
         c = Context({
             'participant_experiment_relationship': participant_experiment_relationship,
+            'participant': participant,
+            'experiment': experiment,
             })
         plaintext_content = plaintext_template.render(c)
         html_content = html_template.render(c)
-        subject = 'Experiment registration: %s' % self.title
+        if subject is None:
+            subject = 'Experiment registration: %s' % self.title
         to_address = participant_experiment_relationship.participant.email
         msg = EmailMultiAlternatives(subject, plaintext_content, self.experimenter.email, [ to_address ])
         msg.attach_alternative(html_content, "text/html")
