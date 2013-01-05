@@ -506,10 +506,9 @@ class Experiment(models.Model):
             per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=self.experimenter.user)
             email_messages.append(self.create_registration_email(per))
 
-        connection = mail.get_connection()
-        connection.open()
-        logger.debug("sending messages out %s", email_messages)
-        connection.send_messages(email_messages)
+        if email_messages:
+            logger.debug("sending email messages: %s", email_messages)
+            mail.get_connection().send_messages(email_messages)
 
     def create_registration_email(self, participant_experiment_relationship, subject=None):
         '''
