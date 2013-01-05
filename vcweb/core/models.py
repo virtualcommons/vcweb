@@ -1,6 +1,7 @@
 from datetime import datetime
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
+from django.core import mail
 from django.core.mail import EmailMultiAlternatives
 from django.core.validators import RegexValidator
 from django.db import models
@@ -491,6 +492,7 @@ class Experiment(models.Model):
                     # perform a password reset programmatically ala
                     # http://stackoverflow.com/questions/5594197/trigger-password-reset-email-in-django-without-browser
                 users.append(u)
+        email_messages = []
         for user in users:
             #logger.debug("registering user %s", user)
             # FIXME: unsafe for concurrent usage, but only one experimenter at a time should be invoking this
@@ -502,14 +504,20 @@ class Experiment(models.Model):
 
             # FIXME: send a registered for experiment email explicitly or use a django post_save signal handler?
             per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=self.experimenter.user)
-            self.send_registration_email(per)
+            email_messages.append(self.create_registration_email(per))
 
-    def send_registration_email(self, participant_experiment_relationship, subject=None):
+        connection = mail.get_connection()
+        connection.open()
+        logger.debug("sending messages out %s", email_messages)
+        connection.send_messages(email_messages)
+
+    def create_registration_email(self, participant_experiment_relationship, subject=None):
         '''
         Override the email template by creating <experiment-namespace>/registration-email(txt|html) template files
         '''
+        logger.debug("sending email to %s", participant_experiment_relationship.participant)
         plaintext_template = select_template(['%s/registration-email.txt' % self.namespace, 'experimenter/registration-email.txt'])
-        html_template = select_template('%s/registration-email.html' % self.namespace, 'experimenter/registration-email.html')
+        html_template = select_template(['%s/registration-email.html' % self.namespace, 'experimenter/registration-email.html'])
         experiment = participant_experiment_relationship.experiment
         participant = participant_experiment_relationship.participant
         c = Context({
@@ -520,11 +528,11 @@ class Experiment(models.Model):
         plaintext_content = plaintext_template.render(c)
         html_content = html_template.render(c)
         if subject is None:
-            subject = 'Experiment registration: %s' % self.title
+            subject = 'Experiment registration: %s' % self.display_name
         to_address = participant_experiment_relationship.participant.email
         msg = EmailMultiAlternatives(subject, plaintext_content, self.experimenter.email, [ to_address ])
         msg.attach_alternative(html_content, "text/html")
-        msg.send()
+        return msg
 
 
 

@@ -92,14 +92,14 @@ class EmailListField(forms.CharField):
         for line in lines:
             # try to split by spaces first, expect first name last name email
             data = line.split()
+            email = ''
             if len(data) == 1:
-                if not email_re.match(data):
-                    raise ValidationError(_(u'%s is not a valid email address.' % data))
+                email = data[0]
             elif len(data) == 3:
                 (first_name, last_name, email) = data
                 logger.debug("first name %s, last name %s, email %s", first_name, last_name, email)
-                if not email_re.match(email):
-                    raise ValidationError(_(u'%s is not a valid email address.' % email))
+            if not email_re.match(email):
+                raise ValidationError(_(u'%s is not a valid email address.' % data))
         return lines
 
 class RegisterParticipantsForm(BootstrapForm):

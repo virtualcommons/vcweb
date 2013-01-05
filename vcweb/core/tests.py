@@ -3,7 +3,7 @@ from django.test.client import RequestFactory, Client
 from vcweb.core import signals
 from vcweb.core.models import (Experiment, Experimenter, ExperimentConfiguration,
     Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
-    ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue,
+    ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue, Institution,
     GroupActivityLog)
 import logging
 
@@ -277,6 +277,14 @@ class GroupTest(BaseVcwebTest):
 
 
 class ParticipantExperimentRelationshipTest(BaseVcwebTest):
+
+    def test_send_emails(self):
+        e = self.experiment.clone()
+        institution = Institution.objects.get(pk=1)
+        number_of_participants = 10
+        emails = ['test%s@asu.edu' % index for index in range(number_of_participants)]
+        e.register_participants(emails=emails, institution=institution,
+                password='test')
 
     def test_participant_identifier(self):
         """ exercises the generation of participant_identifier """
