@@ -1,3 +1,4 @@
+from django.core import serializers
 from django.test import TestCase
 from django.test.client import RequestFactory, Client
 from vcweb.core import signals
@@ -137,6 +138,21 @@ class ExperimentConfigurationTest(BaseVcwebTest):
         e = self.experiment
         ec = e.experiment_configuration
         self.assertEqual(ec.final_sequence_number, ec.last_round_sequence_number)
+
+    def test_xml_serialization(self):
+        e = self.experiment
+        ec = e.experiment_configuration
+        data = ec.serialize()
+        logger.debug("serialized form: %s", data)
+        self.assertIsNotNone(data)
+        found = False
+        for obj in serializers.deserialize("xml", data):
+            self.assertIsNotNone(obj)
+            entity = obj.object
+            logger.debug("deserialized object: %s, actual object: %s", obj, entity)
+            if entity.pk == ec.pk:
+                found = True
+        self.assertTrue(found)
 
 class ExperimentTest(BaseVcwebTest):
     def round_started_test_handler(self, experiment=None, time=None, round_configuration=None, **kwargs):

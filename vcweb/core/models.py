@@ -1,7 +1,7 @@
 from datetime import datetime
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
-from django.core import mail
+from django.core import mail, serializers
 from django.core.mail import EmailMultiAlternatives
 from django.core.validators import RegexValidator
 from django.db import models
@@ -197,6 +197,15 @@ class ExperimentConfiguration(models.Model):
     @property
     def namespace(self):
         return self.experiment_metadata.namespace
+
+    def serialize(self, output_format='xml'):
+        if self.round_configuration_set.count() > 0:
+            all_objects = []
+            for rc in self.round_configuration_set.all():
+                all_objects.append(rc)
+                all_objects.extend(rc.round_parameter_value_set.all())
+            all_objects.append(self)
+            return serializers.serialize(output_format, all_objects)
 
     def __unicode__(self):
         return u"%s configuration for the %s" % (self.name, self.experiment_metadata)
