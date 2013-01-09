@@ -258,7 +258,7 @@ class Experiment(models.Model):
     experiment_configuration = models.ForeignKey(ExperimentConfiguration)
     """ the configuration parameters in use for this experiment run. """
 # FIXME: consider using django-model-utils but need to verify that it works with South
-# status = StatusField() 
+# status = StatusField()
     status = models.CharField(max_length=32, choices=STATUS, default=STATUS.INACTIVE)
     """
     the status of an experiment can be either INACTIVE, ACTIVE, PAUSED, ROUND_IN_PROGRESS, or COMPLETED
@@ -524,8 +524,8 @@ class Experiment(models.Model):
         Override the email template by creating <experiment-namespace>/registration-email(txt|html) template files
         '''
         logger.debug("sending email to %s", participant_experiment_relationship.participant)
-        plaintext_template = select_template(['%s/registration-email.txt' % self.namespace, 'experimenter/registration-email.txt'])
-        html_template = select_template(['%s/registration-email.html' % self.namespace, 'experimenter/registration-email.html'])
+        plaintext_template = select_template(['%s/registration-email.txt' % self.namespace, 'email/experiment-registration.txt'])
+        html_template = select_template(['%s/registration-email.html' % self.namespace, 'email/experiment-registration.html'])
         experiment = participant_experiment_relationship.experiment
         participant = participant_experiment_relationship.participant
         c = Context({
@@ -585,6 +585,11 @@ class Experiment(models.Model):
         if log_message:
             logger.debug("%s: %s", self, log_message)
             self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message)
+
+    def configuration_file_name(self, file_ext='.xml'):
+        if not file_ext.startswith('.'):
+            file_ext = '.' + file_ext
+        return '%s_experiment-configuration_%s%s' % (slugify(self.display_name), self.pk, file_ext)
 
     def data_file_name(self, file_ext='.csv'):
         if not file_ext.startswith('.'):
@@ -747,7 +752,7 @@ class Experiment(models.Model):
                 'roundStatusLabel': self.status_label,
                 'roundSequenceLabel': self.sequence_label,
                 'timeRemaining': self.time_remaining,
-                'currentRoundStartTime': self.current_round_start_time,
+                'currentRoundStartTime': self.current_round_start_time.strftime('%c') if self.current_round_start_time else 'N/A',
                 'participantCount': self.participant_set.count(),
                 'isRoundInProgress': self.is_round_in_progress,
                 'isActive': self.is_active,

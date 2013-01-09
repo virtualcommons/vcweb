@@ -165,12 +165,10 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             model.resourceImageUrl = function() {
                 return "url('{{STATIC_URL}}images/forestry/pine-tree.png')";
             }
-            model.resourceImageWidth = function() {
+            model.resourceImageWidth = ko.computed(function() {
                 return model.resourcesToDisplay() * 30 + "px";
-            }
-            model.resourceImageHeight = function() {
-                return "79px";
-            }
+            });
+            model.resourceImageHeight = ko.observable("79px");
             model.submitDecision = function(data, evt) {
                 evt.preventDefault();
                 var formData = $('#vcweb-form').serialize();

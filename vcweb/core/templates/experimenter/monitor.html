@@ -20,7 +20,7 @@
             <div data-bind="ifnot: hasParticipants()">
                 <div class='alert alert-error alert-block'>
                     <h4>No participants</h4>
-                    <i class='icon-warning-sign'></i><a href='{{experiment.controller_url}}/register-email-list'>Register email addresses for participants</a> or 
+                    <i class='icon-warning-sign'></i><a href='{{experiment.controller_url}}/register-email-list'>Register bulk email addresses</a> or
                     <a href='{{experiment.controller_url}}/register-simple'>add test participants</a>?
                 </div>
             </div>
@@ -34,7 +34,7 @@
                     </p>
                 </div>
                 <ul class='nav nav-list'>
-                    <li><a data-content='Activate this experiment after all participants have been registered and you are ready to collect data.' 
+                    <li><a data-content='Activate this experiment after all participants have been registered and you are ready to collect data.'
                         class='confirm-experiment-action' name='activate' href='activate'><i class='icon-off'></i>activate</a></li>
                 </ul>
             </div>
@@ -48,10 +48,17 @@
             <li>Registered participants: <span data-bind='text:participantCount' class='badge badge-info'></span></li>
         </ul>
         <div class='alert alert-message alert-block'>
-            <h4><i class='icon-download'></i> Download Experiment Data</h4>
+            <h4><i class='icon-download'></i>Download Data</h4>
             <ul class='inline'>
                 <li><a href='download/csv'><img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' alt='csv' />csv</a></li>
                 <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/>xls</a></li>
+            </ul>
+        </div>
+        <div class='alert alert-message'>
+            <h4><i class='icon-download-alt'></i>Download Configuration Files</h4>
+            <ul class='inline'>
+                <li><a href='export/configuration.xml'><i class='icon-cog'></i>xml</a></li>
+                <li><a href='export/configuration.json'><i class='icon-pencil'></i>json</a></li>
             </ul>
         </div>
     </div>

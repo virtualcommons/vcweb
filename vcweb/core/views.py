@@ -301,7 +301,7 @@ class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, FormView
     def get_success_url(self):
         return reverse('core:dashboard')
 
-# FIXME: uses GET (which should be idempotent) to modify database state which makes HTTP sadful
+# FIXME: these last two use GET (which should be idempotent) to modify database state which makes HTTP sadful
 class CloneExperimentView(ExperimenterSingleExperimentView):
     def process(self):
         return self.experiment.clone()
@@ -325,26 +325,16 @@ def add_experiment(request):
             { 'experiment_list': ExperimentMetadata.objects.all() },
             context_instance=RequestContext(request))
 
-@experimenter_required
-def manage(request, pk=None):
-    try:
-        experiment = Experiment.objects.get(pk=pk)
-# redirect to experiment specific management page?
-        return redirect(experiment.management_url)
-    except Experiment.DoesNotExist:
-        logger.warning("Tried to manage non-existent experiment with id %s", pk)
-
-
 class DataExportMixin(ExperimenterSingleExperimentMixin):
     file_extension = '.csv'
     def render_to_response(self, context, **response_kwargs):
         experiment = self.get_object()
         file_ext = self.file_extension
         if file_ext in mimetypes.types_map:
-            mimetype = mimetypes.types_map[file_ext]
+            content_type = mimetypes.types_map[file_ext]
         else:
-            mimetype = 'application/octet-stream'
-        response = HttpResponse(mimetype=mimetype)
+            content_type = 'application/octet-stream'
+        response = HttpResponse(content_type=content_type)
         response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name(file_ext=file_ext)
         self.export_data(response, experiment)
         return response
@@ -373,6 +363,18 @@ class CsvDataExporter(DataExportMixin):
                         chat_message.date_created, round_configuration])
 
 
+@experimenter_required
+def export_configuration(request, pk=None, file_extension='.xml'):
+    experiment = get_object_or_404(Experiment, pk=pk)
+    if experiment.experimenter != request.user.experimenter:
+        logger.warning("unauthorized access to %s by %s", experiment, request.user.experimenter)
+        raise PermissionDenied("You don't appear to have access to this experiment.")
+    content_type = mimetypes.types_map[file_extension]
+    response = HttpResponse(content_type=content_type)
+    response['Content-Disposition'] = 'attachment; filename=%s' % experiment.configuration_file_name(file_extension)
+    experiment.experiment_configuration.serialize(stream=response)
+    return response
+
 # FIXME: add data converter objects to write to csv, excel, etc.
 @experimenter_required
 def download_data(request, pk=None, file_type='csv'):
@@ -380,7 +382,7 @@ def download_data(request, pk=None, file_type='csv'):
     if experiment.experimenter != request.user.experimenter:
         logger.warning("unauthorized access to %s from %s", experiment, request.user.experimenter)
         raise PermissionDenied("You don't have access to this experiment")
-    response = HttpResponse(mimetype='text/csv')
+    response = HttpResponse(content_type=mimetypes.types_map['.%s' % file_type])
     response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
     writer = unicodecsv.UnicodeWriter(response)
     writer.writerow(['Group', 'Members'])

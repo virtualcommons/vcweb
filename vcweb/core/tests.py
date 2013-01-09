@@ -139,6 +139,8 @@ class ExperimentConfigurationTest(BaseVcwebTest):
         ec = e.experiment_configuration
         self.assertEqual(ec.final_sequence_number, ec.last_round_sequence_number)
 
+    def test_serialization_stream(self):
+        pass
     def test_xml_serialization(self):
         e = self.experiment
         ec = e.experiment_configuration
@@ -150,7 +152,7 @@ class ExperimentConfigurationTest(BaseVcwebTest):
             self.assertIsNotNone(obj)
             entity = obj.object
             logger.debug("deserialized object: %s, actual object: %s", obj, entity)
-            if entity.pk == ec.pk:
+            if obj.object.pk == ec.pk:
                 found = True
         self.assertTrue(found)
 
