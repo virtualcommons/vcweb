@@ -2,37 +2,33 @@
 {% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
 {% block page %}
 {{ block.super }}
-<h3>Your experiments</h3>
+<h3>Experimenter Dashboard</h3>
+{% comment %} FIXME: going to need to refine this UI as the list of experiments grows {% endcomment %}
 <div id="experiment-list">
     {% for e in experiments %}
-    <div>
-        <h5>{{e.status_line}} <span class='pull-right'><span class='badge badge-important'>{{e.participant_set.count}}</span> participants</span></h5>
-        
-
-        <div class='well well-small'>
-            <div class='btn-group'>
-                <a class='btn' href='{{e.monitor_url}}'><img src='{{STATIC_URL}}images/famfamfam/zoom.png' alt='General experiment monitoring interface'/> monitor</a></li>
-                <a class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
-                    href='{{e.clone_url}}'><img src='{{STATIC_URL}}images/famfamfam/page_copy.png' alt='Clone experiment'/> clone</a>
-                {% if e.participant_set.count == 0  %}
-                <a class='btn' data-content='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'>
-                    <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> register participants</a>
-                <a data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.' 
-                    class='btn' href='{{e.controller_url}}/register-simple'>
-                    <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> test participants</a>
-                {% else %}
-                <a data-content='Remove all participants from the experiment, including any data they may have generated.' href='{{e.controller_url}}/clear-participants' class='btn confirm-experiment-action'>
-                    <i class='icon-trash'></i>clear all participants</a></li>
-                {% endif %}
-                {% if e.is_active %}
-                <a data-content='stop this experiment' href='{{e.stop_url}}' class='btn confirm-experiment-action'><i class='icon-stop'></i>stop</a>
-                {% else %}
-                <a class='btn' data-content='Configure this experiment (sanitation)' href='{{e.configure_url}}'><i class='icon-wrench'></i>configure</a>
-                {% endif %}
-            </div>
+    <div class='alert alert-message'>
+        <h4>{{e.status_line}} <span class='pull-right'><span class='badge badge-important'>{{e.participant_set.count}}</span> participants</span></h4>
+        <div class='btn-group'>
+            <a class='btn' href='{{e.monitor_url}}'><img src='{{STATIC_URL}}images/famfamfam/zoom.png' alt='General experiment monitoring interface'/> monitor</a></li>
+            <a class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
+                href='{{e.clone_url}}'><img src='{{STATIC_URL}}images/famfamfam/page_copy.png' alt='Clone experiment'/> clone</a>
+            {% if e.participant_set.count == 0  %}
+            <a class='btn' data-content='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'>
+                <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> register participants</a>
+            <a data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.' 
+                class='btn' href='{{e.controller_url}}/register-simple'>
+                <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> test participants</a>
+            {% else %}
+            <a data-content='Remove all participants from the experiment, including any data they may have generated.' href='{{e.controller_url}}/clear-participants' class='btn confirm-experiment-action'>
+                <i class='icon-trash'></i>clear all participants</a></li>
+            {% endif %}
+            {% if e.is_active %}
+            <a data-content='stop this experiment' href='{{e.stop_url}}' class='btn confirm-experiment-action'><i class='icon-stop'></i>stop</a>
+            {% else %}
+            <a class='btn' data-content='Configure this experiment (sanitation)' href='{{e.configure_url}}'><i class='icon-wrench'></i>configure</a>
+            {% endif %}
         </div>
     </div>
-    <hr>
     {% empty %}
     <div class='alert alert-error'>
         You are not currently running any experiments.
