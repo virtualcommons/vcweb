@@ -100,13 +100,13 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
 </div>
 </div>
 
-<div data-bind="ifnot: isResourceEmpty()" id='resourceDisplay'>
-    <div data-bind='style: { width: resourceImageWidth(), height: resourceImageHeight(), background: resourceImageUrl() }'>
+<div data-bind="ifnot: isResourceEmpty" id='resourceDisplay'>
+    <div data-bind='style: { width: resourceImageWidth, height: resourceImageHeight, background: resourceImageUrl }'>
         &nbsp;
     </div>
-    <div class='alert alert-info'><h4>Note</h4>Displaying <strong data-bind='text:resourcesToDisplay()'></strong> resource(s) of <strong data-bind='text:resourceLevel'></strong></div>
+    <div class='alert alert-info'><h4>Note</h4>Displaying <strong data-bind='text:resourcesToDisplay'></strong> resource(s) of <strong data-bind='text:resourceLevel'></strong></div>
 </div>
-<div data-bind="if: isResourceEmpty()">
+<div data-bind="if: isResourceEmpty">
     <div style='padding: 8px; margin: auto; border: solid 1px; background: url("{{STATIC_URL}}images/forestry/deforestation.jpg") no-repeat center; height: 282px; width:425px;'>
         &nbsp;
     </div>
@@ -125,7 +125,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
 </div>
 </div>
 
-<div data-bind='ifnot: isResourceEmpty()'>
+<div data-bind='ifnot: isResourceEmpty'>
 <form id='vcweb-form' action='' method='post' class='form-horizontal'>
     {% csrf_token %}
     <div class='control-group'>
@@ -152,19 +152,17 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             var model = ko.mapping.fromJS(experimentModelJson);
             model.harvestDecision = ko.observable(0);
             model.chatMessages = ko.observableArray([]);
-            model.numberOfTreesPerRow = 10;
-            model.isResourceEmpty = function() {
+            model.numberOfTreesPerRow = ko.observable(10);
+            model.isResourceEmpty = ko.computed(function() {
                 return model.resourceLevel() == 0;
-            }
-            model.resourcesToDisplay = function() {
+            })
+            model.resourcesToDisplay = ko.computed(function() {
                 if (model.resourceLevel() > 0) {
                     return Math.min(model.resourceLevel(), 20);
                 }
                 return 0;
-            }
-            model.resourceImageUrl = function() {
-                return "url('{{STATIC_URL}}images/forestry/pine-tree.png')";
-            }
+            });
+            model.resourceImageUrl = ko.observable("url('{{STATIC_URL}}images/forestry/pine-tree.png')");
             model.resourceImageWidth = ko.computed(function() {
                 return model.resourcesToDisplay() * 30 + "px";
             });
