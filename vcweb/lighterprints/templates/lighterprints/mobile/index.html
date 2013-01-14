@@ -1,32 +1,336 @@
 {% extends "mobile/base.html" %}
+{% block title %}Lighter Footprints{% endblock %}
 {% block head %}
 {{ block.super }}
-{% endblock head %}
+<style>
+.center-wrapper {
+    width: 75%;
+    margin-left: auto;
+    margin-right: auto;
+}
 
-{% block title %}
-Lighter Footprints
+.center-button {
+    text-align: center;
+    width: 100%;
+    margin: 0 auto;
+    margin-left: auto;
+    margin-right: auto;
+    align: center;
+    text-align: center;
+}
+img.displayed {
+    display: block;
+    margin-left: auto;
+    margin-right: auto
+}
+#homeicon .ui-icon-custom {
+    background-image: url("/lighterfootprints/resources/images/53-house.png");
+    background-size: 18px 18px;
+}
+
+#groupicon .ui-icon-custom {
+    background-image: url("/lighterfootprints/resources/images/112-group.png");
+    background-size: 18px 18px;
+}
+
+#notepadicon .ui-icon-custom {
+    background-image: url("/lighterfootprints/resources/images/179-notepad.png");
+    background-size: 18px 18px;
+}
+
+img {
+    float: left;
+}
+</style>
 {% endblock %}
+{% block page %}
+		<!-- Start of first page: #loginPage -->
+		<div data-role="page" id="loginPage">
 
-{% block header %}
-<div data-role='header'>
-    <h1>Available Activities</h1>
-</div>
-{% endblock header %}
+			<div data-role="header" data-theme="b">
+				<h1>Lighter Footprints</h1>
+			</div><!-- /header -->
 
-{% block content %}
-<div data-role='content' data-theme='e'>
-    <div class='ui-grid-{{grid_letter}}'>
-        {% for activity, grid_letter in available_activities %}
-        <div class='ui-block-{{grid_letter}}'><button data-icon='{{activity.icon_name}}' data-iconpos='top' data-theme='b'>{{activity}}</button></div>
-        {% endfor %}
-    </div>
-</div>
-{% endblock content %}
+			<div data-role="content" data-theme="d" >
+				<form id="loginForm" class="ui-body ui-body-b ui-corner-all">
+					<div data-role="fieldcontain">
+						<label for="email">Email:</label>
+						<input type="email" name="email" id="email" value="" placeholder="Email" />
+						<label for="password">Password:</label>
+						<input type="password" name="password" id="password" value="" placeholder="Password" />
+					</div>
+					<button id="submitLogin" type="submit" class="center-button" >
+						Submit
+					</button>
+				</form>
 
-{% block extrapages %}
-{% include "lighterprints/mobile/full-activity-list.html" %}
-{% endblock extrapages %}
+			</div><!-- /content -->
 
-{% block footer %}
-{% include "lighterprints/mobile/footer.html" %}
-{% endblock footer %}
+		</div><!-- /page loginPage-->
+
+		<!-- Start of second page: #homePage -->
+		<div data-role="page" id="homePage" >
+			<div class ="myHeader" data-role="header"  data-theme="c" data-position="fixed">
+				<br>
+				<div data-type="horizontal" class="center-button">
+					<a href="#homePage" class="ui-btn-active ui-state-persist" data-role="button" data-icon="custom" id="homeicon" value="Home">Home</a><a href="#groupPage" data-role="button" id="groupicon" data-icon="custom" value="Group">Group</a><a href="#activitiesPage" data-role="button" data-icon="custom" id="notepadicon" value="Activities">Activities</a>
+				</div><!--control group -->
+				<br>
+			</div><!-- /header -->
+
+			<div data-role="content" data-theme="d" data-inset="true" >
+				<div data-role="navbar" data-theme="b">
+					<ul>
+						<li>
+							<a href="#" class="ui-btn-active ui-state-persist" data-role="button" data-theme="d">Current</a>
+						</li>
+						<li>
+							<a href="#scorePage" data-role="button" data-theme="d">Score</a>
+						</li>
+					</ul>
+				</div><!-- /navbar -->
+				<div id="homePageNoActFlag" data-bind="ifnot: hasAvailableActivities()">
+					<b>No more activities available!</b><img src="/lighterfootprints/resources/images/warning.png" style="float:left;"></img>
+				</div>
+				<div id="homePageActivityList" data-bind="foreach: availableActivities" style="margin-top: 0;"
+				data-inset="true">
+					<div data-role="button" data-theme ="d" data-bind="click: $parent.showActivityDetail">
+						<img data-bind="attr:{src: icon_url}"></img>
+						<div data-bind="text: display_name"></div>
+						<div data-bind="if: time_slots">
+							<a data-bind="text: time_slots"></a>
+						</div>
+					</div>
+				</div>
+
+			</div><!-- /content -->
+
+			<div data-role="footer" id="myFooter" style="text-align:center" data-theme="d" data-position="fixed">
+				<a href="index.html" rel="external" data-theme="b" data-role="button">logout</a>
+			</div><!-- /footer -->
+
+		</div><!-- /page homePage-->
+
+		<!-- Start of third page: #activityDetailsPage -->
+		<div data-role="page" id="activityDetailsPage">
+			<div class ="myHeader" data-role="header"  data-theme="c" data-position="fixed">
+				<br>
+				<div data-type="horizontal" class="center-button">
+					<a href="#homePage" class="ui-btn-active ui-state-persist" data-role="button" data-icon="custom" id="homeicon" value="Home">Home</a><a href="#groupPage" data-role="button" id="groupicon" data-icon="custom" value="Group">Group</a><a href="#activitiesPage" data-role="button" data-icon="custom" id="notepadicon" value="Activities">Activities</a>
+				</div><!--control group -->
+				<br>
+			</div><!-- /header -->
+
+			<div data-role="content" data-theme="d">
+				<ul id="currActivityInfoList" data-bind="with: currentActivity" data-role="listview" data-content-theme="d" data-inset="true">
+					<li data-role="list-divider" data-bind="text: display_name" data-theme="b" style="text-align: center"></li>
+					<img class="displayed" data-bind="attr:{src: icon_url}" style="float:none;"></img>
+					<li data-bind="if: summary" data-theme="c">
+						Benefits to the Environment: <h4 data-bind="text: summary"></h4>
+					<li data-role="list-divider"></li>
+					</li>
+					<li data-bind="if: personal_benefits">
+						Benefits to You: <h4 data-bind="text: personal_benefits"></h4>
+					<li data-role="list-divider"></li>
+					</li>
+					<li data-bind="if: time_slots">
+						Availability: <h4 data-bind="text: time_slots" ></h4>
+					<li data-role="list-divider"></li>
+					</li>
+					<li data-bind="if: points">
+						Green Points: <h4 data-bind="text: points"></h4>
+					<li data-role="list-divider"></li>
+					</li>
+					<li data-bind="if: available_now" data-theme="b">
+						<a href data-inline="true" class="center" data-bind="click: $parent.done">
+							Activity Performed!
+						</a>
+					</li>
+				</ul>
+
+				<div data-role="collapsible" data-theme="b">
+					<h4>Activity Details</h4>
+					<ul id="currActivityDetailsList" data-bind="with: currentActivity"
+					data-role="listview" data-inset="true">
+						<li data-bind="if: description">
+							Description:
+						<li data-bind="text: description"></li>
+						<li data-role="list-divider"></li>
+						</li>
+						<li data-bind="if: url">
+							Source url:
+						<li data-bind="text: url"></li>
+						<li data-role="list-divider"></li>
+						</li>
+					</ul>
+				</div>
+
+			</div><!-- /content -->
+
+			<div data-role="footer" id="myFooter" data-theme="d" style="text-align:center" data-position="fixed">
+				<a href="index.html" rel="external" data-role="button" data-theme="b">logout</a>
+			</div><!-- /footer -->
+
+		</div><!-- /page activityDetailsPage-->
+
+		<!-- Start of fourth page: #groupPage -->
+		<div data-role="page" id="groupPage">
+			<div class ="myHeader" data-role="header"  data-theme="c" data-position="fixed">
+				<br>
+				<div data-type="horizontal" class="center-button">
+					<a href="#homePage" data-role="button" data-icon="custom" id="homeicon" value="Home">Home</a><a href="#groupPage" class="ui-btn-active ui-state-persist" data-role="button" id="groupicon" data-icon="custom" value="Group">Group</a><a href="#activitiesPage" data-role="button" data-icon="custom" id="notepadicon" value="Activities">Activities</a>
+				</div><!--control group -->
+				<br>
+			</div><!-- /header -->
+
+			<div data-role="content" data-theme="d" data-inset="true" >
+				<div data-role="navbar" data-theme="b">
+					<ul>
+						<li>
+							<a href="#" class="ui-btn-active ui-state-persist" data-role="button" data-theme="d">Activites</a>
+						</li>
+						<li>
+							<a href="#messagePage" data-role="button" data-theme="d" >Messages</a>
+						</li>
+					</ul>
+				</div><!-- /navbar -->
+
+				<ul id = "groupActivityList" data-bind="foreach: groupActivity" data-role="listview" data-theme="d" style="margin-top: 0;" data-inset="true">
+					<li><img data-bind="attr:{src: icon_url}"></img>
+						<b data-bind="text: participant_name" ></b> completed <b data-bind="text: display_name" ></b> earning <b data-bind="text: points" ></b> Green Points
+					</li>
+					<li data-role="list-divider" data-theme="d"></li>
+				</ul>
+
+			</div><!-- /content -->
+
+			<div data-role="footer" id="myFooter" style="text-align:center" data-theme="d" data-position="fixed">
+				<a href="index.html" rel="external" data-theme="b" data-role="button">logout</a>
+			</div><!-- /footer -->
+
+		</div><!-- /page groupPagePage-->
+
+		<!-- Start of fifth page: #scorePage -->
+		<div data-role="page" id="scorePage">
+			<div class ="myHeader" data-role="header"  data-theme="c" data-position="fixed">
+				<br>
+				<div data-type="horizontal" class="center-button">
+					<a href="#homePage" class="ui-btn-active ui-state-persist" data-role="button" data-icon="custom" id="homeicon" value="Home">Home</a><a href="#groupPage" data-role="button" id="groupicon" data-icon="custom" value="Group">Group</a><a href="#activitiesPage" data-role="button" data-icon="custom" id="notepadicon" value="Activities">Activities</a>
+				</div><!--control group -->
+				<br>
+			</div><!-- /header -->
+
+			<div data-role="content" data-theme="d">
+				<div data-role="navbar" data-theme="b">
+					<ul>
+						<li>
+							<a href="#homePage" data-role="button" data-theme="d">Current</a>
+						</li>
+						<li>
+							<a href="#" class="ui-btn-active ui-state-persist" data-role="button" data-theme="d">Score</a>
+						</li>
+					</ul>
+				</div><!-- /navbar -->
+				<div id="scoreChart" style="margin-top: 0;" data-inset="true"></div>
+			</div>
+
+			<div data-role="footer" id="myFooter" style="text-align:center" data-theme="d" data-position="fixed">
+				<a href="index.html" rel="external" data-theme="b" data-role="button">logout</a>
+			</div><!-- /footer -->
+
+		</div><!-- /scorePage-->
+
+		<!-- Start of sixth page: #activitiesPage -->
+		<div data-role="page" id="activitiesPage" >
+			<div class ="myHeader" data-role="header"  data-theme="c" data-position="fixed">
+				<br>
+				<div data-type="horizontal" class="center-button">
+					<a href="#homePage" data-role="button" data-icon="custom" id="homeicon" value="Home">Home</a><a href="#groupPage" data-role="button" id="groupicon" data-icon="custom" value="Group">Group</a><a href="#activitiesPage" class="ui-btn-active ui-state-persist" data-role="button" data-icon="custom" id="notepadicon" value="Activities">Activities</a>
+				</div><!--control group -->
+				<br>
+			</div><!-- /header -->
+
+			<div data-role="content" data-theme="d" data-inset="true" >
+                <div data-bind='foreach: activitiesByLevel'>
+                    <h4>Level <span data-bind='text: $index() + 1'></span> Activities</h4>
+                    <div data-bind='template: { name: "activities-by-level-template", data: { activities: $data } }' style="margin-top: 0;" data-inset="true">
+                    </div>
+                </div>
+			</div><!-- /content -->
+
+			<div data-role="footer" id="myFooter" style="text-align:center" data-theme="d" data-position="fixed">
+				<a href="index.html" rel="external" data-theme="b" data-role="button">logout</a>
+			</div><!-- /footer -->
+
+		</div><!-- /page activitiesPage-->
+
+		<!-- Start of seventh page: #messagePage -->
+		<div data-role="page" id="messagePage">
+			<div class ="myHeader" data-role="header"  data-theme="c" data-position="fixed">
+				<br>
+				<div data-type="horizontal" class="center-button">
+					<a href="#homePage" data-role="button" data-icon="custom" id="homeicon" value="Home">Home</a><a href="#groupPage" class="ui-btn-active ui-state-persist" data-role="button" id="groupicon" data-icon="custom" value="Group">Group</a><a href="#activitiesPage" data-role="button" data-icon="custom" id="notepadicon" value="Activities">Activities</a>
+				</div><!--control group -->
+				<br>
+			</div><!-- /header -->
+
+			<div data-role="content" data-theme="d" data-inset="true" >
+				<div data-role="navbar" data-theme="b">
+					<ul>
+						<li>
+							<a href="#groupPage" data-role="button" data-theme="d">Activites</a>
+						</li>
+						<li>
+							<a href="#" class="ui-btn-active ui-state-persist" data-role="button" data-theme="d" >Messages</a>
+						</li>
+					</ul>
+				</div><!-- /navbar -->
+
+				<ul id = "groupPageMessageList" data-bind="foreach: chatMessages" data-role="listview" data-theme="d" style="margin-top: 0;" data-inset="true">
+					<li>
+						<b data-bind="text: participant_name"></b> : <b data-bind="text: message"></b>
+						<!--<img src="/lighterfootprints/resources/images/thumbs-up/thumbs-up-0.png" style="float:right;"></img> -->
+					</li>
+					<li data-role="list-divider" data-theme="d"></li>
+				</ul>
+
+				<form id="chat-form">
+					<div id="messageSend" data-role="fieldcontain" class="ui-body ui-corner-all">
+						<label for="message"><b>Message	:</b></label>
+						<input type="text" name="message" id="chatText" value="" placeholder="message" />
+						<a data-theme="b" id="sendMessage" data-role="button" data-inline="true" data-bind="click:submitChatMessage">Send</a>
+					</div>
+				</form>
+			</div><!-- /content -->
+
+			<div data-role="footer" id="myFooter" style="text-align:center" data-theme="d" data-position="fixed" >
+				<a href="index.html" rel="external" data-role="button" data-theme="b" >logout</a>
+			</div><!-- /footer -->
+
+		</div><!-- /page groupPagePage-->
+
+        {% block javascript %}
+        {{ block.super }}
+		<!--JQPlot-->
+        <script type="text/javascript" src="{{STATIC_URL}}js/jquery.jqplot.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}js/jquery.jqplot.min.css" />
+        <script type="text/javascript" src="{{STATIC_URL}}js/jqplot.barRenderer.min.js"></script>
+        <script type="text/javascript" src="{{STATIC_URL}}js/jqplot.categoryAxisRenderer.min.js"></script>
+        <script type="text/javascript" src="{{STATIC_URL}}js/jqplot.pointLabels.min.js"></script>
+		<!--Local JS-->
+        <script src='{{STATIC_URL}}js/lighterprints/model.js'></script>
+        <script src='{{STATIC_URL}}js/lighterprints/mobile/controller.js'></script>
+        <script type='text/html' id='activities-by-level-template'>
+            <div data-bind='foreach: activities'>
+                <div data-role="button" data-theme ="d" data-bind="click: $root.showActivityDetail">
+                <img data-bind="attr:{src: icon_url}"></img>
+                <div data-bind="text: display_name"></div>
+                <div data-bind="if: time_slots">
+                    <a data-bind="text: time_slots"></a>
+                </div>
+                </div>
+            </div>
+        </script>
+        {% endblock %}
+{% endblock page %}
+

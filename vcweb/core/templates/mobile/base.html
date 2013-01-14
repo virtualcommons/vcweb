@@ -1,53 +1,42 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        {% block head %}
-        <title>{% block title %}Virtual Commons Web Environment{% endblock %}</title>
-        <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0b1/jquery.mobile-1.0b1.min.css" />
-        <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js'></script>
-        <script type="text/javascript" src="http://code.jquery.com/mobile/1.0b1/jquery.mobile-1.0b1.min.js"></script>
-        <link href="{{STATIC_URL}}css/mobile.css" rel="stylesheet" type="text/css" media="screen" />
-        <!-- vcweb common js -->
-        <script type='text/javascript'>
-        // maintain active button state
-        /*
-        $("body").delegate("div:jqmData(role='page')", 'pageshow', function() {
-            console.debug("window location hash is " + window.location.hash);
-            if (window.location.hash) {
-                $(this).find("div:jqmData(role='navbar') a").each(function() {
-                    if ($(this).attr('href') == window.location.hash) {
-                        $(this).addClass('ui-btn-active ui-state-persist');
-                    }
-                    else {
-                        $(this).removeClass('ui-btn-active ui-state-persist');
-                    }
-                });
-            }
-        });
-        */
-        </script>
-        {% endblock %}
-    </head>
-    <body>
-        {% block page %}
-        <div data-role='page' id='{% block page_id %}home{% endblock %}'>
-            {% block header %}
-            <div data-role='header' data-position='inline'>
-                <h1>{{experiment|default:"vcweb mobile"}}</h1>
-            </div>
-            {% endblock header %}
-            {% block content %}
-            {% endblock content %}
-            {% block footer %}
-            <div data-role='footer'>
-                <h4>
-                    This project is funded by the <a href='http://nsf.gov'>National Science Foundation</a> and <a href='http://www.asu.edu'>Arizona State University</a>.
-                </h4>
-            </div> 
-            {% endblock footer %}
-        </div>
-        {% block extrapages %}
-        {% endblock extrapages %}
-        {% endblock page %}
-    </body>
+<head>
+{% block head %}
+<title>{% block title %}Virtual Commons Web Environment{% endblock %}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="{{STATIC_URL}}css/mobile.css" rel="stylesheet" type="text/css" media="screen" />
+{% endblock %}
+</head>
+<body>
+{% block page %}
+<div data-role='page' id='{% block page_id %}home{% endblock %}'>
+    {% block header %}
+    <div data-role='header' data-position='inline'>
+        <h1>{{experiment|default:"vcweb mobile"}}</h1>
+    </div>
+    {% endblock header %}
+    {% block content %}
+    {% endblock content %}
+    {% block footer %}
+    <div data-role='footer'>
+        <h4>
+            This project is funded by the <a href='http://nsf.gov'>National Science Foundation</a> and <a href='http://www.asu.edu'>Arizona State University</a>.
+        </h4>
+    </div>
+    {% block javascript %}
+    {% with jquery_mobile_version="1.2.0" jquery_version="1.8.3" %}
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/{{jquery_mobile_version}}/jquery.mobile-{{jquery_mobile_version}}.min.css" />
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/{{jquery_version}}/jquery.min.js" type="text/javascript"></script>
+    <script src="http://code.jquery.com/mobile/{{jquery_mobile_version}}/jquery.mobile-{{jquery_mobile_version}}.min.js"></script>
+    {% endwith %}
+    <script type='text/javascript' src='{{STATIC_URL}}js/ko/knockout.min.js'></script>
+    <script type='text/javascript' src='{{STATIC_URL}}js/ko/knockout.mapping.min.js'></script>
+
+    {% endblock %}
+    {% endblock footer %}
+</div>
+{% block extrapages %}
+{% endblock extrapages %}
+{% endblock page %}
+</body>
 </html>
