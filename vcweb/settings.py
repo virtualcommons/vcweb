@@ -18,20 +18,23 @@ ADMINS = (
 MANAGERS = ADMINS
 
 DATA_DIR = 'data'
+if DEBUG:
+    DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': path.join(DATA_DIR, 'vcweb.db')
+                },
+            }
+else:
+    DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql_psycopg2',
+                'NAME': 'vcweb',
+                'USER': 'vcweb',
+                'PASSWORD': '',
+                },
+            }
 
-DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'vcweb',
-            'USER': 'vcweb',
-            'PASSWORD': '',
-            },
-        'dev': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': path.join(DATA_DIR, 'vcweb.db')
-            },
-
-        }
 
 #DATABASES = {
 #        'default': {
@@ -243,11 +246,6 @@ try:
     from vcweb.settings_local import *
 except ImportError:
     pass
-
-# after loading possibly overridden database, reset test database
-#if 'test' in sys.argv:
-#    DATABASES['default']['ENGINE'] = 'django.db.backends.sqlite3'
-#    DATABASES['default']['NAME'] = path.join(DATA_DIR, 'vcweb.db')
 
 LOG_DIRECTORY = 'logs' if DEBUG else '/opt/vcweb/logs'
 try:

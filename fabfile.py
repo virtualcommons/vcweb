@@ -16,6 +16,7 @@ env.project_name = 'vcweb'
 env.deploy_user = 'apache'
 env.deploy_group = 'commons'
 env.virtualenv_path = "%s/.virtualenvs/%s" % (os.getenv("HOME"), env['project_name'])
+env.database = 'default'
 #env.virtualenv_path = '/opt/virtualenvs/%(project_name)s' % env
 env.deploy_path = '/opt/'
 # default to current working directory
@@ -34,9 +35,8 @@ this currently only works for sqlite3 development database.  do it by hand with
 postgres a few times to figure out what to automate.
 """
 syncdb_commands = [
-        '%(python)s manage.py syncdb --noinput' % env,
+        '%(python)s manage.py syncdb --noinput --database=%(database)s' % env,
         '%(python)s manage.py migrate' % env,
-        '%(python)s manage.py loaddata slovakia' % env,
         ]
 
 def psh():
@@ -115,7 +115,6 @@ def tornadio(ip="127.0.0.1", port=None):
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
     _virtualenv(local, "{python} vcweb/vcwebio.py {port}".format(python=env.python, port=port), capture=False)
-
 
 def server(ip="127.0.0.1", port=8000):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
