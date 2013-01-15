@@ -18,15 +18,11 @@ ADMINS = (
 MANAGERS = ADMINS
 
 DATA_DIR = 'data'
-if DEBUG:
-    DATABASES = {
-            'default': {
+DATABASES = {
+            'dev': {
                 'ENGINE': 'django.db.backends.sqlite3',
                 'NAME': path.join(DATA_DIR, 'vcweb.db')
                 },
-            }
-else:
-    DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql_psycopg2',
                 'NAME': 'vcweb',
