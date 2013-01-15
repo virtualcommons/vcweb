@@ -1,41 +1,44 @@
 Django
-psycopg2
-simplejson
-#celery
-#tornadio
-tornado
-sockjs-tornado
-tornado-redis
-#django-celery
-#kombu
-#django-kombu
 django-dajaxice
-#django-autocomplete
-PIL
+django-extensions
 django-kronos
 django-model-utils
 django-social-auth
+django-mptt
+psycopg2
+simplejson
+tornado
+sockjs-tornado
+tornado-redis
+PIL
 python-memcached
 pylibmc
-#brabeion
-django-mptt
 south
+# for sentry
+raven
+feedparser
+feedcache
+# graph database
+neo4j-embedded
+xlrd
+xlwt
+# install django-bootstrap from github
+# pip install -e git+git://github.com/earle/django-bootstrap.git#egg=bootstrap
+# FIXME: this will fail on Mac OS X, see http://lxml.de/installation.html#macos-x for workarounds.  
+# easiest is to use MacPorts, sudo port install py27-lxml
+#lxml
+# XXX: disabled packages 
+#
+#celery
+#tornadio
+#django-celery
+#kombu
+#django-kombu
+#django-autocomplete
 #django-unittest-depth
 #redis
 #beanstalkc
 #couchdb
 #pyyaml
 #pymongo
-# for sentry
-#gevent
-raven
-feedparser
-feedcache
-neo4j-embedded
-lxml
-django-extensions
-fabric
-xlrd
-xlwt
-# install django-bootstrap from github
-# pip install -e git+git://github.com/earle/django-bootstrap.git#egg=bootstrap
+#brabeion
