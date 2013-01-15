@@ -1,6 +1,4 @@
-# Django settings for vcweb project.
-import sys
-
+# Production Django settings for vcweb
 DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
@@ -18,7 +16,7 @@ CACHES = {
 
 DATABASES = {
         'default': {
-            'ENGINE': 'sqlite3' if 'test' in sys.argv else 'django.db.backends.postgresql_psycopg2',
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'vcweb',
             'USER': 'vcweb',
             'PASSWORD': 'CUSTOMIZE_ME',

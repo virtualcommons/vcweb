@@ -1,6 +1,5 @@
 from django.contrib import messages
 from os import path, makedirs
-import sys
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -19,11 +18,11 @@ MANAGERS = ADMINS
 
 DATA_DIR = 'data'
 DATABASES = {
-            'dev': {
+            'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
                 'NAME': path.join(DATA_DIR, 'vcweb.db')
                 },
-            'default': {
+            'postgres': {
                 'ENGINE': 'django.db.backends.postgresql_psycopg2',
                 'NAME': 'vcweb',
                 'USER': 'vcweb',
@@ -31,13 +30,6 @@ DATABASES = {
                 },
             }
 
-
-#DATABASES = {
-#        'default': {
-#            'ENGINE': 'django.db.backends.sqlite3',
-#            'NAME': path.join(DATA_DIR, 'vcweb.db')
-#            }
-#        }
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
@@ -51,7 +43,7 @@ LANGUAGE_CODE = 'en-us'
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
-USE_I18N = True
+USE_I18N = False
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.  Default is '/static/admin/'
