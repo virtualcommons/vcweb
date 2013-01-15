@@ -10,8 +10,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import DetailView, BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
-from vcweb.core.middleware import detect_mobile
-
 from vcweb.core import unicodecsv
 from vcweb.core.decorators import participant_required
 from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
@@ -489,7 +487,6 @@ def mobile_participate(request, experiment_id=None):
 
 @participant_required
 def participate(request, experiment_id=None):
-    detect_mobile(request)
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     pgr = participant.get_participant_group_relationship(experiment)
@@ -497,9 +494,9 @@ def participate(request, experiment_id=None):
         raise Http404("You do not appear to be participating in this experiment.")
     all_activities = Activity.objects.all()
     view_model_json = get_view_model_json(pgr, all_activities)
-    if request.mobile:
+#    if request.mobile:
         # FIXME: change this to look up templates in a mobile templates directory?
-        logger.warning("mobile request detected by %s, but we're not ready for mobile apps", participant)
+#        logger.warning("mobile request detected by %s, but we're not ready for mobile apps", participant)
         #return redirect('https://vcweb.asu.edu/devfoot')
     return render(request, 'lighterprints/participate.html', {
         'experiment': experiment,
