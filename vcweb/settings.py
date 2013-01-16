@@ -17,18 +17,21 @@ ADMINS = (
 MANAGERS = ADMINS
 
 DATA_DIR = 'data'
+
+GRAPH_DATABASE_PATH=path.join(DATA_DIR, 'neo4j-store')
+
 DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': path.join(DATA_DIR, 'vcweb.db')
-                },
-            'postgres': {
-                'ENGINE': 'django.db.backends.postgresql_psycopg2',
-                'NAME': 'vcweb',
-                'USER': 'vcweb',
-                'PASSWORD': '',
-                },
+        'sqlite': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': path.join(DATA_DIR, 'vcweb.db'),
+            },
+        'postgres': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'vcweb',
+            'USER': 'vcweb',
+            'PASSWORD': '',
             }
+        }
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -162,13 +165,6 @@ SOCIAL_AUTH_RAISE_EXCEPTIONS = DEBUG
 #SOCIAL_AUTH_USER_MODEL = 'core.Participant'
 #AUTH_USER_MODEL = 'models.User'
 
-try:
-    import south
-    from south.modelsinspector import add_introspection_rules
-    add_introspection_rules([], ["^social_auth\.fields\.JSONField"])
-except:
-    pass
-
 
 # websockets configuration
 WEBSOCKET_PORT = 8882;
@@ -228,12 +224,6 @@ MESSAGE_TAGS = {
         messages.constants.ERROR: 'ui-state-error ui-corner-all'
         }
 
-GRAPH_DATABASE_PATH=path.join(DATA_DIR, 'neo4j-store')
-
-try:
-    from vcweb.settings_local import *
-except ImportError:
-    pass
 
 LOG_DIRECTORY = 'logs' if DEBUG else '/opt/vcweb/logs'
 try:
@@ -328,4 +318,16 @@ LOGGING = {
 # settings
 #import djcelery
 #djcelery.setup_loader()
+try:
+    from settings_local import *
+except ImportError:
+    print "WARNING: unable to import local settings"
+    pass
 
+try:
+    import south
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules([], ["^social_auth\.fields\.JSONField"])
+except:
+    pass
+print "DATABASES: %s" % DATABASES
