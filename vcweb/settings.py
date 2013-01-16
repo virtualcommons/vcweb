@@ -25,7 +25,7 @@ DATABASES = {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': path.join(DATA_DIR, 'vcweb.db'),
             },
-        'postgres': {
+        'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'vcweb',
             'USER': 'vcweb',
