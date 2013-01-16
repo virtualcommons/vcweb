@@ -68,6 +68,7 @@ def to_json(experiment, participant, **kwargs):
     experiment_model_dict['participantNumber'] = pgr.participant_number
     experiment_model_dict['participantGroupId'] = pgr.pk
 # FIXME: defaults hard coded in for now
+    experiment_model_dict['lastHarvestDecision'] = 5
     experiment_model_dict['maxHarvestDecision'] = 10
     experiment_model_dict['storage'] = 20
     experiment_model_dict['resourceLevel'] = 100

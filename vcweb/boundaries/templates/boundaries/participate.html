@@ -42,21 +42,34 @@
 </fieldset>
 </form>
 <h4>Template Preview</h4>
-<table class='table table-bordered table-condensed'>
-    <caption>Group Status</caption>
-    <thead>
-        <tr><th>Group</th><th>Resources left</th><th>Storage</th><th>Survival cost</th><th>Regrowth rate</th></tr>
-    </thead>
-    <tbody data-bind='foreach: groupData'>
-    <tr class='success'>
-        <td data-bind='text: groupId'></td>
-        <td data-bind='text: resourceLevel'></td>
-        <td data-bind='text: totalStorage'></td>
-        <td data-bind='text: survivalCost'></td>
-        <td data-bind='text: regrowthRate'></td>
-    </tr>
-    </tbody>
-</table>
+<div class='row'>
+    <div class='span6'>
+        <h3>My Status</h3>
+        <div class='alert alert-info'>
+            You harvested <strong><span class='text-success' data-bind='text:lastHarvestDecision'></span> <i class='icon-leaf'></i></strong> trees last round.
+        </div>
+        <div class='alert alert-info'>
+            You have <strong><span class='text-success' data-bind='text: storage'></span> <i class='icon-leaf'></i></strong> trees stored.
+        </div>
+    </div>
+    <div class='span6'>
+        <h3>My Group Status</h3>
+        <table class='table table-bordered table-condensed'>
+            <thead>
+                <tr><th>Player</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+            </thead>
+            <tbody data-bind='foreach: groupData'>
+            <tr class='success'>
+                <td data-bind='text: groupId'></td>
+                <td data-bind='text: resourceLevel'></td>
+                <td data-bind='text: totalStorage'></td>
+                <td data-bind='text: survivalCost'></td>
+                <td data-bind='text: regrowthRate'></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 <div data-bind='template: { name: roundType() }'>
 </div>
 {% endblock page %}
@@ -72,7 +85,8 @@
 <p class='lead'>
     Welcome.  This experiment will begin shortly after everyone has been assigned a station.  Please <strong>wait quietly and do
     not close this window, open any other applications, or communicate with any of the other participants</strong>.  Thank you
-    for your cooperation. Please also make sure to turn off any mobile devices before the experiment begins.
+    for your cooperation. Please also make sure to turn off, silence, and disable vibration alerts on your cell phones
+    and any mobile devices before the experiment begins.
 </p>
 </script>
 <script type='text/html' id='INSTRUCTIONS'>
