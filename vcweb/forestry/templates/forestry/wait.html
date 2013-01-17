@@ -7,12 +7,12 @@ Forestry Experiment Round {{ experiment.current_round.round_number }}
 <p>
 Please wait, the facilitator will start the next round when every participant is ready.
 </p>
-<div class='info infoIcon'>
-    You are <span style='padding: 3px;' class='ui-state-highlight'>Participant #{{participant_group_relationship.participant_number}} ({{participant_experiment_relationship.pk}}, {{participant_experiment_relationship.sequential_participant_identifier}})</span> in 
+<div class='alert alert-message'>
+    You are <span class='text-info'>Participant #{{participant_group_relationship.participant_number}} ({{participant_experiment_relationship.pk}}, {{participant_experiment_relationship.sequential_participant_identifier}})</span> in 
     <span style='padding: 3px;' class='ui-state-highlight'>{{participant_group_relationship.group}}</span>
 </div>
 <div class='alert alert-message'>
-    <small><span class='icon-left vcweb-ui-icon ui-icon ui-icon-circle-arrow-w'></span><a href='participate'>return to participation page</a></small>
+    <i class='icon-arrow-left''></i><a href='participate'>return to participation page</a>
 </div>
 <h3>Participant History</h3>
 <div id='group-history'>
@@ -34,8 +34,8 @@ Please wait, the facilitator will start the next round when every participant is
             <tr>
                 <td>
                     {% if harvest_round_data.round_in_progress %}
-                    <div id='round-in-progress' style='line-height: 0.9em;' class='alert alertIcon ui-corner-all tooltip' title='This round is still in progress so only your harvest decision for this round is being shown.'>
-                        <span style='font-size: 0.8em;'>Round in progress</span>
+                    <div id='round-in-progress' class='alert alert-message' title='This round is still in progress so only your harvest decision for this round is being shown.'>
+                        Round in progress
                     </div>
                     {% endif %}
                     {{harvest_round_data.round_configuration.display_label}}

@@ -26,8 +26,8 @@
 </div>
 
 {% if harvest_decision.submitted %}
-<div class='alert alertIcon ui-corner-all'>
-    You have already made a harvest decision of <b>{{ harvest_decision.value }}</b>.  You may change your decision until
+<div class='alert alert-error'>
+    <i class='icon-warning-sign'></i> You have already made a harvest decision of <b>{{ harvest_decision.value }}</b>.  You may change your decision until
     the experimenter ends the round.
 </div>
 {% endif %}

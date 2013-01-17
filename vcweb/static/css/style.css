@@ -11,61 +11,13 @@ h1, h2, h3 {
 h2, h3 {
     border-bottom:1px solid #333;
 }
+/*
 h1 { font-size: 1.8em; }
 h2 { font-size: 1.4em; }
 h3 { font-size: 1.2em; }
 h4 { font-size: 1.0em; }
 h5 { font-size: 0.9em; }
-/*
-span.label {
-    float: left;
-    text-align: right;
-    width: 15em;
-    font-weight: bolder;
-    margin-top: 0.37em;
-    margin-right: 0.37em;
-    display:inline;
-    font-size: 0.8em;
-}
 */
-span.clickable {
-    cursor: pointer;
-    color: #961A06;
-    text-decoration: underline;
-}
-.errorIcon, .warningIcon, .alertIcon, .infoIcon, .smallInfoIcon, .contactIcon, .crossIcon {
-    background-repeat: no-repeat;
-    margin: 5px 0px;
-    padding: 15px 10px 15px 40px;
-    background-position: 3px;
-}
-.errorIcon, .warningIcon, .alertIcon {
-    background-image:  url('../images/warning.png')
-}
-fieldset.small {
-    font: 0.8em "Helvetica Neue", helvetica, arial, sans-serif;
-    color: #666;
-    background-color: #efefef;
-    padding: 2px;
-    border: solid 1px #d3d3d3;
-    width: 350px;
-}
-fieldset.small>legend {
-    font-weight: bold;
-    text-transform: lowercase;
-    padding: 2px 6px;
-}
-.field > input[type='text'] {
-    width: 15em;
-}
-.field > input[type='password'] {
-    width: 15em;
-}
-input.error {
-    margin: 0.5em 0 0.5em 0;
-    padding: 1px 0px 1px 0px;
-    border: 1px solid red;
-}
 label.error {
     background: url('../images/unchecked.gif') no-repeat left center #FBE3E4;
     font-size: .8em;

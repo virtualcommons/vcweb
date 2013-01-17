@@ -29,8 +29,7 @@
             {% block headernav %}
             <ul class='nav'>
                 {% block headerlinks %}
-                <li><a class='brand'><img class='logo' src='{{STATIC_URL}}images/vcweb-logo.png' width='40' height='30' alt='vcweb logo'/>virtual commons</a></li>
-                <li class='{% active request home %}' ><a href='{{ home }}' class='first'><i class='icon-home'></i> Home</a></li>
+                <li><a class='brand {% active request home %}' href='{{ home}}'><img class='logo' src='{{STATIC_URL}}images/vcweb-logo.png' width='27' height='20' alt='vcweb logo'/>virtual commons</a></li>
                 <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'><i class='icon-th-large'></i> Dashboard</a></li>
                 <li class='{% active request contact %}'><a href='{{ contact }}'><i class='icon-bell'></i> Contact us</a></li>
                 <li><a target='_blank' href='https://bitbucket.org/virtualcommons/vcweb/issues'><i class='icon-bullhorn'></i> Report a Bug</a></li>
