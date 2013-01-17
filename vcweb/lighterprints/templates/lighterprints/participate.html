@@ -1,16 +1,18 @@
-{% extends "lighterprints/base.html" %}
+{% extends "participant/base.html" %}
+{% block headernav %}
+<ul class='nav nav-tabs' id='lfp-navtabs'>
+    <li><a class='brand' href=''>lighterfootprints</a></li>
+    <li><a href='#dashboard' data-toggle='tab'>Dashboard</a></li>
+    <li><a href='#all-activities' data-toggle='tab'>Challenges</a></li>
+    <li><a href='#group-wall' data-toggle='tab'>My Team</a></li>
+    <li><a href='#faq' data-toggle='tab'>Help</a></li>
+    <li class='pull-right'><a href='{{ logout }}'>Logout ({{request.user.email}})</a></li>
+</ul>
+{% endblock %}
 {% block logo %}
-<h1>Welcome to the {{ experiment.display_name }} experiment</h1>
 {% endblock %}
 {% block page %}
 <div class='tabbable'>
-    <ul class='nav nav-tabs' id='lfp-navtabs'>
-        <li data-bind='css: { active: firstVisit() }'><a href='#instructions' data-toggle='tab'>Instructions</a></li>
-        <li data-bind='css: { active: ! firstVisit() }'><a href='#dashboard' data-toggle='tab'>Dashboard</a></li>
-        <li><a href='#group-wall' data-toggle='tab'>Group Wall</a></li>
-        <li><a href='#all-activities' data-toggle='tab'>All activities</a></li>
-        <li><a href='#faq' data-toggle='tab'>FAQ</a></li>
-    </ul>
     <div class='tab-content'>
         <div class='tab-pane active' id='instructions'>
             <p>

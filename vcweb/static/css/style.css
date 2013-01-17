@@ -1,22 +1,5 @@
 body {
-    margin: 0;
-    padding: 20px;
-    background: #FFFFFF url(guarantee/images/img01.gif) repeat-x left top;
-    color: #8A8A8A;
-}
-#logo {
-    width: 940px;
-    height: 90px;
-    margin: 0 auto;
-}
-#logo h1 {
-    font-size: 2.3em;
-    margin: .7em auto;
-    line-height: normal;
-    text-transform: lowercase;
-    text-decoration: none;
-    color: #FFFFFF;
-    font-weight: normal;
+    padding: 50px;
 }
 a.external {
     background: url(../images/external.png) center right no-repeat;
@@ -33,6 +16,7 @@ h2 { font-size: 1.4em; }
 h3 { font-size: 1.2em; }
 h4 { font-size: 1.0em; }
 h5 { font-size: 0.9em; }
+/*
 span.label {
     float: left;
     text-align: right;
@@ -43,51 +27,11 @@ span.label {
     display:inline;
     font-size: 0.8em;
 }
-span.ui-button-text {
-    font-size: 0.9em;
-}
-button.submit {
-    margin-left: 215px;
-}
-
-ul.messages {
-    margin-left: 0;
-    list-style: none;
-}
-ul.actions {
-    margin: 0;
-    list-style: none;
-    padding: 0;
-}
+*/
 span.clickable {
     cursor: pointer;
     color: #961A06;
     text-decoration: underline;
-}
-#actions li {
-    padding: 3px;
-}
-li.warning {
-    font-size: 0.8em;
-}
-.icon-left {
-    float:left;
-    /* top right bottom left */
-    margin: 0.32em;
-}
-.icon-right {
-    float: right;
-    margin: 0.32em;
-}
-.vcweb-ui-icon {
-    display:inline;
-    margin: 7px;
-}
-.vcweb-icon {
-    display:inline;
-    background-repeat: no-repeat;
-    background-position: 3px center;
-    margin: 0 0.15em 0 0;
 }
 .errorIcon, .warningIcon, .alertIcon, .infoIcon, .smallInfoIcon, .contactIcon, .crossIcon {
     background-repeat: no-repeat;
@@ -97,24 +41,6 @@ li.warning {
 }
 .errorIcon, .warningIcon, .alertIcon {
     background-image:  url('../images/warning.png')
-}
-.crossIcon {
-    background-image: url('../images/famfamfam/cross.png');
-}
-.contactIcon {
-    background-image: url('../images/famfamfam/comment_add.png');
-}
-.smallInfoIcon {
-    background-image: url('../images/famfamfam/information.png');
-}
-.infoIcon {
-    background-image: url('../images/info.png')
-}
-.small-font {
-    font-size: 0.8em;
-}
-.bold {
-    font-weight: bold;
 }
 fieldset.small {
     font: 0.8em "Helvetica Neue", helvetica, arial, sans-serif;
@@ -147,78 +73,6 @@ label.error {
     padding:0.3em;
     padding-left: 1.1em;
     margin-left: 0.3em;
-}
-#experimentData a {
-    text-decoration: none;
-}
-#experiments a {
-    text-decoration: none;
-    color: #06C;
-}
-#experiments a:hover {
-    text-decoration: underline;
-    color: #36241B;
-}
-#experiments ul {
-    list-style: none;
-    margin: 0 0 0 0;
-    padding: 0 0 0 0;
-}
-#experiments li {
-    list-style-type: none;
-    margin: 0;
-    padding-left: 25px;
-}
-#experiments span.inactive {
-    background: url('../images/famfamfam/clock_stop.png') center left no-repeat;
-}
-#experiments span.active {
-    background: url('../images/famfamfam/accept.png') center left no-repeat;
-}
-#experiments span.round_in_progress {
-    background: url('../images/famfamfam/bullet_go.png') center left no-repeat;
-}
-#experiments .rightArrow {
-    margin: 0;
-    background: url('../images/famfamfam/bullet_go.png') center left no-repeat;
-    padding-left: 16px;
-    padding-right: 8px;
-}
-ul.authbadges {
-    list-style: none;
-    display: block;
-    text-decoration: none;
-    font-size: 0.9em;
-}
-ul.authbadges>li {
-    float: left;
-    margin: 6px 3px 0px 3px;
-    padding: 0;
-}
-ul.horizontal {
-    list-style: none;
-    display: block;
-    text-decoration: none;
-    font-size: 0.9em;
-}
-ul.horizontal>li>a {
-    background: url("../images/separator.gif") bottom right no-repeat;
-    padding-left: 8px;
-    padding-right: 8px;
-    text-decoration: none;
-}
-ul.horizontal>li>a:hover {
-    text-decoration: underline;
-}
-ul.horizontal>li {
-    float: left;
-    margin: 6px 0px 0px 0px;
-    padding: 0;
-}
-#timeRemaining span {
-    background: url('../images/famfamfam/clock.png') bottom center no-repeat;
-    margin-left: 8px;
-    margin-right: 8px;
 }
 .chat {
     height: 20em;
@@ -260,4 +114,7 @@ ul.horizontal>li {
 #experiment-messages {
     height: 230px;
     overflow: auto;
+}
+.nav > .pull-right {
+    float: right !important;
 }

@@ -330,4 +330,3 @@ try:
     add_introspection_rules([], ["^social_auth\.fields\.JSONField"])
 except:
     pass
-print "DATABASES: %s" % DATABASES
