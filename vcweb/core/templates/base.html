@@ -27,8 +27,8 @@
     <div class='navbar-inner'>
         <div class='container'>
             {% block headernav %}
+            {% block headerlinks %}
             <ul class='nav'>
-                {% block headerlinks %}
                 <li><a class='brand {% active request home %}' href='{{ home}}'><img class='logo' src='{{STATIC_URL}}images/vcweb-logo.png' width='27' height='20' alt='vcweb logo'/>virtual commons</a></li>
                 <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'><i class='icon-th-large'></i> Dashboard</a></li>
                 <li class='{% active request contact %}'><a href='{{ contact }}'><i class='icon-bell'></i> Contact us</a></li>
@@ -39,25 +39,34 @@
                 {% if "experiment" in request.path %}
                 <li class='{% active_re request "experiment" %}'><a name='experiment'>Experiment</a></li>
                 {% endif %}
+            </ul>
+            {% endblock %}
+            <ul class='nav pull-right'>
                 {% if request.user.is_authenticated %}
-                <li><a href='{{ logout }}'>Logout ({{request.user.email}})</a></li>
+                <li class='{% active request login %} dropdown'>
+                <a class='dropdown-toggle' data-toggle='dropdown' href='#'><i class='icon-cog'></i><b class='caret'></b></a>
+                    <ul class='dropdown-menu'>
+                        <li><a href='{{ profile }}'>Account</a></li>
+                        <li><a href='{{ logout }}'>Logout ({{request.user.email}})</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li class='{% active request login %}'>
+                    {% if debug_mode %}
+                    <a href='{{ login }}'>Sign In</a>
                     {% else %}
-                    <li class='{% active request login %} {% active request register %}'>
-                        {% if debug_mode %}
-                            <a href='{{ login }}'>Sign In</a>
-                        {% else %}
-                            <a href='https://{{request.get_host}}{{ login }}'>Sign In</a>
-                        {% endif %}
-                    </li>
+                    <a href='https://{{request.get_host}}{{ login }}'>Sign In</a>
+                    {% endif %}
+                </li>
                 {% endif %}
-                {% endblock %}
+            </ul>
+                </li>
             </ul>
             {% endblock headernav %}
         </div>
     </div>
 </div>
 {% endblock %}
-</div>
 <div class='container'>
     <noscript>
         <div class='alert alert-error alert-block'>

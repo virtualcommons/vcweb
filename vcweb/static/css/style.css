@@ -67,6 +67,3 @@ label.error {
     height: 230px;
     overflow: auto;
 }
-.nav > .pull-right {
-    float: right !important;
-}
