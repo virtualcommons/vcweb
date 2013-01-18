@@ -2,15 +2,15 @@
 {% block headerlinks %}
 <ul class='nav nav-tabs' id='lfp-navtabs'>
     <li><a class='brand' href=''>lighterfootprints</a></li>
-    <li><a href='#dashboard' data-toggle='tab'>Dashboard</a></li>
-    <li><a href='#all-activities' data-toggle='tab'>Challenges</a></li>
-    <li><a href='#group-wall' data-toggle='tab'>My Team</a></li>
-    <li><a href='#faq' data-toggle='tab'>Help</a></li>
+    <li><a href='#dashboard' data-toggle='tab'><i class='icon-dashboard'></i> Dashboard</a></li>
+    <li><a href='#all-activities' data-toggle='tab'><i class='icon-star-empty'></i> Challenges</a></li>
+    <li><a href='#group-wall' data-toggle='tab'><i class='icon-comments-alt'></i> My Team</a></li>
+    <li><a href='#faq' data-toggle='tab'><i class='icon-question-sign'></i> Help</a></li>
 </ul>
 {% endblock %}
 {% block logo %}
 {% endblock %}
-{% block page %}
+{% block content %}
 <div class='tabbable'>
     <div class='tab-content'>
         <div class='tab-pane active' id='instructions'>
@@ -68,26 +68,31 @@
             </div>
         </div>
         <div class='tab-pane' id='dashboard'>
-            <div data-bind='if: ! firstVisit()'>
-                Welcome back to the Lighter Footprints Experiment, {{request.user.participant.full_name}}.  Your group
-                score and summary is shown below.
+            <div class='muted dashboard-header'><i class='icon-dashboard'></i> Team Dashboard</div>
+            <!-- FIXME: re-enable this at some point -->
+            <div data-bind='if: firstVisit()'>
             </div>
-            <h3>Dashboard Summary</h3>
-            <p>
-            Your group (# <span data-bind='text: groupNumber'></span>) is currently <span class='badge badge-important'>level <span data-bind='text:groupLevel'></span></span>
-            and has accumulated <span class='badge badge-important'><span data-bind='text:averagePoints'></span> average points</span>.
-            In order to advance in level and unlock more activities the <strong>average number of points contributed by each member of your
-                group</strong> must be greater than or equal to <span data-bind='text: pointsToNextLevel' class='badge badge-info'></span>.  
-            <div class='alert alert-info'>
-                <i class='icon-warning-sign'></i>Your point totals reset <strong>nightly</strong> so if your group's
-                average number of points doesn't reach or exceed <span data-bind='text: pointsToNextLevel'></span> by
-                midnight, you will have to start over again the next day.
+            <div class='alert alert-block alert-white'>
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <h2 class='muted'>Welcome to Lighter Footprints, <i class='text-info'>Team <span data-bind='text: groupNumber'></span>!</i></h2>
+                <p>
+                    You have been randomly placed in a group of {{ participant_group_relationship.group.size }}
+                    participants. In this experiment you can perform virtual actions that represent green alternatives
+                    to some common daily activities. 
+                </p>
+                <p>
+                    <i class='text-success icon-leaf'></i> Earn <span class='label label-success'>green points</span> by
+                    completing challenges.  Rank up by <b>increasing your team's average score.</b>.
+                </p>
+                <p>
+                    <i class='icon-star text-warning'></i> Some challenges are unlocked all day, and others are only
+                    unlocked at specific times.  Discover new challenges by ranking up!
+                </p>
+                <p>
+                    <strong>Your point totals reset at midnight each night.</strong>  If your group's average score
+                    isn't high enough to rank up, you must start over.
+                </p>
             </div>
-            </p>
-            <p>
-            In order to reach this target <span class='text-warning'>you and a majority of the members of your group</span> must perform high point activities when they are available.
-            </p>
-            <hr>
             <table class='table table-bordered table-striped'>
                 <caption>Today's Group Score Summary <strong>(point totals reset starting from {% now "m/d/Y" %} 12:00 AM)</strong></caption>
                 <thead><tr><th>Group</th><th>Level</th><th>Total points earned by you</th><th>Total group points</th><th>Group size</th><th>Group average points</th><th>Group average points needed to reach the next level</th></tr></thead>
@@ -218,7 +223,22 @@
         <button class='btn disabled' data-dismiss='modal' aria-hidden='true'>Continue</button>
     </div>
 </div>
-{% endblock page %}
+{% endblock content %}
+{% block sidebar %}
+<h3 class='muted'><i class='icon-trophy'></i> Leaderboard</h3>
+<ul class='nav nav-list' data-bind='foreach: groupData'>
+    <li><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold text-info": groupNumber() == $root.groupNumber()}'>Team <span data-bind='text: groupNumber'></span></span><span class='pull-right badge badge-success' data-bind='text: averagePoints'></span></li> 
+    <li class='divider'></li>
+</ul>
+
+<h3 class='muted'><i class='icon-group'></i> Team Activity <span class='pull-right'><small><a href='#group-wall' data-toggle='tab'>View all</a></small></span></h3>
+<ul class='nav nav-list' data-bind='foreach: groupData'>
+    <li><i class='text-warning icon-star'></i> Some team activity</li>
+    <li class='divider'></li>
+</ul>
+
+
+{% endblock sidebar %}
 {% block javascript %}
 {{ block.super }}
 <script type='text/javascript' src='{{STATIC_URL}}js/lighterprints/model.js'></script>
