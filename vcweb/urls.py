@@ -31,6 +31,7 @@ urlpatterns = patterns('',
     url(r'^forestry/', include('vcweb.forestry.urls', namespace='forestry', app_name='forestry')),
     url(r'^bound/', include('vcweb.boundaries.urls', namespace='boundaries', app_name='boundaries')),
     url(r'^lighterprints/', include('vcweb.lighterprints.urls', namespace='lighterprints', app_name='lighterprints')),
+    url(r'^broker/', include('vcweb.broker.urls', namespace='broker', app_name='broker')),
     url(r'^admin/', include(admin.site.urls)),
     # social auth urls for logging in via fb, google, foursquare, etc.
     url(r'', include('social_auth.urls')),

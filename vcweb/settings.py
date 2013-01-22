@@ -104,6 +104,7 @@ INSTALLED_APPS = (
         'vcweb.forestry',
         'vcweb.lighterprints',
         'vcweb.boundaries',
+        'vcweb.broker',
 #        'vcweb.sanitation',
         'dajaxice',
         'raven.contrib.django',
