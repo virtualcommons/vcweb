@@ -74,11 +74,11 @@
             </div>
             <div class='alert alert-block alert-white'>
                 <button type="button" class="close" data-dismiss="alert"><i class='icon-remove-sign'></i></button>
-                <h2 class='muted'>Welcome to Lighter Footprints, <i class='text-info'>Team <span data-bind='text: groupNumber'></span>!</i></h2>
+                <h2 class='muted'>Welcome to Lighter Footprints, <i class='text-info' data-bind='text: groupName'></i>!</h2>
                 <p>
                     You have been randomly placed in a group of {{ participant_group_relationship.group.size }}
                     participants. In this experiment you can perform virtual actions that represent green alternatives
-                    to some common daily activities. 
+                    to some common daily activities.
                 </p>
                 <p>
                     <i class='text-success icon-leaf'></i> Earn <span class='label label-success'>green points</span> by
@@ -93,12 +93,34 @@
                     isn't high enough to rank up, you must start over.
                 </p>
             </div>
+            <div class='row lighterprints-dashboard'>
+                <div class='span2'>
+                    <h3>Today's Score</h3>
+                    <h1><span data-bind='text: averagePoints'></span> <i style='color: green;' class='icon-leaf'></i></h1>
+                </div>
+                <div class='span2 left-divider'>
+                    <h3>Current Level</h3>
+                    <h1><span data-bind='text: groupLevel'></span></h1>
+                    <br>
+                </div>
+                <div class='span2 left-divider'>
+                    <h3>Today's Progress</h3>
+                    <h2><span data-bind='text: averagePoints'></span>/<span data-bind='text:pointsToNextLevel'></span></h2>
+                    <br>
+                </div>
+                <div class='span2 left-divider'>
+                    <h3>Time Remaining</h3>
+                    <h1>7:53</h1>
+                    <br>
+                </div>
+            </div>
+            <br>
             <table class='table table-bordered table-striped'>
                 <caption>Today's Group Score Summary <strong>(point totals reset starting from {% now "m/d/Y" %} 12:00 AM)</strong></caption>
                 <thead><tr><th>Group</th><th>Level</th><th>Total points earned by you</th><th>Total group points</th><th>Group size</th><th>Group average points</th><th>Group average points needed to reach the next level</th></tr></thead>
                 <tbody data-bind='foreach: groupData'>
-                <tr data-bind='css: { "alert-success": groupNumber() == $root.groupNumber()}'>
-                    <td>Group #<span data-bind='text: groupNumber'></span></td>
+                <tr data-bind='css: { "alert-success": groupName() == $root.groupName()}'>
+                    <td>Group #<span data-bind='text: groupName'></span></td>
                     <td data-bind='text: groupLevel'></td>
                     <td data-bind='text: totalParticipantPoints'></td>
                     <td data-bind='text: totalPoints'></td>
@@ -227,7 +249,7 @@
 {% block sidebar %}
 <h3 class='muted'><i class='icon-trophy'></i> Leaderboard</h3>
 <ul class='nav nav-list' data-bind='foreach: groupData'>
-    <li><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold text-info": groupNumber() == $root.groupNumber()}'>Team <span data-bind='text: groupNumber'></span></span><span class='pull-right badge badge-success' data-bind='text: averagePoints'></span></li> 
+    <li><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold text-info": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-success' data-bind='text: averagePoints'></span></li> 
     <li class='divider'></li>
 </ul>
 

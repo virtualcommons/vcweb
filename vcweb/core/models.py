@@ -28,6 +28,7 @@ import hashlib
 import logging
 import random
 import re
+import string
 
 logger = logging.getLogger(__name__)
 
@@ -1155,6 +1156,10 @@ class Group(models.Model):
     """
     The experiment that contains this Group.
     """
+
+    @property
+    def name(self):
+        return u"Team %s" % string.ascii_uppercase[self.number]
 
     @property
     def channel(self):
