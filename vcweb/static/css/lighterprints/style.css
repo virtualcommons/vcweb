@@ -1,0 +1,29 @@
+div.lighterprints-scoreboard {
+    color: #A9A9A9;
+}
+.lighterprints-scoreboard-xlarge {
+    font-size: 5em;
+    font-family: 'TrumpGothicWestW01-Bold', sans-serif;
+    color: #333;
+}
+div.lighterprints-scoreboard h1 {
+    font-size: 5em;
+    font-family: 'TrumpGothicWestW01-Medi', sans-serif;
+}
+div.lighterprints-scoreboard h2 {
+    font-size: 4em;
+    font-family: 'TrumpGothicWestW01-Bold', sans-serif;
+}
+div.lighterprints-scoreboard h5 {
+    text-transform: uppercase;
+    font-size: 1.1em;
+    color: #A9A9A9;
+    font-weight: normal;
+    padding-bottom: 10px;
+}
+.lighterprints-green {
+    color: #99CC33;
+}
+.lighterprints-blue {
+    color: #3399FF;
+}
