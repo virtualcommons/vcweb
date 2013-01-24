@@ -98,10 +98,9 @@
                     isn't high enough to rank up, you must start over.
                 </p>
             </div>
-            <!-- FIXME: disabled conditional alert 
+            <!-- FIXME: disabled conditional instruction message
             </div>
             -->
-            
             <div class='row lighterprints-scoreboard'>
                 <div class='span2'>
                     <h5>Today's Score</h5>
@@ -358,12 +357,24 @@ $(function() {
         <img data-bind='attr: {src: "{{STATIC_URL}}/images/lighterprints/badges/" + name() + ".png" }'>
     </div>
     <div class='span5'>
-        <h3 data-bind='text:display_name'></h3>
-        <p data-bind='text:summary'></p>
+        <h4 data-bind='text:display_name'></h4>
+        <p>
+        <span data-bind='text:summary'></span>.
+        </p>
+        <form data-bind='attr: { id: "activityform" + pk() }' class='form-horizontal' method='post'>
+            <input data-bind='value: pk' type='hidden' name='activity_id' />
+            <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
+            <a data-bind='css: status, click: $root.performActivity' class='btn'>
+            <span data-bind='if: availableNow'>Perform</span>
+            <span data-bind='if: completed'>Completed <i class='icon-check'></i></span>
+            <span data-bind='if: expired'>Expired <i class='icon-warning-sign'></i></span>
+            <span data-bind='if: upcoming'>Not yet available <i class='icon-time'></i></span>
+            </a> <small><a href='#'>Learn more</a></small>
+        </form>
     </div>
     <div class='span2'>
         <h2><span data-bind='text: points'></span><i class='icon-leaf lighterprints-green'></i></h2>
-        <i class='icon-time'></i><strong><span data-bind='text: time_slots'></span>
+        <i class='icon-time'></i> <strong><span data-bind='text: time_slots'></span>
     </div>
 </div>
 <hr>
@@ -396,7 +407,7 @@ $(function() {
             <form data-bind='attr: { id: "activityform" + pk() }' class='form-horizontal' method='post'>
                 <input data-bind='value: pk' type='hidden' name='activity_id' />
                 <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
-                <a data-bind='css: { disabled: ! availableNow() }, click: $root.performActivity' class='btn activity-action'
+                <a data-bind='css: { disabled: ! availableNow() }, click: $root.performActivity' class='btn'
                     href='#'><span data-bind='css: { "text-warning": !availableNow(), "text-success": availableNow() }'> Perform this activity</span></a>
             </form>
         </div>

@@ -164,6 +164,11 @@ class ActivityQuerySet(models.query.QuerySet):
             return self.filter(level=level)
 
 class ActivityManager(TreeManager, PassThroughManager):
+    def upcoming(self, level=1):
+        current_time = datetime.now().time()
+        activities = [activity_availability.activity for activity_availability in ActivityAvailability.objects.select_related(depth=1).filter(models.Q(start_time__gte=current_time))]
+        return filter(lambda a: a.level == level, activities)
+
     def currently_available(self, level=1, **kwargs):
         current_time = datetime.now().time()
         available_time_slot = dict(start_time__lte=current_time, end_time__gte=current_time)
@@ -364,6 +369,33 @@ def get_unlocked_activities(participant_group_relationship):
     #logger.debug("participant %s performed activities %s\nunlocked: %s", participant_group_relationship, performed_activities, unlocked_activities)
     return unlocked_activities
 
+def get_activity_status_dict(participant_group_relationship, activities, group_level=1):
+    today = datetime.combine(date.today(), time())
+    available_activities = Activity.objects.currently_available(participant_group_relationship=participant_group_relationship, level=group_level)
+# filter out all activities that have already been performed today (activities may only be performed once a day)
+    performed_activity_data_values = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter(),
+            int_value__in=[activity.id for activity in available_activities],
+            date_created__gte=today)
+    upcoming_activities = Activity.objects.upcoming(level=group_level)
+    # XXX: data value's int_value stores the fk directly, using .value does a fk lookup to restore the full entity
+    # which we don't need
+    performed_activity_ids = [padv.int_value for padv in performed_activity_data_values]
+    available_activity_ids = [activity.pk for activity in available_activities if activity.pk not in performed_activity_ids]
+    upcoming_activity_ids = [activity.pk for activity in upcoming_activities]
+    status_dict = {}
+    for activity in activities:
+        if activity.pk in performed_activity_ids:
+            status_dict[activity.pk] = 'completed-challenge disabled'
+        elif activity.pk in available_activity_ids:
+            status_dict[activity.pk] = 'perform-challenge'
+        elif activity.pk in upcoming_activity_ids:
+            status_dict[activity.pk] = 'upcoming-challenge disabled'
+        elif activity.level > group_level:
+            status_dict[activity.pk] = 'locked-challenge disabled'
+        else:
+            status_dict[activity.pk] = 'expired-challenge disabled'
+    logger.debug("activity status dict: %s", status_dict)
+    return status_dict
 
 # returns a tuple of a (list of activity objects converted to dicts and an activity_by_level list of lists (level -> list of activity
 # objects converted to dicts).
@@ -372,18 +404,22 @@ def get_all_activities_tuple(participant_group_relationship, activities=None, gr
         activities = Activity.objects.all()
     activity_dict_list = []
     level_activity_list = []
-    available_activities = get_available_activities(participant_group_relationship)
-    available_activity_ids = [activity.pk for activity in available_activities]
-    logger.debug("available activity ids: %s", available_activity_ids)
+    activity_statuses = get_activity_status_dict(participant_group_relationship, activities, group_level)
+    #available_activities = get_available_activities(participant_group_relationship)
+    #available_activity_ids = [activity.pk for activity in available_activities]
 
     for activity in activities:
         activity_dict = activity.to_dict()
-        logger.debug("activity dict: %s", activity_dict)
         level = activity.level
         try:
             activity_dict['availabilities'] = [availability.to_dict() for availability in ActivityAvailability.objects.filter(activity=activity)]
-            activity_dict['availableNow'] = activity.pk in available_activity_ids
-            activity_dict['isLocked'] = (group_level < level)
+            activity_dict['locked'] = (group_level < level)
+            activity_status = activity_statuses[activity.pk]
+            activity_dict['availableNow'] = "perform-challenge" in activity_status
+            activity_dict['completed'] = 'completed-challenge' in activity_status
+            activity_dict['expired'] = 'expired-challenge' in activity_status
+            activity_dict['upcoming'] = 'upcoming-challenge' in activity_status
+            activity_dict['status'] = activity_status
         except Exception as e:
             logger.debug("failed to get authenticated activity list: %s", e)
         activity_dict_list.append(activity_dict)
@@ -414,7 +450,6 @@ def get_available_activities(participant_group_relationship=None, ignore_time=Fa
         # XXX: data value's int_value stores the fk directly, using .value does a fk lookup to restore the full entity
         # which we don't need
         performed_activity_ids = [padv.int_value for padv in performed_activity_data_values]
-        logger.debug("performed activity ids: %s", performed_activity_ids)
         return [activity for activity in available_activities if activity.id not in performed_activity_ids]
 
 def check_already_performed_today(activity, participant_group_relationship):

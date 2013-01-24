@@ -18,10 +18,10 @@ function LighterFootprintsModel(modelJson) {
         return false;
     };
     model.lockedChallenges = ko.computed(function() {
-            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.isLocked() });
+            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.locked() });
         });
     model.unlockedChallenges = ko.computed(function() {
-            return ko.utils.arrayFilter(model.activities(), function(activity) { return ! activity.isLocked() });
+            return ko.utils.arrayFilter(model.activities(), function(activity) { return ! activity.locked() });
         });
     model.availableActivities = ko.computed(function() {
             return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.availableNow() });
