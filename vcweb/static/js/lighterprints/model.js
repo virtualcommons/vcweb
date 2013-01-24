@@ -17,11 +17,17 @@ function LighterFootprintsModel(modelJson) {
         $('#chatText').val('');
         return false;
     };
+    model.lockedChallenges = ko.computed(function() {
+            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.isLocked() });
+        });
+    model.unlockedChallenges = ko.computed(function() {
+            return ko.utils.arrayFilter(model.activities(), function(activity) { return ! activity.isLocked() });
+        });
     model.availableActivities = ko.computed(function() {
-            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.available_now() });
-    });
+            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.availableNow() });
+        });
     model.hasAvailableActivities = ko.computed(function() {
             return model.availableActivities().length > 0;
-    });
+        });
     return model;
 }

@@ -118,7 +118,22 @@
                     <br>
                 </div>
             </div>
-            <br>
+            <h3>Challenges</h3>
+            <div class='tabbable'>
+                <ul class='nav nav-tabs'>
+                    <li class='active'><a href='#unlocked-challenges' data-toggle='tab'>Unlocked</a></li>
+                    <li><a href='#locked-challenges' data-toggle='tab'>Locked</a></li>
+                </ul>
+                <div class='tab-content'>
+                    <div class='tab-pane active' id='unlocked-challenges'>
+                        <div data-bind="template: { name: 'challenges-template', data: { challenges: unlockedChallenges() } }"></div>
+                    </div>
+                    <div class='tab-pane' id='locked-challenges'>
+                        <div data-bind="template: { name: 'challenges-template', data: { challenges: lockedChallenges() } }"></div>
+                    </div>
+                </div>
+            </div>
+            <!--
             <table class='table table-bordered table-striped'>
                 <caption>Today's Group Score Summary <strong>(point totals reset starting from {% now "m/d/Y" %} 12:00 AM)</strong></caption>
                 <thead><tr><th>Group</th><th>Level</th><th>Total points earned by you</th><th>Total group points</th><th>Group size</th><th>Group average points</th><th>Group average points needed to reach the next level</th></tr></thead>
@@ -134,6 +149,7 @@
                 </tr>
                 </tbody>
             </table>
+            -->
             <div data-bind='if: hasAvailableActivities()'>
                 <div class='accordion' id='available-activities-accordion'>
                     <h3>Available activities for {{request.user.participant}}</h3>
@@ -288,7 +304,7 @@ $(function() {
         $('#lfp-navtabs a[href="#all-activities"]').tab('show');
     };
     viewModel.performActivity = function(activityModel) {
-        if (! activityModel.available_now()) {
+        if (! activityModel.availableNow()) {
             // FIXME: modal is slow, no feedback on this for now
             // model.errorMessage("The activity " + activityModel.display_name() + " is not currently available.");
             // $('#activityUnavailableModal').modal();
@@ -325,17 +341,35 @@ $(function() {
     ko.applyBindings(viewModel);
 });
 </script>
+<script type='text/html' id='challenges-template'>
+<div data-bind='foreach: challenges'>
+<div class='row'>
+    <div class='span2'>
+        <img data-bind='attr: {src: icon_url}'>
+    </div>
+    <div class='span5'>
+        <h3 data-bind='text:display_name'></h3>
+        <p data-bind='text:summary'></p>
+    </div>
+    <div class='span2'>
+        <h2><span data-bind='text: points'></span><i class='icon-leaf lighterprints-green'></i></h2>
+        <i class='icon-time'></i><strong><span data-bind='text: time_slots'></span>
+    </div>
+</div>
+<hr>
+</div>
+</script>
 <script type='text/html' id='activity-accordion-template'>
 <div data-bind='foreach: activities'>
-    <div data-bind='css: { "alert-error": ! available_now(), "alert-success": available_now() }' class='accordion-group alert'>
+    <div data-bind='css: { "alert-error": ! availableNow(), "alert-success": availableNow() }' class='accordion-group alert'>
     <div class='accordion-heading'>
         <a class='accordion-toggle' data-toggle='collapse'
             data-bind='attr: {"data-parent": "#" + $parent.parentId, href: "#activity" + $parent.parentId + pk()}'><i class='icon-chevron-right'></i>
             <span data-bind='text: display_name'></span>
-        <span class='pull-right text-info'><span data-bind='if: available_now'><i class='icon-exclamation-sign'></i></span><i class='icon-time'></i><strong><span data-bind='text: time_slots'></span></strong></span>
+        <span class='pull-right text-info'><span data-bind='if: availableNow'><i class='icon-exclamation-sign'></i></span><i class='icon-time'></i><strong><span data-bind='text: time_slots'></span></strong></span>
         </a>
     </div>
-    <div data-bind='css: { in: available_now() }, attr: {id: "activity" + $parent.parentId + pk()}' class='accordion-body collapse'>
+    <div data-bind='css: { in: availableNow() }, attr: {id: "activity" + $parent.parentId + pk()}' class='accordion-body collapse'>
         <div class='accordion-inner'>
             <table class='table table-condensed table-bordered table-hover'>
                 <thead><tr><th>Summary</th><th>Availability</th><th>Points</th></tr></thead>
@@ -344,7 +378,7 @@ $(function() {
             </table>
             <p data-bind='text: description'></p>
             <p>For more info, please visit <a data-bind='text: url, attr: { href: url }' target="_blank"></a></p>
-            <div data-bind='ifnot: available_now'>
+            <div data-bind='ifnot: availableNow'>
                 <div class='alert alert-message'>
                     <i class='icon-warning-sign'></i>This activity is not available right now.  Please check again later.
                 </div>
@@ -352,8 +386,8 @@ $(function() {
             <form data-bind='attr: { id: "activityform" + pk() }' class='form-horizontal' method='post'>
                 <input data-bind='value: pk' type='hidden' name='activity_id' />
                 <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
-                <a data-bind='css: { disabled: ! available_now() }, click: $root.performActivity' class='btn activity-action'
-                    href='#'><span data-bind='css: { "text-warning": !available_now(), "text-success": available_now() }'> Perform this activity</span></a>
+                <a data-bind='css: { disabled: ! availableNow() }, click: $root.performActivity' class='btn activity-action'
+                    href='#'><span data-bind='css: { "text-warning": !availableNow(), "text-success": availableNow() }'> Perform this activity</span></a>
             </form>
         </div>
     </div>

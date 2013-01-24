@@ -222,7 +222,7 @@ class Activity(MPTTModel):
         else:
             return ','.join([availability.time_slot for availability in self.availability_set.all()])
 
-    def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'icon_url', 'personal_benefits', 'points', 'time_slots')):
+    def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'icon_url', 'icon_name', 'personal_benefits', 'points', 'time_slots')):
         activity_as_dict = {}
         for attr_name in attrs:
             activity_as_dict[attr_name] = getattr(self, attr_name, None)
@@ -367,7 +367,7 @@ def get_unlocked_activities(participant_group_relationship):
 
 # returns a tuple of a (list of activity objects converted to dicts and an activity_by_level list of lists (level -> list of activity
 # objects converted to dicts).
-def get_all_activities_tuple(participant_group_relationship, activities=None):
+def get_all_activities_tuple(participant_group_relationship, activities=None, group_level=1):
     if activities is None:
         activities = Activity.objects.all()
     activity_dict_list = []
@@ -378,13 +378,15 @@ def get_all_activities_tuple(participant_group_relationship, activities=None):
 
     for activity in activities:
         activity_dict = activity.to_dict()
+        logger.debug("activity dict: %s", activity_dict)
+        level = activity.level
         try:
             activity_dict['availabilities'] = [availability.to_dict() for availability in ActivityAvailability.objects.filter(activity=activity)]
-            activity_dict['available_now'] = activity.pk in available_activity_ids
+            activity_dict['availableNow'] = activity.pk in available_activity_ids
+            activity_dict['isLocked'] = (group_level < level)
         except Exception as e:
             logger.debug("failed to get authenticated activity list: %s", e)
         activity_dict_list.append(activity_dict)
-        level = activity.level
         # XXX: assumes activity list is ordered by level
         if level > len(level_activity_list):
             level_activity_list.append([])

@@ -415,7 +415,6 @@ class CsvExportView(DataExportMixin, BaseDetailView):
 def get_view_model_json(participant_group_relationship, activities=None):
     if activities is None:
         activities = Activity.objects.all()
-    (activity_dict_list, level_activity_list) = get_all_activities_tuple(participant_group_relationship, activities)
     own_group = participant_group_relationship.group
 # FIXME: move to model API
     treatment_type = get_treatment_type(own_group)
@@ -438,6 +437,8 @@ def get_view_model_json(participant_group_relationship, activities=None):
             'pointsToNextLevel': pointsToNextLevel
             })
 
+    (activity_dict_list, level_activity_list) = get_all_activities_tuple(participant_group_relationship, activities,
+            group_level=own_group_level)
     (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
     first_visit = participant_group_relationship.first_visit
     if first_visit:
