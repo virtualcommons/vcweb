@@ -7,10 +7,10 @@
 {% block headerlinks %}
 <ul class='nav nav-tabs' id='lfp-navtabs'>
     <li><a class='brand'><img src='{{STATIC_URL}}/images/lighterprints/logo.png' width=30 height=30> lighter<strong class='lighterprints-green'>footprints</strong></a></li>
-    <li><a href='#dashboard' data-toggle='tab'><i class='icon-dashboard'></i> Dashboard</a></li>
-    <li><a href='#all-activities' data-toggle='tab'><i class='icon-star-empty'></i> Challenges</a></li>
+    <li class='active'><a href='#dashboard' data-toggle='tab'><i class='icon-dashboard'></i> Dashboard</a></li>
+    <li><a href='#challenges' data-toggle='tab'><i class='icon-star-empty'></i> Challenges</a></li>
     <li><a href='#group-wall' data-toggle='tab'><i class='icon-comments-alt'></i> My Team</a></li>
-    <li><a href='#faq' data-toggle='tab'><i class='icon-question-sign'></i> Help</a></li>
+    <li><a href='#help' data-toggle='tab'><i class='icon-question-sign'></i> Help</a></li>
 </ul>
 {% endblock %}
 {% block logo %}
@@ -18,61 +18,7 @@
 {% block content %}
 <div class='tabbable'>
     <div class='tab-content'>
-        <div class='tab-pane active' id='instructions'>
-            <p>
-            You have been randomly placed in a group of <span class='badge badge-info'>{{ participant_group_relationship.group.size }}</span> participants.
-            In this experiment you can perform virtual actions that represent <span class='text-success'>green alternatives</span>
-            to some common daily activities.  Some of these activities are available all day, and others are only available at
-            specific times.  You can learn more about them by clicking on the "All Activities" tab and selecting an activity.
-            </p>
-            <h3>Activities, Green Points, and Levels</h3>
-            <p>
-            Each activity is worth a certain number of green points.  For example, <span class='text-success'>eating locally grown food for lunch</span> (which is only available from 12 PM to 2 PM) is worth <span class='badge badge-success'>15</span> green points.
-            In order to perform this activity you must login to the application between 12 PM and 2 PM, select the activity from the
-            list below, and click the "Perform this activity" button.
-            </p>
-            <p>
-            Your group is currently <span class='badge badge-important'>level <span data-bind='text:groupLevel'></span></span> and has accumulated 
-            <span class='badge badge-important'><span data-bind='text:averagePoints'></span> average points</span>.  In order to
-            advance in level and unlock more activities the <strong>average number of points contributed by each member of your group</strong> must be equal to or greater than 
-            <span data-bind='text: pointsToNextLevel' class='badge badge-info'></span>.  In order to
-            reach this target <span class='text-warning'>you and a majority of the members of your group</span> must perform
-            high point activities when they are available.
-            </p>
-            <h3>How to participate</h3>
-            <p>
-            To begin participating, click on the <a href='#all-activities' data-bind='click: activateAllActivitiesTab'>"All activities" tab</a>, and select an activity you'd like to perform.
-            Available activities will be marked with an exclamation point: <i class='icon-exclamation-sign'></i> and
-            <span class='alert-success'>highlighted in green</span>.
-            </p>
-        </div>
-        <div class='tab-pane' id='all-activities'>
-            <p>
-            Activities are divided up into 3 levels.  In order to unlock higher level activities your group must earn
-            enough points so that the <strong>average number of points</strong> per participant is greater than
-            <span data-bind='text:pointsToNextLevel' class='badge badge-info'></span>.
-            </p>
-            <p>
-            Some activities are available all day, and others are only available at <strong>certain hours</strong>.
-            Currently available activities are marked with a <i class='icon-exclamation-sign'></i> and <span
-                class='alert-success'>highlighted in green</span>.  You can click on any activity to learn more about it.
-            </p>
-            <!-- this would need to be updated via setTimeout / javascript to stay up-to-date otherwise it's just the
-                 time when they last refreshed the page
-            <div class='alert alert-info'>
-                <i class='icon-time'></i> The time is now <strong>{% now "P" %}</strong>
-            </div>
-            -->
-            {% comment %} FIXME: rewrite this to use KO instead of django templating if possible {% endcomment %}
-            <div data-bind='foreach: activitiesByLevel'>
-                <div class='accordion' data-bind='attr: {id: "accordion-level" + $index()}'>
-                    <h4>Level <span data-bind='text: $index() + 1'></span> Activities</h4>
-                    <div data-bind='template: { name: "activity-accordion-template", data: { parentId: "accordion-level" + $index(), activities: $data } }'>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class='tab-pane' id='dashboard'>
+        <div class='tab-pane active' id='dashboard'>
             <h1 class='dashboard-header muted'><i class='icon-dashboard'></i> Team Dashboard</h1>
             <!-- FIXME: re-enable this at some point
             <div data-bind='if: firstVisit()'>
@@ -143,7 +89,50 @@
                 </div>
             </div>
         </div>
-        <div class='tab-pane' id='faq'>
+        <div class='tab-pane' id='challenges'>
+            <p>
+            Activities are divided up into 3 levels.  In order to unlock higher level activities your group must earn
+            enough points so that the <strong>average number of points</strong> per participant is greater than
+            <span data-bind='text:pointsToNextLevel' class='badge badge-info'></span>.
+            </p>
+            <p>
+            Some activities are available all day, and others are only available at <strong>certain hours</strong>.
+            Currently available activities are marked with a <i class='icon-exclamation-sign'></i> and <span
+                class='alert-success'>highlighted in green</span>.  You can click on any activity to learn more about it.
+            </p>
+            <div data-bind='foreach: activitiesByLevel'>
+                <h2>Level <span data-bind='text: $index() + 1'></span> Activities</h2>
+                <div data-bind='template: { name: "challenges-template", data: { challenges: $data } }'></div>
+            </div>
+        </div>
+        <div class='tab-pane' id='help'>
+            <h2>Instructions</h2>
+            <p>
+            You have been randomly placed in a group of <span class='badge badge-info'>{{ participant_group_relationship.group.size }}</span> participants.
+            In this experiment you can perform virtual actions that represent <span class='text-success'>green alternatives</span>
+            to some common daily activities.  Some of these activities are available all day, and others are only available at
+            specific times.  You can learn more about them by clicking on the "All Activities" tab and selecting an activity.
+            </p>
+            <h3>Activities, Green Points, and Levels</h3>
+            <p>
+            Each activity is worth a certain number of green points.  For example, <span class='text-success'>eating locally grown food for lunch</span> (which is only available from 12 PM to 2 PM) is worth <span class='badge badge-success'>15</span> green points.
+            In order to perform this activity you must login to the application between 12 PM and 2 PM, select the activity from the
+            list below, and click the "Perform this activity" button.
+            </p>
+            <p>
+            Your group is currently <span class='badge badge-important'>level <span data-bind='text:groupLevel'></span></span> and has accumulated 
+            <span class='badge badge-important'><span data-bind='text:averagePoints'></span> average points</span>.  In order to
+            advance in level and unlock more activities the <strong>average number of points contributed by each member of your group</strong> must be equal to or greater than 
+            <span data-bind='text: pointsToNextLevel' class='badge badge-info'></span>.  In order to
+            reach this target <span class='text-warning'>you and a majority of the members of your group</span> must perform
+            high point activities when they are available.
+            </p>
+            <h3>How to participate</h3>
+            <p>
+            To begin participating, click on the <a href='#challenges' data-bind='click: activateAllActivitiesTab'>"All activities" tab</a>, and select an activity you'd like to perform.
+            Available activities will be marked with an exclamation point: <i class='icon-exclamation-sign'></i> and
+            <span class='alert-success'>highlighted in green</span>.
+            </p>
             <h2>Frequently Asked Questions</h2>
             <div class='well'>
                 <h4>Why do the activities performed in the previous day not count for today?</h4>
@@ -279,7 +268,7 @@ $(function() {
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
     viewModel.activateAllActivitiesTab = function() {
-        $('#lfp-navtabs a[href="#all-activities"]').tab('show');
+        $('#lfp-navtabs a[href="#challenges"]').tab('show');
     };
     viewModel.performActivity = function(activityModel) {
         if (! activityModel.availableNow()) {
@@ -312,10 +301,6 @@ $(function() {
                 }
             });
     };
-
-    if (! viewModel.firstVisit()) {
-        $('#lfp-navtabs a[href="#dashboard"]').tab('show');
-    }
     ko.applyBindings(viewModel);
 });
 </script>
