@@ -6,12 +6,18 @@ a.external {
     background: url(../images/external.png) center right no-repeat;
     padding-right: 13px;
 }
+h1,h2,h3,h4,h5 {
+    color: #333;
+    border: none;
+}
+/*
 h1, h2, h3 {
     color: #549900;
 }
 h2, h3 {
     border-bottom:1px solid #333;
 }
+*/
 h2 { font-size: 1.5em; }
 h3 { font-size: 1.2em; }
 h4 { font-size: 1.0em; }
@@ -24,7 +30,7 @@ h5 { font-size: 0.9em; }
 }
 .alert-white {
     background: #FFFFFF;
-    border: 1px solid #FFFFFC;
+    border: 1px solid #CCC;
     color: gray;
 }
 label.error {
@@ -73,21 +79,32 @@ label.error {
     height: 230px;
     overflow: auto;
 }
-div.lighterprints-dashboard h1,h2,h3,h4 {
+/* FIXME: move these into lighterprints.css */
+div.lighterprints-scoreboard {
+    color: #A9A9A9;
+}
+div.lighterprints-scoreboard h1 {
+    font-size: 5em;
+    font-family: 'TrumpGothicWestW01-Medi', sans-serif;
+}
+div.lighterprints-scoreboard h2 {
+    font-size: 4em;
+    font-family: 'TrumpGothicWestW01-Bold', sans-serif;
+}
+div.lighterprints-scoreboard h5 {
     text-transform: uppercase;
-    color: #222;
-    border: none;
+    font-size: 1.1em;
+    color: #A9A9A9;
     font-weight: normal;
+    padding-bottom: 10px;
 }
-div.lighterprints-dashboard h1 {
-    color: #A9A9A9;
-    font-size: 4.2em;
+.lighterprints-green {
+    color: #66CC00;
 }
-div.lighterprints-dashboard h2 {
-    color: #A9A9A9;
-    font-size: 3.7em;
+.lighterprints-blue {
+    color: #0099FF;
 }
 .left-divider {
     padding-left: 1.1em;
-    border-left: 1px solid #A9A9A9;
+    border-left: 1px solid #CCC;
 }
