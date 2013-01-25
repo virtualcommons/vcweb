@@ -20,7 +20,7 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, is_activity_available,
         get_treatment_type, get_lighterprints_experiment_metadata, get_lighterprints_public_experiment,
         get_activity_performed_parameter, points_to_next_level, get_group_score, get_footprint_level,
-        get_foursquare_category_ids, get_activity_performed_counts)
+        get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining)
 
 from collections import defaultdict
 import itertools
@@ -212,12 +212,12 @@ def group_activity(request, participant_group_id):
 
 def get_group_activity_tuple(participant_group_relationship, number_of_activities=10, retrieve_all=True):
     group = participant_group_relationship.group
-    chat_messages = []
+    social_activity = []
     for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
         pgr = chat_message.participant_group_relationship
         comments = [c.to_dict() for c in Comment.objects.filter(target_data_value=chat_message.pk)]
         likes = [like.to_dict() for like in Like.objects.filter(target_data_value=chat_message.pk)]
-        chat_messages.append({
+        social_activity.append({
             'pk': chat_message.pk,
             'date_created': timesince(chat_message.date_created),
             'message': chat_message.value,
@@ -245,7 +245,7 @@ def get_group_activity_tuple(participant_group_relationship, number_of_activitie
         activity_performed_dict['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=activity_prdv.pk)]
         activity_performed_dict['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=activity_prdv.pk)]
         group_activity.append(activity_performed_dict)
-    return (chat_messages, group_activity)
+    return (social_activity, group_activity)
 
 def get_group_activity_json(participant_group_relationship, number_of_activities=10, retrieve_all=True):
     (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship, number_of_activities,
@@ -440,12 +440,15 @@ def get_view_model_json(participant_group_relationship, activities=None):
     (activity_dict_list, level_activity_list) = get_all_activities_tuple(participant_group_relationship, activities,
             group_level=own_group_level)
     (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
+    (hours_left, minutes_left) = get_time_remaining()
     first_visit = participant_group_relationship.first_visit
     if first_visit:
         participant_group_relationship.first_visit = False
         participant_group_relationship.save()
     return dumps({
         'groupData': group_data,
+        'hoursLeft': hours_left,
+        'minutesLeft': minutes_left,
         'firstVisit': first_visit,
         'groupLevel': own_group_level,
         'averagePoints': own_average_points,

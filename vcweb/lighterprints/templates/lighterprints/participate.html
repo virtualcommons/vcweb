@@ -6,7 +6,7 @@
 {% endblock %}
 {% block headerlinks %}
 <ul class='nav nav-tabs' id='lfp-navtabs'>
-    <li><a class='brand'><img src='{{STATIC_URL}}/images/lighterprints/logo.png' width=30 height=30> lighter<strong class='lighterprints-green'>footprints</strong></a></li>
+    <li><a class='brand'><img alt='footprint logo' src='{{STATIC_URL}}/images/lighterprints/logo.png' width=30 height=30> lighter<strong class='lighterprints-green'>footprints</strong></a></li>
     <li class='active'><a href='#dashboard' data-toggle='tab'><i class='icon-dashboard'></i> Dashboard</a></li>
     <li><a href='#challenges' data-toggle='tab'><i class='icon-star-empty'></i> Challenges</a></li>
     <li><a href='#group-wall' data-toggle='tab'><i class='icon-comments-alt'></i> My Team</a></li>
@@ -69,7 +69,7 @@
                 </div>
                 <div class='span2 left-divider'>
                     <h5>Time Remaining</h5>
-                    <h1>7:53</h1>
+                    <h1><span data-bind='text:hoursLeft'></span>h <span data-bind='text:minutesLeft'></span>m</h1>
                     <br>
                 </div>
             </div>
@@ -110,7 +110,7 @@
             You have been randomly placed in a group of <span class='badge badge-info'>{{ participant_group_relationship.group.size }}</span> participants.
             In this experiment you can perform virtual actions that represent <span class='text-success'>green alternatives</span>
             to some common daily activities.  Some of these activities are available all day, and others are only available at
-            specific times.  You can learn more about them by clicking on the <a href='#challenges' data-bind='click: activateAllActivitiesTab'>Challenges tab</a> and selecting an activity.
+            specific times.  You can learn more about them by clicking on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a> and selecting an activity.
             </p>
             <h3>Activities, Green Points, and Levels</h3>
             <p>
@@ -128,7 +128,7 @@
             </p>
             <h3>How to participate</h3>
             <p>
-            To participate, simply click on the <a href='#challenges' data-bind='click: activateAllActivitiesTab'>Challenges tab</a>, and select an activity you'd like to perform.
+            To participate, simply click on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a>, and select an activity you'd like to perform.
             You can also leave messages for your other teammates in the My Team tab.
             </p>
             <h2>Frequently Asked Questions</h2>
@@ -194,7 +194,7 @@
         </div>
     </div>
 </div>
-<div id='activityUnavailableModal' class='modal hide fade' tabindex='-1' role=dialog'
+<div id='activityUnavailableModal' class='modal hide fade' tabindex='-1' role='dialog'
     aria-labelledby='activityUnavailableModalLabel'
     aria-hidden='true'>
     <div class='modal-header'>
@@ -239,16 +239,31 @@
 </ul>
 
 <h3 class='muted'><i class='icon-group'></i> Team Activity <span class='pull-right'><small><a href='#group-wall' data-toggle='tab'>View all</a></small></span></h3>
-<ul class='nav nav-list' data-bind='foreach: groupActivity'>
+<ul class='nav nav-list' data-bind='foreach: groupActivity.slice(0, 3)'>
     <li>
     <table>
         <tr>
             <td style='vertical-align: top'><i class='icon-star text-warning'></i></td>
-            <td style='vertical-align: top'><span data-bind='text: participant_name'></span>
-                <small><span class='pull-right muted'><span data-bind='text: date_created'></span> ago</span></small>
+            <td style='vertical-align: top'>
+                <strong data-bind='text: participant_name'></strong>
+                <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
                 <div>earned <span class='lighterprints-green' data-bind='text:points'></span><i class='icon-leaf lighterprints-green'></i>
                     for <span data-bind='text: $root.groupName'></span> by completing <em><span data-bind='text: display_name'></span></em>.
                 </div>
+            </td>
+        </tr>
+    </table>
+    </li>
+    <li class='divider'></li>
+</ul>
+<ul class='nav nav-list' data-bind='foreach: chatMessages.slice(0, 3)'>
+    <li>
+    <table>
+        <tr>
+            <td style='vertical-align: top'><i class='icon-comment lighterprints-blue'></i></td>
+            <td style='vertical-align: top'>
+                <strong data-bind='text: participant_name'></strong> <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+                <blockquote class='pull-right' data-bind='text:message'></blockquote>
             </td>
         </tr>
     </table>
@@ -277,17 +292,17 @@ $(function() {
     // set up KO binding, using one master view model
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
-    viewModel.activateAllActivitiesTab = function() {
+    viewModel.activateChallengesTab = function() {
         $('#lfp-navtabs a[href="#challenges"]').tab('show');
     };
-    viewModel.performActivity = function(activityModel) {
-        if (! activityModel.availableNow()) {
+    viewModel.perform = function(challengeModel) {
+        if (! challengeModel.availableNow()) {
             // FIXME: modal is slow, no feedback on this for now
             // model.errorMessage("The activity " + activityModel.display_name() + " is not currently available.");
             // $('#activityUnavailableModal').modal();
             return;
         }
-        // FIXME: hacky
+        // FIXME: feels dirty
         $('#activityPerformedModal .progress').removeClass('hide');
         $('#activityPerformedModalText').addClass('hide');
         $('#activityPerformedModal .btn').addClass('disabled');
@@ -328,7 +343,7 @@ $(function() {
         <form data-bind='attr: { id: "activityform" + pk() }' class='form-horizontal' method='post'>
             <input data-bind='value: pk' type='hidden' name='activity_id' />
             <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
-            <a data-bind='css: status, click: $root.performActivity' class='btn'>
+            <a data-bind='css: status, click: $root.perform' class='btn'>
             <span data-bind='if: availableNow'>Perform</span>
             <span data-bind='if: completed'>Completed <i class='icon-check'></i></span>
             <span data-bind='if: expired'>Expired <i class='icon-warning-sign'></i></span>
@@ -338,8 +353,8 @@ $(function() {
         </form>
     </div>
     <div class='span2'>
-        <h2><span data-bind='text: points'></span><i class='icon-leaf lighterprints-green'></i></h2>
-        <i class='icon-time'></i> <strong><span data-bind='text: time_slots'></span>
+        <i style='margin-top: 20px;' class='icon-leaf lighterprints-green pull-right'></i><h2 style='text-align: right;' class='lighterprints-scoreboard-large' data-bind='text: points'></h2>
+        <div style='text-align: right;'><i class='icon-time'></i> <strong><span data-bind='text: time_slots'></span></strong></div>
     </div>
 </div>
 <hr>

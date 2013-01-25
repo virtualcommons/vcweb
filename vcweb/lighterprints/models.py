@@ -260,6 +260,9 @@ class ActivityAvailability(models.Model):
     class Meta:
         ordering = ['activity', 'start_time']
 
+'''
+API / model utility methods
+'''
 @simplecache
 def get_foursquare_category_ids(parent_category_name='Travel', subcategory_names=['Light Rail', 'Bike', 'Bus Station', 'Train Station']):
     categories = fetch_foursquare_categories()
@@ -561,3 +564,18 @@ def get_activity_performed_counts(participant_group_relationship, activity_perfo
     if activity_performed_parameter is None:
         activity_performed_parameter = get_activity_performed_parameter()
     return participant_group_relationship.participant_data_value_set.filter(parameter=activity_performed_parameter).values('int_value').order_by().annotate(count=models.Count('int_value'))
+
+def get_time_remaining():
+    '''
+    returns the hours and minutes till midnight
+    '''
+    now = datetime.now()
+    midnight = datetime.combine(date.today() + timedelta(1), time())
+    time_remaining = midnight - now
+    seconds_left = time_remaining.seconds
+    total_minutes_left = seconds_left / 60
+    hours_left = total_minutes_left / 60
+    minutes = total_minutes_left % 60
+    return (hours_left, minutes)
+
+
