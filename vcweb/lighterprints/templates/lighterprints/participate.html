@@ -239,8 +239,20 @@
 </ul>
 
 <h3 class='muted'><i class='icon-group'></i> Team Activity <span class='pull-right'><small><a href='#group-wall' data-toggle='tab'>View all</a></small></span></h3>
-<ul class='nav nav-list' data-bind='foreach: groupData'>
-    <li><i class='text-warning icon-star'></i> Some team activity</li>
+<ul class='nav nav-list' data-bind='foreach: groupActivity'>
+    <li>
+    <table>
+        <tr>
+            <td style='vertical-align: top'><i class='icon-star text-warning'></i></td>
+            <td style='vertical-align: top'><span data-bind='text: participant_name'></span>
+                <small><span class='pull-right muted'><span data-bind='text: date_created'></span> ago</span></small>
+                <div>earned <span class='lighterprints-green' data-bind='text:points'></span><i class='icon-leaf lighterprints-green'></i>
+                    for <span data-bind='text: $root.groupName'></span> by completing <em><span data-bind='text: display_name'></span></em>.
+                </div>
+            </td>
+        </tr>
+    </table>
+    </li>
     <li class='divider'></li>
 </ul>
 

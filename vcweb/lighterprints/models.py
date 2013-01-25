@@ -385,16 +385,17 @@ def get_activity_status_dict(participant_group_relationship, activities, group_l
     status_dict = {}
     for activity in activities:
         if activity.pk in performed_activity_ids:
-            status_dict[activity.pk] = 'completed-challenge disabled'
+            status = 'completed-challenge disabled'
         elif activity.pk in available_activity_ids:
-            status_dict[activity.pk] = 'perform-challenge'
+            status = 'perform-challenge'
         elif activity.pk in upcoming_activity_ids:
-            status_dict[activity.pk] = 'upcoming-challenge disabled'
+            status = 'upcoming-challenge disabled'
         elif activity.level > group_level:
-            status_dict[activity.pk] = 'locked-challenge disabled'
+            status = 'locked-challenge disabled'
         else:
-            status_dict[activity.pk] = 'expired-challenge disabled'
-    logger.debug("activity status dict: %s", status_dict)
+            status = 'expired-challenge disabled'
+        status_dict[activity.pk] = status
+
     return status_dict
 
 # returns a tuple of a (list of activity objects converted to dicts and an activity_by_level list of lists (level -> list of activity
