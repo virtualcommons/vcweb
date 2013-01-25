@@ -90,18 +90,17 @@
             </div>
         </div>
         <div class='tab-pane' id='challenges'>
+            <h2>All Challenges</h2>
             <p>
-            Activities are divided up into 3 levels.  In order to unlock higher level activities your group must earn
+            Challenges are divided up into 3 levels.  In order to unlock higher level challenges your group must earn
             enough points so that the <strong>average number of points</strong> per participant is greater than
             <span data-bind='text:pointsToNextLevel' class='badge badge-info'></span>.
             </p>
             <p>
-            Some activities are available all day, and others are only available at <strong>certain hours</strong>.
-            Currently available activities are marked with a <i class='icon-exclamation-sign'></i> and <span
-                class='alert-success'>highlighted in green</span>.  You can click on any activity to learn more about it.
+            Some challenges are available all day, and others are only available at <strong>certain hours</strong>.
             </p>
             <div data-bind='foreach: activitiesByLevel'>
-                <h2>Level <span data-bind='text: $index() + 1'></span> Activities</h2>
+                <h2>Level <span data-bind='text: $index() + 1'></span> challenges</h2>
                 <div data-bind='template: { name: "challenges-template", data: { challenges: $data } }'></div>
             </div>
         </div>
@@ -111,7 +110,7 @@
             You have been randomly placed in a group of <span class='badge badge-info'>{{ participant_group_relationship.group.size }}</span> participants.
             In this experiment you can perform virtual actions that represent <span class='text-success'>green alternatives</span>
             to some common daily activities.  Some of these activities are available all day, and others are only available at
-            specific times.  You can learn more about them by clicking on the "All Activities" tab and selecting an activity.
+            specific times.  You can learn more about them by clicking on the <a href='#challenges' data-bind='click: activateAllActivitiesTab'>Challenges tab</a> and selecting an activity.
             </p>
             <h3>Activities, Green Points, and Levels</h3>
             <p>
@@ -129,9 +128,8 @@
             </p>
             <h3>How to participate</h3>
             <p>
-            To begin participating, click on the <a href='#challenges' data-bind='click: activateAllActivitiesTab'>"All activities" tab</a>, and select an activity you'd like to perform.
-            Available activities will be marked with an exclamation point: <i class='icon-exclamation-sign'></i> and
-            <span class='alert-success'>highlighted in green</span>.
+            To participate, simply click on the <a href='#challenges' data-bind='click: activateAllActivitiesTab'>Challenges tab</a>, and select an activity you'd like to perform.
+            You can also leave messages for your other teammates in the My Team tab.
             </p>
             <h2>Frequently Asked Questions</h2>
             <div class='well'>
@@ -323,6 +321,7 @@ $(function() {
             <span data-bind='if: completed'>Completed <i class='icon-check'></i></span>
             <span data-bind='if: expired'>Expired <i class='icon-warning-sign'></i></span>
             <span data-bind='if: upcoming'>Not yet available <i class='icon-time'></i></span>
+            <span data-bind='if: locked'>Locked <i class='icon-lock'></i></span>
             </a> <small><a href='#'>Learn more</a></small>
         </form>
     </div>
