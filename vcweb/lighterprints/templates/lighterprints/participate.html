@@ -232,13 +232,13 @@
 </div>
 {% endblock content %}
 {% block sidebar %}
-<h3 class='muted'><i class='icon-trophy'></i> Leaderboard</h3>
+<h3 class='muted'><i class='text-warning icon-trophy'></i> Leaderboard</h3>
 <ul class='nav nav-list' data-bind='foreach: groupData'>
     <li><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold text-info": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-success' data-bind='text: averagePoints'></span></li> 
     <li class='divider'></li>
 </ul>
 
-<h3 class='muted'><i class='icon-group'></i> Team Activity <span class='pull-right'><small><a href='#group-wall' data-toggle='tab'>View all</a></small></span></h3>
+<h3 class='muted'><i class='lighterprints-blue icon-group'></i> Team Activity <span class='pull-right'><small><a href='#group-wall' data-toggle='tab'>View all</a></small></span></h3>
 <ul class='nav nav-list' data-bind='foreach: groupActivity.slice(0, 3)'>
     <li>
     <table>
@@ -261,9 +261,14 @@
     <table>
         <tr>
             <td style='vertical-align: top'><i class='icon-comment lighterprints-blue'></i></td>
-            <td style='vertical-align: top'>
-                <strong data-bind='text: participant_name'></strong> <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
-                <blockquote class='pull-right' data-bind='text:message'></blockquote>
+            <td width='100%'>
+                <strong data-bind='text: participant_name'></strong>
+                <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+                <p>
+                <i class='icon-quote-left'></i>
+                <span data-bind='text:message'></span>
+                <i class='icon-quote-right'></i>
+                </p>
             </td>
         </tr>
     </table>
@@ -307,14 +312,14 @@ $(function() {
         $('#activityPerformedModalText').addClass('hide');
         $('#activityPerformedModal .btn').addClass('disabled');
         $('#activityPerformedModal').modal();
-        var activityId = activityModel.pk();
+        var activityId = challengeModel.pk();
         var formData = $('#activityform' + activityId).serialize();
         $.post('/lighterprints/api/do-activity', formData, function(data) {
                 if (data.success) {
                     ko.mapping.fromJSON(data.viewModel, viewModel);
                     console.debug("successfully performed activity");
-                    viewModel.lastPerformedActivity(activityModel.display_name());
-                    viewModel.lastPerformedActivityPoints(activityModel.points());
+                    viewModel.lastPerformedActivity(challengeModel.display_name());
+                    viewModel.lastPerformedActivityPoints(challengeModel.points());
                     // FIXME: hacky
                     $('#activityPerformedModal .progress').addClass('hide');
                     $('#activityPerformedModalText').removeClass('hide');
