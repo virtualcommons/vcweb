@@ -1,8 +1,8 @@
 {% extends "participant/base.html" %}
 
-{% block page %}
+{% block content %}
 <form class='form-horizontal'>
-    <h4>Experimenter Panel</h4>
+    <h2>Experimenter Panel</h2>
     <div class='control-group'>
         <label class='control-label' for='set-resource-level'>Resource level</label>
         <div class='controls'>
@@ -41,38 +41,29 @@
     </div>
 </fieldset>
 </form>
-<h4>Template Preview</h4>
-<div class='row'>
-    <div class='span6'>
-        <h3>My Status</h3>
-        <div class='alert alert-info'>
-            You harvested <strong><span class='text-success' data-bind='text:lastHarvestDecision'></span> <i class='icon-leaf'></i></strong> trees last round.
-        </div>
-        <div class='alert alert-info'>
-            You have <strong><span class='text-success' data-bind='text: storage'></span> <i class='icon-leaf'></i></strong> trees stored.
-        </div>
-    </div>
-    <div class='span6'>
-        <h3>My Group Status</h3>
-        <table class='table table-bordered table-condensed'>
-            <thead>
-                <tr><th>Player</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
-            </thead>
-            <tbody data-bind='foreach: groupData'>
-            <tr class='success'>
-                <td data-bind='text: groupId'></td>
-                <td data-bind='text: resourceLevel'></td>
-                <td data-bind='text: totalStorage'></td>
-                <td data-bind='text: survivalCost'></td>
-                <td data-bind='text: regrowthRate'></td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
+<h2>Template Preview</h2>
 <div data-bind='template: { name: roundType() }'>
 </div>
-{% endblock page %}
+{% endblock content %}
+
+{% block sidebar %}
+<h3>Chat</h3>
+<div class='chat-sidebar'>
+    <div id='chat-div' class='chat messages'>
+        <div class='alert alert-message' data-bind="foreach: chatMessages">
+            #<b data-bind="text: participant"></b>: <span data-bind="text: message"></span><br>
+        </div>
+    </div>
+    <form id="chatform">
+        <div class='input-prepend'>
+            <span class='add-on'><i class='text-info icon-comment'></i></span>
+            <input id='chatText' type="text" placeholder="Enter a chat message">
+        </div>
+        <button class='disabled btn btn-primary' type='submit' data-bind='click: submitChatMessage'>Send</button>
+    </form>
+</div>
+
+{% endblock sidebar %}
 
 {% block javascript %}
 {{ block.super }}
@@ -93,10 +84,10 @@
 <h3>Instructions</h3>
 <p>
 You have been randomly assigned to a group of size <strong data-bind='text:participantsPerGroup'></strong>.
-In this experiment you will be sharing a resource (forest?) with the other members of your group.  The experiment consists of 
-<span class='badge badge-important' data-bind='text:numberOfRounds'></span> rounds.  In each round you will make a
-decision of how many resources to harvest.  The resources can regenerate over time as long as there some left, at a rate
-of (do we describe the regrowth rate here?).  The resources you collect will be put into your <b>storage</b>
+In this experiment you will be sharing a virtual forest with the other members of your group.  In each round you will
+make a decision of how many resources to harvest.  The resources can regenerate over time as long as there some left, at
+a rate
+of (do we describe the regrowth rate here?).  The resources you collect will be put into your <b>storage</b>.
 </p>
 <h4>Survival</h4>
 Each round you must have <b>at least</b> <span class='badge badge-important' data-bind='text: survivalCost'></span> resources in your storage to survive.
@@ -106,19 +97,56 @@ To better illustrate, we will begin with two practice rounds.  These rounds will
 </p>
 </script>
 <script type='text/html' id='REGULAR'>
-<h3 data-bind='text: roundSequenceLabel'></h3>
+<div class='row'>
+    <div class='span4'>
+        <h3>My Status</h3>
+        <div class='alert alert-message'>
+            You harvested <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span> <i class='icon-leaf'></i></strong> trees last round.
+        </div>
+        <div class='alert alert-message'>
+            You have <strong class='text-success'><span data-bind='text: storage'></span> <i class='icon-leaf'></i></strong> trees stored.
+        </div>
+    </div>
+    <div class='span5'>
+        <h3>Group Status</h3>
+        <table class='table table-bordered table-condensed'>
+            <thead>
+                <tr><th>Player</th>
+                    <!-- ko foreach: playerData -->
+                    <th data-bind='text: id'></th>
+                    <!-- /ko -->
+                </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Last harvest</td>
+                <!-- ko foreach: playerData -->
+                <td data-bind='text: lastHarvestDecision'></td>
+                <!-- /ko -->
+            </tr>
+            <tr>
+                <td>Storage</td>
+                <!-- ko foreach: playerData -->
+                <td data-bind='text: storage'></td>
+                <!-- /ko -->
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<h3>Forest</h3>
 <div data-bind='if: practiceRound'>
 <div class='alert alert-error alert-block'>
-<h4>NOTE</h4>
+<h4>PRACTICE ROUND</h4>
 This is a practice round.  The decisions you make in this round will <b>NOT</b> contribute to your earnings.
 </div>
 </div>
 
 <div data-bind="ifnot: isResourceEmpty" id='resourceDisplay'>
+    <div class='alert alert-info'>There are <strong class='badge badge-success' data-bind='text:resourceLevel'></strong> trees remaining in the forest.</div>
     <div data-bind='style: { width: resourceImageWidth, height: resourceImageHeight, background: resourceImageUrl }'>
         &nbsp;
     </div>
-    <div class='alert alert-info'><h4>Note</h4>Displaying <strong data-bind='text:resourcesToDisplay'></strong> resource(s) of <strong data-bind='text:resourceLevel'></strong></div>
 </div>
 <div data-bind="if: isResourceEmpty">
     <div style='padding: 8px; margin: auto; border: solid 1px; background: url("{{STATIC_URL}}images/forestry/deforestation.jpg") no-repeat center; height: 282px; width:425px;'>
@@ -126,33 +154,50 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
     </div>
     <div class='alert alert-error'>There are no more resources to harvest. Please wait until the next round begins.</div>
 </div>
-<div class='alert alert-message'>
-    You require <span class='badge badge-important' data-bind='text:survivalCost'></span> to survive and you currently have <strong data-bind='text: storage'></strong> resources stored.  
-    There are <span class='badge badge-warning' data-bind='text: resourceLevel'></span> resources left for your entire
-    group, and you can harvest up to <strong data-bind='text:maxHarvestDecision'></strong> resources.
-</div>
-
 <div data-bind='if: hasSubmit'>
 <div class='alert alert-error'>
-    You have submitted a decision to harvest <span class='badge badge-important' data-bind='text: harvestDecision'></span> resources.  You may change your
-    decision until the experimenter ends the round. (TIM: is this ok?)
+    You have submitted a decision to harvest <span class='badge badge-important' data-bind='text: harvestDecision'></span> resources.
 </div>
 </div>
 
+<h3>Observe Other Group</h3>
+<div class='row'>
+<div class='span4'>
+<table>
+<tr>
+<td>
+<button class='btn' data-bind='click: showOtherGroup'><i class='icon-eye-open'></i> Observe</a>
+</td>
+<td>
+<img src='{{STATIC_URL}}/images/boundaries/observe.png' alt='observe'>
+</td>
+</tr>
+</table>
+</div>
+<div class='span5'>
+<div data-bind='if: shouldShowOtherGroup'>
+<table class='table table-bordered table-condensed'>
+<caption>Observation Results</caption>
+<thead>
+<tr><th></th><th>Other Group</th></tr>
+</thead>
+<tbody>
+<tr><td>trees in forest</td><td data-bind='text:otherGroupResourceLevel'></td></tr>
+<tr><td>average harvest</td><td data-bind='text:otherGroupAverageHarvest'></td></tr>
+<tr><td>average storage</td><td data-bind='text:otherGroupAverageStorage'></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<h3>Harvest</h3>
 <div data-bind='ifnot: isResourceEmpty'>
-<form id='vcweb-form' action='' method='post' class='form-horizontal'>
+<form id='vcweb-form' action='' method='post' class='form-inline'>
     {% csrf_token %}
     <div class='control-group'>
-        <label class='control-label' for='harvestDecision'>
-        Harvest Decision
-        </label>
         <div class='controls'>
-            <input id='harvestDecision' placeholder='0' type="number" name='harvest_decision' class='required' min="0" data-bind="value: harvestDecision, attr: { max: maxHarvestDecision }" /> 
             <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
-        </div>
-    </div>
-    <div class='control-group'>
-        <div class='controls'>
+            <input id='harvestDecision' placeholder='Enter a harvest decision' type="number" name='harvest_decision' class='required' min="0" data-bind="value: harvestDecision, attr: { max: maxHarvestDecision }" /> 
             <button id='submitDecision' data-bind='click: submitDecision' type='submit' class='btn'>Harvest</button>
         </div>
     </div>
@@ -164,6 +209,10 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
+            model.showOtherGroup = function() {
+                model.shouldShowOtherGroup(! model.shouldShowOtherGroup());
+            }
+            model.shouldShowOtherGroup = ko.observable(false);
             model.harvestDecision = ko.observable(0);
             model.chatMessages = ko.observableArray([]);
             model.numberOfTreesPerRow = ko.observable(10);

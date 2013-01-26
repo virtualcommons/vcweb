@@ -13,6 +13,7 @@ from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_survival_cost, get_resource_level,
         get_total_storage)
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +44,11 @@ def participate(request, experiment_id=None):
 
 def to_json(experiment, participant, **kwargs):
     pgr = participant.get_participant_group_relationship(experiment)
-    group = pgr.group
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
     experiment_model_dict = experiment.as_dict(include_round_data=False, attrs={})
     group_data = []
+    player_data = []
     regrowth_rate = get_regrowth_rate(current_round)
     survival_cost = get_survival_cost(current_round)
     for group in experiment.group_set.all():
@@ -59,7 +60,18 @@ def to_json(experiment, participant, **kwargs):
             'survivalCost': survival_cost,
             })
 
+    for participant_group_relationship in pgr.group.participant_group_relationship_set.all():
+        player_data.append({
+            'id': participant_group_relationship.participant_number,
+            'lastHarvestDecision': random.randint(0, 10),
+            'storage': random.randint(0, 30),
+            })
     experiment_model_dict['groupData'] = group_data
+    experiment_model_dict['otherGroupResourceLevel'] = random.randint(50, 100)
+    experiment_model_dict['otherGroupAverageHarvest'] = random.uniform(0, 10)
+    experiment_model_dict['otherGroupAverageStorage'] = random.uniform(10, 30)
+
+    experiment_model_dict['playerData'] = player_data
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
     experiment_model_dict['numberOfRounds'] = ec.final_sequence_number
     experiment_model_dict['roundType'] = current_round.round_type
