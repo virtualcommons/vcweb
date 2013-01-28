@@ -244,42 +244,34 @@
 </ul>
 
 <h3 class='muted'><i class='lighterprints-blue icon-group'></i> Team Activity <span class='pull-right'><small><a href='#group-wall' data-toggle='tab'>View all</a></small></span></h3>
-<ul class='nav nav-list' data-bind='foreach: groupActivity.slice(0, 3)'>
-    <li>
-    <table class='table'>
-        <tr>
-            <td style='vertical-align: top'><i class='icon-star text-warning'></i></td>
-            <td>
-                <strong data-bind='text: participant_name'></strong>
-                <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
-                <div>earned <span class='lighterprints-green' data-bind='text:points'></span><i class='icon-leaf lighterprints-green'></i>
-                    for <span data-bind='text: $root.groupName'></span> by completing <em><span data-bind='text: display_name'></span></em>.
-                </div>
-            </td>
-        </tr>
-    </table>
-    </li>
-</ul>
-<ul class='nav nav-list' data-bind='foreach: chatMessages.slice(0, 3)'>
-    <li>
-    <table class='table'>
-        <tr>
-            <td style='vertical-align: top'><i class='icon-comment lighterprints-blue'></i></td>
-            <td>
-                <strong data-bind='text: participant_name'></strong>
-                <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
-                <p>
-                <small><i class='icon-quote-left'></i></small>
-                <span data-bind='text:message'></span>
-                <small><i class='icon-quote-right'></i></small>
-                </p>
-            </td>
-        </tr>
-    </table>
-    </li>
-</ul>
-
-
+<table class='table'>
+    <tbody data-bind='foreach: groupActivity.slice(0, 3)'>
+    <tr>
+        <td style='vertical-align: top'><i class='icon-star text-warning'></i></td>
+        <td>
+            <strong data-bind='text: participant_name'></strong>
+            <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+            <div>earned <span class='lighterprints-green' data-bind='text:points'></span><i class='icon-leaf lighterprints-green'></i>
+                for <span data-bind='text: $root.groupName'></span> by completing <em><span data-bind='text: display_name'></span></em>.
+            </div>
+        </td>
+    </tr>
+    </tbody>
+    <tbody data-bind='foreach: chatMessages.slice(0, 3)'>
+    <tr>
+        <td style='vertical-align: top'><i class='icon-comment lighterprints-blue'></i></td>
+        <td>
+            <strong data-bind='text: participant_name'></strong>
+            <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+            <p>
+            <small><i class='icon-quote-left'></i></small>
+            <span data-bind='text:message'></span>
+            <small><i class='icon-quote-right'></i></small>
+            </p>
+        </td>
+    </tr>
+    </tbody>
+</table>
 {% endblock sidebar %}
 {% block javascript %}
 {{ block.super }}
