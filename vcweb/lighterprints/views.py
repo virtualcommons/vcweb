@@ -25,6 +25,7 @@ from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_a
 from collections import defaultdict
 import itertools
 import logging
+import re
 #import tempfile
 logger = logging.getLogger(__name__)
 
@@ -210,6 +211,15 @@ def group_activity(request, participant_group_id):
         logger.warning("authenticated user %s tried to retrieve group activity for %s", request.user, participant_group_relationship)
         return HttpResponse(dumps({'success': False, 'message': 'Invalid authz request'}), content_type='application/json')
 
+def abbreviated_timesince(date):
+    s = timesince(date)
+    s = re.sub(r'\sdays?', 'd', s)
+    s = re.sub(r'\sminutes?', 'm', s)
+    s = re.sub(r'\shours?', 'h', s)
+    s = re.sub(r'\sweeks?', 'w', s)
+    s = re.sub(r'\smonths?', 'm', s)
+    return s.replace(',', '')
+
 def get_group_activity_tuple(participant_group_relationship, number_of_activities=10, retrieve_all=True):
     group = participant_group_relationship.group
     social_activity = []
@@ -219,7 +229,7 @@ def get_group_activity_tuple(participant_group_relationship, number_of_activitie
         likes = [like.to_dict() for like in Like.objects.filter(target_data_value=chat_message.pk)]
         social_activity.append({
             'pk': chat_message.pk,
-            'date_created': timesince(chat_message.date_created),
+            'date_created': abbreviated_timesince(chat_message.date_created),
             'message': chat_message.value,
             'participant_name': escape(pgr.participant.full_name),
             'participant_number': pgr.participant_number,
@@ -235,7 +245,7 @@ def get_group_activity_tuple(participant_group_relationship, number_of_activitie
     for activity_prdv in performed_activities[:number_of_activities]:
         activity = activity_prdv.value
         activity_performed_dict = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
-        activity_performed_dict['date_created'] = timesince(activity_prdv.date_created)
+        activity_performed_dict['date_created'] = abbreviated_timesince(activity_prdv.date_created)
         activity_performed_dict['date_performed'] = activity_prdv.date_created
         pgr = activity_prdv.participant_group_relationship
         activity_performed_dict['participant_number'] = pgr.participant_number
