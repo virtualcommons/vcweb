@@ -49,7 +49,7 @@
             -->
             <div class='row lighterprints-scoreboard'>
                 <div class='span2'>
-                    <h5>Today's Score</h5>
+                    <h5><span class='uppercase'>Today's Score</span><i id='score-info' rel='popover' data-placement='top' data-content="This is your team's average score for the day.  Complete high-value challenges to rank your team up." class='popover pull-right icon-info-sign'></i></h5>
                     <table>
                         <tr>
                             <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: averagePoints'></span></td>
@@ -58,17 +58,17 @@
                     </table>
                 </div>
                 <div class='span2 left-divider'>
-                    <h5>Current Level</h5>
+                    <h5><span class='uppercase'>Current Level</span></h5>
                     <h1><span data-bind='text: groupLevel'></span></h1>
                     <br>
                 </div>
                 <div class='span2 left-divider'>
-                    <h5>Today's Progress</h5>
+                    <h5 class='uppercase'>Today's Progress</h5>
                     <h1><span data-bind='text: averagePoints'></span> / <span data-bind='text:pointsToNextLevel'></span></h1>
                     <br>
                 </div>
                 <div class='span2 left-divider'>
-                    <h5>Time Remaining</h5>
+                    <h5 class='uppercase'>Time Remaining</h5>
                     <h1><span data-bind='text:hoursLeft'></span>h <span data-bind='text:minutesLeft'></span>m</h1>
                     <br>
                 </div>
@@ -207,24 +207,29 @@
         </div>
     </div>
     <div class='modal-footer'>
-        <button class='btn' data-dismiss='modal' aria-hidden='true'>Continue</button>
+        <button class='btn btn-primary' data-dismiss='modal' aria-hidden='true'>Continue</button>
     </div>
 </div>
 <div id='activityPerformedModal' class='modal hide fade' tabindex='-1' role='dialog'
     aria-labelledby='activityPerformedModalLabel'
     aria-hidden='true'>
     <div class='modal-header'>
-        <h3 id='activityPerformedModalLabel'>Performing activity</h3>
+        <h3 id='activityPerformedModalLabel'>Challenge Completed</h3>
     </div>
     <div class='modal-body'>
         <div class="progress progress-striped active">
             <div class="bar" style="width: 100%;"></div>
         </div>
-        <p id='activityPerformedModalText' class='hide'>
-        You have successfully performed <span class='text-success' data-bind='text:lastPerformedActivity'></span>,
-        earning <span class='badge badge-success' data-bind='text: lastPerformedActivityPoints'></span> green points for
-        your group.
-        </p>
+        <div id='activityPerformedModalText' data-bind='with: lastPerformedActivity' class='hide'>
+            <div class='row-fluid pagination-centered'>
+                <img data-bind='attr: {src: "{{STATIC_URL}}/images/lighterprints/badges/" + name() + ".png" }'>
+            </div>
+            <h3>You completed a challenge!</h3>
+            <p>
+                <strong><em data-bind='text: display_name'></em></strong> for <span class='lighterprints-green' data-bind='text: points'></span><i class='icon-leaf lighterprints-green'></i>
+            </p>
+            <p data-bind='text: summary'></p>
+        </div>
     </div>
     <div class='modal-footer'>
         <button class='btn disabled' data-dismiss='modal' aria-hidden='true'>Continue</button>
@@ -315,21 +320,22 @@ $(function() {
         $.post('/lighterprints/api/do-activity', formData, function(data) {
                 if (data.success) {
                     ko.mapping.fromJSON(data.viewModel, viewModel);
-                    console.debug("successfully performed activity");
-                    viewModel.lastPerformedActivity(challengeModel.display_name());
-                    viewModel.lastPerformedActivityPoints(challengeModel.points());
-                    // FIXME: hacky
+                    viewModel.lastPerformedActivity(challengeModel);
+                    // FIXME: find a better way to handle this?
                     $('#activityPerformedModal .progress').addClass('hide');
                     $('#activityPerformedModalText').removeClass('hide');
                     $('#activityPerformedModal .btn').removeClass('disabled');
                 }
                 else {
+                    console.debug("ERROR: " + data.message);
                     viewModel.errorMessage("Unable to perform activity: " + data.message);
                     $('#activityUnavailableModal').modal();
                 }
             });
     };
     ko.applyBindings(viewModel);
+    // FIXME: use $('.popover').popover() if we end up having a lot more of these.
+    $('#score-info').popover();
 });
 </script>
 <script type='text/html' id='challenges-template'>

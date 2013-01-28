@@ -67,15 +67,17 @@ div.lighterprints-scoreboard h2 {
     font-family: 'TrumpGothicWestW01-Bold', sans-serif;
 }
 div.lighterprints-scoreboard h5 {
-    text-transform: uppercase;
     font-size: 1.1em;
     color: #A9A9A9;
     font-weight: normal;
-    padding-bottom: 10px;
+    padding-bottom: 15px;
 }
 .lighterprints-green {
     color: #99CC33;
 }
 .lighterprints-blue {
     color: #3399FF;
+}
+.uppercase {
+    text-transform: uppercase;
 }
