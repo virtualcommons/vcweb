@@ -1,8 +1,9 @@
 {% extends "participant/base.html" %}
 
 {% block content %}
-<form class='form-horizontal'>
+<form class='form-inline'>
     <h2>Experimenter Panel</h2>
+    <!--
     <div class='control-group'>
         <label class='control-label' for='set-resource-level'>Resource level</label>
         <div class='controls'>
@@ -27,21 +28,22 @@
             <input class='input-small' step='0.1' type='number' id='set-regrowth-rate' data-bind='value:regrowthRate' />
         </div>
     </div>
+    -->
     <div class='control-group'>
-        <label class='control-label' for='pick-template'>Round template to display</label>
         <div class='controls'>
+            <label class='control-label' for='pick-template'>Round template</label>
             <select id='pick-template'>
                 <option value='WELCOME'>Welcome</option>
                 <option value='INSTRUCTIONS' selected>Instructions</option>
                 <option value='PRACTICE'>Practice round</option>
                 <option value='REGULAR'>Actual round</option>
-                <option value='CHAT'>Chat</option>
             </select>
+            <label class='checkbox'>
+                <input type='checkbox' data-bind='click: toggleChat' checked='checked' id='chat-toggle'> Toggle Chat
+            </label>
         </div>
     </div>
-</fieldset>
 </form>
-<h2>Template Preview</h2>
 <div data-bind='template: { name: roundType() }'>
 </div>
 {% endblock content %}
@@ -54,12 +56,12 @@
             #<b data-bind="text: participant"></b>: <span data-bind="text: message"></span><br>
         </div>
     </div>
-    <form id="chatform">
+    <form id="chatform" class='form-inline'>
         <div class='input-prepend'>
             <span class='add-on'><i class='text-info icon-comment'></i></span>
-            <input id='chatText' type="text" placeholder="Enter a chat message">
+            <input class='chat-action' id='chatText' type="text" placeholder="Enter a chat message">
+            <button class='chat-action btn btn-primary' data-bind='click: submitChatMessage'>Send</button>
         </div>
-        <button class='disabled btn btn-primary' type='submit' data-bind='click: submitChatMessage'>Send</button>
     </form>
 </div>
 
@@ -253,12 +255,30 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                     $('#chatText').focus();
                 }
             }
+            model.toggleChat = function(data, evt) {
+                var enabled = $('#chat-toggle').is(':checked');
+                console.debug("enabled: " + enabled);
+                if (enabled) {
+                    $('.chat-action').removeClass('disabled').attr('disabled', ! enabled);
+                }
+                else {
+                    $('.chat-action').addClass('disabled').attr('disabled', ! enabled);
+                }
+                return true;
+            }
             return model;
         }
         function update(experimentModel) {
             return function(data) {
                 ko.mapping.fromJS(data, experimentModel);
             }
+        }
+
+        function enableChat() {
+            $('.chat-action').removeClass('disabled').attr('disabled', false);
+        }
+        function disableChat() {
+            $('.chat-action').addClass('disabled').attr('disabled', true);
         }
         function initialize(experimentModelJson) {
             var experimentModel = new ExperimentModel(experimentModelJson);
@@ -281,6 +301,9 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 }
                 else if (templateName === "REGULAR") {
                     experimentModel.practiceRound(false);
+                }
+                else if (templateName === "CHAT") {
+
                 }
                 else {
                     experimentModel.roundType(templateName);

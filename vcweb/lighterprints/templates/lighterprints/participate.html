@@ -241,10 +241,10 @@
 <h3 class='muted'><i class='lighterprints-blue icon-group'></i> Team Activity <span class='pull-right'><small><a href='#group-wall' data-toggle='tab'>View all</a></small></span></h3>
 <ul class='nav nav-list' data-bind='foreach: groupActivity.slice(0, 3)'>
     <li>
-    <table>
+    <table class='table'>
         <tr>
             <td style='vertical-align: top'><i class='icon-star text-warning'></i></td>
-            <td style='vertical-align: top'>
+            <td>
                 <strong data-bind='text: participant_name'></strong>
                 <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
                 <div>earned <span class='lighterprints-green' data-bind='text:points'></span><i class='icon-leaf lighterprints-green'></i>
@@ -254,26 +254,24 @@
         </tr>
     </table>
     </li>
-    <li class='divider'></li>
 </ul>
 <ul class='nav nav-list' data-bind='foreach: chatMessages.slice(0, 3)'>
     <li>
-    <table>
+    <table class='table'>
         <tr>
             <td style='vertical-align: top'><i class='icon-comment lighterprints-blue'></i></td>
-            <td width='100%'>
+            <td>
                 <strong data-bind='text: participant_name'></strong>
                 <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
                 <p>
-                <i class='icon-quote-left'></i>
+                <small><i class='icon-quote-left'></i></small>
                 <span data-bind='text:message'></span>
-                <i class='icon-quote-right'></i>
+                <small><i class='icon-quote-right'></i></small>
                 </p>
             </td>
         </tr>
     </table>
     </li>
-    <li class='divider'></li>
 </ul>
 
 
