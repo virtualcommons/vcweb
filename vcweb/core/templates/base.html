@@ -84,7 +84,7 @@
     {% endif %}
 
     {% block page %}
-    <div class='row'>
+    <div class='row' id='page'>
         <div class='span9'>
             {% block content %}
             {% endblock %}
@@ -99,14 +99,26 @@
 <div id='footer'>
     <footer class="footer">
         {% block footer %}
-        <p>
-        <a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a><br/>
-        <a href='http://shesc.asu.edu'>School of Human Evolution and Social Change</a> 
-        </p>
-        <p class='legal'>
-        Copyright (c) {% now "Y" %} Arizona Board of Regents.  <br/>
-        <br />
-        </p>
+        <div class='container'>
+            <div class='row'>
+                <div class='span9'>
+                    {% block footerlinks %}
+                    <ul class='nav-footer'>
+                        <li><a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a></li>
+                        <li><a href='http://shesc.asu.edu'>School of Human Evolution and Social Change</a></li>
+                        <li><a href='http://www.azregents.edu/'>&copy; {% now "Y" %} Arizona Board of Regents</a></li>
+                    </ul>
+                    {% endblock footerlinks %}
+                </div>
+                <div class='span3'>
+                    {% block footerlogo %}
+                    <ul class='nav-footer'>
+                        <li><a class='pull-right brand {% active request home %}' href='{{home}}'><img class='logo' src='{{STATIC_URL}}images/vcweb-logo.png' width='30' height='23' alt='vcweb logo'/>virtual commons</a></li>
+                    </ul>
+                    {% endblock footerlogo %}
+                </div>
+            </div>
+        </div>
         {% endblock footer %}
         {% with jquery_version="1.8.3" %}
         <script type='text/javascript' src='//ajax.googleapis.com/ajax/libs/jquery/{{jquery_version}}/jquery.min.js'></script>

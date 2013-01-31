@@ -6,7 +6,7 @@
 {% endblock %}
 {% block headerlinks %}
 <ul class='nav nav-tabs' id='lfp-navtabs'>
-    <li><a class='brand'><img alt='footprint logo' src='{{STATIC_URL}}/images/lighterprints/logo.png' width=30 height=30> lighter<strong class='lighterprints-green'>footprints</strong></a></li>
+    <li><a class='brand'><img alt='footprint logo' src='{{STATIC_URL}}/images/lighterprints/logo.png' width="30" height="30"> lighter<strong class='lighterprints-green'>footprints</strong></a></li>
     <li class='active'><a href='#dashboard' data-toggle='tab'><i class='icon-dashboard'></i> Dashboard</a></li>
     <li><a href='#challenges' data-toggle='tab'><i class='icon-star-empty'></i> Challenges</a></li>
     <li><a href='#group-wall' data-toggle='tab'><i class='icon-comments-alt'></i> My Team</a></li>
@@ -274,6 +274,18 @@
 </table>
 </div>
 {% endblock sidebar %}
+{% block footerlinks %}
+<ul class='nav-footer'>
+    <li><a href='#dashboard' data-toggle='tab'>Dashboard</a></li>
+    <li><a href='#challenges' data-toggle='tab'>Challenges</a></li>
+    <li><a href='#group-wall' data-toggle='tab'>My Team</a></li>
+    <li><a href='#help' data-toggle='tab'>Help</a></li>
+    <li class='pull-right'><a>&copy; {% now "Y" %} Arizona Board of Regents</a></li>
+</ul>
+{% endblock footerlinks %}
+{% block footerlogo %}
+<div class='footer-logo'><img alt='footprint logo' src='{{STATIC_URL}}/images/lighterprints/logo.png' width="30" height="30"> lighter<strong>footprints</strong></div>
+{% endblock footerlogo %}
 {% block javascript %}
 {{ block.super }}
 <script src="//fast.fonts.com/jsapi/e86344be-530a-495b-be28-7a22a9cda219.js"></script>

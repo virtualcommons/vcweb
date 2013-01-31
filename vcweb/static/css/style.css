@@ -42,24 +42,33 @@ label.error {
     margin-bottom: 5px;
 }
 #footer {
-    width: 100%;
-    height: 100px;
-    margin: 0 auto;
-    padding: 0;
-    background: url(guarantee/images/img02.gif) repeat-x left top;
-}
-#footer p {
-    margin: 0;
-    padding: 15px 0px 0px 0px;
-    text-align: center;
-    line-height: normal;
-    text-transform: uppercase;
+    margin-top: 10px;
+    height: 60px;
+    background-color: #42545E;
+    color: #FFF;
     font-size: .8em;
-    color: #7B1605;
 }
 #footer a {
-    color: #36241B;
-    text-decoration: underline;
+    color: #CCC;
+}
+.nav-footer {
+    padding-top: 20px;
+    margin: auto;
+}
+.footer-logo {
+    padding-top: 15px;
+    padding-left: 10px;
+    margin-left: 20px;
+    letter-spacing: 1pt;
+    color: #CCC;
+}
+.nav-footer li {
+    display:inline;
+    list-style-type: none;
+    padding-right: 20px;
+}
+li.pull-right {
+    padding-right: 0px !important;
 }
 .scrollable-messages {
     height: 20em;
