@@ -82,4 +82,5 @@ li.pull-right {
 .left-divider {
     padding-left: 1.1em;
     border-left: 1px solid #CCC;
+    height: 130px;
 }

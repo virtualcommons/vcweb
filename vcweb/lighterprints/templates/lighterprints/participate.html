@@ -49,7 +49,7 @@
             -->
             <div class='row lighterprints-scoreboard'>
                 <div class='span2'>
-                    <h5><span class='uppercase'>Today's Score</span><i id='score-info' rel='popover' data-placement='top' data-content="This is your team's average score for the day.  Complete high-value challenges to rank your team up." class='pull-right icon-info-sign'></i></h5>
+                    <h5><span class='lighterprints-scoreboard-uppercase'>Today's Score</span><i style='padding: 0 0 0 0; margin: 6px 0;' id='score-info' rel='popover' data-placement='top' data-content="This is your team's average score for the day.  Complete high-value challenges to rank your team up." class='pull-right icon-info-sign'></i></h5>
                     <table>
                         <tr>
                             <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: averagePoints'></span></td>
@@ -58,17 +58,16 @@
                     </table>
                 </div>
                 <div class='span2 left-divider'>
-                    <h5><span class='uppercase'>Current Level</span></h5>
-                    <h1><span data-bind='text: groupLevel'></span></h1>
-                    <br>
+                    <h5><span class='lighterprints-scoreboard-uppercase'>Current Level</span></h5>
+                    <h1><img class='group-level' width="104" height="65" data-bind="attr: { src: '{{STATIC_URL}}/images/lighterprints/rank' + groupLevel() + '.png' }"></h1> <br>
                 </div>
                 <div class='span2 left-divider'>
-                    <h5 class='uppercase'>Today's Progress</h5>
+                    <h5><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span></h5>
                     <h1><span data-bind='text: averagePoints'></span> / <span data-bind='text:pointsToNextLevel'></span></h1>
                     <br>
                 </div>
                 <div class='span2 left-divider'>
-                    <h5 class='uppercase'>Time Remaining</h5>
+                    <h5><span class='lighterprints-scoreboard-uppercase'>Time Remaining</span></h5>
                     <h1><span data-bind='text:hoursLeft'></span>h <span data-bind='text:minutesLeft'></span>m</h1>
                     <br>
                 </div>
