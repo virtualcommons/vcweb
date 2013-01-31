@@ -19,7 +19,7 @@
 <div class='tabbable'>
     <div class='tab-content'>
         <div class='tab-pane active' id='dashboard'>
-            <h1 class='dashboard-header muted'><i class='icon-dashboard'></i> Team Dashboard</h1>
+            <h1 class='dashboard-header'><i class='icon-dashboard'></i> Team Dashboard</h1>
             <!-- FIXME: re-enable this at some point
             <div data-bind='if: firstVisit()'>
             -->
@@ -32,7 +32,7 @@
                     to some common daily activities.
                 </p>
                 <p>
-                    <i class='lighterprints-green icon-leaf'></i> Earn <span style='background-color: #66CC00; color: #FFFFFF;' class='label'>green points</span> by
+                    <i class='lighterprints-green icon-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by
                     completing challenges.  Rank up by <b>increasing your team's average score.</b>.
                 </p>
                 <p>
@@ -49,7 +49,7 @@
             -->
             <div class='row lighterprints-scoreboard'>
                 <div class='span2'>
-                    <h5><span class='uppercase'>Today's Score</span><i id='score-info' rel='popover' data-placement='top' data-content="This is your team's average score for the day.  Complete high-value challenges to rank your team up." class='popover pull-right icon-info-sign'></i></h5>
+                    <h5><span class='uppercase'>Today's Score</span><i id='score-info' rel='popover' data-placement='top' data-content="This is your team's average score for the day.  Complete high-value challenges to rank your team up." class='pull-right icon-info-sign'></i></h5>
                     <table>
                         <tr>
                             <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: averagePoints'></span></td>
@@ -237,13 +237,13 @@
 </div>
 {% endblock content %}
 {% block sidebar %}
-<h3 class='muted'><i class='text-warning icon-trophy'></i> Leaderboard</h3>
+<div class='lighterprints-sidebar'>
+<h3 class='lighterprints-sidebar-header'><i class='text-warning icon-trophy'></i> Leaderboard</h3>
 <ul class='nav nav-list' data-bind='foreach: groupData'>
-    <li><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold text-info": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-success' data-bind='text: averagePoints'></span></li> 
+    <li><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-lighterprints-green' data-bind='text: averagePoints'></span></li> 
     <li class='divider'></li>
 </ul>
-
-<h3 class='muted'><i class='lighterprints-blue icon-group'></i> Team Activity <span class='pull-right'><small><a href='#group-wall' data-toggle='tab'>View all</a></small></span></h3>
+<h3 class='lighterprints-sidebar-header'><i class='lighterprints-blue icon-group'></i> Team Activity <span class='pull-right'><small><a href='#group-wall' data-toggle='tab'>View all</a></small></span></h3>
 <table class='table'>
     <tbody data-bind='foreach: groupActivity.slice(0, 3)'>
     <tr>
@@ -272,6 +272,7 @@
     </tr>
     </tbody>
 </table>
+</div>
 {% endblock sidebar %}
 {% block javascript %}
 {{ block.super }}

@@ -1,3 +1,6 @@
+.lighterprints-gray {
+    background-color: #F7F7F7;
+}
 .upcoming-challenge, .expired-challenge, .perform-challenge, .completed-challenge {
     text-transform: uppercase;
     color: #FFF !important;
@@ -43,6 +46,19 @@
     border-color: #59c114 #59c114 hsl(96, 81%, 40.5%);
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.09);
 }
+h1.dashboard-header {
+    font-family:"Open Sans";
+    font-size:1.8em;
+    font-weight: normal;
+    line-height:133%;
+    color:rgb(201,205,209);
+    text-align:left;
+    padding-bottom:5px;
+    /* Firefox v4.0+ , Safari v5.1+ , Chrome v10.0+, IE v10+ and by Opera v10.5+ */
+    text-shadow:0px 1px 1px rgb(255,255,255);
+    -ms-filter:"progid:DXImageTransform.Microsoft.dropshadow(OffX = 0,OffY = 1,Color = #ffffffff,Positive = true)";zoom:1;
+    filter:progid:DXImageTransform.Microsoft.dropshadow(OffX = 0,OffY = 1,Color = #ffffffff,Positive = true);
+}
 div.lighterprints-scoreboard {
     color: #A9A9A9;
 }
@@ -67,17 +83,42 @@ div.lighterprints-scoreboard h2 {
     font-family: 'TrumpGothicWestW01-Bold', sans-serif;
 }
 div.lighterprints-scoreboard h5 {
+    letter-spacing:1pt;
+    line-height:187%;
+    color:rgb(65,85,93);
+    /* Firefox v4.0+ , Safari v5.1+ , Chrome v10.0+, IE v10+ and by Opera v10.5+ */
+    text-shadow:0px 1px 1px rgb(255,255,255);
+    -ms-filter:"progid:DXImageTransform.Microsoft.dropshadow(OffX = 0,OffY = 1,Color = #ffffffff,Positive = true)";zoom:1;
+    filter:progid:DXImageTransform.Microsoft.dropshadow(OffX = 0,OffY = 1,Color = #ffffffff,Positive = true);
     font-size: 1.1em;
-    color: #A9A9A9;
     font-weight: normal;
     padding-bottom: 15px;
 }
+.badge-lighterprints-green {
+    background-color: #95CB29;
+    color: #FFFFFF;
+}
+
 .lighterprints-green {
-    color: #99CC33;
+    color: #95CB29;
 }
 .lighterprints-blue {
-    color: #3399FF;
+    color: #13a5e6;
 }
 .uppercase {
     text-transform: uppercase;
 }
+.lighterprints-sidebar {
+    font-family: 'Entypo', Arial, Helvetica, sans-serif;
+    background-color: #FFFFFF;
+    padding: 10px 20px 10px 20px;
+}
+.lighterprints-leaderboard {
+    font-weight: normal;
+    color: #41555d;
+}
+.lighterprints-footer {
+    background-color: #42545E;
+    color: #FFF;
+}
+.

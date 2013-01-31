@@ -1159,7 +1159,7 @@ class Group(models.Model):
 
     @property
     def name(self):
-        return u"Team %s" % string.ascii_uppercase[self.number]
+        return u"Team %s" % string.ascii_uppercase[max(self.number - 1, 0)]
 
     @property
     def channel(self):
@@ -1444,7 +1444,7 @@ class Participant(CommonsUser):
         return ParticipantExperimentRelationship.objects.select_related(depth=1).get(participant=self, experiment=experiment)
 
     def get_participant_group_relationship(self, experiment):
-        return ParticipantGroupRelationship.objects.get_participant_group(self, experiment)
+        return ParticipantGroupRelationship.objects.get_relationship(self, experiment)
 
     def experiments_with_status(self, status=Experiment.ACTIVE):
         return self.experiment_relationship_set.filter(experiment__status=status)
@@ -1499,7 +1499,7 @@ class ParticipantGroupRelationshipManager(models.Manager):
     def by_experiment(self, experiment):
         return self.select_related(depth=1).filter(group__experiment=experiment)
 
-    def get_participant_group(self, participant, experiment):
+    def get_relationship(self, participant, experiment):
         try:
             return self.select_related(depth=1).get(group__experiment=experiment, participant=participant)
         except ParticipantGroupRelationship.DoesNotExist:

@@ -31,12 +31,11 @@ def participate(request, experiment_id=None):
         # FIXME: is it bad practice to have GET return HTML and POST return JSON?
         # send updated experiment json?
         return HttpResponse(dumps({ 'success': True, 'experimentModelJson': to_json(experiment, participant, hasSubmit=True)}))
+# FIXME: still need to look up participant group relationship and throw 404 if invalid
 
-    participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
 # sends view model JSON to the template to be processed by knockout
     return render_to_response('boundaries/participate.html', {
         'auth_token': participant.authentication_token,
-        'participant_experiment_relationship': participant_experiment_relationship,
         'experiment': experiment,
         'experimentModelJson': to_json(experiment, participant),
         },

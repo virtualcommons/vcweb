@@ -257,7 +257,6 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             }
             model.toggleChat = function(data, evt) {
                 var enabled = $('#chat-toggle').is(':checked');
-                console.debug("enabled: " + enabled);
                 if (enabled) {
                     $('.chat-action').removeClass('disabled').attr('disabled', ! enabled);
                 }
@@ -273,12 +272,13 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 ko.mapping.fromJS(data, experimentModel);
             }
         }
-
         function enableChat() {
             $('.chat-action').removeClass('disabled').attr('disabled', false);
+            $('#chat-toggle').prop('checked', true);
         }
         function disableChat() {
             $('.chat-action').addClass('disabled').attr('disabled', true);
+            $('#chat-toggle').prop('checked', false);
         }
         function initialize(experimentModelJson) {
             var experimentModel = new ExperimentModel(experimentModelJson);
@@ -298,16 +298,17 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 if (templateName === "PRACTICE") {
                     templateName = "REGULAR";
                     experimentModel.practiceRound(true);
+                    disableChat();
                 }
                 else if (templateName === "REGULAR") {
                     experimentModel.practiceRound(false);
+                    disableChat();
                 }
                 else if (templateName === "CHAT") {
 
                 }
                 else {
-                    experimentModel.roundType(templateName);
-                    return false;
+                    enableChat();
                 }
                 experimentModel.roundType(templateName);
             });
