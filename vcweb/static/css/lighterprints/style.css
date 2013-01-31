@@ -121,4 +121,6 @@ div.lighterprints-scoreboard h5 {
     background-color: #42545E;
     color: #FFF;
 }
-.
+.challenges-section {
+    border-bottom: 1px solid #CCC;
+}
