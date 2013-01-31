@@ -90,9 +90,9 @@
             </div>
         </div>
         <div class='tab-pane' id='challenges'>
-            <h2>All Challenges</h2>
+            <h2 class='challenges-section'>All Challenges</h2>
             <p>
-            Challenges are divided up into 3 levels.  In order to unlock higher level challenges your group must earn
+            Challenges are divided up into 3 levels.  In order to unlock the next level's challenges your group must earn
             enough points so that the <strong>average number of points</strong> per participant is greater than
             <span data-bind='text:pointsToNextLevel' class='badge badge-info'></span>.
             </p>
@@ -100,7 +100,7 @@
             Some challenges are available all day, and others are only available at <strong>certain hours</strong>.
             </p>
             <div data-bind='foreach: activitiesByLevel'>
-                <h2>Level <span data-bind='text: $index() + 1'></span> challenges</h2>
+                <h3 class='challenges-section'>Level <span data-bind='text: $index() + 1'></span></h3>
                 <div data-bind='template: { name: "challenges-template", data: { challenges: $data } }'></div>
             </div>
         </div>
