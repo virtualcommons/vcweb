@@ -7,7 +7,7 @@ from django.views.generic import View
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from vcweb.core.decorators import participant_required
 from vcweb.core.json import dumps
-from vcweb.core.models import is_participant, is_experimenter, Experiment
+from vcweb.core.models import is_participant, is_experimenter, Experiment, ParticipantGroupRelationship
 from vcweb.core.views import ParticipantSingleExperimentMixin
 from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_survival_cost, get_resource_level,
@@ -23,26 +23,26 @@ def participate(request, experiment_id=None):
     participant = request.user.participant
     logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
     experiment = get_object_or_404(Experiment.objects.select_related(), pk=experiment_id)
+    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related(), group__experiment=experiment,
+            participant=participant)
     if experiment.experiment_metadata != get_experiment_metadata():
         raise Http404
     if form.is_valid():
         logger.debug("handing POST request, cleaned data: %s", form.cleaned_data)
         # set harvest decision for participant
-        # FIXME: is it bad practice to have GET return HTML and POST return JSON?
-        # send updated experiment json?
-        return HttpResponse(dumps({ 'success': True, 'experimentModelJson': to_json(experiment, participant, hasSubmit=True)}))
+        # FIXME: inconsistency, GET returns HTML and POST return JSON..
+        return HttpResponse(dumps({ 'success': True, 'experimentModelJson': to_json(experiment, pgr)}))
 # FIXME: still need to look up participant group relationship and throw 404 if invalid
 
 # sends view model JSON to the template to be processed by knockout
     return render_to_response('boundaries/participate.html', {
         'auth_token': participant.authentication_token,
         'experiment': experiment,
-        'experimentModelJson': to_json(experiment, participant),
+        'experimentModelJson': to_json(experiment, pgr),
         },
         context_instance=RequestContext(request))
 
-def to_json(experiment, participant, **kwargs):
-    pgr = participant.get_participant_group_relationship(experiment)
+def to_json(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
     experiment_model_dict = experiment.as_dict(include_round_data=False, attrs={})
@@ -59,7 +59,7 @@ def to_json(experiment, participant, **kwargs):
             'survivalCost': survival_cost,
             })
 
-    for participant_group_relationship in pgr.group.participant_group_relationship_set.all():
+    for pgr in participant_group_relationship.group.participant_group_relationship_set.all():
         player_data.append({
             'id': participant_group_relationship.participant_number,
             'lastHarvestDecision': random.randint(0, 10),
