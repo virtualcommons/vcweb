@@ -1,6 +1,8 @@
-.lighterprints-gray {
+/*
+body {
     background-color: #F7F7F7;
 }
+*/
 .upcoming-challenge, .expired-challenge, .perform-challenge, .completed-challenge {
     text-transform: uppercase;
     color: #FFF !important;

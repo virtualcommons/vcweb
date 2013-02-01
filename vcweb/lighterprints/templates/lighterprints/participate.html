@@ -6,7 +6,7 @@
 {% endblock %}
 {% block headerlinks %}
 <ul class='nav nav-tabs' id='lfp-navtabs'>
-    <li><a class='brand'><img alt='footprint logo' src='{{STATIC_URL}}/images/lighterprints/logo.png' width="30" height="30"> lighter<strong class='lighterprints-green'>footprints</strong></a></li>
+    <li><a class='brand'><img alt='footprint logo' src='{{STATIC_URL}}/images/lighterprints/logo.png' width="25" height="25"> lighter<strong class='lighterprints-green'>footprints</strong></a></li>
     <li class='active'><a href='#dashboard' data-toggle='tab'><i class='icon-dashboard'></i> Dashboard</a></li>
     <li><a href='#challenges' data-toggle='tab'><i class='icon-star-empty'></i> Challenges</a></li>
     <li><a href='#group-wall' data-toggle='tab'><i class='icon-comments-alt'></i> My Team</a></li>
@@ -63,13 +63,13 @@
                 </div>
                 <div class='span2 left-divider'>
                     <h5><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span></h5>
-                    <h1><span data-bind='text: averagePoints'></span> / <span data-bind='text:pointsToNextLevel'></span></h1>
-                    <br>
+                    <div class='lighterprints-scoreboard-xlarge'>
+                        <span data-bind='text: averagePoints'></span> / <span data-bind='text:pointsToNextLevel'></span>
+                    </div>
                 </div>
                 <div class='span2 left-divider'>
                     <h5><span class='lighterprints-scoreboard-uppercase'>Time Remaining</span></h5>
-                    <h1><span data-bind='text:hoursLeft'></span>h <span data-bind='text:minutesLeft'></span>m</h1>
-                    <br>
+                    <div class='lighterprints-scoreboard-xlarge'><span data-bind='text:hoursLeft'></span>h <span data-bind='text:minutesLeft'></span>m</div>
                 </div>
             </div>
             <h3 class='challenges-section'>Challenges</h3>
@@ -280,7 +280,7 @@
 </ul>
 {% endblock footerlinks %}
 {% block footerlogo %}
-<div class='footer-logo'><img alt='footprint logo' src='{{STATIC_URL}}/images/lighterprints/logo.png' width="30" height="30"> lighter<strong>footprints</strong></div>
+<div class='footer-logo'><img alt='footprint logo' src='{{STATIC_URL}}/images/lighterprints/logo.png' width="25" height="25"> lighter<strong>footprints</strong></div>
 {% endblock footerlogo %}
 {% block javascript %}
 {{ block.super }}
