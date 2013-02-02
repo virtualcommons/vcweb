@@ -9,7 +9,7 @@
     <li><a class='brand'><img alt='footprint logo' src='{{STATIC_URL}}/images/lighterprints/logo.png' width="25" height="25"> lighter<strong class='lighterprints-green'>footprints</strong></a></li>
     <li class='active'><a href='#dashboard' data-toggle='tab'><i class='icon-dashboard'></i> Dashboard</a></li>
     <li><a href='#challenges' data-toggle='tab'><i class='icon-star-empty'></i> Challenges</a></li>
-    <li><a href='#group-wall' data-toggle='tab'><i class='icon-comments-alt'></i> My Team</a></li>
+    <li><a href='#team' data-toggle='tab'><i class='icon-comments-alt'></i> My Team</a></li>
     <li><a href='#help' data-toggle='tab'><i class='icon-question-sign'></i> Help</a></li>
 </ul>
 {% endblock %}
@@ -151,7 +151,7 @@
                 </p>
             </div>
         </div>
-        <div class='tab-pane' id='group-wall'>
+        <div class='tab-pane' id='team'>
             <h1 class='dashboard-header'><i class='icon-comment'></i> My Team</h3>
             <h3>Team Chat</h3>
             <form id='chat-form' data-bind='submit: submitChatMessage'>
@@ -239,7 +239,7 @@
     <li><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-lighterprints-green' data-bind='text: averagePoints'></span></li> 
     <li class='divider'></li>
 </ul>
-<h3 class='lighterprints-sidebar-header'><i class='lighterprints-blue icon-group'></i> Team Activity <span class='pull-right'><small><a href='#group-wall' data-toggle='tab'>View all</a></small></span></h3>
+<h3 class='lighterprints-sidebar-header'><i class='lighterprints-blue icon-group'></i> Team Activity <span class='pull-right'><small><a href='#team' data-bind='click: activateTeamTab' data-toggle='tab'>View all</a></small></span></h3>
 <table class='table'>
     <tbody data-bind='foreach: groupActivity.slice(0, 3)'>
     <tr>
@@ -272,10 +272,10 @@
 {% endblock sidebar %}
 {% block footerlinks %}
 <ul class='nav-footer'>
-    <li><a href='#dashboard' data-toggle='tab'>Dashboard</a></li>
-    <li><a href='#challenges' data-toggle='tab'>Challenges</a></li>
-    <li><a href='#group-wall' data-toggle='tab'>My Team</a></li>
-    <li><a href='#help' data-toggle='tab'>Help</a></li>
+    <li><a href='#dashboard' data-bind='click: activateDashboardTab' data-toggle='tab'>Dashboard</a></li>
+    <li><a href='#challenges' data-bind='click: activateChallengesTab' data-toggle='tab'>Challenges</a></li>
+    <li><a href='#team' data-bind='click: activateTeamTab' data-toggle='tab'>My Team</a></li>
+    <li><a href='#help' data-bind='click: activateHelpTab' data-toggle='tab'>Help</a></li>
     <li class='pull-right'><a>&copy; {% now "Y" %} Arizona Board of Regents</a></li>
 </ul>
 {% endblock footerlinks %}
@@ -298,12 +298,18 @@ $(function() {
         window.location.hash = evt.target.hash;
     });
     */
+    function activateTabFunctor(tabHref) {
+        return function() {
+            $('#lfp-navtabs a[href="' + tabHref + '"]').tab('show');
+        }
+    }
     // set up KO binding, using one master view model
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
-    viewModel.activateChallengesTab = function() {
-        $('#lfp-navtabs a[href="#challenges"]').tab('show');
-    };
+    viewModel.activateChallengesTab = activateTabFunctor('#challenges');
+    viewModel.activateDashboardTab = activateTabFunctor('#dashboard');
+    viewModel.activateHelpTab = activateTabFunctor('#help');
+    viewModel.activateTeamTab = activateTabFunctor('#team');
     viewModel.perform = function(challengeModel) {
         if (! challengeModel.availableNow()) {
             // FIXME: modal is slow, no feedback on this for now
