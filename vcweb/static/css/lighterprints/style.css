@@ -1,10 +1,10 @@
 body {
     background-color: #F7F7F7;
 }
-.nav-tabs > .active > a, .nav-tabs > .active > a:hover {
+.challenge-tabs > .nav-tabs > .active > a, .challenge-tabs > .nav-tabs > .active > a:hover {
     border-top: 3px solid #DFB03D;
 }
-.nav-tabs > li > a {
+.challenge-tabs > .nav-tabs > li > a {
     border: 1px solid #ddd;
     color: #A9A9A9;
 }
