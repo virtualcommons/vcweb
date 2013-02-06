@@ -1,8 +1,18 @@
 body {
     background-color: #F7F7F7;
 }
+.nav-tabs > .active > a, .nav-tabs > .active > a:hover {
+    border-top: 3px solid #DFB03D;
+}
+.nav-tabs > li > a {
+    border: 1px solid #ddd;
+    color: #A9A9A9;
+}
 .challenges {
     background-color: #FFFFFF;
+}
+.text-gold {
+    color: #DFB03D;
 }
 .expired-challenge {
     color: red;

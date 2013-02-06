@@ -36,7 +36,7 @@
                     completing challenges.  Rank up by <b>increasing your team's average score.</b>.
                 </p>
                 <p>
-                    <i class='icon-star text-warning'></i> Some challenges are unlocked all day, and others are only
+                    <i class='icon-star text-gold'></i> Some challenges are unlocked all day, and others are only
                     unlocked at specific times.  Discover new challenges by ranking up!
                 </p>
                 <p>
@@ -74,12 +74,12 @@
                 </div>
             </div>
             <h3 class='underline'>Challenges</h3>
-            <div class='tabbable challenges'>
+            <div class='tabbable'>
                 <ul class='nav nav-tabs'>
-                    <li class='active'><a href='#unlocked-challenges' data-toggle='tab'><i class='icon-star text-warning'></i> Unlocked</a></li>
+                    <li class='active'><a href='#unlocked-challenges' data-toggle='tab'><span class='text-gold'><i class='icon-star'></i> Unlocked</span></a></li>
                     <li><a href='#locked-challenges' data-toggle='tab'><i class='icon-lock'></i> Locked</a></li>
                 </ul>
-                <div class='tab-content'>
+                <div class='tab-content challenges'>
                     <div class='tab-pane active' id='unlocked-challenges'>
                         <div data-bind="template: { name: 'challenges-template', data: { challenges: unlockedChallenges() } }"></div>
                     </div>
@@ -235,7 +235,7 @@
 {% endblock content %}
 {% block sidebar %}
 <div class='lighterprints-sidebar'>
-<h3 class='lighterprints-sidebar-header'><i class='text-warning icon-trophy'></i> Leaderboard</h3>
+<h3 class='lighterprints-sidebar-header'><i class='text-gold icon-trophy'></i> Leaderboard</h3>
 <ul class='nav nav-list' data-bind='foreach: groupData'>
     <li><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-lighterprints-green' data-bind='text: averagePoints'></span></li> 
     <li class='divider'></li>
@@ -244,7 +244,7 @@
 <table class='table'>
     <tbody data-bind='foreach: groupActivity.slice(0, 3)'>
     <tr>
-        <td style='vertical-align: top'><i class='icon-star text-warning'></i></td>
+        <td style='vertical-align: top'><i class='icon-star text-gold'></i></td>
         <td>
             <strong data-bind='text: participant_name'></strong>
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
