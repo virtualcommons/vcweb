@@ -49,7 +49,8 @@
             -->
             <div class='row lighterprints-scoreboard'>
                 <div class='span2'>
-                    <h5><span class='lighterprints-scoreboard-uppercase'>Today's Score</span><i style='padding: 0 0 0 0; margin: 6px 0;' id='score-info' rel='popover' data-placement='top' data-content="This is your team's average score for the day.  Complete high-value challenges to rank your team up." class='pull-right icon-info-sign'></i></h5>
+                    <h5><span class='lighterprints-scoreboard-uppercase'>Today's Score</span>
+                        <i id='score-info' style='margin:8px 0 0 0;' rel='popover' data-trigger='hover' data-placement='top' data-content="This is your team's average score for the day.  Complete high-value challenges to rank your team up." class='pull-right icon-info-sign'></i></h5>
                     <table>
                         <tr>
                             <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: averagePoints'></span></td>
@@ -73,7 +74,7 @@
                 </div>
             </div>
             <h3 class='underline'>Challenges</h3>
-            <div class='tabbable'>
+            <div class='tabbable challenges'>
                 <ul class='nav nav-tabs'>
                     <li class='active'><a href='#unlocked-challenges' data-toggle='tab'><i class='icon-star text-warning'></i> Unlocked</a></li>
                     <li><a href='#locked-challenges' data-toggle='tab'><i class='icon-lock'></i> Locked</a></li>
@@ -352,9 +353,9 @@ $(function() {
         <img data-bind='attr: {src: "{{STATIC_URL}}/images/lighterprints/badges/" + name() + ".png" }'>
     </div>
     <div class='span5'>
-        <h4 data-bind='text:display_name'></h4>
+        <h4 data-bind='css: status, text:display_name'></h4>
         <p>
-        <span data-bind='text:summary'></span>.
+        <span data-bind='css: status, text:summary'></span>.
         </p>
         <form data-bind='attr: { id: "activityform" + pk() }' class='form-horizontal' method='post'>
             <input data-bind='value: pk' type='hidden' name='activity_id' />
@@ -370,7 +371,7 @@ $(function() {
     </div>
     <div class='span2'>
         <i style='margin-top: 20px;' class='icon-leaf lighterprints-green pull-right'></i><h2 style='text-align: right;' class='lighterprints-scoreboard-large' data-bind='text: points'></h2>
-        <div style='text-align: right;'><i class='icon-time'></i> <strong><span data-bind='text: time_slots'></span></strong></div>
+        <div data-bind='css: status' style='text-align: right;'><i class='icon-time'></i> <strong><span data-bind='text: time_slots'></span></strong></div>
     </div>
 </div>
 <hr>

@@ -1,15 +1,19 @@
-/*
 body {
     background-color: #F7F7F7;
 }
-*/
-.upcoming-challenge, .expired-challenge, .perform-challenge, .completed-challenge {
+.challenges {
+    background-color: #FFFFFF;
+}
+.expired-challenge {
+    color: red;
+}
+a.upcoming-challenge, a.expired-challenge, a.perform-challenge, a.completed-challenge {
     text-transform: uppercase;
     color: #FFF !important;
     -webkit-font-smoothing: antialiased;
     background-repeat: repeat-x;
 }
-.upcoming-challenge {
+a.upcoming-challenge {
     background-color: hsl(0, 0%, 54%) !important;
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#f4f4f4", endColorstr="#898989");
     background-image: -khtml-gradient(linear, left top, left bottom, from(#f4f4f4), to(#898989));
@@ -22,7 +26,7 @@ body {
     border-color: #898989 #898989 hsl(0, 0%, 43.5%);
     text-shadow: 0 1px 1px rgba(255, 255, 255, 0.69);
 }
-.expired-challenge {
+a.expired-challenge {
     background-color: hsl(0, 100%, 79%) !important;
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#ffbcbc", endColorstr="#ff9393");
     background-image: -khtml-gradient(linear, left top, left bottom, from(#ffbcbc), to(#ff9393));
@@ -35,7 +39,7 @@ body {
     border-color: #ff9393 #ff9393 hsl(0, 100%, 77%);
     text-shadow: 0 1px 1px rgba(255, 255, 255, 0.13);
 }
-.perform-challenge,.completed-challenge {
+a.perform-challenge,a.completed-challenge {
     background-color: hsl(96, 81%, 42%) !important;
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#66dd17", endColorstr="#59c114");
     background-image: -khtml-gradient(linear, left top, left bottom, from(#66dd17), to(#59c114));
@@ -111,17 +115,17 @@ div.lighterprints-scoreboard h5 {
     padding-bottom: 15px;
     text-transform: uppercase;
 }
-.lighterprints-sidebar {
+.sidebar {
     font-family: 'Entypo', Arial, Helvetica, sans-serif;
+    min-height: 100%;
     background-color: #FFFFFF;
+}
+.lighterprints-sidebar {
     padding: 10px 20px 10px 20px;
 }
 .lighterprints-leaderboard {
     font-weight: normal;
     color: #41555d;
-}
-.underline {
-    border-bottom: 1px solid #CCC;
 }
 .group-level {
     margin-top: -15px;
