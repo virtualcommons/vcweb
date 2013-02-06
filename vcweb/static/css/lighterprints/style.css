@@ -3,13 +3,24 @@ body {
 }
 .challenge-tabs > .nav-tabs > .active > a, .challenge-tabs > .nav-tabs > .active > a:hover {
     border-top: 3px solid #DFB03D;
+    border-bottom: none;
 }
 .challenge-tabs > .nav-tabs > li > a {
-    border: 1px solid #ddd;
+    border-top: 1px solid #ddd;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: none;
     color: #A9A9A9;
 }
+.challenge-row {
+    padding: 20px 0 20px 0;
+    border-bottom: 1px solid #ddd;
+}
 .challenges {
+    margin-top: -20px;
     background-color: #FFFFFF;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
 }
 .text-gold {
     color: #DFB03D;

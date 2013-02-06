@@ -155,8 +155,8 @@
             <div class='well alert-white'>
                 <h4>I don't have a car or anyone to carpool with, so how can I carpool?</h4>
                 <p>
-                You don't have to actually perform the activity in the real world to click on "perform this activity" -
-                these are just virtual challenges at the moment. In the future we plan to include options to gain points by
+                You don't have to actually perform the activity in the real world to click on "perform". These are just
+                virtual challenges for the time being. In the future we plan to allow participants to gain points by
                 actually performing these challenges.
                 </p>
             </div>
@@ -290,7 +290,7 @@
 </ul>
 {% endblock footerlinks %}
 {% block footerlogo %}
-<div class='footer-logo'><img alt='footprint logo' src='{{STATIC_URL}}/images/lighterprints/logo.png' width="25" height="25"> lighter<strong>footprints</strong></div>
+<div class='footer-logo'><img alt='footprint logo' src='{{STATIC_URL}}/images/lighterprints/logo.png' width="25" height="25"> <span style='font-size: 1.5em;'>lighter<strong>footprints</strong></span></div>
 {% endblock footerlogo %}
 {% block javascript %}
 {{ block.super }}
@@ -332,8 +332,8 @@ $(function() {
         $('#activityPerformedModalText').addClass('hide');
         $('#activityPerformedModal .btn').addClass('disabled');
         $('#activityPerformedModal').modal();
-        var activityId = challengeModel.pk();
-        var formData = $('#activityform' + activityId).serialize();
+        var id = challengeModel.pk();
+        var formData = $('#challengeForm' + id).serialize();
         $.post('/lighterprints/api/do-activity', formData, function(data) {
                 if (data.success) {
                     ko.mapping.fromJSON(data.viewModel, viewModel);
@@ -357,16 +357,16 @@ $(function() {
 </script>
 <script type='text/html' id='challenges-template'>
 <div data-bind='foreach: challenges'>
-<div class='row'>
+<div class='row challenge-row'>
     <div class='span2'>
-        <img data-bind='attr: {src: "{{STATIC_URL}}/images/lighterprints/badges/" + name() + ".png" }'>
+        <img style='padding: 10px 0 0 20px;' data-bind='attr: {src: "{{STATIC_URL}}/images/lighterprints/badges/" + name() + ".png" }'>
     </div>
-    <div class='span5'>
+    <div class='span4'>
         <h4 data-bind='css: status, text:display_name'></h4>
         <p>
-        <span data-bind='css: status, text:summary'></span>.
+        <span data-bind='css: status, text:summary'></span>
         </p>
-        <form data-bind='attr: { id: "activityform" + pk() }' class='form-horizontal' method='post'>
+        <form data-bind='attr: { id: "challengeForm" + pk() }' class='form-horizontal' method='post'>
             <input data-bind='value: pk' type='hidden' name='activity_id' />
             <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
             <a data-bind='css: status, click: $root.perform' class='btn'>
@@ -378,12 +378,13 @@ $(function() {
             </a> <small><a href='#'>Learn more</a></small>
         </form>
     </div>
-    <div class='span2'>
-        <i style='margin-top: 20px;' class='icon-leaf lighterprints-green pull-right'></i><h2 style='text-align: right;' class='lighterprints-scoreboard-large' data-bind='text: points'></h2>
-        <div data-bind='css: status' style='text-align: right;'><i class='icon-time'></i> <strong><span data-bind='text: time_slots'></span></strong></div>
+    <div style='padding: 15px 0;' class='span2'>
+        <table>
+        <tr><td><span class='lighterprints-scoreboard-large' data-bind='text:points'></td><td style='text-align: center;'><i class='icon-leaf lighterprints-green'></i></td></tr>
+        </table>
+        <div data-bind='css: status'><i class='icon-time'></i> <strong><span data-bind='text: time_slots'></span></strong></div>
     </div>
 </div>
-<hr>
 </div>
 </script>
 {% endblock %}
