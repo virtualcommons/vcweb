@@ -19,7 +19,7 @@
 <div class='tabbable'>
     <div class='tab-content'>
         <div class='tab-pane active' id='dashboard'>
-            <h1 class='dashboard-header'><i class='icon-dashboard'></i> Team Dashboard</h1>
+            <h1 class='header'><i class='icon-dashboard'></i> Team Dashboard</h1>
             <!-- FIXME: re-enable this at some point
             <div data-bind='if: firstVisit()'>
             -->
@@ -90,70 +90,79 @@
             </div>
         </div>
         <div class='tab-pane' id='challenges'>
-            <h2 class='underline'>All Challenges</h2>
-            <p>
-            Challenges are divided up into 3 levels.  In order to unlock the next level's challenges your group must earn
-            enough points so that the <strong>average number of points</strong> per participant is greater than
-            <span data-bind='text:pointsToNextLevel' class='badge badge-info'></span>.
-            </p>
-            <p>
-            Some challenges are available all day, and others are only available at <strong>certain hours</strong>.
-            </p>
+            <h1 class='header'><i class='icon-star'></i> Challenges</h2>
+            <div class='alert alert-block alert-white'>
+                <button type="button" class="close" data-dismiss="alert"><i class='icon-remove-sign'></i></button>
+                <h2>Complete challenges to earn green points.</h2>
+                <p>
+                Challenges are divided up into 3 levels.  In order to unlock the next level's challenges your group must earn
+                enough points so that the <strong>average number of points</strong> per participant is greater than
+                <span data-bind='text:pointsToNextLevel' class='badge badge-lighterprints-green'></span>.
+                </p>
+                <p>
+                <i class='icon-time'></i> Some challenges are available all day, and others are only available at <strong>certain hours</strong>.
+                </p>
+            </div>
             <div data-bind='foreach: activitiesByLevel'>
                 <h3 class='underline'>Level <span data-bind='text: $index() + 1'></span></h3>
                 <div data-bind='template: { name: "challenges-template", data: { challenges: $data } }'></div>
             </div>
         </div>
         <div class='tab-pane' id='help'>
-            <h2>Instructions</h2>
+            <h1 class='header'><i class='icon-question-sign'></i> Instructions</h1>
             <p>
-            You have been randomly placed in a group of <span class='badge badge-info'>{{ participant_group_relationship.group.size }}</span> participants.
-            In this experiment you can perform virtual actions that represent <span class='text-success'>green alternatives</span>
-            to some common daily activities.  Some of these activities are available all day, and others are only available at
+            You have been randomly placed in a group of <strong>{{ participant_group_relationship.group.size }} participants</strong>.
+            In this experiment you can perform virtual actions that represent green alternatives to some common daily
+            activities.  Some of these activities are available all day, and others are only available at
             specific times.  You can learn more about them by clicking on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a> and selecting an activity.
             </p>
-            <h3>Activities, Green Points, and Levels</h3>
+            <h4>Challenges, Green Points, and Levels</h4>
             <p>
-            Each activity is worth a certain number of green points.  For example, <span class='text-success'>eating locally grown food for lunch</span> (which is only available from 12 PM to 2 PM) is worth <span class='badge badge-success'>15</span> green points.
-            In order to perform this activity you must login to the application between 12 PM and 2 PM, select the activity from the
-            list below, and click the "Perform this activity" button.
+            Each <strong class='text-gold'>challenge</strong> is worth a certain number of 
+            <strong class='lighterprints-green'>green points <i class='icon-leaf'></i></strong>.
+            For example, <em>Eat locally grown food for lunch</em> (available from 12-2pm) is worth 
+            <span class='lighterprints-green'>15 <i class='icon-leaf'></i></span> green points.
+            In order to perform this challenge you must login to the application between 12pm and 2pm, 
+            select the challenge from the list below, and click the &quot;Perform&quot; button.
             </p>
             <p>
-            Your group is currently <span class='badge badge-important'>level <span data-bind='text:groupLevel'></span></span> and has accumulated 
-            <span class='badge badge-important'><span data-bind='text:averagePoints'></span> average points</span>.  In order to
-            advance in level and unlock more activities the <strong>average number of points contributed by each member of your group</strong> must be equal to or greater than 
-            <span data-bind='text: pointsToNextLevel' class='badge badge-info'></span>.  In order to
-            reach this target <span class='text-warning'>you and a majority of the members of your group</span> must perform
-            high point activities when they are available.
+            Your group is currently <strong class='text-gold'>Level <span data-bind='text:groupLevel'></span></strong> and has an average score of 
+            <strong class='lighterprints-green'><span data-bind='text:averagePoints'></span> <i class='icon-leaf'></i></strong>.  In order to
+            advance in level and unlock more challenges the <em>average number of points contributed by each member of your group</em> must be equal to or greater than 
+            <strong class='lighterprints-green'><span data-bind='text: pointsToNextLevel'></span> <i class='icon-leaf'></i></strong>.
+            In order to reach this target you and a majority of the members of your group must perform
+            high point challenges when they are available.
             </p>
-            <h3>How to participate</h3>
+            <h4>How to participate</h4>
             <p>
-            To participate, simply click on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a>, and select an activity you'd like to perform.
-            You can also leave messages for your other teammates in the My Team tab.
+            To participate, simply click on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a>, and select a challenge you'd like to perform.
+            You can also leave messages for your other teammates in the 
+            <a href='#team' data-bind='click: activateTeamTab'>My Team tab</a> or visit the 
+            <a href='#dashboard' data-bind='click:activateDashboardTab'>Dashboard</a> to view your team's progress.
             </p>
-            <h2>Frequently Asked Questions</h2>
-            <div class='well'>
-                <h4>Why do the activities performed in the previous day not count for today?</h4>
+            <h3 class='underline'>Frequently Asked Questions</h3>
+            <div class='well alert-white'>
+                <h4>Why do the challenges performed in the previous day not count for today?</h4>
                 <p>
-                In order to advance in level and unlock more activities you must reach an average level of points in your
+                In order to advance in level and unlock more challenges you must reach an average level of points in your
                 group during one day, starting at 0.00AM.  Every day at midnight the server will check your group's average number of
                 points and determine whether or not you should move on to the next level.
                 If your group advances in level your group will once again start at 0 points with the additional unlocked
-                activities for that level available to perform. If your group did not reach the next level, your group
-                will start with 0 points at the same level with the same activities available as the previous day.
+                challenges for that level available to perform. If your group did not reach the next level, your group
+                will start with 0 points at the same level with the same challenges available as the previous day.
                 </p>
             </div>
-            <div class='well'>
+            <div class='well alert-white'>
                 <h4>I don't have a car or anyone to carpool with, so how can I carpool?</h4>
                 <p>
                 You don't have to actually perform the activity in the real world to click on "perform this activity" -
-                these are just virtual activities at the moment. In the future we plan to include options to gain points by
-                actually performing these activities.
+                these are just virtual challenges at the moment. In the future we plan to include options to gain points by
+                actually performing these challenges.
                 </p>
             </div>
         </div>
         <div class='tab-pane' id='team'>
-            <h1 class='dashboard-header'><i class='icon-comment'></i> My Team</h3>
+            <h1 class='header'><i class='icon-comment'></i> My Team</h1>
             <h3 class='underline'>Team Chat</h3>
             <form id='chat-form' data-bind='submit: submitChatMessage'>
                 <div class='input-prepend'>
