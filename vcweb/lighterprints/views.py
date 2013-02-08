@@ -229,7 +229,7 @@ def get_all_team_activity(participant_group_relationship, limit=None):
     for prdv in data_values:
         # FIXME: ugly downcasting.. consider doing something like this instead:
         # http://jeffelmore.org/2010/11/11/automatic-downcasting-of-inherited-models-in-django/
-        data = None
+        data = prdv.to_dict()
         parameter_name = prdv.parameter.name
         if parameter_name == 'chat_message':
             data = prdv.chatmessage.to_dict()
@@ -249,6 +249,9 @@ def get_all_team_activity(participant_group_relationship, limit=None):
             data['activity_performed_id'] = prdv.pk
             data['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=prdv.pk)]
             data['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=prdv.pk)]
+        else:
+            logger.debug("unhandled data value parameter: %s", prdv.parameter)
+            continue
         social_activity.append(data)
     return social_activity
 
