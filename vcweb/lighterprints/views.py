@@ -5,7 +5,6 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.html import escape
-from django.utils.timesince import timesince
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import DetailView, BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
@@ -17,21 +16,20 @@ from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGrou
 from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response, get_active_experiment
 from vcweb.lighterprints.forms import ActivityForm
-from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, is_activity_available,
-        get_treatment_type, get_lighterprints_experiment_metadata, get_lighterprints_public_experiment,
+from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_all_team_activity,
+        get_group_activity_tuple, get_treatment_type, get_lighterprints_experiment_metadata,
         get_activity_performed_parameter, points_to_next_level, get_group_score, get_footprint_level,
         get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining, team_name)
 
 from collections import defaultdict
 import itertools
 import logging
-import re
 #import tempfile
 logger = logging.getLogger(__name__)
 
+# FIXME: these are now mostly defunct, remove when not needed
 class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
     model = Activity
-
     def get_context_data(self, **kwargs):
         context = super(ActivityListView, self).get_context_data(**kwargs)
         user = self.request.user
@@ -61,46 +59,6 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
             return JSONResponseMixin.render_to_response(self, context, context_key='flattened_activities')
         else:
             return MultipleObjectTemplateResponseMixin.render_to_response(self, context)
-
-class DiscussionBoardView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
-    model = ChatMessage
-    template_name = 'discussion_board.html'
-    def get_queryset(self):
-        # FIXME: stubbed out for now, passing in the participant id for the time
-        # being
-        # participant = self.request.user.participant
-        participant_group_id = self.kwargs['participant_group_id']
-# FIXME: will change once we have proper auth set up
-        self.participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=1), pk=participant_group_id)
-        self.group = self.participant_group_relationship.group
-        return ChatMessage.objects.filter(participant_group_relationship__group = self.group)
-
-    def render_to_response(self, context, **response_kwargs):
-        if self.request.GET.get('format', 'html') == 'json':
-            return JSONResponseMixin.render_to_response(self, context, context_key='group_activity')
-        else:
-            return MultipleObjectTemplateResponseMixin.render_to_response(self, context)
-
-    def get_context_data(self, **kwargs):
-        context = super(DiscussionBoardView, self).get_context_data(**kwargs)
-        context['group'] = self.group
-        context['participant_group_relationship'] = self.participant_group_relationship
-        context['group_activity'] = get_group_activity_json(self.participant_group_relationship)
-        return context
-
-
-class ActivityDetailView(DetailView):
-    model = Activity
-    template_name = 'lighterprints/activity_detail.html'
-
-    def get_context_data(self, **kwargs):
-        context = super(ActivityDetailView, self).get_context_data(**kwargs)
-        participant = self.request.user.participant
-        experiment = get_active_experiment(participant, experiment_metadata=get_lighterprints_experiment_metadata())
-        context['experiment'] = experiment
-        context['available'] = is_activity_available(context['activity'], participant.get_participant_group_relationship(experiment))
-        logger.debug("checking availability for %s: %s", context['activity'], context['available'])
-        return context
 
 # FIXME: use persistent_messages instead where the user has to explicitly clear /
 # dismiss the messages.  additional fields would be target_id
@@ -211,95 +169,6 @@ def group_activity(request, participant_group_id):
         logger.warning("authenticated user %s tried to retrieve group activity for %s", request.user, participant_group_relationship)
         return HttpResponse(dumps({'success': False, 'message': 'Invalid authz request'}), content_type='application/json')
 
-def abbreviated_timesince(date):
-    s = timesince(date)
-    s = re.sub(r'\sdays?', 'd', s)
-    s = re.sub(r'\sminutes?', 'm', s)
-    s = re.sub(r'\shours?', 'h', s)
-    s = re.sub(r'\sweeks?', 'w', s)
-    s = re.sub(r'\smonths?', 'm', s)
-    return s.replace(',', '')
-
-def get_all_team_activity(participant_group_relationship, limit=None):
-    group = participant_group_relationship.group
-    social_activity = []
-    data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like', 'comment', 'chatmessage')
-    if limit is not None:
-        data_values = data_values[:limit]
-    for prdv in data_values:
-        # FIXME: ugly downcasting.. consider doing something like this instead:
-        # http://jeffelmore.org/2010/11/11/automatic-downcasting-of-inherited-models-in-django/
-        data = prdv.to_dict()
-        parameter_name = prdv.parameter.name
-        if parameter_name == 'chat_message':
-            data = prdv.chatmessage.to_dict()
-        elif parameter_name == 'comment':
-            data = prdv.comment.to_dict()
-        elif parameter_name == 'like':
-            data = prdv.like.to_dict()
-        elif parameter_name == 'activity_performed':
-            activity = prdv.value
-            data = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
-            data['date_created'] = abbreviated_timesince(prdv.date_created)
-            data['date_performed'] = prdv.date_created
-            pgr = prdv.participant_group_relationship
-            data['participant_number'] = pgr.participant_number
-            data['participant_name'] = pgr.participant.full_name
-            data['participant_group_id'] = pgr.pk
-            data['activity_performed_id'] = prdv.pk
-            data['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=prdv.pk)]
-            data['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=prdv.pk)]
-        else:
-            logger.debug("unhandled data value parameter: %s", prdv.parameter)
-            continue
-        social_activity.append(data)
-    return social_activity
-
-def get_group_activity_tuple(participant_group_relationship, number_of_activities=10, retrieve_all=True):
-    group = participant_group_relationship.group
-    social_activity = []
-    for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
-        pgr = chat_message.participant_group_relationship
-        comments = [c.to_dict() for c in Comment.objects.filter(target_data_value=chat_message.pk)]
-        likes = [like.to_dict() for like in Like.objects.filter(target_data_value=chat_message.pk)]
-        social_activity.append({
-            'pk': chat_message.pk,
-            'date_created': abbreviated_timesince(chat_message.date_created),
-            'message': chat_message.value,
-            'participant_name': escape(pgr.participant.full_name),
-            'participant_number': pgr.participant_number,
-            'participant_group_id':pgr.pk,
-            'comments': comments,
-            'likes': likes
-            })
-    group_activity = []
-    performed_activities = ParticipantRoundDataValue.objects.filter(participant_group_relationship__group=group,
-            submitted=True, parameter=get_activity_performed_parameter()).order_by('-date_created')
-    if retrieve_all:
-        number_of_activities = len(performed_activities)
-    for activity_prdv in performed_activities[:number_of_activities]:
-        activity = activity_prdv.value
-        activity_performed_dict = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
-        activity_performed_dict['date_created'] = abbreviated_timesince(activity_prdv.date_created)
-        activity_performed_dict['date_performed'] = activity_prdv.date_created
-        pgr = activity_prdv.participant_group_relationship
-        activity_performed_dict['participant_number'] = pgr.participant_number
-        activity_performed_dict['participant_name'] = pgr.participant.full_name 
-        activity_performed_dict['participant_group_id'] = pgr.pk
-        activity_performed_dict['activity_performed_id'] = activity_prdv.pk
-        activity_performed_dict['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=activity_prdv.pk)]
-        activity_performed_dict['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=activity_prdv.pk)]
-        group_activity.append(activity_performed_dict)
-    return (social_activity, group_activity)
-
-def get_group_activity_json(participant_group_relationship, number_of_activities=10, retrieve_all=True):
-    (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship, number_of_activities, retrieve_all)
-    return dumps({
-        'success': True,
-        'chat_messages': chat_messages,
-        'recent_activity': group_activity
-        })
-
 @csrf_exempt
 @participant_required
 def perform_activity(request):
@@ -396,8 +265,6 @@ def post_comment(request):
                 target_data_value=target)
         logger.debug("Participant %s commented '%s' on %s", participant_group_relationship.participant, message, target)
 
-        #content = get_group_activity_json(participant_group_relationship)
-        #return HttpResponse(content, content_type='application/json')
         return HttpResponse(dumps({'success': True, 'comment' : escape(comment.value), 'target': target}))
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
@@ -456,6 +323,14 @@ class CsvExportView(DataExportMixin, BaseDetailView):
                 total_points += performed_activity.value.points
             writer.writerow([participant_group_relationship, total_points])
 
+def get_group_activity_json(participant_group_relationship, number_of_activities=10, retrieve_all=True):
+    (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship, number_of_activities, retrieve_all)
+    return dumps({
+        'success': True,
+        'chat_messages': chat_messages,
+        'recent_activity': group_activity
+        })
+
 def get_view_model_json(participant_group_relationship, activities=None):
     if activities is None:
         activities = Activity.objects.all()
@@ -483,7 +358,8 @@ def get_view_model_json(participant_group_relationship, activities=None):
 
     (activity_dict_list, level_activity_list) = get_all_activities_tuple(participant_group_relationship, activities,
             group_level=own_group_level)
-    (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
+    (team_activity, chat_messages) = get_all_team_activity(participant_group_relationship)
+    #(chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
     (hours_left, minutes_left) = get_time_remaining()
     first_visit = participant_group_relationship.first_visit
     if first_visit:
@@ -498,7 +374,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
         'averagePoints': own_average_points,
         'pointsToNextLevel': own_points_to_next_level,
         'chatMessages': chat_messages,
-        'groupActivity': group_activity,
+        'groupActivity': team_activity,
         'groupName': team_name(own_group),
         'activities': activity_dict_list,
         'activitiesByLevel': level_activity_list,

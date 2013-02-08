@@ -1602,7 +1602,8 @@ class ParticipantRoundDataValue(ParameterizedValue):
                 'participant_name': escape(pgr.participant.full_name),
                 'participant_number': pgr.participant_number,
                 'date_created': timesince(self.date_created),
-                'value': escape(self.value)
+                'value': escape(self.value),
+                'parameter_name': self.parameter.name
                 }
 
     def __unicode__(self):
@@ -1651,7 +1652,7 @@ class ChatMessage(ParticipantRoundDataValue):
 
     def to_dict(self):
         data = super(ChatMessage, self).to_dict()
-        data['message'] = unicode(self)
+        data['message'] = self.message
         group = self.participant_group_relationship.group
         data['group_id'] = group.pk
         data['group'] = unicode(group)

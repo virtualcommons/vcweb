@@ -80,7 +80,7 @@ class GroupActivityTest(BaseTest):
         performed_activities = self.perform_activities()
         team_activity = []
         for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
-            team_activity = get_all_team_activity(pgr)
+            (team_activity, chat_messages) = get_all_team_activity(pgr)
             logger.debug("team activity is %s", len(team_activity))
             self.assertEqual(len(team_activity), len(performed_activities) * pgr.group.size)
 

@@ -175,10 +175,10 @@ class ParticipantConnection(SockJSConnection):
 
     def on_open(self, info):
         logger.debug("opening connection %s", info)
-        connection_manager.add_participant(self)
         #self.client.listen(self.on_chan_message)
 
     def on_message(self, json_string):
+        logger.debug("message: %s", json_string)
         message_dict = simplejson.loads(json_string)
         experiment_id = message_dict['experiment_id']
         auth_token = message_dict['auth_token']

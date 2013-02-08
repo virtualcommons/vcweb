@@ -188,14 +188,10 @@
                 </div>
             </div>
             <h3 class='underline'>Team activity</h3>
-            <div data-bind='foreach: groupActivity' class='scrollable-messages'>
-                <div class='alert alert-info'>
-                    <span data-bind='text: participant_name'></span> performed <span data-bind='text: display_name'></span>,
-                    earning <span class='badge badge-success' data-bind='text:points'></span> green points.
-                    <b class='pull-right'><span data-bind='text: date_created'></span> ago</b>
-
-                </div>
-            </div>
+            <table class='table scrollable-messages'>
+                <tbody data-bind='template: { name: groupActivityTemplate, foreach: groupActivity }'>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -250,31 +246,7 @@
 </ul>
 <h3 class='lighterprints-sidebar-header'><i class='lighterprints-blue icon-group'></i> Team Activity <span class='pull-right'><small><a href='#team' data-bind='click: activateTeamTab' data-toggle='tab'>View all</a></small></span></h3>
 <table class='table'>
-    <tbody data-bind='foreach: groupActivity.slice(0, 3)'>
-    <tr>
-        <td style='vertical-align: top'><i class='icon-star text-gold'></i></td>
-        <td>
-            <strong data-bind='text: participant_name'></strong>
-            <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
-            <div>earned <span class='lighterprints-green' data-bind='text:points'></span><i class='icon-leaf lighterprints-green'></i>
-                for <span data-bind='text: $root.groupName'></span> by completing <em><span data-bind='text: display_name'></span></em>.
-            </div>
-        </td>
-    </tr>
-    </tbody>
-    <tbody data-bind='foreach: chatMessages.slice(0, 3)'>
-    <tr>
-        <td style='vertical-align: top'><i class='icon-comment lighterprints-blue'></i></td>
-        <td>
-            <strong data-bind='text: participant_name'></strong>
-            <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
-            <p>
-            <small><i class='icon-quote-left'></i></small>
-            <span data-bind='text:message'></span>
-            <small><i class='icon-quote-right'></i></small>
-            </p>
-        </td>
-    </tr>
+    <tbody data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
     </tbody>
 </table>
 </div>
@@ -315,6 +287,10 @@ $(function() {
     // set up KO binding, using one master view model
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
+    viewModel.groupActivityTemplate = function(groupActivity) {
+        console.debug("parameter name: " + groupActivity.parameter_name());
+        return groupActivity.parameter_name();
+    }
     viewModel.activateChallengesTab = activateTabFunctor('#challenges');
     viewModel.activateDashboardTab = activateTabFunctor('#dashboard');
     viewModel.activateHelpTab = activateTabFunctor('#help');
@@ -353,6 +329,32 @@ $(function() {
     // FIXME: use $('.popover').popover() if we end up having a lot more of these.
     $('#score-info').popover();
 });
+</script>
+<script type='text/html' id='chat_message'>
+    <tr>
+        <td style='vertical-align: top'><i class='icon-comment lighterprints-blue'></i></td>
+        <td>
+            <strong data-bind='text: participant_name'></strong>
+            <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+            <p>
+            <small><i class='icon-quote-left'></i></small>
+            <span data-bind='text:message'></span>
+            <small><i class='icon-quote-right'></i></small>
+            </p>
+        </td>
+    </tr>
+</script>
+<script type='text/html' id='activity_performed'>
+    <tr>
+        <td style='vertical-align: top'><i class='icon-star text-gold'></i></td>
+        <td>
+            <strong data-bind='text: participant_name'></strong>
+            <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+            <div>earned <span class='lighterprints-green' data-bind='text:points'></span><i class='icon-leaf lighterprints-green'></i>
+                for <span data-bind='text: $root.groupName'></span> by completing <em><span data-bind='text: display_name'></span></em>.
+            </div>
+        </td>
+    </tr>
 </script>
 <script type='text/html' id='challenges-template'>
 <div data-bind='foreach: challenges'>

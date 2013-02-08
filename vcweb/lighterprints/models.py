@@ -1,10 +1,12 @@
 from django.db import models
 from django.dispatch import receiver
+from django.utils.html import escape
+from django.utils.timesince import timesince
 from django.utils.translation import ugettext_lazy as _
 from functools import partial
 from model_utils.managers import PassThroughManager
 from vcweb.core import signals, simplecache, enum
-from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, ParticipantGroupRelationship, ParticipantRoundDataValue, Parameter, User)
+from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, ParticipantGroupRelationship, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
 from vcweb.core.services import fetch_foursquare_categories
 import collections
 from datetime import datetime, date, time, timedelta
@@ -12,6 +14,7 @@ from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 from lxml import etree
 
 import logging
+import re
 import string
 logger = logging.getLogger(__name__)
 
@@ -581,5 +584,90 @@ def get_time_remaining():
 
 def team_name(group):
     return u"Team %s" % string.ascii_uppercase[max(group.number - 1, 0)]
+
+def get_all_team_activity(participant_group_relationship, limit=None):
+    group = participant_group_relationship.group
+    social_activity = []
+    chat_messages = []
+    data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like', 'comment', 'chatmessage')
+    if limit is not None:
+        data_values = data_values[:limit]
+    for prdv in data_values:
+        # FIXME: ugly downcasting.. consider doing something like this instead:
+        # http://jeffelmore.org/2010/11/11/automatic-downcasting-of-inherited-models-in-django/
+        data = prdv.to_dict()
+        parameter_name = prdv.parameter.name
+        if parameter_name == 'chat_message':
+            data = prdv.chatmessage.to_dict()
+            chat_messages.append(data)
+        elif parameter_name == 'comment':
+            data = prdv.comment.to_dict()
+        elif parameter_name == 'like':
+            data = prdv.like.to_dict()
+        elif parameter_name == 'activity_performed':
+            activity = prdv.value
+            data = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
+            data['date_created'] = abbreviated_timesince(prdv.date_created)
+            data['date_performed'] = prdv.date_created
+            pgr = prdv.participant_group_relationship
+            data['participant_number'] = pgr.participant_number
+            data['participant_name'] = pgr.participant.full_name
+            data['participant_group_id'] = pgr.pk
+            data['activity_performed_id'] = prdv.pk
+            data['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=prdv.pk)]
+            data['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=prdv.pk)]
+        else:
+            logger.debug("unhandled data value parameter: %s", prdv.parameter)
+            continue
+        data['parameter_name'] = parameter_name
+        social_activity.append(data)
+    return (social_activity, chat_messages)
+
+def abbreviated_timesince(date):
+    s = timesince(date)
+    s = re.sub(r'\sdays?', 'd', s)
+    s = re.sub(r'\sminutes?', 'm', s)
+    s = re.sub(r'\shours?', 'h', s)
+    s = re.sub(r'\sweeks?', 'w', s)
+    s = re.sub(r'\smonths?', 'mo', s)
+    return s.replace(',', '')
+
+# Deprecated
+def get_group_activity_tuple(participant_group_relationship, number_of_activities=10, retrieve_all=True):
+    group = participant_group_relationship.group
+    social_activity = []
+    for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
+        pgr = chat_message.participant_group_relationship
+        comments = [c.to_dict() for c in Comment.objects.filter(target_data_value=chat_message.pk)]
+        likes = [like.to_dict() for like in Like.objects.filter(target_data_value=chat_message.pk)]
+        social_activity.append({
+            'pk': chat_message.pk,
+            'date_created': abbreviated_timesince(chat_message.date_created),
+            'message': chat_message.value,
+            'participant_name': escape(pgr.participant.full_name),
+            'participant_number': pgr.participant_number,
+            'participant_group_id':pgr.pk,
+            'comments': comments,
+            'likes': likes
+            })
+    group_activity = []
+    performed_activities = ParticipantRoundDataValue.objects.filter(participant_group_relationship__group=group,
+            submitted=True, parameter=get_activity_performed_parameter()).order_by('-date_created')
+    if retrieve_all:
+        number_of_activities = len(performed_activities)
+    for activity_prdv in performed_activities[:number_of_activities]:
+        activity = activity_prdv.value
+        activity_performed_dict = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
+        activity_performed_dict['date_created'] = abbreviated_timesince(activity_prdv.date_created)
+        activity_performed_dict['date_performed'] = activity_prdv.date_created
+        pgr = activity_prdv.participant_group_relationship
+        activity_performed_dict['participant_number'] = pgr.participant_number
+        activity_performed_dict['participant_name'] = pgr.participant.full_name
+        activity_performed_dict['participant_group_id'] = pgr.pk
+        activity_performed_dict['activity_performed_id'] = activity_prdv.pk
+        activity_performed_dict['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=activity_prdv.pk)]
+        activity_performed_dict['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=activity_prdv.pk)]
+        group_activity.append(activity_performed_dict)
+    return (social_activity, group_activity)
 
 
