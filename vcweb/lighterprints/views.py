@@ -20,7 +20,7 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, is_activity_available,
         get_treatment_type, get_lighterprints_experiment_metadata, get_lighterprints_public_experiment,
         get_activity_performed_parameter, points_to_next_level, get_group_score, get_footprint_level,
-        get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining)
+        get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining, team_name)
 
 from collections import defaultdict
 import itertools
@@ -220,6 +220,38 @@ def abbreviated_timesince(date):
     s = re.sub(r'\smonths?', 'm', s)
     return s.replace(',', '')
 
+def get_all_team_activity(participant_group_relationship, limit=None):
+    group = participant_group_relationship.group
+    social_activity = []
+    data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like', 'comment', 'chatmessage')
+    if limit is not None:
+        data_values = data_values[:limit]
+    for prdv in data_values:
+        # FIXME: ugly downcasting.. consider doing something like this instead:
+        # http://jeffelmore.org/2010/11/11/automatic-downcasting-of-inherited-models-in-django/
+        data = None
+        parameter_name = prdv.parameter.name
+        if parameter_name == 'chat_message':
+            data = prdv.chatmessage.to_dict()
+        elif parameter_name == 'comment':
+            data = prdv.comment.to_dict()
+        elif parameter_name == 'like':
+            data = prdv.like.to_dict()
+        elif parameter_name == 'activity_performed':
+            activity = prdv.value
+            data = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
+            data['date_created'] = abbreviated_timesince(prdv.date_created)
+            data['date_performed'] = prdv.date_created
+            pgr = prdv.participant_group_relationship
+            data['participant_number'] = pgr.participant_number
+            data['participant_name'] = pgr.participant.full_name
+            data['participant_group_id'] = pgr.pk
+            data['activity_performed_id'] = prdv.pk
+            data['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=prdv.pk)]
+            data['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=prdv.pk)]
+        social_activity.append(data)
+    return social_activity
+
 def get_group_activity_tuple(participant_group_relationship, number_of_activities=10, retrieve_all=True):
     group = participant_group_relationship.group
     social_activity = []
@@ -258,8 +290,7 @@ def get_group_activity_tuple(participant_group_relationship, number_of_activitie
     return (social_activity, group_activity)
 
 def get_group_activity_json(participant_group_relationship, number_of_activities=10, retrieve_all=True):
-    (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship, number_of_activities,
-            retrieve_all)
+    (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship, number_of_activities, retrieve_all)
     return dumps({
         'success': True,
         'chat_messages': chat_messages,
@@ -438,7 +469,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
             own_average_points = average_points
             own_points_to_next_level = pointsToNextLevel
         group_data.append({
-            'groupName': group.name,
+            'groupName': team_name(group),
             'groupLevel': group_level,
             'groupSize': group.size,
             'averagePoints': average_points,
@@ -465,7 +496,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
         'pointsToNextLevel': own_points_to_next_level,
         'chatMessages': chat_messages,
         'groupActivity': group_activity,
-        'groupName': own_group.name,
+        'groupName': team_name(own_group),
         'activities': activity_dict_list,
         'activitiesByLevel': level_activity_list,
         })

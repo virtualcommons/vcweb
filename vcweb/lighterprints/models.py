@@ -12,6 +12,7 @@ from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 from lxml import etree
 
 import logging
+import string
 logger = logging.getLogger(__name__)
 
 # signal handlers for midnight tick + round_started
@@ -577,5 +578,8 @@ def get_time_remaining():
     hours_left = total_minutes_left / 60
     minutes = total_minutes_left % 60
     return (hours_left, minutes)
+
+def team_name(group):
+    return u"Team %s" % string.ascii_uppercase[max(group.number - 1, 0)]
 
 

@@ -760,7 +760,7 @@ class Experiment(models.Model):
                 }
         if include_round_data:
             experiment_dict['allRoundData'] = self.all_round_data()
-            experiment_dict['chatMessages'] = [chat_message.as_dict for chat_message in self.all_chat_messages]
+            experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
             experiment_dict['messages'] = [escape(log) for log in self.activity_log_set.order_by('-date_created')]
         return experiment_dict
 
@@ -1156,10 +1156,6 @@ class Group(models.Model):
     """
     The experiment that contains this Group.
     """
-
-    @property
-    def name(self):
-        return u"Team %s" % string.ascii_uppercase[max(self.number - 1, 0)]
 
     @property
     def channel(self):
@@ -1558,6 +1554,10 @@ class ParticipantGroupRelationship(models.Model):
     class Meta:
         ordering = ['group', 'participant_number']
 
+class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
+    def for_group(self, group=None, **kwargs):
+        return self.filter(participant_group_relationship__group=group, **kwargs).order_by('-date_created')
+
 class ParticipantRoundDataValue(ParameterizedValue):
     """
     Represents one data point collected for a given Participant in a given Round.
@@ -1566,6 +1566,7 @@ class ParticipantRoundDataValue(ParameterizedValue):
     participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='participant_data_value_set')
     submitted = models.BooleanField(default=False)
     target_data_value = models.ForeignKey('ParticipantRoundDataValue', related_name='target_data_value_set', null=True, blank=True)
+    objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
 
     def __init__(self, *args, **kwargs):
         super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
@@ -1593,6 +1594,16 @@ class ParticipantRoundDataValue(ParameterizedValue):
     @property
     def round_configuration(self):
         return self.round_data.round_configuration
+
+    def to_dict(self):
+        pgr = self.participant_group_relationship
+        return {'pk' : self.pk,
+                'participant_group_id': pgr.pk,
+                'participant_name': escape(pgr.participant.full_name),
+                'participant_number': pgr.participant_number,
+                'date_created': timesince(self.date_created),
+                'value': escape(self.value)
+                }
 
     def __unicode__(self):
         return u"{0} : {1} pgr:{2} ({3})".format(self.parameter, self.value, self.participant_group_relationship, self.round_data.experiment)
@@ -1638,15 +1649,14 @@ class ChatMessage(ParticipantRoundDataValue):
     def round_configuration(self):
         return self.round_data.round_configuration
 
-    @property
-    def as_dict(self):
-        return {
-                'message': unicode(self),
-                'participant_group_id': self.participant_group_relationship.pk,
-                'group': unicode(self.participant_group_relationship.group),
-                'participant_number': self.participant_group_relationship.participant_number,
-                'date_created': self.date_created,
-                }
+    def to_dict(self):
+        data = super(ChatMessage, self).to_dict()
+        data['message'] = unicode(self)
+        group = self.participant_group_relationship.group
+        data['group_id'] = group.pk
+        data['group'] = unicode(group)
+        return data
+
     @property
     def as_html(self):
         return "<a name='{0}'>{1}</a> | {2}".format(self.pk,
@@ -1675,13 +1685,9 @@ class Comment(ParticipantRoundDataValue):
         super(Comment, self).__init__(*args, **kwargs)
 
     def to_dict(self):
-        return {'pk' : self.pk,
-                'participant_group_id': self.participant_group_relationship.pk,
-                'participant_name': escape(self.participant_group_relationship.participant.full_name),
-                'participant_number': self.participant_group_relationship.participant_number,
-                'date_created': timesince(self.date_created),
-                'message': escape(self.value)
-                }
+        data = super(Comment, self).to_dict()
+        data['message'] = escape(self.value)
+        return data
 
     class Meta:
         ordering = ['date_created']
@@ -1692,13 +1698,9 @@ class Like(ParticipantRoundDataValue):
         super(Like, self).__init__(*args, **kwargs)
 
     def to_dict(self):
-        return {'pk' : self.pk,
-                'participant_group_id': self.participant_group_relationship.pk,
-                'participant_name': escape(self.participant_group_relationship.participant.full_name),
-                'participant_number': self.participant_group_relationship.participant_number,
-                'target': self.target_data_value,
-                'date_created': timesince(self.date_created)
-                }
+        data = super(Like, self).to_dict()
+        data['target'] = self.target_data_value
+        return data
 
 class ActivityLog(models.Model):
     log_message = models.TextField()
