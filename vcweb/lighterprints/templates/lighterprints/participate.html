@@ -188,8 +188,8 @@
                 </div>
             </div>
             <h3 class='underline'>Team activity</h3>
-            <table class='table scrollable-messages'>
-                <tbody data-bind='template: { name: groupActivityTemplate, foreach: groupActivity }'>
+            <table class='table'>
+                <tbody data-bind='template: { name: groupActivityTemplate, foreach: teamActivity() }'>
                 </tbody>
             </table>
         </div>
@@ -287,10 +287,15 @@ $(function() {
     // set up KO binding, using one master view model
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
+    // custom view model methods, some of these may be lifted into the model itself
     viewModel.groupActivityTemplate = function(groupActivity) {
-        console.debug("parameter name: " + groupActivity.parameter_name());
         return groupActivity.parameter_name();
-    }
+    };
+    viewModel.teamActivity = ko.computed(function() {
+        return ko.utils.arrayFilter(viewModel.groupActivity(), function(groupActivity) {
+            return groupActivity.parameter_name().indexOf("chat_message") != 0;
+        });
+    });
     viewModel.activateChallengesTab = activateTabFunctor('#challenges');
     viewModel.activateDashboardTab = activateTabFunctor('#dashboard');
     viewModel.activateHelpTab = activateTabFunctor('#help');
@@ -302,7 +307,7 @@ $(function() {
             // $('#activityUnavailableModal').modal();
             return;
         }
-        // FIXME: feels dirty
+        // FIXME: manually manipulating DOM elements via JQuery feels dirty when mixed in with KO's data binding
         $('#activityPerformedModal .progress').removeClass('hide');
         $('#activityPerformedModalText').addClass('hide');
         $('#activityPerformedModal .btn').addClass('disabled');

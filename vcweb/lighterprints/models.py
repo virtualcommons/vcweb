@@ -620,6 +620,7 @@ def get_all_team_activity(participant_group_relationship, limit=None):
             logger.debug("unhandled data value parameter: %s", prdv.parameter)
             continue
         data['parameter_name'] = parameter_name
+        data['date_created'] = abbreviated_timesince(prdv.date_created)
         social_activity.append(data)
     return (social_activity, chat_messages)
 

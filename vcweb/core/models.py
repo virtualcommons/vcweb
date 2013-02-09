@@ -1601,7 +1601,7 @@ class ParticipantRoundDataValue(ParameterizedValue):
                 'participant_group_id': pgr.pk,
                 'participant_name': escape(pgr.participant.full_name),
                 'participant_number': pgr.participant_number,
-                'date_created': timesince(self.date_created),
+                'date_created': self.date_created,
                 'value': escape(self.value),
                 'parameter_name': self.parameter.name
                 }
