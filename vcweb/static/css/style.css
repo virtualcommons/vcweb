@@ -102,3 +102,7 @@ li.pull-right {
     width: inherit;
     z-index: -1; 
 }
+@font-face {
+    font-family: Entypo;
+    src: url('../fonts/entypo.eot'), url('../fonts/entypo.woff'), url('../fonts/entypo.ttf'), url('../fonts/entypo.svg');
+}
