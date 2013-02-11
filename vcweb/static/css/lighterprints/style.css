@@ -112,13 +112,32 @@ div.lighterprints-scoreboard h2 {
 div.lighterprints-scoreboard h5 {
     padding-bottom: 15px;
 }
+.comment {
+    color: #D0D0D0;
+}
+.like {
+    color: #D0D0D0;
+}
+.comment:hover {
+    color: #13a5e6;
+    text-decoration: none;
+}
+.like:hover {
+    color: #FF0066;
+    text-decoration: none;
+}
+.lighterprints-red {
+    color: #FF0066;
+}
+.lighterprints-blue {
+    color: #13a5e6;
+}
+.lighterprints-green {
+    color: #95CB29;
+}
 .badge-lighterprints-green {
     background-color: #95CB29;
     color: #FFFFFF;
-}
-
-.lighterprints-green {
-    color: #95CB29;
 }
 .btn-lighterprints-blue {
   background-color: hsl(197, 89%, 37%) !important;
@@ -135,9 +154,6 @@ div.lighterprints-scoreboard h5 {
   color: #fff !important;
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.36);
   -webkit-font-smoothing: antialiased;
-}
-.lighterprints-blue {
-    color: #13a5e6;
 }
 .lighterprints-scoreboard-uppercase {
     letter-spacing:1pt;

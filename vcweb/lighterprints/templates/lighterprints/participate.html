@@ -266,8 +266,8 @@
 {% block javascript %}
 {{ block.super }}
 <script src="//fast.fonts.com/jsapi/e86344be-530a-495b-be28-7a22a9cda219.js"></script>
-<script type='text/javascript' src='{{STATIC_URL}}js/lighterprints/model.js'></script>
-<script type='text/javascript'>
+<script src='{{STATIC_URL}}js/lighterprints/model.js'></script>
+<script>
 $(function() {
     // XXX: set up bootstrap nav-tabs to be semi-refresh friendly, remove in production
     /*
@@ -300,6 +300,14 @@ $(function() {
     viewModel.activateDashboardTab = activateTabFunctor('#dashboard');
     viewModel.activateHelpTab = activateTabFunctor('#help');
     viewModel.activateTeamTab = activateTabFunctor('#team');
+    viewModel.addComment = function(targetModel) {
+        console.debug("adding comment to");
+        console.debug(targetModel);
+    };
+    viewModel.like = function(targetModel) {
+        console.debug("liking");
+        console.debug(targetModel);
+    };
     viewModel.perform = function(challengeModel) {
         if (! challengeModel.availableNow()) {
             // FIXME: modal is slow, no feedback on this for now
@@ -335,17 +343,47 @@ $(function() {
     $('#score-info').popover();
 });
 </script>
+<!-- knockout templates -->
+<script type='text/html' id='likeCommentTemplate'>
+<a href='#' data-bind='click: $root.addComment'><i class='comment icon-comment'></i></a> <a href='#' data-bind='click: $root.like'><i class='like icon-heart'></i></a>
+</script>
+<script type='text/html' id='comment'>
+    <tr>
+        <td style='vertical-align: top'><i class='icon-heart lighterprints-red'></i></td>
+        <td>
+            <strong data-bind='text: participant_name'></strong>
+            <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+            <div>commented on your <span data-bind='text: target_action'></span>:
+            <small><i class='icon-quote-left'></i></small>
+            <span data-bind='text:message'></span>
+            <small><i class='icon-quote-right'></i></small>
+            </div>
+            <div data-bind='template: "likeCommentTemplate"'></div>
+        </td>
+    </tr>
+</script>
+<script type='text/html' id='like'>
+    <tr>
+        <td style='vertical-align: top'><i class='icon-heart lighterprints-red'></i></td>
+        <td>
+            <strong data-bind='text: participant_name'></strong>
+            <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+            <div>liked your <span data-bind='text: target_action'></span></div>
+        </td>
+    </tr>
+</script>
 <script type='text/html' id='chat_message'>
     <tr>
         <td style='vertical-align: top'><i class='icon-comment lighterprints-blue'></i></td>
         <td>
             <strong data-bind='text: participant_name'></strong>
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
-            <p>
+            <div>
             <small><i class='icon-quote-left'></i></small>
             <span data-bind='text:message'></span>
             <small><i class='icon-quote-right'></i></small>
-            </p>
+            </div>
+            <div data-bind="template: 'likeCommentTemplate'"></div>
         </td>
     </tr>
 </script>
@@ -358,6 +396,7 @@ $(function() {
             <div>earned <span class='lighterprints-green' data-bind='text:points'></span><i class='icon-leaf lighterprints-green'></i>
                 for <span data-bind='text: $root.groupName'></span> by completing <em><span data-bind='text: display_name'></span></em>.
             </div>
+            <div data-bind="template: 'likeCommentTemplate'"></div>
         </td>
     </tr>
 </script>
