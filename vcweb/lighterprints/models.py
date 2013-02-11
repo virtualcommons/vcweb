@@ -601,6 +601,8 @@ def get_all_team_activity(participant_group_relationship, limit=None):
             data = prdv.chatmessage.to_dict()
             chat_messages.append(data)
         elif parameter_name == 'comment':
+            if prdv.target_data_value.participant_group_relationship != participant_group_relationship:
+                continue
             data = prdv.comment.to_dict()
         elif parameter_name == 'like':
             if prdv.target_data_value.participant_group_relationship != participant_group_relationship:
