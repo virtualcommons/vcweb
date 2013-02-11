@@ -112,10 +112,10 @@ div.lighterprints-scoreboard h2 {
 div.lighterprints-scoreboard h5 {
     padding-bottom: 15px;
 }
-.comment {
-    color: #D0D0D0;
+h3.popover-title {
+    font-weight: bolder;
 }
-.like {
+.lighterprints-gray {
     color: #D0D0D0;
 }
 .comment:hover {

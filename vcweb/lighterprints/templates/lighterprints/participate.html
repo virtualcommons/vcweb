@@ -268,6 +268,25 @@
 <script src="//fast.fonts.com/jsapi/e86344be-530a-495b-be28-7a22a9cda219.js"></script>
 <script src='{{STATIC_URL}}js/lighterprints/model.js'></script>
 <script>
+function postComment(submitButton) {
+    var parentForm = $(submitButton).closest('form')[0];
+    // var parentForm = submitButton.form;
+    // FIXME: so terribly dirty, need to figure out a way to utilize KO binding to get rid of this ugliness
+    var popoverTarget = $(parentForm).parent().parent().parent().find('.comment-popover');
+    console.debug(popoverTarget);
+    var targetActionId = $(popoverTarget).attr("data-target-id");
+    console.debug("target action id: " + targetActionId);
+    var targetActionIdInput = $(parentForm).find(':input[name="target_action_id"]');
+    targetActionIdInput.val(targetActionId);
+    console.debug(targetActionId);
+    var data = $(parentForm).serialize();
+    console.debug(data);
+    // send the data to the comment api
+    return false;
+}
+function dismissCommentPopover() {
+    $('.comment-popover').popover('hide');
+}
 $(function() {
     // XXX: set up bootstrap nav-tabs to be semi-refresh friendly, remove in production
     /*
@@ -301,12 +320,30 @@ $(function() {
     viewModel.activateHelpTab = activateTabFunctor('#help');
     viewModel.activateTeamTab = activateTabFunctor('#team');
     viewModel.addComment = function(targetModel) {
-        console.debug("adding comment to");
+        // FIXME: could try setting up the bootstrap popover here and manually applying the bindings to it to get rid of
+        // hackiness of postComment global
+        console.debug("adding comment to target");
         console.debug(targetModel);
     };
     viewModel.like = function(targetModel) {
-        console.debug("liking");
-        console.debug(targetModel);
+        // FIXME: if targetModel.likes already contains this participant's pgr.pk, don't allow for this again
+        if (targetModel.likes().indexOf( {{ participant_group_relationship.pk }} ) != -1) {
+            console.debug(targetModel);
+            console.debug("is already liked");
+            return;
+        }
+        $.post('/lighterprints/api/like', 
+        {participant_group_id: {{ participant_group_relationship.pk }}, target_id: targetModel.pk()}, 
+        function(data) {
+            console.debug(data);
+            if (data.success) {
+                console.debug("success!");
+            }
+            else {
+                console.debug("ERROR: " + data.message);
+            }
+        });
+
     };
     viewModel.perform = function(challengeModel) {
         if (! challengeModel.availableNow()) {
@@ -341,11 +378,33 @@ $(function() {
     ko.applyBindings(viewModel);
     // FIXME: use $('.popover').popover() if we end up having a lot more of these.
     $('#score-info').popover();
+    // FIXME: figure out how to get KO binding to work here
+    $('.comment-popover').popover({
+        html: true,
+        content: function() {
+            return $('#commentPopoverForm').html();
+        }
+    });
 });
+</script>
+<!-- bootstrap popover templates -->
+<script type='text/html' id='commentPopoverForm'>
+<form action='#'>
+<textarea name='comment' rows='3'></textarea>
+<input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
+<input type='hidden' name='target_action_id' />
+<a class='btn btn-lighterprints-blue' onclick='postComment(this)'>POST</button> <a style='position: relative; left: 8px; top: 5px;' href='#' class='lighterprints-gray' onclick='dismissCommentPopover()'>Cancel</a>
+</form>
 </script>
 <!-- knockout templates -->
 <script type='text/html' id='likeCommentTemplate'>
-<a href='#' data-bind='click: $root.addComment'><i class='comment icon-comment'></i></a> <a href='#' data-bind='click: $root.like'><i class='like icon-heart'></i></a>
+<a class='comment comment-popover' href='#' rel="popover" data-placement="left" data-html="true" data-bind='click: $root.addComment, attr: { "data-title": "Reply to " + participant_name(), "data-target-id": pk() }'>
+<i class='comment lighterprints-gray icon-comment'></i>
+</a> 
+
+<a href='#' data-bind='click: $root.like'>
+<i class='lighterprints-gray icon-heart'></i>
+</a>
 </script>
 <script type='text/html' id='comment'>
     <tr>
@@ -368,7 +427,17 @@ $(function() {
         <td>
             <strong data-bind='text: participant_name'></strong>
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
-            <div>liked your <span data-bind='text: target_action'></span></div>
+            <div>
+            <small>
+            liked your 
+            <span data-bind='if: target.parameter_name() === "activity_performed"'>
+            completed challenge, <em data-bind='text: target.value'></em>
+            </span>
+            <span data-bind='if: target.parameter_name() === "chat_message"'>
+            message, &quot;<em data-bind='text: target.value'></em>&quot;
+            </span>
+            </small>
+            </div>
         </td>
     </tr>
 </script>

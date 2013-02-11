@@ -241,8 +241,7 @@ def like(request):
         return HttpResponse(dumps({'success': True}))
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
-        return HttpResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
-
+        return HttpResponse(dumps({'success': False, 'message': 'Invalid like post'}))
 
 @csrf_exempt
 @login_required

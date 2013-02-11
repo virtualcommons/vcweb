@@ -238,7 +238,7 @@ class Activity(MPTTModel):
         return activity_as_dict
 
     def __unicode__(self):
-        return u'%s (+%s)' % (self.label, self.points)
+        return u'%s' % self.label
 
     class Meta:
         ordering = ['level', 'name']
@@ -603,10 +603,13 @@ def get_all_team_activity(participant_group_relationship, limit=None):
         elif parameter_name == 'comment':
             data = prdv.comment.to_dict()
         elif parameter_name == 'like':
+            if prdv.target_data_value.participant_group_relationship != participant_group_relationship:
+                continue
             data = prdv.like.to_dict()
         elif parameter_name == 'activity_performed':
             activity = prdv.value
             data = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
+            data['pk'] = prdv.pk
             data['date_created'] = abbreviated_timesince(prdv.date_created)
             data['date_performed'] = prdv.date_created
             pgr = prdv.participant_group_relationship

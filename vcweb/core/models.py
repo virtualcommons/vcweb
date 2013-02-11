@@ -1688,6 +1688,7 @@ class Comment(ParticipantRoundDataValue):
     def to_dict(self):
         data = super(Comment, self).to_dict()
         data['message'] = escape(self.value)
+        data['target'] = self.target_data_value.to_dict()
         return data
 
     class Meta:
@@ -1700,7 +1701,7 @@ class Like(ParticipantRoundDataValue):
 
     def to_dict(self):
         data = super(Like, self).to_dict()
-        data['target'] = self.target_data_value
+        data['target'] = self.target_data_value.to_dict()
         return data
 
 class ActivityLog(models.Model):
