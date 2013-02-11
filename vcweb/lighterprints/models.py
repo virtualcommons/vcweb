@@ -590,6 +590,8 @@ def get_all_team_activity(participant_group_relationship, limit=None):
     social_activity = []
     chat_messages = []
     data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like', 'comment', 'chatmessage')
+    own_likes = Like.objects.select_related('target_data_value').filter(participant_group_relationship=participant_group_relationship)
+    like_target_ids = [l.target_data_value.pk for l in own_likes]
     if limit is not None:
         data_values = data_values[:limit]
     for prdv in data_values:
@@ -624,6 +626,7 @@ def get_all_team_activity(participant_group_relationship, limit=None):
         else:
             logger.debug("unhandled data value parameter: %s", prdv.parameter)
             continue
+        data['liked'] = prdv.pk in like_target_ids
         data['parameter_name'] = parameter_name
         data['date_created'] = abbreviated_timesince(prdv.date_created)
         social_activity.append(data)

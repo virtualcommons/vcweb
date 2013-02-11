@@ -122,7 +122,7 @@ h3.popover-title {
     color: #13a5e6;
     text-decoration: none;
 }
-.like:hover {
+.like:hover, .liked {
     color: #FF0066;
     text-decoration: none;
 }

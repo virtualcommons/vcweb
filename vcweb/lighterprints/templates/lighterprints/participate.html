@@ -327,17 +327,13 @@ $(function() {
     };
     viewModel.like = function(targetModel) {
         // FIXME: if targetModel.likes already contains this participant's pgr.pk, don't allow for this again
-        if (targetModel.likes().indexOf( {{ participant_group_relationship.pk }} ) != -1) {
-            console.debug(targetModel);
-            console.debug("is already liked");
-            return;
-        }
         $.post('/lighterprints/api/like', 
-        {participant_group_id: {{ participant_group_relationship.pk }}, target_id: targetModel.pk()}, 
+        {participant_group_id: {{ participant_group_relationship.pk }}, target_id: targetModel.pk()},
         function(data) {
             console.debug(data);
+            targetModel.liked(true);
             if (data.success) {
-                console.debug("success!");
+
             }
             else {
                 console.debug("ERROR: " + data.message);
@@ -400,11 +396,16 @@ $(function() {
 <script type='text/html' id='likeCommentTemplate'>
 <a class='comment comment-popover' href='#' rel="popover" data-placement="left" data-html="true" data-bind='click: $root.addComment, attr: { "data-title": "Reply to " + participant_name(), "data-target-id": pk() }'>
 <i class='comment lighterprints-gray icon-comment'></i>
-</a> 
-
-<a href='#' data-bind='click: $root.like'>
-<i class='lighterprints-gray icon-heart'></i>
 </a>
+
+<span data-bind='ifnot: liked'>
+<a href='#' data-bind='click: $root.like'>
+<i class='like lighterprints-gray icon-heart'></i>
+</a>
+</span>
+<span data-bind='if: liked'>
+<i class='liked icon-heart'></i>
+</span>
 </script>
 <script type='text/html' id='comment'>
     <tr>
