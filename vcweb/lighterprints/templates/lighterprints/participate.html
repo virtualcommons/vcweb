@@ -298,14 +298,6 @@ $(function() {
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
     // custom view model methods, some of these may be lifted into the model itself
-    viewModel.groupActivityTemplate = function(groupActivity) {
-        return groupActivity.parameter_name();
-    };
-    viewModel.teamActivity = ko.computed(function() {
-        return ko.utils.arrayFilter(viewModel.groupActivity(), function(groupActivity) {
-            return groupActivity.parameter_name().indexOf("chat_message") != 0;
-        });
-    });
     viewModel.activateChallengesTab = activateTabFunctor('#challenges');
     viewModel.activateDashboardTab = activateTabFunctor('#dashboard');
     viewModel.activateHelpTab = activateTabFunctor('#help');

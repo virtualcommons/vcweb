@@ -20,6 +20,17 @@ function LighterFootprintsModel(modelJson) {
     model.lastPerformedActivity = ko.observable();
     model.lastPerformedActivityPoints = ko.observable();
     model.errorMessage = ko.observable();
+    model.groupActivityTemplate = function(groupActivity) {
+        return groupActivity.parameter_name();
+    };
+    model.teamActivity = ko.computed(function() {
+        return ko.utils.arrayFilter(model.groupActivity(), function(groupActivity) {
+            return groupActivity.parameter_name().indexOf("chat_message") != 0;
+        });
+    });
+    model.chatMessages = ko.computed(function() {
+            return ko.utils.arrayFilter(model.groupActivity(), function(groupActivity) { return groupActivity.parameter_name().indexOf("chat_message") === 0 });
+        });
     model.hasChatMessages = function() {
         return model.chatMessages().length > 0;
     }
@@ -28,8 +39,7 @@ function LighterFootprintsModel(modelJson) {
         $.post('/lighterprints/api/message', formData, function(response) {
                 if (response.success) {
                     console.debug("successful post - updated view model: ");
-                    console.debug(response.viewModel);
-                    ko.mapping.fromJSON(response.viewModel, model);
+                    ko.mapping.fromJS(response.viewModel, model);
                 }
                 else {
                     console.debug("unable to post message to server");

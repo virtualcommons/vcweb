@@ -626,7 +626,6 @@ def get_all_team_activity(participant_group_relationship, limit=None):
             data['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=prdv.pk)]
             data['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=prdv.pk)]
         else:
-            logger.debug("unhandled data value parameter: %s", prdv.parameter)
             continue
         data['liked'] = prdv.pk in like_target_ids
         data['commented'] = prdv.pk in comment_target_ids
