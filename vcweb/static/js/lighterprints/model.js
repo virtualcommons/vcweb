@@ -25,8 +25,16 @@ function LighterFootprintsModel(modelJson) {
     }
     model.submitChatMessage = function() {
         var formData = $('#chat-form').serialize();
-        $.post('/lighterprints/api/message', formData, function(data) {
-                ko.mapping.fromJS(data, model);
+        $.post('/lighterprints/api/message', formData, function(response) {
+                if (response.success) {
+                    console.debug("successful post - updated view model: ");
+                    console.debug(response.viewModel);
+                    ko.mapping.fromJSON(response.viewModel, model);
+                }
+                else {
+                    console.debug("unable to post message to server");
+                    console.debug(response);
+                }
             });
         $('#chatText').val('');
         return false;

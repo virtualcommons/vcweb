@@ -210,8 +210,8 @@ def post_chat_message(request):
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
         chat_message = ChatMessage.objects.create(value=message, participant_group_relationship=participant_group_relationship)
         logger.debug("%s: %s", participant_group_relationship.participant, chat_message)
-        content = get_view_model_json(participant_group_relationship)
-        return JsonResponse(content)
+        view_model = get_view_model_json(participant_group_relationship)
+        return JsonResponse(dumps({'success': True, 'viewModel': view_model}))
     return JsonResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
 
 
@@ -359,6 +359,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
         participant_group_relationship.first_visit = False
         participant_group_relationship.save()
     return dumps({
+        'participantGroupId': participant_group_relationship.pk,
         'groupData': group_data,
         'hoursLeft': hours_left,
         'minutesLeft': minutes_left,

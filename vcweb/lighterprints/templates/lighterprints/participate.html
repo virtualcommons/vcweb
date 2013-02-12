@@ -172,7 +172,7 @@
                 <button class='btn btn-lighterprints-blue' data-bind='click: submitChatMessage'>Send</button>
                 <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.id}}'/>
             </form>
-            <div id='chat-div' class='scrollable-messages'>
+            <div class='well alert-white scrollable-messages'>
                 <div data-bind='ifnot: hasChatMessages() '>
                     <div class='alert alert-warning'>
                         No chat messages have been posted yet.
@@ -180,9 +180,19 @@
                 </div>
                 <div data-bind='if: hasChatMessages()'>
                     <div data-bind='foreach: chatMessages'>
-                        <div class='alert alert-message chat-message'>
-                            <strong data-bind='text: participant_name'></strong>: <em><span data-bind='text: message'></span></em>
-                            <b class='pull-right' ><span data-bind='text: date_created'></span> ago</b>
+                        <div class='row'>
+                            <div class='span1'>
+                                <i class='lighterprints-gray icon-user icon-2x'></i>
+                            </div>
+                            <div class='span6'>
+                                <strong data-bind='text: participant_name'></strong>
+                                <p>
+                                <span data-bind='text: message'></span>
+                                </p>
+                            </div>
+                            <div class='span1'>
+                                <b class='pull-right'><span data-bind='text: date_created'></span> ago</b>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -368,6 +378,7 @@ $(function() {
 </script>
 <!-- knockout templates -->
 <script type='text/html' id='likeCommentTemplate'>
+<div data-bind='if: $root.participantGroupId() != participant_group_id()'>
 <span data-bind='ifnot: commented'>
 <a class='comment comment-popover' href='javascript:void(0)' rel="popover" data-placement='left' data-title="Leave a comment" data-bind='popover: {  content: "#commentPopoverForm", id: pk()}'>
 <i class='comment lighterprints-gray icon-comment'></i>
@@ -384,6 +395,7 @@ $(function() {
 <span data-bind='if: liked'>
 <i class='liked icon-heart'></i>
 </span>
+</div>
 </script>
 <script type='text/html' id='comment'>
     <tr>
@@ -391,12 +403,12 @@ $(function() {
         <td>
             <strong data-bind='text: participant_name'></strong>
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
-            <div>commented on your
+            <div>
             <span data-bind='if: target.parameter_name() === "activity_performed"'>
-            completed challenge, <em data-bind='text: target.value'></em>
+            commented on your completed challenge, <em data-bind='text: target.value'></em>
             </span>
-            <span data-bind='if: target.parameter_name() === "chat_message"'>
-            message, &quot;<em data-bind='text: target.value'></em>&quot;
+            <span data-bind='if: target.parameter_name() === "chat_message" || target.parameter_name() === "comment"'>
+            replied to your message, &quot;<em data-bind='text: target.value'></em>&quot;
             </span>
             <div>
             <small><i class='icon-quote-left'></i></small>
@@ -419,7 +431,7 @@ $(function() {
             <span data-bind='if: target.parameter_name() === "activity_performed"'>
             completed challenge, <em data-bind='text: target.value'></em>
             </span>
-            <span data-bind='if: target.parameter_name() === "chat_message"'>
+            <span data-bind='if: target.parameter_name() === "chat_message" || target.parameter_name() === "comment"'>
             message, &quot;<em data-bind='text: target.value'></em>&quot;
             </span>
             </div>

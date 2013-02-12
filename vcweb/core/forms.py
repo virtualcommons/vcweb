@@ -136,7 +136,7 @@ class RegisterExcelParticipantsForm(RegisterParticipantsForm):
     file = forms.FileField()
 
 class ChatForm(forms.Form):
-    message = forms.CharField(max_length=512)
+    message = forms.CharField()
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
     target_participant_group_id = forms.IntegerField(widget=forms.HiddenInput, required=False)
     def clean_message(self):

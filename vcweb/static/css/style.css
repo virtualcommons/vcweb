@@ -23,7 +23,7 @@ h5 { font-size: 0.9em; }
 .alert-white {
     background: #FFFFFF;
     border: 1px solid #CCC;
-    color: gray;
+    color: #5F6E77;
 }
 label.error {
     background: #FBE3E4;
@@ -102,7 +102,9 @@ li.pull-right {
     width: inherit;
     z-index: -1; 
 }
+/*
 @font-face {
     font-family: Entypo;
     src: url('../fonts/entypo.eot'), url('../fonts/entypo.woff'), url('../fonts/entypo.ttf'), url('../fonts/entypo.svg');
 }
+*/
