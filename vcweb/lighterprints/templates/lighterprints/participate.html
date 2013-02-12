@@ -327,19 +327,16 @@ $(function() {
     };
     viewModel.like = function(targetModel) {
         // FIXME: if targetModel.likes already contains this participant's pgr.pk, don't allow for this again
+        if (targetModel.liked()) {
+            console.debug("this is already liked");
+            return;
+        }
+        targetModel.liked(true);
         $.post('/lighterprints/api/like', 
-        {participant_group_id: {{ participant_group_relationship.pk }}, target_id: targetModel.pk()},
-        function(data) {
-            console.debug(data);
-            targetModel.liked(true);
-            if (data.success) {
-
-            }
-            else {
-                console.debug("ERROR: " + data.message);
-            }
-        });
-
+            {participant_group_id: {{ participant_group_relationship.pk }}, target_id: targetModel.pk()},
+            function(data) {
+                targetModel.liked(data.success);
+            });
     };
     viewModel.perform = function(challengeModel) {
         if (! challengeModel.availableNow()) {
@@ -389,7 +386,7 @@ $(function() {
 <textarea name='comment' rows='3'></textarea>
 <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
 <input type='hidden' name='target_action_id' />
-<a class='btn btn-lighterprints-blue' onclick='postComment(this)'>POST</button> <a style='position: relative; left: 8px; top: 5px;' href='#' class='lighterprints-gray' onclick='dismissCommentPopover()'>Cancel</a>
+<a class='btn btn-lighterprints-blue' onclick='postComment(this)'>POST</button> <a style='position: relative; left: 8px; top: 5px;' href='javascript:void(0)' class='lighterprints-gray' onclick='dismissCommentPopover()'>Cancel</a>
 </form>
 </script>
 <!-- knockout templates -->

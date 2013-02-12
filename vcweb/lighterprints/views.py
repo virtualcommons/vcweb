@@ -12,6 +12,7 @@ from django.views.generic.list import BaseListView, MultipleObjectTemplateRespon
 from vcweb.core import unicodecsv
 from vcweb.core.decorators import participant_required
 from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
+from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response, get_active_experiment
@@ -229,7 +230,7 @@ def like(request):
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to like target_id %s as %s", request.user, target_id, participant_group_relationship)
-            return HttpResponse(dumps({'success': False, 'message': "Invalid request"}))
+            return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
         logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         logger.debug("target: %s", target)
@@ -238,10 +239,10 @@ def like(request):
         # https://bitbucket.org/virtualcommons/vcweb/issue/59/get_or_create-issues-for-likes
         Like.objects.create(participant_group_relationship=participant_group_relationship, target_data_value=target)
         logger.debug("Participant %s liked %s", participant_group_relationship, target)
-        return HttpResponse(dumps({'success': True}))
+        return JsonResponse(dumps({'success': True}))
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
-        return HttpResponse(dumps({'success': False, 'message': 'Invalid like post'}))
+        return JsonResponse(dumps({'success': False, 'message': 'Invalid like post'}))
 
 @csrf_exempt
 @login_required
@@ -254,7 +255,7 @@ def post_comment(request):
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message, target_id, participant_group_relationship)
-            return HttpResponse(dumps({'success': False, 'message': "Invalid request"}))
+            return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
         logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         logger.debug("target: %s", target)
@@ -264,10 +265,10 @@ def post_comment(request):
                 target_data_value=target)
         logger.debug("Participant %s commented '%s' on %s", participant_group_relationship.participant, message, target)
 
-        return HttpResponse(dumps({'success': True, 'comment' : escape(comment.value), 'target': target}))
+        return JsonResponse(dumps({'success': True, 'comment' : escape(comment.value), 'target': target}))
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
-        return HttpResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
+        return JsonResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
 
 @csrf_exempt
 def login(request):
@@ -282,12 +283,12 @@ def login(request):
 # FIXME: defaulting to first active experiment... need to revisit this.
             active_experiment = get_active_experiment(participant, experiment_metadata=get_lighterprints_experiment_metadata())
             participant_group_relationship = participant.get_participant_group_relationship(active_experiment)
-            return HttpResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.id}), content_type='application/json')
+            return JsonResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.id}))
         else:
             logger.debug("invalid form %s", form)
     except Exception as e:
         logger.debug("Invalid login: %s", e)
-    return HttpResponse(dumps({'success': False, 'message': "Invalid login"}), content_type='application/json')
+    return JsonResponse(dumps({'success': False, 'message': "Invalid login"}))
 
 class CsvExportView(DataExportMixin, BaseDetailView):
     def export_data(self, response, experiment):
