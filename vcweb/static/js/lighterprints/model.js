@@ -43,5 +43,28 @@ function LighterFootprintsModel(modelJson) {
     model.hasAvailableActivities = ko.computed(function() {
             return model.availableActivities().length > 0;
         });
+    model.closeCommentPopover = function(targetModel) {
+        $('.comment-popover').popover('hide');
+    };
     return model;
 }
+ko.bindingHandlers.popover = {
+    init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+        var attribute = ko.utils.unwrapObservable(valueAccessor());
+        var cssSelectorForPopoverTemplate = attribute.content;
+        var popOverTemplate = "<div id='"+attribute.id+"-popover'>" + $(cssSelectorForPopoverTemplate).html() + "</div>";
+        $(element).popover({
+            content: popOverTemplate,
+            html: true,
+            trigger: 'manual'
+        });
+        var popoverId = "comment-popover" + attribute.id;
+        $(element).attr('id', popoverId);
+        $(element).click(function() {
+            $(this).popover('toggle');
+            var thePopover = document.getElementById(attribute.id+"-popover");
+            childBindingContext = bindingContext.createChildContext(viewModel);
+            ko.applyBindingsToDescendants(childBindingContext, thePopover);
+        });
+    },
+};

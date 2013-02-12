@@ -99,7 +99,7 @@ def get_notifications(request, participant_group_id):
     else:
         logger.warning("authenticated user %s tried to retrieve notifications for %s", request.user,
                 participant_group_relationship)
-        return HttpResponse(dumps({'success':False, 'message': 'Invalid authz request'}), content_type='application/json')
+        return JsonResponse(dumps({'success':False, 'message': 'Invalid authz request'}))
 
 @login_required
 def update_notifications_since(request):
@@ -110,10 +110,10 @@ def update_notifications_since(request):
         if request.user.participant == participant_group_relationship.participant:
             participant_group_relationship.notifications_since = datetime.now()
             participant_group_relationship.save()
-            return HttpResponse(dumps({'success':True}), content_type='application/json')
+            return JsonResponse(dumps({'success':True}))
         else:
             logger.warning("authenticated user %s tried to update notifications since for %s", request.user, participant_group_relationship)
-    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}), content_type='application/json')
+    return JsonResponse(dumps({'success':False, 'message': 'Invalid request'}))
 '''
 [(4, u'adjust-thermostat'),
  (2, u'eat-local-lunch'),
@@ -139,8 +139,8 @@ def activity_performed_counts(request, participant_group_id):
         activity_counts_dict = defaultdict(int, [(d['int_value'], d['count']) for d in activity_performed_counts])
         activity_counts = [activity_counts_dict[activity_id] for activity_id in _activity_ids]
         logger.debug("activity counts: %s", activity_counts)
-        return HttpResponse(dumps({'success': True, 'activity_counts': activity_counts}), content_type='application/json')
-    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}), content_type='application/json')
+        return JsonResponse(dumps({'success': True, 'activity_counts': activity_counts}))
+    return JsonResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
 @login_required
 def group_score(request, participant_group_id):
@@ -157,8 +157,8 @@ def group_score(request, participant_group_id):
             'total_participant_points': total_participant_points,
             'points_to_next_level': points_to_next_level(level)
             })
-        return HttpResponse(dumps({'success':True, 'scores': groups }), content_type='application/json')
-    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}), content_type='application/json')
+        return JsonResponse(dumps({'success':True, 'scores': groups }))
+    return JsonResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
 @login_required
 def group_activity(request, participant_group_id):
@@ -168,7 +168,7 @@ def group_activity(request, participant_group_id):
         return json_response(request, content)
     else:
         logger.warning("authenticated user %s tried to retrieve group activity for %s", request.user, participant_group_relationship)
-        return HttpResponse(dumps({'success': False, 'message': 'Invalid authz request'}), content_type='application/json')
+        return JsonResponse(dumps({'success': False, 'message': 'Invalid authz request'}))
 
 @csrf_exempt
 @participant_required
@@ -189,14 +189,13 @@ def perform_activity(request):
                     categoryId=','.join(get_foursquare_category_ids()))
             logger.debug("Found venues: %s", venues)
             if performed_activity is not None:
-                return HttpResponse(dumps({
+                return JsonResponse(dumps({
                     'success': True,
                     'viewModel':get_view_model_json(participant_group_relationship)
-                    }),
-                    content_type='application/json')
+                    }))
         else:
             logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id, participant_group_relationship)
-    return HttpResponse(dumps({'success': False, 'response': "Could not perform activity"}), content_type='application/json')
+    return JsonResponse(dumps({'success': False, 'response': "Could not perform activity"}))
 
 @csrf_exempt
 @login_required
@@ -208,16 +207,12 @@ def post_chat_message(request):
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, participant_group_relationship)
-            return HttpResponse(dumps({'success': False, 'message': "Invalid request"}))
-        chat_message_parameters = {
-                'value': message,
-                'participant_group_relationship': participant_group_relationship
-                }
-        chat_message = ChatMessage.objects.create(**chat_message_parameters)
-        logger.debug("Participant %s created chat message %s", participant_group_relationship.participant, chat_message)
+            return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
+        chat_message = ChatMessage.objects.create(value=message, participant_group_relationship=participant_group_relationship)
+        logger.debug("%s: %s", participant_group_relationship.participant, chat_message)
         content = get_view_model_json(participant_group_relationship)
-        return HttpResponse(content, content_type='application/json')
-    return HttpResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
+        return JsonResponse(content)
+    return JsonResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
 
 
 @csrf_exempt
@@ -239,7 +234,7 @@ def like(request):
         # https://bitbucket.org/virtualcommons/vcweb/issue/59/get_or_create-issues-for-likes
         Like.objects.create(participant_group_relationship=participant_group_relationship, target_data_value=target)
         logger.debug("Participant %s liked %s", participant_group_relationship, target)
-        return JsonResponse(dumps({'success': True}))
+        return JsonResponse(dumps({'success': True, 'viewModel': get_view_model_json(participant_group_relationship)}))
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
         return JsonResponse(dumps({'success': False, 'message': 'Invalid like post'}))
@@ -256,15 +251,13 @@ def post_comment(request):
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message, target_id, participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
-        logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
-        logger.debug("target: %s", target)
+        logger.debug("%s commented on %s", participant_group_relationship, target)
         comment = Comment.objects.create(
                 value=message,
                 participant_group_relationship=participant_group_relationship,
                 target_data_value=target)
         logger.debug("Participant %s commented '%s' on %s", participant_group_relationship.participant, message, target)
-
         return JsonResponse(dumps({'success': True, 'comment' : escape(comment.value), 'target': target}))
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
@@ -392,7 +385,7 @@ def get_view_model(request, participant_group_id=None):
         logger.warning("user %s tried to access view model for %s", request.user.participant, pgr)
         raise PermissionDenied("Access denied.")
     view_model_json = get_view_model_json(pgr)
-    return HttpResponse(dumps({'success': True, 'view_model_json': view_model_json}), content_type='application/json')
+    return JsonResponse(dumps({'success': True, 'view_model_json': view_model_json}))
 
 @participant_required
 def mobile_participate(request, experiment_id=None):
@@ -442,7 +435,7 @@ def checkin(request):
             venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
                     categoryId=','.join(get_foursquare_category_ids()))
             logger.debug("Found venues: %s", venues)
-            return HttpResponse(dumps({'success':True}), content_type='application/json')
+            return JsonResponse(dumps({'success':True}))
         else:
             logger.warning("authenticated user %s tried to checkin at (%s, %s) for %s", request.user, latitude, longitude, participant_group_relationship)
-    return HttpResponse(dumps({'success':False, 'message': 'Invalid request'}), content_type='application/json')
+    return JsonResponse(dumps({'success':False, 'message': 'Invalid request'}))
