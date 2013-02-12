@@ -543,8 +543,6 @@ class Experiment(models.Model):
         msg.attach_alternative(html_content, "text/html")
         return msg
 
-
-
     ''' FIXME: get rid of hardcoded defaults for the slovakia pretest '''
     def setup_test_participants(self, count=20, institution=None, email_suffix='sav.sk', password='test'):
         if self.participant_set.count() > 0:

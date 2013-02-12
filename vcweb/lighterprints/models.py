@@ -1,5 +1,7 @@
 from django.db import models
 from django.dispatch import receiver
+from django.template import Context
+from django.template.loader import select_template
 from django.utils.html import escape
 from django.utils.timesince import timesince
 from django.utils.translation import ugettext_lazy as _
@@ -26,6 +28,28 @@ def new_participant(sender, experiment=None, participant_group_relationship=None
         if participant_group_relationship is not None:
             get_unlocked_activities(participant_group_relationship)
 
+def create_group_summary_email(group, promoted=False, completed=False):
+    logger.debug("creating group summary email for group %s", group)
+# FIXME: need some logic to select an email template based on the treatment type, or push into the template itself
+    plaintext_template = select_template(['lighterprints/email/group-summary-email.txt'])
+    html_template = select_template(['lighterprints/email/group-summary-email.html'])
+    experiment = group.experiment
+    experimenter_email = experiment.experimenter.email
+    yesterday = date.today() - timedelta(1)
+    c = Context({
+        'experiment': experiment,
+        'team_name': team_name(group),
+        'summary_date': yesterday,
+        })
+    plaintext_content = plaintext_template.render(c)
+    html_content = html_template.render(c)
+    msg = EmailMultiAlternatives('Lighter Footprints Nightly Summary', plaintext_content, experimenter_email, [ experimenter_email ])
+    msg.bcc = [p.email for p in group.participant_set.all()]
+    msg.attach_alternative(html_content, 'text/html')
+    return msg
+
+
+
 @receiver(signals.midnight_tick)
 def update_active_experiments(sender, time=None, start=None, **kwargs):
 # since this happens at midnight we need to look at the previous day
@@ -37,7 +61,7 @@ def update_active_experiments(sender, time=None, start=None, **kwargs):
         for group in experiment.group_set.all():
             footprint_level_grdv = get_footprint_level_dv(group)
             if should_advance_level(group, footprint_level_grdv.value, start):
-                # advance group level
+                # group was promoted
                 footprint_level_grdv.value = min(footprint_level_grdv.value + 1, 3)
                 footprint_level_grdv.save()
 
@@ -314,8 +338,7 @@ def get_treatment_type(group):
     return group.get_round_configuration_value(name='treatment_type')
 
 def get_active_experiments():
-    # FIXME: add PassThroughManager to ExperimentManager
-    return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(), status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
+    return Experiment.objects.active(experiment_metadata=get_lighterprints_experiment_metadata())
 
 # all activity names:
 #[u'adjust-thermostat', u'eat-local-lunch', u'enable-sleep-on-computer', u'recycle-materials', u'share-your-ride',
