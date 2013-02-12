@@ -268,28 +268,6 @@
 <script src="//fast.fonts.com/jsapi/e86344be-530a-495b-be28-7a22a9cda219.js"></script>
 <script src='{{STATIC_URL}}js/lighterprints/model.js'></script>
 <script>
-function postComment(submitButton) {
-    var parentForm = $(submitButton).closest('form')[0];
-    // var parentForm = submitButton.form;
-    // FIXME: so terribly dirty, need to figure out a way to utilize KO binding to get rid of this ugliness
-    var popoverTarget = $(parentForm).parent().parent().parent().find('.comment-popover');
-    console.debug(popoverTarget);
-    var targetId = $(popoverTarget).attr("data-target-id");
-    console.debug("target action id: " + targetActionId);
-    var targetIdInput = $(parentForm).find(':input[name="target_id"]');
-    targetIdInput.val(targetId);
-    var formData = $(parentForm).serialize();
-    $.post('/lighterprints/api/comment', formData, function(response) {
-        if (response.success) {
-            var viewModel = response.viewModel;
-        }
-    });
-    // send the data to the comment api
-    return false;
-}
-function dismissCommentPopover() {
-    $('.comment-popover').popover('hide');
-}
 $(function() {
     // XXX: set up bootstrap nav-tabs to be semi-refresh friendly, remove in production
     /*
@@ -324,6 +302,7 @@ $(function() {
     viewModel.activateTeamTab = activateTabFunctor('#team');
     viewModel.postComment = function(targetModel) {
         var formData = $('#commentForm' + targetModel.pk()).serialize();
+        $('.comment-popover').popover('hide');
         $.post('/lighterprints/api/comment', formData, function(response) {
             if (response.success) {
                 ko.mapping.fromJSON(response.viewModel, viewModel);
@@ -381,7 +360,7 @@ $(function() {
 <!-- bootstrap popover templates -->
 <script type='text/html' id='commentPopoverForm'>
 <form data-bind='attr: { id: "commentForm" + pk() }'>
-<textarea name='comment' rows='3'></textarea>
+<textarea name='message' rows='3'></textarea>
 <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
 <input type='hidden' name='target_id' data-bind='value: pk()' />
 <a class='btn btn-lighterprints-blue' data-bind='click: $root.postComment'>POST</button> <a style='position: relative; left: 8px; top: 5px;' href='javascript:void(0)' class='lighterprints-gray' data-bind='click: $root.closeCommentPopover' >Cancel</a>
@@ -389,9 +368,14 @@ $(function() {
 </script>
 <!-- knockout templates -->
 <script type='text/html' id='likeCommentTemplate'>
-<a class='comment comment-popover' href='javascript:void(0)' rel="popover" data-placement='left' data-bind='popover: { content: "#commentPopoverForm", id: pk()}'>
+<span data-bind='ifnot: commented'>
+<a class='comment comment-popover' href='javascript:void(0)' rel="popover" data-placement='left' data-title="Leave a comment" data-bind='popover: {  content: "#commentPopoverForm", id: pk()}'>
 <i class='comment lighterprints-gray icon-comment'></i>
 </a>
+</span>
+<span data-bind='if: commented'>
+<i class='commented icon-comment'></i>
+</span>
 <span data-bind='ifnot: liked'>
 <a href='#' data-bind='click: $root.like'>
 <i class='like lighterprints-gray icon-heart'></i>
@@ -407,10 +391,18 @@ $(function() {
         <td>
             <strong data-bind='text: participant_name'></strong>
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
-            <div>commented on your <span data-bind='text: target_action'></span>:
+            <div>commented on your
+            <span data-bind='if: target.parameter_name() === "activity_performed"'>
+            completed challenge, <em data-bind='text: target.value'></em>
+            </span>
+            <span data-bind='if: target.parameter_name() === "chat_message"'>
+            message, &quot;<em data-bind='text: target.value'></em>&quot;
+            </span>
+            <div>
             <small><i class='icon-quote-left'></i></small>
             <span data-bind='text:message'></span>
             <small><i class='icon-quote-right'></i></small>
+            </div>
             </div>
             <div data-bind='template: "likeCommentTemplate"'></div>
         </td>
@@ -423,15 +415,13 @@ $(function() {
             <strong data-bind='text: participant_name'></strong>
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
             <div>
-            <small>
-            liked your 
+            liked your
             <span data-bind='if: target.parameter_name() === "activity_performed"'>
             completed challenge, <em data-bind='text: target.value'></em>
             </span>
             <span data-bind='if: target.parameter_name() === "chat_message"'>
             message, &quot;<em data-bind='text: target.value'></em>&quot;
             </span>
-            </small>
             </div>
         </td>
     </tr>

@@ -258,7 +258,7 @@ def post_comment(request):
                 participant_group_relationship=participant_group_relationship,
                 target_data_value=target)
         logger.debug("Participant %s commented '%s' on %s", participant_group_relationship.participant, message, target)
-        return JsonResponse(dumps({'success': True, 'comment' : escape(comment.value), 'target': target}))
+        return JsonResponse(dumps({'success': True, 'viewModel' : get_view_model_json(participant_group_relationship)}))
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
         return JsonResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
