@@ -31,27 +31,6 @@ def new_participant(sender, experiment=None, participant_group_relationship=None
         if participant_group_relationship is not None:
             get_unlocked_activities(participant_group_relationship)
 
-def create_group_summary_email(group, promoted=False, completed=False):
-    logger.debug("creating group summary email for group %s", group)
-# FIXME: need some logic to select an email template based on the treatment type, or push into the template itself
-    plaintext_template = select_template(['lighterprints/email/group-summary-email.txt'])
-    html_template = select_template(['lighterprints/email/group-summary-email.html'])
-    experiment = group.experiment
-    experimenter_email = experiment.experimenter.email
-    yesterday = date.today() - timedelta(1)
-    c = Context({
-        'experiment': experiment,
-        'team_name': team_name(group),
-        'summary_date': yesterday,
-        })
-    plaintext_content = plaintext_template.render(c)
-    html_content = html_template.render(c)
-    msg = EmailMultiAlternatives('Lighter Footprints Nightly Summary', plaintext_content, experimenter_email, [ experimenter_email ])
-    msg.bcc = [p.email for p in group.participant_set.all()]
-    msg.attach_alternative(html_content, 'text/html')
-    return msg
-
-
 
 @receiver(signals.midnight_tick)
 def update_active_experiments(sender, time=None, start=None, **kwargs):
@@ -59,14 +38,25 @@ def update_active_experiments(sender, time=None, start=None, **kwargs):
     if start is None:
         start = date.today() - timedelta(1);
     logger.debug("updating active experiments for %s", start)
+    messages = []
     for experiment in get_active_experiments():
         # calculate total carbon savings and decide if they move on to the next level
         for group in experiment.group_set.all():
+            promoted = False
+            completed = False
             footprint_level_grdv = get_footprint_level_dv(group)
             if should_advance_level(group, footprint_level_grdv.value, start):
                 # group was promoted
-                footprint_level_grdv.value = min(footprint_level_grdv.value + 1, 3)
+                promoted = True
+                next_level = min(footprint_level_grdv.value + 1, 3)
+                footprint_level_grdv.value = next_level
                 footprint_level_grdv.save()
+                if next_level == 3:
+                    completed = True
+            summary_email = create_group_summary_email(group, footprint_level_grdv.value, promoted=promoted, completed=completed)
+            messages.append(summary_email)
+    logger.debug("about to send nightly summary emails: %s", messages)
+    mail.get_connection().send_messages(messages)
 
 @receiver(signals.round_started)
 def round_started_handler(sender, experiment=None, **kwargs):
@@ -682,42 +672,31 @@ def abbreviated_timesince(date):
     s = re.sub(r'\smonths?', 'mo', s)
     return s.replace(',', '')
 
-# Deprecated
-def get_group_activity_tuple(participant_group_relationship, number_of_activities=10, retrieve_all=True):
-    group = participant_group_relationship.group
-    social_activity = []
-    for chat_message in ChatMessage.objects.filter(participant_group_relationship__group=group).order_by('-date_created'):
-        pgr = chat_message.participant_group_relationship
-        comments = [c.to_dict() for c in Comment.objects.filter(target_data_value=chat_message.pk)]
-        likes = [like.to_dict() for like in Like.objects.filter(target_data_value=chat_message.pk)]
-        social_activity.append({
-            'pk': chat_message.pk,
-            'date_created': abbreviated_timesince(chat_message.date_created),
-            'message': chat_message.value,
-            'participant_name': escape(pgr.participant.full_name),
-            'participant_number': pgr.participant_number,
-            'participant_group_id':pgr.pk,
-            'comments': comments,
-            'likes': likes
-            })
-    group_activity = []
-    performed_activities = ParticipantRoundDataValue.objects.filter(participant_group_relationship__group=group,
-            submitted=True, parameter=get_activity_performed_parameter()).order_by('-date_created')
-    if retrieve_all:
-        number_of_activities = len(performed_activities)
-    for activity_prdv in performed_activities[:number_of_activities]:
-        activity = activity_prdv.value
-        activity_performed_dict = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
-        activity_performed_dict['date_created'] = abbreviated_timesince(activity_prdv.date_created)
-        activity_performed_dict['date_performed'] = activity_prdv.date_created
-        pgr = activity_prdv.participant_group_relationship
-        activity_performed_dict['participant_number'] = pgr.participant_number
-        activity_performed_dict['participant_name'] = pgr.participant.full_name
-        activity_performed_dict['participant_group_id'] = pgr.pk
-        activity_performed_dict['activity_performed_id'] = activity_prdv.pk
-        activity_performed_dict['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=activity_prdv.pk)]
-        activity_performed_dict['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=activity_prdv.pk)]
-        group_activity.append(activity_performed_dict)
-    return (social_activity, group_activity)
+def create_group_summary_email(group, level, promoted=False, completed=False):
+    logger.debug("creating group summary email for group %s", group)
+# FIXME: need some logic to select an email template based on the treatment type, or push into the template itself
+    plaintext_template = select_template(['lighterprints/email/group-summary-email.txt'])
+    html_template = select_template(['lighterprints/email/group-summary-email.html'])
+    experiment = group.experiment
+    experimenter_email = experiment.experimenter.email
+    yesterday = date.today() - timedelta(1)
+    number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group, date_created__gte=yesterday).count()
+    c = Context({
+        'experiment': experiment,
+        'team_name': team_name(group),
+        'summary_date': yesterday,
+        'completed': completed,
+        'promoted': promoted,
+        'group_level': level,
+        'points_to_next_level': points_to_next_level(level),
+        'number_of_chat_messages': number_of_chat_messages,
+        })
+    plaintext_content = plaintext_template.render(c)
+    html_content = html_template.render(c)
+    msg = EmailMultiAlternatives('Lighter Footprints Nightly Summary', plaintext_content, experimenter_email, [ experimenter_email ])
+    msg.bcc = [p.email for p in group.participant_set.all()]
+    msg.attach_alternative(html_content, 'text/html')
+    return msg
+
 
 

@@ -18,7 +18,7 @@ from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response, get_active_experiment
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_all_team_activity,
-        get_group_activity_tuple, get_treatment_type, get_lighterprints_experiment_metadata,
+        get_treatment_type, get_lighterprints_experiment_metadata,
         get_activity_performed_parameter, points_to_next_level, get_group_score, get_footprint_level,
         get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining, team_name)
 
@@ -165,7 +165,7 @@ def group_score(request, participant_group_id):
 def group_activity(request, participant_group_id):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=1), pk=participant_group_id)
     if request.user.participant == participant_group_relationship.participant:
-        content = get_group_activity_json(participant_group_relationship)
+        content = get_view_model_json(participant_group_relationship)
         return json_response(request, content)
     else:
         logger.warning("authenticated user %s tried to retrieve group activity for %s", request.user, participant_group_relationship)
@@ -317,14 +317,6 @@ class CsvExportView(DataExportMixin, BaseDetailView):
             for performed_activity in performed_activities:
                 total_points += performed_activity.value.points
             writer.writerow([participant_group_relationship, total_points])
-
-def get_group_activity_json(participant_group_relationship, number_of_activities=10, retrieve_all=True):
-    (chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship, number_of_activities, retrieve_all)
-    return dumps({
-        'success': True,
-        'chat_messages': chat_messages,
-        'recent_activity': group_activity
-        })
 
 def get_view_model_json(participant_group_relationship, activities=None):
     if activities is None:
