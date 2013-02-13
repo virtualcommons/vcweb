@@ -196,17 +196,16 @@ class ActivityQuerySet(models.query.QuerySet):
 class ActivityManager(TreeManager, PassThroughManager):
     def upcoming(self, level=1):
         current_time = datetime.now().time()
-        activities = [aa.activity for aa in ActivityAvailability.objects.select_related(depth=1).filter(models.Q(start_time__gte=current_time)) if aa.activity.level <= level]
-        return activities
+        return self._filter_by_availability(level, start_time__gte=current_time)
+
+    def _filter_by_availability(self, level=1, **kwargs):
+        return [aa.activity for aa in ActivityAvailability.objects.select_related(depth=1).filter(models.Q(**kwargs)) if aa.activity.level <= level]
 
     def currently_available(self, level=1, **kwargs):
         current_time = datetime.now().time()
-        available_time_slot = dict(start_time__lte=current_time, end_time__gte=current_time)
-# find all activities with time slots that fall within current time
-        activities = [aa.activity for aa in ActivityAvailability.objects.select_related(depth=1).filter(models.Q(**available_time_slot)) if aa.activity.level <= level]
-# add activities that are available all day
+        activities = self._filter_by_availability(level, start_time__lte=current_time, end_time__gte=current_time)
+# add available all day activities
         activities.extend(Activity.objects.filter(available_all_day=True, level__lte=level))
-# only include activities that are at this level or lower
         return activities
 
     def get_by_natural_key(self, name):
