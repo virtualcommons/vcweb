@@ -206,8 +206,8 @@ class ActivityManager(TreeManager, PassThroughManager):
         activities = [activity_availability.activity for activity_availability in ActivityAvailability.objects.select_related(depth=1).filter(models.Q(**available_time_slot))]
 # add activities that are available all day
         activities.extend(Activity.objects.filter(available_all_day=True))
-# only include activities that are at this level
-        return filter(lambda a: a.level == level, activities)
+# only include activities that are at this level or lower
+        return filter(lambda a: a.level <= level, activities)
 
     def get_by_natural_key(self, name):
         return self.get(name=name)
