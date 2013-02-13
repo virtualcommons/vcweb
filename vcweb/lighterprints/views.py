@@ -211,7 +211,7 @@ def post_chat_message(request):
         chat_message = ChatMessage.objects.create(value=message, participant_group_relationship=participant_group_relationship)
         logger.debug("%s: %s", participant_group_relationship.participant, chat_message)
 # FIXME: just get the chat messages
-        team_activity = get_all_team_activity(participant_group_relationship)
+        (team_activity, chat_messages) = get_all_team_activity(participant_group_relationship)
         return JsonResponse(dumps({'success': True, 'viewModel': { 'groupActivity': team_activity } }))
     return JsonResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
 

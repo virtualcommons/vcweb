@@ -1,3 +1,5 @@
+from django.core import mail
+from django.core.mail import EmailMultiAlternatives
 from django.db import models
 from django.dispatch import receiver
 from django.template import Context
