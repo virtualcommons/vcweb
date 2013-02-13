@@ -390,7 +390,7 @@ $(function() {
 </div>
 </script>
 <script type='text/html' id='comment'>
-    <tr>
+    <tr data-bind='if: $root.participantGroupId() != participant_group_id()'>
         <td style='vertical-align: top'><i class='icon-heart lighterprints-red'></i></td>
         <td>
             <strong data-bind='text: participant_name'></strong>
@@ -413,22 +413,21 @@ $(function() {
     </tr>
 </script>
 <script type='text/html' id='like'>
-    <tr>
-        <td style='vertical-align: top'><i class='icon-heart lighterprints-red'></i></td>
-        <td>
-            <strong data-bind='text: participant_name'></strong>
-            <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
-            <div>
-            liked your
+<tr data-bind='if: $root.participantGroupId() != participant_group_id()'>
+    <td style='vertical-align: top'><i class='icon-heart lighterprints-red'></i></td>
+    <td>
+        <strong data-bind='text: participant_name'></strong>
+        <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+        <div>liked your
             <span data-bind='if: target.parameter_name() === "activity_performed"'>
             completed challenge, <em data-bind='text: target.value'></em>
             </span>
             <span data-bind='if: target.parameter_name() === "chat_message" || target.parameter_name() === "comment"'>
             message, &quot;<em data-bind='text: target.value'></em>&quot;
             </span>
-            </div>
-        </td>
-    </tr>
+        </div>
+    </td>
+</tr>
 </script>
 <script type='text/html' id='chat_message'>
     <tr>
