@@ -16,6 +16,7 @@ import collections
 from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 from lxml import etree
+from operator import itemgetter
 
 import logging
 import re
@@ -429,6 +430,19 @@ def get_activity_status_dict(participant_group_relationship, activities, group_l
 
     return status_dict
 
+def _activity_status_sort_key(activity_dict):
+    s = activity_dict['status']
+    if 'perform' in s:
+        return 1
+    elif 'upcoming' in s:
+        return 2
+    elif 'expired' in s:
+        return 3
+    elif 'completed' in s:
+        return 4
+    else:
+        return 5
+
 # returns a tuple of a (list of activity objects converted to dicts and an activity_by_level list of lists (level -> list of activity
 # objects converted to dicts).
 def get_all_activities_tuple(participant_group_relationship, activities=None, group_level=1):
@@ -459,6 +473,7 @@ def get_all_activities_tuple(participant_group_relationship, activities=None, gr
         if level > len(level_activity_list):
             level_activity_list.append([])
         level_activity_list[level-1].append(activity_dict)
+    activity_dict_list.sort(key=_activity_status_sort_key)
     return (activity_dict_list, level_activity_list)
 
 def get_available_activities(participant_group_relationship=None, ignore_time=False):

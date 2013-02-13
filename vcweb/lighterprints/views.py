@@ -23,6 +23,7 @@ from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_a
         get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining, team_name)
 
 from collections import defaultdict
+from operator import itemgetter
 import itertools
 import logging
 #import tempfile
@@ -349,7 +350,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
             'totalParticipantPoints': total_participant_points,
             'pointsToNextLevel': pointsToNextLevel
             })
-
+    group_data.sort(key=itemgetter('averagePoints'), reverse=True)
     (activity_dict_list, level_activity_list) = get_all_activities_tuple(participant_group_relationship, activities,
             group_level=own_group_level)
     (team_activity, chat_messages) = get_all_team_activity(participant_group_relationship)
