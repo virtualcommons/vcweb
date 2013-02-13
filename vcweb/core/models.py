@@ -70,7 +70,7 @@ class ExperimentMetadata(models.Model):
     namespace_regex = re.compile(r'^(?:[/]?[a-z0-9_]+\/?)+$')
     namespace = models.CharField(max_length=255, unique=True, validators=[RegexValidator(regex=namespace_regex)])
     # short name slug
-    short_name = models.SlugField(max_length=32, unique=True, null=True)
+    short_name = models.SlugField(max_length=32, unique=True, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)

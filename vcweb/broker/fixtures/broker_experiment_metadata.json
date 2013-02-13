@@ -1,0 +1,103 @@
+[
+    {  
+        "pk": 255,
+        "model": "auth.user",
+        "fields": {
+            "username": "diego.galafassi@gmail.com",
+            "first_name": "Diego",
+            "last_name": "Galafassi",
+            "is_active": true,
+            "is_superuser": false,
+            "is_staff": true,
+            "last_login": "2013-02-13T15:46:48",
+            "groups": [
+                1
+            ],
+            "user_permissions": [],
+            "password": "pbkdf2_sha256$10000$8RqKdrQLW2c4$saCFS4zkbDqxZvYqkwm6Ef219skl/rYw6uvxVR7ojjo=",
+            "email": "diego.galafassi@gmail.com",
+            "date_joined": "2013-02-13T15:46:48"
+        }
+    },
+    {  
+        "pk": 7,
+        "model": "core.experimenter",
+        "fields": {
+            "authentication_token": "",
+            "approved": true,
+            "user": 255,
+            "failed_password_attempts": 0,
+            "institution": 3
+        }
+    },
+    {
+        "pk": 7,
+        "model": "core.experimentmetadata",
+        "fields": {
+            "description": "The broker experiment examines how different network configurations affect outcomes.",
+            "short_name": "broker",
+            "title": "Broker Experiment",
+            "namespace": "broker",
+            "default_configuration": 8,
+            "last_modified": "2013-02-13T15:52:46.693",
+            "date_created": "2013-02-13T15:49:49",
+            "logo_url": "",
+            "about_url": ""
+        }
+    },
+    {
+        "pk": 8,
+        "model": "core.experimentconfiguration",
+        "fields": {
+            "experiment_metadata": 7,
+            "name": "Broker Experiment Default Configuration",
+            "creator": 7,
+            "max_number_of_participants": 20,
+            "invitation_text": "",
+            "last_modified": "2013-02-13T15:52:27.520",
+            "is_public": false,
+            "date_created": "2013-02-13T15:50:59",
+            "max_group_size": 4
+        }
+    },
+    {
+        "pk": 32,
+        "model": "core.experiment",
+        "fields": {
+            "experiment_metadata": 7,
+            "status": "INACTIVE",
+            "start_date_time": null,
+            "current_round_elapsed_time": 0,
+            "tick_duration": "",
+            "slug": "broker-experiment",
+            "authentication_code": "broker_test",
+            "total_elapsed_time": 0,
+            "current_round_start_time": null,
+            "last_modified": "2013-02-13T15:53:45.902",
+            "experimenter": 7,
+            "current_round_sequence_number": 1,
+            "duration": "",
+            "date_created": "2013-02-13T15:52:55",
+            "experiment_configuration": 8,
+            "is_experimenter_driven": true,
+            "amqp_exchange_name": "vcweb.default.exchange"
+        }
+    },
+    {
+        "pk": 49,
+        "model": "core.roundconfiguration",
+        "fields": {
+            "round_type": "PRACTICE",
+            "template_name": "",
+            "debriefing": "",
+            "survey_url": "",
+            "duration": 0,
+            "last_modified": "2013-02-13T15:54:53.999",
+            "display_number": 0,
+            "date_created": "2013-02-13T15:54:23",
+            "experiment_configuration": 8,
+            "sequence_number": 1,
+            "instructions": ""
+        }
+    }
+]
