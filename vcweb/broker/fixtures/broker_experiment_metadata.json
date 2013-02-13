@@ -7,7 +7,7 @@
             "first_name": "Diego",
             "last_name": "Galafassi",
             "is_active": true,
-            "is_superuser": false,
+            "is_superuser": true,
             "is_staff": true,
             "last_login": "2013-02-13T15:46:48",
             "groups": [
