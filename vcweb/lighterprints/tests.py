@@ -73,18 +73,18 @@ class UpdateLevelTest(BaseTest):
                 logger.debug("available activities: %s", get_available_activities(pgr))
 
 class GroupActivityTest(BaseTest):
-    def test_all_team_activity(self):
+    def test_group_activity(self):
         e = self.experiment
         e.activate()
         e.start_round()
         performed_activities = self.perform_activities()
         team_activity = []
         for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
-            (team_activity, chat_messages) = get_all_team_activity(pgr)
-            logger.debug("team activity is %s", len(team_activity))
+            (group_activity, chat_messages) = get_group_activity(pgr)
+            logger.debug("group activity is %s", len(group_activity))
             self.assertEqual(len(team_activity), len(performed_activities) * pgr.group.size)
 
-    def test_group_activity_json(self):
+    def test_group_activity_messaging(self):
         e = self.experiment
         e.activate()
         e.start_round()

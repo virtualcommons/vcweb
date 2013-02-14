@@ -611,10 +611,7 @@ def get_time_remaining():
     minutes = total_minutes_left % 60
     return (hours_left, minutes)
 
-def team_name(group):
-    return u"Team %s" % string.ascii_uppercase[max(group.number - 1, 0)]
-
-def get_all_team_activity(participant_group_relationship, limit=None):
+def get_group_activity(participant_group_relationship, limit=None):
     group = participant_group_relationship.group
     social_activity = []
     chat_messages = []
@@ -683,7 +680,7 @@ def create_group_summary_email(group, level, promoted=False, completed=False):
     number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group, date_created__gte=yesterday).count()
     c = Context({
         'experiment': experiment,
-        'team_name': team_name(group),
+        'group_name': group.name,
         'summary_date': yesterday,
         'completed': completed,
         'promoted': promoted,
@@ -693,7 +690,11 @@ def create_group_summary_email(group, level, promoted=False, completed=False):
         })
     plaintext_content = plaintext_template.render(c)
     html_content = html_template.render(c)
-    msg = EmailMultiAlternatives('Lighter Footprints Nightly Summary', plaintext_content, experimenter_email, [ experimenter_email ])
+    subject = 'Lighter Footprints Summary for %s' % yesterday
+    to_address = [ experimenter_email ]
+# FIXME: remove in production
+    to_address.extend(['marco.janssen@asu.edu', 'shelby.manney@asu.edu', 'allen.lee@asu.edu'])
+    msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
     msg.bcc = [p.email for p in group.participant_set.all()]
     msg.attach_alternative(html_content, 'text/html')
     return msg

@@ -1,6 +1,7 @@
-Lighter Footprints Summary for {{ date }}
+Lighter Footprints Summary for {{ summary_date }}
 
-* You are a member of {{ team_name }}.
+You are a member of {{ group_name }}.
+
 * You earned {{ individual_points }} while the average in your group was {{ average_group_points }}.
 * {{ number_of_chat_messages }} chat messages were posted by your group.
 
@@ -13,6 +14,3 @@ earn {{ points_to_next_level }} today.
 Your group is still at Level {{ group_level }}.  In order to be promoted to the next level your group must earn
 {{ points_to_next_level }} today.
 {% endif %}
-
-
-

@@ -1156,6 +1156,10 @@ class Group(models.Model):
     """
 
     @property
+    def name(self):
+        return u"Group %s" % string.ascii_uppercase[max(self.number - 1, 0)]
+
+    @property
     def channel(self):
         """ should return a unique chat / event channel to communicate on """
         return u"%s.%d" % (self.experiment.event_channel_name, self.number)

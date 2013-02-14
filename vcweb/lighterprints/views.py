@@ -17,10 +17,10 @@ from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGrou
 from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response, get_active_experiment
 from vcweb.lighterprints.forms import ActivityForm
-from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_all_team_activity,
+from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_group_activity,
         get_treatment_type, get_lighterprints_experiment_metadata,
         get_activity_performed_parameter, points_to_next_level, get_group_score, get_footprint_level,
-        get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining, team_name)
+        get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining)
 
 from collections import defaultdict
 from operator import itemgetter
@@ -212,7 +212,7 @@ def post_chat_message(request):
         chat_message = ChatMessage.objects.create(value=message, participant_group_relationship=participant_group_relationship)
         logger.debug("%s: %s", participant_group_relationship.participant, chat_message)
 # FIXME: just get the chat messages
-        (team_activity, chat_messages) = get_all_team_activity(participant_group_relationship)
+        (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
         return JsonResponse(dumps({'success': True, 'viewModel': { 'groupActivity': team_activity } }))
     return JsonResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
 
@@ -334,7 +334,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
             own_average_points = average_points
             own_points_to_next_level = pointsToNextLevel
         group_data.append({
-            'groupName': team_name(group),
+            'groupName': group.name,
             'groupLevel': group_level,
             'groupSize': group.size,
             'averagePoints': average_points,
@@ -345,7 +345,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
     group_data.sort(key=itemgetter('averagePoints'), reverse=True)
     (activity_dict_list, level_activity_list) = get_all_activities_tuple(participant_group_relationship, activities,
             group_level=own_group_level)
-    (team_activity, chat_messages) = get_all_team_activity(participant_group_relationship)
+    (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
     #(chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
     (hours_left, minutes_left) = get_time_remaining()
     first_visit = participant_group_relationship.first_visit
@@ -362,7 +362,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
         'averagePoints': own_average_points,
         'pointsToNextLevel': own_points_to_next_level,
         'groupActivity': team_activity,
-        'groupName': team_name(own_group),
+        'groupName': own_group.name,
         'activities': activity_dict_list,
         'activitiesByLevel': level_activity_list,
         })
