@@ -163,7 +163,7 @@ def group_score(request, participant_group_id):
 
 @login_required
 def group_activity(request, participant_group_id):
-    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=1), pk=participant_group_id)
+    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group__experiment'), pk=participant_group_id)
     if request.user.participant == participant_group_relationship.participant:
         content = get_view_model_json(participant_group_relationship)
         return json_response(request, content)
@@ -318,12 +318,13 @@ class CsvExportView(DataExportMixin, BaseDetailView):
                 total_points += performed_activity.value.points
             writer.writerow([participant_group_relationship, total_points])
 
-def get_view_model_json(participant_group_relationship, activities=None):
+def get_view_model_json(participant_group_relationship, activities=None, experiment=None):
     if activities is None:
         activities = Activity.objects.all()
     own_group = participant_group_relationship.group
-# FIXME: move to model API
-    treatment_type = get_treatment_type(own_group)
+    if experiment is None:
+        experiment = own_group.experiment
+    treatment_type = get_treatment_type(own_group, round_configuration=experiment.current_round)
     group_data = []
     activity_points_cache = dict([(a.pk, a.points) for a in activities])
     for group in own_group.experiment.group_set.all():
@@ -372,13 +373,14 @@ def get_view_model(request, participant_group_id=None):
     if participant_group_id is None:
         # check in the request query parameters as well
         participant_group_id = request.GET.get('participant_group_id')
-    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
+# FIXME: replace with ParticipantGroupRelationship.objects.fetch(pk=participant_group_id)
+    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'), pk=participant_group_id)
     if pgr.participant != request.user.participant:
         # security check to ensure that the authenticated participant is the same as the participant whose data is
         # being requested
         logger.warning("user %s tried to access view model for %s", request.user.participant, pgr)
         raise PermissionDenied("Access denied.")
-    view_model_json = get_view_model_json(pgr)
+    view_model_json = get_view_model_json(pgr, experiment=pgr.group.experiment)
     return JsonResponse(dumps({'success': True, 'view_model_json': view_model_json}))
 
 @participant_required
@@ -387,7 +389,7 @@ def mobile_participate(request, experiment_id=None):
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     pgr = participant.get_participant_group_relationship(experiment)
     all_activities = Activity.objects.all()
-    view_model_json = get_view_model_json(pgr, all_activities)
+    view_model_json = get_view_model_json(pgr, all_activities, experiment)
     return render(request, 'lighterprints/mobile/index.html', {
         'experiment': experiment,
         'participant_group_relationship': pgr,
@@ -404,7 +406,7 @@ def participate(request, experiment_id=None):
     if pgr is None:
         raise Http404("You do not appear to be participating in this experiment.")
     all_activities = Activity.objects.all()
-    view_model_json = get_view_model_json(pgr, all_activities)
+    view_model_json = get_view_model_json(pgr, all_activities, experiment)
 #    if request.mobile:
         # FIXME: change this to look up templates in a mobile templates directory?
 #        logger.warning("mobile request detected by %s, but we're not ready for mobile apps", participant)

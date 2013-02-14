@@ -2,6 +2,7 @@ from datetime import datetime
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.core import mail, serializers
+from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
 from django.core.validators import RegexValidator
 from django.db import models
@@ -636,7 +637,6 @@ class Experiment(models.Model):
             pgr = self.add_participant(p, current_group)
             current_group = pgr.group
 
-
         # XXX: if there a performance hit here, should probably do a void return instead
         # or collect the groups as they are added
         return self.group_set
@@ -1113,6 +1113,24 @@ class ParameterizedValue(models.Model):
     is_active = models.BooleanField(default=True)
 
     @property
+    def cache_key(self):
+        p = self.parameter
+        if p.is_foreign_key:
+            return "%s-%s" % (p.name, self.int_value)
+        else:
+            return "%s-%s" % (p.name, self.pk)
+
+
+    @property
+    def cached_value(self):
+        ck = self.cache_key
+        cv = cache.get(ck)
+        if cv is None:
+            cv = self.value
+            cache.set(ck, cv)
+        return cv
+
+    @property
     def value(self):
         value = getattr(self, self.parameter.value_field_name, self.parameter.none_value)
         if value is None:
@@ -1283,8 +1301,8 @@ class Group(models.Model):
 
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
         criteria = dict([
-            ('parameter', parameter) if parameter else ('parameter__name', parameter_name),
-            ('round_data', self.current_round_data if round_data is None else round_data)
+            ('parameter__pk', parameter.pk) if parameter else ('parameter__name', parameter_name),
+            ('round_data__pk', self.current_round_data.pk if round_data is None else round_data.pk)
             ])
         criteria.update(kwargs)
         return criteria
@@ -1603,13 +1621,16 @@ class ParticipantRoundDataValue(ParameterizedValue):
                 'participant_name': escape(pgr.participant.full_name),
                 'participant_number': pgr.participant_number,
                 'date_created': self.date_created,
-                'value': escape(self.value),
                 'parameter_name': self.parameter.name
                 }
+        # value cache lookup should be via int_value
+        if self.parameter.is_foreign_key:
+            data['value'] = self.cached_value
+        else:
+            data['value'] = self.value
         tdv = self.target_data_value
         if tdv is not None:
-            data['target'] = tdv.to_dict()
-            data['target_data_value'] = escape(tdv.value)
+            data['target_data_value'] = tdv.cached_value
         return data
 
     def __unicode__(self):

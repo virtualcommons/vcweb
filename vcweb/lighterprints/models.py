@@ -1,23 +1,22 @@
 from django.core import mail
+from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
 from django.db import models
 from django.db.models import Sum
 from django.dispatch import receiver
 from django.template import Context
 from django.template.loader import select_template
-from django.utils.html import escape
 from django.utils.timesince import timesince
 from django.utils.translation import ugettext_lazy as _
 from functools import partial
 from model_utils.managers import PassThroughManager
 from vcweb.core import signals, simplecache, enum
-from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, ParticipantGroupRelationship, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
+from vcweb.core.models import (Experiment, ExperimentMetadata, RoundParameterValue, ParticipantGroupRelationship, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
 from vcweb.core.services import fetch_foursquare_categories
 import collections
 from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 from lxml import etree
-from operator import itemgetter
 
 import logging
 import re
@@ -327,8 +326,12 @@ def get_footprint_level_dv(group):
 def get_footprint_level(group):
     return get_footprint_level_dv(group).value
 
-def get_treatment_type(group):
-    return group.get_round_configuration_value(name='treatment_type')
+def get_treatment_type(group, round_configuration=None, **kwargs):
+    try:
+        return RoundParameterValue.objects.get(round_configuration=round_configuration, parameter=get_treatment_type_parameter())
+    except RoundParameterValue.DoesNotExist:
+        return None
+    #return group.get_round_configuration_value(name='treatment_type', **kwargs)
 
 def get_active_experiments():
     return Experiment.objects.active(experiment_metadata=get_lighterprints_experiment_metadata())
@@ -434,9 +437,18 @@ def _activity_status_sort_key(activity_dict):
     else:
         return 5
 
+def get_activity_availability_cache():
+    aac = cache.get('activity_availability_cache')
+    if aac is None:
+        aac = collections.defaultdict(list)
+        for aa in ActivityAvailability.objects.select_related('activity').all():
+            aac[aa.activity.pk].append(aa)
+        cache.set('activity_availability_cache', aac)
+    return aac
+
 # returns a tuple of a (list of activity objects converted to dicts and an activity_by_level list of lists (level -> list of activity
 # objects converted to dicts).
-def get_all_activities_tuple(participant_group_relationship, activities=None, group_level=1, activity_availability_cache=None):
+def get_all_activities_tuple(participant_group_relationship, activities=None, group_level=1):
     if activities is None:
         activities = Activity.objects.all()
     activity_dict_list = []
@@ -444,10 +456,7 @@ def get_all_activities_tuple(participant_group_relationship, activities=None, gr
     activity_statuses = get_activity_status_dict(participant_group_relationship, activities, group_level)
     #available_activities = get_available_activities(participant_group_relationship)
     #available_activity_ids = [activity.pk for activity in available_activities]
-    if activity_availability_cache is None:
-        activity_availability_cache = collections.defaultdict(list)
-        for aa in ActivityAvailability.objects.select_related('activity').all():
-            activity_availability_cache[aa.activity.pk].append(aa)
+    activity_availability_cache = get_activity_availability_cache()
 
     for activity in activities:
         activity_dict = activity.to_dict()
@@ -575,7 +584,7 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
         start = date.today()
     if end is None:
         end = start + timedelta(1)
-    activities_performed_qs = activities_performed_qs.filter(date_created__range=(start, end))
+    activities_performed_qs = activities_performed_qs.select_related('participant_group_relationship').filter(date_created__range=(start, end))
     for activity_performed_dv in activities_performed_qs:
         activity_points = activity_points_cache[activity_performed_dv.int_value]
         total_group_points += activity_points
@@ -623,7 +632,7 @@ def get_group_activity(participant_group_relationship, limit=None):
     group = participant_group_relationship.group
     social_activity = []
     chat_messages = []
-    data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like', 'comment', 'chatmessage', 'participant_group_relationship__participant__user')
+    data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like', 'comment', 'chatmessage', 'participant_group_relationship__participant__user', 'parameter')
     own_likes = Like.objects.select_related('target_data_value').filter(participant_group_relationship=participant_group_relationship)
     like_target_ids = [l.target_data_value.pk for l in own_likes]
     own_comments = Comment.objects.select_related('target_data_value').filter(participant_group_relationship=participant_group_relationship)
@@ -647,7 +656,7 @@ def get_group_activity(participant_group_relationship, limit=None):
                 continue
             data = prdv.like.to_dict()
         elif parameter_name == 'activity_performed':
-            activity = prdv.value
+            activity = prdv.cached_value
             data = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
             data['pk'] = prdv.pk
             data['date_created'] = abbreviated_timesince(prdv.date_created)
