@@ -1631,6 +1631,7 @@ class ParticipantRoundDataValue(ParameterizedValue):
         tdv = self.target_data_value
         if tdv is not None:
             data['target_data_value'] = tdv.cached_value
+            data['target'] = tdv.to_dict()
         return data
 
     def __unicode__(self):
