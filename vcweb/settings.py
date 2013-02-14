@@ -77,9 +77,10 @@ MIDDLEWARE_CLASSES = (
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'vcweb.core.middleware.ExceptionHandlingMiddleware',
-        # FIXME: add to middleware if we want to add mobile detection to every view
-        #        'minidetector.Middleware',
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
         )
+
+INTERNAL_IPS = ('127.0.0.1','68.99.87.185',)
 
 ROOT_URLCONF = 'vcweb.urls'
 
@@ -114,6 +115,8 @@ INSTALLED_APPS = (
         'django_extensions',
         'mptt',
         'bootstrap',
+        # XXX: disable in prod
+        'debug_toolbar',
         )
 
 SOUTH_TESTS_MIGRATE = False
