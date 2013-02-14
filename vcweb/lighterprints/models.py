@@ -703,7 +703,7 @@ def create_group_summary_email(group, level, promoted=False, completed=False):
         msg.bcc = pgr.participant.email
         msg.attach_alternative(html_content, 'text/html')
         messages.append(msg)
-    return msg
+    return messages
 
 def get_individual_points(participant_group_relationship):
     yesterday = date.today() - timedelta(1)

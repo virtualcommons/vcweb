@@ -135,9 +135,8 @@ class ActivityTest(BaseTest):
                     'target_id': activity_id
                     })
                 self.assertEqual(response.status_code, 200)
-                json_object = json.loads(response.content)
+                json_object = json.loads(response.viewModel)
                 logger.debug("json: %s", json_object)
-                self.assertEqual(json_object['comment'], text)
 
 class GroupScoreTest(ActivityTest):
     def setUp(self):
