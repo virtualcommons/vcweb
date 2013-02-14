@@ -556,9 +556,12 @@ def get_performed_activity_ids(participant_group_relationship):
 def average_points_per_person(group, start=None, end=None):
     return get_group_score(group, start=start, end=end)[0]
 
+# cache activity points
 # returns a tuple of the average points per person and the total points for
 # the given group
-def get_group_score(group, start=None, end=None, participant_group_relationship=None):
+def get_group_score(group, start=None, end=None, participant_group_relationship=None, activity_points_cache=None, **kwargs):
+    if activity_points_cache is None:
+        activity_points_cache = dict([(a.pk, a.points) for a in Activity.objects.all()])
     # establish date range
     # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
     total_group_points = 0
@@ -570,10 +573,10 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
         end = start + timedelta(1)
     activities_performed_qs = activities_performed_qs.filter(date_created__range=(start, end))
     for activity_performed_dv in activities_performed_qs:
-        activity = activity_performed_dv.value
-        total_group_points += activity.points
+        activity_points = activity_points_cache[activity_performed_dv.int_value]
+        total_group_points += activity_points
         if activity_performed_dv.participant_group_relationship == participant_group_relationship:
-            total_participant_points += activity.points
+            total_participant_points += activity_points
 
     average = total_group_points / group.size
     logger.debug("total carbon savings: %s divided by %s members = %s per person", total_group_points, group.size, average)

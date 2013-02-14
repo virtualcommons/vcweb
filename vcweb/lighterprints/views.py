@@ -178,7 +178,7 @@ def perform_activity(request):
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
         participant_group_id = form.cleaned_data['participant_group_id']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
         latitude = form.cleaned_data['latitude']
         longitude = form.cleaned_data['longitude']
         if participant_group_relationship.participant == request.user.participant:
@@ -205,7 +205,7 @@ def post_chat_message(request):
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
         message = form.cleaned_data['message']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
@@ -224,7 +224,7 @@ def like(request):
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
         target_id = form.cleaned_data['target_id']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to like target_id %s as %s", request.user, target_id, participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
@@ -249,7 +249,7 @@ def post_comment(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         target_id = form.cleaned_data['target_id']
         message = form.cleaned_data['message']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message, target_id, participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
@@ -325,8 +325,9 @@ def get_view_model_json(participant_group_relationship, activities=None):
 # FIXME: move to model API
     treatment_type = get_treatment_type(own_group)
     group_data = []
+    activity_points_cache = dict([(a.pk, a.points) for a in activities])
     for group in own_group.experiment.group_set.all():
-        (average_points, total_points, total_participant_points) = get_group_score(group, participant_group_relationship=participant_group_relationship)
+        (average_points, total_points, total_participant_points) = get_group_score(group, participant_group_relationship=participant_group_relationship, activity_points_cache=activity_points_cache)
         group_level = get_footprint_level(group)
         pointsToNextLevel = points_to_next_level(group_level)
         if group == own_group:
@@ -372,7 +373,7 @@ def get_view_model(request, participant_group_id=None):
     if participant_group_id is None:
         # check in the request query parameters as well
         participant_group_id = request.GET.get('participant_group_id')
-    pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
     if pgr.participant != request.user.participant:
         # security check to ensure that the authenticated participant is the same as the participant whose data is
         # being requested
@@ -395,12 +396,12 @@ def mobile_participate(request, experiment_id=None):
         'all_activities': all_activities,
         })
 
-
 @participant_required
 def participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id)
-    pgr = participant.get_participant_group_relationship(experiment)
+    pgr = ParticipantGroupRelationship.objects.select_related(depth=2).get(participant=participant,
+            group__experiment=experiment)
     if pgr is None:
         raise Http404("You do not appear to be participating in this experiment.")
     all_activities = Activity.objects.all()
@@ -422,7 +423,7 @@ def checkin(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         latitude = form.cleaned_data['latitude']
         longitude = form.cleaned_data['longitude']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
         logger.debug("%s checking at at (%s, %s)", participant_group_relationship, latitude, longitude)
         if request.user.participant == participant_group_relationship.participant:
 # perform checkin logic here, query foursquare API for nearest "green" venu

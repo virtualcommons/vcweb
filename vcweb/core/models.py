@@ -1108,7 +1108,7 @@ class ParameterizedValue(models.Model):
     int_value = models.IntegerField(null=True, blank=True)
     float_value = models.FloatField(null=True, blank=True)
     boolean_value = models.NullBooleanField(null=True, blank=True)
-    date_created = models.DateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(default=datetime.now, db_index=True)
     last_modified = AutoDateTimeField(default=datetime.now)
     is_active = models.BooleanField(default=True)
 
@@ -1339,7 +1339,6 @@ class Group(models.Model):
     def get_participant_data_values(self, **kwargs):
         criteria = self._data_parameter_criteria(participant_group_relationship__group=self, **kwargs)
         return ParticipantRoundDataValue.objects.filter(**criteria)
-
 
     def create_next_group(self):
         return Group.objects.create(number=self.number + 1, max_size=self.max_size, experiment=self.experiment)
@@ -1599,7 +1598,7 @@ class ParticipantRoundDataValue(ParameterizedValue):
 
     def to_dict(self):
         pgr = self.participant_group_relationship
-        return {'pk' : self.pk,
+        data = {'pk' : self.pk,
                 'participant_group_id': pgr.pk,
                 'participant_name': escape(pgr.participant.full_name),
                 'participant_number': pgr.participant_number,
@@ -1607,6 +1606,11 @@ class ParticipantRoundDataValue(ParameterizedValue):
                 'value': escape(self.value),
                 'parameter_name': self.parameter.name
                 }
+        tdv = self.target_data_value
+        if tdv is not None:
+            data['target'] = tdv.to_dict()
+            data['target_data_value'] = escape(tdv.value)
+        return data
 
     def __unicode__(self):
         return u"{0} : {1} pgr:{2} ({3})".format(self.parameter, self.value, self.participant_group_relationship, self.round_data.experiment)
@@ -1690,7 +1694,6 @@ class Comment(ParticipantRoundDataValue):
     def to_dict(self):
         data = super(Comment, self).to_dict()
         data['message'] = escape(self.value)
-        data['target'] = self.target_data_value.to_dict()
         return data
 
     class Meta:
@@ -1703,7 +1706,6 @@ class Like(ParticipantRoundDataValue):
 
     def to_dict(self):
         data = super(Like, self).to_dict()
-        data['target'] = self.target_data_value.to_dict()
         return data
 
 class ActivityLog(models.Model):

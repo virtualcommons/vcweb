@@ -396,10 +396,10 @@ $(function() {
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
             <div>
             <span data-bind='if: target.parameter_name() === "activity_performed"'>
-            commented on your completed challenge, <em data-bind='text: target.value'></em>
+            commented on your completed challenge, <em data-bind='text: target_data_value'></em>
             </span>
             <span data-bind='if: target.parameter_name() === "chat_message" || target.parameter_name() === "comment"'>
-            replied to your message, &quot;<em data-bind='text: target.value'></em>&quot;
+            replied to your message, &quot;<em data-bind='text: target.message'></em>&quot;
             </span>
             <div>
             <small><i class='icon-quote-left'></i></small>
@@ -419,10 +419,10 @@ $(function() {
         <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
         <div>liked your
             <span data-bind='if: target.parameter_name() === "activity_performed"'>
-            completed challenge, <em data-bind='text: target.value'></em>
+            completed challenge, <em data-bind='text: target_data_value'></em>
             </span>
             <span data-bind='if: target.parameter_name() === "chat_message" || target.parameter_name() === "comment"'>
-            message, &quot;<em data-bind='text: target.value'></em>&quot;
+            message, &quot;<em data-bind='text: target_data_value'></em>&quot;
             </span>
         </div>
     </td>
