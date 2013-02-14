@@ -344,8 +344,7 @@ def get_view_model_json(participant_group_relationship, activities=None):
             'pointsToNextLevel': pointsToNextLevel
             })
     group_data.sort(key=itemgetter('averagePoints'), reverse=True)
-    (activity_dict_list, level_activity_list) = get_all_activities_tuple(participant_group_relationship, activities,
-            group_level=own_group_level)
+    (activity_dict_list, level_activity_list) = get_all_activities_tuple(participant_group_relationship, activities, group_level=own_group_level)
     (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
     #(chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
     (hours_left, minutes_left) = get_time_remaining()
@@ -400,7 +399,7 @@ def mobile_participate(request, experiment_id=None):
 def participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id)
-    pgr = ParticipantGroupRelationship.objects.select_related(depth=2).get(participant=participant,
+    pgr = ParticipantGroupRelationship.objects.select_related('participant__user', 'group').get(participant=participant,
             group__experiment=experiment)
     if pgr is None:
         raise Http404("You do not appear to be participating in this experiment.")

@@ -436,7 +436,7 @@ def _activity_status_sort_key(activity_dict):
 
 # returns a tuple of a (list of activity objects converted to dicts and an activity_by_level list of lists (level -> list of activity
 # objects converted to dicts).
-def get_all_activities_tuple(participant_group_relationship, activities=None, group_level=1):
+def get_all_activities_tuple(participant_group_relationship, activities=None, group_level=1, activity_availability_cache=None):
     if activities is None:
         activities = Activity.objects.all()
     activity_dict_list = []
@@ -444,12 +444,16 @@ def get_all_activities_tuple(participant_group_relationship, activities=None, gr
     activity_statuses = get_activity_status_dict(participant_group_relationship, activities, group_level)
     #available_activities = get_available_activities(participant_group_relationship)
     #available_activity_ids = [activity.pk for activity in available_activities]
+    if activity_availability_cache is None:
+        activity_availability_cache = collections.defaultdict(list)
+        for aa in ActivityAvailability.objects.select_related('activity').all():
+            activity_availability_cache[aa.activity.pk].append(aa)
 
     for activity in activities:
         activity_dict = activity.to_dict()
         level = activity.level
         try:
-            activity_dict['availabilities'] = [availability.to_dict() for availability in ActivityAvailability.objects.filter(activity=activity)]
+            activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
             activity_dict['locked'] = (group_level < level)
             activity_status = activity_statuses[activity.pk]
             activity_dict['availableNow'] = "perform-challenge" in activity_status
@@ -619,7 +623,7 @@ def get_group_activity(participant_group_relationship, limit=None):
     group = participant_group_relationship.group
     social_activity = []
     chat_messages = []
-    data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like', 'comment', 'chatmessage')
+    data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like', 'comment', 'chatmessage', 'participant_group_relationship__participant__user')
     own_likes = Like.objects.select_related('target_data_value').filter(participant_group_relationship=participant_group_relationship)
     like_target_ids = [l.target_data_value.pk for l in own_likes]
     own_comments = Comment.objects.select_related('target_data_value').filter(participant_group_relationship=participant_group_relationship)
@@ -653,8 +657,6 @@ def get_group_activity(participant_group_relationship, limit=None):
             data['participant_name'] = pgr.participant.full_name
             data['participant_group_id'] = pgr.pk
             data['activity_performed_id'] = prdv.pk
-            data['comments'] = [c.to_dict() for c in Comment.objects.filter(target_data_value=prdv.pk)]
-            data['likes'] = [like.to_dict() for like in Like.objects.filter(target_data_value=prdv.pk)]
         else:
             continue
         data['liked'] = prdv.pk in like_target_ids
