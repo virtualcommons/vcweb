@@ -709,6 +709,6 @@ def get_individual_points(participant_group_relationship):
     yesterday = date.today() - timedelta(1)
     prdvs = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship,
             date_created__gte=yesterday, parameter=get_activity_performed_parameter())
-    return prdvs.aggregate(Sum('value'))
+    return prdvs.aggregate(Sum('int_value'))['int_value__sum']
 
 
