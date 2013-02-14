@@ -78,51 +78,19 @@ class GroupActivityTest(BaseTest):
         e.activate()
         e.start_round()
         performed_activities = self.perform_activities()
-        team_activity = []
         for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
             (group_activity, chat_messages) = get_group_activity(pgr)
             logger.debug("group activity is %s", len(group_activity))
-            self.assertEqual(len(team_activity), len(performed_activities) * pgr.group.size)
+            self.assertEqual(len(group_activity), len(performed_activities) * pgr.group.size)
 
-    def test_group_activity_messaging(self):
+    def test_group_activity_email(self):
         e = self.experiment
         e.activate()
         e.start_round()
-        participant_group_relationship = ParticipantGroupRelationship.objects.filter(group__experiment=e)[0]
-        # do every activity in level 1 for this particular participant
-        activity_performed_parameter = get_activity_performed_parameter()
-        current_round_data = e.current_round_data
-        for activity in Activity.objects.filter(level=1):
-            activity_performed = participant_group_relationship.participant_data_value_set.create(submitted=True, round_data=current_round_data, parameter=activity_performed_parameter)
-            activity_performed.value = activity.id
-            activity_performed.save()
-        group_activity_json = get_group_activity_json(participant_group_relationship)
-        group_activity_dict = json.loads(group_activity_json)
-        chat_messages = group_activity_dict['chat_messages']
-        recent_activity = group_activity_dict['recent_activity']
-        self.assertEqual(0, len(chat_messages))
-        self.assertEqual(5, len(recent_activity))
-        test_message = "Midnight mushrumps"
-        response = self.client.post('/lighterprints/api/message', {
-            'participant_group_id': participant_group_relationship.id,
-            'message': test_message,
-            })
-# should not be allowed to post when not logged in
-        self.assertEqual(response.status_code, 302)
-        self.client.login(username=participant_group_relationship.participant.email, password='test')
-        response = self.client.post('/lighterprints/api/message', {
-            'participant_group_id': participant_group_relationship.id,
-            'message': test_message,
-            })
-# now it should be OK, logged in user
-        self.assertEqual(response.status_code, 200)
-        group_activity_json = get_group_activity_json(participant_group_relationship)
-        group_activity_dict = json.loads(group_activity_json)
-        chat_messages = group_activity_dict['chat_messages']
-        recent_activity = group_activity_dict['recent_activity']
-        self.assertEqual(1, len(chat_messages))
-        self.assertEqual(chat_messages[0]['message'], test_message)
-        self.assertEqual(5, len(recent_activity))
+        self.perform_activities()
+        for group in e.group_set.all():
+            msg = create_group_summary_email(group, 2)
+            logger.debug("message: " + msg.body);
 
 class ActivityTest(BaseTest):
 

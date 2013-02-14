@@ -1,6 +1,7 @@
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives
 from django.db import models
+from django.db.models import Sum
 from django.dispatch import receiver
 from django.template import Context
 from django.template.loader import select_template
@@ -53,8 +54,8 @@ def update_active_experiments(sender, time=None, start=None, **kwargs):
                 footprint_level_grdv.save()
                 if next_level == 3:
                     completed = True
-            summary_email = create_group_summary_email(group, footprint_level_grdv.value, promoted=promoted, completed=completed)
-            messages.append(summary_email)
+            group_summary_emails = create_group_summary_email(group, footprint_level_grdv.value, promoted=promoted, completed=completed)
+            messages.extend(group_summary_emails)
     logger.debug("about to send nightly summary emails: %s", messages)
     mail.get_connection().send_messages(messages)
 
@@ -678,26 +679,36 @@ def create_group_summary_email(group, level, promoted=False, completed=False):
     experimenter_email = experiment.experimenter.email
     yesterday = date.today() - timedelta(1)
     number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group, date_created__gte=yesterday).count()
-    c = Context({
-        'experiment': experiment,
-        'group_name': group.name,
-        'summary_date': yesterday,
-        'completed': completed,
-        'promoted': promoted,
-        'group_level': level,
-        'points_to_next_level': points_to_next_level(level),
-        'number_of_chat_messages': number_of_chat_messages,
-        })
-    plaintext_content = plaintext_template.render(c)
-    html_content = html_template.render(c)
-    subject = 'Lighter Footprints Summary for %s' % yesterday
-    to_address = [ experimenter_email ]
+    messages = []
+    for pgr in group.participant_group_relationship_set.all():
+        c = Context({
+            'experiment': experiment,
+            'group_name': group.name,
+            'summary_date': yesterday,
+            'completed': completed,
+            'promoted': promoted,
+            'group_level': level,
+            'points_to_next_level': points_to_next_level(level),
+            'average_group_points': average_points_per_person(group, start=yesterday),
+            'number_of_chat_messages': number_of_chat_messages,
+            'individual_points': get_individual_points(pgr),
+                })
+        plaintext_content = plaintext_template.render(c)
+        html_content = html_template.render(c)
+        subject = 'Lighter Footprints Summary for %s' % yesterday
+        to_address = [ experimenter_email ]
 # FIXME: remove in production
-    to_address.extend(['marco.janssen@asu.edu', 'shelby.manney@asu.edu', 'allen.lee@asu.edu'])
-    msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
-    msg.bcc = [p.email for p in group.participant_set.all()]
-    msg.attach_alternative(html_content, 'text/html')
+#    to_address.extend(['marco.janssen@asu.edu', 'shelby.manney@asu.edu', 'allen.lee@asu.edu', 'rsinha@asu.edu'])
+        msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
+        msg.bcc = pgr.participant.email
+        msg.attach_alternative(html_content, 'text/html')
+        messages.append(msg)
     return msg
 
+def get_individual_points(participant_group_relationship):
+    yesterday = date.today() - timedelta(1)
+    prdvs = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship,
+            date_created__gte=yesterday, parameter=get_activity_performed_parameter())
+    return prdvs.aggregate(Sum('value'))
 
 
