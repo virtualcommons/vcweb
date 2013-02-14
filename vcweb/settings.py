@@ -77,9 +77,10 @@ MIDDLEWARE_CLASSES = (
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'vcweb.core.middleware.ExceptionHandlingMiddleware',
-        'debug_toolbar.middleware.DebugToolbarMiddleware',
+        #'debug_toolbar.middleware.DebugToolbarMiddleware',
         )
 
+# for django-debug-toolbar
 INTERNAL_IPS = ('127.0.0.1','68.99.87.185',)
 
 ROOT_URLCONF = 'vcweb.urls'
@@ -116,7 +117,7 @@ INSTALLED_APPS = (
         'mptt',
         'bootstrap',
         # XXX: disable in prod
-        'debug_toolbar',
+        #'debug_toolbar',
         )
 
 SOUTH_TESTS_MIGRATE = False
