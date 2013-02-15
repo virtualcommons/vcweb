@@ -584,7 +584,9 @@ def get_activity_points_cache():
     activity_points_cache = cache.get(cv)
     if activity_points_cache is None:
         activity_points_cache = dict([(a.pk, a.points) for a in Activity.objects.all()])
-        cache.set(cv, activity_points_cache, timedelta(days=1).total_seconds())
+        #cache.set(cv, activity_points_cache, timedelta(days=1).total_seconds())
+# 1 day = 86400 seconds
+        cache.set(cv, activity_points_cache, 86400)
     return activity_points_cache
 
 def average_points_per_person(group, start=None, end=None):
