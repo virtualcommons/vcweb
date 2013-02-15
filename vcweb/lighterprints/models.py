@@ -578,15 +578,22 @@ def get_performed_activity_ids(participant_group_relationship):
     return [prdv.pk for prdv in participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())]
 
 
+def get_activity_points_cache():
+    cv = 'activity_points_cache'
+    activity_points_cache = cache.get(cv)
+    if activity_points_cache is None:
+        activity_points_cache = dict([(a.pk, a.points) for a in Activity.objects.all()])
+        cache.set(cv, activity_points_cache, timedelta(days=1).total_seconds())
+    return activity_points_cache
+
 def average_points_per_person(group, start=None, end=None):
     return get_group_score(group, start=start, end=end)[0]
 
 # cache activity points
 # returns a tuple of the average points per person and the total points for
 # the given group
-def get_group_score(group, start=None, end=None, participant_group_relationship=None, activity_points_cache=None, **kwargs):
-    if activity_points_cache is None:
-        activity_points_cache = dict([(a.pk, a.points) for a in Activity.objects.all()])
+def get_group_score(group, start=None, end=None, participant_group_relationship=None, **kwargs):
+    activity_points_cache = get_activity_points_cache()
     # establish date range
     # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
     total_group_points = 0
@@ -642,12 +649,16 @@ def get_time_remaining():
 
 def get_group_activity(participant_group_relationship, limit=None):
     group = participant_group_relationship.group
-    social_activity = []
+    all_activity = []
     chat_messages = []
-    data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like', 'comment', 'chatmessage', 'participant_group_relationship__participant__user', 'parameter')
-    own_likes = Like.objects.select_related('target_data_value').filter(participant_group_relationship=participant_group_relationship)
+# FIXME: embed this hairiness in ParticipantRoundDataValueQuerySet to avoid seeing it in client code
+    data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like',
+            'comment', 'chatmessage', 'participant_group_relationship__participant__user',
+            'parameter', 'participant_group_relationship__group',
+            'target_data_value__participant_group_relationship',)
+    own_likes = Like.objects.select_related('target_data_value__participant_group_relationship').filter(participant_group_relationship=participant_group_relationship)
     like_target_ids = [l.target_data_value.pk for l in own_likes]
-    own_comments = Comment.objects.select_related('target_data_value').filter(participant_group_relationship=participant_group_relationship)
+    own_comments = Comment.objects.select_related('target_data_value__participant_group_relationship').filter(participant_group_relationship=participant_group_relationship)
     comment_target_ids = [c.target_data_value.pk for c in own_comments]
     if limit is not None:
         data_values = data_values[:limit]
@@ -659,6 +670,8 @@ def get_group_activity(participant_group_relationship, limit=None):
             data = prdv.chatmessage.to_dict()
             chat_messages.append(data)
         elif parameter_name == 'comment':
+            # filters out comments not directed at the given participant_group_relationship (parameter to this method)
+            # FIXME: this is expensive, does an extra query per comment
             if prdv.target_data_value.participant_group_relationship != participant_group_relationship:
                 continue
             data = prdv.comment.to_dict()
@@ -683,8 +696,8 @@ def get_group_activity(participant_group_relationship, limit=None):
         data['commented'] = prdv.pk in comment_target_ids
         data['parameter_name'] = parameter_name
         data['date_created'] = abbreviated_timesince(prdv.date_created)
-        social_activity.append(data)
-    return (social_activity, chat_messages)
+        all_activity.append(data)
+    return (all_activity, chat_messages)
 
 def abbreviated_timesince(date):
     s = timesince(date)
