@@ -332,11 +332,11 @@ def get_footprint_level_parameter():
 def get_treatment_type_parameter():
     return Parameter.objects.get(name='treatment_type')
 
-def get_footprint_level_dv(group):
-    return group.get_data_value(parameter=get_footprint_level_parameter())[1]
+def get_footprint_level_dv(group, **kwargs):
+    return group.get_data_value(parameter=get_footprint_level_parameter(), **kwargs)[1]
 
-def get_footprint_level(group):
-    return get_footprint_level_dv(group).value
+def get_footprint_level(group, **kwargs):
+    return get_footprint_level_dv(group, **kwargs).value
 
 def get_treatment_type(group, round_configuration=None, **kwargs):
     try:
@@ -499,7 +499,8 @@ def get_available_activities(participant_group_relationship=None, ignore_time=Fa
     else:
         logger.debug("requesting available activities for pgr %s (%d)", participant_group_relationship, participant_group_relationship.pk)
         # FIXME: push this logic into the manager / queryset?
-        group_level = get_footprint_level(participant_group_relationship.group)
+        experiment = participant_group_relationship.group.experiment
+        group_level = get_footprint_level(participant_group_relationship.group, round_data=experiment.current_round_data)
         if ignore_time:
             # don't worry about the time, just return all activities at this participant's group level
             return Activity.objects.at_level(group_level)
@@ -610,11 +611,12 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
         if activity_performed_dv.participant_group_relationship == participant_group_relationship:
             total_participant_points += activity_points
 
-    average = total_group_points / group.size
-    logger.debug("total carbon savings: %s divided by %s members = %s per person", total_group_points, group.size, average)
+    group_size = group.size
+    average = total_group_points / group_size
+    logger.debug("total carbon savings: %s divided by %s members = %s per person", total_group_points, group_size, average)
     return (average, total_group_points, total_participant_points)
 
-def points_to_next_level(current_level):
+def get_points_to_next_level(current_level):
     ''' returns the number of average points needed to advance to the next level '''
     if current_level == 1:
         return 50
@@ -626,7 +628,7 @@ def points_to_next_level(current_level):
 def should_advance_level(group, level, start=None, end=None, max_level=3):
     logger.debug("checking if group %s at level %s should advance in level on %s", group, level, start)
     if level < max_level:
-        return average_points_per_person(group, start=start, end=end) >= points_to_next_level(level)
+        return average_points_per_person(group, start=start, end=end) >= get_points_to_next_level(level)
     return False
 
 def get_activity_performed_counts(participant_group_relationship, activity_performed_parameter=None):
@@ -652,10 +654,7 @@ def get_group_activity(participant_group_relationship, limit=None):
     all_activity = []
     chat_messages = []
 # FIXME: embed this hairiness in ParticipantRoundDataValueQuerySet to avoid seeing it in client code
-    data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like__parameter',
-            'comment__parameter', 'chatmessage__parameter', 'participant_group_relationship__participant__user',
-            'parameter', 'participant_group_relationship__group',
-            'target_data_value__participant_group_relationship',)
+    data_values = ParticipantRoundDataValue.objects.for_group(group)
     own_likes = Like.objects.select_related('target_data_value__participant_group_relationship').filter(participant_group_relationship=participant_group_relationship)
     like_target_ids = [l.target_data_value.pk for l in own_likes]
     own_comments = Comment.objects.select_related('target_data_value__participant_group_relationship').filter(participant_group_relationship=participant_group_relationship)
@@ -726,7 +725,7 @@ def create_group_summary_email(group, level, promoted=False, completed=False):
             'completed': completed,
             'promoted': promoted,
             'group_level': level,
-            'points_to_next_level': points_to_next_level(level),
+            'points_to_next_level': get_points_to_next_level(level),
             'average_group_points': average_points_per_person(group, start=yesterday),
             'number_of_chat_messages': number_of_chat_messages,
             'individual_points': get_individual_points(pgr),

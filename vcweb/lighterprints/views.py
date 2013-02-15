@@ -19,7 +19,7 @@ from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_auth
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_group_activity,
         get_treatment_type, get_lighterprints_experiment_metadata,
-        get_activity_performed_parameter, points_to_next_level, get_group_score, get_footprint_level,
+        get_activity_performed_parameter, get_points_to_next_level, get_group_score, get_footprint_level,
         get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining)
 
 from collections import defaultdict
@@ -156,7 +156,7 @@ def group_score(request, participant_group_id):
             'average_points_per_person': average_points,
             'total_points': total_points,
             'total_participant_points': total_participant_points,
-            'points_to_next_level': points_to_next_level(level)
+            'points_to_next_level': get_points_to_next_level(level)
             })
         return JsonResponse(dumps({'success':True, 'scores': groups }))
     return JsonResponse(dumps({'success':False, 'message': 'Invalid request'}))
@@ -326,15 +326,15 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         experiment = own_group.experiment
     treatment_type = get_treatment_type(own_group, round_configuration=experiment.current_round)
     group_data = []
-    activity_points_cache = dict([(a.pk, a.points) for a in activities])
+    round_data = experiment.current_round_data
     for group in own_group.experiment.group_set.all():
-        (average_points, total_points, total_participant_points) = get_group_score(group, participant_group_relationship=participant_group_relationship, activity_points_cache=activity_points_cache)
-        group_level = get_footprint_level(group)
-        pointsToNextLevel = points_to_next_level(group_level)
+        (average_points, total_points, total_participant_points) = get_group_score(group, participant_group_relationship=participant_group_relationship)
+        group_level = get_footprint_level(group, round_data=round_data)
+        points_to_next_level = get_points_to_next_level(group_level)
         if group == own_group:
             own_group_level = group_level
             own_average_points = average_points
-            own_points_to_next_level = pointsToNextLevel
+            own_points_to_next_level = points_to_next_level
         group_data.append({
             'groupName': group.name,
             'groupLevel': group_level,
@@ -342,7 +342,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
             'averagePoints': average_points,
             'totalPoints': total_points,
             'totalParticipantPoints': total_participant_points,
-            'pointsToNextLevel': pointsToNextLevel
+            'pointsToNextLevel': points_to_next_level
             })
     group_data.sort(key=itemgetter('averagePoints'), reverse=True)
     (activity_dict_list, level_activity_list) = get_all_activities_tuple(participant_group_relationship, activities, group_level=own_group_level)
