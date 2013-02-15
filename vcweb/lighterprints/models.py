@@ -242,16 +242,25 @@ class Activity(MPTTModel):
 
     @property
     def time_slots(self):
-        if self.available_all_day:
-            return 'available all day'
-        else:
-            return ','.join([availability.time_slot for availability in self.availability_set.all()])
+        ck = 'activity_%s_timeslots' % self.pk
+        cv = cache.get(ck)
+        if cv is None:
+            if self.available_all_day:
+                cv = 'available all day'
+            else:
+                cv = ','.join([availability.time_slot for availability in self.availability_set.all()])
+            cache.set(ck, cv)
+        return cv
 
     def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'icon_url', 'icon_name', 'personal_benefits', 'points', 'time_slots')):
-        activity_as_dict = {}
-        for attr_name in attrs:
-            activity_as_dict[attr_name] = getattr(self, attr_name, None)
-        return activity_as_dict
+        ck = 'activity.%s' % self.pk
+        cv = cache.get(ck)
+        if cv is None:
+            cv = {}
+            for attr_name in attrs:
+                cv[attr_name] = getattr(self, attr_name, None)
+            cache.set(ck, cv)
+        return cv
 
     def __unicode__(self):
         return u'%s' % self.label
@@ -267,9 +276,12 @@ class ActivityAvailability(models.Model):
     def __unicode__(self):
         return u'%s (%s - %s)' % (self.activity, self.start_time, self.end_time)
 
+    def _to_hour(self, dt):
+        return dt.strftime('%I%p').lstrip('0').lower()
+
     @property
     def time_slot(self):
-        return u'%s - %s' % (self.start_time.strftime('%I:%M %p'), self.end_time.strftime('%I:%M %p'))
+        return u'%s-%s' % (self._to_hour(self.start_time), self._to_hour(self.end_time))
 
     def to_dict(self, attrs=('start_time', 'end_time')):
         d = {}
@@ -642,7 +654,6 @@ def get_group_activity(participant_group_relationship, limit=None):
     for prdv in data_values:
         # FIXME: ugly downcasting.. consider doing something like this instead:
         # http://jeffelmore.org/2010/11/11/automatic-downcasting-of-inherited-models-in-django/
-        data = prdv.to_dict()
         parameter_name = prdv.parameter.name
         if parameter_name == 'chat_message':
             data = prdv.chatmessage.to_dict()

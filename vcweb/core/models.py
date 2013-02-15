@@ -1614,23 +1614,19 @@ class ParticipantRoundDataValue(ParameterizedValue):
     def round_configuration(self):
         return self.round_data.round_configuration
 
-    def to_dict(self):
+    def to_dict(self, cacheable=False):
         pgr = self.participant_group_relationship
         data = {'pk' : self.pk,
                 'participant_group_id': pgr.pk,
-                'participant_name': escape(pgr.participant.full_name),
+                'participant_name': pgr.participant.full_name,
                 'participant_number': pgr.participant_number,
                 'date_created': self.date_created,
                 'parameter_name': self.parameter.name
                 }
-        # value cache lookup should be via int_value
-        if self.parameter.is_foreign_key:
-            data['value'] = self.cached_value
-        else:
-            data['value'] = self.value
+        data['value'] = unicode(self.cached_value if cacheable else self.value)
         tdv = self.target_data_value
         if tdv is not None:
-            data['target_data_value'] = tdv.cached_value
+            data['target_data_value'] = unicode(tdv.cached_value if cacheable else tdv.value)
             data['target'] = tdv.to_dict()
         return data
 
@@ -1678,8 +1674,8 @@ class ChatMessage(ParticipantRoundDataValue):
     def round_configuration(self):
         return self.round_data.round_configuration
 
-    def to_dict(self):
-        data = super(ChatMessage, self).to_dict()
+    def to_dict(self, **kwargs):
+        data = super(ChatMessage, self).to_dict(cacheable=True)
         data['message'] = self.message
         group = self.participant_group_relationship.group
         data['group_id'] = group.pk
@@ -1714,8 +1710,8 @@ class Comment(ParticipantRoundDataValue):
         super(Comment, self).__init__(*args, **kwargs)
 
     def to_dict(self):
-        data = super(Comment, self).to_dict()
-        data['message'] = escape(self.value)
+        data = super(Comment, self).to_dict(cacheable=True)
+        data['message'] = self.value
         return data
 
     class Meta:
@@ -1727,7 +1723,7 @@ class Like(ParticipantRoundDataValue):
         super(Like, self).__init__(*args, **kwargs)
 
     def to_dict(self):
-        data = super(Like, self).to_dict()
+        data = super(Like, self).to_dict(cacheable=True)
         return data
 
 class ActivityLog(models.Model):
