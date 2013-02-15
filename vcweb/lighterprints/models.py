@@ -652,8 +652,8 @@ def get_group_activity(participant_group_relationship, limit=None):
     all_activity = []
     chat_messages = []
 # FIXME: embed this hairiness in ParticipantRoundDataValueQuerySet to avoid seeing it in client code
-    data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like',
-            'comment', 'chatmessage', 'participant_group_relationship__participant__user',
+    data_values = ParticipantRoundDataValue.objects.for_group(group).select_related('like__parameter',
+            'comment__parameter', 'chatmessage__parameter', 'participant_group_relationship__participant__user',
             'parameter', 'participant_group_relationship__group',
             'target_data_value__participant_group_relationship',)
     own_likes = Like.objects.select_related('target_data_value__participant_group_relationship').filter(participant_group_relationship=participant_group_relationship)
