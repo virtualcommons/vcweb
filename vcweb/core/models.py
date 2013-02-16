@@ -396,7 +396,7 @@ class Experiment(models.Model):
 
     @property
     def current_round_data(self):
-        round_data, created = self.round_data_set.get_or_create(round_configuration=self.current_round)
+        round_data, created = self.round_data_set.select_related('round_configuration').get_or_create(round_configuration=self.current_round)
         return round_data
 
     @property
@@ -1405,12 +1405,6 @@ class RoundData(models.Model):
 class GroupRoundDataValue(ParameterizedValue):
     group = models.ForeignKey(Group, related_name='data_value_set')
     round_data = models.ForeignKey(RoundData, related_name='group_data_value_set')
-
-    def __init__(self, *args, **kwargs):
-        super(GroupRoundDataValue, self).__init__(*args, **kwargs)
-        if not hasattr(self, 'experiment'):
-            self.experiment = self.round_data.experiment
-
 
     @property
     def owner(self):

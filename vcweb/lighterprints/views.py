@@ -324,11 +324,12 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     own_group = participant_group_relationship.group
     if experiment is None:
         experiment = own_group.experiment
-    treatment_type = get_treatment_type(own_group, round_configuration=experiment.current_round)
-    group_data = []
     round_data = experiment.current_round_data
-    for group in own_group.experiment.group_set.all():
-        (average_points, total_points, total_participant_points) = get_group_score(group, participant_group_relationship=participant_group_relationship)
+    round_configuration = round_data.round_configuration
+    treatment_type = get_treatment_type(own_group, round_configuration=round_configuration)
+    group_data = []
+    for group in experiment.group_set.all():
+        (average_points, total_points, total_participant_points) = get_group_score(group, participant_group_relationship=participant_group_relationship, round_data=round_data)
         group_level = get_footprint_level(group, round_data=round_data)
         points_to_next_level = get_points_to_next_level(group_level)
         if group == own_group:
@@ -424,7 +425,7 @@ def checkin(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         latitude = form.cleaned_data['latitude']
         longitude = form.cleaned_data['longitude']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group', 'participant__user'), pk=participant_group_id)
         logger.debug("%s checking at at (%s, %s)", participant_group_relationship, latitude, longitude)
         if request.user.participant == participant_group_relationship.participant:
 # perform checkin logic here, query foursquare API for nearest "green" venu

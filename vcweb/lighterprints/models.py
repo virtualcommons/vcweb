@@ -11,7 +11,7 @@ from django.utils.translation import ugettext_lazy as _
 from functools import partial
 from model_utils.managers import PassThroughManager
 from vcweb.core import signals, simplecache, enum
-from vcweb.core.models import (Experiment, ExperimentMetadata, RoundParameterValue, ParticipantGroupRelationship, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
+from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, RoundParameterValue, ParticipantGroupRelationship, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
 from vcweb.core.services import fetch_foursquare_categories
 import collections
 from datetime import datetime, date, time, timedelta
@@ -41,10 +41,11 @@ def update_active_experiments(sender, time=None, start=None, **kwargs):
     messages = []
     for experiment in get_active_experiments():
         # calculate total carbon savings and decide if they move on to the next level
+        round_data = experiment.current_round_data
         for group in experiment.group_set.all():
             promoted = False
             completed = False
-            footprint_level_grdv = get_footprint_level_dv(group)
+            footprint_level_grdv = get_footprint_level_dv(group, round_data=round_data)
             if should_advance_level(group, footprint_level_grdv.value, start):
                 # group was promoted
                 promoted = True
@@ -190,7 +191,7 @@ class ActivityManager(TreeManager, PassThroughManager):
         return self._filter_by_availability(level, start_time__gte=current_time)
 
     def _filter_by_availability(self, level=1, **kwargs):
-        return [aa.activity for aa in ActivityAvailability.objects.select_related(depth=1).filter(models.Q(**kwargs)) if aa.activity.level <= level]
+        return [aa.activity for aa in ActivityAvailability.objects.select_related('activity').filter(models.Q(**kwargs)) if aa.activity.level <= level]
 
     def currently_available(self, level=1, **kwargs):
         current_time = datetime.now().time()
@@ -332,8 +333,10 @@ def get_footprint_level_parameter():
 def get_treatment_type_parameter():
     return Parameter.objects.get(name='treatment_type')
 
-def get_footprint_level_dv(group, **kwargs):
-    return group.get_data_value(parameter=get_footprint_level_parameter(), **kwargs)[1]
+def get_footprint_level_dv(group, round_data=None):
+    if round_data is None:
+        round_data = group.current_round_data
+    return GroupRoundDataValue.objects.get(group=group, round_data=round_data)
 
 def get_footprint_level(group, **kwargs):
     return get_footprint_level_dv(group, **kwargs).value
@@ -530,7 +533,7 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
     how often can a participant participate in an activity? whenever it falls within the ActivityAvailability schedule
     and if the participant hasn't already performed this activity during a one-day cycle (which begins at midnight)
     '''
-    level = get_footprint_level(participant_group_relationship.group)
+    level = get_footprint_level(participant_group_relationship.group, **kwargs)
     if activity.level > level:
         logger.debug("activity %s had larger level (%s) than group level (%s)", activity, activity.level, level)
         return ActivityStatus.UNAVAILABLE
@@ -564,9 +567,9 @@ def is_activity_available(activity, participant_group_relationship):
     return check_activity_availability(activity, participant_group_relationship) == ActivityStatus.AVAILABLE
 
 def do_activity(activity, participant_group_relationship):
-    if is_activity_available(activity, participant_group_relationship):
+    round_data = participant_group_relationship.group.current_round_data
+    if is_activity_available(activity, participant_group_relationship, round_data=round_data):
         logger.debug("activity %s was available", activity)
-        round_data = participant_group_relationship.group.current_round_data
         return ParticipantRoundDataValue.objects.create(parameter=get_activity_performed_parameter(),
                 participant_group_relationship=participant_group_relationship,
                 round_data=round_data,
@@ -594,13 +597,14 @@ def average_points_per_person(group, start=None, end=None):
 # cache activity points
 # returns a tuple of the average points per person and the total points for
 # the given group
-def get_group_score(group, start=None, end=None, participant_group_relationship=None, **kwargs):
+def get_group_score(group, start=None, end=None, participant_group_relationship=None, round_data=None, **kwargs):
     activity_points_cache = get_activity_points_cache()
     # establish date range
     # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
     total_group_points = 0
     total_participant_points = 0
-    activities_performed_qs = group.get_participant_data_values(parameter=get_activity_performed_parameter())
+    activities_performed_qs = group.get_participant_data_values(parameter=get_activity_performed_parameter(),
+            round_data=round_data)
     if start is None:
         start = date.today()
     if end is None:
