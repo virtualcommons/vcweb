@@ -84,6 +84,11 @@
                         <div data-bind="template: { name: 'challenges-template', data: { challenges: unlockedChallenges() } }"></div>
                     </div>
                     <div class='tab-pane' id='locked-challenges'>
+                        <div data-bind='if: lockedChallenges().length === 0'>
+                            <div style='padding: 10px;' class='alert-block'>
+                                <i class='text-gold icon-star'></i>Congratulations, your group has unlocked all of the challenges.
+                            </div>
+                        </div>
                         <div data-bind="template: { name: 'challenges-template', data: { challenges: lockedChallenges() } }"></div>
                     </div>
                 </div>

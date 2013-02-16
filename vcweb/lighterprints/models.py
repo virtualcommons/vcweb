@@ -585,7 +585,6 @@ def get_activity_points_cache():
     if activity_points_cache is None:
         activity_points_cache = dict([(a.pk, a.points) for a in Activity.objects.all()])
         #cache.set(cv, activity_points_cache, timedelta(days=1).total_seconds())
-# 1 day = 86400 seconds
         cache.set(cv, activity_points_cache, 86400)
     return activity_points_cache
 
@@ -656,7 +655,7 @@ def get_group_activity(participant_group_relationship, limit=None):
     all_activity = []
     chat_messages = []
 # FIXME: embed this hairiness in ParticipantRoundDataValueQuerySet to avoid seeing it in client code
-    data_values = ParticipantRoundDataValue.objects.for_group(group)
+    data_values = ParticipantRoundDataValue.objects.for_group(group=group)
     own_likes = Like.objects.select_related('target_data_value__participant_group_relationship').filter(participant_group_relationship=participant_group_relationship)
     like_target_ids = [l.target_data_value.pk for l in own_likes]
     own_comments = Comment.objects.select_related('target_data_value__participant_group_relationship').filter(participant_group_relationship=participant_group_relationship)

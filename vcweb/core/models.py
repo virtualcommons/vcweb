@@ -1575,10 +1575,12 @@ class ParticipantGroupRelationship(models.Model):
 
 class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
     def for_group(self, group=None, **kwargs):
-        return self.select_related('like__parameter',
-                'comment__parameter', 'chatmessage__parameter', 'participant_group_relationship__participant__user',
-                'participant_group_relationship__group', 'target_data_value__participant_group_relationship',
-                'parameter', ).filter(participant_group_relationship__group=group, **kwargs).order_by('-date_created')
+        return self.select_related(
+                'parameter',
+                'participant_group_relationship__participant__user',
+                'participant_group_relationship__group',
+                'target_data_value__participant_group_relationship',
+                ).filter(participant_group_relationship__group=group, **kwargs).order_by('-date_created')
 
 class ParticipantRoundDataValue(ParameterizedValue):
     """
