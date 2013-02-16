@@ -1632,6 +1632,7 @@ class ParticipantRoundDataValue(ParameterizedValue):
         tdv = self.target_data_value
         if tdv is not None:
             data['target_data_value'] = unicode(tdv.cached_value if cacheable else tdv.value)
+            data['target_parameter_name'] = tdv.parameter.name
         return data
 
     def __unicode__(self):
