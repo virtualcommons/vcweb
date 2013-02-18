@@ -652,7 +652,8 @@ def get_time_remaining():
     seconds_left = time_remaining.seconds
     total_minutes_left = seconds_left / 60
     hours_left = total_minutes_left / 60
-    minutes = total_minutes_left % 60
+# pad minutes to have a leading 0 for single digits
+    minutes = str(total_minutes_left % 60).zfill(2)
     return (hours_left, minutes)
 
 def get_group_activity(participant_group_relationship, limit=None):
