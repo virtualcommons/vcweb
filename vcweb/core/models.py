@@ -16,7 +16,7 @@ from django.utils.html import escape
 from django.utils.timesince import timesince
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
-from model_utils.managers import PassThroughManager
+from model_utils.managers import InheritanceManager, PassThroughManager
 from string import Template
 from social_auth.backends.facebook import FacebookBackend
 import social_auth.signals
@@ -1581,6 +1581,9 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
                 'target_data_value__participant_group_relationship',
                 ).filter(participant_group_relationship__group=group, **kwargs).order_by('-date_created')
 
+class ParticipantRoundDataValueManager(InheritanceManager, PassThroughManager):
+    pass
+
 class ParticipantRoundDataValue(ParameterizedValue):
     """
     Represents one data point collected for a given Participant in a given Round.
@@ -1589,7 +1592,7 @@ class ParticipantRoundDataValue(ParameterizedValue):
     participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='participant_data_value_set')
     submitted = models.BooleanField(default=False)
     target_data_value = models.ForeignKey('ParticipantRoundDataValue', related_name='target_data_value_set', null=True, blank=True)
-    objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
+    objects = ParticipantRoundDataValueManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
 
     @property
     def owner(self):
