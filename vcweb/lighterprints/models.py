@@ -564,8 +564,8 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
 # default behavior is for the activity to be unavailable
     return ActivityStatus.UNAVAILABLE
 
-def is_activity_available(activity, participant_group_relationship):
-    return check_activity_availability(activity, participant_group_relationship) == ActivityStatus.AVAILABLE
+def is_activity_available(activity, participant_group_relationship, **kwargs):
+    return check_activity_availability(activity, participant_group_relationship, **kwargs) == ActivityStatus.AVAILABLE
 
 def do_activity(activity, participant_group_relationship):
     round_data = participant_group_relationship.group.current_round_data
