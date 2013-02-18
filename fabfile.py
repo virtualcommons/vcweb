@@ -97,11 +97,14 @@ def pip():
 def host_type():
     run('uname -a')
 
-def test():
+def test(name=None):
     '''
-    runs tests on this local codebase, not the deployed codebase
+    runs tests on this local codebase, never remote
+    run specific tests like fab test:core.ExperimentTest
     '''
     with cd(env.project_path):
+        if name is not None:
+            env.apps = name
         _virtualenv(local, '%(python)s manage.py test %(apps)s' % env)
 
 def sockjs(ip="127.0.0.1", port=None):
