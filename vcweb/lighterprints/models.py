@@ -54,7 +54,7 @@ def update_active_experiments(sender, time=None, start=None, **kwargs):
                 footprint_level_grdv.save()
                 if next_level == 3:
                     completed = True
-            group_summary_emails = create_group_summary_email(group, footprint_level_grdv.value, promoted=promoted, completed=completed)
+            group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed)
             messages.extend(group_summary_emails)
     logger.debug("about to send nightly summary emails: %s", messages)
     mail.get_connection().send_messages(messages)
@@ -712,7 +712,7 @@ def abbreviated_timesince(date):
     s = re.sub(r'\smonths?', 'mo', s)
     return s.replace(',', '')
 
-def create_group_summary_email(group, level, promoted=False, completed=False):
+def create_group_summary_emails(group, level, promoted=False, completed=False):
     logger.debug("creating group summary email for group %s", group)
 # FIXME: need some logic to select an email template based on the treatment type, or push into the template itself
     plaintext_template = select_template(['lighterprints/email/group-summary-email.txt'])
@@ -738,11 +738,11 @@ def create_group_summary_email(group, level, promoted=False, completed=False):
         plaintext_content = plaintext_template.render(c)
         html_content = html_template.render(c)
         subject = 'Lighter Footprints Summary for %s' % yesterday
-        to_address = [ experimenter_email ]
+        to_address = [ experimenter_email, 'allen.lee@asu.edu' ]
 # FIXME: remove in production
 #    to_address.extend(['marco.janssen@asu.edu', 'shelby.manney@asu.edu', 'allen.lee@asu.edu', 'rsinha@asu.edu'])
         msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
-        msg.bcc = pgr.participant.email
+        msg.bcc = [pgr.participant.email]
         msg.attach_alternative(html_content, 'text/html')
         messages.append(msg)
     return messages

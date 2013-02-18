@@ -77,7 +77,7 @@ MIDDLEWARE_CLASSES = (
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'vcweb.core.middleware.ExceptionHandlingMiddleware',
-        #'debug_toolbar.middleware.DebugToolbarMiddleware',
+#        'debug_toolbar.middleware.DebugToolbarMiddleware',
         )
 
 # for django-debug-toolbar
@@ -116,8 +116,8 @@ INSTALLED_APPS = (
         'django_extensions',
         'mptt',
         'bootstrap',
-        # XXX: disable in prod
-        #'debug_toolbar',
+# XXX: disable in prod
+#        'debug_toolbar',
         )
 
 SOUTH_TESTS_MIGRATE = False
@@ -230,10 +230,11 @@ MESSAGE_TAGS = {
         }
 
 
-LOG_DIRECTORY = 'logs' if DEBUG else '/opt/vcweb/logs'
+LOG_DIRECTORY = '/opt/vcweb/logs'
 try:
     makedirs(LOG_DIRECTORY)
 except OSError:
+    print "Unable to create log directory at %s" % LOG_DIRECTORY
     pass
 
 # logging configuration
@@ -265,7 +266,10 @@ LOGGING = {
         'sentry': {
              'level': 'ERROR',
              'formatter': 'verbose',
-             'class': 'raven.contrib.django.handlers.SentryHandler',
+             # according to http://raven.readthedocs.org/en/latest/config/django.html should be
+             # 'class': 'raven.contrib.django.handlers.SentryHandler',
+             'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+
         },
         'console':{
             'level':'DEBUG',
@@ -326,7 +330,7 @@ LOGGING = {
 try:
     from settings_local import *
 except ImportError:
-    print "WARNING: unable to import local settings"
+    print "no local settings found.  create settings_local.py to override settings in a hg-ignored file"
     pass
 
 try:
