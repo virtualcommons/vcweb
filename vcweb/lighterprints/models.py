@@ -74,9 +74,9 @@ def round_started_handler(sender, experiment=None, **kwargs):
             # FIXME: these aren't used by the current experiment version, are artifacts from the public lighter
             # footprints green button app.  remove if unused for too long
             # create participant level data value for each participant
-            ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, parameter=participant_level_parameter, int_value=1)
-            # create initial unlocked set of data values
-            get_unlocked_activities(pgr)
+            ParticipantRoundDataValue.objects.create(round_data=current_round_data, participant_group_relationship=pgr, parameter=participant_level_parameter, int_value=1)
+            # create initial unlocked set of data values (only for public experiment)
+            # get_unlocked_activities(pgr)
 
 
 ActivityStatus = enum('AVAILABLE', 'COMPLETED', 'UNAVAILABLE')
@@ -388,9 +388,10 @@ def create_activity_unlocked_data_values(participant_group_relationship, activit
         return None
     logger.debug("unlocking activities: %s", activity_ids)
     dvs = []
+    current_round_data = participant_group_relationship.current_round_data
     for activity_id in activity_ids:
         unlocked_activity_dv = ParticipantRoundDataValue.objects.create(parameter=get_activity_unlocked_parameter(),
-                participant_group_relationship=participant_group_relationship)
+                round_data=current_round_data, participant_group_relationship=participant_group_relationship)
         unlocked_activity_dv.value = activity_id
         unlocked_activity_dv.save()
         dvs.append(unlocked_activity_dv)

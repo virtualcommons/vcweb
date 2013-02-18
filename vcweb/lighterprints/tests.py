@@ -35,9 +35,8 @@ class BaseTest(BaseVcwebTest):
         return performed_activities
 
     def setUp(self, **kwargs):
-        super(BaseTest, self).setUp()
-        experiment_metadata = get_lighterprints_experiment_metadata()
-        self.load_experiment(experiment_metadata=experiment_metadata, **kwargs)
+        super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
+        logger.debug("loaded experiment %s", self.experiment)
 
 class ActivityViewTest(BaseTest):
     def test_list(self):
@@ -61,7 +60,7 @@ class UpdateLevelTest(BaseTest):
 # initialize participant carbon savings
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
             for activity in Activity.objects.filter(level=1):
-                activity_performed = participant_group_relationship.participant_data_value_set.create(round_data=current_round_data, parameter=get_activity_performed_parameter())
+                activity_performed = ParticipantRoundDataValue.objects.create(participant_group_relationship=participant_group_relationship, round_data=current_round_data, parameter=get_activity_performed_parameter())
                 activity_performed.value = activity.id
                 activity_performed.save()
         update_active_experiments(self, start=date.today())

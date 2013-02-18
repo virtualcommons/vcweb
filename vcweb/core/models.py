@@ -396,8 +396,10 @@ class Experiment(models.Model):
 
     @property
     def current_round_data(self):
-        round_data, created = self.round_data_set.select_related('round_configuration').get_or_create(round_configuration=self.current_round)
-        return round_data
+        current_round_configuration = self.current_round
+        logger.debug("current round configuration: %s", current_round_configuration)
+        logger.debug("round data: %s", self.round_data_set.all())
+        return self.round_data_set.select_related('round_configuration').get(round_configuration=current_round_configuration)
 
     @property
     def playable_round_data(self):
@@ -642,7 +644,7 @@ class Experiment(models.Model):
         return self.group_set
 
     def get_round_configuration(self, sequence_number):
-        return self.experiment_configuration.round_configuration_set.get(sequence_number=sequence_number)
+        return RoundConfiguration.objects.get(experiment_configuration__experiment=self, sequence_number=sequence_number)
 
     def get_template_path(self, name):
         return "%s/%s" % (self.namespace, name)
@@ -671,9 +673,12 @@ class Experiment(models.Model):
         else:
             logger.warning("trying to advance past the last round - no-op")
 
+    def create_round_data(self):
+        return self.round_data_set.create(round_configuration=self.current_round)
+
     def start_round(self, sender=None):
         self.status = 'ROUND_IN_PROGRESS'
-        self.current_round_data
+        self.create_round_data()
         self.current_round_elapsed_time = 0
         self.current_round_start_time = datetime.now()
         self.save()
@@ -1585,13 +1590,6 @@ class ParticipantRoundDataValue(ParameterizedValue):
     submitted = models.BooleanField(default=False)
     target_data_value = models.ForeignKey('ParticipantRoundDataValue', related_name='target_data_value_set', null=True, blank=True)
     objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
-
-    def __init__(self, *args, **kwargs):
-        super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
-        # FIXME: is this really necessary?
-        if 'participant_group_relationship' in kwargs and not hasattr(self, 'round_data'):
-            participant_group_relationship = kwargs['participant_group_relationship']
-            self.round_data = participant_group_relationship.experiment.current_round_data
 
     @property
     def owner(self):

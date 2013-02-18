@@ -2,7 +2,7 @@ from django.core import serializers
 from django.test import TestCase
 from django.test.client import RequestFactory, Client
 from vcweb.core import signals
-from vcweb.core.models import (Experiment, Experimenter, ExperimentConfiguration,
+from vcweb.core.models import (Experiment, Experimenter, ExperimentConfiguration, ParticipantRoundDataValue,
     Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
     ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue, Institution,
     GroupActivityLog)
@@ -27,6 +27,7 @@ class BaseVcwebTest(TestCase):
             experiment.setup_test_participants(email_suffix='asu.edu', count=10)
         experiment.save()
         self.experiment = experiment
+        logger.debug("loaded experiment: %s", experiment)
         return experiment
 
     @property
@@ -54,16 +55,18 @@ class BaseVcwebTest(TestCase):
             experimenter = Experimenter.objects.get(pk=1)
         experiment_configuration = ExperimentConfiguration.objects.create(experiment_metadata=experiment_metadata,
                 name='Test Experiment Configuration', creator=experimenter, is_public=is_public)
+        logger.debug("creating new experiment configuration: %s", experiment_configuration)
         for index in xrange(1, 10):
             experiment_configuration.round_configuration_set.create(sequence_number=index)
-        return Experiment.objects.create(experimenter=self.experimenter,
+        logger.debug("created round configurations: %s", experiment_configuration.round_configuration_set.all())
+        return Experiment.objects.create(experimenter=experimenter,
                 experiment_metadata=experiment_metadata, experiment_configuration=experiment_configuration)
 
 
-    def setUp(self):
+    def setUp(self, **kwargs):
         self.client = Client()
         self.factory = RequestFactory()
-        self.load_experiment()
+        self.load_experiment(**kwargs)
 
     def advance_to_data_round(self):
         self.experiment.activate()
@@ -227,8 +230,8 @@ class ExperimentTest(BaseVcwebTest):
         self.assertEqual(current_round_data.participant_data_value_set.count(), 0)
 
     def test_playable_round(self):
+# advance_to_next_round automatically starts it
         e = self.advance_to_data_round()
-        e.start_round()
         current_round_data = e.current_round_data
         for group in e.group_set.all():
             for parameter in group.data_parameters.all():
@@ -237,8 +240,7 @@ class ExperimentTest(BaseVcwebTest):
                 self.assertFalse(created)
             for pgr in group.participant_group_relationship_set.all():
                 for parameter in e.parameters(scope=Parameter.PARTICIPANT_SCOPE):
-                    participant_data_value, created = current_round_data.participant_data_value_set.get_or_create(participant_group_relationship=pgr,
-                            parameter=parameter)
+                    participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(round_data=current_round_data, participant_group_relationship=pgr, parameter=parameter)
                     self.assertFalse(created)
 
 class GroupTest(BaseVcwebTest):
