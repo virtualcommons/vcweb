@@ -205,14 +205,14 @@ def post_chat_message(request):
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
         message = form.cleaned_data['message']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'), pk=participant_group_id)
-        if participant_group_relationship.participant != request.user.participant:
-            logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, participant_group_relationship)
+        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'), pk=participant_group_id)
+        if pgr.participant != request.user.participant:
+            logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, pgr)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
-        chat_message = ChatMessage.objects.create(value=message, participant_group_relationship=participant_group_relationship)
-        logger.debug("%s: %s", participant_group_relationship.participant, chat_message)
+        chat_message = ChatMessage.objects.create(value=message, participant_group_relationship=pgr)
+        logger.debug("%s: %s", pgr.participant, chat_message)
 # FIXME: just get the chat messages
-        (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
+        (team_activity, chat_messages) = get_group_activity(pgr)
         return JsonResponse(dumps({'success': True, 'viewModel': { 'groupActivity': team_activity } }))
     return JsonResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
 
@@ -224,7 +224,7 @@ def like(request):
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
         target_id = form.cleaned_data['target_id']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'), pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'), pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to like target_id %s as %s", request.user, target_id, participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
@@ -234,7 +234,8 @@ def like(request):
         # FIXME: either needs a uniqueness constraint to ensure that duplicates don't get created or add guards when we
         # retrieve them to only send back the latest one (feels hacky).  See
         # https://bitbucket.org/virtualcommons/vcweb/issue/59/get_or_create-issues-for-likes
-        Like.objects.create(participant_group_relationship=participant_group_relationship, target_data_value=target)
+        round_data = participant_group_relationship.current_round_data
+        Like.objects.create(round_data=round_data, participant_group_relationship=participant_group_relationship, target_data_value=target)
         logger.debug("Participant %s liked %s", participant_group_relationship, target)
         return JsonResponse(dumps({'success': True, 'viewModel': get_view_model_json(participant_group_relationship)}))
     else:
@@ -249,7 +250,7 @@ def post_comment(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         target_id = form.cleaned_data['target_id']
         message = form.cleaned_data['message']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'), pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'), pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message, target_id, participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
@@ -257,6 +258,7 @@ def post_comment(request):
         logger.debug("%s commented on %s", participant_group_relationship, target)
         comment = Comment.objects.create(
                 value=message,
+                round_data=participant_group_relationship.round_data,
                 participant_group_relationship=participant_group_relationship,
                 target_data_value=target)
         logger.debug("Participant %s commented '%s' on %s", participant_group_relationship.participant, message, target)

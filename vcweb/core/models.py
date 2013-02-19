@@ -1597,6 +1597,10 @@ class ParticipantRoundDataValueManager(InheritanceManager):
                 ).filter(participant_group_relationship__group=group, **kwargs).order_by('-date_created')
 
 class ParticipantRoundDataValue(ParameterizedValue):
+    def __init__(self, *args, **kwargs):
+        if 'round_data' not in kwargs and 'participant_group_relationship' in kwargs:
+            kwargs['round_data'] = kwargs['participant_group_relationship'].current_round_data
+        super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
     """
     Represents one data point collected for a given Participant in a given Round.
     """
