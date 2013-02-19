@@ -18,15 +18,15 @@ class BaseVcwebTest(TestCase):
     """
     fixtures = ['test_users_participants', 'forestry_test_data']
 
-    def load_experiment(self, experiment_metadata=None, is_public=False, **kwargs):
+    def load_experiment(self, experiment_metadata=None, **kwargs):
         if experiment_metadata is None:
             experiment = Experiment.objects.all()[0].clone()
         else:
-            experiment = self.create_new_experiment(experiment_metadata, is_public=is_public, **kwargs)
+            experiment = self.create_new_experiment(experiment_metadata, **kwargs)
+        self.experiment = experiment
         if experiment.participant_set.count() == 0:
             experiment.setup_test_participants(email_suffix='asu.edu', count=10)
         experiment.save()
-        self.experiment = experiment
         logger.debug("loaded experiment: %s", experiment)
         return experiment
 
@@ -50,11 +50,11 @@ class BaseVcwebTest(TestCase):
     def participant_group_relationships(self):
         return ParticipantGroupRelationship.objects.filter(group__experiment=self.experiment)
 
-    def create_new_experiment(self, experiment_metadata, experimenter=None, is_public=False):
+    def create_new_experiment(self, experiment_metadata, experimenter=None):
         if experimenter is None:
             experimenter = Experimenter.objects.get(pk=1)
         experiment_configuration = ExperimentConfiguration.objects.create(experiment_metadata=experiment_metadata,
-                name='Test Experiment Configuration', creator=experimenter, is_public=is_public)
+                name='Test Experiment Configuration', creator=experimenter)
         logger.debug("creating new experiment configuration: %s", experiment_configuration)
         for index in xrange(1, 10):
             experiment_configuration.round_configuration_set.create(sequence_number=index)
@@ -69,18 +69,22 @@ class BaseVcwebTest(TestCase):
         self.load_experiment(**kwargs)
 
     def advance_to_data_round(self):
-        self.experiment.activate()
-        while self.experiment.has_next_round:
-            if self.experiment.current_round.is_playable_round:
-                return self.experiment
-            self.experiment.advance_to_next_round()
+        e = self.experiment
+        e.activate()
+        e.start_round()
+        while e.has_next_round:
+            if e.current_round.is_playable_round:
+                return e
+            e.advance_to_next_round()
 
     def all_data_rounds(self):
-        self.experiment.activate()
-        while self.experiment.has_next_round:
-            if self.experiment.current_round.is_playable_round:
+        e = self.experiment
+        e.activate()
+        e.start_round()
+        while e.has_next_round:
+            if e.current_round.is_playable_round:
                 yield self.experiment
-            self.experiment.advance_to_next_round()
+            e.advance_to_next_round()
 
     def create_new_round_configuration(self, round_type='REGULAR', template_name=None):
         return RoundConfiguration.objects.create(experiment_configuration=self.experiment_configuration,
@@ -90,8 +94,7 @@ class BaseVcwebTest(TestCase):
                 )
 
     def create_new_parameter(self, name='vcweb.test.parameter', scope='EXPERIMENT_SCOPE', parameter_type='string'):
-        return self.experiment_metadata.parameter_set.create(creator=self.experimenter, name=name, scope=scope, type=parameter_type)
-
+        return Parameter.objects.create(experiment_metadata=self.experiment_metadata, creator=self.experimenter, name=name, scope=scope, type=parameter_type)
 
     def create_new_group(self, max_size=10, experiment=None):
         if not experiment:

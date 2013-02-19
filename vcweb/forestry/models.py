@@ -72,7 +72,7 @@ def get_max_harvest_decision(resource_level):
         return 0
 
 @simplecache
-def get_experiment_metadata(refresh=False):
+def get_forestry_experiment_metadata(refresh=False):
     return ExperimentMetadata.objects.get(namespace='forestry')
 
 @simplecache
@@ -99,8 +99,8 @@ def get_harvest_decision_parameter(refresh=False):
 def set_harvest_decision(participant_group_relationship=None, value=None):
     participant_group_relationship.set_data_value(parameter=get_harvest_decision_parameter(), value=value)
 
-def set_resource_level(group=None, value=None):
-    group.set_data_value(parameter=get_resource_level_parameter(), value=value)
+def set_resource_level(group, value, round_data=None):
+    return group.set_data_value(parameter=get_resource_level_parameter(), round_data=round_data)
 
 def round_setup(experiment, **kwargs):
     round_configuration = experiment.current_round

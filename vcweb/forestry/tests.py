@@ -5,7 +5,11 @@ from vcweb.forestry.models import *
 import logging
 logger = logging.getLogger(__name__)
 
-class ForestryRoundSignalTest(BaseVcwebTest):
+class BaseTest(BaseVcwebTest):
+    def setUp(self, **kwargs):
+        super(BaseTest, self).setUp(experiment_metadata=get_forestry_experiment_metadata(), **kwargs)
+
+class ForestryRoundSignalTest(BaseTest):
 
     def verify_resource_level(self, group, value=100):
         self.assertEqual(get_resource_level(group), value)
@@ -16,7 +20,6 @@ class ForestryRoundSignalTest(BaseVcwebTest):
 
     def test_round_started_signal(self):
         e = self.advance_to_data_round()
-        e.start_round(sender=forestry_sender)
         for group in e.group_set.all():
             self.verify_resource_level(group)
         return e
@@ -53,7 +56,7 @@ class ForestryRoundSignalTest(BaseVcwebTest):
         e = self.test_round_setup()
         self.verify_round_ended(e, lambda experiment: round_teardown(experiment))
 
-class ForestryViewsTest(BaseVcwebTest):
+class ForestryViewsTest(BaseTest):
 
     def test_get_template(self):
         e = self.experiment
@@ -65,7 +68,7 @@ class ForestryViewsTest(BaseVcwebTest):
         e.current_round_sequence_number = rc.sequence_number
         self.assertEqual(e.current_round_template, 'forestry/quiz.html', 'should return default quiz.html')
 
-class TransferParametersTest(BaseVcwebTest):
+class TransferParametersTest(BaseTest):
     def test_transfer_parameters(self):
         def calculate_expected_resource_level(resource_level, harvested):
             after_harvest = max(resource_level - harvested, 0)
@@ -74,7 +77,6 @@ class TransferParametersTest(BaseVcwebTest):
         e = self.advance_to_data_round()
         expected_resource_level = 100
         while True:
-            e.start_round()
             current_round_configuration = e.current_round
             if should_reset_resource_level(current_round_configuration):
                 logger.debug("resetting resource level for round %s, %d", current_round_configuration,
@@ -99,24 +101,23 @@ class TransferParametersTest(BaseVcwebTest):
             else:
                 break
 
-class ForestryParametersTest(BaseVcwebTest):
+class ForestryParametersTest(BaseTest):
     '''
     FIXME: several of these can and should be lifted to core/tests.py
     '''
     def test_initialize_parameters_at_round_start(self):
         e = self.advance_to_data_round()
-        e.start_round()
         current_round_data = e.current_round_data
         group_parameters = (get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter())
         for group in e.group_set.select_related(depth=1).all():
             for parameter in group_parameters:
-                group_data_value = group.data_value_set.get(round_data=current_round_data, parameter=parameter)
-                self.assertTrue(group_data_value.parameter in group_parameters)
-                self.assertTrue(group_data_value)
+                gdv = group.get_data_value(round_data=current_round_data, parameter=parameter)[1]
+                logger.debug("inspecting group data value: %s", gdv)
+                self.assertTrue(gdv.parameter in group_parameters)
+                self.assertTrue(gdv)
 # single participant data parameter, harvest decisions
             for pgr in group.participant_group_relationship_set.all():
-                prdv = pgr.participant_data_value_set.get(round_data=current_round_data,
-                        parameter=get_harvest_decision_parameter())
+                prdv = ParticipantRoundDataValue.objects.get(participant_group_relationship=pgr, round_data=current_round_data, parameter=get_harvest_decision_parameter())
                 self.assertTrue(prdv)
                 self.assertEquals(prdv.parameter, get_harvest_decision_parameter())
 
@@ -155,7 +156,7 @@ class ForestryParametersTest(BaseVcwebTest):
             self.assertEqual(func(), func())
             self.assertEqual(id(func()), id(func()))
         caching_funcs = (get_harvest_decision_parameter, get_group_harvest_parameter, get_regrowth_parameter,
-                get_resource_level_parameter, get_experiment_metadata)
+                get_resource_level_parameter, get_forestry_experiment_metadata)
         for i in range(0, 25):
             for func in caching_funcs:
                 verify_cached_data(func)
@@ -169,14 +170,13 @@ class ForestryParametersTest(BaseVcwebTest):
             self.assertEqual(a, b)
 
         caching_funcs = (get_harvest_decision_parameter, get_group_harvest_parameter, get_regrowth_parameter,
-                get_resource_level_parameter, get_experiment_metadata)
+                get_resource_level_parameter, get_forestry_experiment_metadata)
         for i in range(0, 25):
             for func in caching_funcs:
                 verify_refreshed_data(func)
 
     def test_get_set_resource_level(self):
         e = self.advance_to_data_round()
-        e.start_round()
 # should initially be 100
         for group in e.group_set.all():
             resource_level = get_resource_level(group)
@@ -221,12 +221,14 @@ class ForestryParametersTest(BaseVcwebTest):
     def create_participant_data_values(self):
         e = self.experiment
         e.activate()
+        e.start_round()
         current_round_data = e.current_round_data
         for data_param in e.parameters(scope=Parameter.PARTICIPANT_SCOPE).all():
             for p in self.participants:
-                pexpr = ParticipantExperimentRelationship.objects.get(participant=p, experiment=e)
-                pgroupr = ParticipantGroupRelationship.objects.get(group__experiment=e, participant=p)
-                current_round_data.participant_data_value_set.create(participant_group_relationship=pgroupr, parameter=data_param, value=pexpr.sequential_participant_identifier * 2)
+                per = ParticipantExperimentRelationship.objects.get(participant=p, experiment=e)
+                pgr = ParticipantGroupRelationship.objects.get(group__experiment=e, participant=p)
+# all data parameters should be ints?
+                ParticipantRoundDataValue.objects.create(round_data=current_round_data, participant_group_relationship=pgr, parameter=data_param, value=per.sequential_participant_identifier * 2)
         return e
 
     def test_data_values(self):

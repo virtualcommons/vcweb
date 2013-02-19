@@ -138,8 +138,6 @@ class ActivityTest(BaseTest):
                 logger.debug("json: %s", json_object)
 
 class GroupScoreTest(ActivityTest):
-    def setUp(self):
-        super(GroupScoreTest, self).setUp(is_public=True)
     def test_group_score(self):
         e = self.experiment
         e.activate()
@@ -150,4 +148,3 @@ class GroupScoreTest(ActivityTest):
             (average_points_per_person, total_points, total_participant_points) = get_group_score(group)
             self.assertEqual(average_points_per_person, expected_avg_points_per_person)
             self.assertEqual(total_points, expected_avg_points_per_person * group.size)
-

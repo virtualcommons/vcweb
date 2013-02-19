@@ -397,9 +397,7 @@ class Experiment(models.Model):
     @property
     def current_round_data(self):
         current_round_configuration = self.current_round
-        logger.debug("current round configuration: %s", current_round_configuration)
-        logger.debug("round data: %s", self.round_data_set.all())
-        return self.round_data_set.select_related('round_configuration').get(round_configuration=current_round_configuration)
+        return RoundData.objects.select_related('round_configuration').get(experiment=self, round_configuration=current_round_configuration)
 
     @property
     def playable_round_data(self):
@@ -564,7 +562,8 @@ class Experiment(models.Model):
             users.append(user)
         self.register_participants(users=users, institution=institution)
 
-    def initialize_parameters(self, group_parameters=None, participant_parameters=None):
+    def initialize_parameters(self, group_parameters=None, participant_parameters=None, round_data=None):
+        logger.debug("initializing [participant params: %s]  [group parameters: %s] ", participant_parameters, group_parameters)
         if not self.current_round.is_playable_round:
             logger.warn("ignoring request to initialize parameters for round %s", self.current_round)
             return
@@ -572,15 +571,16 @@ class Experiment(models.Model):
             group_parameters = self.parameters(scope=Parameter.GROUP_SCOPE)
         if participant_parameters is None:
             participant_parameters = self.parameters(scope=Parameter.PARTICIPANT_SCOPE)
-        current_round_data = self.current_round_data
-        for group in self.group_set.select_related(depth=1).all():
+        if round_data is None:
+            round_data = self.current_round_data
+        for group in self.group_set.select_related('parameter').all():
             for parameter in group_parameters:
-                group_data_value, created = current_round_data.group_data_value_set.get_or_create(group=group, parameter=parameter)
+                group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter)
                 logger.debug("%s (%s)", group_data_value, created)
             if participant_parameters:
                 for pgr in group.participant_group_relationship_set.all():
                     for parameter in participant_parameters:
-                        participant_data_value, created = current_round_data.participant_data_value_set.get_or_create(participant_group_relationship=pgr, parameter=parameter)
+                        participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(round_data=round_data, participant_group_relationship=pgr, parameter=parameter)
                         logger.debug("%s (%s)", participant_data_value, created)
 
     def log(self, log_message):
@@ -674,9 +674,13 @@ class Experiment(models.Model):
             logger.warning("trying to advance past the last round - no-op")
 
     def create_round_data(self):
-        return self.round_data_set.create(round_configuration=self.current_round)
+        round_data, created = self.round_data_set.get_or_create(round_configuration=self.current_round)
+        if not created:
+            logger.debug("already created round data: %s", round_data)
+        return round_data
 
     def start_round(self, sender=None):
+        logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
         self.status = 'ROUND_IN_PROGRESS'
         self.create_round_data()
         self.current_round_elapsed_time = 0
@@ -1292,17 +1296,15 @@ class Group(models.Model):
             else:
                 return (default, None)
 
-    def set_data_value(self, parameter=None, value=None, **kwargs):
+    def set_data_value(self, parameter=None, value=None, round_data=None, **kwargs):
         '''
         Not as efficient as a simple SQL update because we need to do some type
         conversion / processing to put the value into the appropriate field.
         '''
-        data_value = self.get_data_value(parameter=parameter, **kwargs)[1]
-        data_value.value = value
-        self.log("setting parameter %s = %s" % (parameter, value))
-        data_value.save()
-        return data_value
-
+        grdv = GroupRoundDataValue.objects.get(parameter=parameter, round_data=round_data, group=self)
+        grdv.value = value
+        self.log("setting group param %s => %s" % (parameter, value))
+        return grdv
 
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
         criteria = dict([
@@ -1552,19 +1554,17 @@ class ParticipantGroupRelationship(models.Model):
     def get_round_configuration_value(self, **kwargs):
         return self.group.get_round_configuration_value(**kwargs)
 
-    def set_data_value(self, parameter=None, value=None):
-        current_round_data = self.current_round_data
+    def set_data_value(self, parameter=None, value=None, round_data=None):
+        if round_data is None:
+            round_data = self.current_round_data
         if parameter is not None and value is not None:
             # FIXME: make sure this is concurrent-safe or better yet that all participant data values are created at the
             # start of a round.
-            participant_data_value, created = current_round_data.participant_data_value_set.get_or_create(parameter=parameter, participant_group_relationship=self)
-            participant_data_value.value = value
+            participant_data_value = ParticipantRoundDataValue.objects.create(round_data=round_data, parameter=parameter, participant_group_relationship=self, value=value, submitted=True)
             # FIXME: parameterize / make explicit?
-            participant_data_value.submitted = True
-            participant_data_value.save()
             return participant_data_value
         else:
-            logger.warning("Unable to set data value %s on round data %s for %s", value, current_round_data, parameter)
+            logger.warning("Unable to set data value %s on round data %s for %s", value, round_data, parameter)
 
     def __unicode__(self):
         return u"{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)
