@@ -1301,9 +1301,10 @@ class Group(models.Model):
         Not as efficient as a simple SQL update because we need to do some type
         conversion / processing to put the value into the appropriate field.
         '''
+        self.log("setting group param %s => %s" % (parameter, value))
         grdv = GroupRoundDataValue.objects.get(parameter=parameter, round_data=round_data, group=self)
         grdv.value = value
-        self.log("setting group param %s => %s" % (parameter, value))
+        grdv.save()
         return grdv
 
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
@@ -1348,18 +1349,18 @@ class Group(models.Model):
         return self.transfer_parameter(data_value.parameter, data_value.value)
 
     def transfer_parameter(self, parameter, value):
-        if self.experiment.is_last_round:
+        e = self.experiment
+        if e.is_last_round:
             logger.error("Trying to transfer parameter (%s: %s) past the last round of the experiment",
                     parameter, value)
             return None
-        next_round_data, created = self.experiment.round_data_set.get_or_create(round_configuration=self.experiment.next_round)
+        next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
         logger.debug("next round data: %s (%s)", next_round_data, created)
-        group_data_value, created = next_round_data.group_data_value_set.get_or_create(group=self, parameter=parameter, defaults={'value': value})
-        logger.debug("group data value: %s (%s)", group_data_value, created)
-        if not created:
-            group_data_value.value = value
-            group_data_value.save()
-        return group_data_value
+        gdv, created = GroupRoundDataValue.objects.get_or_create(group=self, round_data=next_round_data, parameter=parameter)
+        logger.debug("group data value: %s (%s)", gdv, created)
+        gdv.value = value
+        gdv.save()
+        return gdv
 
     def get_participant_data_values(self, **kwargs):
         criteria = self._data_parameter_criteria(participant_group_relationship__group=self, **kwargs)
@@ -1558,11 +1559,12 @@ class ParticipantGroupRelationship(models.Model):
         if round_data is None:
             round_data = self.current_round_data
         if parameter is not None and value is not None:
-            # FIXME: make sure this is concurrent-safe or better yet that all participant data values are created at the
-            # start of a round.
-            participant_data_value = ParticipantRoundDataValue.objects.create(round_data=round_data, parameter=parameter, participant_group_relationship=self, value=value, submitted=True)
+            pdv = ParticipantRoundDataValue.objects.get(round_data=round_data, parameter=parameter, participant_group_relationship=self)
+            pdv.submitted = True
+            pdv.value = value
+            pdv.save()
             # FIXME: parameterize / make explicit?
-            return participant_data_value
+            return pdv
         else:
             logger.warning("Unable to set data value %s on round data %s for %s", value, round_data, parameter)
 
