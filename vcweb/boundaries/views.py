@@ -22,17 +22,17 @@ def participate(request, experiment_id=None):
     form = HarvestDecisionForm(request.POST or None)
     participant = request.user.participant
     logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
-    experiment = get_object_or_404(Experiment.objects.select_related(), pk=experiment_id)
-    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related(), group__experiment=experiment,
+    experiment = get_object_or_404(Experiment.objects.select_related('experiment_configuration').prefetch_related('group_set', 'experiment_configuration__round_configuration_set'), pk=experiment_id)
+    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group', 'participant__user').prefetch_related('group__participant_group_relationship_set'),
+            group__experiment=experiment,
             participant=participant)
-    if experiment.experiment_metadata != get_experiment_metadata():
+    if experiment.experiment_metadata != get_experiment_metadata() or pgr.participant != request.user.participant:
         raise Http404
     if form.is_valid():
         logger.debug("handing POST request, cleaned data: %s", form.cleaned_data)
         # set harvest decision for participant
         # FIXME: inconsistency, GET returns HTML and POST return JSON..
         return HttpResponse(dumps({ 'success': True, 'experimentModelJson': to_json(experiment, pgr)}))
-# FIXME: still need to look up participant group relationship and throw 404 if invalid
 
 # sends view model JSON to the template to be processed by knockout
     return render_to_response('boundaries/participate.html', {
@@ -61,7 +61,7 @@ def to_json(experiment, participant_group_relationship, **kwargs):
 
     for pgr in participant_group_relationship.group.participant_group_relationship_set.all():
         player_data.append({
-            'id': participant_group_relationship.participant_number,
+            'id': pgr.participant_number,
             'lastHarvestDecision': random.randint(0, 10),
             'storage': random.randint(0, 30),
             })
