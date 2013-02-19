@@ -46,14 +46,16 @@ def update_active_experiments(sender, time=None, start=None, **kwargs):
             promoted = False
             completed = False
             footprint_level_grdv = get_footprint_level_dv(group, round_data=round_data)
+            current_level = footprint_level_grdv.value
             if should_advance_level(group, footprint_level_grdv.value, start):
                 # group was promoted
                 promoted = True
-                next_level = min(footprint_level_grdv.value + 1, 3)
+                next_level = min(current_level + 1, 3)
                 footprint_level_grdv.value = next_level
                 footprint_level_grdv.save()
-                if next_level == 3:
+                if current_level == 3:
                     completed = True
+# FIXME: store another group data parameter that says they've completed the experiment?
             group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed)
             messages.extend(group_summary_emails)
     logger.debug("about to send nightly summary emails: %s", messages)
@@ -740,11 +742,10 @@ def create_group_summary_emails(group, level, promoted=False, completed=False):
         plaintext_content = plaintext_template.render(c)
         html_content = html_template.render(c)
         subject = 'Lighter Footprints Summary for %s' % yesterday
-        to_address = [ experimenter_email, 'allen.lee@asu.edu' ]
+        to_address = [ experimenter_email, pgr.participant.email ]
 # FIXME: remove in production
 #    to_address.extend(['marco.janssen@asu.edu', 'shelby.manney@asu.edu', 'allen.lee@asu.edu', 'rsinha@asu.edu'])
         msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
-        msg.bcc = [pgr.participant.email]
         msg.attach_alternative(html_content, 'text/html')
         messages.append(msg)
     return messages
@@ -753,6 +754,9 @@ def get_individual_points(participant_group_relationship):
     yesterday = date.today() - timedelta(1)
     prdvs = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship,
             date_created__gte=yesterday, parameter=get_activity_performed_parameter())
-    return prdvs.aggregate(Sum('int_value'))['int_value__sum']
+    points = prdvs.aggregate(Sum('int_value'))['int_value__sum']
+    if points is None:
+        points = 0
+    return points
 
 

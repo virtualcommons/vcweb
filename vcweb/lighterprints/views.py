@@ -40,7 +40,7 @@ class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, B
             participant_group_id = self.request.GET.get('participant_group_id')
             if not participant_group_id:
                 raise Http404
-            participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
+            participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'), pk=participant_group_id)
             # XXX: we can only return a context dictionary or raise an exception
             # at this location
             if participant_group_relationship.participant != user.participant:
@@ -178,7 +178,7 @@ def perform_activity(request):
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
         participant_group_id = form.cleaned_data['participant_group_id']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'), pk=participant_group_id)
         latitude = form.cleaned_data['latitude']
         longitude = form.cleaned_data['longitude']
         if participant_group_relationship.participant == request.user.participant:
@@ -205,7 +205,7 @@ def post_chat_message(request):
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
         message = form.cleaned_data['message']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'), pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
@@ -224,7 +224,7 @@ def like(request):
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
         target_id = form.cleaned_data['target_id']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'), pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to like target_id %s as %s", request.user, target_id, participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
@@ -249,7 +249,7 @@ def post_comment(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         target_id = form.cleaned_data['target_id']
         message = form.cleaned_data['message']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related(depth=2), pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'), pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message, target_id, participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
