@@ -661,10 +661,10 @@ def get_group_activity(participant_group_relationship, limit=None):
     all_activity = []
     chat_messages = []
 # FIXME: embed this hairiness in ParticipantRoundDataValueQuerySet to avoid seeing it in client code
-    data_values = ParticipantRoundDataValue.objects.for_group(group=group)
-    own_likes = Like.objects.select_related('target_data_value__participant_group_relationship').filter(participant_group_relationship=participant_group_relationship)
+    data_values = ParticipantRoundDataValue.objects.for_group(group)
+    own_likes = Like.objects.select_related('target_data_value').filter(participant_group_relationship=participant_group_relationship)
     like_target_ids = [l.target_data_value.pk for l in own_likes]
-    own_comments = Comment.objects.select_related('target_data_value__participant_group_relationship').filter(participant_group_relationship=participant_group_relationship)
+    own_comments = Comment.objects.select_related('target_data_value').filter(participant_group_relationship=participant_group_relationship)
     comment_target_ids = [c.target_data_value.pk for c in own_comments]
     if limit is not None:
         data_values = data_values[:limit]

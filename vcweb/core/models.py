@@ -1585,8 +1585,16 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
                 'target_data_value__participant_group_relationship',
                 ).filter(participant_group_relationship__group=group, **kwargs).order_by('-date_created')
 
-class ParticipantRoundDataValueManager(InheritanceManager, PassThroughManager):
-    pass
+# FIXME: unused at the moment, select_subclasses overrides select_related and it hasn't been straightforward to add the
+# related joins to select_subclasses
+class ParticipantRoundDataValueManager(InheritanceManager):
+    def for_group(self, group=None, **kwargs):
+        return self.select_related(
+                'parameter',
+                'participant_group_relationship__participant__user',
+                'participant_group_relationship__group',
+                'target_data_value__participant_group_relationship',
+                ).filter(participant_group_relationship__group=group, **kwargs).order_by('-date_created')
 
 class ParticipantRoundDataValue(ParameterizedValue):
     """
@@ -1596,7 +1604,7 @@ class ParticipantRoundDataValue(ParameterizedValue):
     participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='participant_data_value_set')
     submitted = models.BooleanField(default=False)
     target_data_value = models.ForeignKey('ParticipantRoundDataValue', related_name='target_data_value_set', null=True, blank=True)
-    objects = ParticipantRoundDataValueManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
+    objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
 
     @property
     def owner(self):
