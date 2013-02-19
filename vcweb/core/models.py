@@ -908,7 +908,7 @@ class RoundConfiguration(models.Model):
 
     def get_parameter_value(self, name, default=None):
         try:
-            return self.round_parameter_value_set.get(parameter__name=name).value
+            return RoundParameterValue.objects.get(round_configuration=self, parameter__name=name).value
         except RoundParameterValue.DoesNotExist:
             return default
 
@@ -1301,6 +1301,8 @@ class Group(models.Model):
         Not as efficient as a simple SQL update because we need to do some type
         conversion / processing to put the value into the appropriate field.
         '''
+        if round_data is None:
+            round_data = self.current_round_data
         self.log("setting group param %s => %s" % (parameter, value))
         grdv = GroupRoundDataValue.objects.get(parameter=parameter, round_data=round_data, group=self)
         grdv.value = value
