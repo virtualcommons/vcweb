@@ -34,8 +34,8 @@ class ConnectionManager(object):
     FIXME: consider refactoring core so that an "all" group always exists in an
     experiment.
     '''
-    REFRESH_EVENT = simplejson.dumps({ 'message_type': 'refresh' })
-    DISCONNECTION_EVENT = simplejson.dumps({ 'message_type': 'info', 'message': 'Your session has expired and you have been disconnected.  You can only have one window open to a vcweb page.'})
+    REFRESH_EVENT = simplejson.dumps({ 'event_type': 'refresh' })
+    DISCONNECTION_EVENT = simplejson.dumps({ 'event_type': 'info', 'message': 'Your session has expired and you have been disconnected.  You can only have one window open to a vcweb page.'})
 
     def __str__(self):
         return u"Participants: %s\nExperimenters: %s" % (self.participant_to_connection, self.experimenter_to_connection)
@@ -130,7 +130,7 @@ class ConnectionManager(object):
 
     def send_goto(self, experimenter, experiment, url):
         notified_participants = []
-        json = simplejson.dumps({'message_type': 'goto', 'url': url})
+        json = simplejson.dumps({'event_type': 'goto', 'url': url})
         for (participant_group_pk, connection) in self.all_participants(experimenter, experiment):
             connection.send(json)
             notified_participants.append(participant_group_pk)
@@ -155,8 +155,11 @@ class ConnectionManager(object):
 
 connection_manager = ConnectionManager()
 
-def create_message_event(message, message_type='info'):
-    return simplejson.dumps({ 'message': message, 'message_type': message_type})
+def create_chat_event(message):
+    return create_message_event(message, 'chat')
+
+def create_message_event(message, event_type='info'):
+    return simplejson.dumps({ 'message': message, 'event_type': event_type})
 
 # replace with namedtuple
 class Struct:
@@ -174,8 +177,8 @@ def to_event(message):
     return Struct(**message)
 
 class BaseConnection(SockJSConnection):
-    def get_handler(self, message_type):
-        lexical_handler = 'handle_' + message_type
+    def get_handler(self, event_type):
+        lexical_handler = 'handle_' + event_type
         handler = getattr(self, lexical_handler, None)
         if handler is None:
             handler = self.default_handler
@@ -185,6 +188,15 @@ class BaseConnection(SockJSConnection):
     def default_handler(self, event, experiment=None, **kwargs):
         logger.warning("unhandled message: %s", event)
 
+    def verify_auth_token(self, event):
+        try:
+            auth_token = event.auth_token
+            per = ParticipantExperimentRelationship.objects.select_related('participant').get(pk=event.participant_experiment_relationship_id)
+            participant = per.participant
+            return (per, participant.authentication_token == auth_token)
+        except ParticipantExperimentRelationship.DoesNotExist:
+            logger.error("no participant experiment relationship found for id %s", event.participant_experiment_relationship_id)
+            return (None, False)
 
 class ParticipantConnection(BaseConnection):
     default_channel = 'vcweb.participant.websocket'
@@ -203,11 +215,13 @@ class ParticipantConnection(BaseConnection):
 
     def handle_connect(self, event, experiment, **kwargs):
         logger.debug("connection event: %s", event)
-        auth_token = event.auth_token
-        per = ParticipantExperimentRelationship.objects.select_related('participant').get(pk=event.participant_experiment_relationship_id)
-        if per.participant.authentication_token == auth_token:
+        (per, valid) = self.verify_auth_token(event)
+        if valid:
             participant_tuple = connection_manager.add_participant(self, per)
             logger.debug("added connection: %s", participant_tuple)
+            self.send(create_message_event("Successful connection"));
+        else:
+            self.send(create_message_event("You do not appear to be authorized to perform this action.  If this problem persists, please contact us."))
 
     def handle_refresh(self, experimenter, experiment, event):
         notified_participants = connection_manager.send_refresh(experimenter, experiment)
@@ -217,23 +231,16 @@ class ParticipantConnection(BaseConnection):
         logger.debug("message: %s", json_string)
         message_dict = simplejson.loads(json_string)
         experiment_id = message_dict['experiment_id']
-        auth_token = message_dict['auth_token']
         experiment = Experiment.objects.select_related('participant_experiment_relationship_set').get(pk=experiment_id)
         # could handle connection here or in on_open, revisit
-        message_type = message_dict['message_type']
-        handler = self.get_handler(message_type)
-        # FIXME: verify auth token
+        event_type = message_dict['event_type']
+        handler = self.get_handler(event_type)
         event = to_event(message_dict)
         handler(event, experiment)
 
+        '''
         (participant_pk, experiment_pk) = connection_manager.get_participant_experiment_tuple(self)
-        participant = Participant.objects.get(pk=participant_pk)
-        if participant.authentication_token != auth_token:
-            self.send(create_message_event("Your do not appear to be authorized to perform this action.  If this problem persists, please contact us."))
-            logger.warning("participant %s auth tokens didn't match [%s <=> %s]", participant,
-                    participant.authentication_token, auth_token)
-            return
-        if message_type == 'submit':
+        if event_type == 'submit':
             logger.debug("processing participant submission for participant %s and experiment %s", participant_pk, experiment)
             # sanity check, make sure this is a data round.
             if experiment.is_data_round_in_progress:
@@ -258,7 +265,7 @@ class ParticipantConnection(BaseConnection):
             else:
                 logger.debug("No data round in progress, received late submit event: %s", event)
 
-        elif message_type == 'chat':
+        elif event_type == 'chat':
             try:
                 participant_group_relationship = connection_manager.get_participant_group_relationship(self)
                 current_round_data = participant_group_relationship.group.experiment.current_round_data
@@ -273,12 +280,13 @@ class ParticipantConnection(BaseConnection):
                     'participant': unicode(participant_group_relationship.participant),
                     "date_created": chat_message.date_created.strftime("%H:%M:%S"),
                     "message" : xhtml_escape(unicode(chat_message)),
-                    "message_type": 'chat',
+                    "event_type": 'chat',
                     })
                 connection_manager.send_to_group(participant_group_relationship.group, chat_json)
             except:
                 logger.warning("Couldn't find a participant group relationship using connection %s with connection manager %s", self, self.connection_manager)
 
+'''
 
     def on_close(self):
         #self.client.unsubscribe(self.default_channel)
@@ -302,7 +310,7 @@ class ExperimenterConnection(SockJSConnection):
         if experimenter.authentication_token == auth_token:
             event = to_event(message_dict)
             experiment = Experiment.objects.get(pk=event.experiment_id)
-            handler = self.get_handler(event.message_type)
+            handler = self.get_handler(event.event_type)
             handler(event, experiment, experimenter=experimenter)
             return
         logger.warning("experimenter %s auth tokens didn't match: [%s <=> %s]", auth_token, experimenter.authentication_token)

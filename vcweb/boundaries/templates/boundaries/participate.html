@@ -250,10 +250,9 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             model.submitChatMessage = function(data, evt) {
                 evt.preventDefault();
                 console.log("clicking chat message");
-                var line = $('#chatText').val();
-                if (line) {
+                var message = $('#chatText').val();
+                if (message) {
                     $('#chatText').val('');
-                    model.chatMessages.unshift({ participant: model.participantNumber(), message: line, dateCreated: new Date() });
                     getWebSocket().send(createMessageEvent(line));
                     $('#chatText').focus();
                 }
@@ -288,11 +287,14 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             var experimentModel = new ExperimentModel(experimentModelJson);
             ko.applyBindings(experimentModel);
             var s = connect();
-            s.onmessage = function(json_string) {
-                var json = jQuery.parseJSON(json_string);
+            s.onmessage = function(json) {
                 console.debug(json);
                 switch (json.message_type) {
-
+                    case 'chat':
+                        experimentModel.chatMessages.unshift({ participant: json.participant_number, message: json.message, dateCreated: json.date_created });
+                        console.debug("received chat message:" + json);
+                    default:
+                        console.debug("unhandled json message:" + json);
                 }
                 update(json);
             };

@@ -10,7 +10,7 @@ function createMessageEvent(payload, event_type) {
         event_type = "chat";
     }
     return JSON.stringify({
-        "message_type": event_type,
+        "event_type": event_type,
         "auth_token": "{{ request.user.participant.authentication_token }}",
         "experiment_id": {{experiment.pk}},
         {% if participant_group_relationship %}
