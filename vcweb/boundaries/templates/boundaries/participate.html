@@ -253,7 +253,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 var message = $('#chatText').val();
                 if (message) {
                     $('#chatText').val('');
-                    getWebSocket().send(createMessageEvent(line));
+                    getWebSocket().send(createMessageEvent(message));
                     $('#chatText').focus();
                 }
             }
@@ -289,12 +289,16 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             var s = connect();
             s.onmessage = function(json) {
                 console.debug(json);
-                switch (json.message_type) {
+                var data = $.parseJSON(json.data);
+                console.debug(data);
+                switch (data.event_type) {
                     case 'chat':
                         experimentModel.chatMessages.unshift({ participant: json.participant_number, message: json.message, dateCreated: json.date_created });
                         console.debug("received chat message:" + json);
+                        break;
                     default:
                         console.debug("unhandled json message:" + json);
+                        break;
                 }
                 update(json);
             };

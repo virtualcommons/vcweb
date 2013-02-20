@@ -223,9 +223,24 @@ class ParticipantConnection(BaseConnection):
         else:
             self.send(create_message_event("You do not appear to be authorized to perform this action.  If this problem persists, please contact us."))
 
-    def handle_refresh(self, experimenter, experiment, event):
-        notified_participants = connection_manager.send_refresh(experimenter, experiment)
-        self.send(create_message_event("Refreshed %s participants" % notified_participants))
+    def handle_chat(self, event, experiment, **kwargs):
+        (per, valid) = self.verify_auth_token(event)
+        if valid:
+            pgr = connection_manager.get_participant_group_relationship(self)
+            current_round_data = experiment.current_round_data
+            chat_message = ChatMessage.objects.create(participant_group_relationship=pgr,
+                    value=xhtml_escape(event.message),
+                    round_data=current_round_data
+                    )
+            chat_json = simplejson.dumps({
+                "pk": chat_message.pk,
+                'round_data_pk': current_round_data.pk,
+                'participant': unicode(pgr.participant),
+                "date_created": chat_message.date_created.strftime("%H:%M:%S"),
+                "message" : xhtml_escape(unicode(chat_message)),
+                "event_type": 'chat',
+                })
+            connection_manager.send_to_group(pgr.group, chat_json)
 
     def on_message(self, json_string):
         logger.debug("message: %s", json_string)
