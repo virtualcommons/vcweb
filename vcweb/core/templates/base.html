@@ -1,5 +1,6 @@
 {% load tags %}
 {% load url from future %}
+{% load static %}
 
 {% url 'home' as home %}
 {% url 'about' as about %}
@@ -15,9 +16,9 @@
 {% block head %}
 <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<link rel="stylesheet" href="{{STATIC_URL}}bootstrap/css/bootstrap.min.css">
-<link rel='stylesheet' href='{{STATIC_URL}}bootstrap/css/font-awesome.min.css'>
-<link rel="stylesheet" href="{{STATIC_URL}}css/style.css" media="screen" />
+<link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+<link rel='stylesheet' href="{% static 'bootstrap/css/font-awesome.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/style.css' %}" media="screen" />
 <link href='//fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
 {% endblock %}
 </head>

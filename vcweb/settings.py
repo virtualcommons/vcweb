@@ -10,6 +10,7 @@ SERVER_EMAIL='vcweb@asu.edu'
 SERVER_NAME='vcweb.asu.edu'
 EMAIL_HOST='smtp.asu.edu'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+ALLOWED_HOSTS = ('.asu.edu', 'localhost',)
 ADMINS = (
         ('Allen Lee', 'allen.lee@asu.edu')
         )
@@ -77,11 +78,7 @@ MIDDLEWARE_CLASSES = (
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'vcweb.core.middleware.ExceptionHandlingMiddleware',
-#        'debug_toolbar.middleware.DebugToolbarMiddleware',
         )
-
-# for django-debug-toolbar
-INTERNAL_IPS = ('127.0.0.1','68.99.87.185',)
 
 ROOT_URLCONF = 'vcweb.urls'
 
@@ -116,8 +113,6 @@ INSTALLED_APPS = (
         'django_extensions',
         'mptt',
         'bootstrap',
-# XXX: disable in prod
-#        'debug_toolbar',
         )
 
 SOUTH_TESTS_MIGRATE = False
@@ -322,17 +317,30 @@ LOGGING = {
     }
 }
 
-
-# this is the last thing to happen so we can override django-celery configuration
-# settings
-#import djcelery
-#djcelery.setup_loader()
+# for django-debug-toolbar
+INTERNAL_IPS = ('127.0.0.1','68.99.87.185',)
+# FIXME: hacky, see
+# http://stackoverflow.com/questions/8219940/how-do-i-access-imported-local-settings-without-a-circular-import
+# for other solutions
 try:
-    from settings_local import *
+    import settings_local as local
+    has_local_settings = True
 except ImportError:
     print "no local settings found.  create settings_local.py to override settings in a hg-ignored file"
-    pass
+    has_local_settings = False
 
+if has_local_settings:
+    for l in local.MIDDLEWARE_CLASSES:
+        if l not in MIDDLEWARE_CLASSES:
+            MIDDLEWARE_CLASSES += (l,)
+    for l in local.INSTALLED_APPS:
+        if l not in INSTALLED_APPS:
+            INSTALLED_APPS += (l,)
+# for django-debug-toolbar
+INTERNAL_IPS = ('127.0.0.1','68.99.87.185',)
+DEBUG_TOOLBAR_CONFIG = {
+        'INTERCEPT_REDIRECTS': False,
+        }
 try:
     import south
     from south.modelsinspector import add_introspection_rules

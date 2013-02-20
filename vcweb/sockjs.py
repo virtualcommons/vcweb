@@ -7,6 +7,7 @@ from itertools import chain
 from sockjs.tornado import SockJSRouter, SockJSConnection
 from tornado import web, ioloop
 from tornado.escape import xhtml_escape
+from raven.contrib.tornado import AsyncSentryClient
 import tornadoredis
 
 sys.path.append(os.path.abspath('.'))
@@ -162,10 +163,30 @@ class Struct:
     def __init__(self, **attributes):
         self.__dict__.update(attributes)
 
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+
+    def __unicode__(self):
+        return u"%s" % self.__dict__
+
+
 def to_event(message):
     return Struct(**message)
 
-class ParticipantConnection(SockJSConnection):
+class BaseConnection(SockJSConnection):
+    def get_handler(self, message_type):
+        lexical_handler = 'handle_' + message_type
+        handler = getattr(self, lexical_handler, None)
+        if handler is None:
+            handler = self.default_handler
+        logger.debug("invoking handler %s (lexical: %s)", handler, lexical_handler)
+        return handler
+
+    def default_handler(self, event, experiment=None, **kwargs):
+        logger.warning("unhandled message: %s", event)
+
+
+class ParticipantConnection(BaseConnection):
     default_channel = 'vcweb.participant.websocket'
     def __init__(self, *args, **kwargs):
         super(ParticipantConnection, self).__init__(*args, **kwargs)
@@ -177,16 +198,36 @@ class ParticipantConnection(SockJSConnection):
         logger.debug("opening connection %s", info)
         #self.client.listen(self.on_chan_message)
 
+    def handle_submit(self, event, experiment, **kwargs):
+        pass
+
+    def handle_connect(self, event, experiment, **kwargs):
+        logger.debug("connection event: %s", event)
+        auth_token = event.auth_token
+        participant_group_id = event.participant_group_relationship_id
+        per = ParticipantGroupRelationship.objects.select_related('participant').get(pk=participant_group_id)
+        if pgr.participant.authentication_token == auth_token:
+            connection_manager.add_participant(
+
+        
+
+    def handle_refresh(self, experimenter, experiment, event):
+        notified_participants = connection_manager.send_refresh(experimenter, experiment)
+        self.send(create_message_event("Refreshed %s participants" % notified_participants))
+
     def on_message(self, json_string):
         logger.debug("message: %s", json_string)
         message_dict = simplejson.loads(json_string)
         experiment_id = message_dict['experiment_id']
         auth_token = message_dict['auth_token']
-        experiment = Experiment.objects.select_related(depth=1).get(pk=experiment_id)
+        experiment = Experiment.objects.select_related('participant_experiment_relationship_set').get(pk=experiment_id)
         # could handle connection here or in on_open, revisit
         message_type = message_dict['message_type']
-# verify auth token
+        handler = self.get_handler(message_type)
+        # FIXME: verify auth token
         event = to_event(message_dict)
+        handler(event, experiment)
+
         (participant_pk, experiment_pk) = connection_manager.get_participant_experiment_tuple(self)
         participant = Participant.objects.get(pk=participant_pk)
         if participant.authentication_token != auth_token:
@@ -198,7 +239,8 @@ class ParticipantConnection(SockJSConnection):
             logger.debug("processing participant submission for participant %s and experiment %s", participant_pk, experiment)
             # sanity check, make sure this is a data round.
             if experiment.is_data_round_in_progress:
-                # FIXME: forward the submission to the experimenter
+                # FIXME: forward the submission event directly to the experimenter, we don't need to save anything as it
+                # should be processed directly by posting to the django side of things
                 experimenter_tuple = (experiment.experimenter.pk, experiment.pk)
                 event.participant_pk = participant_pk
                 pgr_pk = event.participant_group_relationship_id
@@ -239,6 +281,7 @@ class ParticipantConnection(SockJSConnection):
             except:
                 logger.warning("Couldn't find a participant group relationship using connection %s with connection manager %s", self, self.connection_manager)
 
+
     def on_close(self):
         #self.client.unsubscribe(self.default_channel)
         pass
@@ -261,24 +304,17 @@ class ExperimenterConnection(SockJSConnection):
         if experimenter.authentication_token == auth_token:
             event = to_event(message_dict)
             experiment = Experiment.objects.get(pk=event.experiment_id)
-            lexical_handler = 'handle_' + event.message_type
-            handler = getattr(self, lexical_handler, None)
-            logger.debug("invoking handler %s (lexical: %s)", handler, lexical_handler)
-            if not handler:
-                handler = self.default_handler
-            handler(experimenter, experiment, event)
+            handler = self.get_handler(event.message_type)
+            handler(event, experiment, experimenter=experimenter)
             return
         logger.warning("experimenter %s auth tokens didn't match: [%s <=> %s]", auth_token, experimenter.authentication_token)
         self.send(create_message_event('Your session has expired, please try logging in again.  If this problem persists, please contact us.'))
 
-    def default_handler(self, experimenter, experiment, event):
-        logger.warning("unhandled message: %s", event)
-
-    def handle_connect(self, experimenter, experiment, event):
+    def handle_connect(self, event, experiment, experimenter):
         connection_manager.add_experimenter(self, event.experimenter_id, event.experiment_id)
         self.send(create_message_event("Experimenter %s connected." % experimenter))
 
-    def handle_refresh(self, experimenter, experiment, event):
+    def handle_refresh(self, event, experiment, experimenter):
         notified_participants = connection_manager.send_refresh(experimenter, experiment)
         self.send(create_message_event("Refreshed %s participants" % notified_participants))
 
@@ -299,6 +335,7 @@ def main(argv=None):
     app = web.Application(urls)
     logger.info("starting sockjs server on port %s", port)
     app.listen(port)
+    app.sentry_client = AsyncSentryClient('http://d266113006054187b70e3af60d9561f3:4f0f8608122b4749a38f8a3a11d0b662@vcweb.asu.edu:9000/1')
     ioloop.IOLoop.instance().start()
 
 if __name__ == '__main__':

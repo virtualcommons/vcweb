@@ -7,7 +7,8 @@ from django.views.generic import View
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from vcweb.core.decorators import participant_required
 from vcweb.core.json import dumps
-from vcweb.core.models import is_participant, is_experimenter, Experiment, ParticipantGroupRelationship
+from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
+        ParticipantExperimentRelationship)
 from vcweb.core.views import ParticipantSingleExperimentMixin
 from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_survival_cost, get_resource_level,
@@ -23,6 +24,8 @@ def participate(request, experiment_id=None):
     participant = request.user.participant
     logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_configuration').prefetch_related('group_set', 'experiment_configuration__round_configuration_set'), pk=experiment_id)
+    per = get_object_or_404(ParticipantExperimentRelationship.objects.select_related('participant'),
+            experiment=experiment, participant=participant)
     pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group', 'participant__user').prefetch_related('group__participant_group_relationship_set'),
             group__experiment=experiment,
             participant=participant)
@@ -38,6 +41,8 @@ def participate(request, experiment_id=None):
     return render_to_response('boundaries/participate.html', {
         'auth_token': participant.authentication_token,
         'experiment': experiment,
+        'participant_group_relationship': pgr,
+        'participant_experiment_relationship': per,
         'experimentModelJson': to_json(experiment, pgr),
         },
         context_instance=RequestContext(request))
