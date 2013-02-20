@@ -13,7 +13,7 @@ import tornadoredis
 sys.path.append(os.path.abspath('.'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
-from vcweb.core.models import Experiment, ParticipantGroupRelationship, Participant, Experimenter, ChatMessage
+from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ParticipantExperimentRelationship, Participant, Experimenter, ChatMessage)
 from vcweb import settings
 
 logger = logging.getLogger('sockjs.vcweb')
@@ -76,7 +76,7 @@ class ConnectionManager(object):
     def get_participant_experiment_tuple(self, connection):
         return self.connection_to_participant[connection]
 
-    def add_participant(self, auth_token, connection, participant_experiment_relationship):
+    def add_participant(self, connection, participant_experiment_relationship):
         logger.debug("connection to participant: %s", self.connection_to_participant)
         logger.debug("participant to connection: %s", self.participant_to_connection)
         participant_tuple = (participant_experiment_relationship.participant.pk, participant_experiment_relationship.experiment.pk)
@@ -204,12 +204,10 @@ class ParticipantConnection(BaseConnection):
     def handle_connect(self, event, experiment, **kwargs):
         logger.debug("connection event: %s", event)
         auth_token = event.auth_token
-        participant_group_id = event.participant_group_relationship_id
-        per = ParticipantGroupRelationship.objects.select_related('participant').get(pk=participant_group_id)
-        if pgr.participant.authentication_token == auth_token:
-            connection_manager.add_participant(
-
-        
+        per = ParticipantExperimentRelationship.objects.select_related('participant').get(pk=event.participant_experiment_relationship_id)
+        if per.participant.authentication_token == auth_token:
+            participant_tuple = connection_manager.add_participant(self, per)
+            logger.debug("added connection: %s", participant_tuple)
 
     def handle_refresh(self, experimenter, experiment, event):
         notified_participants = connection_manager.send_refresh(experimenter, experiment)
