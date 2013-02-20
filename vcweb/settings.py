@@ -330,12 +330,15 @@ except ImportError:
     has_local_settings = False
 
 if has_local_settings:
-    for l in local.MIDDLEWARE_CLASSES:
-        if l not in MIDDLEWARE_CLASSES:
-            MIDDLEWARE_CLASSES += (l,)
-    for l in local.INSTALLED_APPS:
-        if l not in INSTALLED_APPS:
-            INSTALLED_APPS += (l,)
+    try:
+        for l in local.MIDDLEWARE_CLASSES:
+            if l not in MIDDLEWARE_CLASSES:
+                MIDDLEWARE_CLASSES += (l,)
+        for l in local.INSTALLED_APPS:
+            if l not in INSTALLED_APPS:
+                INSTALLED_APPS += (l,)
+    except:
+        pass
 # for django-debug-toolbar
 INTERNAL_IPS = ('127.0.0.1','68.99.87.185',)
 DEBUG_TOOLBAR_CONFIG = {
