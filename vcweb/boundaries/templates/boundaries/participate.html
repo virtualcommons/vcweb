@@ -32,9 +32,11 @@
     <div class='control-group'>
         <div class='controls'>
             <label class='control-label' for='pick-template'>Round template</label>
-            <select id='pick-template'>
+            <select id='pick-template' data-bind='value: templateName()'>
                 <option value='WELCOME'>Welcome</option>
-                <option value='INSTRUCTIONS' selected>Instructions</option>
+                <option value='INSTRUCTIONS'>Instructions</option>
+                <option value='INSTRUCTIONS2'>Instructions page 2</option>
+                <option value='INSTRUCTIONS3'>Instructions page 3</option>
                 <option value='PRACTICE'>Practice round</option>
                 <option value='REGULAR'>Actual round</option>
             </select>
@@ -44,7 +46,7 @@
         </div>
     </div>
 </form>
-<div data-bind='template: { name: roundType() }'>
+<div data-bind='template: { name: templateName() }'>
 </div>
 {% endblock content %}
 
@@ -98,20 +100,13 @@
 </div>
 </script>
 <script type='text/html' id='INSTRUCTIONS'>
-<div class='tabbable'>
-<ul id='boundaries-instructions-tabs' class='nav nav-tabs'>
-<li class='active'><a href='#instructions1' data-toggle='tab'>Harvesting and Profit</a></li>
-<li><a href='#instructions2' data-toggle='tab'>Forest Regrowth</a></li>
-<li><a href='#instructions3' data-toggle='tab'>Groups and Rounds</a></li>
-</ul>
-<div style='overflow: hidden;' class='tab-content'>
-<div class='tab-pane active' id='instructions1'>
+<div id='instructions1'>
 <h4>Harvesting and Profit</h4>
 <p>
 In this experiment you will harvest trees <i class='icon-leaf text-success'></i> to make a
-profit and survive.  Each round you may choose to harvest between <strong>0</strong> and <strong data-bind='text:
-maxHarvestDecision'></strong> trees.  Each tree you harvest will be exchanged for one token, and extra tokens will be
-kept in your <strong>savings</strong> each round.
+profit and survive.  Each round you may choose to harvest between <strong>0</strong> and <strong data-bind='text: maxHarvestDecision'></strong> trees.  
+Each tree you harvest will be exchanged for one token, and extra tokens will be kept in your <strong>savings</strong>
+each round.
 </p>
 <h4>Cost of living</h4>
 <p>
@@ -129,7 +124,9 @@ However, the final outcome depends on your choices and those of your group membe
 </p>
 <a data-bind='click: activateInstructionsPageTwo' class='btn btn-primary'>OK, I understand</a>
 </div>
-<div class='tab-pane' id='instructions2'>
+</script>
+<script type='text/html' id='INSTRUCTIONS2'>
+<div id='instructions2'>
 <h4>Forest Growth</h4>
 <p>
 Trees in the forest regrow much as real trees do.  The more trees there are, the faster empty places fill up with new
@@ -152,7 +149,9 @@ split between the 4 participants in your group, the forest has a capacity to pro
 </p>
 <a data-bind='click: activateInstructionsPageThree' class='btn btn-primary'>OK, I understand</a>
 </div>
-<div class='tab-pane' id='instructions3'>
+</script>
+<script type='text/html' id='INSTRUCTIONS3'>
+<div id='instructions3'>
 <h4>Groups and Rounds</h4>
 <p>
 You have been randomly assigned to a group of size <strong data-bind='text:participantsPerGroup'></strong>.
@@ -281,9 +280,14 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
+            model.templateName = ko.observable("WELCOME");
             // activate tab bindings
-            model.activateInstructionsPageTwo = activateTabFunctor('#instructions2', '#boundaries-instructions-tabs');
-            model.activateInstructionsPageThree = activateTabFunctor('#instructions3', '#boundaries-instructions-tabs');
+            model.activateInstructionsPageTwo = function() {
+                model.templateName('INSTRUCTIONS2');
+            };
+            model.activateInstructionsPageThree = function() {
+                model.templateName('INSTRUCTIONS3');
+            };
             model.finishedInstructions = function() {
                 console.debug("instructions were finished, notify experimenter");
                 getWebSocket().send(createMessageEvent("Instructions completed"));
@@ -350,14 +354,6 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 ko.mapping.fromJS(data, experimentModel);
             }
         }
-        function enableChat() {
-            $('.chat-action').removeClass('disabled').attr('disabled', false);
-            $('#chat-toggle').prop('checked', true);
-        }
-        function disableChat() {
-            $('.chat-action').addClass('disabled').attr('disabled', true);
-            $('#chat-toggle').prop('checked', false);
-        }
         function initialize(experimentModelJson) {
             var experimentModel = new ExperimentModel(experimentModelJson);
             ko.applyBindings(experimentModel);
@@ -383,19 +379,11 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 if (templateName === "PRACTICE") {
                     templateName = "REGULAR";
                     experimentModel.practiceRound(true);
-                    disableChat();
                 }
                 else if (templateName === "REGULAR") {
                     experimentModel.practiceRound(false);
-                    disableChat();
                 }
-                else if (templateName === "CHAT") {
-
-                }
-                else {
-                    enableChat();
-                }
-                experimentModel.roundType(templateName);
+                experimentModel.templateName(templateName);
             });
 
         }
