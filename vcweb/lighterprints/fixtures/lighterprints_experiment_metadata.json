@@ -178,6 +178,19 @@
     },
     {
         "fields": {
+               "name":"experiment_completed",
+               "experiment_metadata": [ "lighterprints" ],
+               "creator": 1,
+               "type": "boolean",
+               "date_created": "2011-01-01 15:13:07",
+               "last_modified": "2011-07-07 15:13:03",
+               "scope": "group"
+        },
+        "model": "core.parameter",
+        "pk": 21
+    },
+    {
+        "fields": {
                "name":"treatment_type",
                "experiment_metadata": [ "lighterprints" ],
                "creator": 1,
