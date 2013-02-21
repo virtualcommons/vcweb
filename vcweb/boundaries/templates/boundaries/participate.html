@@ -294,7 +294,6 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             model.chatEnabled = ko.observable(false);
             model.shouldShowOtherGroup = ko.observable(false);
             model.harvestDecision = ko.observable(0);
-            model.chatMessages = ko.observableArray([]);
             model.numberOfTreesPerRow = ko.observable(10);
             model.isResourceEmpty = ko.computed(function() {
                 return model.resourceLevel() == 0;

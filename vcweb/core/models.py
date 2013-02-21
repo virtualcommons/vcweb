@@ -1637,6 +1637,7 @@ class ParticipantRoundDataValue(ParameterizedValue):
                 'participant_name': pgr.participant.full_name,
                 'participant_number': pgr.participant_number,
                 'date_created': self.date_created,
+                'short_date_created': self.date_created.strftime('%I:%M:%S'),
                 'parameter_name': self.parameter.name
                 }
         data['value'] = unicode(self.cached_value if cacheable else self.value)

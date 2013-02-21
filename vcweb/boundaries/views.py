@@ -8,7 +8,7 @@ from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from vcweb.core.decorators import participant_required
 from vcweb.core.json import dumps
 from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
-        ParticipantExperimentRelationship)
+        ParticipantExperimentRelationship, ChatMessage)
 from vcweb.core.views import ParticipantSingleExperimentMixin
 from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_survival_cost, get_resource_level,
@@ -64,12 +64,21 @@ def to_json(experiment, participant_group_relationship, **kwargs):
             'survivalCost': survival_cost,
             })
 
-    for pgr in participant_group_relationship.group.participant_group_relationship_set.all():
+    own_group = participant_group_relationship.group
+    for pgr in own_group.participant_group_relationship_set.all():
         player_data.append({
             'id': pgr.participant_number,
             'lastHarvestDecision': random.randint(0, 10),
             'storage': random.randint(0, 30),
             })
+
+    experiment_model_dict['chatMessages'] = [
+            {'pk': cm.pk, 
+                'participant_number': cm.participant_group_relationship.participant_number,
+                'message': cm.string_value,
+                'date_created': cm.date_created.strftime("%I:%M:%S")} 
+            for cm in ChatMessage.objects.select_related('participant_group_relationship').filter(participant_group_relationship__group=own_group).order_by('-date_created')
+            ]
     experiment_model_dict['groupData'] = group_data
     experiment_model_dict['otherGroupResourceLevel'] = random.randint(50, 100)
     experiment_model_dict['otherGroupAverageHarvest'] = random.uniform(0, 10)
