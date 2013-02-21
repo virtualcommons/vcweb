@@ -111,7 +111,7 @@ def sockjs(ip="127.0.0.1", port=None):
     from vcweb import settings as vcweb_settings
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
-    _virtualenv(local, "{python} vcweb/sockjs.py {port}".format(python=env.python, port=port), capture=False)
+    _virtualenv(local, "{python} vcweb/vcweb-sockjs.py {port}".format(python=env.python, port=port), capture=False)
 
 def tornadio(ip="127.0.0.1", port=None):
     from vcweb import settings as vcweb_settings
