@@ -32,9 +32,9 @@
     <div class='control-group'>
         <div class='controls'>
             <label class='control-label' for='pick-template'>Round template</label>
-            <select id='pick-template'>
+            <select id='pick-template' data-bind='value: roundType'>
                 <option value='WELCOME'>Welcome</option>
-                <option value='INSTRUCTIONS' selected>Instructions</option>
+                <option value='INSTRUCTIONS'>Instructions</option>
                 <option value='PRACTICE'>Practice round</option>
                 <option value='REGULAR'>Actual round</option>
             </select>
@@ -53,8 +53,11 @@
 <h3>Chat</h3>
 <div class='chat-sidebar'>
     <div id='chat-div' class='chat messages'>
-        <div class='alert alert-message' data-bind="foreach: chatMessages">
-            #<b data-bind="text: participant"></b>: <span data-bind="text: message"></span><br>
+        <div class='well' data-bind='foreach: chatMessages'>
+            <i class='icon-user muted'></i> <strong>Participant <span data-bind='text: participant_number'></strong><b class='pull-right muted' data-bind='text: date_created'></b>
+            <p>
+            <small><i class='icon-double-angle-right'></i></small> <span data-bind='text: message'></span>
+            </p>
         </div>
     </div>
     <form id="chatform" class='form-inline'>
@@ -78,27 +81,92 @@
 <script type='text/html' id='WELCOME'>
 <h3>Welcome</h3>
 <p class='lead'>
-    Welcome.  This experiment will begin shortly after everyone has been assigned a station.  Please <strong>wait quietly and do
-    not close this window, open any other applications, or communicate with any of the other participants</strong>.  Thank you
-    for your cooperation. Please also make sure to turn off, silence, and disable vibration alerts on your cell phones
-    and any mobile devices before the experiment begins.
+    The experiment will begin shortly after everyone has been assigned a station and has had time to log in.
 </p>
+<div class='well'>
+    <div class='alert alert-info'>
+    <i class='text-success icon-info-sign'></i> Please <strong>wait quietly and do not close this window, open any other applications, or communicate with any of
+    the other participants</strong>.
+    </div>
+    <div class='alert alert-info'>
+    <i class='text-success icon-info-sign'></i>
+    Please also make sure to turn off, silence, and disable vibration alerts on your cell phones and any mobile devices before the experiment begins.
+    </div>
+    <div>
+    Thank you for your cooperation.
+    </div>
+</div>
 </script>
 <script type='text/html' id='INSTRUCTIONS'>
-<h3>Instructions</h3>
+<div class='tabbable'>
+<ul id='boundaries-instructions-tabs' class='nav nav-tabs'>
+<li class='active'><a href='#instructions1' data-toggle='tab'>Harvesting and Profit</a></li>
+<li><a href='#instructions2' data-toggle='tab'>Forest Regrowth</a></li>
+<li><a href='#instructions3' data-toggle='tab'>Groups and Rounds</a></li>
+</ul>
+<div style='overflow: hidden;' class='tab-content'>
+<div class='tab-pane active' id='instructions1'>
+<h4>Harvesting and Profit</h4>
+<p>
+In this experiment you will harvest trees <i class='icon-leaf text-success'></i> to make a
+profit and survive.  Each round you may choose to harvest between <strong>0</strong> and <strong data-bind='text:
+maxHarvestDecision'></strong> trees.  Each tree you harvest will be exchanged for one token, and extra tokens will be
+kept in your <strong>savings</strong> each round.
+</p>
+<h4>Cost of living</h4>
+<p>
+Each round you must pay living expenses of <span class='badge badge-important' data-bind='text: survivalCost'></span>
+tokens.  If, at any point you do not have enough tokens to pay the living expenses, you will not be paid or be able to
+continue harvesting for the rest of the experimental session.  You will need to wait until the session is complete
+before joining again.
+</p>
+<h4>Cash payment</h4>
+<p>
+If you collect enough tokens to pay living expenses until the end of the session you will be paid in cash 
+<strong data-bind='text: formatCurrency(dollarsPerToken())'></strong> for each token you have.  It is possible that you
+could earn as much as <strong data-bind='text: formatCurrency(maxEarnings())'></strong> for the entire experiment.
+However, the final outcome depends on your choices and those of your group members.
+</p>
+<a data-bind='click: activateInstructionsPageTwo' class='btn btn-primary'>OK, I understand</a>
+</div>
+<div class='tab-pane' id='instructions2'>
+<h4>Forest Growth</h4>
+<p>
+Trees in the forest regrow much as real trees do.  The more trees there are, the faster empty places fill up with new
+trees.  It is possible to destroy the forest by overharvesting.  If the forest is destroyed there will be no more trees
+to harvest for the rest of the experiment.
+</p>
+<h4>Carrying Capacity</h4>
+<p>
+Initially there are <span class='badge badge-success' data-bind='text: initialResourceLevel'></span> trees in the
+forest.  The forest grows new trees after every harvesting round, but the rate of growth depends on how large the forest
+is.  The forest cannot grow at all with zero trees, or at its full size of <span data-bind='text:initialResourceLevel'></span> trees.  
+Instead, it grows fastest at one half of full size; <span data-bind='text: initialResourceLevel() / 2'></span> trees.
+At a size of <span data-bind='text: initialResourceLevel() / 2'></span> trees, the forest will produce <span
+data-bind='text: initialResourceLevel() / 10'></span> trees each season.
+</p>
+<h4>Sustainable Harvesting</h4>
+<p>
+The highest amount of harvesting that the forest can permanently support is 24 trees per season.  If that number is
+split between the 4 participants in your group, the forest has a capacity to produce 6 trees per individual per round.
+</p>
+<a data-bind='click: activateInstructionsPageThree' class='btn btn-primary'>OK, I understand</a>
+</div>
+<div class='tab-pane' id='instructions3'>
+<h4>Groups and Rounds</h4>
 <p>
 You have been randomly assigned to a group of size <strong data-bind='text:participantsPerGroup'></strong>.
-In this experiment you will be sharing a virtual forest with the other members of your group.  In each round you will
-make a decision of how many resources to harvest.  The resources can regenerate over time as long as there some left, at
-a rate
-of (do we describe the regrowth rate here?).  The resources you collect will be put into your <b>storage</b>.
-</p>
-<h4>Survival</h4>
-Each round you must have <b>at least</b> <span class='badge badge-important' data-bind='text: survivalCost'></span> resources in your storage to survive.
+In this experiment you will be sharing a virtual forest with the <span data-bind='text: participantsPerGroup() - 1'></span> 
+other members in your group.  All participants in the experiment are in identical conditions and must harvest
+trees to pay the cost of living <span data-bind='text: survivalCost'></span> and make a profit.
 </p>
 <p>
-To better illustrate, we will begin with two practice rounds.  These rounds will not contribute to your earnings.
+We will now begin with some <strong>practice rounds</strong>.  These rounds will <strong>not</strong> contribute to your
+earnings.  If you have any questions please raise your hand and someone will come to address your question.  Otherwise,
+please click the button to continue.
 </p>
+<a data-bind='click: finishedInstructions' class='btn btn-primary'>I have read and understand all of these instructions</a>
+</div>
 </script>
 <script type='text/html' id='REGULAR'>
 <div class='row'>
@@ -148,7 +216,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
 
 <div data-bind="ifnot: isResourceEmpty" id='resourceDisplay'>
     <div class='alert alert-info'>There are <strong class='badge badge-success' data-bind='text:resourceLevel'></strong> trees remaining in the forest.</div>
-    <div data-bind='style: { width: resourceImageWidth, height: resourceImageHeight, background: resourceImageUrl }'>
+    <div data-bind='style: { width: resourceImageWidth, height: resourceImageHeight, background: resourceImageBackgroundUrl }'>
         &nbsp;
     </div>
 </div>
@@ -213,6 +281,13 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
+            // activate tab bindings
+            model.activateInstructionsPageTwo = activateTabFunctor('#instructions2', '#boundaries-instructions-tabs');
+            model.activateInstructionsPageThree = activateTabFunctor('#instructions3', '#boundaries-instructions-tabs');
+            model.finishedInstructions = function() {
+                console.debug("instructions were finished, notify experimenter");
+                getWebSocket().send(createMessageEvent("Instructions completed"));
+            }
             model.showOtherGroup = function() {
                 model.shouldShowOtherGroup(! model.shouldShowOtherGroup());
             }
@@ -230,7 +305,8 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 }
                 return 0;
             });
-            model.resourceImageUrl = ko.observable("url('{{STATIC_URL}}images/forestry/pine-tree.png')");
+            model.resourceImageUrl = ko.observable("{{STATIC_URL}}images/forestry/pine-tree.png");
+            model.resourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/pine-tree.png')");
             model.resourceImageWidth = ko.computed(function() {
                 return model.resourcesToDisplay() * 30 + "px";
             });
@@ -293,7 +369,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 console.debug(data);
                 switch (data.event_type) {
                     case 'chat':
-                        experimentModel.chatMessages.unshift({ participant: json.participant_number, message: json.message, dateCreated: json.date_created });
+                        experimentModel.chatMessages.unshift(data);
                         console.debug("received chat message:" + json);
                         break;
                     default:

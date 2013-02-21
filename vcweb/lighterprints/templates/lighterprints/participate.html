@@ -294,19 +294,14 @@ $(function() {
         window.location.hash = evt.target.hash;
     });
     */
-    function activateTabFunctor(tabHref) {
-        return function() {
-            $('#lfp-navtabs a[href="' + tabHref + '"]').tab('show');
-        }
-    }
     // set up KO binding, using one master view model
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
     // custom view model methods, some of these may be lifted into the model itself
-    viewModel.activateChallengesTab = activateTabFunctor('#challenges');
-    viewModel.activateDashboardTab = activateTabFunctor('#dashboard');
-    viewModel.activateHelpTab = activateTabFunctor('#help');
-    viewModel.activateGroupTab = activateTabFunctor('#group');
+    viewModel.activateChallengesTab = activateTabFunctor('#challenges', '#lfp-navtabs');
+    viewModel.activateDashboardTab = activateTabFunctor('#dashboard', '#lfp-navtabs');
+    viewModel.activateHelpTab = activateTabFunctor('#help', '#lfp-navtabs');
+    viewModel.activateGroupTab = activateTabFunctor('#group', '#lfp-navtabs');
     viewModel.postComment = function(targetModel) {
         var formData = $('#commentForm' + targetModel.pk()).serialize();
         $('.comment-popover').popover('hide');

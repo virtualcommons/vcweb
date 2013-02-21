@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import simplejson
+from django.utils.timesince import timesince
 from itertools import chain
 from sockjs.tornado import SockJSRouter, SockJSConnection
 from tornado import web, ioloop
@@ -17,6 +18,16 @@ from vcweb.core.models import (Experiment, ParticipantGroupRelationship, Partici
 from vcweb import settings
 
 logger = logging.getLogger('sockjs.vcweb')
+
+def create_chat_event(message):
+    return create_message_event(message, 'chat')
+
+def create_message_event(message, event_type='info'):
+    return simplejson.dumps({ 'message': message, 'event_type': event_type})
+
+REFRESH_EVENT = simplejson.dumps({ 'event_type': 'refresh' })
+DISCONNECTION_EVENT = create_message_event('Your session has expired and you have been disconnected.  You can only have one window open to a vcweb page.')
+UNAUTHORIZED_EVENT = create_message_event("You do not appear to be authorized to perform this action.  If this problem persists, please contact us.")
 
 class ConnectionManager(object):
     '''
@@ -34,8 +45,6 @@ class ConnectionManager(object):
     FIXME: consider refactoring core so that an "all" group always exists in an
     experiment.
     '''
-    REFRESH_EVENT = simplejson.dumps({ 'event_type': 'refresh' })
-    DISCONNECTION_EVENT = simplejson.dumps({ 'event_type': 'info', 'message': 'Your session has expired and you have been disconnected.  You can only have one window open to a vcweb page.'})
 
     def __str__(self):
         return u"Participants: %s\nExperimenters: %s" % (self.participant_to_connection, self.experimenter_to_connection)
@@ -51,7 +60,7 @@ class ConnectionManager(object):
         if experimenter_tuple in self.experimenter_to_connection:
             existing_connection = self.experimenter_to_connection[experimenter_tuple]
             if existing_connection:
-                existing_connection.send(self.DISCONNECTION_EVENT)
+                existing_connection.send(DISCONNECTION_EVENT)
                 del self.connection_to_experimenter[existing_connection]
 
         if connection in self.connection_to_experimenter:
@@ -125,7 +134,7 @@ class ConnectionManager(object):
         for (participant_group_pk, connection) in self.all_participants(experimenter, experiment):
             logger.debug("sending refresh to %s, %s", participant_group_pk, connection)
             participant_connections.append(participant_group_pk)
-            connection.send(ConnectionManager.REFRESH_EVENT)
+            connection.send(REFRESH_EVENT)
         return participant_connections
 
     def send_goto(self, experimenter, experiment, url):
@@ -155,11 +164,6 @@ class ConnectionManager(object):
 
 connection_manager = ConnectionManager()
 
-def create_chat_event(message):
-    return create_message_event(message, 'chat')
-
-def create_message_event(message, event_type='info'):
-    return simplejson.dumps({ 'message': message, 'event_type': event_type})
 
 # replace with namedtuple
 class Struct:
@@ -221,23 +225,24 @@ class ParticipantConnection(BaseConnection):
             logger.debug("added connection: %s", participant_tuple)
             self.send(create_message_event("Successful connection"));
         else:
-            self.send(create_message_event("You do not appear to be authorized to perform this action.  If this problem persists, please contact us."))
+            self.send(UNAUTHORIZED_EVENT)
 
     def handle_chat(self, event, experiment, **kwargs):
         (per, valid) = self.verify_auth_token(event)
         if valid:
             pgr = connection_manager.get_participant_group_relationship(self)
             current_round_data = experiment.current_round_data
+            # FIXME: should chat message be created via post to Django form instead?
             chat_message = ChatMessage.objects.create(participant_group_relationship=pgr,
-                    value=xhtml_escape(event.message),
+                    value=event.message,
                     round_data=current_round_data
                     )
             chat_json = simplejson.dumps({
                 "pk": chat_message.pk,
                 'round_data_pk': current_round_data.pk,
-                'participant': unicode(pgr.participant),
-                "date_created": chat_message.date_created.strftime("%H:%M:%S"),
-                "message" : xhtml_escape(unicode(chat_message)),
+                'participant_number': pgr.participant_number,
+                "date_created": chat_message.date_created.strftime("%I:%M:%S"),
+                "message" : event.message,
                 "event_type": 'chat',
                 })
             connection_manager.send_to_group(pgr.group, chat_json)

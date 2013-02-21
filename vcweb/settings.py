@@ -344,9 +344,3 @@ INTERNAL_IPS = ('127.0.0.1','68.99.87.185',)
 DEBUG_TOOLBAR_CONFIG = {
         'INTERCEPT_REDIRECTS': False,
         }
-try:
-    import south
-    from south.modelsinspector import add_introspection_rules
-    add_introspection_rules([], ["^social_auth\.fields\.JSONField"])
-except:
-    pass
