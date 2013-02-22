@@ -20,6 +20,9 @@ function LighterFootprintsModel(modelJson) {
     model.lastPerformedActivity = ko.observable();
     model.lastPerformedActivityPoints = ko.observable();
     model.errorMessage = ko.observable();
+    model.hasGroupActivity = ko.computed(function() {
+        return model.groupActivity().length > 0;
+    });
     model.groupActivityTemplate = function(groupActivity) {
         return groupActivity.parameter_name();
     };
@@ -31,9 +34,9 @@ function LighterFootprintsModel(modelJson) {
     model.chatMessages = ko.computed(function() {
             return ko.utils.arrayFilter(model.groupActivity(), function(groupActivity) { return groupActivity.parameter_name().indexOf("chat_message") === 0 });
         });
-    model.hasChatMessages = function() {
+    model.hasChatMessages = ko.computed(function() {
         return model.chatMessages().length > 0;
-    }
+    });
     model.submitChatMessage = function() {
         var formData = $('#chat-form').serialize();
         $.post('/lighterprints/api/message', formData, function(response) {

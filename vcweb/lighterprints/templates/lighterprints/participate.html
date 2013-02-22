@@ -180,9 +180,7 @@
             </form>
             <div class='well alert-white scrollable-messages'>
                 <div data-bind='ifnot: hasChatMessages() '>
-                    <div class='alert alert-warning'>
-                        No chat messages have been posted yet.
-                    </div>
+                    No chat messages have been posted yet.
                 </div>
                 <div data-bind='if: hasChatMessages()'>
                     <div data-bind='foreach: chatMessages'>
@@ -204,6 +202,9 @@
                 </div>
             </div>
             <h3 class='underline'>Group activity</h3>
+            <div data-bind='ifnot: hasGroupActivity() '>
+                <div data-bind='template: { name: "no-group-activity-template" }'></div>
+            </div>
             <table class='table'>
                 <tbody data-bind='template: { name: groupActivityTemplate, foreach: teamActivity() }'>
                 </tbody>
@@ -261,6 +262,9 @@
     <li class='divider'></li>
 </ul>
 <h3 class='lighterprints-sidebar-header'><i class='lighterprints-blue icon-group'></i> Group Activity <span class='pull-right'><small><a href='#group' data-bind='click: activateGroupTab' data-toggle='tab'>View all</a></small></span></h3>
+<div data-bind='ifnot: hasGroupActivity()'>
+    <div data-bind='template: { name: "no-group-activity-template" }'></div>
+</div>
 <table class='table'>
     <tbody data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
     </tbody>
@@ -490,5 +494,9 @@ $(function() {
     </div>
 </div>
 </div>
+</script>
+<script type='text/html' id='no-group-activity-template'>
+Your group has not had any activity yet.  You can <a href='#dashboard' data-bind='click:activateDashboardTab'
+data-toggle='tab'>perform challenges in your dashboard</a> or post messages in the <a href='#group' data-bind='click:activateGroupTab'>the group wall</a> .
 </script>
 {% endblock %}

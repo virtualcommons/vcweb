@@ -631,6 +631,7 @@ class Experiment(models.Model):
         return current_group.add_participant(participant)
 
     def allocate_groups(self, randomize=True):
+        logger.debug("allocating groups for %s (randomize? %s)" % (self, randomize))
         # clear out all existing groups
         # FIXME: record previous mappings in activity log.
         self.group_set.all().delete()

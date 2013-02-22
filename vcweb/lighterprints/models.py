@@ -23,15 +23,6 @@ import re
 import string
 logger = logging.getLogger(__name__)
 
-# signal handlers for midnight tick + round_started
-@receiver(signals.participant_added)
-def new_participant(sender, experiment=None, participant_group_relationship=None, **kwargs):
-    if experiment.is_public and experiment.experiment_metadata == get_lighterprints_experiment_metadata():
-        logger.debug("new participant %s for public experiment %s", participant_group_relationship, experiment)
-        if participant_group_relationship is not None:
-            get_unlocked_activities(participant_group_relationship)
-
-
 @receiver(signals.midnight_tick)
 def update_active_experiments(sender, time=None, start=None, **kwargs):
 # since this happens at midnight we need to look at the previous day
@@ -70,6 +61,7 @@ def update_active_experiments(sender, time=None, start=None, **kwargs):
 LIGHTERPRINTS_SENDER = intern('lighterprints')
 @receiver(signals.round_started, sender=LIGHTERPRINTS_SENDER)
 def round_started_handler(sender, experiment=None, **kwargs):
+    logger.debug("experiment %s started" % experiment)
     round_data = experiment.current_round_data
     # FIXME: experiment.initialize_parameters could do some of this except for setting the default values properly
     footprint_level_parameter = get_footprint_level_parameter()
