@@ -523,11 +523,11 @@ class Experiment(models.Model):
 
     def create_registration_email(self, participant_experiment_relationship, subject=None):
         '''
-        Override the email template by creating <experiment-namespace>/registration-email(txt|html) template files
+        Override the email template by creating <experiment-namespace>/email/experiment-registration(txt|html) template files
         '''
         logger.debug("sending email to %s", participant_experiment_relationship.participant)
-        plaintext_template = select_template(['%s/registration-email.txt' % self.namespace, 'email/experiment-registration.txt'])
-        html_template = select_template(['%s/registration-email.html' % self.namespace, 'email/experiment-registration.html'])
+        plaintext_template = select_template(['%s/email/experiment-registration.txt' % self.namespace, 'email/experiment-registration.txt'])
+        html_template = select_template(['%s/email/experiment-registration.html' % self.namespace, 'email/experiment-registration.html'])
         experiment = participant_experiment_relationship.experiment
         participant = participant_experiment_relationship.participant
         c = Context({
