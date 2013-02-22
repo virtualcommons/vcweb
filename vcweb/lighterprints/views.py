@@ -178,17 +178,17 @@ def perform_activity(request):
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
         participant_group_id = form.cleaned_data['participant_group_id']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'), pk=participant_group_id)
-        latitude = form.cleaned_data['latitude']
-        longitude = form.cleaned_data['longitude']
+        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'), pk=participant_group_id)
+#        latitude = form.cleaned_data['latitude']
+#        longitude = form.cleaned_data['longitude']
         if participant_group_relationship.participant == request.user.participant:
             activity = get_object_or_404(Activity, pk=activity_id)
             performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
 # perform checkin logic here, query foursquare API for nearest "green" venu
-            logger.debug("searching venues at %s,%s", latitude, longitude)
-            venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
-                    categoryId=','.join(get_foursquare_category_ids()))
-            logger.debug("Found venues: %s", venues)
+#            logger.debug("searching venues at %s,%s", latitude, longitude)
+#            venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
+#                    categoryId=','.join(get_foursquare_category_ids()))
+#            logger.debug("Found venues: %s", venues)
             if performed_activity is not None:
                 return JsonResponse(dumps({
                     'success': True,

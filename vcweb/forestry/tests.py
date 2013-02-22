@@ -15,7 +15,7 @@ class ForestryRoundSignalTest(BaseTest):
 
     def test_round_ended_signal(self):
         e = self.test_round_started_signal()
-        self.verify_round_ended(e, lambda e: e.end_round(sender=forestry_sender))
+        self.verify_round_ended(e, lambda e: e.end_round(sender=FORESTRY_SENDER))
 
     def test_round_started_signal(self):
         e = self.advance_to_data_round()

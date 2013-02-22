@@ -88,8 +88,8 @@ class GroupActivityTest(BaseTest):
         e.start_round()
         self.perform_activities()
         for group in e.group_set.all():
-            msg = create_group_summary_email(group, 2)
-            logger.debug("message: " + msg.body);
+            messages = create_group_summary_emails(group, 2)
+            self.assertEquals(len(messages), group.size)
 
 class ActivityTest(BaseTest):
 
