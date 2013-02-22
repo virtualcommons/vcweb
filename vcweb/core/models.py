@@ -170,7 +170,8 @@ class ExperimentConfiguration(models.Model):
     creator = models.ForeignKey(Experimenter, related_name='experiment_configuration_set')
     name = models.CharField(max_length=255)
     max_number_of_participants = models.PositiveIntegerField(default=0)
-    invitation_text = models.TextField(null=True, blank=True, help_text='text to send out via email invitations')
+    invitation_subject = models.TextField(null=True, blank=True, help_text=_('subject header for email registrations'))
+    invitation_text = models.TextField(null=True, blank=True, help_text=_('text to send out via email invitations'))
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
     is_public = models.BooleanField(default=False)
@@ -530,10 +531,16 @@ class Experiment(models.Model):
         html_template = select_template(['%s/email/experiment-registration.html' % self.namespace, 'email/experiment-registration.html'])
         experiment = participant_experiment_relationship.experiment
         participant = participant_experiment_relationship.participant
+        password = User.objects.make_random_password()
+        user = participant.user
+        user.set_password(password)
+        user.save()
+
         c = Context({
             'participant_experiment_relationship': participant_experiment_relationship,
             'participant': participant,
             'experiment': experiment,
+            'password': password,
             })
         plaintext_content = plaintext_template.render(c)
         html_content = html_template.render(c)
