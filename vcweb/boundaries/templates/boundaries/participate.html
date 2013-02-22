@@ -37,6 +37,7 @@
                 <option value='INSTRUCTIONS'>Instructions</option>
                 <option value='INSTRUCTIONS2'>Instructions page 2</option>
                 <option value='INSTRUCTIONS3'>Instructions page 3</option>
+                <option value='PRACTICE_ROUND_INSTRUCTIONS'>Practice Round Instructions</option>
                 <option value='PRACTICE'>Practice round</option>
                 <option value='REGULAR'>Actual round</option>
             </select>
@@ -122,7 +123,11 @@ If you collect enough tokens to pay living expenses until the end of the session
 could earn as much as <strong data-bind='text: formatCurrency(maxEarnings())'></strong> for the entire experiment.
 However, the final outcome depends on your choices and those of your group members.
 </p>
-<a data-bind='click: activateInstructionsPageTwo' class='btn btn-primary'>OK, I understand</a>
+<ul class='pager'>
+<li class='next'>
+<a href='javascript: void();' data-bind='click: activateInstructionsPageTwo'>OK, I understand</a>
+</li>
+</ul>
 </div>
 </script>
 <script type='text/html' id='INSTRUCTIONS2'>
@@ -147,7 +152,14 @@ data-bind='text: initialResourceLevel() / 10'></span> trees each season.
 The highest amount of harvesting that the forest can permanently support is 24 trees per season.  If that number is
 split between the 4 participants in your group, the forest has a capacity to produce 6 trees per individual per round.
 </p>
-<a data-bind='click: activateInstructionsPageThree' class='btn btn-primary'>OK, I understand</a>
+<ul class='pager'>
+<li class='previous'>
+<a href='javascript: void();' data-bind='click: activateInstructionsPageOne' >Back</a>
+</li>
+<li class='next'>
+<a href='javascript: void();' data-bind='click: activateInstructionsPageThree' >OK, I understand</a>
+</li>
+</ul>
 </div>
 </script>
 <script type='text/html' id='INSTRUCTIONS3'>
@@ -164,8 +176,47 @@ We will now begin with some <strong>practice rounds</strong>.  These rounds will
 earnings.  If you have any questions please raise your hand and someone will come to address your question.  Otherwise,
 please click the button to continue.
 </p>
-<a data-bind='click: finishedInstructions' class='btn btn-primary'>I have read and understand all of these instructions</a>
+<ul class='pager'>
+<li class='previous'>
+<a href='javascript: void();' data-bind='click: activateInstructionsPageTwo' >Back</a>
+</li>
+<li class='next'>
+<a href='javascript: void();' data-bind='click: activatePracticeRoundInstructions'>OK, Continue to practice rounds</a>
+</li>
+</ul>
 </div>
+</script>
+<script type='text/html' id='PRACTICE_ROUND_INSTRUCTIONS'>
+<h3>No Payment</h3>
+<p>
+There will be no payment for this practice session.
+</p>
+<h3>Group and Individual Status</h3>
+<p>
+You will be able to observe the status of the members of your group each round.  Likewise, group members will see your
+status, and those of your group.
+</p>
+<h3>Harvest Choice</h3>
+<p>
+Each round you will have a maximum of 1 minute to make a harvest decision.  THere are two ways to submit a harvest
+decision:
+</p>
+<ol>
+<li>Select a harvest amount and click submit</li>
+<li>Select a harvest amount and wait for the end of the session</li>
+</ol>
+<p>
+At the end of each round a countdown will alert you when there are 10 seconds remaining to make a harvest choice.  When
+the countdown reaches zero, any value you have selected will be auto-submitted.  The default harvest is zero.
+</p>
+<ul class='pager'>
+<li class='previous'>
+<a href='javascript:void();' data-bind='click: activateInstructionsPageThree'>Back</a>
+</li>
+<li class='next'>
+<a href='javascript: void();' data-bind='click: finishedInstructions'>I have fully read and understand these instructions</a>
+</li>
+</ul>
 </script>
 <script type='text/html' id='REGULAR'>
 <div class='row'>
@@ -281,13 +332,19 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
             model.templateName = ko.observable("WELCOME");
-            // activate tab bindings
+            // activate instructions click bindings
+            model.activateInstructionsPageOne = function() {
+                model.templateName('INSTRUCTIONS');
+            };
             model.activateInstructionsPageTwo = function() {
                 model.templateName('INSTRUCTIONS2');
             };
             model.activateInstructionsPageThree = function() {
                 model.templateName('INSTRUCTIONS3');
             };
+            model.activatePracticeRoundInstructions = function() {
+                model.templateName("PRACTICE_ROUND_INSTRUCTIONS");
+            }
             model.finishedInstructions = function() {
                 console.debug("instructions were finished, notify experimenter");
                 getWebSocket().send(createMessageEvent("Instructions completed"));

@@ -658,7 +658,8 @@ def get_group_activity(participant_group_relationship, limit=None):
     group = participant_group_relationship.group
     all_activity = []
     chat_messages = []
-# FIXME: embed this hairiness in ParticipantRoundDataValueQuerySet to avoid seeing it in client code
+# FIXME: consider using InheritanceManager or manually selecting likes, comments, chatmessages, activities performed to
+# avoid n+1 selects when doing a to_dict
     data_values = ParticipantRoundDataValue.objects.for_group(group)
     own_likes = Like.objects.select_related('target_data_value').filter(participant_group_relationship=participant_group_relationship)
     like_target_ids = [l.target_data_value.pk for l in own_likes]
@@ -667,8 +668,6 @@ def get_group_activity(participant_group_relationship, limit=None):
     if limit is not None:
         data_values = data_values[:limit]
     for prdv in data_values:
-        # FIXME: ugly downcasting.. consider doing something like this instead:
-        # http://jeffelmore.org/2010/11/11/automatic-downcasting-of-inherited-models-in-django/
         parameter_name = prdv.parameter.name
         if parameter_name == 'chat_message':
             data = prdv.chatmessage.to_dict()
