@@ -4,8 +4,7 @@ Thanks in advance for participating in this experiment pretest. You have been ra
 with four other students who are also in ASB 328. You can earn extra credit points for the course by performing actions
 within the app to reduce your virtual carbon footprint. 
 
-To access the game go to <a href='https://vcweb.asu.edu'>https://vcweb.asu.edu</a> and login with the following
-credentials:
+To access the game go to https://vcweb.asu.edu and login with the following credentials:
 
     Email:          {{ participant.email }}
     Password:       {{ password }} 
