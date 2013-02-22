@@ -51,35 +51,32 @@ def update_active_experiments(sender, time=None, start=None, **kwargs):
                 # group was promoted
                 promoted = True
                 next_level = min(current_level + 1, 3)
-                footprint_level_grdv.value = next_level
+                footprint_level_grdv.int_value = next_level
                 footprint_level_grdv.save()
                 if current_level == 3:
                     completed = True
 # FIXME: store another group data parameter that says they've completed the experiment?
-            group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed)
-            messages.extend(group_summary_emails)
+            experiment_completed_dv = get_experiment_completed_dv(group, round_data=round_data)
+            already_completed = experiment_completed_dv.boolean_value
+            if not already_completed:
+                group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed)
+                messages.extend(group_summary_emails)
+                if completed:
+                    experiment_completed_dv.boolean_value = True
+                    experiment_completed_dv.save()
     logger.debug("about to send nightly summary emails: %s", messages)
     mail.get_connection().send_messages(messages)
 
-@receiver(signals.round_started)
+LIGHTERPRINTS_SENDER = intern('lighterprints')
+@receiver(signals.round_started, sender=LIGHTERPRINTS_SENDER)
 def round_started_handler(sender, experiment=None, **kwargs):
-    if sender != get_lighterprints_experiment_metadata().pk:
-        return
-    # FIXME: See if we can push this logic up to core..
-    current_round_data = experiment.current_round_data
+    round_data = experiment.current_round_data
+    # FIXME: experiment.initialize_parameters could do some of this except for setting the default values properly
     footprint_level_parameter = get_footprint_level_parameter()
-    participant_level_parameter = get_participant_level_parameter()
-# only create the footprint level parameter, the participant activity performed data values will be created each time.
+    experiment_completed_parameter = get_experiment_completed_parameter()
     for group in experiment.group_set.all():
-        current_round_data.group_data_value_set.create(group=group, parameter=footprint_level_parameter, int_value=1)
-        for pgr in group.participant_group_relationship_set.all():
-            # FIXME: these aren't used by the current experiment version, are artifacts from the public lighter
-            # footprints green button app.  remove if unused for too long
-            # create participant level data value for each participant
-            ParticipantRoundDataValue.objects.create(round_data=current_round_data, participant_group_relationship=pgr, parameter=participant_level_parameter, int_value=1)
-            # create initial unlocked set of data values (only for public experiment)
-            # get_unlocked_activities(pgr)
-
+        round_data.group_data_value_set.create(group=group, parameter=footprint_level_parameter, int_value=1)
+        round_data.group_data_value_set.create(group=group, parameter=experiment_completed_parameter, boolean_value=False)
 
 ActivityStatus = enum('AVAILABLE', 'COMPLETED', 'UNAVAILABLE')
 
@@ -306,30 +303,20 @@ def get_foursquare_category_ids(parent_category_name='Travel', subcategory_names
             return [subcategory['id'] for subcategory in parent_category['categories'] if subcategory['shortName'] in subcategory_names]
 
 @simplecache
-def get_lighterprints_public_experiment():
-    # FIXME: hacky
-    return Experiment.objects.filter(experiment_metadata=get_lighterprints_experiment_metadata(),
-            experiment_configuration__is_public=True)[0]
-
-@simplecache
 def get_lighterprints_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace='lighterprints')
 
 @simplecache
-def get_participant_level_parameter():
-    return Parameter.objects.get(name='participant_level')
-
-@simplecache
-def get_activity_unlocked_parameter():
-    return Parameter.objects.get(name='activity_unlocked')
-
-@simplecache
 def get_activity_performed_parameter():
-    return Parameter.objects.get(name='activity_performed')
+    return Parameter.objects.for_participant(name='activity_performed')
 
 @simplecache
 def get_footprint_level_parameter():
-    return Parameter.objects.get(name='footprint_level')
+    return Parameter.objects.for_group(name='footprint_level')
+
+@simplecache
+def get_experiment_completed_parameter():
+    return Parameter.objects.for_group(name='experiment_completed')
 
 @simplecache
 def get_treatment_type_parameter():
@@ -338,10 +325,19 @@ def get_treatment_type_parameter():
 def get_footprint_level_dv(group, round_data=None):
     if round_data is None:
         round_data = group.current_round_data
-    return GroupRoundDataValue.objects.get(group=group, round_data=round_data)
+    return GroupRoundDataValue.objects.get(group=group, round_data=round_data, parameter=get_footprint_level_parameter())
 
 def get_footprint_level(group, **kwargs):
-    return get_footprint_level_dv(group, **kwargs).value
+    return get_footprint_level_dv(group, **kwargs).int_value
+
+def get_experiment_completed_dv(group, round_data=None):
+    if round_data is None:
+        round_data = group.current_round_data
+    return GroupRoundDataValue.objects.get(group=group, round_data=round_data,
+            parameter=get_experiment_completed_parameter())
+
+def get_experiment_completed(group, **kwargs):
+    return get_experiment_completed_dv(group, **kwargs).boolean_value
 
 def get_treatment_type(group, round_configuration=None, **kwargs):
     try:
@@ -633,7 +629,7 @@ def get_points_to_next_level(current_level):
     elif current_level == 3:
         return 225
 
-def should_advance_level(group, level, start=None, end=None, max_level=3):
+def should_advance_level(group, level, start=None, end=None, max_level=4):
     logger.debug("checking if group %s at level %s should advance in level on %s", group, level, start)
     if level < max_level:
         return average_points_per_person(group, start=start, end=end) >= get_points_to_next_level(level)

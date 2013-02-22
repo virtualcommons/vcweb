@@ -104,7 +104,7 @@ def set_resource_level(group, value, round_data=None):
 
 def round_setup(experiment, **kwargs):
     round_configuration = experiment.current_round
-    logger.debug("current round %s", round_configuration)
+    logger.debug("setting up round %s", round_configuration)
     if round_configuration.is_playable_round:
         # participant parameter
         harvest_decision_parameter = get_harvest_decision_parameter()
@@ -176,12 +176,12 @@ id(repr(u'forestry'))
 id(repr(e.namespace))
 even using django.util.encodings smart_unicode and smart_str functions don't help.
 '''
-forestry_sender = 1
-@receiver(signals.round_started, sender=forestry_sender)
+FORESTRY_SENDER = intern('forestry')
+@receiver(signals.round_started, sender=FORESTRY_SENDER)
 def round_started_handler(sender, experiment=None, **kwargs):
     round_setup(experiment, **kwargs)
 
-@receiver(signals.round_ended, sender=forestry_sender)
+@receiver(signals.round_ended, sender=FORESTRY_SENDER)
 def round_ended_handler(sender, experiment=None, **kwargs):
     logger.debug("forestry handling round ended signal")
     round_teardown(experiment, **kwargs)

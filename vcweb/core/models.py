@@ -689,7 +689,7 @@ class Experiment(models.Model):
         self.log('Starting round')
         # FIXME: would prefer using self.namespace as a default but django's
         # managed unicode strings don't work as senders
-        sender = self.experiment_metadata.pk if sender is None else sender
+        sender = intern(self.experiment_metadata.namespace.encode('utf8')) if sender is None else sender
         #sender = self.namespace.encode('utf-8')
         # notify registered game handlers
         logger.debug("About to send round started signal with sender %s", sender)
@@ -700,7 +700,7 @@ class Experiment(models.Model):
         self.current_round_elapsed_time = max(self.current_round_elapsed_time, self.current_round.duration)
         self.save()
         self.log('Ending round with elapsed time %s' % self.current_round_elapsed_time)
-        sender = self.experiment_metadata.pk if sender is None else sender
+        sender = intern(self.experiment_metadata.namespace.encode('utf8')) if sender is None else sender
         #sender = self.namespace.encode('utf-8')
         logger.debug("about to send round ended signal with sender %s", sender)
         return signals.round_ended.send_robust(sender, experiment=self, round_configuration=self.current_round)
@@ -1677,7 +1677,7 @@ class ChatMessage(ParticipantRoundDataValue):
 
     @property
     def message(self):
-        return self.value
+        return self.string_value
 
     @property
     def group(self):
@@ -1698,12 +1698,6 @@ class ChatMessage(ParticipantRoundDataValue):
         data['group_id'] = group.pk
         data['group'] = unicode(group)
         return data
-
-    @property
-    def as_html(self):
-        return "<a name='{0}'>{1}</a> | {2}".format(self.pk,
-                self.date_created.strftime("%H:%M:%S"),
-                self.__unicode__())
 
     def __unicode__(self):
         """ return this participant's sequence number combined with the message """
@@ -1726,9 +1720,13 @@ class Comment(ParticipantRoundDataValue):
         kwargs['parameter'] = get_comment_parameter()
         super(Comment, self).__init__(*args, **kwargs)
 
+    @property
+    def message(self):
+        return self.string_value
+
     def to_dict(self):
         data = super(Comment, self).to_dict(cacheable=True)
-        data['message'] = self.value
+        data['message'] = self.message
         return data
 
     class Meta:
