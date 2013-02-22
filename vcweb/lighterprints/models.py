@@ -336,7 +336,7 @@ def get_experiment_completed_dv(group, round_data=None):
     return GroupRoundDataValue.objects.get(group=group, round_data=round_data,
             parameter=get_experiment_completed_parameter())
 
-def get_experiment_completed(group, **kwargs):
+def is_experiment_completed(group, **kwargs):
     return get_experiment_completed_dv(group, **kwargs).boolean_value
 
 def get_treatment_type(group, round_configuration=None, **kwargs):

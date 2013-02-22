@@ -17,7 +17,7 @@ class Migration(DataMigration):
         Parameter.objects.create(
                 name="experiment_completed",
                 experiment_metadata=em,
-                scope=Parameter.GROUP_SCOPE,
+                scope='group',
                 creator=experimenter,
                 type='boolean'
                 )

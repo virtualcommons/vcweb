@@ -18,7 +18,7 @@ from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response, get_active_experiment
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_group_activity,
-        get_treatment_type, get_lighterprints_experiment_metadata,
+        get_treatment_type, get_lighterprints_experiment_metadata, is_experiment_completed,
         get_activity_performed_parameter, get_points_to_next_level, get_group_score, get_footprint_level,
         get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining)
 
@@ -358,6 +358,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         participant_group_relationship.save()
     return dumps({
         'participantGroupId': participant_group_relationship.pk,
+        'experimentCompleted': is_experiment_completed(own_group, round_data=round_data),
         'groupData': group_data,
         'hoursLeft': hours_left,
         'minutesLeft': minutes_left,

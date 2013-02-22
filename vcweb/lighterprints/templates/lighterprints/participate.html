@@ -21,9 +21,12 @@
     <div class='tab-content'>
         <div class='tab-pane active' id='dashboard'>
             <h1 class='header'><i class='icon-dashboard'></i> Group Dashboard</h1>
-            <!-- FIXME: re-enable this at some point
-            <div data-bind='if: firstVisit()'>
-            -->
+            <div style='display:none;' data-bind='visible: experimentCompleted'>
+                <div class='alert alert-block alert-white'>
+                    <i class='text-gold icon-trophy'></i> Congratulations! Your group has completed level 3 and finished the experiment.
+                </div>
+            </div>
+            <div style='display: none;' data-bind='visible: ! experimentCompleted()'>
             <div class='alert alert-block alert-white'>
                 <button type="button" class="close" data-dismiss="alert"><i class='icon-remove-sign'></i></button>
                 <h2 class='muted'>Welcome to Lighter Footprints, <i class='lighterprints-blue'><span data-bind='text: groupName'></span>!</i></h2>
@@ -45,9 +48,7 @@
                     isn't high enough to rank up, you must start over.
                 </p>
             </div>
-            <!-- FIXME: disabled conditional instruction message
             </div>
-            -->
             <div class='row lighterprints-scoreboard'>
                 <div class='span2'>
                     <h5><span class='lighterprints-scoreboard-uppercase'>Today's Score</span>
