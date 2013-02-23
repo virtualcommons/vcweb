@@ -41,7 +41,8 @@
                 <li class='{% active_re request "experiment" %}'><a name='experiment'><i class='icon-beaker'></i> Experiment</a></li>
                 {% endif %}
             </ul>
-            {% endblock %}
+            {% endblock headerlinks %}
+            {% block login %}
             <ul class='nav pull-right'>
                 {% if request.user.is_authenticated %}
                 <li class='{% active request login %} dropdown'>
@@ -62,6 +63,7 @@
                 </li>
                 {% endif %}
             </ul>
+            {% endblock login %}
             {% endblock headernav %}
         </div>
     </div>

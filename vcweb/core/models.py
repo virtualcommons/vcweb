@@ -483,7 +483,8 @@ class Experiment(models.Model):
                     logger.debug("invalid participant data: %s", email)
                     continue
                 # XXX: handle incoming firstname lastname email data
-                data = email.strip().split()
+                email = email.strip()
+                data = email.split()
                 first_name = None
                 last_name = None
                 if len(data) >= 3:
