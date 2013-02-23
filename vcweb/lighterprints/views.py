@@ -404,11 +404,8 @@ def mobile_participate(request, experiment_id=None):
 @participant_required
 def participate(request, experiment_id=None):
     participant = request.user.participant
-    experiment = get_object_or_404(Experiment, pk=experiment_id)
-    pgr = ParticipantGroupRelationship.objects.select_related('participant__user', 'group').get(participant=participant,
-            group__experiment=experiment)
-    if pgr is None:
-        raise Http404("You do not appear to be participating in this experiment.")
+    experiment = get_object_or_404(Experiment, pk=experiment_id, experiment_metadata=get_lighterprints_experiment_metadata())
+    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'), participant=participant, group__experiment=experiment)
     all_activities = Activity.objects.all()
     view_model_json = get_view_model_json(pgr, all_activities, experiment)
 #    if request.mobile:

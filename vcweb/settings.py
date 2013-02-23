@@ -332,6 +332,7 @@ except ImportError:
 if has_local_settings:
     try:
         DEBUG = local.DEBUG
+        SENTRY_DSN = local.SENTRY_DSN
         for l in local.MIDDLEWARE_CLASSES:
             if l not in MIDDLEWARE_CLASSES:
                 MIDDLEWARE_CLASSES += (l,)
