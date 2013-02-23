@@ -523,7 +523,7 @@ class Experiment(models.Model):
             logger.debug("sending email messages: %s", email_messages)
             mail.get_connection().send_messages(email_messages)
 
-    def create_registration_email(self, participant_experiment_relationship, subject=None):
+    def create_registration_email(self, participant_experiment_relationship):
         '''
         Override the email template by creating <experiment-namespace>/email/experiment-registration(txt|html) template files
         '''
@@ -545,10 +545,12 @@ class Experiment(models.Model):
             })
         plaintext_content = plaintext_template.render(c)
         html_content = html_template.render(c)
+        subject = self.experiment_configuration.invitation_subject
         if subject is None:
-            subject = 'Experiment registration: %s' % self.display_name
-        to_address = participant_experiment_relationship.participant.email
-        msg = EmailMultiAlternatives(subject, plaintext_content, self.experimenter.email, [ to_address ])
+            subject = 'VCWEB: experiment registration for %s' % self.display_name
+        experimenter_email = self.experimenter.email
+        to_address = [ participant_experiment_relationship.participant.email, experimenter_email ]
+        msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
         msg.attach_alternative(html_content, "text/html")
         return msg
 
