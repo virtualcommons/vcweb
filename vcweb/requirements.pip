@@ -21,13 +21,13 @@ feedcache
 neo4j-embedded
 xlrd
 xlwt
+pillow
 # install django-bootstrap from github
-# pip install -e git+git://github.com/earle/django-bootstrap.git#egg=bootstrap
+django-crispy-forms
 # FIXME: this will fail on Mac OS X, see http://lxml.de/installation.html#macos-x for workarounds.  
 # easiest is to use MacPorts, sudo port install py27-lxml beforehand to set up the appropriate xml libraries
 lxml
 # XXX: disabled packages 
-#PIL
 #celery
 #tornadio
 #django-celery
