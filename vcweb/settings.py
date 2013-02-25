@@ -331,7 +331,7 @@ except ImportError:
 if has_local_settings:
     try:
         DEBUG = getattr(local, 'DEBUG', DEBUG)
-        SENTRY_DSN = getattr(local, 'SENTRY_DSN', SENTRY_DSN)
+        SENTRY_DSN = getattr(local, 'SENTRY_DSN', None)
         EMAIL_BACKEND = getattr(local, 'EMAIL_BACKEND', EMAIL_BACKEND)
         for l in local.MIDDLEWARE_CLASSES:
             if l not in MIDDLEWARE_CLASSES:
