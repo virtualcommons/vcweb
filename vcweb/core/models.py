@@ -475,8 +475,6 @@ class Experiment(models.Model):
             if emails is None:
                 logger.warning("No users or emails supplied, aborting.")
                 return
-            if password is None:
-                password = self.authentication_code
             for email in emails:
                 if not email:
                     logger.debug("invalid participant data: %s", email)
@@ -504,23 +502,18 @@ class Experiment(models.Model):
                 users.append(u)
         email_messages = []
         for user in users:
-            #logger.debug("registering user %s", user)
             # FIXME: unsafe for concurrent usage, but only one experimenter at a time should be invoking this
             (p, created) = Participant.objects.get_or_create(user=user)
             # FIXME: instead of asking for the email suffix, perhaps we just append the institution URL to keep it simpler?
             if institution and p.institution != institution:
                 p.institution = institution
                 p.save()
-
-            # FIXME: send a registered for experiment email explicitly or use a django post_save signal handler?
             per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=self.experimenter.user)
-            email_messages.append(self.create_registration_email(per))
-
+            email_messages.append(self.create_registration_email(per, password=password))
         if email_messages:
-            logger.debug("sending email messages: %s", email_messages)
             mail.get_connection().send_messages(email_messages)
 
-    def create_registration_email(self, participant_experiment_relationship, **kwargs):
+    def create_registration_email(self, participant_experiment_relationship, password=None, **kwargs):
         '''
         Override the email template by creating <experiment-namespace>/email/experiment-registration(txt|html) template files
         '''
@@ -529,12 +522,12 @@ class Experiment(models.Model):
         html_template = select_template(['%s/email/experiment-registration.html' % self.namespace, 'email/experiment-registration.html'])
         experiment = participant_experiment_relationship.experiment
         participant = participant_experiment_relationship.participant
-        password = User.objects.make_random_password()
         user = participant.user
+        if password is None:
+            password = User.objects.make_random_password()
 # FIXME: this resets existing user passwords..
         user.set_password(password)
         user.save()
-
         c = Context({
             'participant_experiment_relationship': participant_experiment_relationship,
             'participant': participant,
