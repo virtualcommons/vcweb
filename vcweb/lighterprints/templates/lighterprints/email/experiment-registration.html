@@ -10,10 +10,12 @@ within the app to reduce your virtual carbon footprint.
 To access the experiment visit <a href='https://vcweb.asu.edu'>https://vcweb.asu.edu</a> and login with the following
 credentials:
 </p>
-<ul>
-    <li>Email: {{ participant.email }}</li>
-    <li>Password:</td><td>{{ password }}</li>
-</ul>
+<table cellspacing="3" cellpadding="3">
+    <tbody>
+    <tr><td>Email: </td><td> {{ participant.email }}</td></tr>
+    <tr><td>Password: </td><td> {{ password }}</td></tr>
+    </tbody>
+</table>
 <p>
 You can reset your password at any time at <a href='https://vcweb.asu.edu/accounts/password/reset?email={{ participant.email }}'>https://vcweb.asu.edu/accounts/password/reset</a>
 </p>
