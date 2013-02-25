@@ -13,7 +13,6 @@ from django.template.defaultfilters import slugify
 from django.template import Context
 from django.template.loader import select_template
 from django.utils.html import escape
-from django.utils.timesince import timesince
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
 from model_utils.managers import InheritanceManager, PassThroughManager
@@ -1561,6 +1560,10 @@ class ParticipantGroupRelationship(models.Model):
         return self.group.current_round_data
 
     @property
+    def participant_handle(self):
+        return "Participant %s" % self.participant_number
+
+    @property
     def experiment(self):
         return self.group.experiment
 
@@ -1646,9 +1649,12 @@ class ParticipantRoundDataValue(ParameterizedValue):
 
     def to_dict(self, cacheable=False):
         pgr = self.participant_group_relationship
+        participant_name = pgr.participant.full_name
+        if not participant_name:
+            participant_name = pgr.participant_handle
         data = {'pk' : self.pk,
                 'participant_group_id': pgr.pk,
-                'participant_name': pgr.participant.full_name,
+                'participant_name': participant_name,
                 'participant_number': pgr.participant_number,
                 'date_created': self.date_created,
                 'short_date_created': self.date_created.strftime('%I:%M:%S'),
