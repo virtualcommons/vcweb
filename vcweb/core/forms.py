@@ -4,7 +4,6 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
-from bootstrap.forms import BootstrapForm, BootstrapMixin, Fieldset
 
 from vcweb.core.models import (Experimenter, Institution)
 
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 REQUIRED_EMAIL_ATTRIBUTES = { 'class' : 'required email' }
 REQUIRED_ATTRIBUTES = { 'class' : 'required' }
 
-class BaseRegistrationForm(BootstrapForm):
+class BaseRegistrationForm(forms.Form):
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
@@ -43,21 +42,13 @@ class BaseRegistrationForm(BootstrapForm):
 
 class RegistrationForm(BaseRegistrationForm):
     experimenter = forms.BooleanField(required=False, help_text=_('Check this box if you would like to request experimenter access.'))
-    class Meta:
-        layout = (
-                Fieldset("", "first_name", "last_name", "email", "password", "confirm_password", "institution",'experimenter'),
-                )
 
-class VcwebPasswordResetForm(BootstrapMixin, PasswordResetForm):
+class VcwebPasswordResetForm(PasswordResetForm):
     def __init__(self, *args, **kwargs):
         logger.debug("creating vcweb password reset form: %s %s", args, kwargs)
         super(VcwebPasswordResetForm, self).__init__(*args, **kwargs)
 
-class LoginForm(BootstrapForm):
-    class Meta:
-        layout = (
-                Fieldset("", 'email', 'password'),
-                )
+class LoginForm(forms.Form):
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
 
@@ -75,7 +66,7 @@ class LoginForm(BootstrapForm):
 class ParticipantAccountForm(BaseRegistrationForm):
     pass
 
-class ExperimenterAccountForm(BootstrapMixin, forms.ModelForm):
+class ExperimenterAccountForm(forms.ModelForm):
     class Meta:
         model = Experimenter
         exclude = ('user',)
@@ -102,7 +93,7 @@ class EmailListField(forms.CharField):
                 raise ValidationError(_(u'%s is not a valid email address.' % data))
         return lines
 
-class RegisterParticipantsForm(BootstrapForm):
+class RegisterParticipantsForm(forms.Form):
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
     experiment_passcode = forms.CharField(min_length=3, label="Experiment passcode", help_text=_('The password used to login to your experiment.'), initial='test')
     institution_name = forms.CharField(min_length=3, label="Institution name",

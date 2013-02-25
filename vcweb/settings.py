@@ -112,7 +112,7 @@ INSTALLED_APPS = (
         'social_auth',
         'django_extensions',
         'mptt',
-        'bootstrap',
+        'bootstrap_toolkit',
         )
 
 SOUTH_TESTS_MIGRATE = False
