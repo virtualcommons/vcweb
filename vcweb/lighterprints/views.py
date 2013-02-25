@@ -18,7 +18,7 @@ from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response, get_active_experiment
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_group_activity,
-        get_treatment_type, get_lighterprints_experiment_metadata, is_experiment_completed,
+        can_view_other_groups, get_lighterprints_experiment_metadata, is_experiment_completed,
         get_activity_performed_parameter, get_points_to_next_level, get_group_score, get_footprint_level,
         get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining)
 
@@ -320,15 +320,18 @@ class CsvExportView(DataExportMixin, BaseDetailView):
                 total_points += performed_activity.value.points
             writer.writerow([participant_group_relationship, total_points])
 
-def get_view_model_json(participant_group_relationship, activities=None, experiment=None):
+def get_view_model_json(participant_group_relationship, activities=None, experiment=None, round_configuration=None, round_data=None, **kwargs):
     if activities is None:
         activities = Activity.objects.all()
     own_group = participant_group_relationship.group
     if experiment is None:
         experiment = own_group.experiment
+    if round_data is None:
+        round_data = experiment.current_round_data
+    if round_configuration is None:
+        round_configuration = round_data.round_configuration
     round_data = experiment.current_round_data
-    round_configuration = round_data.round_configuration
-    treatment_type = get_treatment_type(round_configuration=round_configuration)
+    compare_other_group = can_view_other_groups(round_configuration=round_configuration)
     group_data = []
     for group in experiment.group_set.all():
         (average_points, total_points, total_participant_points) = get_group_score(group, participant_group_relationship=participant_group_relationship, round_data=round_data)
@@ -359,6 +362,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     return dumps({
         'participantGroupId': participant_group_relationship.pk,
         'experimentCompleted': is_experiment_completed(own_group, round_data=round_data),
+        'compareOtherGroup': compare_other_group,
         'groupData': group_data,
         'hoursLeft': hours_left,
         'minutesLeft': minutes_left,
@@ -405,9 +409,11 @@ def mobile_participate(request, experiment_id=None):
 def participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id, experiment_metadata=get_lighterprints_experiment_metadata())
+    round_configuration = experiment.current_round
     pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'), participant=participant, group__experiment=experiment)
+    compare_other_group = can_view_other_groups(round_configuration=round_configuration)
     all_activities = Activity.objects.all()
-    view_model_json = get_view_model_json(pgr, all_activities, experiment)
+    view_model_json = get_view_model_json(pgr, all_activities, experiment, round_configuration=round_configuration)
 #    if request.mobile:
         # FIXME: change this to look up templates in a mobile templates directory?
 #        logger.warning("mobile request detected by %s, but we're not ready for mobile apps", participant)
@@ -415,6 +421,7 @@ def participate(request, experiment_id=None):
     return render(request, 'lighterprints/participate.html', {
         'experiment': experiment,
         'participant_group_relationship': pgr,
+        'compare_other_group': compare_other_group,
         'view_model_json': view_model_json,
         'all_activities': all_activities,
         })

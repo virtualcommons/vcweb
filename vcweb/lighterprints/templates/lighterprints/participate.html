@@ -256,19 +256,21 @@
 {% endblock content %}
 {% block sidebar %}
 <div class='lighterprints-sidebar'>
-<h3 class='lighterprints-sidebar-header'><i class='text-gold icon-trophy'></i> Leaderboard</h3>
-<ul class='nav nav-list' data-bind='foreach: groupData'>
-    <li><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-lighterprints-green' data-bind='text: averagePoints'></span></li> 
-    <li class='divider'></li>
-</ul>
-<h3 class='lighterprints-sidebar-header'><i class='lighterprints-blue icon-group'></i> Group Activity <span class='pull-right'><small><a href='#group' data-bind='click: activateGroupTab' data-toggle='tab'>View all</a></small></span></h3>
-<div data-bind='ifnot: hasGroupActivity()'>
-    <div data-bind='template: { name: "no-group-activity-template" }'></div>
-</div>
-<table class='table'>
-    <tbody data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
-    </tbody>
-</table>
+    {% if compare_other_group %}
+    <h3 class='lighterprints-sidebar-header'><i class='text-gold icon-trophy'></i> Leaderboard</h3>
+    <ul class='nav nav-list' data-bind='foreach: groupData'>
+        <li><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-lighterprints-green' data-bind='text: averagePoints'></span></li> 
+        <li class='divider'></li>
+    </ul>
+    {% endif %}
+    <h3 class='lighterprints-sidebar-header'><i class='lighterprints-blue icon-group'></i> Group Activity <span class='pull-right'><small><a href='#group' data-bind='click: activateGroupTab' data-toggle='tab'>View all</a></small></span></h3>
+    <div data-bind='ifnot: hasGroupActivity()'>
+        <div data-bind='template: { name: "no-group-activity-template" }'></div>
+    </div>
+    <table class='table'>
+        <tbody data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
+        </tbody>
+    </table>
 </div>
 {% endblock sidebar %}
 {% block footerlinks %}

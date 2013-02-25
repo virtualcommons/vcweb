@@ -5,6 +5,7 @@ from django.views.decorators.cache import cache_page
 from django.views.generic.base import TemplateView
 
 from vcweb import settings
+from django.contrib.auth.forms import PasswordResetForm
 from vcweb.core.forms import VcwebPasswordResetForm
 
 from dajaxice.core import dajaxice_autodiscover, dajaxice_config
@@ -19,7 +20,7 @@ urlpatterns = patterns('',
     url(r'^contact/$', cache_page(60*15)(TemplateView.as_view(template_name='contact.html')), name='contact'),
     # FIXME: customize password reset email and forms to not go through django admin?
     #url(r'^accounts/password_reset/$', 'django.contrib.auth.views.password_reset', {'template_name':'password_reset_form.html', 'email_template_name':'userpanel/password_reset_email.html'}),
-    url(r'^accounts/password/reset/$', 'django.contrib.auth.views.password_reset', { 'template_name': 'account/password_reset_form.html', 'password_reset_form': VcwebPasswordResetForm}, name='password-reset'),
+    url(r'^accounts/password/reset/$', 'django.contrib.auth.views.password_reset', { 'template_name': 'account/password_reset_form.html', 'password_reset_form': PasswordResetForm}, name='password-reset'),
     url(r'^accounts/password_reset/done/$', 'django.contrib.auth.views.password_reset_done', { 'template_name': 'account/password_reset_done.html' }),
     url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$', 'django.contrib.auth.views.password_reset_confirm'),
     url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete'),

@@ -13,13 +13,25 @@ class Migration(DataMigration):
         ExperimentMetadata = orm['core.ExperimentMetadata']
         RoundParameterValue = orm['core.RoundParameterValue']
         RoundConfiguration = orm['core.RoundConfiguration']
+        Experiment = orm['core.Experiment']
         ExperimentConfiguration = orm['core.ExperimentConfiguration']
+        Experimenter = orm['core.Experimenter']
+        experimenter = Experimenter.objects.get(pk=1)
         em = ExperimentMetadata.objects.get(namespace='lighterprints')
         ec = ExperimentConfiguration.objects.get(name='2012/2013 Pretest', experiment_metadata=em)
+        ec.name = '2013 Pretest Positive View Other Group'
+        ec.save()
         rc = ec.round_configuration_set.all()[0]
         treatment_type_parameter = Parameter.objects.get(name='treatment_type')
-        RoundParameterValue.objects.create(round_configuration=rc, parameter=treatment_type_parameter, string_value='POSITIVE_COMPARE_OWN_GROUP')
         RoundParameterValue.objects.create(round_configuration=rc, parameter=treatment_type_parameter, string_value='POSITIVE_COMPARE_OTHER_GROUP')
+        ec = ExperimentConfiguration.objects.create(name='2013 Pretest Positive View Own Group', experiment_metadata=em,
+                max_group_size=5,
+                invitation_subject='ASB 328: Extra credit experiment',
+                creator=experimenter,
+                )
+        rc = RoundConfiguration.objects.create(experiment_configuration=ec, sequence_number=1, display_number=1)
+        e = Experiment.objects.create(experiment_configuration=ec, experiment_metadata=em, experimenter=experimenter)
+        RoundParameterValue.objects.create(round_configuration=rc, parameter=treatment_type_parameter, string_value='POSTIVE_COMPARE_OWN_GROUP')
 
     def backwards(self, orm):
         "Write your backwards methods here."

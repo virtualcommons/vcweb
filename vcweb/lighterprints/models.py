@@ -337,6 +337,10 @@ def get_treatment_type(round_configuration=None, **kwargs):
     except RoundParameterValue.DoesNotExist:
         return None
 
+def can_view_other_groups(round_configuration=None, **kwargs):
+    treatment_type = get_treatment_type(round_configuration=round_configuration)
+    return 'COMPARE_OTHER_GROUP' in treatment_type.string_value
+
 def get_active_experiments():
     return Experiment.objects.active(experiment_metadata=get_lighterprints_experiment_metadata())
 

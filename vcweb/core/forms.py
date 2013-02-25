@@ -45,7 +45,6 @@ class RegistrationForm(BaseRegistrationForm):
 
 class VcwebPasswordResetForm(PasswordResetForm):
     def __init__(self, *args, **kwargs):
-        logger.debug("creating vcweb password reset form: %s %s", args, kwargs)
         super(VcwebPasswordResetForm, self).__init__(*args, **kwargs)
 
 class LoginForm(forms.Form):
