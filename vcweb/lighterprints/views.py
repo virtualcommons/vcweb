@@ -255,10 +255,9 @@ def post_comment(request):
             logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message, target_id, participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
-        logger.debug("%s commented on %s", participant_group_relationship, target)
-        comment = Comment.objects.create(
-                value=message,
-                round_data=participant_group_relationship.round_data,
+        Comment.objects.create(
+                string_value=message,
+                round_data=participant_group_relationship.current_round_data,
                 participant_group_relationship=participant_group_relationship,
                 target_data_value=target)
         logger.debug("Participant %s commented '%s' on %s", participant_group_relationship.participant, message, target)
