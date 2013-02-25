@@ -141,7 +141,7 @@ class CommonsUser(models.Model):
         return self.user.is_authenticated()
 
     def __unicode__(self):
-        return u"%s (%s)" % (self.user.get_full_name(), self.user.email)
+        return u"%s (%s)" % (self.full_name, self.user.email)
 
     class Meta:
         abstract = True
@@ -1560,6 +1560,13 @@ class ParticipantGroupRelationship(models.Model):
         return self.group.current_round_data
 
     @property
+    def full_name(self):
+        fn = self.participant.get_full_name()
+        if not fn:
+            fn = self.participant_handle
+        return fn
+
+    @property
     def participant_handle(self):
         return "Participant %s" % self.participant_number
 
@@ -1649,12 +1656,9 @@ class ParticipantRoundDataValue(ParameterizedValue):
 
     def to_dict(self, cacheable=False):
         pgr = self.participant_group_relationship
-        participant_name = pgr.participant.full_name
-        if not participant_name:
-            participant_name = pgr.participant_handle
         data = {'pk' : self.pk,
                 'participant_group_id': pgr.pk,
-                'participant_name': participant_name,
+                'participant_name': pgr.full_name,
                 'participant_number': pgr.participant_number,
                 'date_created': self.date_created,
                 'short_date_created': self.date_created.strftime('%I:%M:%S'),

@@ -685,7 +685,7 @@ def get_group_activity(participant_group_relationship, limit=None):
             data['date_performed'] = prdv.date_created
             pgr = prdv.participant_group_relationship
             data['participant_number'] = pgr.participant_number
-            data['participant_name'] = pgr.participant.full_name
+            data['participant_name'] = pgr.full_name
             data['participant_group_id'] = pgr.pk
             data['activity_performed_id'] = prdv.pk
         else:
