@@ -1561,7 +1561,7 @@ class ParticipantGroupRelationship(models.Model):
 
     @property
     def full_name(self):
-        fn = self.participant.get_full_name()
+        fn = self.participant.user.get_full_name()
         if not fn:
             fn = self.participant_handle
         return fn
