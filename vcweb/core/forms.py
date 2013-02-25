@@ -79,6 +79,7 @@ class EmailListField(forms.CharField):
         #emails = email_separator_re.split(value)
         if not lines:
             raise ValidationError(_(u'You must enter at least one email address.'))
+        emails = []
         for line in lines:
             # try to split by spaces first, expect first name last name email
             data = line.split()
@@ -92,9 +93,12 @@ class EmailListField(forms.CharField):
             if not email:
                 logger.debug("blank line, ignoring")
                 continue
+            # FIXME: the only way to really test a valid email address is to try to send an email to it but keeping it
+            # simple for the time being.
             if not email_re.match(email):
                 raise ValidationError(_(u'%s is not a valid email address.' % data))
-        return lines
+            emails.append(line)
+        return emails
 
 class RegisterParticipantsForm(forms.Form):
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)

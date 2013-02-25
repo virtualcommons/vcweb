@@ -482,8 +482,8 @@ class Experiment(models.Model):
                 if not email:
                     logger.debug("invalid participant data: %s", email)
                     continue
+                # FIXME: push this logic into the form clean / EmailListField.clean instead?
                 # XXX: handle incoming firstname lastname email data
-                email = email.strip()
                 data = email.split()
                 first_name = None
                 last_name = None
