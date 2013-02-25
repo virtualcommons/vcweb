@@ -88,6 +88,10 @@ class EmailListField(forms.CharField):
             elif len(data) == 3:
                 (first_name, last_name, email) = data
                 logger.debug("first name %s, last name %s, email %s", first_name, last_name, email)
+            email = email.strip()
+            if not email:
+                logger.debug("blank line, ignoring")
+                continue
             if not email_re.match(email):
                 raise ValidationError(_(u'%s is not a valid email address.' % data))
         return lines
