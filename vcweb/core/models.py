@@ -491,8 +491,8 @@ class Experiment(models.Model):
                     email = data.pop()
                     last_name = data.pop()
                     first_name = ' '.join(data)
-# convert all usernames/email addresses to lowercase internally
-                email = email.lower()
+# convert all usernames/email addresses to lowercase internally and strip any whitespace
+                email = email.lower().strip()
                 try:
                     u = User.objects.get(username=email)
                 except User.DoesNotExist:
@@ -502,8 +502,6 @@ class Experiment(models.Model):
                         u.first_name = first_name
                         u.last_name = last_name
                         u.save()
-                    # perform a password reset programmatically ala
-                    # http://stackoverflow.com/questions/5594197/trigger-password-reset-email-in-django-without-browser
                 users.append(u)
         email_messages = []
         for user in users:
@@ -523,7 +521,7 @@ class Experiment(models.Model):
             logger.debug("sending email messages: %s", email_messages)
             mail.get_connection().send_messages(email_messages)
 
-    def create_registration_email(self, participant_experiment_relationship):
+    def create_registration_email(self, participant_experiment_relationship, **kwargs):
         '''
         Override the email template by creating <experiment-namespace>/email/experiment-registration(txt|html) template files
         '''
@@ -534,6 +532,7 @@ class Experiment(models.Model):
         participant = participant_experiment_relationship.participant
         password = User.objects.make_random_password()
         user = participant.user
+# FIXME: this resets existing user passwords..
         user.set_password(password)
         user.save()
 
