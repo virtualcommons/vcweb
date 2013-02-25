@@ -741,24 +741,13 @@ class Experiment(models.Model):
     def all_round_data(self):
         all_round_data = []
         for round_data in self.round_data_set.reverse():
-            group_data_values = []
-            for gdv in round_data.group_data_value_set.all():
-                group_data_values.append({
-                    'group': unicode(gdv.group),
-                    'parameter': gdv.parameter.label,
-                    'value': gdv.value
-                    })
-            participant_data_values = []
-            for pdv in round_data.participant_data_value_set.all():
-                participant_data_values.append({
-                    'participantLabel': unicode(pdv.participant_group_relationship),
-                    'parameter': pdv.parameter.label,
-                    'value': pdv.value
-                    })
+            group_data_values = [gdv.to_dict() for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()]
+            participant_data_values = [pdv.to_dict(include_email=True, cacheable=True) for pdv in round_data.participant_data_value_set.select_related('participant_group_relationship__participant__user', 'parameter').all()]
+            rc = round_data.round_configuration
             all_round_data.append({
                 'roundDataId': "roundData_%s" % round_data.pk,
-                'roundType': round_data.round_configuration.get_round_type_display(),
-                'roundNumber': round_data.round_configuration.round_number,
+                'roundType': rc.get_round_type_display(),
+                'roundNumber':rc.round_number,
                 'groupDataValues': group_data_values,
                 'participantDataValues': participant_data_values
                 })
@@ -1141,11 +1130,11 @@ class ParameterizedValue(models.Model):
         else:
             return "%s-%s" % (p.name, self.pk)
 
-
     @property
     def cached_value(self):
         ck = self.cache_key
         cv = cache.get(ck)
+        logger.debug("looking up cached value with key: %s -> %s", ck, cv)
         if cv is None:
             cv = self.value
             cache.set(ck, cv)
@@ -1165,6 +1154,18 @@ class ParameterizedValue(models.Model):
     def value(self, obj):
         converted_value = self.parameter.convert(obj)
         setattr(self, self.parameter.value_field_name, converted_value)
+
+    def to_dict(self, cacheable=False, **kwargs):
+        p = self.parameter
+        data = {'pk' : self.pk,
+                'date_created': self.date_created,
+                'short_date_created': self.date_created.strftime('%I:%M:%S'),
+                'parameter_name': p.name,
+                'parameter_label': p.label,
+                'parameter': self.parameter
+                }
+        data['value'] = unicode(self.cached_value if cacheable else self.value)
+        return data
 
     def __unicode__(self):
         return u"Data value: [parameter {0}, value {1}], recorded at {2}".format(self.parameter, self.value, self.date_created)
@@ -1429,6 +1430,13 @@ class GroupRoundDataValue(ParameterizedValue):
     group = models.ForeignKey(Group, related_name='data_value_set')
     round_data = models.ForeignKey(RoundData, related_name='group_data_value_set')
 
+    def to_dict(self, **kwargs):
+        data = super(GroupRoundDataValue, self).to_dict(**kwargs)
+        data.update({
+            'group': self.group.name,
+            })
+        return data
+
     @property
     def owner(self):
         return self.group
@@ -1654,21 +1662,22 @@ class ParticipantRoundDataValue(ParameterizedValue):
     def round_configuration(self):
         return self.round_data.round_configuration
 
-    def to_dict(self, cacheable=False):
+    def to_dict(self, cacheable=False, include_email=False):
+        data = super(ParticipantRoundDataValue, self).to_dict(cacheable)
         pgr = self.participant_group_relationship
-        data = {'pk' : self.pk,
-                'participant_group_id': pgr.pk,
-                'participant_name': pgr.full_name,
-                'participant_number': pgr.participant_number,
-                'date_created': self.date_created,
-                'short_date_created': self.date_created.strftime('%I:%M:%S'),
-                'parameter_name': self.parameter.name
-                }
-        data['value'] = unicode(self.cached_value if cacheable else self.value)
+        data.update({
+            'participant_group_id': pgr.pk,
+            'participant_name': pgr.full_name,
+            'participant_number': pgr.participant_number,
+            })
+        if include_email:
+            data['participant_email'] = pgr.participant.email
         tdv = self.target_data_value
         if tdv is not None:
-            data['target_data_value'] = unicode(tdv.cached_value if cacheable else tdv.value)
-            data['target_parameter_name'] = tdv.parameter.name
+            data.update({
+                'target_data_value': unicode(tdv.cached_value if cacheable else tdv.value),
+                'target_parameter_name': tdv.parameter.name
+                })
         return data
 
     def __unicode__(self):
