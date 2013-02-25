@@ -1051,9 +1051,12 @@ class Parameter(models.Model):
 
     @property
     def value_field_name(self):
-        if self.type == 'foreignkey':
+        t = self.type
+        if t == 'foreignkey':
             return 'int_value'
-        return '%s_value' % (self.type)
+        elif t == 'enum':
+            return 'string_value'
+        return '%s_value' % (t)
 
     @property
     def none_value(self):
@@ -1178,7 +1181,8 @@ class RoundParameterValue(ParameterizedValue):
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_parameter_value_set')
 
     def __unicode__(self):
-        return u"{0} -> [{1}: {2}]".format(self.round_configuration, self.parameter, self.value)
+        rc = self.round_configuration
+        return u"{0} -> [{1}: {2}]".format(rc.experiment_configuration, self.parameter, self.value)
 
 class Group(models.Model):
     number = models.PositiveIntegerField()

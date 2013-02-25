@@ -328,7 +328,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         experiment = own_group.experiment
     round_data = experiment.current_round_data
     round_configuration = round_data.round_configuration
-    treatment_type = get_treatment_type(own_group, round_configuration=round_configuration)
+    treatment_type = get_treatment_type(round_configuration=round_configuration)
     group_data = []
     for group in experiment.group_set.all():
         (average_points, total_points, total_participant_points) = get_group_score(group, participant_group_relationship=participant_group_relationship, round_data=round_data)

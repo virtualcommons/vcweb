@@ -109,7 +109,6 @@ INSTALLED_APPS = (
         'raven.contrib.django',
         'kronos',
         'south',
-        'social_auth',
         'django_extensions',
         'mptt',
         'bootstrap_toolkit',

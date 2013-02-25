@@ -331,12 +331,11 @@ def get_experiment_completed_dv(group, round_data=None):
 def is_experiment_completed(group, **kwargs):
     return get_experiment_completed_dv(group, **kwargs).boolean_value
 
-def get_treatment_type(group, round_configuration=None, **kwargs):
+def get_treatment_type(round_configuration=None, **kwargs):
     try:
         return RoundParameterValue.objects.get(round_configuration=round_configuration, parameter=get_treatment_type_parameter())
     except RoundParameterValue.DoesNotExist:
         return None
-    #return group.get_round_configuration_value(name='treatment_type', **kwargs)
 
 def get_active_experiments():
     return Experiment.objects.active(experiment_metadata=get_lighterprints_experiment_metadata())
