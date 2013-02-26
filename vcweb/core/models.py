@@ -561,7 +561,7 @@ class Experiment(models.Model):
                 user.last_name = u"%d" % i
                 user.save()
             users.append(user)
-        self.register_participants(users=users, institution=institution)
+        self.register_participants(users=users, institution=institution, password=password)
 
     def initialize_parameters(self, group_parameters=None, participant_parameters=None, round_data=None):
         logger.debug("initializing [participant params: %s]  [group parameters: %s] ", participant_parameters, group_parameters)
