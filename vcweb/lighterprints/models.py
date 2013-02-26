@@ -24,7 +24,7 @@ import string
 logger = logging.getLogger(__name__)
 
 @receiver(signals.midnight_tick)
-def update_active_experiments(sender, time=None, start=None, **kwargs):
+def update_active_experiments(sender, time=None, start=None, send_emails=True, **kwargs):
 # since this happens at midnight we need to look at the previous day
     if start is None:
         start = date.today() - timedelta(1);
@@ -38,7 +38,7 @@ def update_active_experiments(sender, time=None, start=None, **kwargs):
             completed = False
             footprint_level_grdv = get_footprint_level_dv(group, round_data=round_data)
             current_level = footprint_level_grdv.value
-            if should_advance_level(group, footprint_level_grdv.value, start):
+            if should_advance_level(group, footprint_level_grdv.int_value, start, round_data=round_data):
                 # group was promoted
                 promoted = True
                 next_level = min(current_level + 1, 3)
@@ -50,13 +50,14 @@ def update_active_experiments(sender, time=None, start=None, **kwargs):
             experiment_completed_dv = get_experiment_completed_dv(group, round_data=round_data)
             already_completed = experiment_completed_dv.boolean_value
             if not already_completed:
-                group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed)
+                group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed, round_data=round_data)
                 messages.extend(group_summary_emails)
                 if completed:
                     experiment_completed_dv.boolean_value = True
                     experiment_completed_dv.save()
-    logger.debug("about to send nightly summary emails: %s", messages)
-    mail.get_connection().send_messages(messages)
+    logger.debug("about to send nightly summary emails (%s): %s", send_emails, messages)
+    if send_emails:
+        mail.get_connection().send_messages(messages)
 
 LIGHTERPRINTS_SENDER = intern('lighterprints')
 @receiver(signals.round_started, sender=LIGHTERPRINTS_SENDER)
@@ -339,70 +340,11 @@ def get_treatment_type(round_configuration=None, **kwargs):
 
 def can_view_other_groups(round_configuration=None, **kwargs):
     treatment_type = get_treatment_type(round_configuration=round_configuration)
-    return 'COMPARE_OTHER_GROUP' in treatment_type.string_value
+# XXX: if there is no treatment type we default to the compare other group condition
+    return (treatment_type is None) or ('COMPARE_OTHER_GROUP' in treatment_type.string_value)
 
 def get_active_experiments():
     return Experiment.objects.active(experiment_metadata=get_lighterprints_experiment_metadata())
-
-# all activity names:
-#[u'adjust-thermostat', u'eat-local-lunch', u'enable-sleep-on-computer', u'recycle-materials', u'share-your-ride',
-#u'bike-or-walk', u'computer-off-night', u'no-beef', u'recycle-paper', u'air-dry-clothes', u'cold-water-wash',
-#u'eat-green-lunch', u'lights-off', u'vegan-for-a-day']
-
-def _lookup_activities(activity_names):
-    return Activity.objects.filter(name__in=activity_names)
-
-_levels_to_unlocked_activities = map (lambda x: partial(_lookup_activities, x), (
-    ['recycle-paper', 'share-your-ride', 'enable-sleep-on-computer'],
-    ['adjust-thermostat'],
-    ['eat-local-lunch'],
-    ['cold-water-wash'],
-    ['no-beef']
-    ))
-
-def get_unlocked_activities_by_level(level=0):
-    return _levels_to_unlocked_activities[level]()
-
-_unlocking_activities = {
-        'recycle-paper': (3, 'recycle-materials'),
-        'share-your-ride': (3, 'bike-or-walk'),
-        'enable-sleep-on-computer': (3, 'computer-off-night'),
-        'adjust-thermostat': (3, 'lights-off'),
-        'eat-local-lunch': (3, 'eat-green-lunch'),
-        'cold-water-wash': (1, 'air-dry-clothes'),
-        'beef-with-poultry': (3, 'vegan-for-a-day'),
-        }
-
-def initial_unlocked_activities():
-    return Activity.objects.filter(name__in=('recycle-paper', 'share-your-ride', 'enable-sleep-on-computer'))
-
-def create_activity_unlocked_data_values(participant_group_relationship, activity_ids=None):
-    if activity_ids is None:
-        return None
-    logger.debug("unlocking activities: %s", activity_ids)
-    dvs = []
-    current_round_data = participant_group_relationship.current_round_data
-    for activity_id in activity_ids:
-        unlocked_activity_dv = ParticipantRoundDataValue.objects.create(parameter=get_activity_unlocked_parameter(),
-                round_data=current_round_data, participant_group_relationship=participant_group_relationship)
-        unlocked_activity_dv.value = activity_id
-        unlocked_activity_dv.save()
-        dvs.append(unlocked_activity_dv)
-    return dvs
-
-def get_unlocked_activities(participant_group_relationship):
-    # first check if they've performed any activities
-    pdvs = participant_group_relationship.participant_data_value_set
-    performed_activities = pdvs.filter(parameter=get_activity_performed_parameter())
-    unlocked_activities = pdvs.filter(parameter=get_activity_unlocked_parameter())
-# FIXME: degenerate data check, remove if unnecessary
-    if performed_activities.count() == 0 and unlocked_activities.count() == 0:
-        # check if they have any unlocked activities now
-        initial_unlocked_activity_ids = initial_unlocked_activities().values_list('id', flat=True)
-        # unlock the base set of activities for them
-        unlocked_activities = create_activity_unlocked_data_values(participant_group_relationship, initial_unlocked_activity_ids)
-    #logger.debug("participant %s performed activities %s\nunlocked: %s", participant_group_relationship, performed_activities, unlocked_activities)
-    return unlocked_activities
 
 def get_activity_status_dict(participant_group_relationship, activities, group_level=1):
     today = datetime.combine(date.today(), time())
@@ -585,8 +527,8 @@ def get_activity_points_cache():
         cache.set(cv, activity_points_cache, 86400)
     return activity_points_cache
 
-def average_points_per_person(group, start=None, end=None):
-    return get_group_score(group, start=start, end=end)[0]
+def average_points_per_person(group, start=None, end=None, round_data=None):
+    return get_group_score(group, start=start, end=end, round_data=round_data)[0]
 
 # cache activity points
 # returns a tuple of the average points per person and the total points for
@@ -597,19 +539,18 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
     # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
     total_group_points = 0
     total_participant_points = 0
-    activities_performed_qs = group.get_participant_data_values(parameter=get_activity_performed_parameter(),
-            round_data=round_data)
     if start is None:
         start = date.today()
     if end is None:
         end = start + timedelta(1)
-    activities_performed_qs = activities_performed_qs.select_related('participant_group_relationship').filter(date_created__range=(start, end))
+    if round_data is None:
+        round_data = group.current_round_data
+    activities_performed_qs = ParticipantRoundDataValue.objects.for_group(group, parameter=get_activity_performed_parameter(), round_data=round_data, date_created__range=(start, end))
     for activity_performed_dv in activities_performed_qs:
         activity_points = activity_points_cache[activity_performed_dv.int_value]
         total_group_points += activity_points
         if activity_performed_dv.participant_group_relationship == participant_group_relationship:
             total_participant_points += activity_points
-
     group_size = group.size
     average = total_group_points / group_size
     logger.debug("total carbon savings: %s divided by %s members = %s per person", total_group_points, group_size, average)
@@ -624,10 +565,10 @@ def get_points_to_next_level(current_level):
     elif current_level == 3:
         return 225
 
-def should_advance_level(group, level, start=None, end=None, max_level=4):
+def should_advance_level(group, level, start=None, end=None, round_data=None, max_level=4):
     logger.debug("checking if group %s at level %s should advance in level on %s", group, level, start)
     if level < max_level:
-        return average_points_per_person(group, start=start, end=end) >= get_points_to_next_level(level)
+        return average_points_per_person(group, start=start, end=end, round_data=round_data) >= get_points_to_next_level(level)
     return False
 
 def get_activity_performed_counts(participant_group_relationship, activity_performed_parameter=None):
@@ -706,7 +647,7 @@ def abbreviated_timesince(date):
     s = re.sub(r'\smonths?', 'mo', s)
     return s.replace(',', '')
 
-def create_group_summary_emails(group, level, promoted=False, completed=False):
+def create_group_summary_emails(group, level, promoted=False, completed=False, round_data=None):
     logger.debug("creating group summary email for group %s", group)
 # FIXME: need some logic to select an email template based on the treatment type, or push into the template itself
     plaintext_template = select_template(['lighterprints/email/group-summary-email.txt'])
@@ -741,7 +682,8 @@ def create_group_summary_emails(group, level, promoted=False, completed=False):
     return messages
 
 def get_individual_points(participant_group_relationship):
-    yesterday = date.today() - timedelta(1)
+    today = date.today()
+    yesterday = today - timedelta(1)
     prdvs = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship,
-            date_created__gte=yesterday, parameter=get_activity_performed_parameter())
+            date_created__range=(yesterday, today), parameter=get_activity_performed_parameter())
     return sum([prdv.value.points for prdv in prdvs])
