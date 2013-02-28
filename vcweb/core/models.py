@@ -20,8 +20,7 @@ from string import Template
 from social_auth.backends.facebook import FacebookBackend
 import social_auth.signals
 
-from vcweb.core import signals, simplecache
-from vcweb.core.json import dumps
+from vcweb.core import signals, simplecache, dumps
 
 import base64
 import hashlib

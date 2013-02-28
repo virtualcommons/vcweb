@@ -1,8 +1,8 @@
 from django.http import Http404, HttpResponse
 from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context import RequestContext
+from vcweb.core import dumps
 from vcweb.core.decorators import participant_required
-from vcweb.core.json import dumps
 from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
         ParticipantExperimentRelationship, ChatMessage, ParticipantRoundDataValue)
 from vcweb.boundaries.forms import HarvestDecisionForm

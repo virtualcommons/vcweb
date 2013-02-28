@@ -10,12 +10,13 @@ from django.views.generic import ListView, FormView, TemplateView
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin, DetailView
 from django.views.generic.edit import UpdateView
+from vcweb.core import dumps
+from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
         RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm, RegisterExcelParticipantsForm, LogMessageForm)
-from vcweb.core import unicodecsv
-from vcweb.core.json import dumps
-from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
-from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
+from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
+        ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
+from vcweb.core.unicodecsv import UnicodeWriter
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
 import logging
@@ -341,7 +342,7 @@ class DataExportMixin(ExperimenterSingleExperimentMixin):
 
 class CsvDataExporter(DataExportMixin):
     def export_data(self, response, experiment):
-        writer = unicodecsv.UnicodeWriter(response)
+        writer = UnicodeWriter(response)
         writer.writerow(['Group', 'Members'])
         for group in experiment.group_set.all():
             writer.writerow(itertools.chain.from_iterable([[group], group.participant_set.all()]))
@@ -384,7 +385,7 @@ def download_data(request, pk=None, file_type='csv'):
         raise PermissionDenied("You don't have access to this experiment")
     response = HttpResponse(content_type=mimetypes.types_map['.%s' % file_type])
     response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
-    writer = unicodecsv.UnicodeWriter(response)
+    writer = UnicodeWriter(response)
     writer.writerow(['Group', 'Members'])
     for group in experiment.group_set.all():
         writer.writerow(itertools.chain.from_iterable([[group], group.participant_set.all()]))

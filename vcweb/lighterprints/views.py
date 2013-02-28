@@ -372,7 +372,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         'groupActivity': team_activity,
         'groupName': own_group.name,
         'activities': activity_dict_list,
-        'activitiesByLevel': level_activity_list,
+        'activitiesByLevel': level_activity_list
         })
 
 @participant_required
@@ -412,7 +412,7 @@ def participate(request, experiment_id=None):
     pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'), participant=participant, group__experiment=experiment)
     compare_other_group = can_view_other_groups(round_configuration=round_configuration)
     all_activities = Activity.objects.all()
-    view_model_json = get_view_model_json(pgr, all_activities, experiment, round_configuration=round_configuration)
+    view_model_json = get_view_model_json(pgr, activities=all_activities, experiment=experiment, round_configuration=round_configuration)
 #    if request.mobile:
         # FIXME: change this to look up templates in a mobile templates directory?
 #        logger.warning("mobile request detected by %s, but we're not ready for mobile apps", participant)
