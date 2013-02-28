@@ -74,8 +74,8 @@ class ExperimentMetadata(models.Model):
     description = models.TextField(null=True, blank=True)
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
-    about_url = models.URLField(null=True, blank=True, verify_exists=True)
-    logo_url = models.URLField(null=True, blank=True, verify_exists=True)
+    about_url = models.URLField(null=True, blank=True)
+    logo_url = models.URLField(null=True, blank=True)
     default_configuration = models.ForeignKey('ExperimentConfiguration', null=True, blank=True)
 
     objects = ExperimentMetadataManager()
@@ -92,7 +92,7 @@ class ExperimentMetadata(models.Model):
 class Institution(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
-    url = models.URLField(null=True, blank=True, verify_exists=True)
+    url = models.URLField(null=True, blank=True)
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
 
