@@ -1,17 +1,12 @@
-from django import forms
-from django.contrib import messages
 from django.http import Http404, HttpResponse
 from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context import RequestContext
-from django.views.generic import View
-from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from vcweb.core.decorators import participant_required
 from vcweb.core.json import dumps
 from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
-        ParticipantExperimentRelationship, ChatMessage)
-from vcweb.core.views import ParticipantSingleExperimentMixin
+        ParticipantExperimentRelationship, ChatMessage, ParticipantRoundDataValue)
 from vcweb.boundaries.forms import HarvestDecisionForm
-from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_survival_cost, get_resource_level,
+from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_harvest_decision_parameter, get_survival_cost, get_resource_level,
         get_total_storage)
 import logging
 import random
@@ -20,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 @participant_required
 def participate(request, experiment_id=None):
-    form = HarvestDecisionForm(request.POST or None)
     participant = request.user.participant
     logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_configuration').prefetch_related('group_set', 'experiment_configuration__round_configuration_set'), pk=experiment_id)
@@ -31,11 +25,6 @@ def participate(request, experiment_id=None):
             participant=participant)
     if experiment.experiment_metadata != get_experiment_metadata() or pgr.participant != request.user.participant:
         raise Http404
-    if form.is_valid():
-        logger.debug("handing POST request, cleaned data: %s", form.cleaned_data)
-        # set harvest decision for participant
-        # FIXME: inconsistency, GET returns HTML and POST return JSON..
-        return HttpResponse(dumps({ 'success': True, 'experimentModelJson': to_json(experiment, pgr)}))
 
 # sends view model JSON to the template to be processed by knockout
     return render_to_response('boundaries/participate.html', {
@@ -46,6 +35,22 @@ def participate(request, experiment_id=None):
         'experimentModelJson': to_json(experiment, pgr),
         },
         context_instance=RequestContext(request))
+
+@participant_required
+def submit_harvest_decision(request, experiment_id=None):
+    form = HarvestDecisionForm(request.POST or None)
+    experiment = get_object_or_404(Experiment, pk=experiment_id)
+    if form.is_valid():
+        logger.debug("handing POST request, cleaned data: %s", form.cleaned_data)
+        participant_group_id = form.cleaned_data['participant_group_id']
+        pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        harvest_decision = form.cleaned_data['harvest_decision']
+        ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, int_value=harvest_decision,
+                round_data=experiment.current_round_data, parameter=get_harvest_decision_parameter())
+        # set harvest decision for participant
+        # FIXME: inconsistency, GET returns HTML and POST return JSON..
+        return HttpResponse(dumps({ 'success': True, 'experimentModelJson': to_json(experiment, pgr)}))
+
 
 def to_json(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
@@ -73,10 +78,10 @@ def to_json(experiment, participant_group_relationship, **kwargs):
             })
 
     experiment_model_dict['chatMessages'] = [
-            {'pk': cm.pk, 
+            {'pk': cm.pk,
                 'participant_number': cm.participant_group_relationship.participant_number,
                 'message': cm.string_value,
-                'date_created': cm.date_created.strftime("%I:%M:%S")} 
+                'date_created': cm.date_created.strftime("%I:%M:%S")}
             for cm in ChatMessage.objects.select_related('participant_group_relationship').filter(participant_group_relationship__group=own_group).order_by('-date_created')
             ]
     experiment_model_dict['groupData'] = group_data

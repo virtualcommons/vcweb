@@ -46,6 +46,11 @@
             </label>
         </div>
     </div>
+    <div class='control-group'>
+        <div class='controls'>
+            <button data-bind='click: startHarvestDecisionTimer' type='button' class='btn btn-primary'>Start harvest decision timer</button>
+        </div>
+    </div>
 </form>
 <div data-bind='template: { name: templateName() }'>
 </div>
@@ -222,6 +227,12 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
 <div class='row'>
     <div class='span4'>
         <h3>My Status</h3>
+        <div data-bind='if: isTimerRunning'>
+        <div class='alert alert-error'>
+        <b><i class='icon-time'></i> Time left:</b> 
+         <span data-bind='text: secondsLeft'></span>s
+        </div>
+        </div>
         <div class='alert alert-message'>
             You harvested <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span> <i class='icon-leaf'></i></strong> trees last round.
         </div>
@@ -304,9 +315,9 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
 <tr><th></th><th>Other Group</th></tr>
 </thead>
 <tbody>
-<tr><td>trees in forest</td><td data-bind='text:otherGroupResourceLevel'></td></tr>
-<tr><td>average harvest</td><td data-bind='text:otherGroupAverageHarvest'></td></tr>
-<tr><td>average storage</td><td data-bind='text:otherGroupAverageStorage'></td></tr>
+<tr><td>trees in forest</td><td data-bind='text:otherGroupResourceLevel()'></td></tr>
+<tr><td>average harvest</td><td data-bind='text:otherGroupAverageHarvest().toFixed(1)'></td></tr>
+<tr><td>average storage</td><td data-bind='text:otherGroupAverageStorage().toFixed(1)'></td></tr>
 </tbody>
 </table>
 </div>
@@ -319,7 +330,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
     <div class='control-group'>
         <div class='controls'>
             <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
-            <input id='harvestDecision' placeholder='Enter a harvest decision' type="number" name='harvest_decision' class='required' min="0" data-bind="value: harvestDecision, attr: { max: maxHarvestDecision }" /> 
+            <input id='harvestDecision' type="number" size="1" maxlength="1" name='harvest_decision' class='required' min="0" data-bind="value: harvestDecision, attr: { max: maxHarvestDecision }" /> 
             <button id='submitDecision' data-bind='click: submitDecision' type='submit' class='btn'>Harvest</button>
         </div>
     </div>
@@ -331,6 +342,21 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
+            model.secondsLeft = ko.observable(0);
+            model.currentInterval = ko.observable();
+            model.clearCurrentInterval = function() {
+                console.debug("clearing current interval: " + model.currentInterval());
+                if (model.currentInterval()) {
+                    clearInterval(model.currentInterval());
+                    model.currentInterval(undefined);
+                }
+            }
+            model.tick = function() {
+                model.secondsLeft(model.secondsLeft() - 1);
+            }
+            model.isTimerRunning = ko.computed(function() {
+                return model.secondsLeft() > 0;
+            });
             model.templateName = ko.observable("WELCOME");
             // activate instructions click bindings
             model.activateInstructionsPageOne = function() {
@@ -350,7 +376,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 getWebSocket().send(createMessageEvent("Instructions completed"));
             }
             model.showOtherGroup = function() {
-                model.shouldShowOtherGroup(! model.shouldShowOtherGroup());
+                model.shouldShowOtherGroup(true);
             }
             model.chatEnabled = ko.observable(false);
             model.shouldShowOtherGroup = ko.observable(false);
@@ -371,16 +397,33 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 return model.resourcesToDisplay() * 30 + "px";
             });
             model.resourceImageHeight = ko.observable("79px");
+            model.startHarvestDecisionTimer = function() { 
+                console.debug("starting interval: " + model.currentInterval());
+                model.secondsLeft(10);
+                model.currentInterval(setInterval(function() {
+                    console.debug("running interval: " + model.secondsLeft() + " interval id: " +
+                        model.currentInterval());
+                    model.tick();
+                    if (! model.isTimerRunning()) {
+                        model.submitDecision();
+                        model.clearCurrentInterval();
+                    }
+                },
+                1000));
+            };
             model.submitDecision = function(data, evt) {
-                evt.preventDefault();
+                if (evt) {
+                    evt.preventDefault();
+                }
                 var formData = $('#vcweb-form').serialize();
-                $.post('', formData, function(jsonString) {
-                    var data = jQuery.parseJSON(jsonString);
-                    console.log(data);
+                $.post('submit-harvest-decision', formData, function(jsonString) {
+                    console.log(jsonString);
                     // FIXME: should probably update the entire model after we remove the test panel
                     // update(data.experimentModelJson);
                     // ko.mapping.fromJSON(data.experimentModelJson, model);
+                    model.secondsLeft(0);
                     model.hasSubmit(true);
+                    model.clearCurrentInterval();
                 });
             }
             model.submitChatMessage = function(data, evt) {
@@ -430,6 +473,9 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 }
                 update(json);
             };
+            $('#harvestDecision').keyup(function() {
+                $('#harvestDecision').val(this.value.match(/\d+/));
+            });
             $('#pick-template').change(function() {
                 var templateName = $(this).val();
                 console.debug("switching to template: " + templateName);
