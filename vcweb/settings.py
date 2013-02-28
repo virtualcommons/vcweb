@@ -322,24 +322,29 @@ INTERNAL_IPS = ('127.0.0.1','68.99.87.185',)
 # http://stackoverflow.com/questions/8219940/how-do-i-access-imported-local-settings-without-a-circular-import
 # for other solutions
 try:
-    import settings_local as local
+    import settings_local as local_settings
     has_local_settings = True
 except ImportError:
     print "no local settings found.  create settings_local.py to override settings in a hg-ignored file"
     has_local_settings = False
 
+def add_settings_tuples(varname, local_settings):
+    local_settings_tuple = getattr(local_settings, varname, None)
+    original_settings_tuple = globals()[varname]
+    if local_settings_tuple is not None:
+        print "adding local setting %s to existing %s %s" % (local_settings_tuple, varname, original_settings_tuple)
+        globals()[varname] = original_settings_tuple + local_settings_tuple
+
 if has_local_settings:
     try:
-        DEBUG = getattr(local, 'DEBUG', DEBUG)
-        SENTRY_DSN = getattr(local, 'SENTRY_DSN', None)
-        EMAIL_BACKEND = getattr(local, 'EMAIL_BACKEND', EMAIL_BACKEND)
-        for l in local.MIDDLEWARE_CLASSES:
-            if l not in MIDDLEWARE_CLASSES:
-                MIDDLEWARE_CLASSES += (l,)
-        for l in local.INSTALLED_APPS:
-            if l not in INSTALLED_APPS:
-                INSTALLED_APPS += (l,)
-    except:
+        DEBUG = getattr(local_settings, 'DEBUG', DEBUG)
+        SENTRY_DSN = getattr(local_settings, 'SENTRY_DSN', None)
+        EMAIL_BACKEND = getattr(local_settings, 'EMAIL_BACKEND', EMAIL_BACKEND)
+        add_settings_tuples('MIDDLEWARE_CLASSES', local_settings)
+        add_settings_tuples('INSTALLED_APPS', local_settings)
+        add_settings_tuples('ALLOWED_HOSTS', local_settings)
+    except Exception as e:
+        print "error: %s" % e
         pass
 # for django-debug-toolbar
 INTERNAL_IPS = ('127.0.0.1','68.99.87.185',)

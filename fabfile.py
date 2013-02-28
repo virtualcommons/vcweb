@@ -152,6 +152,10 @@ def setup():
 def _restart_command():
     return 'service %(apache)s restart' % env
 
+def clean():
+    with cd(env.project_path):
+        sudo('find . -name "*.pyc" -delete -print')
+        
 def restart():
     sudo(_restart_command(), pty=True)
 
@@ -166,12 +170,13 @@ def deploy():
     if confirm("Deploy to %(hosts)s ?" % env):
         with cd(env.project_path):
             sudo_chain('hg pull && hg up -C',
-                    'chmod -R g+w logs',
+                    'chmod -R g+rws logs',
                     user=env.deploy_user, pty=True)
             env.static_root = vcweb_settings.STATIC_ROOT
             _virtualenv(run,'%(python)s manage.py collectstatic' % env)
             sudo_chain('chmod -R ug+rw .',
                     'find %(static_root)s -type d -exec chmod a+x {} \;' % env,
+                    'find %(static_root)s -type f -exec chmod a+r {} \;' % env,
                     'find . -type d -exec chmod ug+x {} \;',
                     'chown -R %(deploy_user)s:%(deploy_group)s . %(static_root)s' % env,
                     _restart_command(),
