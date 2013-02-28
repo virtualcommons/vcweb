@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load tags %}
 
-{% url home as home %}
-{% url core:dashboard as dashboard %}
-{% url core:login as login %}
-{% url core:logout as logout %}
-{% url core:profile as profile %}
+{% url 'home' as home %}
+{% url 'core:dashboard' as dashboard %}
+{% url 'core:login' as login %}
+{% url 'core:logout' as logout %}
+{% url 'core:profile' as profile %}
 
 {% block title %}
 {{ experiment.display_name }}

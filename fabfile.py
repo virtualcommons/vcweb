@@ -125,7 +125,7 @@ def push():
 
 def dev():
     env.project_path = env.deploy_path + env.project_name
-    env.hosts =['dev.commons.asu.edu']
+    env.hosts =['sod51.asu.edu']
 
 def prod():
     env.project_path = env.deploy_path + env.project_name

@@ -6,9 +6,9 @@
 {% block form %}
     <h3>Returning User</h3>
     <p>
-    Don&#39;t have an account or a first-time user?  Please <a href='{% url core:register %}'>register first</a>.
+    Don&#39;t have an account or a first-time user?  Please <a href='{% url "core:register" %}'>register first</a>.
     <br>
-    If you've forgotten your password, you can <a href='{% url password-reset %}'>request a new one</a>.
+    If you've forgotten your password, you can <a href='{% url "password-reset" %}'>request a new one</a>.
     </p>
     {% include "includes/bootstrap-form.html" %}
     <div class='controls'>
