@@ -1,0 +1,108 @@
+.navbar-fixed-top {
+  height: 60px;
+}
+.navbar-fixed-top .navbar-inner {
+  background: rgba(255, 255, 255, 0.960784);
+  border: none;
+  height: 60px;
+  padding-left: 20px;
+  padding-right: 10px;
+}
+.navbar-fixed-top .navbar-inner .image {
+  border-radius: 0px;
+  margin: 16px 0px 0px 0px;
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  -o-box-shadow: none;
+  box-shadow: none;
+  height: 30px;
+  width: 30px;
+}
+.navbar-fixed-top .navbar-inner .brand {
+  margin: 0px 0px 0px -15px;
+  text-shadow: none;
+  font-family:"oswald";
+  font-weight: bold;
+  font-size: 24.24242401123047px;
+  color: #333333;
+  line-height: 39.98579406738281px;
+}
+.navbar-fixed-top .navbar-inner .nav li a {
+  line-height: 39.98579406738281px;
+}
+.container.container-1 {
+  margin-bottom: 60px;
+  margin-top: 30px;
+}
+.container-1 .row-fluid .span9 div.div-1 {
+  margin: 0px 20px 60px 0px;
+}
+.container-1 .row-fluid .span9 div.div-2 {
+  padding: 0px;
+  margin: 0px 0px 10px 0px;
+}
+.container-1 .row-fluid .span9 .div-1 .page-header.div-2 h1 {
+  font-weight: normal;
+  font-size: 42.42424011230469px;
+  color: #555555;
+}
+.container-1 .row-fluid .span9 .div-1 .image.image-1 {
+  border-radius: 1.9886362552642822px;
+  margin: 0px 0px 10px 0px;
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  -o-box-shadow: none;
+  box-shadow: none;
+}
+.container-1 .row-fluid .span9 .div-1 p {
+  font-weight: 300;
+  font-size: 16.66666603088379px;
+  line-height: 24.999998092651367px;
+}
+.container-1 .row-fluid .span9 .div-1 .table tbody tr td.td-1 {
+  font-size: 19.69696807861328px;
+}
+#harvestID {
+  width: 34.9905309677124px;
+}
+#conservationID {
+  background: #ffedca;
+  width: 34.9905309677124px;
+}
+.container-1 .row-fluid .span9 .div-1 .table tbody tr td.td-2 {
+  text-align: center;
+}
+.container-1 .row-fluid .span9 .div-1 .table tbody tr td.td-3 {
+  font-weight: bold;
+  font-size: 16.66666603088379px;
+}
+#paymentID {
+  width: 34.9905309677124px;
+}
+.container-1 .row-fluid .span3 .heading {
+  font-weight: normal;
+  font-size: 22.727272033691406px;
+}
+.container-1 .row-fluid .span3 p {
+  font-weight: 300;
+  font-size: 34.84848403930664px;
+}
+.container-1 .row-fluid .span3 .nav li a.a-1 {
+  color: #005580;
+}
+.container-fluid {
+  background: #333333;
+  padding: 29.995264053344727px 19.981060028076172px 29.995264053344727px 19.981060028076172px;
+}
+.container-fluid .container .row-fluid .span12 .pull-left p {
+  font-weight: 300;
+  color: #ffffff;
+  line-height: 35.98484802246094px;
+}
+.container-fluid .container .row-fluid .span12 .nav-pills {
+  margin: 0px;
+}
+.container-fluid .container .row-fluid .span12 .nav-pills li a {
+  text-align: center;
+  color: #cccccc;
+}
