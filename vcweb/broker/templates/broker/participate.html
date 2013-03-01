@@ -1,5 +1,126 @@
 {% extends "participant/base.html" %}
+{% load static from staticfiles %}
+{% block head %}
+{{ block.super }}
+<link rel='stylesheet' href='{% static "css/broker/style.css" %}'/>
+    <link href="https://fonts.googleapis.com/css?family=Limelight|Flamenco|Federo|Yesteryear|Josefin Sans|Spinnaker|Sansita One|Handlee|Droid Sans|Oswald:400,300,700" media="screen" rel="stylesheet" type="text/css" />
+{% endblock %}
+{% block headerlinks %}
 
-{% block page %}
-<h1>I am the broker</h1>
+{% endblock %}
+{% block logo %}
+{% endblock %}
+{% block content %}
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <img src="bolt.png" class="pull-left image">
+        <a class="brand" href="#">Harvesting Game</a>
+        <ul class="nav pull-right">
+          <li>
+            <a href="#">Instructions</a>
+          </li>
+          <li class="active">
+            <a href="#">Game</a>
+          </li>
+          <li>
+            <a href="#">Calculator</a>
+          </li>
+          <li>
+            <a href="#">About</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="container container-1">
+      <div class="row-fluid">
+        <span class="span9">
+          <div class="div-1">
+            <div class="page-header div-2">
+              <h1>How to play</h1>
+            </div>
+            <p>You start this game with 10 hours available to invest. You will have several "workdays" which are the rounds of this game. At each workday you have to choose how you will allocate the time you have available between two activities. You can invest your
+              time into harvesting a natural resource or into conservation/maintenance. Your gains are proportional to the amount of time you spend harvesting. For each hour you harvest you will receive $XX. The amount of time that you put on conservation will be sum
+              together with the time that others invest in conservation. When conservation time is higher than 10 hours then your returns from the harvesting time will be 50% higher.</p>
+            <p>You can decide to invest all your time in one of the activities.
+              <br>
+            </p>
+          </div>
+          <div class="div-1">
+            <div class="page-header div-2">
+              <h1>Resource Harvesting</h1>
+            </div>
+            <img src="SES.jpg" class="image image-1">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Hours Available</th>
+                  <th>Harvesting</th>
+                  <th>Conservation</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="td-1">10</td>
+                  <td>&nbsp;
+                    <input class="textinput" type="text" id="harvestID" name="harvest" placeholder="Placeholder">
+                  </td>
+                  <td class="td-1">
+                    <input class="textinput" type="text" id="conservationID" name="conservation" placeholder="Placeholder">
+                  </td>
+                  <td>&nbsp;
+                    <button class="btn" id="play">Play !</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td class="td-2">
+                    <img src="arrow.png" class="image">
+                  </td>
+                  <td></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td class="td-3">Payments</td>
+                  <td>
+                    <input class="textinput" type="text" id="paymentID" name="payment" placeholder="Placeholder">
+                  </td>
+                  <td></td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              <br>
+            </p>
+          </div>
+        </span>
+        <span class="span3">
+          <h3 class="heading">Your earnings</h3>
+          <p>$ 100,00</p>
+          <p></p>
+          <p></p>
+          <p></p>
+          <h3 class="heading">Communication</h3>
+          <img src="network.png" class="image">
+          <ul class="nav">
+            <li>
+             Here is where the chat room is placed
+            </li>
+          </ul>
+        </span>
+      </div>
+    </div>
+     <div class="container-fluid">
+      <div class="container">
+        <h3 class="dom-heading">Centre for the Study of Institutional Diversity
+          <br>Stockholm Resilience Centre</h3>
+      </div>
+    </div>
+  
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+
 {% endblock %}
