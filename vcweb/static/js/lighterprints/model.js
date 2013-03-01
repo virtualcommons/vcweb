@@ -12,13 +12,16 @@ function LighterFootprintsModel(modelJson) {
             }
         }
         model.hoursLeft(hoursLeft);
+        var minutes = minutesLeft + "";
+        if (minutesLeft.length == 1) {
+            minutesLeft = "0" + minutesLeft;
+        }
         model.minutesLeft(minutesLeft);
     };
     setInterval(model.minuteTick, 1000*60);
     // FIXME: hacky, figure out if there is a way to pass the observable in directly from the model object we get in
     // performActivity
     model.lastPerformedActivity = ko.observable();
-    model.lastPerformedActivityPoints = ko.observable();
     model.errorMessage = ko.observable();
     model.hasGroupActivity = ko.computed(function() {
         return model.groupActivity().length > 0;

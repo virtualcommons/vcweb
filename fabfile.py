@@ -165,7 +165,6 @@ def sudo_chain(*commands, **kwargs):
 def deploy():
     from vcweb import settings as vcweb_settings
     """ deploys to an already setup environment """
-    env.project_path = env.deploy_path + env.project_name
     push()
     if confirm("Deploy to %(hosts)s ?" % env):
         with cd(env.project_path):

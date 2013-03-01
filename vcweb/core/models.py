@@ -1126,7 +1126,6 @@ class ParameterizedValue(models.Model):
     def cached_value(self):
         ck = self.cache_key
         cv = cache.get(ck)
-        logger.debug("looking up cached value with key: %s -> %s", ck, cv)
         if cv is None:
             cv = self.value
             cache.set(ck, cv)
