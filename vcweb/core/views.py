@@ -19,9 +19,12 @@ from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperi
 from vcweb.core.unicodecsv import UnicodeWriter
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
-import logging
-import mimetypes
 import tempfile
+
+import mimetypes
+mimetypes.init()
+
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -326,15 +329,13 @@ def add_experiment(request):
             { 'experiment_list': ExperimentMetadata.objects.all() },
             context_instance=RequestContext(request))
 
-mime_types = mimetypes.MimeTypes(filenames=('/etc/mime.types',))
-
 class DataExportMixin(ExperimenterSingleExperimentMixin):
     file_extension = '.csv'
     def render_to_response(self, context, **response_kwargs):
         experiment = self.get_object()
         file_ext = self.file_extension
-        if file_ext in mime_types.types_map:
-            content_type = mime_types.types_map[file_ext]
+        if file_ext in mimetypes.types_map:
+            content_type = mimetypes.types_map[file_ext]
         else:
             content_type = 'application/octet-stream'
         response = HttpResponse(content_type=content_type)
@@ -372,7 +373,7 @@ def export_configuration(request, pk=None, file_extension='.xml'):
     if experiment.experimenter != request.user.experimenter:
         logger.warning("unauthorized access to %s by %s", experiment, request.user.experimenter)
         raise PermissionDenied("You don't appear to have access to this experiment.")
-    content_type = mime_types.types_map[file_extension]
+    content_type = mimetypes.types_map[file_extension]
     response = HttpResponse(content_type=content_type)
     response['Content-Disposition'] = 'attachment; filename=%s' % experiment.configuration_file_name(file_extension)
     experiment.experiment_configuration.serialize(stream=response)
@@ -385,7 +386,7 @@ def download_data(request, pk=None, file_type='csv'):
     if experiment.experimenter != request.user.experimenter:
         logger.warning("unauthorized access to %s from %s", experiment, request.user.experimenter)
         raise PermissionDenied("You don't have access to this experiment")
-    response = HttpResponse(content_type=mime_types.types_map['.%s' % file_type])
+    response = HttpResponse(content_type=mimetypes.types_map['.%s' % file_type])
     response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
     writer = UnicodeWriter(response)
     writer.writerow(['Group', 'Members'])
