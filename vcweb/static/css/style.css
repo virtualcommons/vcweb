@@ -31,6 +31,10 @@ label.error {
     margin: 0.4em;
     padding: 0.4em;
 }
+.chat-sidebar {
+    overflow: auto;
+    height: 90%;
+}
 .chat {
     height: 20em;
     overflow: auto;

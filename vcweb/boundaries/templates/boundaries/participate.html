@@ -41,14 +41,13 @@
                 <option value='PRACTICE'>Practice round</option>
                 <option value='REGULAR'>Actual round</option>
             </select>
-            <label class='checkbox'>
-                <input type='checkbox' data-bind='click: toggleChat' id='chat-toggle'> Toggle Chat
-            </label>
         </div>
     </div>
+    <h3>Timers</h3>
     <div class='control-group'>
         <div class='controls'>
             <button data-bind='click: startHarvestDecisionTimer' type='button' class='btn btn-primary'>Start harvest decision timer</button>
+            <button data-bind='click: startChatTimer' type='button' class='btn btn-primary'>Start chat timer</button>
         </div>
     </div>
 </form>
@@ -60,21 +59,21 @@
 <div data-bind='if: chatEnabled'>
 <h3>Chat</h3>
 <div class='chat-sidebar'>
-    <div id='chat-div' class='chat messages'>
-        <div class='well' data-bind='foreach: chatMessages'>
+    <form id="chatform" class='form-inline'>
+        <div class='input-prepend input-append'>
+            <span class='add-on'><i class='text-info icon-comment'></i></span>
+            <input style='width: 63%;' class='chat-action' id='chatText' type="text" placeholder="Enter a chat message">
+            <button class='btn' data-bind='click: submitChatMessage'>Send</button>
+        </div>
+    </form>
+    <div id='chat-div' class='chat-sidebar'>
+        <div data-bind='foreach: chatMessages'>
             <i class='icon-user muted'></i> <strong>Participant <span data-bind='text: participant_number'></strong><b class='pull-right muted' data-bind='text: date_created'></b>
             <p>
             <small><i class='icon-double-angle-right'></i></small> <span data-bind='text: message'></span>
             </p>
         </div>
     </div>
-    <form id="chatform" class='form-inline'>
-        <div class='input-prepend'>
-            <span class='add-on'><i class='text-info icon-comment'></i></span>
-            <input style='width: 81%;' class='chat-action' id='chatText' type="text" placeholder="Enter a chat message">
-        </div>
-        <button class='chat-action btn btn-primary' data-bind='click: submitChatMessage'>Send</button>
-    </form>
 </div>
 </div>
 
@@ -344,6 +343,10 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             var model = ko.mapping.fromJS(experimentModelJson);
             model.secondsLeft = ko.observable(0);
             model.currentInterval = ko.observable();
+            model.setCurrentInterval = function(intervalId) {
+                model.clearCurrentInterval();
+                model.currentInterval(intervalId);
+            }
             model.clearCurrentInterval = function() {
                 console.debug("clearing current interval: " + model.currentInterval());
                 if (model.currentInterval()) {
@@ -397,12 +400,22 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 return model.resourcesToDisplay() * 30 + "px";
             });
             model.resourceImageHeight = ko.observable("79px");
+            model.startChatTimer = function() {
+                model.enableChat(true);
+                model.secondsLeft(60);
+                model.setCurrentInterval(
+                        setInterval(function() {
+                            model.tick();
+                            if (! model.isTimerRunning()) {
+                                model.disableChat();
+                                model.clearCurrentInterval();
+                            }
+                        },
+                        1000));
+            };
             model.startHarvestDecisionTimer = function() { 
-                console.debug("starting interval: " + model.currentInterval());
                 model.secondsLeft(10);
-                model.currentInterval(setInterval(function() {
-                    console.debug("running interval: " + model.secondsLeft() + " interval id: " +
-                        model.currentInterval());
+                model.setCurrentInterval(setInterval(function() {
                     model.tick();
                     if (! model.isTimerRunning()) {
                         model.submitDecision();
@@ -436,16 +449,13 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                     $('#chatText').focus();
                 }
             }
-            model.toggleChat = function(data, evt) {
-                var enabled = $('#chat-toggle').is(':checked');
-                if (enabled) {
-                    $('.chat-action').removeClass('disabled').attr('disabled', ! enabled);
-                }
-                else {
-                    $('.chat-action').addClass('disabled').attr('disabled', ! enabled);
-                }
-                model.chatEnabled(enabled);
-                return true;
+            model.disableChat = function() {
+                $('.chat-action').addClass('disabled').attr('disabled', true);
+                model.chatEnabled(false);
+            }
+            model.enableChat = function() {
+                $('.chat-action').removeClass('disabled').attr('disabled', false);
+                model.chatEnabled(true);
             }
             return model;
         }
