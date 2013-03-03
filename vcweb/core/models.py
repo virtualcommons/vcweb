@@ -1269,7 +1269,7 @@ class Group(models.Model):
             return False
 
     def get_scalar_data_value(self, parameter=None, **kwargs):
-        return self.get_data_value(parameter=parameter, **kwargs)[0]
+        return self.get_data_value(parameter=parameter, **kwargs).value
 
     def get_round_configuration_value(self, parameter=None, name=None, current_round_configuration=None, **kwargs):
         if current_round_configuration is None:
@@ -1288,13 +1288,11 @@ class Group(models.Model):
 
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None, default=None):
         ''' returns a tuple of (scalar data value, entity DataValue).  if no entity data value exists, returns (default value, None) '''
-
         if round_data is None:
             round_data = self.current_round_data
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         try:
-            dv = self.data_value_set.get(**criteria)
-            return (dv.value, dv)
+            return self.data_value_set.select_related('parameter', 'group', 'round_data').get(**criteria)
         except GroupRoundDataValue.DoesNotExist as e:
             logger.warning("No data value found for criteria %s", criteria)
             if default is None:

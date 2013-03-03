@@ -10,21 +10,20 @@ def forestry_second_tick():
     check all forestry experiments.
     '''
 
-def get_resource_level_dv(group, round_data=None):
-    return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data, default=0)
+def get_resource_level_dv(group, round_data=None, default=100):
+    return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data, default=default)
 
-
-def get_resource_level(group, round_data=None):
+def get_resource_level(group, round_data=None, **kwargs):
     ''' returns the group resource level data value scalar '''
-    return get_resource_level_dv(group, round_data=round_data)[0]
+    return get_resource_level_dv(group, round_data=round_data, **kwargs).int_value
 
 def get_group_harvest(group, round_data=None):
     ''' returns the collective group harvest data value '''
-    return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data, default=0)[0]
+    return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data).int_value
 
 # returns the number of resources regenerated for the given group in the given round
 def get_regrowth(group, round_data=None):
-    return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0)[0]
+    return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0).int_value
 
 def get_regrowth_rate(current_round):
     return current_round.get_parameter_value('regrowth_rate', default=0.1)
