@@ -1609,17 +1609,6 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
                 'target_data_value__participant_group_relationship',
                 ).filter(participant_group_relationship__group=group, **kwargs).order_by('-date_created')
 
-# FIXME: unused at the moment, select_subclasses overrides select_related and it hasn't been straightforward to add the
-# related joins to select_subclasses
-class ParticipantRoundDataValueManager(InheritanceManager):
-    def for_group(self, group=None, **kwargs):
-        return self.select_related(
-                'parameter',
-                'participant_group_relationship__participant__user',
-                'participant_group_relationship__group',
-                'target_data_value__participant_group_relationship',
-                ).filter(participant_group_relationship__group=group, **kwargs).order_by('-date_created')
-
 class ParticipantRoundDataValue(ParameterizedValue):
     def __init__(self, *args, **kwargs):
         if 'round_data' not in kwargs and 'participant_group_relationship' in kwargs:
@@ -1683,18 +1672,28 @@ class ParticipantRoundDataValue(ParameterizedValue):
 def get_chat_message_parameter():
     return Parameter.objects.get(name='chat_message', scope=Parameter.PARTICIPANT_SCOPE)
 
-class ChatMessageManager(models.Manager):
-    def message(self, experiment, message):
-        current_round_data = experiment.current_round_data
+class ChatMessageQuerySet(models.query.QuerySet):
+
+    def for_group(self, group=None, **kwargs):
+        return self.select_related(
+                'parameter',
+                'participant_group_relationship__participant__user',
+                'participant_group_relationship__group',
+                'target_data_value__participant_group_relationship',
+                ).filter(parameter=get_chat_message_parameter(), participant_group_relationship__group=group, **kwargs).order_by('-date_created')
+
+    def message_all(self, round_data=None, **kwargs):
+        if round_data is None:
+            round_data = experiment.current_round_data
         for participant in experiment.participant_set.all():
             yield ChatMessage.objects.create(participant_group_relationship=participant.get_participant_group_relationship(experiment),
                     value=message,
-                    round_data=current_round_data)
+                    round_data=round_data)
 
 class ChatMessage(ParticipantRoundDataValue):
     target_participant = models.ForeignKey(ParticipantGroupRelationship, null=True, blank=True, related_name='target_participant_chat_message_set')
     """ if set, this is a targeted message to the other participant in this group.  If null, this is a broadcast message to the entire group """
-    objects = ChatMessageManager()
+    objects = PassThroughManager.for_queryset_class(ChatMessageQuerySet)()
 
     def __init__(self, *args, **kwargs):
         kwargs['parameter'] = get_chat_message_parameter()

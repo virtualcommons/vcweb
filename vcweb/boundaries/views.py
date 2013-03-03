@@ -7,7 +7,7 @@ from vcweb.core.models import (is_participant, is_experimenter, Experiment, Part
         ParticipantExperimentRelationship, ChatMessage, ParticipantRoundDataValue)
 from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_harvest_decision_parameter, get_survival_cost, get_resource_level,
-        get_total_storage)
+        get_initial_resource_level, get_total_storage)
 import logging
 import random
 
@@ -60,16 +60,20 @@ def to_json(experiment, participant_group_relationship, **kwargs):
     player_data = []
     regrowth_rate = get_regrowth_rate(current_round)
     survival_cost = get_survival_cost(current_round)
+    own_group = participant_group_relationship.group
+    own_resource_level = 0
     for group in experiment.group_set.all():
+        resource_level = get_resource_level(group)
+        if group == own_group:
+            own_resource_level = resource_level
         group_data.append({
             'groupId': unicode(group),
-            'resourceLevel': get_resource_level(group),
+            'resourceLevel': resource_level,
             'totalStorage': get_total_storage(group),
             'regrowthRate': regrowth_rate,
             'survivalCost': survival_cost,
             })
 
-    own_group = participant_group_relationship.group
     for pgr in own_group.participant_group_relationship_set.all():
         player_data.append({
             'id': pgr.participant_number,
@@ -78,12 +82,14 @@ def to_json(experiment, participant_group_relationship, **kwargs):
             })
 
     experiment_model_dict['chatMessages'] = [
-            {'pk': cm.pk,
+            { 'pk': cm.pk,
                 'participant_number': cm.participant_group_relationship.participant_number,
                 'message': cm.string_value,
-                'date_created': cm.date_created.strftime("%I:%M:%S")}
-            for cm in ChatMessage.objects.select_related('participant_group_relationship').filter(participant_group_relationship__group=own_group).order_by('-date_created')
+                'date_created': cm.date_created.strftime("%I:%M:%S")
+                }
+            for cm in ChatMessage.objects.for_group(own_group)
             ]
+    experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
     experiment_model_dict['groupData'] = group_data
     experiment_model_dict['otherGroupResourceLevel'] = random.randint(50, 100)
     experiment_model_dict['otherGroupAverageHarvest'] = random.uniform(0, 10)
@@ -100,12 +106,11 @@ def to_json(experiment, participant_group_relationship, **kwargs):
 # FIXME: defaults hard coded in for now
     experiment_model_dict['dollarsPerToken'] = 0.20
     experiment_model_dict['maxEarnings'] = 20.00
-    experiment_model_dict['initialResourceLevel'] = 240
 
     experiment_model_dict['lastHarvestDecision'] = 5
     experiment_model_dict['maxHarvestDecision'] = 10
     experiment_model_dict['storage'] = 20
-    experiment_model_dict['resourceLevel'] = 100
+    experiment_model_dict['resourceLevel'] = own_resource_level
     experiment_model_dict['hasSubmit'] = False
     experiment_model_dict['practiceRound'] = False
     experiment_model_dict.update(**kwargs)

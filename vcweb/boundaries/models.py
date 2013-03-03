@@ -1,12 +1,15 @@
 from django.db import models
 from vcweb.core import simplecache
 from vcweb.core.models import ExperimentMetadata, Parameter, ParticipantRoundDataValue
-from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_regrowth_rate, get_group_harvest_parameter, get_resource_level)
+from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_regrowth_rate,
+        get_group_harvest_parameter, get_resource_level, get_initial_resource_level as forestry_initial_resource_level)
 
 import logging
 
 logger = logging.getLogger(__name__)
 
+def get_initial_resource_level(round_configuration, default=240):
+    return forestry_initial_resource_level(round_configuration, default)
 
 @simplecache
 def get_experiment_metadata():
