@@ -233,7 +233,7 @@ except OSError:
 
 # logging configuration
 VCWEB_LOG_FILENAME = 'vcweb.log'
-TORNADO_LOG_FILENAME = 'tornadio.log'
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
@@ -278,14 +278,6 @@ LOGGING = {
             'backupCount': 6,
             'maxBytes': 10000000,
         },
-        'tornado.file': {
-            'level': 'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
-            'formatter': 'vcweb_verbose',
-            'filename': path.join(LOG_DIRECTORY, TORNADO_LOG_FILENAME),
-            'backupCount': 6,
-            'maxBytes': 10000000,
-        },
     },
     'loggers': {
         'django.db.backends': {
@@ -305,11 +297,6 @@ LOGGING = {
         },
         'vcweb': {
             'handlers': ['vcweb.file', 'console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'sockjs.vcweb': {
-            'handlers': ['tornado.file', 'console'],
             'level': 'DEBUG',
             'propagate': False,
         },

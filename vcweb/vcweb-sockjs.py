@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import logging
 import os
+from os import path
 import sys
 import simplejson
 from django.utils.timesince import timesince
@@ -10,14 +10,38 @@ from tornado import web, ioloop
 from tornado.escape import xhtml_escape
 from raven.contrib.tornado import AsyncSentryClient
 import tornadoredis
+import logging
+from logging.config import dictConfig
+TORNADO_LOG_FILENAME = "vcweb-tornado.log"
+logger = logging.getLogger(__name__)
+dictConfig({
+    'version': 1,
+    __name__: {
+        'loggers': {
+            'handlers': ['tornado.file', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+            },
+        'handlers': {
+            'tornado.file': {
+                'level': 'DEBUG',
+                'class':'logging.handlers.RotatingFileHandler',
+                'formatter': 'vcweb_verbose',
+                'filename': path.join('logs', TORNADO_LOG_FILENAME),
+                'backupCount': 6,
+                'maxBytes': 10000000,
+                },
+            },
+        }
+    })
 
 sys.path.append(os.path.abspath('.'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
 from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ParticipantExperimentRelationship, Participant, Experimenter, ChatMessage)
-from vcweb import settings
 
-logger = logging.getLogger('sockjs.vcweb')
+DEFAULT_WEBSOCKET_PORT = 8882
+
 
 def create_chat_event(message):
     return create_message_event(message, 'chat')
@@ -354,7 +378,7 @@ def main(argv=None):
         argv = sys.argv
     # currently only allow one command-line argument, the port to run on.
     logging.getLogger().setLevel(logging.DEBUG)
-    port = int(argv[1]) if (len(argv) > 1) else settings.WEBSOCKET_PORT
+    port = int(argv[1]) if (len(argv) > 1) else DEFAULT_WEBSOCKET_PORT
     ParticipantRouter = SockJSRouter(ParticipantConnection, '/participant')
     ExperimenterRouter = SockJSRouter(ExperimenterConnection, '/experimenter')
     urls = list(chain.from_iterable([ParticipantRouter.urls, ExperimenterRouter.urls, ]))
