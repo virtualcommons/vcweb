@@ -398,8 +398,8 @@ $(function() {
 </script>
 <script type='text/html' id='comment'>
     <tr data-bind='if: $root.participantGroupId() != participant_group_id()'>
-        <td style='vertical-align: top'><i class='icon-comment lighterprints-blue'></i></td>
-        <td>
+        <td class='group-activity-icon'><i class='icon-comment lighterprints-blue'></i></td>
+        <td class='group-activity'>
             <strong data-bind='text: participant_name'></strong>
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
             <div>
@@ -421,8 +421,8 @@ $(function() {
 </script>
 <script type='text/html' id='like'>
 <tr data-bind='if: $root.participantGroupId() != participant_group_id()'>
-    <td style='vertical-align: top'><i class='icon-heart lighterprints-red'></i></td>
-    <td>
+    <td class='group-activity-icon'><i class='icon-heart lighterprints-red'></i></td>
+    <td class='group-activity'>
         <strong data-bind='text: participant_name'></strong>
         <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
         <div>liked your
@@ -438,8 +438,8 @@ $(function() {
 </script>
 <script type='text/html' id='chat_message'>
     <tr>
-        <td style='vertical-align: top'><i class='icon-comment lighterprints-blue'></i></td>
-        <td>
+        <td class='group-activity-icon'><i class='icon-comment lighterprints-blue'></i></td>
+        <td class='group-activity'>
             <strong data-bind='text: participant_name'></strong>
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
             <div>
@@ -453,8 +453,8 @@ $(function() {
 </script>
 <script type='text/html' id='activity_performed'>
     <tr>
-        <td style='vertical-align: top'><i class='icon-star text-gold'></i></td>
-        <td>
+        <td class='group-activity-icon'><i class='icon-star text-gold'></i></td>
+        <td class='group-activity'>
             <strong data-bind='text: participant_name'></strong>
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
             <div>earned <span class='lighterprints-green' data-bind='text:points'></span><i class='icon-leaf lighterprints-green'></i>

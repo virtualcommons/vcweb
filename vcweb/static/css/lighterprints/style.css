@@ -169,7 +169,6 @@ h3.popover-title {
     text-transform: uppercase;
 }
 .sidebar {
-    font-family: 'Entypo', Arial, Helvetica, sans-serif;
     min-height: 100%;
     background-color: #FFFFFF;
 }
@@ -186,4 +185,10 @@ h3.popover-title {
 }
 h3.underline {
     font-weight: normal;
+}
+td.group-activity-icon {
+    padding-right: 2px;
+}
+td.group-activity {
+    padding-left: 2px;
 }
