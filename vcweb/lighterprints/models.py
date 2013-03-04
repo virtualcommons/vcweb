@@ -28,9 +28,10 @@ def update_active_experiments(sender, time=None, start=None, send_emails=True, *
 # since this happens at midnight we need to look at the previous day
     if start is None:
         start = date.today() - timedelta(1);
-    logger.debug("updating active experiments for %s", start)
+    active_experiments = get_active_experiments()
+    logger.debug("updating active experiments [%s] for %s", active_experiments, start)
     messages = []
-    for experiment in get_active_experiments():
+    for experiment in active_experiments:
         # calculate total carbon savings and decide if they move on to the next level
         round_data = experiment.current_round_data
         for group in experiment.group_set.all():
