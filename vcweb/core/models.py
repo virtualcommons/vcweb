@@ -889,12 +889,6 @@ class RoundConfiguration(models.Model):
     def is_playable_round(self):
         return self.round_type in RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS
 
-    def set_parameter(self, name=None, value=None):
-        parameter = Parameter.objects.get(name=name, scope=Parameter.ROUND_SCOPE)
-        parameter_value, created = self.round_parameter_value_set.get_or_create(parameter=parameter)
-        parameter_value.value = value
-        parameter_value.save()
-
     def get_parameter_value(self, parameter=None, name=None, default=None):
         if parameter is None and name is None:
             logger.error("Can't find a parameter value with no name or parameter, returning default")
@@ -1169,6 +1163,14 @@ class ParameterizedValue(models.Model):
     class Meta:
         abstract = True
 
+# configuration parameters across the entire experiment
+class ExperimentParameterValue(ParameterizedValue):
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='experiment_parameter_value_set')
+
+    def __unicode__(self):
+        ec = self.experiment_configuration
+        return u"{0} -> [{1}: {2}]".format(ec, self.parameter, self.value)
+
 class RoundParameterValue(ParameterizedValue):
     """
     Represents a specific piece of round configuration data.
@@ -1177,7 +1179,7 @@ class RoundParameterValue(ParameterizedValue):
 
     def __unicode__(self):
         rc = self.round_configuration
-        return u"{0} -> [{1}: {2}]".format(rc.experiment_configuration, self.parameter, self.value)
+        return u"{0}:{1} -> [{2}: {3}]".format(rc.experiment_configuration, rc.sequence_label, self.parameter, self.value)
 
 class Group(models.Model):
     number = models.PositiveIntegerField()
@@ -1527,14 +1529,18 @@ class ParticipantExperimentRelationship(models.Model):
     def __unicode__(self):
         return u"Experiment {0} - participant {1} (created {2})".format(self.experiment, self.participant, self.date_created)
 
-class ParticipantGroupRelationshipManager(models.Manager):
+class ParticipantGroupRelationshipQuerySet(models.query.QuerySet):
 
+    def for_experiment(self, experiment):
+        return self.select_related('group', 'participant').filter(group__experiment=experiment)
+
+# FIXME: deprecated, for backwards compatibility
     def by_experiment(self, experiment):
-        return self.select_related(depth=1).filter(group__experiment=experiment)
+        return self.for_experiment(experiment)
 
     def get_relationship(self, participant, experiment):
         try:
-            return self.select_related(depth=1).get(group__experiment=experiment, participant=participant)
+            return self.select_related('group', 'participant').get(group__experiment=experiment, participant=participant)
         except ParticipantGroupRelationship.DoesNotExist:
             logger.warning("Participant %s does not belong to a group in %s", participant, experiment)
             return None
@@ -1554,7 +1560,7 @@ class ParticipantGroupRelationship(models.Model):
     first_visit = models.BooleanField(default=True)
     notifications_since = models.DateTimeField(default=datetime.now, null=True, blank=True)
 
-    objects = ParticipantGroupRelationshipManager()
+    objects = PassThroughManager.for_queryset_class(ParticipantGroupRelationshipQuerySet)()
 
     @property
     def current_round_data(self):
@@ -1683,12 +1689,12 @@ class ChatMessageQuerySet(models.query.QuerySet):
                 'target_data_value__participant_group_relationship',
                 ).filter(parameter=get_chat_message_parameter(), participant_group_relationship__group=group, **kwargs).order_by('-date_created')
 
-    def message_all(self, round_data=None, **kwargs):
+    def message_all(self, experiment, message, round_data=None, **kwargs):
         if round_data is None:
             round_data = experiment.current_round_data
-        for participant in experiment.participant_set.all():
-            yield ChatMessage.objects.create(participant_group_relationship=participant.get_participant_group_relationship(experiment),
-                    value=message,
+        for participant_group_relationship in ParticipantGroupRelationship.objects.for_experiment(experiment):
+            yield ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
+                    string_value=message,
                     round_data=round_data)
 
 class ChatMessage(ParticipantRoundDataValue):

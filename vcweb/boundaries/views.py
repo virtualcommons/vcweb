@@ -6,7 +6,7 @@ from vcweb.core.decorators import participant_required
 from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
         ParticipantExperimentRelationship, ChatMessage, ParticipantRoundDataValue)
 from vcweb.boundaries.forms import HarvestDecisionForm
-from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_harvest_decision_parameter, get_survival_cost, get_resource_level,
+from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_harvest_decision_parameter, get_cost_of_living, get_resource_level,
         get_initial_resource_level, get_total_storage)
 import logging
 import random
@@ -59,7 +59,7 @@ def to_json(experiment, participant_group_relationship, **kwargs):
     group_data = []
     player_data = []
     regrowth_rate = get_regrowth_rate(current_round)
-    survival_cost = get_survival_cost(current_round)
+    cost_of_living = get_cost_of_living(current_round)
     own_group = participant_group_relationship.group
     own_resource_level = 0
     for group in experiment.group_set.all():
@@ -71,7 +71,7 @@ def to_json(experiment, participant_group_relationship, **kwargs):
             'resourceLevel': resource_level,
             'totalStorage': get_total_storage(group),
             'regrowthRate': regrowth_rate,
-            'survivalCost': survival_cost,
+            'costOfLiving': cost_of_living,
             })
 
     for pgr in own_group.participant_group_relationship_set.all():

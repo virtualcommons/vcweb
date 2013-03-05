@@ -27,12 +27,24 @@ def get_survival_cost_parameter():
 def get_storage_parameter():
     return Parameter.objects.for_participant(name='storage')
 
+@simplecache
+def get_max_harvest_decision_parameter():
+    return Parameter.objects.for_round(name='max_harvest_decision')
+
+@simplecache
+def get_cost_of_living_parameter():
+    return Parameter.objects.for_round(name='cost_of_living')
+
+@simplecache
+def get_exchange_rate_parameter():
+    return Parameter.objects.for_experiment(name='exchange_rate')
+
 # players can either be dead or alive
 def get_player_status_dv(participant_group_relationship_id):
     return ParticipantRoundDataValue.objects.get(parameter=get_player_status_parameter(), participant_group_relationship__pk=participant_group_relationship_id)
 
-def get_survival_cost(current_round):
-    return current_round.get_parameter_value('survival_cost', default=5)
+def get_cost_of_living(current_round):
+    return current_round.get_parameter_value('cost_of_living', default=5)
 
 def set_storage(participant_group_relationship, value=0):
     storage_dv = participant_group_relationship.set_data_value(parameter=get_storage_parameter(), value=value)

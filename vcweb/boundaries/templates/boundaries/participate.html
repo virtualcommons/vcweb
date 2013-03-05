@@ -17,7 +17,7 @@
     <div class='control-group'>
         <label class='control-label' for='set-survival-cost'>Survival cost</label>
         <div class='controls'>
-            <input class='input-small' type='number' id='set-survival-cost' data-bind='value:survivalCost' />
+            <input class='input-small' type='number' id='set-survival-cost' data-bind='value:costOfLiving' />
         </div>
     </div>
     <div class='control-group'>
@@ -119,7 +119,7 @@ each round.
 </p>
 <h4>Cost of living</h4>
 <p>
-Each round you must pay living expenses of <span class='badge badge-important' data-bind='text: survivalCost'></span>
+Each round you must pay living expenses of <span class='badge badge-important' data-bind='text: costOfLiving'></span>
 tokens.  If, at any point you do not have enough tokens to pay the living expenses, you will not be paid or be able to
 continue harvesting for the rest of the experimental session.  You will need to wait until the session is complete
 before joining again.
@@ -177,7 +177,7 @@ split between the 4 participants in your group, the forest has a capacity to pro
 You have been randomly assigned to a group of size <strong data-bind='text:participantsPerGroup'></strong>.
 In this experiment you will be sharing a virtual forest with the <span data-bind='text: participantsPerGroup() - 1'></span> 
 other members in your group.  All participants in the experiment are in identical conditions and must harvest
-trees to pay the cost of living <span data-bind='text: survivalCost'></span> and make a profit.
+trees to pay the cost of living <span data-bind='text: costOfLiving'></span> and make a profit.
 </p>
 <p>
 We will now begin with some <strong>practice rounds</strong>.  These rounds will <strong>not</strong> contribute to your

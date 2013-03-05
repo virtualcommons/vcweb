@@ -187,7 +187,7 @@ class ExperimentTest(BaseVcwebTest):
     def test_participant_numbering(self):
         experiment = self.experiment
         experiment.allocate_groups(randomize=False)
-        for pgr in ParticipantGroupRelationship.objects.by_experiment(experiment):
+        for pgr in ParticipantGroupRelationship.objects.for_experiment(experiment):
             participant_number = pgr.participant_number
             group = pgr.group
             self.assertTrue(0 < participant_number <= group.max_size)
@@ -336,21 +336,11 @@ class RoundConfigurationTest(BaseVcwebTest):
             self.assertTrue(pair[0] in RoundConfiguration.ROUND_TYPES)
             self.assertFalse(pair[1].isupper())
 
-    def test_get_set_parameter(self):
-        e = self.experiment
-# current_round is instructions, with no available parameters.
-        round_configuration = e.current_round
-        name = 'initial_resource_level'
-        round_configuration.set_parameter(name=name, value=501)
-        self.assertEqual(round_configuration.get_parameter_value(name), 501)
-        self.assertEqual(round_configuration.get_parameter(name).value, round_configuration.get_parameter_value(name))
-
     def test_parameterized_value(self):
         e = self.experiment
         p = Parameter.objects.create(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
         rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round, value='14')
         self.assertEqual(14, rp.int_value)
-
 
     def test_round_parameters(self):
         e = self.experiment

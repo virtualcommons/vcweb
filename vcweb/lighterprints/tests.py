@@ -133,9 +133,9 @@ class ActivityTest(BaseTest):
                     'target_id': activity_id
                     })
                 self.assertEqual(response.status_code, 200)
-                json_object = json.loads(response)
+                json_object = json.loads(response.content)
                 self.assertTrue(json_object)
-                self.assertIsNotNone(json_object.viewModel);
+                self.assertIsNotNone(json_object['viewModel']);
 
 class GroupScoreTest(ActivityTest):
     def test_group_score(self):
