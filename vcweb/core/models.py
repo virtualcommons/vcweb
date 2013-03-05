@@ -180,6 +180,7 @@ class ExperimentConfiguration(models.Model):
     last_modified = AutoDateTimeField(default=datetime.now)
     is_public = models.BooleanField(default=False)
     max_group_size = models.PositiveIntegerField(default=5)
+    exchange_rate = models.DecimalField(null=True, blank=True, max_digits=6, decimal_places=2, help_text=_('The exchange rate of currency per in-game token, e.g., dollars per token'))
 
     @property
     def is_open(self):
