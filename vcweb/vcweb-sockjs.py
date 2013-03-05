@@ -2,54 +2,76 @@
 import os
 from os import path
 import sys
-import simplejson
+import json
 from django.utils.timesince import timesince
 from itertools import chain
+from raven.contrib.tornado import AsyncSentryClient
 from sockjs.tornado import SockJSRouter, SockJSConnection
 from tornado import web, ioloop
 from tornado.escape import xhtml_escape
-from raven.contrib.tornado import AsyncSentryClient
 import tornadoredis
-import logging
-from logging.config import dictConfig
-TORNADO_LOG_FILENAME = "vcweb-tornado.log"
-logger = logging.getLogger(__name__)
-dictConfig({
-    'version': 1,
-    __name__: {
-        'loggers': {
-            'handlers': ['tornado.file', 'console'],
-            'level': 'DEBUG',
-            'propagate': False,
-            },
-        'handlers': {
-            'tornado.file': {
-                'level': 'DEBUG',
-                'class':'logging.handlers.RotatingFileHandler',
-                'formatter': 'vcweb_verbose',
-                'filename': path.join('logs', TORNADO_LOG_FILENAME),
-                'backupCount': 6,
-                'maxBytes': 10000000,
-                },
-            },
-        }
-    })
 
 sys.path.append(os.path.abspath('.'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
-
 from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ParticipantExperimentRelationship, Participant, Experimenter, ChatMessage)
 
+# redefine logger
+import logging
+from logging.config import dictConfig
+TORNADO_LOG_FILENAME = "vcweb-tornado.log"
+LOG_DIRECTORY = '/opt/vcweb/logs'
+TORNADO_LOG = path.join(LOG_DIRECTORY, TORNADO_LOG_FILENAME)
 DEFAULT_WEBSOCKET_PORT = 8882
 
+dictConfig({
+    'version': 1,
+    'disable_existing_loggers': True,
+    'root': {
+        'level': 'DEBUG',
+        'handlers': ['tornado.file', 'console'],
+        },
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s [%(name)s|%(funcName)s:%(lineno)d] %(message)s'
+            }
+        },
+    'loggers': {
+        'vcweb': {
+            'level': 'DEBUG',
+            'handlers': ['tornado.file', 'console'],
+            'propagate': False,
+            },
+        'sockjs.vcweb': {
+            'level': 'DEBUG',
+            'handlers': ['tornado.file', 'console'],
+            'propagate': False,
+            },
+        },
+    'handlers': {
+        'console':{
+            'level':'DEBUG',
+            'class':'logging.StreamHandler',
+            'formatter': 'verbose',
+            },
+        'tornado.file': {
+            'level': 'DEBUG',
+            'class':'logging.handlers.RotatingFileHandler',
+            'formatter': 'verbose',
+            'filename': TORNADO_LOG,
+            'backupCount': 6,
+            'maxBytes': 10000000,
+            },
+        },
+    })
+logger = logging.getLogger('sockjs.vcweb')
 
 def create_chat_event(message):
     return create_message_event(message, 'chat')
 
 def create_message_event(message, event_type='info'):
-    return simplejson.dumps({ 'message': message, 'event_type': event_type})
+    return json.dumps({ 'message': message, 'event_type': event_type})
 
-REFRESH_EVENT = simplejson.dumps({ 'event_type': 'refresh' })
+REFRESH_EVENT = json.dumps({ 'event_type': 'refresh' })
 DISCONNECTION_EVENT = create_message_event('Your session has expired and you have been disconnected.  You can only have one window open to a vcweb page.')
 UNAUTHORIZED_EVENT = create_message_event("You do not appear to be authorized to perform this action.  If this problem persists, please contact us.")
 
@@ -163,14 +185,18 @@ class ConnectionManager(object):
 
     def send_goto(self, experimenter, experiment, url):
         notified_participants = []
-        json = simplejson.dumps({'event_type': 'goto', 'url': url})
+        json = json.dumps({'event_type': 'goto', 'url': url})
         for (participant_group_pk, connection) in self.all_participants(experimenter, experiment):
             connection.send(json)
             notified_participants.append(participant_group_pk)
         return notified_participants
 
-    def send_to_experimenter(self, experimenter_tuple, json):
-        logger.debug("sending %s to experimenter %s", json, experimenter_tuple)
+    def send_to_experimenter(self, json, experiment_id=None, experimenter_id=None, experiment=None):
+        if experimenter_id is None and experiment_id is None:
+            experiment_id = experiment.pk
+            experimenter_id = experiment.experimenter.pk
+        experimenter_tuple = (experimenter_id, experiment_id)
+        logger.debug("sending %s to experimenter %s", json, experimenter_id)
         if experimenter_tuple in self.experimenter_to_connection:
             connection = self.experimenter_to_connection[experimenter_tuple]
             logger.debug("sending to connection %s", connection)
@@ -182,9 +208,7 @@ class ConnectionManager(object):
     def send_to_group(self, group, json):
         for participant_group_pk, connection in self.connections(group):
             connection.send(json)
-        experiment = group.experiment
-        experimenter = experiment.experimenter
-        self.send_to_experimenter((experimenter.pk, experiment.pk), json)
+        self.send_to_experimenter(json, experiment=group.experiment)
 
 connection_manager = ConnectionManager()
 
@@ -247,7 +271,7 @@ class ParticipantConnection(BaseConnection):
         if valid:
             participant_tuple = connection_manager.add_participant(self, per)
             logger.debug("added connection: %s", participant_tuple)
-            self.send(create_message_event("Successful connection"));
+            connection_manager.send_to_experimenter(create_message_event("Participant %s connected." % per.participant), experiment=experiment);
         else:
             self.send(UNAUTHORIZED_EVENT)
 
@@ -261,7 +285,7 @@ class ParticipantConnection(BaseConnection):
                     value=event.message,
                     round_data=current_round_data
                     )
-            chat_json = simplejson.dumps({
+            chat_json = json.dumps({
                 "pk": chat_message.pk,
                 'round_data_pk': current_round_data.pk,
                 'participant_number': pgr.participant_number,
@@ -273,7 +297,7 @@ class ParticipantConnection(BaseConnection):
 
     def on_message(self, json_string):
         logger.debug("message: %s", json_string)
-        message_dict = simplejson.loads(json_string)
+        message_dict = json.loads(json_string)
         experiment_id = message_dict['experiment_id']
         experiment = Experiment.objects.select_related('participant_experiment_relationship_set').get(pk=experiment_id)
         # could handle connection here or in on_open, revisit
@@ -299,7 +323,7 @@ class ParticipantConnection(BaseConnection):
                 event.participant_data_value_pk = prdv.pk
                 event.participant_number = participant_group_relationship.participant_number
                 event.participant_group = participant_group_relationship.group_number
-                json = simplejson.dumps(event.__dict__)
+                json = json.dumps(event.__dict__)
                 logger.debug("submit event json: %s", json)
                 connection_manager.send_to_experimenter(experimenter_tuple, json)
                 if experiment.all_participants_have_submitted:
@@ -318,7 +342,7 @@ class ParticipantConnection(BaseConnection):
                         value=xhtml_escape(event.message),
                         round_data=current_round_data
                         )
-                chat_json = simplejson.dumps({
+                chat_json = json.dumps({
                     "pk": chat_message.pk,
                     'round_data_pk': current_round_data.pk,
                     'participant': unicode(participant_group_relationship.participant),
@@ -336,7 +360,7 @@ class ParticipantConnection(BaseConnection):
         #self.client.unsubscribe(self.default_channel)
         pass
 
-class ExperimenterConnection(SockJSConnection):
+class ExperimenterConnection(BaseConnection):
     default_channel = 'vcweb.experimenter.websocket'
     def __init__(self, *args, **kwargs):
         super(ExperimenterConnection, self).__init__(*args, **kwargs)
@@ -347,7 +371,7 @@ class ExperimenterConnection(SockJSConnection):
         #self.client.listen(self.on_chan_message)
 
     def on_message(self, json_string):
-        message_dict = simplejson.loads(json_string)
+        message_dict = json.loads(json_string)
         auth_token = message_dict['auth_token']
         experimenter_id = message_dict['experimenter_id']
         experimenter = Experimenter.objects.get(pk=experimenter_id)

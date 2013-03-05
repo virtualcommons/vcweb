@@ -253,17 +253,10 @@ LOGGING = {
         },
     },
     'handlers': {
-#        'null': {
-#            'level':'DEBUG',
-#            'class':'django.utils.log.NullHandler',
-#        },
         'sentry': {
              'level': 'ERROR',
              'formatter': 'verbose',
-             # according to http://raven.readthedocs.org/en/latest/config/django.html should be
-             # 'class': 'raven.contrib.django.handlers.SentryHandler',
              'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
-
         },
         'console':{
             'level':'DEBUG',
