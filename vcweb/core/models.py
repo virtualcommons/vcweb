@@ -889,24 +889,23 @@ class RoundConfiguration(models.Model):
     def is_playable_round(self):
         return self.round_type in RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS
 
-    def get_parameter(self, name):
-        parameter = Parameter.objects.get(name=name, scope=Parameter.ROUND_SCOPE)
-        round_parameter, created = self.round_parameter_value_set.get_or_create(parameter=parameter)
-        if created:
-            logger.debug("created new parameter %s for %s", parameter, self)
-        return round_parameter
-
     def set_parameter(self, name=None, value=None):
         parameter = Parameter.objects.get(name=name, scope=Parameter.ROUND_SCOPE)
         parameter_value, created = self.round_parameter_value_set.get_or_create(parameter=parameter)
         parameter_value.value = value
         parameter_value.save()
 
-    def get_parameter_value(self, name, default=None):
-        try:
-            return RoundParameterValue.objects.get(round_configuration=self, parameter__name=name).value
-        except RoundParameterValue.DoesNotExist:
+    def get_parameter_value(self, parameter=None, name=None, default=None):
+        if parameter is None and name is None:
+            logger.error("Can't find a parameter value with no name or parameter, returning default")
             return default
+        try:
+            if parameter:
+                return RoundParameterValue.objects.get(round_configuration=self, parameter=parameter)
+            elif name:
+                return RoundParameterValue.objects.get(round_configuration=self, parameter__name=name)
+        except RoundParameterValue.DoesNotExist:
+            return DefaultValue(default)
 
     def is_survey_enabled(self):
         try:
@@ -1828,9 +1827,6 @@ def is_participant(user):
     returns true if user.participant exists and is a Participant instance.
     """
     return hasattr(user, 'participant') and isinstance(user.participant, Participant)
-
-def get_active_experiment(participant):
-    pass
 
 # signal handlers for socialauth
 @receiver(social_auth.signals.socialauth_registered, sender=None)

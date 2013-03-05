@@ -17,7 +17,7 @@ class VcwebJSONEncoder(DjangoJSONEncoder):
 
 dumps = curry(json.dumps, cls=VcwebJSONEncoder)
 
-# FIXME: deprecate this in favor of django.cache memcached caching
+# FIXME: deprecate this in favor of django.cache memcached caching?
 class simplecache(object):
     """
     only works on no-arg functions that return instances of models that will never change (data parameters,

@@ -31,7 +31,7 @@ def get_regrowth_rate(current_round):
 def has_resource_level(group=None):
     return group.has_data_parameter(parameter=get_resource_level_parameter())
 
-
+# FIXME: revamp
 def get_harvest_decision(participant_group_relationship, round_data=None):
     if round_data is None:
         round_data = participant_group_relationship.current_round_data
@@ -51,10 +51,10 @@ def set_group_harvest(group, value):
     group.set_data_value(parameter=get_group_harvest_parameter(), value=value)
 
 def should_reset_resource_level(round_configuration):
-    return round_configuration.get_parameter_value('reset_resource_level', default=False)
+    return round_configuration.get_parameter_value(parameter=get_reset_resource_level_parameter(), default=False).boolean_value
 
 def get_initial_resource_level(round_configuration, default=100):
-    return round_configuration.get_parameter_value('initial_resource_level', default=default)
+    return round_configuration.get_parameter_value(parameter=get_initial_resource_level_parameter(), default=default).int_value
 
 def get_max_harvest_decision(resource_level):
     if resource_level >= 25:
@@ -71,29 +71,37 @@ def get_max_harvest_decision(resource_level):
         return 0
 
 @simplecache
-def get_forestry_experiment_metadata(refresh=False):
+def get_forestry_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace='forestry')
 
 @simplecache
-def get_resource_level_parameter(refresh=False):
+def get_resource_level_parameter():
     return Parameter.objects.for_group(name='resource_level')
 
 @simplecache
-def get_regrowth_rate_parameter(refresh=False):
+def get_regrowth_rate_parameter():
     return Parameter.objects.for_group(name='regrowth_rate')
 
 # parameter for the amount of resources that were regrown at the end of the given round for the given group
 @simplecache
-def get_regrowth_parameter(refresh=False):
+def get_regrowth_parameter():
     return Parameter.objects.for_group(name='group_regrowth')
 
 @simplecache
-def get_group_harvest_parameter(refresh=False):
+def get_group_harvest_parameter():
     return Parameter.objects.for_group(name='group_harvest')
 
 @simplecache
-def get_harvest_decision_parameter(refresh=False):
+def get_harvest_decision_parameter():
     return Parameter.objects.for_participant(name='harvest_decision')
+
+@simplecache
+def get_reset_resource_level_parameter():
+    return Parameter.objects.for_round(name='reset_resource_level')
+
+@simplecache
+def get_initial_resource_level_parameter():
+    return Parameter.objects.for_round(name='initial_resource_level')
 
 def set_harvest_decision(participant_group_relationship=None, value=None):
     participant_group_relationship.set_data_value(parameter=get_harvest_decision_parameter(), value=value)
