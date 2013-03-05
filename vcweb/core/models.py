@@ -36,6 +36,12 @@ Contains all data models used in the core as well as a number of helper function
 FIXME: getting a bit monolithically unwieldy.  Consider splitting into models subdirectory
 """
 
+class DefaultValue(object):
+    def __init__(self, value):
+        self.value = value
+    def __getattr__(self, name):
+        return self.value
+
 class AutoDateTimeField(models.DateTimeField):
     def pre_save(self, model_instance, add):
         return datetime.now()
@@ -1293,11 +1299,10 @@ class Group(models.Model):
         try:
             return self.data_value_set.select_related('parameter', 'group', 'round_data').get(**criteria)
         except GroupRoundDataValue.DoesNotExist as e:
-            logger.warning("No data value found for criteria %s", criteria)
             if default is None:
                 raise e
             else:
-                return (default, None)
+                return DefaultValue(default)
 
     def set_data_value(self, parameter=None, value=None, round_data=None, **kwargs):
         '''

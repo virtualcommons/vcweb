@@ -6,7 +6,7 @@ from vcweb.lighterprints.models import *
 from lxml import etree
 
 import logging
-import simplejson as json
+import json
 import os
 
 logger = logging.getLogger(__name__)
@@ -114,7 +114,6 @@ class ActivityTest(BaseTest):
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
                 self.assertEqual(expected_success, json_object['success'])
-                logger.debug("Initial do activity response: %s", response)
 # trying to do the same activity again should result in an error response
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
@@ -134,8 +133,9 @@ class ActivityTest(BaseTest):
                     'target_id': activity_id
                     })
                 self.assertEqual(response.status_code, 200)
-                json_object = json.loads(response.viewModel)
-                logger.debug("json: %s", json_object)
+                json_object = json.loads(response)
+                self.assertTrue(json_object)
+                self.assertIsNotNone(json_object.viewModel);
 
 class GroupScoreTest(ActivityTest):
     def test_group_score(self):

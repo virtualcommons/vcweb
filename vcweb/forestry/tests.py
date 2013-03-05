@@ -110,7 +110,7 @@ class ForestryParametersTest(BaseTest):
         group_parameters = (get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter())
         for group in e.group_set.select_related(depth=1).all():
             for parameter in group_parameters:
-                gdv = group.get_data_value(round_data=round_data, parameter=parameter)[1]
+                gdv = group.get_data_value(round_data=round_data, parameter=parameter)
                 logger.debug("inspecting group data value: %s", gdv)
                 self.assertTrue(gdv.parameter in group_parameters)
                 self.assertTrue(gdv)

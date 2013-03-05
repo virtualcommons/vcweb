@@ -516,8 +516,7 @@ def do_activity(activity, participant_group_relationship):
                 )
 
 def get_performed_activity_ids(participant_group_relationship):
-    return [prdv.pk for prdv in participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())]
-
+    return participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter()).values_list('id', flat=True)
 
 def get_activity_points_cache():
     cv = 'activity_points_cache'

@@ -141,8 +141,8 @@ def round_teardown(experiment, **kwargs):
         # FIXME: simplify logic
         logger.debug("group %s has resource level", group)
         if has_resource_level(group):
-            current_resource_level_dv = get_resource_level_dv(group)[1]
-            current_resource_level = current_resource_level_dv.value
+            current_resource_level_dv = get_resource_level_dv(group)
+            current_resource_level = current_resource_level_dv.int_value
             if current_round_configuration.is_playable_round:
                 total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
                 logger.debug("total harvest for playable round: %d", total_harvest)
@@ -155,12 +155,12 @@ def round_teardown(experiment, **kwargs):
                     regrowth = current_resource_level / 10
                     group.log("Regrowth: adding %s to current resource level %s" % (regrowth, current_resource_level))
                     set_regrowth(group, regrowth)
-                    current_resource_level_dv.value = min(current_resource_level + regrowth, max_resource_level)
+                    current_resource_level_dv.int_value = min(current_resource_level + regrowth, max_resource_level)
                     current_resource_level_dv.save()
             ''' transfer resource levels across chat and quiz rounds if they exist '''
             if experiment.has_next_round:
                 ''' set group round data resource_level for each group + regrowth '''
-                group.log("Transferring resource level %s to next round" % current_resource_level_dv.value)
+                group.log("Transferring resource level %s to next round" % current_resource_level_dv.int_value)
                 group.copy_to_next_round(current_resource_level_dv)
 
 '''
