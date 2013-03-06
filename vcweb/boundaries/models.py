@@ -15,9 +15,6 @@ logger = logging.getLogger(__name__)
 EXPERIMENT_METADATA_NAME = intern('bound')
 MAX_RESOURCE_LEVEL = 240
 
-def get_initial_resource_level(round_configuration, default=MAX_RESOURCE_LEVEL):
-    return forestry_initial_resource_level(round_configuration, default)
-
 @simplecache
 def get_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace=EXPERIMENT_METADATA_NAME)
@@ -50,18 +47,28 @@ def get_exchange_rate_parameter():
 def get_player_status_dv(participant_group_relationship_id):
     return ParticipantRoundDataValue.objects.get(parameter=get_player_status_parameter(), participant_group_relationship__pk=participant_group_relationship_id)
 
-def get_cost_of_living(current_round):
-    return current_round.get_parameter_value(get_cost_of_living_parameter(), default=5)
 
-def set_storage(participant_group_relationship, value=0):
-    storage_dv = participant_group_relationship.set_data_value(parameter=get_storage_parameter(), value=value)
-    logger.debug("set storage variable: %s", storage_dv)
-    return storage_dv
+''' value accessors '''
+
+def get_initial_resource_level(round_configuration, default=MAX_RESOURCE_LEVEL):
+    return forestry_initial_resource_level(round_configuration, default)
+
+def get_cost_of_living(current_round):
+    return current_round.get_parameter_value(get_cost_of_living_parameter(), default=5).int_value
+
+def get_storage(participant_group_relationship, round_data=None):
+    return participant_group_relationship.get_data_value(parameter=get_storage_parameter(), round_data=round_data)
 
 # returns the sum of all stored resources for each member in the group
 def get_total_storage(group):
     # FIXME: use django queryset aggregation for this?
     return sum([pdv.value for pdv in group.get_participant_data_values(parameter=get_storage_parameter())])
+
+
+def set_storage(participant_group_relationship, value=0):
+    storage_dv = participant_group_relationship.set_data_value(parameter=get_storage_parameter(), value=value)
+    logger.debug("set storage variable: %s", storage_dv)
+    return storage_dv
 
 # signal handlers
 def round_setup(experiment, **kwargs):

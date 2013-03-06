@@ -55,6 +55,7 @@ def submit_harvest_decision(request, experiment_id=None):
 def to_json(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
+    current_round_data = experiment.current_round_data
     experiment_model_dict = experiment.as_dict(include_round_data=False, attrs={})
     group_data = []
     player_data = []
@@ -78,7 +79,7 @@ def to_json(experiment, participant_group_relationship, **kwargs):
         player_data.append({
             'id': pgr.participant_number,
             'lastHarvestDecision': random.randint(0, 10),
-            'storage': random.randint(0, 30),
+            'storage': get_storage(pgr, round_data),
             })
 
     experiment_model_dict['chatMessages'] = [
@@ -100,7 +101,7 @@ def to_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['numberOfRounds'] = ec.final_sequence_number
     experiment_model_dict['roundType'] = current_round.round_type
     experiment_model_dict['regrowthRate'] = regrowth_rate
-    experiment_model_dict['survivalCost'] = survival_cost
+    experiment_model_dict['costOfLiving'] = cost_of_living
     experiment_model_dict['participantNumber'] = pgr.participant_number
     experiment_model_dict['participantGroupId'] = pgr.pk
 # FIXME: defaults hard coded in for now

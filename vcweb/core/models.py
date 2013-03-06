@@ -400,10 +400,10 @@ class Experiment(models.Model):
     def current_round(self):
         return self.get_round_configuration(self.current_round_sequence_number)
 
-    @property
-    def current_round_data(self):
-        current_round_configuration = self.current_round
-        return RoundData.objects.select_related('round_configuration').get(experiment=self, round_configuration=current_round_configuration)
+    def current_round_data(self, round_configuration=None):
+        if round_configuration is None:
+            round_configuration = self.current_round
+        return RoundData.objects.select_related('round_configuration').get(experiment=self, round_configuration=round_configuration)
 
     @property
     def playable_round_data(self):
@@ -1591,6 +1591,15 @@ class ParticipantGroupRelationship(models.Model):
 
     def get_round_configuration_value(self, **kwargs):
         return self.group.get_round_configuration_value(**kwargs)
+
+    def get_data_value(self, parameter=None, round_data=None, default=None):
+        if round_data is None:
+            round_data = self.current_round_data
+        if parameter is not None:
+            return ParticipantRoundDataValue.objects.get(round_data=round_data, parameter=parameter,
+                    participant_group_relationship=self)
+        logger.warning("unable to retrieve data value with parameter %s, returning default value %s", parameter, default)
+        return DefaultValue(default)
 
     def set_data_value(self, parameter=None, value=None, round_data=None):
         if round_data is None:
