@@ -34,7 +34,7 @@ def has_resource_level(group=None):
 # FIXME: revamp
 def get_harvest_decision(participant_group_relationship, round_data=None):
     if round_data is None:
-        round_data = participant_group_relationship.current_round_data
+        round_data = participant_group_relationship.current_round_data()
     try:
         return ParticipantRoundDataValue.objects.get(participant_group_relationship=participant_group_relationship,
                 round_data=round_data, parameter__name='harvest_decision')
@@ -131,7 +131,7 @@ def round_setup(experiment, **kwargs):
         if should_reset_resource_level(round_configuration):
             initial_resource_level = get_initial_resource_level(round_configuration)
             logger.debug("Resetting resource level for %s to %d", round_configuration, initial_resource_level)
-            round_data = experiment.current_round_data
+            round_data = experiment.current_round_data(round_configuration)
             for group in experiment.group_set.all():
                 ''' set resource level to initial default '''
                 group.log("Setting resource level to initial value [%s]" % initial_resource_level)

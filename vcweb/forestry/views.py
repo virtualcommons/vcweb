@@ -185,7 +185,7 @@ def quiz(request, experiment, participant):
 def chat(request, experiment, participant):
     participant_group_rel = participant.get_participant_group_relationship(experiment)
     participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
-    chat_messages = experiment.current_round_data.chat_message_set.filter(participant_group_relationship__group=participant_group_rel.group)
+    chat_messages = experiment.current_round_data().chat_message_set.filter(participant_group_relationship__group=participant_group_rel.group)
     return render_to_response(experiment.current_round_template, {
         'participant_group_relationship': participant_group_rel,
         'participant_experiment_relationship': participant_experiment_relationship,
