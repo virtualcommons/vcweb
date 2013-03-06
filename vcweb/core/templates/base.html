@@ -35,9 +35,6 @@
                 {% if request.user.is_authenticated %}
                 <li class='{% active_re request participate %}'><a href='{{ participate }}'><i class='icon-group'></i> Participate</a></li>
                 {% endif %}
-                {% comment FIXME: disabling for the time %}
-                <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'><i class='icon-dashboard'></i> Dashboard</a></li>
-                {% endcomment %}
                 <li class='{% active request contact %}'><a href='{{ contact }}'><i class='icon-bell'></i> Contact us</a></li>
                 <li><a target='_blank' href='https://bitbucket.org/virtualcommons/vcweb/issues/new'><i class='icon-bullhorn'></i> Report a Bug</a></li>
                 {% if "participate" in request.path or "wait" in request.path %}
