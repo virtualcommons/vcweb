@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from vcweb import settings
 from vcweb.core.views import (Dashboard, LoginView, LogoutView, RegistrationView, MonitorExperimentView, CloneExperimentView,
         RegisterEmailListView, RegisterSimpleParticipantsView, ClearParticipantsExperimentView, add_experiment,
-        download_data, export_configuration, experiment_controller, api_logger)
+        Participate, download_data, export_configuration, experiment_controller, api_logger)
 
 import logging
 import urllib
@@ -18,6 +18,7 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^accounts/logout/$', login_required(LogoutView.as_view()), name='logout'),
     url(r'^accounts/add/$', RegistrationView.as_view(), name='register'),
     url(r'^accounts/profile/$', 'account_profile', name='profile'),
+    url(r'^participate/?$', login_required(Participate.as_view()), name='participate'),
     url(r'^participate/(?P<namespace>\w+)/instructions', 'instructions', name='namespace_instructions'),
     url(r'^experiment/add$', add_experiment, name='add_experiment'),
     url(r'^experiment/(?P<pk>\d+)/monitor$', MonitorExperimentView.as_view(), name='monitor_experiment'),

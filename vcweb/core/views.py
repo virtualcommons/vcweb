@@ -59,6 +59,15 @@ class AnonymousMixin(object):
     def dispatch(self, *args, **kwargs):
         return super(AnonymousMixin, self).dispatch(*args, **kwargs)
 
+class Participate(TemplateView):
+    def dispatch(self, *args, **kwargs):
+        participant = self.request.user.participant
+        experiment = get_active_experiment(participant)
+        if experiment is None:
+            return redirect('core:dashboard')
+        else:
+            return redirect(experiment.participant_url)
+
 class Dashboard(ListView, TemplateResponseMixin):
     """
     general dashboard for participants or experimenters that displays a list of

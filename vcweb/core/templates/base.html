@@ -10,6 +10,7 @@
 {% url 'core:register' as register %}
 {% url 'core:profile' as profile %}
 {% url 'core:dashboard' as dashboard %}
+{% url 'core:participate' as participate %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,6 +32,9 @@
             {% block headerlinks %}
             <ul class='nav'>
                 <li><a class='brand {% active request home %}' href='{{ home}}'><img class='logo' src='{{STATIC_URL}}images/vcweb-logo.png' width='30' height='23' alt='vcweb logo'/>virtual commons</a></li>
+                {% if request.user.is_authenticated %}
+                <li class='{% active_re request participate %}'><a href='{{ participate }}'><i class='icon-group'></i> Participate</a></li>
+                {% endif %}
                 {% comment FIXME: disabling for the time %}
                 <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'><i class='icon-dashboard'></i> Dashboard</a></li>
                 {% endcomment %}
