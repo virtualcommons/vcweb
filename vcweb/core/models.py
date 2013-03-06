@@ -569,7 +569,7 @@ class Experiment(models.Model):
             users.append(user)
         self.register_participants(users=users, institution=institution, password=password)
 
-    def initialize_parameters(self, group_parameters=None, participant_parameters=None, round_data=None):
+    def initialize_data_values(self, group_parameters=None, participant_parameters=None, round_data=None):
         logger.debug("initializing [participant params: %s]  [group parameters: %s] ", participant_parameters, group_parameters)
         if not self.current_round.is_playable_round:
             logger.warn("ignoring request to initialize parameters for round %s", self.current_round)
@@ -968,6 +968,9 @@ class ParameterQuerySet(models.query.QuerySet):
 
     def for_round(self, **kwargs):
         return self.get(scope=Parameter.ROUND_SCOPE, **kwargs)
+
+    def for_experiment(self, **kwargs):
+        return self.get(scope=Parameter.EXPERIMENT_SCOPE, **kwargs)
 
 class ParameterPassThroughManager(PassThroughManager):
     def get_by_natural_key(self, name):

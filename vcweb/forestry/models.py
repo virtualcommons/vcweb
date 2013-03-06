@@ -80,7 +80,7 @@ def get_resource_level_parameter():
 
 @simplecache
 def get_regrowth_rate_parameter():
-    return Parameter.objects.for_group(name='regrowth_rate')
+    return Parameter.objects.for_round(name='regrowth_rate')
 
 # parameter for the amount of resources that were regrown at the end of the given round for the given group
 @simplecache
@@ -111,7 +111,7 @@ def set_resource_level(group, value, round_data=None):
 
 def round_setup(experiment, **kwargs):
     round_configuration = experiment.current_round
-    logger.debug("setting up round %s", round_configuration)
+    logger.debug("setting up boundaries round %s", round_configuration)
     if round_configuration.is_playable_round:
         # participant parameter
         harvest_decision_parameter = get_harvest_decision_parameter()
@@ -120,7 +120,7 @@ def round_setup(experiment, **kwargs):
         group_harvest_parameter = get_group_harvest_parameter()
         resource_level_parameter = get_resource_level_parameter()
         # initialize group and participant data values
-        experiment.initialize_parameters(
+        experiment.initialize_data_values(
                 group_parameters=(regrowth_parameter, group_harvest_parameter, resource_level_parameter),
                 participant_parameters=[harvest_decision_parameter]
                 )
