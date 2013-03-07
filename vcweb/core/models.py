@@ -572,7 +572,7 @@ class Experiment(models.Model):
     def initialize_data_values(self, group_parameters=None, participant_parameters=None, round_data=None):
         logger.debug("initializing [participant params: %s]  [group parameters: %s] ", participant_parameters, group_parameters)
         current_round_configuration = self.current_round
-        if not self.current_round_configuration.is_playable_round:
+        if not current_round_configuration.is_playable_round:
             logger.warn("ignoring request to initialize parameters for round %s", self.current_round)
             return
         if group_parameters is None:
@@ -1562,7 +1562,6 @@ class ParticipantGroupRelationship(models.Model):
 
     objects = PassThroughManager.for_queryset_class(ParticipantGroupRelationshipQuerySet)()
 
-    @property
     def current_round_data(self, round_configuration=None):
         return self.group.current_round_data(round_configuration)
 

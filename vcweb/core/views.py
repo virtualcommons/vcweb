@@ -490,8 +490,7 @@ def experiment_controller(request, pk=None, experiment_action=None):
 # FIXME: unimplemented: add filters by round_data parameters
 def daily_report(request, pk=None, parameter_ids=None):
     experiment = get_object_or_404(Experiment, pk=pk)
-    round_data = experiment.current_round_data
-    pass
+    round_data = experiment.current_round_data()
 
 @login_required
 def api_logger(request, participant_group_id=None):

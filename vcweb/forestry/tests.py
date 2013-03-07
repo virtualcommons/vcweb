@@ -33,7 +33,7 @@ class ForestryRoundSignalTest(BaseTest):
         return e
 
     def verify_round_ended(self, e, end_round_func):
-        round_data = e.current_round_data
+        round_data = e.current_round_data()
         harvest_decision_parameter = get_harvest_decision_parameter()
         for group in e.group_set.all():
             ds = get_harvest_decisions(group)
@@ -106,7 +106,7 @@ class ForestryParametersTest(BaseTest):
     '''
     def test_initialize_parameters_at_round_start(self):
         e = self.advance_to_data_round()
-        round_data = e.current_round_data
+        round_data = e.current_round_data()
         group_parameters = (get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter())
         for group in e.group_set.select_related(depth=1).all():
             for parameter in group_parameters:
@@ -123,7 +123,7 @@ class ForestryParametersTest(BaseTest):
     def test_get_set_harvest_decisions(self):
         e = self.advance_to_data_round()
         # generate harvest decisions
-        round_data = e.current_round_data
+        round_data = e.current_round_data()
         harvest_decision_parameter = get_harvest_decision_parameter()
         for group in e.group_set.all():
             ds = get_harvest_decisions(group)
@@ -194,8 +194,8 @@ class ForestryParametersTest(BaseTest):
         data_round_number = 1
         round_data = None
         for e in self.all_data_rounds():
-            self.assertNotEqual(round_data, e.current_round_data)
-            round_data = e.current_round_data
+            self.assertNotEqual(round_data, e.current_round_data())
+            round_data = e.current_round_data()
             for data_value in round_data.group_data_value_set.filter(parameter__name='resource_level'):
                 self.assertTrue(data_value.pk > 0)
                 self.assertEqual('resource_level', data_value.parameter.name)
@@ -205,7 +205,7 @@ class ForestryParametersTest(BaseTest):
                 data_value.value = 100
                 data_value.save()
                 self.assertEqual(100, data_value.value)
-            self.assertEqual(e.current_round_data.group_data_value_set.count(), GroupRoundDataValue.objects.filter(group__experiment=e, round_data=round_data).count())
+            self.assertEqual(e.current_round_data().group_data_value_set.count(), GroupRoundDataValue.objects.filter(group__experiment=e, round_data=round_data).count())
             self.assertEqual(e.parameters(scope=Parameter.GROUP_SCOPE).count(), 3)
             data_round_number += 1
 
@@ -222,7 +222,7 @@ class ForestryParametersTest(BaseTest):
         e = self.experiment
         e.activate()
         e.start_round()
-        round_data = e.current_round_data
+        round_data = e.current_round_data()
         for data_param in e.parameters(scope=Parameter.PARTICIPANT_SCOPE).all():
             for p in self.participants:
                 per = ParticipantExperimentRelationship.objects.get(participant=p, experiment=e)
@@ -241,7 +241,7 @@ class ForestryParametersTest(BaseTest):
 
     def test_data_value_conversion(self):
         e = self.create_participant_data_values()
-        round_data = e.current_round_data
+        round_data = e.current_round_data()
         for p in self.participants:
             participant_data_values = round_data.participant_data_value_set.filter(participant_group_relationship__participant=p)
             logger.debug("XXX: participant data values: %s", participant_data_values)
@@ -257,5 +257,5 @@ class ForestryParametersTest(BaseTest):
                 self.assertFalse(dv.boolean_value)
                 self.assertFalse(dv.float_value)
         e.advance_to_next_round()
-        round_data = e.current_round_data
+        round_data = e.current_round_data()
         self.assertEqual(10, ParticipantRoundDataValue.objects.filter(round_data=round_data).count())

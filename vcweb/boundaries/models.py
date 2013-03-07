@@ -3,7 +3,9 @@ from vcweb.core import signals, simplecache
 from vcweb.core.models import ExperimentMetadata, Parameter, ParticipantRoundDataValue
 from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_regrowth_rate,
         should_reset_resource_level, get_group_harvest_parameter, get_resource_level,
-        get_initial_resource_level as forestry_initial_resource_level)
+        get_initial_resource_level as forestry_initial_resource_level, set_resource_level, get_regrowth_parameter,
+        get_resource_level_parameter, has_resource_level, get_resource_level_dv, get_harvest_decisions,
+        set_group_harvest, set_regrowth)
 
 import logging
 
@@ -87,7 +89,7 @@ def round_setup(experiment, **kwargs):
         if should_reset_resource_level(round_configuration):
             initial_resource_level = get_initial_resource_level(round_configuration)
             logger.debug("Resetting resource level for %s to %d", round_configuration, initial_resource_level)
-            round_data = experiment.current_round_data
+            round_data = experiment.current_round_data(round_configuration)
             for group in experiment.group_set.all():
                 ''' set resource level to initial default '''
                 group.log("Setting resource level to initial value [%s]" % initial_resource_level)

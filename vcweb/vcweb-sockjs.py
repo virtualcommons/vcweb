@@ -279,7 +279,7 @@ class ParticipantConnection(BaseConnection):
         (per, valid) = self.verify_auth_token(event)
         if valid:
             pgr = connection_manager.get_participant_group_relationship(self)
-            current_round_data = experiment.current_round_data
+            current_round_data = experiment.current_round_data()
             # FIXME: should chat message be created via post to Django form instead?
             chat_message = ChatMessage.objects.create(participant_group_relationship=pgr,
                     value=event.message,
@@ -305,56 +305,6 @@ class ParticipantConnection(BaseConnection):
         handler = self.get_handler(event_type)
         event = to_event(message_dict)
         handler(event, experiment)
-
-        '''
-        (participant_pk, experiment_pk) = connection_manager.get_participant_experiment_tuple(self)
-        if event_type == 'submit':
-            logger.debug("processing participant submission for participant %s and experiment %s", participant_pk, experiment)
-            # sanity check, make sure this is a data round.
-            if experiment.is_data_round_in_progress:
-                # FIXME: forward the submission event directly to the experimenter, we don't need to save anything as it
-                # should be processed directly by posting to the django side of things
-                experimenter_tuple = (experiment.experimenter.pk, experiment.pk)
-                event.participant_pk = participant_pk
-                pgr_pk = event.participant_group_relationship_id
-                participant_group_relationship = ParticipantGroupRelationship.objects.get(pk=pgr_pk)
-
-                prdv = experiment.current_round_data.participant_data_value_set.get(participant_group_relationship__pk=pgr_pk)
-                event.participant_data_value_pk = prdv.pk
-                event.participant_number = participant_group_relationship.participant_number
-                event.participant_group = participant_group_relationship.group_number
-                json = json.dumps(event.__dict__)
-                logger.debug("submit event json: %s", json)
-                connection_manager.send_to_experimenter(experimenter_tuple, json)
-                if experiment.all_participants_have_submitted:
-                    connection_manager.send_to_experimenter(
-                            experimenter_tuple,
-                            create_message_event('All participants have submitted a decision.'))
-            else:
-                logger.debug("No data round in progress, received late submit event: %s", event)
-
-        elif event_type == 'chat':
-            try:
-                participant_group_relationship = connection_manager.get_participant_group_relationship(self)
-                current_round_data = participant_group_relationship.group.experiment.current_round_data
-# FIXME:  escape on output instead of input
-                chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
-                        value=xhtml_escape(event.message),
-                        round_data=current_round_data
-                        )
-                chat_json = json.dumps({
-                    "pk": chat_message.pk,
-                    'round_data_pk': current_round_data.pk,
-                    'participant': unicode(participant_group_relationship.participant),
-                    "date_created": chat_message.date_created.strftime("%H:%M:%S"),
-                    "message" : xhtml_escape(unicode(chat_message)),
-                    "event_type": 'chat',
-                    })
-                connection_manager.send_to_group(participant_group_relationship.group, chat_json)
-            except:
-                logger.warning("Couldn't find a participant group relationship using connection %s with connection manager %s", self, self.connection_manager)
-
-'''
 
     def on_close(self):
         #self.client.unsubscribe(self.default_channel)
