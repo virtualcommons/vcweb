@@ -41,9 +41,6 @@
                 {% endif %}
                 <li class='{% active request contact %}'><a href='{{ contact }}'><i class='icon-bell'></i> Contact us</a></li>
                 <li><a target='_blank' href='https://bitbucket.org/virtualcommons/vcweb/issues/new'><i class='icon-bullhorn'></i> Report a Bug</a></li>
-                {% if "participate" in request.path or "wait" in request.path %}
-                <li class='{% active_re request "participate" %} {% active_re request "wait" %}'><a name='participate'><i class='icon-group'></i>Participate</a></li>
-                {% endif %}
             </ul>
             {% endblock headerlinks %}
             {% block login %}
