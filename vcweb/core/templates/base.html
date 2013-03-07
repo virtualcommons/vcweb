@@ -58,7 +58,7 @@
                 </li>
                 {% else %}
                 <li class='{% active request login %}'>
-                    {% if debug_mode %}
+                    {% if DEBUG %}
                     <a href='{{ login }}'>
                     {% else %}
                     <a href='https://{{request.get_host}}{{ login }}'>
@@ -80,6 +80,13 @@
             <p>Experiments may not function properly without JavaScript enabled.</p>
         </div>
     </noscript>
+    {% if DEBUG %}
+    <div class='alert alert-error alert-block'>
+        <h2>Development Server</h2>
+        <i class='icon-warning-sign icon-2x'></i>You are accessing a <b>development version</b> of the vcweb software.  Any changes you make here will <b>NOT</b>
+        be persistent.
+    </div>
+    {% endif %}
     {% if messages %}
     <h3>Messages</h3>
     {% for message in messages %}
@@ -136,7 +143,7 @@
         <script type='text/javascript' src='{{STATIC_URL}}js/ko/knockout.mapping.min.js'></script>
         <script type='text/javascript' src='{{STATIC_URL}}js/common.js'></script>
         <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/d3/3.0.1/d3.v3.min.js'></script>
-        {% if debug_mode %}
+        {% if DEBUG %}
         {% load dajaxice_templatetags %}
         {% dajaxice_js_import %}
         {% else %}
