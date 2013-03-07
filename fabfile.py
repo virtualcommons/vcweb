@@ -169,7 +169,8 @@ def deploy():
     if confirm("Deploy to %(hosts)s ?" % env):
         with cd(env.project_path):
             sudo_chain('hg pull && hg up -C',
-                    'chmod -R g+rws logs',
+                    'chmod g+s logs',
+                    'chmod -R g+rw logs/',
                     user=env.deploy_user, pty=True)
             env.static_root = vcweb_settings.STATIC_ROOT
             _virtualenv(run,'%(python)s manage.py collectstatic' % env)
