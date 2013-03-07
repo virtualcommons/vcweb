@@ -23,7 +23,7 @@
                 <li class='{% active request logout %}'><a href='{{ logout }}'>Logout</a></li>
                 {% else %}
                 <li class='{% active request login %} {% active request register %}'>
-                {% if debug_mode %}
+                {% if DEBUG %}
                 <a href='{{ login }}'>Login/Register</a>
                 {% else %}
                 <a href='https://{{request.get_host}}{{ login }}'>Login/Register</a>
