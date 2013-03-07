@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def participate(request, experiment_id=None):
     participant = request.user.participant
     logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
-    experiment = get_object_or_404(Experiment.objects.select_related('experiment_configuration').prefetch_related('group_set', 'experiment_configuration__round_configuration_set'), pk=experiment_id)
+    experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration').prefetch_related('group_set', 'experiment_configuration__round_configuration_set'), pk=experiment_id)
     per = get_object_or_404(ParticipantExperimentRelationship.objects.select_related('participant'),
             experiment=experiment, participant=participant)
     pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group', 'participant__user').prefetch_related('group__participant_group_relationship_set'),

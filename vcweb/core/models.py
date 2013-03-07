@@ -300,6 +300,9 @@ class Experiment(models.Model):
     slug = models.SlugField(max_length=32, unique=True, null=True, blank=True)
     ''' short slug to use instead of experiment pk, currently unimplemented '''
 
+    cached_round_sequence_number = None
+    ''' used to cache the round configuration '''
+
     objects = PassThroughManager.for_queryset_class(ExperimentQuerySet)()
 
     @property
@@ -398,7 +401,11 @@ class Experiment(models.Model):
 
     @property
     def current_round(self):
-        return self.get_round_configuration(self.current_round_sequence_number)
+        csn = self.cached_round_sequence_number
+        if csn is None or self.current_round_sequence_number != self.cached_round_sequence_number:
+            self.cached_round_sequence_number = self.current_round_sequence_number
+            self.cached_round = self.get_round_configuration(self.current_round_sequence_number)
+        return self.cached_round
 
     def current_round_data(self, round_configuration=None):
         if round_configuration is None:
