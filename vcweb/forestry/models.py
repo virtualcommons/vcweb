@@ -26,7 +26,7 @@ def get_regrowth(group, round_data=None):
     return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0).int_value
 
 def get_regrowth_rate(current_round, default=0.1):
-    return current_round.get_parameter_value(get_regrowth_rate_parameter(), default=default)
+    return current_round.get_parameter_value(get_regrowth_rate_parameter(), default=default).float_value
 
 def has_resource_level(group=None):
     return group.has_data_parameter(parameter=get_resource_level_parameter())

@@ -58,8 +58,11 @@ def get_initial_resource_level(round_configuration, default=MAX_RESOURCE_LEVEL):
 def get_cost_of_living(current_round):
     return current_round.get_parameter_value(get_cost_of_living_parameter(), default=5).int_value
 
-def get_storage(participant_group_relationship, round_data=None):
+def get_storage_dv(participant_group_relationship, round_data=None):
     return participant_group_relationship.get_data_value(parameter=get_storage_parameter(), round_data=round_data)
+
+def get_storage(participant_group_relationship, round_data=None):
+    return get_storage_dv(participant_group_relationship, round_data).int_value
 
 # returns the sum of all stored resources for each member in the group
 def get_total_storage(group):
@@ -76,24 +79,23 @@ def set_storage(participant_group_relationship, value=0):
 def round_setup(experiment, **kwargs):
     round_configuration = experiment.current_round
     logger.debug("setting up round %s", round_configuration)
-    if round_configuration.is_playable_round:
-        # initialize group and participant data values
-        experiment.initialize_data_values(
-                group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
-                participant_parameters=[get_harvest_decision_parameter(), get_storage_parameter(), get_player_status_parameter()]
-                )
-        '''
-        during a practice or regular round, set up resource levels and participant
-        harvest decision parameters
-        '''
-        if should_reset_resource_level(round_configuration):
-            initial_resource_level = get_initial_resource_level(round_configuration)
-            logger.debug("Resetting resource level for %s to %d", round_configuration, initial_resource_level)
-            round_data = experiment.current_round_data(round_configuration)
-            for group in experiment.group_set.all():
-                ''' set resource level to initial default '''
-                group.log("Setting resource level to initial value [%s]" % initial_resource_level)
-                set_resource_level(group, initial_resource_level, round_data=round_data)
+    # initialize group and participant data values
+    experiment.initialize_data_values(
+            group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
+            participant_parameters=[get_harvest_decision_parameter(), get_storage_parameter(), get_player_status_parameter()]
+            )
+    '''
+    during a practice or regular round, set up resource levels and participant
+    harvest decision parameters
+    '''
+    if should_reset_resource_level(round_configuration):
+        initial_resource_level = get_initial_resource_level(round_configuration)
+        logger.debug("Resetting resource level for %s to %d", round_configuration, initial_resource_level)
+        round_data = experiment.current_round_data(round_configuration)
+        for group in experiment.group_set.all():
+            ''' set resource level to initial default '''
+            group.log("Setting resource level to initial value [%s]" % initial_resource_level)
+            set_resource_level(group, initial_resource_level, round_data=round_data)
 
 def round_teardown(experiment, **kwargs):
     '''

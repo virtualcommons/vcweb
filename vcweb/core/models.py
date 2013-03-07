@@ -571,16 +571,12 @@ class Experiment(models.Model):
 
     def initialize_data_values(self, group_parameters=None, participant_parameters=None, round_data=None):
         logger.debug("initializing [participant params: %s]  [group parameters: %s] ", participant_parameters, group_parameters)
-        current_round_configuration = self.current_round
-        if not current_round_configuration.is_playable_round:
-            logger.warn("ignoring request to initialize parameters for round %s", self.current_round)
-            return
         if group_parameters is None:
             group_parameters = self.parameters(scope=Parameter.GROUP_SCOPE)
         if participant_parameters is None:
             participant_parameters = self.parameters(scope=Parameter.PARTICIPANT_SCOPE)
         if round_data is None:
-            round_data = self.current_round_data(current_round_configuration)
+            round_data = self.current_round_data()
         for group in self.group_set.select_related('parameter').all():
             for parameter in group_parameters:
                 group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter)
