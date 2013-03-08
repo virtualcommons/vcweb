@@ -62,7 +62,12 @@
                 </div>
                 <div class='span2 left-divider'>
                     <h5><span class='lighterprints-scoreboard-uppercase'>Current Level</span></h5>
-                    <h1><img class='group-level' width="104" height="65" data-bind="attr: { src: '{% static "images/lighterprints/rank"%}' + groupLevel() + '.png' }"></h1> <br>
+                    <h1 data-bind='if: experimentCompleted'>
+                        <img class='group-level' width='104' height='70' src='{% static "images/lighterprints/experiment-completed.png"%}'>
+                    </h1>
+                    <h1 data-bind='ifnot: experimentCompleted'>
+                        <img class='group-level' width="104" height="65" data-bind="attr: { src: '{% static "images/lighterprints/rank"%}' + groupLevel() + '.png' }">
+                    </h1> 
                 </div>
                 <div class='span2 left-divider'>
                     <h5><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span></h5>
