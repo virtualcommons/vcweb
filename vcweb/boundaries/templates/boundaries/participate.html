@@ -86,9 +86,6 @@
 {% block javascript %}
 {{ block.super }}
 <!-- ko templates -->
-<script type='text/html' id='TREATMENT_INSTRUCTIONS'>
-    <div data-bind='text: instructions'></div>
-</script>
 <script type='text/html' id='CHAT'>
 {% include "forms/chat-template.html" %}
 </script>
@@ -256,7 +253,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
 </p>
 </script>
 <script type='text/html' id='INSTRUCTIONS'>
-    <div data-bind='text: instructions'>
+    <div data-bind='html: instructions'>
     </div>
 </script>
 <script type='text/html' id='REGULAR'>
