@@ -1417,6 +1417,7 @@ class RoundData(models.Model):
     experiment = models.ForeignKey(Experiment, related_name='round_data_set')
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_data_set')
     elapsed_time = models.PositiveIntegerField(default=0)
+    experimenter_notes = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
         return u"Data for Round %s (%s)" % (self.round_configuration.sequence_number, self.round_configuration.get_round_type_display())

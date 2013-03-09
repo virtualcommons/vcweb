@@ -1,4 +1,5 @@
 if (!window.console) console = {};
+console.debug = console.debug || function() {};
 console.log = console.log || function(){};
 console.warn = console.warn || function(){};
 console.error = console.error || function(){};
@@ -14,7 +15,6 @@ function csrfSafeMethod(method) {
     return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
 }
 function activateTabFunctor(tabHref, parentId) {
-    console.debug("activating tab: " + tabHref + " - " + parentId);
     if (! parentId) {
         parentId = ".nav-tabs";
     }
