@@ -86,6 +86,9 @@
 {% block javascript %}
 {{ block.super }}
 <!-- ko templates -->
+<script type='text/html' id='TREATMENT_INSTRUCTIONS'>
+    <div data-bind='text: instructions'></div>
+</script>
 <script type='text/html' id='CHAT'>
 {% include "forms/chat-template.html" %}
 </script>
@@ -108,7 +111,7 @@
     </div>
 </div>
 </script>
-<script type='text/html' id='INSTRUCTIONS'>
+<script type='text/html' id='GENERAL_INSTRUCTIONS'>
 <div id='instructions1'>
 <h4>Harvesting and Profit</h4>
 <p>
@@ -138,7 +141,7 @@ However, the final outcome depends on your choices and those of your group membe
 </ul>
 </div>
 </script>
-<script type='text/html' id='INSTRUCTIONS2'>
+<script type='text/html' id='GENERAL_INSTRUCTIONS2'>
 <div id='instructions2'>
 <h4>Forest Growth</h4>
 <p>
@@ -170,7 +173,7 @@ split between the 4 participants in your group, the forest has a capacity to pro
 </ul>
 </div>
 </script>
-<script type='text/html' id='INSTRUCTIONS3'>
+<script type='text/html' id='GENERAL_INSTRUCTIONS3'>
 <div id='instructions3'>
 <h4>Groups and Rounds</h4>
 <p>
@@ -225,6 +228,36 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
 <a href='javascript: void();' data-bind='click: finishedInstructions'>I have fully read and understand these instructions</a>
 </li>
 </ul>
+</script>
+<script type='text/html' id='PAID_EXPERIMENT_INSTRUCTIONS'>
+<h2>Paid Experiment Instructions</h2>
+<h3>Two Sessions</h3>
+<p>
+This experiment is composed of two different, unconnected sessions.  Your group will be randomly selected for each
+session, so you will be playing with a different group each time.  We will pay you for one of these two sessions, chosen
+at random.  You have exactly 50% chance of being paid for your earnings in either session.
+</p>
+<h3>Group and Individual Status</h3>
+<p>
+You will be able to observe the status of the members of your group each round.  Likewise your group members can see
+your status and those of the group.
+</p>
+<h3>Group Chat</h3>
+<p>
+You will be able to chat with the other members of your group via group text chat.  Once you have made a harvest
+decision, you will no longer be able to chat for that round.
+</p>
+<h3>Harvest Choice</h3>
+<p>
+You will have a maximum of <i class='icon-clock'></i><span data-bind='text: roundDuration'></span> seconds to make a
+harvest decision each round.  A countdown will alert you when there are 
+<span data-bind='text: warningCountdownTime'></span> seconds remaining to make a harvest choice.  When the countdown
+reaches zero, any value you have selected will be submitted.  <strong>The default harvest is zero.</strong>
+</p>
+</script>
+<script type='text/html' id='INSTRUCTIONS'>
+    <div data-bind='text: instructions'>
+    </div>
 </script>
 <script type='text/html' id='REGULAR'>
 <div class='row'>
@@ -367,16 +400,19 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             model.templateName = ko.observable("WELCOME");
             // activate instructions click bindings
             model.activateInstructionsPageOne = function() {
-                model.templateName('INSTRUCTIONS');
+                model.templateName('GENERAL_INSTRUCTIONS');
             };
             model.activateInstructionsPageTwo = function() {
-                model.templateName('INSTRUCTIONS2');
+                model.templateName('GENERAL_INSTRUCTIONS2');
             };
             model.activateInstructionsPageThree = function() {
-                model.templateName('INSTRUCTIONS3');
+                model.templateName('GENERAL_INSTRUCTIONS3');
             };
             model.activatePracticeRoundInstructions = function() {
                 model.templateName("PRACTICE_ROUND_INSTRUCTIONS");
+            }
+            model.activateTreatmentInstructions = function() {
+                model.templateName("TREATMENT_INSTRUCTIONS");
             }
             model.finishedInstructions = function() {
                 console.debug("instructions were finished, notify experimenter");
