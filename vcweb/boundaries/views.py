@@ -32,7 +32,7 @@ def participate(request, experiment_id=None):
         'experiment': experiment,
         'participant_group_relationship': pgr,
         'participant_experiment_relationship': per,
-        'experimentModelJson': to_json(experiment, pgr),
+        'experimentModelJson': get_view_model_json(experiment, pgr),
         },
         context_instance=RequestContext(request))
 
@@ -49,13 +49,13 @@ def submit_harvest_decision(request, experiment_id=None):
                 round_data=experiment.current_round_data(), parameter=get_harvest_decision_parameter())
         # set harvest decision for participant
         # FIXME: inconsistency, GET returns HTML and POST return JSON..
-        return HttpResponse(dumps({ 'success': True, 'experimentModelJson': to_json(experiment, pgr)}))
+        return HttpResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr)}))
 
 
-def to_json(experiment, participant_group_relationship, **kwargs):
+def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
-    current_round_data = experiment.current_round_data(current_round)
+    current_round_data = experiment.current_round_data
     experiment_model_dict = experiment.as_dict(include_round_data=False, attrs={})
     group_data = []
     player_data = []
@@ -114,5 +114,6 @@ def to_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['resourceLevel'] = own_resource_level
     experiment_model_dict['hasSubmit'] = False
     experiment_model_dict['practiceRound'] = False
+    experiment_model_dict['instructions'] = current_round.get_custom_template_instructions()
     experiment_model_dict.update(**kwargs)
     return dumps(experiment_model_dict)

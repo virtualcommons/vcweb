@@ -77,7 +77,7 @@ UNAUTHORIZED_EVENT = create_message_event("You do not appear to be authorized to
 
 class ConnectionManager(object):
     '''
-    Manages socket.io connections to tornadio.
+    Manages sockjs-tornado connections, would be better to replace this with some kind of redis pub/sub layer.
     '''
     # bidi maps for (participant.pk, experiment.pk) -> SocketConnection
     connection_to_participant = {}
@@ -108,10 +108,11 @@ class ConnectionManager(object):
             if existing_connection:
                 existing_connection.send(DISCONNECTION_EVENT)
                 del self.connection_to_experimenter[existing_connection]
+                existing_connection.close()
 
         if connection in self.connection_to_experimenter:
-            logger.debug("this experimenter has an existing connection (%s <-> %s) ",
-                    self.connection_to_experimenter[connection], experimenter_tuple)
+            logger.debug("experimenter %s had an existing connection %s ", str(experimenter_tuple),
+                    self.connection_to_experimenter[connection])
         self.connection_to_experimenter[connection] = experimenter_tuple
         self.experimenter_to_connection[experimenter_tuple] = connection
 
@@ -185,9 +186,9 @@ class ConnectionManager(object):
 
     def send_goto(self, experimenter, experiment, url):
         notified_participants = []
-        json = json.dumps({'event_type': 'goto', 'url': url})
+        message = json.dumps({'event_type': 'goto', 'url': url})
         for (participant_group_pk, connection) in self.all_participants(experimenter, experiment):
-            connection.send(json)
+            connection.send(message)
             notified_participants.append(participant_group_pk)
         return notified_participants
 
@@ -282,10 +283,10 @@ class ParticipantConnection(BaseConnection):
             current_round_data = experiment.current_round_data()
             # FIXME: should chat message be created via post to Django form instead?
             chat_message = ChatMessage.objects.create(participant_group_relationship=pgr,
-                    value=event.message,
+                    string_value=event.message,
                     round_data=current_round_data
                     )
-            chat_json = json.dumps({
+            chat_message = json.dumps({
                 "pk": chat_message.pk,
                 'round_data_pk': current_round_data.pk,
                 'participant_number': pgr.participant_number,
@@ -293,7 +294,7 @@ class ParticipantConnection(BaseConnection):
                 "message" : event.message,
                 "event_type": 'chat',
                 })
-            connection_manager.send_to_group(pgr.group, chat_json)
+            connection_manager.send_to_group(pgr.group, chat_message)
 
     def on_message(self, json_string):
         logger.debug("message: %s", json_string)

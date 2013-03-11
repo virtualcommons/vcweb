@@ -588,12 +588,12 @@ class Experiment(models.Model):
         for group in self.group_set.select_related('parameter').all():
             for parameter in group_parameters:
                 group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter)
-                logger.debug("%s (%s)", group_data_value, created)
+        #        logger.debug("%s (%s)", group_data_value, created)
             if participant_parameters:
                 for pgr in group.participant_group_relationship_set.all():
                     for parameter in participant_parameters:
                         participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(round_data=round_data, participant_group_relationship=pgr, parameter=parameter)
-                        logger.debug("%s (%s)", participant_data_value, created)
+        #                logger.debug("%s (%s)", participant_data_value, created)
 
     def log(self, log_message):
         if log_message:
@@ -858,6 +858,17 @@ class RoundConfiguration(models.Model):
     @property
     def default_template_name(self):
         return RoundConfiguration.ROUND_TYPES_DICT[self.round_type][1]
+
+    def get_custom_instructions(self, context_dict=None, **kwargs):
+        if not self.is_instructions_round():
+            logger.error("aborting: tried to get custom instructions for a non-instructions round %s", self)
+            return
+        instructions_template = select_template([self.template_path])
+        if context_dict is None:
+            context_dict = {}
+        context_dict.update(kwargs)
+        c = Context(context_dict)
+        return instructions_template.render(c)
 
     @property
     def template_path(self):
