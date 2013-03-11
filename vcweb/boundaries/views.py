@@ -114,6 +114,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['resourceLevel'] = own_resource_level
     experiment_model_dict['hasSubmit'] = False
     experiment_model_dict['practiceRound'] = False
-    experiment_model_dict['instructions'] = current_round.get_custom_template_instructions()
+    experiment_model_dict['instructions'] = current_round.get_custom_instructions()
     experiment_model_dict.update(**kwargs)
     return dumps(experiment_model_dict)
