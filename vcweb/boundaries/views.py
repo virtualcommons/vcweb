@@ -1,17 +1,29 @@
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context import RequestContext
 from vcweb.core import dumps
 from vcweb.core.decorators import participant_required
+from vcweb.core.http import JsonResponse
 from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
         ParticipantExperimentRelationship, ChatMessage, ParticipantRoundDataValue)
-from vcweb.boundaries.forms import HarvestDecisionForm
+from vcweb.boundaries.forms import HarvestDecisionForm, ParticipantGroupIdForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_harvest_decision_parameter,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage)
 import logging
 import random
 
 logger = logging.getLogger(__name__)
+
+@participant_required
+def finished_instructions(request, experiment_id=None):
+    form = ParticipantGroupIdForm(request.POST or None)
+    experiment = get_object_or_404(Experiment, pk=experiment_id)
+    if form.is_valid():
+        pgr = get_object_or_404(ParticipantGroupRelationship, pk=form.cleaned_data['participant_group_id'])
+        experiment.ready_participants += 1
+        experiment.save()
+        return JsonResponse(dumps({'success': True}))
+    return JsonResponse(dumps({'success': False}))
 
 @participant_required
 def participate(request, experiment_id=None):
@@ -49,7 +61,7 @@ def submit_harvest_decision(request, experiment_id=None):
                 round_data=experiment.current_round_data(), parameter=get_harvest_decision_parameter())
         # set harvest decision for participant
         # FIXME: inconsistency, GET returns HTML and POST return JSON..
-        return HttpResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr)}))
+        return JsonResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr)}))
 
 
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):

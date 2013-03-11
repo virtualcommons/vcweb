@@ -243,7 +243,7 @@ class ParticipantHandler(tornadio2.SocketConnection):
                 json = simplejson.dumps(event.__dict__)
                 logger.debug("submit event json: %s", json)
                 connection_manager.send_to_experimenter(experimenter_tuple, json)
-                if experiment.all_participants_have_submitted:
+                if experiment.all_participants_have_submitted():
                     connection_manager.send_to_experimenter(
                             experimenter_tuple,
                             info_json('All participants have submitted a decision.'))

@@ -300,6 +300,7 @@ class Experiment(models.Model):
 
     slug = models.SlugField(max_length=32, unique=True, null=True, blank=True)
     ''' short slug to use instead of experiment pk, currently unimplemented '''
+    ready_participants = models.PositiveIntegerField(default=0, help_text=_("The number of participants ready to move on to the next round."))
 
     cached_round_sequence_number = None
     ''' used to cache the round configuration '''
@@ -408,6 +409,7 @@ class Experiment(models.Model):
             self.cached_round = self.get_round_configuration(self.current_round_sequence_number)
         return self.cached_round
 
+# FIXME: cache this as well to avoid a query per invocation
     def current_round_data(self, round_configuration=None):
         if round_configuration is None:
             round_configuration = self.current_round
@@ -476,9 +478,11 @@ class Experiment(models.Model):
         return self.current_round.instructions
 
     @property
+    def all_participants_ready(self):
+        return self.ready_participants == self.participant_set.count()
+
     def all_participants_have_submitted(self):
-        pdvs = self.current_round_data().participant_data_value_set
-        return pdvs.filter(submitted=False).count() == 0
+        return ParticipantRoundDataValue.objects.filter(submitted=False, round_data=self.current_round_data()).count() == 0
 
     def register_participants(self, users=None, emails=None, institution=None, password=None):
         if self.participant_set.count() > 0:
@@ -698,6 +702,7 @@ class Experiment(models.Model):
         self.create_round_data()
         self.current_round_elapsed_time = 0
         self.current_round_start_time = datetime.now()
+        self.ready_participants = 0
         self.save()
         self.log('Starting round')
         # FIXME: would prefer using self.namespace as a default but django's

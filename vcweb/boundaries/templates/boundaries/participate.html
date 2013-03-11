@@ -412,8 +412,11 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 model.templateName("TREATMENT_INSTRUCTIONS");
             }
             model.finishedInstructions = function() {
-                console.debug("instructions were finished, notify experimenter");
-                getWebSocket().send(createMessageEvent("Instructions completed"));
+                console.debug("instructions were finished, notifying experimenter");
+                $.post('finished-instructions', { participant_group_id: {{ participant_group_relationship.pk }} }, function(response) {
+                    console.debug("successfully posted to server, notifying sockjs: " + response);
+                    getWebSocket().send(createMessageEvent("Instructions completed", "client_ready"));
+                });
             }
             model.showOtherGroup = function() {
                 model.shouldShowOtherGroup(true);

@@ -77,7 +77,12 @@ UNAUTHORIZED_EVENT = create_message_event("You do not appear to be authorized to
 
 class ConnectionManager(object):
     '''
-    Manages sockjs-tornado connections, would be better to replace this with some kind of redis pub/sub layer.
+    Manages sockjs-tornado connections
+    
+    FIXME: Better to replace this with a pub/sub system like redis or zeromq.  Instead of pushing data from the client
+    to this real-time server directly and placing experiment logic here we would POST data to django endpoints, which
+    then push JSON events into the pub/sub system.  The connection manager observes the pub/sub system and dispatches
+    the events appropriately.
     '''
     # bidi maps for (participant.pk, experiment.pk) -> SocketConnection
     connection_to_participant = {}
@@ -225,7 +230,6 @@ class Struct:
     def __unicode__(self):
         return u"%s" % self.__dict__
 
-
 def to_event(message):
     return Struct(**message)
 
@@ -265,6 +269,18 @@ class ParticipantConnection(BaseConnection):
 
     def handle_submit(self, event, experiment, **kwargs):
         pass
+
+    def handle_client_ready(self, event, experiment, **kwargs):
+        logger.debug("handling client ready event %s for experiment %s", event, experiment)
+        (per, valid) = self.verify_auth_token(event)
+        if valid:
+            connection_manager.send_to_experimenter(create_message_event("Participant %s is ready." % per.participant),
+                    experiment=experiment)
+        else:
+            logger.warning("Invalid auth token for participant %s", per)
+            self.send(UNAUTHORIZED_EVENT)
+        if experiment.all_participants_ready:
+            connection_manager.send_to_experimenter(create_message_event("All participants are ready to move on to the next round."), experiment=experiment)
 
     def handle_connect(self, event, experiment, **kwargs):
         logger.debug("connection event: %s", event)
