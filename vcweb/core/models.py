@@ -860,9 +860,9 @@ class RoundConfiguration(models.Model):
         return RoundConfiguration.ROUND_TYPES_DICT[self.round_type][1]
 
     def get_custom_instructions(self, context_dict=None, **kwargs):
-        if not self.is_instructions_round():
-            logger.error("aborting: tried to get custom instructions for a non-instructions round %s", self)
-            return
+        if not self.is_instructions_round:
+            logger.warning("tried to get custom instructions for a non-instructions round %s", self)
+            return None
         instructions_template = select_template([self.template_path])
         if context_dict is None:
             context_dict = {}

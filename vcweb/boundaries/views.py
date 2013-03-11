@@ -107,13 +107,22 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 # FIXME: defaults hard coded in for now
     experiment_model_dict['dollarsPerToken'] = 0.20
     experiment_model_dict['maxEarnings'] = 20.00
+    experiment_model_dict['warningCountdownTime'] = 10
 
+# FIXME: these need to be looked up
     experiment_model_dict['lastHarvestDecision'] = 5
     experiment_model_dict['maxHarvestDecision'] = 10
     experiment_model_dict['storage'] = 20
     experiment_model_dict['resourceLevel'] = own_resource_level
     experiment_model_dict['hasSubmit'] = False
     experiment_model_dict['practiceRound'] = False
-    experiment_model_dict['instructions'] = current_round.get_custom_instructions()
+    experiment_model_dict['instructions'] = current_round.get_custom_instructions(session_number=get_session_number(current_round))
     experiment_model_dict.update(**kwargs)
     return dumps(experiment_model_dict)
+
+def get_session_number(round_configuration):
+    # FIXME: brittle but alternatives are messy and time consuming, refactor later
+    if round_configuration.sequence_number > 22:
+        return 2
+    else:
+        return 1
