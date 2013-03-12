@@ -18,12 +18,12 @@ logger = logging.getLogger(__name__)
 def finished_instructions(request, experiment_id=None):
     form = ParticipantGroupIdForm(request.POST or None)
     experiment = get_object_or_404(Experiment, pk=experiment_id)
-    if form.is_valid():
+    valid_form = form.is_valid()
+    if valid_form:
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=form.cleaned_data['participant_group_id'])
         experiment.ready_participants += 1
         experiment.save()
-        return JsonResponse(dumps({'success': True}))
-    return JsonResponse(dumps({'success': False}))
+    return JsonResponse(dumps({'success': valid_form}))
 
 @participant_required
 def participate(request, experiment_id=None):
@@ -62,6 +62,10 @@ def submit_harvest_decision(request, experiment_id=None):
         # set harvest decision for participant
         # FIXME: inconsistency, GET returns HTML and POST return JSON..
         return JsonResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr)}))
+    for field in form:
+        if field.errors:
+            logger.debug("field %s had errors %s", field, field.errors)
+    return JsonResponse(dumps({'success': False }))
 
 
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):

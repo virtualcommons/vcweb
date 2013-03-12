@@ -22,11 +22,11 @@ DATA_DIR = 'data'
 GRAPH_DATABASE_PATH=path.join(DATA_DIR, 'neo4j-store')
 
 DATABASES = {
-        'sqlite': {
+        'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': path.join(DATA_DIR, 'vcweb.db'),
             },
-        'default': {
+        'postgres': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'vcweb',
             'USER': 'vcweb',
@@ -320,6 +320,7 @@ if has_local_settings:
         DEBUG = getattr(local_settings, 'DEBUG', DEBUG)
         SENTRY_DSN = getattr(local_settings, 'SENTRY_DSN', None)
         EMAIL_BACKEND = getattr(local_settings, 'EMAIL_BACKEND', EMAIL_BACKEND)
+        DATABASES = getattr(local_settings, 'DATABASES', DATABASES)
         add_settings_tuples('MIDDLEWARE_CLASSES', local_settings)
         add_settings_tuples('INSTALLED_APPS', local_settings)
         add_settings_tuples('ALLOWED_HOSTS', local_settings)
