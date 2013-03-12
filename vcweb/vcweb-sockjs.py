@@ -338,6 +338,7 @@ class ExperimenterConnection(BaseConnection):
         #self.client.listen(self.on_chan_message)
 
     def on_message(self, json_string):
+        logger.debug("message: %s", json_string)
         message_dict = json.loads(json_string)
         auth_token = message_dict['auth_token']
         experimenter_id = message_dict['experimenter_id']
@@ -348,7 +349,7 @@ class ExperimenterConnection(BaseConnection):
             handler = self.get_handler(event.event_type)
             handler(event, experiment, experimenter=experimenter)
             return
-        logger.warning("experimenter %s auth tokens didn't match: [%s <=> %s]", auth_token, experimenter.authentication_token)
+        logger.warning("experimenter %s auth tokens didn't match: [%s <=> %s]", experimenter, auth_token, experimenter.authentication_token)
         self.send(create_message_event('Your session has expired, please try logging in again.  If this problem persists, please contact us.'))
 
     def handle_connect(self, event, experiment, experimenter):
