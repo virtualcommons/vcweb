@@ -830,16 +830,16 @@ class RoundConfiguration(models.Model):
                                                help_text='The round number to be displayed with this round.  If set to zero, defaults to the internally used sequence_number.')
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
+    duration = models.PositiveIntegerField(default=0,
+                                           help_text='Duration in seconds.  0 means an untimed round that can only be advanced by an experimenter.')
     """
     How long should this round execute before advancing to the next?
     Interpreted as whole seconds.
     """
-    duration = models.PositiveIntegerField(default=0,
-                                           help_text='Duration in seconds.  0 means an untimed round that can only be advanced by an experimenter.')
-    """ instructions, if any, to display before the round begins """
     instructions = models.TextField(null=True, blank=True)
-    """ debriefing, if any, to display after the round ends """
+    """ instructions, if any, to display before the round begins """
     debriefing = models.TextField(null=True, blank=True)
+    """ debriefing, if any, to display after the round ends """
 # FIXME: replace with model_utils Choices
     round_type = models.CharField(max_length=32,
                                   choices=ROUND_TYPE_CHOICES,
@@ -850,11 +850,23 @@ class RoundConfiguration(models.Model):
     forestry/templates/forestry/quiz_2.html
     """
     template_name = models.CharField(max_length=64, null=True, blank=True,
-                                            help_text='''The name of the template to use to render when executing this round.
-                                            This file should exist in your templates directory as your-experiment-namespace/template-name.html,
-                                            e.g., if set to foo.html, vcweb will look for templates/forestry/foo.html''')
-    """ survey url """
+            help_text=_('''The name of the template to use to render when executing this round.
+                        This file should exist in your templates directory as your-experiment-namespace/template-name.html,
+                        e.g., if set to foo.html, vcweb will look for templates/forestry/foo.html'''))
     survey_url = models.URLField(null=True, blank=True)
+    """ external survey url """
+    randomize_groups = models.BooleanField(default=False, help_text=_("Shuffle participants into new groups when the round begins?"))
+    """ Should groups be randomized at the start of the round? """
+    preserve_existing_groups = models.BooleanField(default=True, help_text=_("This option is only useful if randomize_groups is set to true.  If we are randomizing groups, should existing groups (if any) be preserved?"))
+    """ Should existing groups (if any) be preserved? """
+    session_id = models.CharField(max_length=64, null=True, blank=True,
+            help_text=_('''
+            Session id to associate with this round data and the groups in this experiment, useful for longer
+            multi-session experiments where group membership may change.  We don't want to destroy the old groups as
+            that information is still needed to determine payments, etc. Instead we need to create a new set of
+            Group/ParticipantGroupRelationship models that can live in conjunction with the existing
+            Group/ParticipantGroupRelationship models.
+            '''))
 
     @property
     def custom_template_name(self):
@@ -1211,13 +1223,13 @@ class Group(models.Model):
     ''' internal numbering unique to the given experiment '''
     max_size = models.PositiveIntegerField(default=5)
     """
-    how many members can this group hold at a maximum? Could be specified as a
-    RoundParameterValue / ExperimentConfiguration value
+    how many members can this group hold at a maximum? 
     """
     experiment = models.ForeignKey(Experiment)
     """
     The experiment that contains this Group.
     """
+    session_id = models.CharField(max_length=64, null=True, blank=True)
 
     @property
     def name(self):
@@ -1435,6 +1447,10 @@ class RoundData(models.Model):
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_data_set')
     elapsed_time = models.PositiveIntegerField(default=0)
     experimenter_notes = models.TextField(null=True, blank=True)
+
+    @property
+    def session_id(self):
+        return self.round_configuration.session_id
 
     def __unicode__(self):
         return u"Data for Round %s (%s)" % (self.round_configuration.sequence_number, self.round_configuration.get_round_type_display())
