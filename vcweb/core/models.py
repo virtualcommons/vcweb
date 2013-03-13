@@ -481,6 +481,14 @@ class Experiment(models.Model):
     def all_participants_ready(self):
         return self.ready_participants == self.participant_set.count()
 
+    def get_participant_group_relationship(self, participant):
+        session_id = self.current_round.session_id
+        if session_id is None:
+            return ParticipantGroupRelationship.objects.get(group__experiment=self, participant=participant)
+        else:
+            return ParticipantGroupRelationship.objects.get(group__experiment=self, participant=participant,
+                    group__session_id=session_id)
+
     def all_participants_have_submitted(self):
         return ParticipantRoundDataValue.objects.filter(submitted=False, round_data=self.current_round_data()).count() == 0
 
@@ -1218,6 +1226,7 @@ class RoundParameterValue(ParameterizedValue):
         rc = self.round_configuration
         return u"{0}:{1} -> [{2}: {3}]".format(rc.experiment_configuration, rc.sequence_label, self.parameter, self.value)
 
+# FIXME: how to share data across groups...
 class Group(models.Model):
     number = models.PositiveIntegerField()
     ''' internal numbering unique to the given experiment '''
@@ -1230,6 +1239,7 @@ class Group(models.Model):
     The experiment that contains this Group.
     """
     session_id = models.CharField(max_length=64, null=True, blank=True)
+    related_groups = models.ManyToManyField('Group', through='GroupRelationship')
 
     @property
     def name(self):
@@ -1436,6 +1446,10 @@ class Group(models.Model):
     class Meta:
         ordering = ['experiment', 'number']
 
+class GroupRelationship(models.Model):
+    date_created = models.DateTimeField(default=datetime.now)
+    first_group = models.ForeignKey(Group, related_name='first_group_relationship_set')
+    second_group = models.ForeignKey(Group, related_name='second_group_relationship_set')
 
 class RoundData(models.Model):
     """
@@ -1457,6 +1471,10 @@ class RoundData(models.Model):
 
     class Meta:
         ordering = [ 'round_configuration' ]
+
+class GroupRelationshipDataValue(ParameterizedValue):
+    group_relationship = models.ForeignKey(GroupRelationship)
+    round_data = models.ForeignKey(RoundData, related_name='group_relationship_data_value_set')
 
 class GroupRoundDataValue(ParameterizedValue):
     group = models.ForeignKey(Group, related_name='data_value_set')
