@@ -63,6 +63,12 @@ def participate(request, experiment_id=None):
         'experimentModelJson': get_view_model_json(experiment, participant_group_relationship),
         })
 
+@participant_required
+def get_view_model(request, experiment_id=None):
+    experiment = get_object_or_404(Experiment, pk=experiment_id)
+    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=request.GET.get('participant_group_id'))
+    return JsonResponse(get_view_model_json(experiment, participant_group_relationship))
+
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict = experiment.to_dict(include_round_data=False)
     group = participant_group_relationship.group
@@ -79,6 +85,15 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['chatEnabled'] = True
     experiment_model_dict['roundDuration'] = 10
     experiment_model_dict['networkStructure'] = 10
+    practice_round = round_configuration.is_practice_round
+    experiment_model_dict['practiceRound'] = practice_round
+    if practice_round and round_configuration.sequence_number == 2:
+        experiment_model_dict['isFirstPracticeRound'] = True
+        experiment_model_dict['isSecondPracticeRound'] = False
+    elif practice_round and round_configuration.sequence_number == 3:
+        experiment_model_dict['isFirstPracticeRound'] = False
+        experiment_model_dict['isSecondPracticeRound'] = True
+
 
 # round data
 # group data values
