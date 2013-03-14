@@ -179,33 +179,23 @@ So the amount of money you get depends primarily on the amount of time you inves
 For each hour you harvest you will receive <strong data-bind='text: formatCurrency(dollarsPerToken())'></strong>
 This is your standard earning.
  <p>
- 
 <strong data-bind='text: formatCurrency(maxEarnings())'></strong>
  </p>
 </p>
 <h4>Your standard earning can increase</h4>
 <p>
 This standard revenue can change in two ways:
-If players of subgroup A, taken together, reach <span class='badge badge-important' data-bind='text: thresholdGroupA'></span> hours of conservation, 
-then each hour they spend harvesting will be paid <span class='badge badge-important' data-bind='text: bonusGroupA'></span>% more than the standard revenue.
+If players of subgroup A, taken together, reach <span class='badge badge-important' data-bind='text: localThreshold'></span> hours of conservation, 
+then each hour they spend harvesting will be paid <span class='badge badge-important' data-bind='text: localBonus'></span>% more than the standard revenue.
 The same applies for subgroup B.
-If all players in the game, taken together, reach <span class='badge badge-important' data-bind='text: thresholdGlobal'></span> hours of conservation, 
-then returns will again increase by <span class='badge badge-important' data-bind='text: bonusGlobal'></span>%. 
-
-!!DG: here we need to have different values for different players. 
-<span class='badge badge-important' data-bind='text: thresholdGroupB'></span>
-<span class='badge badge-important' data-bind='text: bonusGroupB'></span>
-
+If all players in the game, taken together, reach <span class='badge badge-important' data-bind='text: globalThreshold'></span> hours of conservation, 
+then returns will again increase by <span class='badge badge-important' data-bind='text: globalBonus'></span>%. 
 </p>
 
 <h4>Decisions are private</h4>
 <p>
-Keep in mind that decisions are private, and everyone decides for themselves how much time they want to invest in each activity.  
-
+Keep in mind that decisions are private, and everyone decides for themselves how much time they want to invest in each activity.
 </p>
-
-
-
 <ul class='pager'>
 <li class='previous'>
 <a href='javascript: void();' data-bind='click: activateInstructionsPageOne' >Back</a>
@@ -491,19 +481,15 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
         	model.networkStructure = ko.observable("{{STATIC_URL}}images/broker/SES.jpg");
         	model.networkStructureImageWidth = ko.observable("600px");
             model.networkStructureImageHeight = ko.observable("80px");
-          
-            
-      //       model.finishedInstructions = function() {
-//                 console.debug("instructions were finished, notifying experimenter");
-//                 $.post('finished-instructions', { participant_group_id: {{ participant_group_relationship.pk }} }, function(response) {
-//                     console.debug("successfully posted to server, notifying sockjs: " + response);
-//                     getWebSocket().send(createMessageEvent("Instructions completed", "client_ready"));
-//                 });
-//             }
-          
+            model.finishedInstructions = function() {
+                console.debug("instructions were finished, notifying experimenter");
+                $.post('finished-instructions', { participant_group_id: {{ participant_group_relationship.pk }} }, function(response) {
+                    console.debug("successfully posted to server, notifying sockjs: " + response);
+                    getWebSocket().send(createMessageEvent("Instructions completed", "client_ready"));
+                });
+            }
             model.chatEnabled = ko.observable(false);  // round configurations
             model.chatOptionEnabled = ko.observable(false); // round configurations
-            
             model.harvestDecision = ko.observable(0);
             model.conservationDecision = ko.computed(function() {
             	return model.maxHarvestDecision - model.harvestDecision
@@ -557,10 +543,6 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                         },
                         1000));
             };
-            
-            
-            
-            
  //            model.submitDecision = function(data, evt) {
 //                 if (evt) {
 //                     evt.preventDefault();
