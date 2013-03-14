@@ -1,126 +1,662 @@
 {% extends "participant/base.html" %}
-{% load static from staticfiles %}
+{% load static %}
 {% block head %}
 {{ block.super }}
 <link rel='stylesheet' href='{% static "css/broker/style.css" %}'/>
-    <link href="https://fonts.googleapis.com/css?family=Limelight|Flamenco|Federo|Yesteryear|Josefin Sans|Spinnaker|Sansita One|Handlee|Droid Sans|Oswald:400,300,700" media="screen" rel="stylesheet" type="text/css" />
 {% endblock %}
-{% block headerlinks %}
+{% block page %}
+<div clas="container">
+<div class="hero-unit">
+<form class='form-inline'>
+	<div class="row">
+	
+    <div class='control-group'>
+        <div class='controls'>
+            <label class='control-label' for='pick-template'>Round template</label>
+            <select id='pick-template' data-bind='value: templateName()'>
+                <option value='WELCOME'>Welcome</option>
+                <option value='GENERAL_INSTRUCTIONS'>Instructions</option>
+                <option value='GENERAL_INSTRUCTIONS2'>Instructions page 2</option>
+                <option value='PRACTICE_ROUND_INSTRUCTIONS'>Practice Round Instructions</option>
+                <option value='PRACTICE'>Practice round</option>
+                <option value='REGULAR'>Actual round</option>
+            </select>
+        </div>
+     
+       
+         <div class='controls'>
+            <label class='control-label' for='pick-network-structure'>Network structure</label>
+            <select id='pick-network-structure' data-bind='value: networkStructure()'>
+                <option value='SES.jpg'>Whole System</option>
+                <option value='WITHIN_AB.jpg'>Within Group Communication A-B</option>
+       			<option value='WITHIN_CD.jpg'>Within Group Communication C-D</option>
+       			<option value='BETWEEN_AC.jpg'>Within Group Communication A-C</option>
+       			<option value='BETWEEN_AD.jpg'>Within Group Communication A-D</option>
+       			<option value='BETWEEN_BC.jpg'>Within Group Communication B-C</option>
+       			<option value='BETWEEN_BD.jpg'>Within Group Communication B-D</option>
+            </select>
+        </div>
 
-{% endblock %}
-{% block logo %}
-{% endblock %}
-{% block content %}
-    <div class="navbar navbar-fixed-top">
-      <div class="navbar-inner">
-        <img src="bolt.png" class="pull-left image">
-        <a class="brand" href="#">Harvesting Game</a>
-        <ul class="nav pull-right">
-          <li>
-            <a href="#">Instructions</a>
-          </li>
-          <li class="active">
-            <a href="#">Game</a>
-          </li>
-          <li>
-            <a href="#">Calculator</a>
-          </li>
-          <li>
-            <a href="#">About</a>
-          </li>
-        </ul>
-      </div>
     </div>
-    <div class="container container-1">
-      <div class="row-fluid">
-        <span class="span9">
-          <div class="div-1">
-            <div class="page-header div-2">
-              <h1>How to play</h1>
-            </div>
-            <p>You start this game with 10 hours available to invest. You will have several "workdays" which are the rounds of this game. At each workday you have to choose how you will allocate the time you have available between two activities. You can invest your
-              time into harvesting a natural resource or into conservation/maintenance. Your gains are proportional to the amount of time you spend harvesting. For each hour you harvest you will receive $XX. The amount of time that you put on conservation will be sum
-              together with the time that others invest in conservation. When conservation time is higher than 10 hours then your returns from the harvesting time will be 50% higher.</p>
-            <p>You can decide to invest all your time in one of the activities.
-              <br>
-            </p>
-          </div>
-          <div class="div-1">
-            <div class="page-header div-2">
-              <h1>Resource Harvesting</h1>
-            </div>
-            <img src="SES.jpg" class="image image-1">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Hours Available</th>
-                  <th>Harvesting</th>
-                  <th>Conservation</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="td-1">10</td>
-                  <td>&nbsp;
-                    <input class="textinput" type="text" id="harvestID" name="harvest" placeholder="Placeholder">
-                  </td>
-                  <td class="td-1">
-                    <input class="textinput" type="text" id="conservationID" name="conservation" placeholder="Placeholder">
-                  </td>
-                  <td>&nbsp;
-                    <button class="btn" id="play">Play !</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td></td>
-                  <td class="td-2">
-                    <img src="arrow.png" class="image">
-                  </td>
-                  <td></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td class="td-3">Payments</td>
-                  <td>
-                    <input class="textinput" type="text" id="paymentID" name="payment" placeholder="Placeholder">
-                  </td>
-                  <td></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-            <p>
-              <br>
-            </p>
-          </div>
-        </span>
-        <span class="span3">
-          <h3 class="heading">Your earnings</h3>
-          <p>$ 100,00</p>
-          <p></p>
-          <p></p>
-          <p></p>
-          <h3 class="heading">Communication</h3>
-          <img src="network.png" class="image">
-          <ul class="nav">
-            <li>
-             Here is where the chat room is placed
-            </li>
-          </ul>
-        </span>
-      </div>
     </div>
-     <div class="container-fluid">
-      <div class="container">
-        <h3 class="dom-heading">Centre for the Study of Institutional Diversity
-          <br>Stockholm Resilience Centre</h3>
-      </div>
+	<div class="row">
+    <h3>Timers</h3>
+    <div class='control-group'>
+        <div class='controls'>
+            <button data-bind='click: startHarvestDecisionTimer' type='button' class='btn btn-primary'>Start harvest decision timer</button>
+            <button data-bind='click: startChatTimer' type='button' class='btn btn-primary'>Start chat timer</button>
+             <button data-bind='click: startChatOptionTimer' type='button' class='btn btn-primary'>Start chat option timer</button>
+        </div>
     </div>
-  
-{% endblock %}
+    </div>
+    </div>
+</form>
+</div>
+<div class="row">
+	<div class="span9">
+		<div data-bind='template: { name: templateName() }'>
+	</div>
+</div>
+</div>
+{% endblock page %}
+
 
 {% block javascript %}
 {{ block.super }}
+<!-- ko templates -->
+<script type='text/html' id='CHAT'>
+{% include "forms/chat-template.html" %}	
+<div data-bind='if: chatEnabled'>
+<h3>Chat</h3>
+<div class='chat-sidebar well'>
+    <form id="chatform" class='form-inline'>
+        <div class='input-prepend input-append'>
+            <span class='add-on'><i class='text-info icon-comment'></i></span>
+            <input style='width: 100%;' class='chat-action' id='chatText' type="text" placeholder="Enter a chat message">
+            <button class='btn' data-bind='click: submitChatMessage'>Send</button>
+        </div>
+    </form>
+    <div id='chat-div'>
+        <div data-bind='foreach: chatMessages'>
+            <i class='icon-user muted'></i> <strong>Participant <span data-bind='text: participant_number'></span></strong><b class='pull-right muted' data-bind='text: date_created'></b>
+            <p>
+            <small><i class='icon-double-angle-right'></i></small> <span data-bind='text: message'></span>
+            </p>
+        </div>
+    </div>
+</div>
+</div>
+</script>
 
+
+
+
+
+
+
+<script type='text/html' id='WELCOME'>
+
+<h3>Welcome</h3>
+<p class='lead'>
+    The experiment will begin shortly after everyone has been assigned a station and has had time to log in.
+</p>
+<div class='well'>
+    <div class='alert alert-info'>
+    <i class='text-success icon-info-sign'></i> Please <strong>wait quietly and do not close this window, open any other applications, or communicate with any of
+    the other participants</strong>.
+    </div>
+    <div class='alert alert-info'>
+    <i class='text-success icon-info-sign'></i>
+    Please also make sure to turn off, silence, and disable vibration alerts on your cell phones and any mobile devices before the experiment begins.
+    </div>
+    <div>
+    Thank you for your cooperation.
+    </div>
+    <div class="progress progress-striped">
+ 	 <div class="bar" style="width: 20%;"></div>
+	</div>
+</div>
+</script>
+
+
+
+
+<script type='text/html' id='GENERAL_INSTRUCTIONS'>
+<div id='instructions1'>
+<h4>Harvesting and Profit</h4>
+<p>
+This experiment is intended to recreate management decision about natural resources. 
+You have been assigned randomly to a group of four people. 
+You represent a manager of a natural resource.
+</p>
+<h4>
+In this game you can earn money. 
+</h4>
+<p>
+Your earnings depend on how well you will do in the game. Let me tell you how the game works. 
+</p>
+
+<br>
+<h4>The game setup</h4>
+ <img class="image image-1" src="{{STATIC_URL}}images/broker/SES.jpg" '>
+<p>
+Imagine you have an ecological resource at your disposal. 
+This resource is also shared with another player. 
+In the image you see, players on the left-hand side share the first resource and 
+players on the right hand-side share another resource. 
+In other words, there are two groups of <strong data-bind='text:participantsPerSubGroup'></strong> people within the larger group of <strong data-bind='text:participantsPerGroup'></strong> people.
+</p>
+
+<h4>Resources influence each other</h4>
+<p>
+The resources you see in the picture, they influence each other. Which means that 
+the decision you take also influences the resources of the other group. 
+</p>
+
+<ul class='pager'>
+<li class='next'>
+<a href='javascript: void();' data-bind='click: activateInstructionsPageTwo'>OK, I understand</a>
+</li>
+</ul>
+</div>
+</script>
+
+
+<script type='text/html' id='GENERAL_INSTRUCTIONS2'>
+<div id='instructions2'>
+<h4>How to play</h4>
+<p>
+At each round you have <strong data-bind='text: maxHarvestDecision'></strong> hours available to work on this resource, 
+and you can invest your time in two different types of activities: 
+You can spend time harvesting the resource or spend time in conserving the resource. 
+</br>
+Notice that if you prefer, you can invest all your time in only one of the activities.
+You will play several rounds. 
+As I said before you can earn money in this game. 
+At the end of each round the amount of time you spent in harvesting will be transformed into earnings. 
+So the amount of money you get depends primarily on the amount of time you invest into harvesting. 
+
+For each hour you harvest you will receive <strong data-bind='text: formatCurrency(dollarsPerToken())'></strong>
+This is your standard earning.
+ <p>
+ 
+<strong data-bind='text: formatCurrency(maxEarnings())'></strong>
+ </p>
+</p>
+<h4>Your standard earning can increase</h4>
+<p>
+This standard revenue can change in two ways:
+If players of subgroup A, taken together, reach <span class='badge badge-important' data-bind='text: thresholdGroupA'></span> hours of conservation, 
+then each hour they spend harvesting will be paid <span class='badge badge-important' data-bind='text: bonusGroupA'></span>% more than the standard revenue.
+The same applies for subgroup B.
+If all players in the game, taken together, reach <span class='badge badge-important' data-bind='text: thresholdGlobal'></span> hours of conservation, 
+then returns will again increase by <span class='badge badge-important' data-bind='text: bonusGlobal'></span>%. 
+
+!!DG: here we need to have different values for different players. 
+<span class='badge badge-important' data-bind='text: thresholdGroupB'></span>
+<span class='badge badge-important' data-bind='text: bonusGroupB'></span>
+
+</p>
+
+<h4>Decisions are private</h4>
+<p>
+Keep in mind that decisions are private, and everyone decides for themselves how much time they want to invest in each activity.  
+
+</p>
+
+
+
+<ul class='pager'>
+<li class='previous'>
+<a href='javascript: void();' data-bind='click: activateInstructionsPageOne' >Back</a>
+</li>
+<li class='next'>
+<a href='javascript: void();' data-bind='click: activatePracticeRoundInstructions'>OK, Continue to practice rounds</a>
+</li>
+</ul>
+</div>
+</script>
+
+<script type='text/html' id='PRACTICE_ROUND_INSTRUCTIONS'>
+<h3>
+Practicing 
+</h3>
+<p>
+Let’s do some practicing so you can get familiar with the interface. 
+</p>
+
+<h3>No Payment</h3>
+This practice will NOT count for your real earnings.  <br>
+It is just an opportunity for you to get familiar with the game.  
+
+
+At the center of the page is where you insert your decision. 
+For this practice round, put 6 hours into harvesting. 
+Note that the rest of your available hours will be put into conservation. 
+{Then click Play!  To submit your choice.} You immediately see how much you earned in that day.  
+
+You receive 0.6 from harvesting. Because everyone contributed 4 hours to conservation, resulting in 8 hours for group A and 8 hours for group B. So the standard revenue of $0.10/hour has been increased by 50% you receive an extra $0.30 and your total is $0.90.
+ If the sum within your group was less than 5 hours you would not receive benefits. If the sum of conservation time of all players was more than 22 hours you would get a further increase of 50% in the revenues.
+On the right hand side of the page you can see the accumulation of your earning through the game. 
+
+At some point during the game you will be allowed to communicate to other players. This will be done through the chat window. Each message you send will be targeted a single player. … 
+Go ahead and send a message. It will not be seen by others now. 
+Remember that all your choices are independent and none will see what your decisions are. Communications will be limited by time. 
+
+</p>
+
+<h3>Harvest Choice</h3>
+<p>
+Each round you will have a maximum of 1 minute to make a harvest decision.  THere are two ways to submit a harvest
+decision:
+</p>
+<ol>
+<li>Select a harvest amount and click submit</li>
+<li>Select a harvest amount and wait for the end of the session</li>
+</ol>
+<p>
+At the end of each round a countdown will alert you when there are 10 seconds remaining to make a harvest choice.  When
+the countdown reaches zero, any value you have selected will be auto-submitted.  The default harvest is zero.
+</p>
+<ul class='pager'>
+<li class='previous'>
+<a href='javascript:void();' data-bind='click: activateInstructionsPageTwo'>Back</a>
+</li>
+<li class='next'>
+<a href='javascript: void();' data-bind='click: finishedInstructions'>I have fully read and understand these instructions</a>
+</li>
+</ul>
+</script>
+<script type='text/html' id='PAID_EXPERIMENT_INSTRUCTIONS'>
+<h2>Paid Experiment Instructions</h2>
+<h3>Two Sessions</h3>
+<p>
+This experiment is composed of two different, unconnected sessions.  Your group will be randomly selected for each
+session, so you will be playing with a different group each time.  We will pay you for one of these two sessions, chosen
+at random.  You have exactly 50% chance of being paid for your earnings in either session.
+</p>
+<h3>Group and Individual Status</h3>
+<p>
+You will be able to observe the status of the members of your group each round.  Likewise your group members can see
+your status and those of the group.
+</p>
+<h3>Group Chat</h3>
+<p>
+You will be able to chat with the other members of your group via group text chat.  Once you have made a harvest
+decision, you will no longer be able to chat for that round.
+</p>
+<h3>Harvest Choice</h3>
+<p>
+You will have a maximum of <i class='icon-clock'></i><span data-bind='text: roundDuration'></span> seconds to make a
+harvest decision each round.  A countdown will alert you when there are 
+<span data-bind='text: warningCountdownTime'></span> seconds remaining to make a harvest choice.  When the countdown
+reaches zero, any value you have selected will be submitted.  <strong>The default harvest is zero.</strong>
+</p>
+</script>
+<script type='text/html' id='INSTRUCTIONS'>
+    <div data-bind='html: instructions'>
+    </div>
+</script>
+<script type='text/html' id='REGULAR'>
+<div class='row'>
+   <div class='span4'>
+        <h3>My Current Earnings</h3>
+        <div>
+        	<span data-bind='text: totalEarning'></span>
+        </div>
+        
+        <div data-bind='if: isTimerRunning'>
+        <div class='alert alert-error'>
+        <b><i class='icon-time'></i> Time left:</b> 
+         <span data-bind='text: secondsLeft'></span>
+        </div>
+        </div>
+        
+        
+        
+    </div>
+    
+<!-- only show when chatOption enabled -->     
+<div clas="span6" data-bind="if: chatOptionEnabled">
+<div data-bind='if: isTimerRunning'>
+        <div class='alert alert-error'>
+        <b><i class='icon-time'></i> Time left:</b> 
+         <span data-bind='text: secondsLeft'></span>s
+        </div>
+        </div>
+<div class="span1" >
+    <a href="#" class="btn btn-primary" data-bind="submitChatOptionLocal">
+        <i class="icon-home icon-white"></i>
+        <span><strong>Talk within group FREE</strong></span>            
+    </a>
+</div>
+<div class="span1">
+	<a href="#" class="btn btn-primary" data-bind="submitChatOptionGlobal">
+        <i class="icon-globe icon-white"></i>
+        <span><strong>Talk with other group $$ 2h</strong></span>        	
+    </a>
+</div>
+</div>
+
+
+
+<!-- The table for decision and showing payments from last round -->
+<div class='span6'>
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th colspan="3">Decisions Today</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="td-1">Harvesting</td>
+      <td><input class="textinput" type="text" id="harvestID" name="harvest" placeholder="Placeholder"></td>
+      <td class="td-1">
+</table>
+<p>
+<table class="table" data-bind="with: chosenFolderData">
+  <thead>
+    <tr>
+      <th colspan="3" >Your decisions last round</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="td-1">Harvesting</td>
+      <td><strong class='text-success'><span data-bind='text:lastHarvestDecision'></span> <i class='icon-leaf'></i></strong></td>
+      <td class="td-1"></td>
+    </tr>
+    <tr>
+      <td class="td-1">Conservation</td>
+      <td span="2"><strong class='text-success'><span data-bind='text:lastConservationDecision'></span> <i class='icon-leaf'></i></strong></td>
+    </tr>
+</table>
+<p>
+<table class="table" data-bind="with: chosenFolderData">
+  <thead>
+    <tr>
+      <th colspan="3" >Payments from last round</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="td-1">from your harvesting</td>
+      <td><input class="textinput" type="text" id="harvestID" name="harvest" placeholder="Placeholder"></td>
+      <td class="td-1"></td>
+    </tr>
+    <tr>
+      <td class="td-1">from within group bonus</td>
+      <td span="2"><input class="textinput" type="text" id="conservationID" name="conservation" ></td>
+    </tr>
+    <tr>
+      <td class="td-1">from between group bonus</td>
+      <td span="2"><input class="textinput" type="text" id="conservationID" name="conservation" ></td>
+    </tr>
+</table>
+
+</div>
+ 
+
+</div>
+
+<div data-bind='if: practiceRound'>
+<div class='alert alert-error alert-block'>
+<h4>PRACTICE ROUND</h4>
+This is a practice round.  The decisions you make in this round will <b>NOT</b> contribute to your earnings.
+</div>
+</div>
+<div data-bind='style: { width: networkStructureImageWidth, height: systemImageHeight, background: networkStructureImageBackgroundUrl }'>
+        &nbsp;
+    </div>
+    
+<div data-bind="ifnot: isTimeOut" id='resourceDisplay'>
+    <div class='alert alert-info'>You have <strong class='badge badge-success' data-bind='text:hoursLeft'></strong> hours left to use today.</div>
+    
+</div>
+<div data-bind="if: isTimeOut">
+    <div style='padding: 8px; margin: auto; border: solid 1px; background: url("{{STATIC_URL}}images/forestry/deforestation.jpg") no-repeat center; height: 282px; width:425px;'>
+        &nbsp;
+    </div>
+    <div class='alert alert-error'>You have no time left today. Please wait until the next round begins.</div>
+</div>
+<div data-bind='if: hasSubmit'>
+<div class='alert alert-error'>
+    You have invested <span class='badge badge-important' data-bind='text: harvestDecision'></span> hours in harvesting today.
+    You have invested <span class='badge badge-important' data-bind='text: conservationDecision'></span> hours in conservation today.
+</div>
+</div>
+
+
+<h3>Harvest</h3>
+<div data-bind='ifnot: isResourceEmpty'>
+<form id='vcweb-form' action='' method='post' class='form-inline'>
+    {% csrf_token %}
+    <div class='control-group'>
+        <div class='controls'>
+            <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
+            <input id='harvestDecision' type="number" size="1" maxlength="1" name='harvest_decision' class='required' min="0" data-bind="value: harvestDecision, attr: { max: maxHarvestDecision }" /> 
+             <input id='conservationDecision' type="number" size="1" maxlength="1" name='conservation_decision' class='disabled' min="0" data-bind="value: conservationDecision, attr: { max: maxConservationDecision }" /> 
+           
+            <button id='submitDecision' data-bind='click: submitDecision' type='submit' class='btn'>Harvest</button>
+        </div>
+    </div>
+</form>
+</div>
+</script>
+<script type="text/javascript">
+    $(function() {
+        function ExperimentModel(experimentModelJson) {
+            var self = this;
+            var model = ko.mapping.fromJS(experimentModelJson);
+
+
+            model.secondsLeft = ko.observable(0);
+            model.currentInterval = ko.observable();
+            model.setCurrentInterval = function(intervalId) {
+                model.clearCurrentInterval();
+                model.currentInterval(intervalId);
+            }
+            model.clearCurrentInterval = function() {
+                console.debug("clearing current interval: " + model.currentInterval());
+                if (model.currentInterval()) {
+                    clearInterval(model.currentInterval());
+                    model.currentInterval(undefined);
+                }
+            }
+            model.tick = function() {
+                model.secondsLeft(model.secondsLeft() - 1);
+            }
+            model.isTimerRunning = ko.computed(function() {
+                return model.secondsLeft() > 0;
+            });
+            model.templateName = ko.observable("WELCOME");
+            // activate instructions click bindings
+            model.activateInstructionsPageOne = function() {
+                model.templateName('GENERAL_INSTRUCTIONS');
+            };
+            model.activateInstructionsPageTwo = function() {
+                model.templateName('GENERAL_INSTRUCTIONS2');
+            };
+            model.activateInstructionsPageThree = function() {
+                model.templateName('GENERAL_INSTRUCTIONS3');
+            };
+            model.activatePracticeRoundInstructions = function() {
+                model.templateName("PRACTICE_ROUND_INSTRUCTIONS");
+            }
+            model.activateTreatmentInstructions = function() {
+                model.templateName("TREATMENT_INSTRUCTIONS");
+            }
+            //for displaying the different network structures
+        	model.networkStructure = ko.observable("{{STATIC_URL}}images/broker/SES.jpg");
+        	model.networkStructureImageWidth = ko.observable("600px");
+            model.networkStructureImageHeight = ko.observable("80px");
+          
+            
+      //       model.finishedInstructions = function() {
+//                 console.debug("instructions were finished, notifying experimenter");
+//                 $.post('finished-instructions', { participant_group_id: {{ participant_group_relationship.pk }} }, function(response) {
+//                     console.debug("successfully posted to server, notifying sockjs: " + response);
+//                     getWebSocket().send(createMessageEvent("Instructions completed", "client_ready"));
+//                 });
+//             }
+          
+            model.chatEnabled = ko.observable(false);  // round configurations
+            model.chatOptionEnabled = ko.observable(false); // round configurations
+            
+            model.harvestDecision = ko.observable(0);
+            model.conservationDecision = ko.computed(function() {
+            	return model.maxHarvestDecision - model.harvestDecision
+            });
+//             model.numberOfTreesPerRow = ko.observable(10);
+//             model.isResourceEmpty = ko.computed(function() {
+//                 return model.resourceLevel() == 0;
+//             });
+//             model.resourcesToDisplay = ko.computed(function() {
+//                 if (model.resourceLevel() > 0) {
+//                     return Math.min(model.resourceLevel(), 20);
+//                 }
+//                 return 0;
+//             });
+        
+//          
+            model.startChatTimer = function() {
+                model.enableChat();
+                model.secondsLeft(60);
+                model.setCurrentInterval(
+                        setInterval(function() {
+                            model.tick();
+                            if (! model.isTimerRunning()) {
+                                model.disableChat();
+                                model.clearCurrentInterval();
+                            }
+                        },
+                        1000));
+            };
+            model.startHarvestDecisionTimer = function() { 
+                model.secondsLeft(10);
+                model.setCurrentInterval(setInterval(function() {
+                    model.tick();
+                    if (! model.isTimerRunning()) {
+                        model.submitDecision();
+                        model.clearCurrentInterval();
+                    }
+                },
+                1000));
+            };
+             model.startChatOptionTimer = function() {
+              	model.enableChatOption();
+                model.secondsLeft(10);
+                model.setCurrentInterval(
+                        setInterval(function() {
+                            model.tick();
+                            if (! model.isTimerRunning()) {
+                            	model.disableChatOption();
+                                model.clearCurrentInterval();
+                            }
+                        },
+                        1000));
+            };
+            
+            
+            
+            
+ //            model.submitDecision = function(data, evt) {
+//                 if (evt) {
+//                     evt.preventDefault();
+//                 }
+//                 var formData = $('#vcweb-form').serialize();
+//                 $.post('submit-harvest-decision', formData, function(jsonString) {
+//                     console.log(jsonString);
+//                     // FIXME: should probably update the entire model after we remove the test panel
+//                     // update(data.experimentModelJson);
+//                     // ko.mapping.fromJSON(data.experimentModelJson, model);
+//                     model.secondsLeft(0);
+//                     model.hasSubmit(true);
+//                     model.clearCurrentInterval();
+//                 });
+//             }
+//             model.submitChatMessage = function(data, evt) {
+//                 evt.preventDefault();
+//                 console.log("clicking chat message");
+//                 var message = $('#chatText').val();
+//                 if (message) {
+//                     $('#chatText').val('');
+//                     getWebSocket().send(createMessageEvent(message));
+//                     $('#chatText').focus();
+//                 }
+//             }
+//             model.disableChat = function() {
+//                 $('#content').removeClass('span6').addClass('span9');
+//                 $('#sidebar').removeClass('span6').addClass('span3');
+//                 $('.chat-action').addClass('disabled').attr('disabled', true);
+//                 model.chatEnabled(false);
+//             }
+//             model.enableChat = function() {
+//                 $('#content').removeClass('span9').addClass('span6');
+//                 $('#sidebar').removeClass('span3').addClass('span6');
+//                 $('.chat-action').removeClass('disabled').attr('disabled', false);
+//                 model.chatEnabled(true);
+//             }
+//             
+//              model.disableChatOption = function() {
+//                 model.chatOptionEnabled(false);
+//             }
+//             model.enableChatOption = function() {
+//                 model.chatOptionEnabled(true);
+//             }
+//             
+            
+            return model;
+        }
+        function update(experimentModel) {
+            return function(data) {
+                ko.mapping.fromJS(data, experimentModel);
+            }
+        }
+        function initialize(experimentModelJson) {
+            var experimentModel = new ExperimentModel(experimentModelJson);
+            ko.applyBindings(experimentModel);
+            var s = connect();
+            s.onmessage = function(json) {
+                console.debug(json);
+                var data = $.parseJSON(json.data);
+                console.debug(data);
+                switch (data.event_type) {
+                    case 'chat':
+                        experimentModel.chatMessages.unshift(data);
+                        console.debug("received chat message:" + json);
+                        break;
+                    default:
+                        console.debug("unhandled json message:" + json);
+                        break;
+                }
+                update(json);
+            };
+//             $('#harvestDecision').keyup(function() {
+//                 $('#harvestDecision').val(this.value.match(/\d+/));
+//             });
+            $('#pick-template').change(function() {
+                var templateName = $(this).val();
+                console.debug("switching to template: " + templateName);
+                if (templateName === "PRACTICE") {
+                    templateName = "REGULAR";
+                    experimentModel.practiceRound(true);
+                }
+                else if (templateName === "REGULAR") {
+                    experimentModel.practiceRound(false);
+                }
+                experimentModel.templateName(templateName);
+            });
+//             $('#pick-network-structure').change(function() {
+//                 var networkStructure = $(this).val();
+//                 console.debug("choosing network structure: " + networkStructure);  
+//                 experimentModel.networkStructure(networkStructure);
+//             });
+
+        }
+        var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
+        initialize(experimentModelJson);
+    });
+</script>
 {% endblock %}
