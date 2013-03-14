@@ -173,6 +173,10 @@ class LogMessageForm(forms.Form):
             return level
         raise ValidationError(_("invalid log level %s" % level))
 
+class SingleIntegerDecisionForm(forms.Form):
+    integer_decision = forms.IntegerField(required=True, min_value=0)
+    participant_group_id = forms.IntegerField(required=True, widget=forms.widgets.HiddenInput)
+
 class QuizForm(forms.Form):
     name_question = forms.CharField(max_length=64, label=_("What is your name?"))
     def __init__(self, *args, **kwargs):

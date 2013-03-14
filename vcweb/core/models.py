@@ -207,6 +207,20 @@ class ExperimentConfiguration(models.Model):
     def namespace(self):
         return self.experiment_metadata.namespace
 
+    def get_parameter_value(self, parameter=None, name=None, default=None):
+        if parameter is None and name is None:
+            logger.error("Can't find a parameter value with no name or parameter, returning default")
+            return default
+        try:
+            if parameter:
+                return self.experiment_parameter_value_set.get(parameter=parameter)
+            elif name:
+                return self.experiment_parameter_value_set.get(parameter__name=name)
+        except ExperimentParameterValue.DoesNotExist:
+            logger.debug("no experiment configuration parameter value found: (%s, %s) returning default %s", parameter,
+                    name, default)
+            return DefaultValue(default)
+
     def serialize(self, output_format='xml', **kwargs):
         if self.round_configuration_set.count() > 0:
             all_objects = []
@@ -298,8 +312,6 @@ class Experiment(models.Model):
     """
     amqp_exchange_name = models.CharField(max_length=64, default="vcweb.default.exchange")
 
-    slug = models.SlugField(max_length=32, unique=True, null=True, blank=True)
-    ''' short slug to use instead of experiment pk, currently unimplemented '''
     ready_participants = models.PositiveIntegerField(default=0, help_text=_("The number of participants ready to move on to the next round."))
 
     cached_round_sequence_number = None
@@ -770,7 +782,8 @@ class Experiment(models.Model):
                 })
         return all_round_data
 
-    def as_dict(self, include_round_data=True, *args, **kwargs):
+    def to_dict(self, include_round_data=True, *args, **kwargs):
+        ec = self.experiment_configuration
         experiment_dict = {
                 'roundStatusLabel': self.status_label,
                 'roundSequenceLabel': self.sequence_label,
@@ -779,12 +792,16 @@ class Experiment(models.Model):
                 'participantCount': self.participant_set.count(),
                 'isRoundInProgress': self.is_round_in_progress,
                 'isActive': self.is_active,
+                'dollarsPerToken': float(ec.exchange_rate),
                 }
         if include_round_data:
             experiment_dict['allRoundData'] = self.all_round_data()
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
             experiment_dict['messages'] = [escape(log) for log in self.activity_log_set.order_by('-date_created')]
         return experiment_dict
+
+    def as_dict(self, *args, **kwargs):
+        return self.to_dict(*args, **kwargs)
 
     def to_json(self, include_round_data=True, *args, **kwargs):
         return dumps(self.as_dict(include_round_data, *args, **kwargs))
@@ -1226,13 +1243,12 @@ class RoundParameterValue(ParameterizedValue):
         rc = self.round_configuration
         return u"{0}:{1} -> [{2}: {3}]".format(rc.experiment_configuration, rc.sequence_label, self.parameter, self.value)
 
-# FIXME: how to share data across groups...
 class Group(models.Model):
     number = models.PositiveIntegerField()
     ''' internal numbering unique to the given experiment '''
     max_size = models.PositiveIntegerField(default=5)
     """
-    how many members can this group hold at a maximum? 
+    how many members can this group hold at a maximum?
     """
     experiment = models.ForeignKey(Experiment)
     """
