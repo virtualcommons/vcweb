@@ -64,6 +64,7 @@
 
 {% block javascript %}
 {{ block.super }}
+<script src='{% static "js/bootstrap-tour.js" %}'></script>
 <!-- ko templates -->
 <script type='text/html' id='CHAT'>
 {% include "forms/chat-template.html" %}	
@@ -460,9 +461,11 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             });
             model.setupFirstPracticeRoundTour = function() {
                 // set up first bootstrap tour
+                alert("setting up first practice round tour");
 
             };
             model.setupSecondPracticeRoundTour = function() {
+                alert("setting up second practice round tour");
 
             };
             model.update = function() {
@@ -470,14 +473,12 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
                 function(response) {
                     console.debug("updating with response: ");
                     console.debug(response);
-                    if (response.success) {
-                        ko.mapping.fromJS(response, model);
-                        if (model.isFirstPracticeRoundTour()) {
-                            model.setupFirstPracticeRoundTour();
-                        }
-                        else if (model.isSecondPracticeRoundTour()) {
-                            model.setupSecondPracticeRoundTour();
-                        }
+                    ko.mapping.fromJS(response, model);
+                    if (model.isFirstPracticeRound()) {
+                        model.setupFirstPracticeRoundTour();
+                    }
+                    else if (model.isSecondPracticeRound()) {
+                        model.setupSecondPracticeRoundTour();
                     }
                 });
             };
