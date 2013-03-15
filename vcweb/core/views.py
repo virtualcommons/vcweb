@@ -495,7 +495,7 @@ def experiment_controller(request, pk=None, experiment_action=None):
 # FIXME: unimplemented: add filters by round_data parameters
 def daily_report(request, pk=None, parameter_ids=None):
     experiment = get_object_or_404(Experiment, pk=pk)
-    round_data = experiment.current_round_data()
+    round_data = experiment.get_round_data()
 
 @login_required
 def api_logger(request, participant_group_id=None):
@@ -522,9 +522,11 @@ def participant_ready(request):
     if valid_form:
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group__experiment'), pk=form.cleaned_data['participant_group_id'])
         experiment = pgr.group.experiment
-        ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr,
-                round_data=experiment.current_round_data(), parameter=get_participant_ready_parameter(),
-                submitted=True, boolean_value=True)
+        prdv = ParticipantRoundDataValue.objects.get_or_create(participant_group_relationship=pgr,
+                round_data=experiment.get_round_data(), parameter=get_participant_ready_parameter())
+        prdv.submitted = True
+        prdv.boolean_value = True
+        prdv.save()
         experiment.ready_participants += 1
         experiment.save()
     return JsonResponse(dumps({'success': valid_form}))

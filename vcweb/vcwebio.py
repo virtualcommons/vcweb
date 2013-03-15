@@ -236,7 +236,7 @@ class ParticipantHandler(tornadio2.SocketConnection):
                 event.participant_pk = participant_pk
                 pgr_pk = event.participant_group_relationship_id
                 participant_group_relationship = ParticipantGroupRelationship.objects.get(pk=pgr_pk)
-                prdv = experiment.current_round_data().participant_data_value_set.get(participant_group_relationship__pk=pgr_pk)
+                prdv = experiment.get_round_data().participant_data_value_set.get(participant_group_relationship__pk=pgr_pk)
                 event.participant_data_value_pk = prdv.pk
                 event.participant_number = participant_group_relationship.participant_number
                 event.participant_group = participant_group_relationship.group_number
@@ -253,7 +253,7 @@ class ParticipantHandler(tornadio2.SocketConnection):
         elif message_type == 'chat':
             try:
                 participant_group_relationship = connection_manager.get_participant_group_relationship(self)
-                current_round_data = participant_group_relationship.group.experiment.current_round_data()
+                current_round_data = participant_group_relationship.group.experiment.get_round_data()
                 chat_message = ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
                         value=xhtml_escape(event.message),
                         round_data=current_round_data

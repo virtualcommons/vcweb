@@ -168,7 +168,7 @@ class ExperimenterRequest(models.Model):
 class ExperimentConfiguration(models.Model):
     """
     The configuration for a given Experiment instance.  One ExperimentConfiguration can be applied to many Experiment
-    instances but can only be associated to a single ExperimentMetadata record.  
+    instances but can only be associated to a single ExperimentMetadata record.
     """
     experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='experiment_configuration_set')
     creator = models.ForeignKey(Experimenter, related_name='experiment_configuration_set')
@@ -182,6 +182,11 @@ class ExperimentConfiguration(models.Model):
     max_group_size = models.PositiveIntegerField(default=5)
     exchange_rate = models.DecimalField(null=True, blank=True, max_digits=6, decimal_places=2, help_text=_('The exchange rate of currency per in-game token, e.g., dollars per token'))
     treatment_id = models.CharField(null=True, blank=True, max_length=32, help_text=_('An alphanumeric ID that should be unique to the set of ExperimentConfigurations for a given ExperimentMetadata'))
+    is_experimenter_driven = models.BooleanField(default=True)
+    """
+    Experimenter driven experiments have checkpoints where the experimenter
+    needs to explicitly signal the system to move to the next round or stage.
+    """
 
     @property
     def is_open(self):
@@ -305,11 +310,6 @@ class Experiment(models.Model):
     """ current round start time """
     current_round_elapsed_time = models.PositiveIntegerField(default=0)
     """ elapsed time in seconds for the current round. """
-    is_experimenter_driven = models.BooleanField(default=True)
-    """
-    Experimenter driven experiments have checkpoints where the experimenter
-    needs to explicitly signal the system to move to the next round or stage.
-    """
     amqp_exchange_name = models.CharField(max_length=64, default="vcweb.default.exchange")
 
     ready_participants = models.PositiveIntegerField(default=0, help_text=_("The number of participants ready to move on to the next round."))
@@ -360,7 +360,15 @@ class Experiment(models.Model):
 
     @property
     def participant_group_relationships(self):
-        for group in self.group_set.all():
+        '''
+        Generator function for all participant group relationships in this experiment
+        '''
+        session_id = self.current_round.session_id
+        if session_id is not None:
+            groups = self.group_set.filter(session_id=session_id)
+        else:
+            groups = self.group_set.all()
+        for group in groups:
             for pgr in group.participant_group_relationship_set.all():
                 yield pgr
 
@@ -422,7 +430,7 @@ class Experiment(models.Model):
         return self.cached_round
 
 # FIXME: cache this as well to avoid a query per invocation
-    def current_round_data(self, round_configuration=None):
+    def get_round_data(self, round_configuration=None):
         if round_configuration is None:
             round_configuration = self.current_round
         return RoundData.objects.select_related('round_configuration').get(experiment=self, round_configuration=round_configuration)
@@ -491,7 +499,7 @@ class Experiment(models.Model):
 
     @property
     def all_participants_ready(self):
-        return self.ready_participants == self.participant_set.count()
+        return self.ready_participants >= self.participant_set.count()
 
     def get_participant_group_relationship(self, participant):
         session_id = self.current_round.session_id
@@ -502,7 +510,7 @@ class Experiment(models.Model):
                     group__session_id=session_id)
 
     def all_participants_have_submitted(self):
-        return ParticipantRoundDataValue.objects.filter(submitted=False, round_data=self.current_round_data()).count() == 0
+        return ParticipantRoundDataValue.objects.filter(submitted=False, round_data=self.get_round_data()).count() == 0
 
     def register_participants(self, users=None, emails=None, institution=None, password=None):
         if self.participant_set.count() > 0:
@@ -608,7 +616,7 @@ class Experiment(models.Model):
         if participant_parameters is None:
             participant_parameters = self.parameters(scope=Parameter.PARTICIPANT_SCOPE)
         if round_data is None:
-            round_data = self.current_round_data()
+            round_data = self.get_round_data()
         for group in self.group_set.select_related('parameter').all():
             for parameter in group_parameters:
                 group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter)
@@ -712,6 +720,11 @@ class Experiment(models.Model):
 
     def create_round_data(self):
         round_data, created = self.round_data_set.get_or_create(round_configuration=self.current_round)
+        if self.experiment_configuration.is_experimenter_driven:
+            # create participant ready data values for every round in experimenter driven experiments
+            for pgr in self.participant_group_relationships:
+                ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, boolean_value=False,
+                        parameter=get_participant_ready_parameter(), round_data=round_data)
         if not created:
             logger.debug("already created round data: %s", round_data)
         return round_data
@@ -1285,8 +1298,8 @@ class Group(models.Model):
     def data_parameters(self):
         return Parameter.objects.filter(experiment_metadata=self.experiment.experiment_metadata, scope=Parameter.GROUP_SCOPE)
 
-    def current_round_data(self, round_configuration=None):
-        return self.experiment.current_round_data(round_configuration)
+    def get_round_data(self, round_configuration=None):
+        return self.experiment.get_round_data(round_configuration)
 
     @property
     def is_full(self):
@@ -1312,18 +1325,10 @@ class Group(models.Model):
 # could be a float or an int..
         update_dict = { parameter.value_field_name : models.F(parameter.value_field_name) + amount }
         self.log("adding %s to this group's %s parameter" % (amount, parameter))
-        '''
-        vs
-        GroupRoundDataValue.objects.filter(group_round_data=self.current_round_data, parameter=parameter).update(**update_dict)
-        '''
-        updated_rows = self.data_value_set.filter(round_data=self.current_round_data(), parameter=parameter).update(**update_dict)
+        updated_rows = self.data_value_set.filter(round_data=self.get_round_data(), parameter=parameter).update(**update_dict)
         if updated_rows != 1:
             logger.error("Updated %s rows, should have been only one.", updated_rows)
-        '''
-        data_value = self.current_round_data.data_values.get(parameter=parameter)
-        data_value.value += amount
-        data_value.save()
-        '''
+
     def has_data_parameter(self, **kwargs):
         criteria = self._data_parameter_criteria(**kwargs)
         try:
@@ -1352,7 +1357,7 @@ class Group(models.Model):
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None, default=None):
         ''' returns a tuple of (scalar data value, entity DataValue).  if no entity data value exists, returns (default value, None) '''
         if round_data is None:
-            round_data = self.current_round_data()
+            round_data = self.get_round_data()
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         try:
             return self.data_value_set.select_related('parameter', 'group', 'round_data').get(**criteria)
@@ -1368,7 +1373,7 @@ class Group(models.Model):
         conversion / processing to put the value into the appropriate field.
         '''
         if round_data is None:
-            round_data = self.current_round_data()
+            round_data = self.get_round_data()
         self.log("setting group param %s => %s" % (parameter, value))
         grdv = GroupRoundDataValue.objects.get(parameter=parameter, round_data=round_data, group=self)
         grdv.value = value
@@ -1378,14 +1383,14 @@ class Group(models.Model):
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
         criteria = dict([
             ('parameter__pk', parameter.pk) if parameter else ('parameter__name', parameter_name),
-            ('round_data__pk', self.current_round_data().pk if round_data is None else round_data.pk)
+            ('round_data__pk', self.get_round_data().pk if round_data is None else round_data.pk)
             ])
         criteria.update(kwargs)
         return criteria
 
 
     def get_group_data_values(self, name=None, *names):
-        round_data = self.current_round_data()
+        round_data = self.get_round_data()
         if names:
             if name: names.append(name)
             return self.data_value_set.filter(round_data=round_data, parameter__name__in=names)
@@ -1504,6 +1509,7 @@ class RoundData(models.Model):
 
     class Meta:
         ordering = [ 'round_configuration' ]
+        unique_together = (('round_configuration', 'experiment'),)
 
 class GroupClusterDataValue(ParameterizedValue):
     group_cluster = models.ForeignKey(GroupCluster)
@@ -1628,7 +1634,7 @@ class ParticipantGroupRelationshipQuerySet(models.query.QuerySet):
 
     def get_relationship(self, participant, experiment):
         try:
-            return self.select_related('group', 'participant').get(group__experiment=experiment, participant=participant)
+            return self.select_related('group', 'participant__user').get(group__experiment=experiment, participant=participant)
         except ParticipantGroupRelationship.DoesNotExist:
             logger.warning("Participant %s does not belong to a group in %s", participant, experiment)
             return None
@@ -1650,8 +1656,8 @@ class ParticipantGroupRelationship(models.Model):
 
     objects = PassThroughManager.for_queryset_class(ParticipantGroupRelationshipQuerySet)()
 
-    def current_round_data(self, round_configuration=None):
-        return self.group.current_round_data(round_configuration)
+    def get_round_data(self, round_configuration=None):
+        return self.group.get_round_data(round_configuration)
 
     @property
     def full_name(self):
@@ -1677,7 +1683,7 @@ class ParticipantGroupRelationship(models.Model):
 
     def get_data_value(self, parameter=None, round_data=None, default=None):
         if round_data is None:
-            round_data = self.current_round_data()
+            round_data = self.get_round_data()
         if parameter is not None:
             return ParticipantRoundDataValue.objects.get(round_data=round_data, parameter=parameter,
                     participant_group_relationship=self)
@@ -1686,7 +1692,7 @@ class ParticipantGroupRelationship(models.Model):
 
     def set_data_value(self, parameter=None, value=None, round_data=None):
         if round_data is None:
-            round_data = self.current_round_data()
+            round_data = self.get_round_data()
         if parameter is not None and value is not None:
             pdv = ParticipantRoundDataValue.objects.get(round_data=round_data, parameter=parameter, participant_group_relationship=self)
             pdv.submitted = True
@@ -1715,7 +1721,7 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
 class ParticipantRoundDataValue(ParameterizedValue):
     def __init__(self, *args, **kwargs):
         if 'round_data' not in kwargs and 'participant_group_relationship' in kwargs:
-            kwargs['round_data'] = kwargs['participant_group_relationship'].current_round_data()
+            kwargs['round_data'] = kwargs['participant_group_relationship'].get_round_data()
         super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
     """
     Represents one data point collected for a given Participant in a given Round.
@@ -1769,6 +1775,8 @@ class ParticipantRoundDataValue(ParameterizedValue):
 
     class Meta:
         ordering = [ '-date_created', 'round_data', 'participant_group_relationship', 'parameter' ]
+# FIXME: can't use this currently as it forbids multiple ChatMessages
+#        unique_together = (('parameter', 'participant_group_relationship'),)
 
 
 @simplecache
@@ -1787,7 +1795,7 @@ class ChatMessageQuerySet(models.query.QuerySet):
 
     def message_all(self, experiment, message, round_data=None, **kwargs):
         if round_data is None:
-            round_data = experiment.current_round_data()
+            round_data = experiment.get_round_data()
         for participant_group_relationship in ParticipantGroupRelationship.objects.for_experiment(experiment):
             yield ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
                     string_value=message,

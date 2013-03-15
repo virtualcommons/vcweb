@@ -66,8 +66,7 @@ def get_storage(participant_group_relationship, round_data=None):
 # returns the sum of all stored resources for each member in the group
 def get_total_storage(group):
     # FIXME: use django queryset aggregation for this?
-    return sum([pdv.value for pdv in group.get_participant_data_values(parameter=get_storage_parameter())])
-
+    return sum([pdv.int_value for pdv in group.get_participant_data_values(parameter=get_storage_parameter())])
 
 def set_storage(participant_group_relationship, value=0):
     storage_dv = participant_group_relationship.set_data_value(parameter=get_storage_parameter(), value=value)
@@ -75,7 +74,12 @@ def set_storage(participant_group_relationship, value=0):
     return storage_dv
 
 def should_reset_resource_level(round_configuration):
+    # FIXME: stub
     return True
+
+def get_last_harvest_decision(participant_group_relationship, round_data=None):
+    return participant_group_relationship.get_data_value(parameter=get_harvest_decision_parameter(),
+            round_data=round_data, default=0).int_value
 
 # signal handlers
 def round_setup(experiment, **kwargs):
@@ -93,7 +97,7 @@ def round_setup(experiment, **kwargs):
     if should_reset_resource_level(round_configuration):
         initial_resource_level = get_initial_resource_level(round_configuration)
         logger.debug("Resetting resource level for %s to %d", round_configuration, initial_resource_level)
-        round_data = experiment.current_round_data(round_configuration)
+        round_data = experiment.get_round_data(round_configuration)
         for group in experiment.group_set.all():
             ''' set resource level to initial default '''
             group.log("Setting resource level to initial value [%s]" % initial_resource_level)
@@ -142,7 +146,3 @@ def round_started_handler(sender, experiment=None, **kwargs):
 def round_ended_handler(sender, experiment=None, **kwargs):
     logger.debug("ending boundaries round for %s", experiment)
     round_teardown(experiment, **kwargs)
-
-
-
-

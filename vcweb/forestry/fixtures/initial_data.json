@@ -24,6 +24,7 @@
             "max_group_size": 5,
             "name": "Forestry Default Configuration",
             "date_created": "2010-09-07",
+            "is_experimenter_driven": true,
             "last_modified": "2010-09-07 16:13:03"
         },
         "model": "core.experimentconfiguration",
@@ -38,7 +39,6 @@
             "experiment_configuration": 1,
             "experiment_metadata": 1,
             "experimenter": 1,
-            "is_experimenter_driven": true,
             "start_date_time": null,
             "status": "INACTIVE",
             "tick_duration": "10s",

@@ -430,7 +430,7 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             })
             model.resourcesToDisplay = ko.computed(function() {
                 if (model.resourceLevel() > 0) {
-                    return Math.min(model.resourceLevel(), 20);
+                    return Math.min(model.resourceLevel(), model.maximumResourcesToDisplay());
                 }
                 return 0;
             });

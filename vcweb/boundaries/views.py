@@ -8,7 +8,8 @@ from vcweb.core.models import (is_participant, is_experimenter, Experiment, Part
         ParticipantExperimentRelationship, ChatMessage, ParticipantRoundDataValue)
 from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_harvest_decision_parameter,
-        get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage)
+        get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
+        get_last_harvest_decision)
 import logging
 import random
 
@@ -19,11 +20,7 @@ def participate(request, experiment_id=None):
     participant = request.user.participant
     logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration').prefetch_related('group_set', 'experiment_configuration__round_configuration_set'), pk=experiment_id)
-    per = get_object_or_404(ParticipantExperimentRelationship.objects.select_related('participant'),
-            experiment=experiment, participant=participant)
-    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group', 'participant__user').prefetch_related('group__participant_group_relationship_set'),
-            group__experiment=experiment,
-            participant=participant)
+    pgr = experiment.get_participant_group_relationship(participant)
     if experiment.experiment_metadata != get_experiment_metadata() or pgr.participant != request.user.participant:
         raise Http404
 
@@ -32,7 +29,6 @@ def participate(request, experiment_id=None):
         'auth_token': participant.authentication_token,
         'experiment': experiment,
         'participant_group_relationship': pgr,
-        'participant_experiment_relationship': per,
         'experimentModelJson': get_view_model_json(experiment, pgr),
         },
         context_instance=RequestContext(request))
@@ -47,7 +43,7 @@ def submit_harvest_decision(request, experiment_id=None):
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         harvest_decision = form.cleaned_data['harvest_decision']
         ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, int_value=harvest_decision,
-                round_data=experiment.current_round_data(), parameter=get_harvest_decision_parameter())
+                round_data=experiment.get_round_data(), parameter=get_harvest_decision_parameter())
         # set harvest decision for participant
         # FIXME: inconsistency, GET returns HTML and POST return JSON..
         return JsonResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr)}))
@@ -60,7 +56,10 @@ def submit_harvest_decision(request, experiment_id=None):
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
-    current_round_data = experiment.current_round_data
+    current_round_data = experiment.current_round_data(round_configuration=current_round)
+    previous_round = experiment.previous_round
+    previous_round_data = experiment.get_round_data(round_configuration=previous_round)
+
     experiment_model_dict = experiment.as_dict(include_round_data=False, attrs={})
     group_data = []
     player_data = []
@@ -68,24 +67,14 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     cost_of_living = get_cost_of_living(current_round)
     own_group = participant_group_relationship.group
     own_resource_level = 0
-    for group in experiment.group_set.all():
-        resource_level = get_resource_level(group)
-        if group == own_group:
-            own_resource_level = resource_level
-        group_data.append({
-            'groupId': unicode(group),
-            'resourceLevel': resource_level,
-            'totalStorage': get_total_storage(group),
-            'regrowthRate': regrowth_rate,
-            'costOfLiving': cost_of_living,
-            })
-
     for pgr in own_group.participant_group_relationship_set.all():
         player_data.append({
             'id': pgr.participant_number,
-            'lastHarvestDecision': random.randint(0, 10),
+            # FIXME: replace with lookup of last harvest decision, if it exists
+            'lastHarvestDecision': get_last_harvest_decision(pgr, round_data=previous_round_data),
             'storage': get_storage(pgr, current_round_data),
             })
+    experiment_model_dict['playerData'] = player_data
 
     experiment_model_dict['chatMessages'] = [
             { 'pk': cm.pk,
@@ -97,13 +86,24 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             ]
     experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
     experiment_model_dict['groupData'] = group_data
+# FIXME: replace with group cluster lookups
+    for group in experiment.group_set.all():
+        resource_level = get_resource_level(group)
+        if group == own_group:
+            own_resource_level = resource_level
+        group_data.append({
+            'groupId': unicode(group),
+            'resourceLevel': resource_level,
+            'totalStorage': get_total_storage(group),
+            'regrowthRate': regrowth_rate,
+            'costOfLiving': cost_of_living,
+            })
     experiment_model_dict['otherGroupResourceLevel'] = random.randint(50, 100)
     experiment_model_dict['otherGroupAverageHarvest'] = random.uniform(0, 10)
     experiment_model_dict['otherGroupAverageStorage'] = random.uniform(10, 30)
 
-    experiment_model_dict['playerData'] = player_data
+# round / experiment configuration data
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
-    experiment_model_dict['numberOfRounds'] = ec.final_sequence_number
     experiment_model_dict['roundType'] = current_round.round_type
     experiment_model_dict['regrowthRate'] = regrowth_rate
     experiment_model_dict['costOfLiving'] = cost_of_living

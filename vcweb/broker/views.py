@@ -25,7 +25,7 @@ def submit_decision(request, experiment_id=None):
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         harvest_hours = form.cleaned_data['integer_decision']
         conservation_hours = get_max_harvest_hours(experiment) - harvest_hours
-        round_data = experiment.current_round_data()
+        round_data = experiment.get_round_data()
         ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, int_value=harvest_hours,
                 round_data=round_data, parameter=get_harvest_decision_parameter())
         pgr.participant_data_value_set.create(int_value=conservation_hours, round_data=round_data,

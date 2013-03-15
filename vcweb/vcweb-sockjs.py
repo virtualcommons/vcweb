@@ -296,7 +296,7 @@ class ParticipantConnection(BaseConnection):
         (per, valid) = self.verify_auth_token(event)
         if valid:
             pgr = connection_manager.get_participant_group_relationship(self)
-            current_round_data = experiment.current_round_data()
+            current_round_data = experiment.get_round_data()
             # FIXME: should chat message be created via post to Django form instead?
             chat_message = ChatMessage.objects.create(participant_group_relationship=pgr,
                     string_value=event.message,

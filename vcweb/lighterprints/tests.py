@@ -56,7 +56,7 @@ class UpdateLevelTest(BaseTest):
         e = self.experiment
         e.activate()
         e.start_round()
-        current_round_data = e.current_round_data()
+        current_round_data = e.get_round_data()
 # initialize participant carbon savings
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
             for activity in Activity.objects.filter(level=1):
