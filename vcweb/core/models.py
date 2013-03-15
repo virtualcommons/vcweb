@@ -1255,7 +1255,6 @@ class Group(models.Model):
     The experiment that contains this Group.
     """
     session_id = models.CharField(max_length=64, null=True, blank=True)
-    related_groups = models.ManyToManyField('Group', through='GroupRelationship')
 
     @property
     def name(self):
@@ -1462,10 +1461,15 @@ class Group(models.Model):
     class Meta:
         ordering = ['experiment', 'number']
 
+class GroupCluster(models.Model):
+    date_created = models.DateTimeField(default=datetime.now)
+    name = models.CharField(max_length=64, null=True, blank=True)
+    session_id = models.CharField(max_length=64, null=True, blank=True)
+
 class GroupRelationship(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
-    first_group = models.ForeignKey(Group, related_name='first_group_relationship_set')
-    second_group = models.ForeignKey(Group, related_name='second_group_relationship_set')
+    cluster = models.ForeignKey(GroupCluster, related_name='group_set')
+    group = models.ForeignKey(Group)
 
 class RoundData(models.Model):
     """
@@ -1488,9 +1492,9 @@ class RoundData(models.Model):
     class Meta:
         ordering = [ 'round_configuration' ]
 
-class GroupRelationshipDataValue(ParameterizedValue):
-    group_relationship = models.ForeignKey(GroupRelationship)
-    round_data = models.ForeignKey(RoundData, related_name='group_relationship_data_value_set')
+class GroupClusterDataValue(ParameterizedValue):
+    group_cluster = models.ForeignKey(GroupCluster)
+    round_data = models.ForeignKey(RoundData, related_name='group_cluster_data_value_set')
 
 class GroupRoundDataValue(ParameterizedValue):
     group = models.ForeignKey(Group, related_name='data_value_set')
