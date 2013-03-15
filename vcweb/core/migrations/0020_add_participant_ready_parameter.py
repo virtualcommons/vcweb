@@ -12,7 +12,7 @@ class Migration(DataMigration):
         Parameter = orm['core.Parameter']
         Experimenter = orm['core.Experimenter']
         Parameter.objects.create(name='participant_ready',
-                scope='PARTICIPANT',
+                scope='participant',
                 display_name='Participant Is Ready',
                 description='Data value signifying that this participant is now ready to move on (typically used in a waiting phase)',
                 creator=Experimenter.objects.get(pk=1),
