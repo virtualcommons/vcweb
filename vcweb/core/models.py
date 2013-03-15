@@ -1465,11 +1465,24 @@ class GroupCluster(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
     name = models.CharField(max_length=64, null=True, blank=True)
     session_id = models.CharField(max_length=64, null=True, blank=True)
+    experiment = models.ForeignKey(Experiment)
+
+    def __unicode__(self):
+        return u"group cluster %s (%s)" % (self.name, self.experiment)
+
+    class Meta:
+        ordering = ['date_created']
 
 class GroupRelationship(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
     cluster = models.ForeignKey(GroupCluster, related_name='group_set')
     group = models.ForeignKey(Group)
+
+    def __unicode__(self):
+        return u"group %s in cluster %s" % (self.group, self.cluster)
+
+    class Meta:
+        ordering = ['date_created']
 
 class RoundData(models.Model):
     """
