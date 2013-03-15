@@ -96,10 +96,16 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['lastRoundGroupBConservation'] = 10
     experiment_model_dict['lastRoundGroupLocalBonus'] = 10
     experiment_model_dict['lastRoundGroupGlobalBonus'] = 10
+    experiment_model_dict['lastRoundHarvestPayOff'] = 5
 
     experiment_model_dict['totalEarning'] = 100
     number_of_connected_groups = round_configuration.get_parameter_value(name='number_of_connected_groups', default=2).int_value
     experiment_model_dict['participantsPerSubGroup'] = group.max_size
     experiment_model_dict['participantsPerGroup'] = group.max_size * number_of_connected_groups
+
+
+
+
+
     experiment_model_dict.update(**kwargs)
     return dumps(experiment_model_dict)
