@@ -69,18 +69,25 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['maxEarnings'] = 20.00
     experiment_model_dict['localBonus'] = experiment_configuration.get_parameter_value(name='local_bonus', default=50).int_value
     experiment_model_dict['globalBonus'] = experiment_configuration.get_parameter_value(name='global_bonus', default=50).int_value
+
 # round configuration data
     experiment_model_dict['chatEnabled'] = True
     experiment_model_dict['roundDuration'] = 10
     experiment_model_dict['networkStructure'] = 10
     practice_round = round_configuration.is_practice_round
     experiment_model_dict['practiceRound'] = practice_round
-    if practice_round and round_configuration.sequence_number == 2:
+
+    if practice_round and round_configuration.sequence_number == 3:
         experiment_model_dict['isFirstPracticeRound'] = True
         experiment_model_dict['isSecondPracticeRound'] = False
-    elif practice_round and round_configuration.sequence_number == 3:
+    elif practice_round and round_configuration.sequence_number == 4:
         experiment_model_dict['isFirstPracticeRound'] = False
         experiment_model_dict['isSecondPracticeRound'] = True
+    else:
+        experiment_model_dict['isFirstPracticeRound'] = False
+        experiment_model_dict['isSecondPracticeRound'] = False
+
+    experiment_model_dict['networkStructureImageBackgroundUrl'] = "{{ STATIC_URL }}images/broker/SES.jpg"
 
 
 # round data
@@ -92,12 +99,11 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 
     # data from the last round
     experiment_model_dict['lastRoundHarvestDecision'] = 5
-    experiment_model_dict['lastRoundGroupAConservation'] = 10
-    experiment_model_dict['lastRoundGroupBConservation'] = 10
+    experiment_model_dict['lastRoundMyGroupConservation'] = 10
+    experiment_model_dict['lastRoundGlobalConservation'] = 10
     experiment_model_dict['lastRoundGroupLocalBonus'] = 10
     experiment_model_dict['lastRoundGroupGlobalBonus'] = 10
     experiment_model_dict['lastRoundHarvestPayOff'] = 5
-
     experiment_model_dict['totalEarning'] = 100
     number_of_connected_groups = round_configuration.get_parameter_value(name='number_of_connected_groups', default=2).int_value
     experiment_model_dict['participantsPerSubGroup'] = group.max_size
