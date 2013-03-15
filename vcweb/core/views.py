@@ -18,7 +18,7 @@ from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountFor
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
         ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter,
-        get_participant_ready_parameter)
+        get_participant_ready_parameter, ParticipantRoundDataValue,)
 from vcweb.core.unicodecsv import UnicodeWriter
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
@@ -522,8 +522,9 @@ def participant_ready(request):
     if valid_form:
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group__experiment'), pk=form.cleaned_data['participant_group_id'])
         experiment = pgr.group.experiment
-# FIXME: record a ParticipantRoundDataValue for when they signaled they are ready?
-        pgr.participant_data_value_set.get_or_create(parameter=get_participant_ready_parameter())
+        ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr,
+                round_data=experiment.current_round_data(), parameter=get_participant_ready_parameter(),
+                submitted=True, boolean_value=True)
         experiment.ready_participants += 1
         experiment.save()
     return JsonResponse(dumps({'success': valid_form}))
