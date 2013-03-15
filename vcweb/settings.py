@@ -321,6 +321,7 @@ if has_local_settings:
         SENTRY_DSN = getattr(local_settings, 'SENTRY_DSN', None)
         EMAIL_BACKEND = getattr(local_settings, 'EMAIL_BACKEND', EMAIL_BACKEND)
         DATABASES = getattr(local_settings, 'DATABASES', DATABASES)
+        SECRET_KEY = getattr(local_settings, 'SECRET_KEY', SECRET_KEY)
         add_settings_tuples('MIDDLEWARE_CLASSES', local_settings)
         add_settings_tuples('INSTALLED_APPS', local_settings)
         add_settings_tuples('ALLOWED_HOSTS', local_settings)
