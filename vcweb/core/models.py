@@ -1825,6 +1825,10 @@ def get_comment_parameter():
 def get_like_parameter():
     return Parameter.objects.get(name='like', scope=Parameter.PARTICIPANT_SCOPE)
 
+@simplecache
+def get_participant_ready_parameter():
+    return Parameter.objects.get(name='participant_ready', scope=Parameter.PARTICIPANT_SCOPE)
+
 class Comment(ParticipantRoundDataValue):
     def __init__(self, *args, **kwargs):
         kwargs['parameter'] = get_comment_parameter()

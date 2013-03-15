@@ -13,9 +13,12 @@ from django.views.generic.edit import UpdateView
 from vcweb.core import dumps
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
-        RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm, RegisterExcelParticipantsForm, LogMessageForm)
+        ParticipantGroupIdForm, RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm,
+        RegisterExcelParticipantsForm, LogMessageForm)
+from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
-        ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter)
+        ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter,
+        get_participant_ready_parameter)
 from vcweb.core.unicodecsv import UnicodeWriter
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
@@ -60,6 +63,7 @@ class AnonymousMixin(object):
         return super(AnonymousMixin, self).dispatch(*args, **kwargs)
 
 class Participate(TemplateView):
+    @method_decorator(participant_required)
     def dispatch(self, *args, **kwargs):
         participant = self.request.user.participant
         experiment = get_active_experiment(participant)
@@ -510,6 +514,19 @@ def api_logger(request, participant_group_id=None):
         logger.error("Failed to validate log message form %s (%s)", request, form)
     return json_response(request, dumps({'success': success}))
 
+
+@participant_required
+def participant_ready(request):
+    form = ParticipantGroupIdForm(request.POST or None)
+    valid_form = form.is_valid()
+    if valid_form:
+        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group__experiment'), pk=form.cleaned_data['participant_group_id'])
+        experiment = pgr.group.experiment
+# FIXME: record a ParticipantRoundDataValue for when they signaled they are ready?
+        pgr.participant_data_value_set.get_or_create(parameter=get_participant_ready_parameter())
+        experiment.ready_participants += 1
+        experiment.save()
+    return JsonResponse(dumps({'success': valid_form}))
 
 def handler500(request):
     return render_to_response('500.html', context_instance=RequestContext(request))

@@ -6,24 +6,13 @@ from vcweb.core.decorators import participant_required
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
         ParticipantExperimentRelationship, ChatMessage, ParticipantRoundDataValue)
-from vcweb.boundaries.forms import HarvestDecisionForm, ParticipantGroupIdForm
+from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_harvest_decision_parameter,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage)
 import logging
 import random
 
 logger = logging.getLogger(__name__)
-
-@participant_required
-def finished_instructions(request, experiment_id=None):
-    form = ParticipantGroupIdForm(request.POST or None)
-    experiment = get_object_or_404(Experiment, pk=experiment_id)
-    valid_form = form.is_valid()
-    if valid_form:
-        pgr = get_object_or_404(ParticipantGroupRelationship, pk=form.cleaned_data['participant_group_id'])
-        experiment.ready_participants += 1
-        experiment.save()
-    return JsonResponse(dumps({'success': valid_form}))
 
 @participant_required
 def participate(request, experiment_id=None):

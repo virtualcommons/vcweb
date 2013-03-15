@@ -15,18 +15,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# FIXME: move finished_instructions to a participant_ready endpoint in core 
-@participant_required
-def finished_instructions(request, experiment_id=None):
-    form = ParticipantGroupIdForm(request.POST or None)
-    experiment = get_object_or_404(Experiment, pk=experiment_id)
-    valid_form = form.is_valid()
-    if valid_form:
-        pgr = get_object_or_404(ParticipantGroupRelationship, pk=form.cleaned_data['participant_group_id'])
-        experiment.ready_participants += 1
-        experiment.save()
-    return JsonResponse(dumps({'success': valid_form}))
-
 @participant_required
 def submit_decision(request, experiment_id=None):
     form = SingleIntegerDecisionForm(request.POST or None)
