@@ -43,7 +43,7 @@ def submit_harvest_decision(request, experiment_id=None):
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         harvest_decision = form.cleaned_data['harvest_decision']
         ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, int_value=harvest_decision,
-                round_data=experiment.get_round_data(), parameter=get_harvest_decision_parameter())
+                round_data=experiment.current_round_data, parameter=get_harvest_decision_parameter())
         # set harvest decision for participant
         # FIXME: inconsistency, GET returns HTML and POST return JSON..
         return JsonResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr)}))
@@ -56,7 +56,7 @@ def submit_harvest_decision(request, experiment_id=None):
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
-    current_round_data = experiment.current_round_data(round_configuration=current_round)
+    current_round_data = experiment.current_round_data
     previous_round = experiment.previous_round
     previous_round_data = experiment.get_round_data(round_configuration=previous_round)
 

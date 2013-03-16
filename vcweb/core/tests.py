@@ -228,14 +228,14 @@ class ExperimentTest(BaseVcwebTest):
         e.activate()
         e.start_round()
         # instructions round
-        current_round_data = e.get_round_data()
+        current_round_data = e.current_round_data
         self.assertEqual(current_round_data.group_data_value_set.count(), 0)
         self.assertEqual(current_round_data.participant_data_value_set.count(), 0)
 
     def test_playable_round(self):
 # advance_to_next_round automatically starts it
         e = self.advance_to_data_round()
-        current_round_data = e.get_round_data()
+        current_round_data = e.current_round_data
         for group in e.group_set.all():
             for parameter in group.data_parameters.all():
                 group_data_value, created = current_round_data.group_data_value_set.get_or_create(group=group,

@@ -429,6 +429,10 @@ class Experiment(models.Model):
             self.cached_round = self.get_round_configuration(self.current_round_sequence_number)
         return self.cached_round
 
+    @property
+    def current_round_data(self):
+        return self.get_round_data(round_configuration=self.current_round)
+
 # FIXME: cache this as well to avoid a query per invocation
     def get_round_data(self, round_configuration=None):
         if round_configuration is None:
@@ -510,7 +514,7 @@ class Experiment(models.Model):
                     group__session_id=session_id)
 
     def all_participants_have_submitted(self):
-        return ParticipantRoundDataValue.objects.filter(submitted=False, round_data=self.get_round_data()).count() == 0
+        return ParticipantRoundDataValue.objects.filter(submitted=False, round_data=self.current_round_data).count() == 0
 
     def register_participants(self, users=None, emails=None, institution=None, password=None):
         if self.participant_set.count() > 0:
@@ -616,7 +620,7 @@ class Experiment(models.Model):
         if participant_parameters is None:
             participant_parameters = self.parameters(scope=Parameter.PARTICIPANT_SCOPE)
         if round_data is None:
-            round_data = self.get_round_data()
+            round_data = self.current_round_data
         for group in self.group_set.select_related('parameter').all():
             for parameter in group_parameters:
                 group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter)
@@ -1298,6 +1302,10 @@ class Group(models.Model):
     def data_parameters(self):
         return Parameter.objects.filter(experiment_metadata=self.experiment.experiment_metadata, scope=Parameter.GROUP_SCOPE)
 
+    @property
+    def current_round_data(self):
+        return self.experiment.get_round_data(round_configuration=self.current_round)
+
     def get_round_data(self, round_configuration=None):
         return self.experiment.get_round_data(round_configuration)
 
@@ -1325,7 +1333,7 @@ class Group(models.Model):
 # could be a float or an int..
         update_dict = { parameter.value_field_name : models.F(parameter.value_field_name) + amount }
         self.log("adding %s to this group's %s parameter" % (amount, parameter))
-        updated_rows = self.data_value_set.filter(round_data=self.get_round_data(), parameter=parameter).update(**update_dict)
+        updated_rows = self.data_value_set.filter(round_data=self.current_round_data, parameter=parameter).update(**update_dict)
         if updated_rows != 1:
             logger.error("Updated %s rows, should have been only one.", updated_rows)
 
@@ -1357,7 +1365,7 @@ class Group(models.Model):
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None, default=None):
         ''' returns a tuple of (scalar data value, entity DataValue).  if no entity data value exists, returns (default value, None) '''
         if round_data is None:
-            round_data = self.get_round_data()
+            round_data = self.current_round_data
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         try:
             return self.data_value_set.select_related('parameter', 'group', 'round_data').get(**criteria)
@@ -1373,7 +1381,7 @@ class Group(models.Model):
         conversion / processing to put the value into the appropriate field.
         '''
         if round_data is None:
-            round_data = self.get_round_data()
+            round_data = self.current_round_data
         self.log("setting group param %s => %s" % (parameter, value))
         grdv = GroupRoundDataValue.objects.get(parameter=parameter, round_data=round_data, group=self)
         grdv.value = value
@@ -1383,14 +1391,13 @@ class Group(models.Model):
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
         criteria = dict([
             ('parameter__pk', parameter.pk) if parameter else ('parameter__name', parameter_name),
-            ('round_data__pk', self.get_round_data().pk if round_data is None else round_data.pk)
+            ('round_data__pk', self.current_round_data.pk if round_data is None else round_data.pk)
             ])
         criteria.update(kwargs)
         return criteria
 
-
     def get_group_data_values(self, name=None, *names):
-        round_data = self.get_round_data()
+        round_data = self.current_round_data
         if names:
             if name: names.append(name)
             return self.data_value_set.filter(round_data=round_data, parameter__name__in=names)
@@ -1656,6 +1663,10 @@ class ParticipantGroupRelationship(models.Model):
 
     objects = PassThroughManager.for_queryset_class(ParticipantGroupRelationshipQuerySet)()
 
+    @property
+    def current_round_data(self):
+        return self.group.current_round_data
+
     def get_round_data(self, round_configuration=None):
         return self.group.get_round_data(round_configuration)
 
@@ -1683,7 +1694,7 @@ class ParticipantGroupRelationship(models.Model):
 
     def get_data_value(self, parameter=None, round_data=None, default=None):
         if round_data is None:
-            round_data = self.get_round_data()
+            round_data = self.current_round_data
         if parameter is not None:
             return ParticipantRoundDataValue.objects.get(round_data=round_data, parameter=parameter,
                     participant_group_relationship=self)
@@ -1692,7 +1703,7 @@ class ParticipantGroupRelationship(models.Model):
 
     def set_data_value(self, parameter=None, value=None, round_data=None):
         if round_data is None:
-            round_data = self.get_round_data()
+            round_data = self.current_round_data
         if parameter is not None and value is not None:
             pdv = ParticipantRoundDataValue.objects.get(round_data=round_data, parameter=parameter, participant_group_relationship=self)
             pdv.submitted = True
@@ -1721,7 +1732,7 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
 class ParticipantRoundDataValue(ParameterizedValue):
     def __init__(self, *args, **kwargs):
         if 'round_data' not in kwargs and 'participant_group_relationship' in kwargs:
-            kwargs['round_data'] = kwargs['participant_group_relationship'].get_round_data()
+            kwargs['round_data'] = kwargs['participant_group_relationship'].current_round_data
         super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
     """
     Represents one data point collected for a given Participant in a given Round.
@@ -1795,7 +1806,7 @@ class ChatMessageQuerySet(models.query.QuerySet):
 
     def message_all(self, experiment, message, round_data=None, **kwargs):
         if round_data is None:
-            round_data = experiment.get_round_data()
+            round_data = experiment.current_round_data
         for participant_group_relationship in ParticipantGroupRelationship.objects.for_experiment(experiment):
             yield ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
                     string_value=message,

@@ -62,7 +62,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     group = participant_group_relationship.group
     experiment_configuration = experiment.experiment_configuration
     round_configuration = experiment.current_round
-    round_data = experiment.current_round_data(round_configuration=round_configuration)
+    round_data = experiment.current_round_data
 
 # experiment configuration data
     experiment_model_dict['maxHarvestDecision'] = 10
