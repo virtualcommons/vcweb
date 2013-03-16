@@ -65,8 +65,9 @@ def get_storage(participant_group_relationship, round_data=None):
 
 # returns the sum of all stored resources for each member in the group
 def get_total_storage(group):
-    # FIXME: use django queryset aggregation for this?
-    return sum([pdv.int_value for pdv in group.get_participant_data_values(parameter=get_storage_parameter())])
+    # FIXME: int_value would be more performant but storage isn't being initialized properly yet and value returns an
+    # appropriate default value
+    return sum([pdv.value for pdv in group.get_participant_data_values(parameter=get_storage_parameter())])
 
 def set_storage(participant_group_relationship, value=0):
     storage_dv = participant_group_relationship.set_data_value(parameter=get_storage_parameter(), value=value)
@@ -74,15 +75,17 @@ def set_storage(participant_group_relationship, value=0):
     return storage_dv
 
 def should_reset_resource_level(round_configuration):
-    # FIXME: stub
-    return True
+    return round_configuration.get_parameter_value(parameter=get_reset_resource_level_parameter(), default=False).boolean_value
 
 def get_last_harvest_decision(participant_group_relationship, round_data=None):
     return participant_group_relationship.get_data_value(parameter=get_harvest_decision_parameter(),
             round_data=round_data, default=0).int_value
 
-# signal handlers
-def round_setup(experiment, **kwargs):
+@receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
+def round_started_handler(sender, experiment=None, **kwargs):
+    if experiment is None:
+        logger.error("Received round started signal with no experiment: %s", sender)
+        raise ValueError("Received round started signal with no experiment")
     round_configuration = experiment.current_round
     logger.debug("setting up round %s", round_configuration)
     # initialize group and participant data values
@@ -94,6 +97,14 @@ def round_setup(experiment, **kwargs):
     during a practice or regular round, set up resource levels and participant
     harvest decision parameters
     '''
+    if round_configuration.randomize_groups:
+# check if we need to preserve existing groups
+        if round_configuration.preserve_existing_groups:
+            experiment.create_new_groups()
+        else:
+            experiment.allocate_groups()
+
+
     if should_reset_resource_level(round_configuration):
         initial_resource_level = get_initial_resource_level(round_configuration)
         logger.debug("Resetting resource level for %s to %d", round_configuration, initial_resource_level)
@@ -103,13 +114,14 @@ def round_setup(experiment, **kwargs):
             group.log("Setting resource level to initial value [%s]" % initial_resource_level)
             set_resource_level(group, initial_resource_level, round_data=round_data)
 
-def round_teardown(experiment, **kwargs):
+@receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
+def round_ended_handler(sender, experiment=None, **kwargs):
     '''
     calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth.
     also responsible for transferring those parameters to the next round as needed.
     '''
     current_round_configuration = experiment.current_round
-    logger.debug("ending round: %s", current_round_configuration)
+    logger.debug("ending boundaries round: %s", current_round_configuration)
 # FIXME: max resource level might need to be read from the experiment / round configuration instead
     max_resource_level = MAX_RESOURCE_LEVEL
     for group in experiment.group_set.all():
@@ -137,12 +149,3 @@ def round_teardown(experiment, **kwargs):
                 ''' set group round data resource_level for each group + regrowth '''
                 group.log("Transferring resource level %s to next round" % current_resource_level_dv.int_value)
                 group.copy_to_next_round(current_resource_level_dv)
-
-@receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
-def round_started_handler(sender, experiment=None, **kwargs):
-    round_setup(experiment, **kwargs)
-
-@receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
-def round_ended_handler(sender, experiment=None, **kwargs):
-    logger.debug("ending boundaries round for %s", experiment)
-    round_teardown(experiment, **kwargs)

@@ -236,7 +236,7 @@ class ExperimentConfiguration(models.Model):
             return serializers.serialize(output_format, all_objects, **kwargs)
 
     def __unicode__(self):
-        return u"%s configuration for the %s" % (self.name, self.experiment_metadata)
+        return self.name
 
     class Meta:
         ordering = ['experiment_metadata', 'creator', 'date_created']
@@ -675,7 +675,13 @@ class Experiment(models.Model):
         logger.debug("allocating groups for %s (randomize? %s)" % (self, randomize))
         # clear out all existing groups
         # FIXME: record previous mappings in activity log.
-        self.group_set.all().delete()
+        gs = self.group_set
+        if gs.count() > 0:
+            self.log("reallocating groups, deleting old groups")
+            gqs = gs.all()
+            for g in gqs:
+                self.log("reallocating group %s" % g.participant_group_relationship_set.all())
+            gqs.delete()
         # seed the initial group.
         max_group_size = self.experiment_configuration.max_group_size
         logger.debug("creating group with max size %d", max_group_size)
@@ -683,14 +689,9 @@ class Experiment(models.Model):
         participants = list(self.participant_set.all())
         if randomize:
             random.shuffle(participants)
-
         for p in participants:
             pgr = self.add_participant(p, current_group)
             current_group = pgr.group
-
-        # XXX: if there a performance hit here, should probably do a void return instead
-        # or collect the groups as they are added
-        return self.group_set
 
     def get_round_configuration(self, sequence_number):
         return RoundConfiguration.objects.get(experiment_configuration__experiment=self, sequence_number=sequence_number)
@@ -994,7 +995,7 @@ class RoundConfiguration(models.Model):
         return Template(template_string).substitute(kwargs, round_number=self.display_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return u"%s (%s)" % (self.experiment_configuration, self.sequence_label)
+        return u"%s %s (%s)" % (self.get_round_type_display(), self.sequence_label, self.experiment_configuration)
 
     @property
     def display_label(self):
