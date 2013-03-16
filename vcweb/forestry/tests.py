@@ -258,4 +258,4 @@ class ForestryParametersTest(BaseTest):
                 self.assertFalse(dv.float_value)
         e.advance_to_next_round()
         round_data = e.get_round_data()
-        self.assertEqual(10, ParticipantRoundDataValue.objects.filter(round_data=round_data).count())
+        self.assertEqual(10, ParticipantRoundDataValue.objects.filter(round_data=round_data, parameter__type='int').count())
