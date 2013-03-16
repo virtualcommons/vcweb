@@ -834,7 +834,6 @@ class Experiment(models.Model):
                           experiment_configuration=self.experiment_configuration,
                           duration=self.duration,
                           tick_duration=self.tick_duration,
-                          is_experimenter_driven=self.is_experimenter_driven,
                           status=Experiment.INACTIVE
                           )
 
