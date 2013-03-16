@@ -230,7 +230,10 @@ class ExperimentTest(BaseVcwebTest):
         # instructions round
         current_round_data = e.current_round_data
         self.assertEqual(current_round_data.group_data_value_set.count(), 0)
-        self.assertEqual(current_round_data.participant_data_value_set.count(), 0)
+        if e.experiment_configuration.is_experimenter_driven:
+            self.assertEqual(current_round_data.participant_data_value_set.count(), e.participant_set.count()) 
+        else:
+            self.assertEqual(current_round_data.participant_data_value_set.count(), 0) 
 
     def test_playable_round(self):
 # advance_to_next_round automatically starts it

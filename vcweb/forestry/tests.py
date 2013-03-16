@@ -236,7 +236,7 @@ class ForestryParametersTest(BaseTest):
     def test_data_values(self):
         e = self.create_participant_data_values()
         num_participant_parameters = e.parameters(scope=Parameter.PARTICIPANT_SCOPE).count()
-        self.assertEqual(e.participant_set.count() * num_participant_parameters, ParticipantRoundDataValue.objects.filter(round_data__experiment=e).count(),
+        self.assertEqual(e.participant_set.count() * num_participant_parameters, ParticipantRoundDataValue.objects.filter(round_data__experiment=e, parameter__type='int').count(),
                 'There should be %s participants * %s total data parameters = %s' % (e.participant_set.count(), num_participant_parameters, e.participant_set.count() * num_participant_parameters))
 
     def test_data_value_conversion(self):
@@ -245,10 +245,10 @@ class ForestryParametersTest(BaseTest):
         for p in self.participants:
             participant_data_values = round_data.participant_data_value_set.filter(participant_group_relationship__participant=p)
             logger.debug("XXX: participant data values: %s", participant_data_values)
-            self.assertEqual(participant_data_values.count(), 1)
+            self.assertEqual(participant_data_values.count(), 2)
             pexpr = p.get_participant_experiment_relationship(e)
             logger.debug("relationship %s" % pexpr)
-            for dv in participant_data_values.all():
+            for dv in participant_data_values.filter(parameter__type='int'):
                 logger.debug("verifying data value %s" % dv)
                 self.assertEqual(pexpr.sequential_participant_identifier * 2, dv.value)
                 self.assertTrue(dv.value)
