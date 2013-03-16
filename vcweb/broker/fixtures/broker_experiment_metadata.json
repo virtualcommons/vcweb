@@ -57,6 +57,7 @@
             "last_modified": "2013-02-13T15:52:27.520",
             "is_public": false,
             "date_created": "2013-02-13T15:50:59",
+            "is_experimenter_driven": true,
             "max_group_size": 4
         }
     },
@@ -79,7 +80,6 @@
             "duration": "",
             "date_created": "2013-02-13T15:52:55",
             "experiment_configuration": 8,
-            "is_experimenter_driven": true,
             "amqp_exchange_name": "vcweb.default.exchange"
         }
     },

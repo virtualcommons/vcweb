@@ -75,7 +75,6 @@
                 "lighterprints"
             ],
             "experimenter": 1,
-            "is_experimenter_driven": false,
             "start_date_time": null,
             "status": "INACTIVE",
             "date_created": "2011-07-07 15:12:07",
@@ -96,6 +95,7 @@
             "last_modified": "2011-07-07 15:13:03",
             "is_public": false,
             "max_group_size": 20,
+            "is_experimenter_driven": false,
             "name": "Lighter Footprints Default Configuration"
         },
         "model": "core.experimentconfiguration",
