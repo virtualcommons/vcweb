@@ -16,7 +16,12 @@
             <li class='divider'></li>
         </ul>
         {% comment %} should offer different actions (start + reset) to experiments that has already been activated / started {% endcomment %}
-        <div data-bind="ifnot: isActive">
+        <div data-bind='if: isArchived()'>
+            <div class='alert alert-success'>
+                <i class='icon-save'></i> This experiment has been archived.
+            </div>
+        </div>
+        <div data-bind="ifnot: isActive() || isArchived()">
             <div data-bind="ifnot: hasParticipants">
                 <div class='alert alert-error alert-block'>
                     <h4>No participants</h4>

@@ -107,6 +107,9 @@ li.pull-right {
     width: inherit;
     z-index: -1; 
 }
+.text-gold {
+    color: #DFB03D;
+}
 /*
 @font-face {
     font-family: Entypo;

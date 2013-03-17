@@ -830,6 +830,7 @@ class Experiment(models.Model):
                 'participantCount': self.participant_set.count(),
                 'isRoundInProgress': self.is_round_in_progress,
                 'isActive': self.is_active,
+                'isArchived': self.is_archived,
                 'dollarsPerToken': float(ec.exchange_rate),
                 }
         if include_round_data:

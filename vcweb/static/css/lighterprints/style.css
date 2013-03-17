@@ -190,10 +190,7 @@ body {
     border-left: 1px solid #ddd;
     border-right: 1px solid #ddd;
 }
-.text-gold {
-    color: #DFB03D;
-}
-.expired-challenge {
+..expired-challenge {
     color: red;
 }
 a.upcoming-challenge, a.expired-challenge, a.perform-challenge, a.completed-challenge {
