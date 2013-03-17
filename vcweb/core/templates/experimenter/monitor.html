@@ -17,14 +17,14 @@
         </ul>
         {% comment %} should offer different actions (start + reset) to experiments that has already been activated / started {% endcomment %}
         <div data-bind="ifnot: isActive">
-            <div data-bind="ifnot: hasParticipants()">
+            <div data-bind="ifnot: hasParticipants">
                 <div class='alert alert-error alert-block'>
                     <h4>No participants</h4>
                     <i class='icon-warning-sign'></i><a href='{{experiment.controller_url}}/register-email-list'>Register bulk email addresses</a> or
                     <a href='{{experiment.controller_url}}/register-simple'>add test participants</a>?
                 </div>
             </div>
-            <div data-bind="if: hasParticipants()">
+            <div data-bind="if: hasParticipants">
                 <div class='alert alert-info alert-block'>
                     <h3>Inactive Experiment</h3>
                     <p>
@@ -143,9 +143,9 @@
             model.addMessage = function (evt) {
                 model.messages.unshift(evt.message);
             }
-            model.hasParticipants = function() {
+            model.hasParticipants = ko.computed(function() {
                 return model.participantCount() > 0;
-            }
+            });
             return model;
         }
         function update(experimentModel) {
@@ -163,7 +163,7 @@
                 console.log("Received event: " + evt);
                 experimentModel.addMessage(jQuery.parseJSON(evt.data));
             };
-            $('a.confirm-experiment-action').live("click", function(evt) {
+            $('a.confirm-experiment-action').on("click", function(evt) {
                 evt.preventDefault();
                 var self = $(this);
                 var description = self.attr("data-content");

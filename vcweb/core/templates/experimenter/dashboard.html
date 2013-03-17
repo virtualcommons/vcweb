@@ -12,6 +12,7 @@
             <a class='btn' href='{{e.monitor_url}}'><i class='icon-zoom-in'></i> monitor</a></li>
             <a class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
                 href='{{e.clone_url}}'><i class='icon-copy'></i> clone</a>
+            {% if not e.is_archived %}
             {% if e.participant_set.count == 0  %}
             <a class='btn' data-content='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'>
                 <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> register participants</a>
@@ -26,7 +27,8 @@
             <a data-content='Mark this experiment as completed' href='{{e.complete_url}}' class='btn confirm-experiment-action'><i class='icon-save'></i> archive</a>
             <a data-content='deactivate this experiment' href='{{e.deactivate_url}}' class='btn confirm-experiment-action'><i class='icon-off'></i> deactivate</a>
             {% else %}
-            <a class='btn' data-content='Configure this experiment (sanitation)' href='{{e.configure_url}}'><i class='icon-wrench'></i>configure</a>
+            <a class='btn' data-content='Configure this experiment' href='{{e.configure_url}}'><i class='icon-wrench'></i> configure</a>
+            {% endif %}
             {% endif %}
         </div>
     </div>

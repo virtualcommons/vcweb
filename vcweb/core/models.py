@@ -180,7 +180,7 @@ class ExperimentConfiguration(models.Model):
     last_modified = AutoDateTimeField(default=datetime.now)
     is_public = models.BooleanField(default=False)
     max_group_size = models.PositiveIntegerField(default=5)
-    exchange_rate = models.DecimalField(null=True, blank=True, max_digits=6, decimal_places=2, help_text=_('The exchange rate of currency per in-game token, e.g., dollars per token'))
+    exchange_rate = models.DecimalField(null=True, blank=True, default=0.2, max_digits=6, decimal_places=2, help_text=_('The exchange rate of currency per in-game token, e.g., dollars per token'))
     treatment_id = models.CharField(null=True, blank=True, max_length=32, help_text=_('An alphanumeric ID that should be unique to the set of ExperimentConfigurations for a given ExperimentMetadata'))
     is_experimenter_driven = models.BooleanField(default=True)
     """
@@ -266,13 +266,12 @@ class Experiment(models.Model):
     Experiment instances are a concrete parameterization of an ExperimentMetadata record, with associated
     ExperimentConfiguration, Experimenter, etc.  In other words, they represent an actual experiment run.
     """
-    STATUS = Choices(
+    Status = Choices(
             ('INACTIVE', _('Not active')),
             ('ACTIVE', _('Active, no round in progress')),
             ('PAUSED', _('Paused')),
             ('ROUND_IN_PROGRESS', _('Round in progress')),
             ('COMPLETED', _('Completed')))
-    (INACTIVE, ACTIVE, PAUSED, ROUND_IN_PROGRESS, COMPLETED) = [ choice[0] for choice in STATUS ]
     authentication_code = models.CharField(max_length=32, default="vcweb.auth.code")
     """
     currently unused, but kept here in the event that we want to allow participants to authenticate with this
@@ -289,7 +288,7 @@ class Experiment(models.Model):
     """ the configuration parameters in use for this experiment run. """
 # FIXME: consider using django-model-utils but need to verify that it works with South
 # status = StatusField()
-    status = models.CharField(max_length=32, choices=STATUS, default=STATUS.INACTIVE)
+    status = models.CharField(max_length=32, choices=Status, default=Status.INACTIVE)
     """
     the status of an experiment can be either INACTIVE, ACTIVE, PAUSED, ROUND_IN_PROGRESS, or COMPLETED
     """
@@ -327,7 +326,7 @@ class Experiment(models.Model):
 
     @property
     def is_round_in_progress(self):
-        return self.status == 'ROUND_IN_PROGRESS'
+        return self.status == Experiment.Status.ROUND_IN_PROGRESS
 
     @property
     def is_data_round_in_progress(self):
@@ -495,11 +494,17 @@ class Experiment(models.Model):
 
     @property
     def is_active(self):
-        return self.status != 'INACTIVE'
+        return self.status not in (Experiment.Status.COMPLETED, Experiment.Status.INACTIVE,)
+
+    @property
+    def is_archived(self):
+        # FIXME: add a unique status for this if needed
+        return self.status == Experiment.Status.COMPLETED
 
     @property
     def is_completed(self):
-        return self.status == 'COMPLETED'
+        return self.status == Experiment.Status.COMPLETED
+
     @property
     def is_public(self):
         return self.experiment_configuration.is_public
@@ -746,7 +751,7 @@ class Experiment(models.Model):
 
     def start_round(self, sender=None):
         logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
-        self.status = 'ROUND_IN_PROGRESS'
+        self.status = Experiment.Status.ROUND_IN_PROGRESS
         self.create_round_data()
         self.current_round_elapsed_time = 0
         self.current_round_start_time = datetime.now()
@@ -767,7 +772,7 @@ class Experiment(models.Model):
         return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(), round_configuration=current_round_configuration)
 
     def end_round(self, sender=None):
-        self.status = 'ACTIVE'
+        self.status = Experiment.Status.ACTIVE
         self.current_round_elapsed_time = max(self.current_round_elapsed_time, self.current_round.duration)
         self.save()
         self.log('Ending round with elapsed time %s' % self.current_round_elapsed_time)
@@ -779,19 +784,19 @@ class Experiment(models.Model):
     def activate(self):
         if not self.is_active:
             self.allocate_groups()
-            self.status = 'ACTIVE'
+            self.status = Experiment.Status.ACTIVE
             self.start_date_time = datetime.now()
             self.save()
         return self
 
     def complete(self):
         self.log("Marking as COMPLETED")
-        self.status = 'COMPLETED'
+        self.status = Experiment.Status.COMPLETED
         self.save()
 
     def deactivate(self):
         self.log("Deactivating experiment and flagging as inactive.")
-        self.status = 'INACTIVE'
+        self.status = Experiment.Status.INACTIVE
         self.save()
 
     def check_elapsed_time(self):
@@ -837,7 +842,7 @@ class Experiment(models.Model):
         return self.to_dict(*args, **kwargs)
 
     def to_json(self, include_round_data=True, *args, **kwargs):
-        return dumps(self.as_dict(include_round_data, *args, **kwargs))
+        return dumps(self.to_dict(include_round_data, *args, **kwargs))
 
     """ returns a fresh copy of this experiment with configuration / metadata intact """
     def clone(self, experimenter=None):
@@ -849,7 +854,7 @@ class Experiment(models.Model):
                           experiment_configuration=self.experiment_configuration,
                           duration=self.duration,
                           tick_duration=self.tick_duration,
-                          status=Experiment.INACTIVE
+                          status=Experiment.Status.INACTIVE
                           )
 
     def transfer_participants(self, experiment):
@@ -1581,15 +1586,15 @@ class Participant(CommonsUser):
 
     @property
     def active_experiments(self):
-        return self.experiment_relationship_set.filter(experiment__status=Experiment.ACTIVE)
+        return self.experiment_relationship_set.filter(experiment__status=Experiment.Status.ACTIVE)
 
     @property
     def inactive_experiments(self):
-        return self.experiment_relationship_set.exclude(experiment__status=Experiment.ACTIVE)
+        return self.experiment_relationship_set.exclude(experiment__status=Experiment.Status.ACTIVE)
 
     @property
     def completed_experiments(self):
-        return self.experiments_with_status(Experiment.COMPLETED)
+        return self.experiments_with_status(Experiment.Status.COMPLETED)
 
     def get_participant_experiment_relationship(self, experiment):
         return ParticipantExperimentRelationship.objects.select_related(depth=1).get(participant=self, experiment=experiment)
@@ -1597,7 +1602,7 @@ class Participant(CommonsUser):
     def get_participant_group_relationship(self, experiment):
         return ParticipantGroupRelationship.objects.get_relationship(self, experiment)
 
-    def experiments_with_status(self, status=Experiment.ACTIVE):
+    def experiments_with_status(self, status=Experiment.Status.ACTIVE):
         return self.experiment_relationship_set.filter(experiment__status=status)
 
     class Meta:
