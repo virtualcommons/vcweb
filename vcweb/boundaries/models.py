@@ -97,13 +97,6 @@ def round_started_handler(sender, experiment=None, **kwargs):
     during a practice or regular round, set up resource levels and participant
     harvest decision parameters
     '''
-    if round_configuration.randomize_groups:
-# check if we need to preserve existing groups
-        if round_configuration.preserve_existing_groups:
-            experiment.create_new_groups()
-        else:
-            experiment.allocate_groups()
-
 
     if should_reset_resource_level(round_configuration):
         initial_resource_level = get_initial_resource_level(round_configuration)
@@ -125,7 +118,6 @@ def round_ended_handler(sender, experiment=None, **kwargs):
 # FIXME: max resource level might need to be read from the experiment / round configuration instead
     max_resource_level = MAX_RESOURCE_LEVEL
     for group in experiment.group_set.all():
-        # FIXME: simplify logic
         logger.debug("group %s has resource level", group)
         if has_resource_level(group):
             current_resource_level_dv = get_resource_level_dv(group)

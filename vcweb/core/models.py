@@ -245,6 +245,8 @@ class ExperimentConfiguration(models.Model):
 class ExperimentQuerySet(models.query.QuerySet):
     def public(self, **kwargs):
         return self.filter(experiment_configuration__is_public=True, **kwargs)
+    def completed(self, **kwargs):
+        return self.filter(status='COMPLETED', **kwargs)
     def active(self, **kwargs):
         return self.filter(status__in=('ACTIVE', 'ROUND_IN_PROGRESS'), **kwargs)
     def increment_elapsed_time(self, status='ROUND_IN_PROGRESS', amount=60):
@@ -391,13 +393,18 @@ class Experiment(models.Model):
         return "/%s/configure" % self.get_absolute_url()
 
     @property
-    def stop_url(self):
-        return "%s/stop" % self.controller_url
+    def complete_url(self):
+        return "%s/complete" % self.controller_url
+
+    @property
+    def deactivate_url(self):
+        return "%s/deactivate" % self.controller_url
 
     @property
     def monitor_url(self):
         return "%s/monitor" % self.controller_url
 
+# FIXME: deprecate and remove this, should be a POST not a GET
     @property
     def clone_url(self):
         return "%s/clone" % self.controller_url
@@ -490,6 +497,9 @@ class Experiment(models.Model):
     def is_active(self):
         return self.status != 'INACTIVE'
 
+    @property
+    def is_completed(self):
+        return self.status == 'COMPLETED'
     @property
     def is_public(self):
         return self.experiment_configuration.is_public
@@ -743,13 +753,18 @@ class Experiment(models.Model):
         self.ready_participants = 0
         self.save()
         self.log('Starting round')
-        # FIXME: would prefer using self.namespace as a default but django's
-        # managed unicode strings don't work as senders
-        sender = intern(self.experiment_metadata.namespace.encode('utf8')) if sender is None else sender
-        #sender = self.namespace.encode('utf-8')
+        current_round_configuration = self.current_round
+        if current_round_configuration.randomize_groups:
+            # check if we need to preserve existing groups
+            if round_configuration.preserve_existing_groups:
+                create_new_groups()
+            else:
+                allocate_groups()
+        if sender is None:
+            sender = intern(self.experiment_metadata.namespace.encode('utf8'))
         # notify registered game handlers
         logger.debug("About to send round started signal with sender %s", sender)
-        return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(), round_configuration=self.current_round)
+        return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(), round_configuration=current_round_configuration)
 
     def end_round(self, sender=None):
         self.status = 'ACTIVE'
@@ -770,12 +785,12 @@ class Experiment(models.Model):
         return self
 
     def complete(self):
-        self.log("Marking as COMPLETED") 
+        self.log("Marking as COMPLETED")
         self.status = 'COMPLETED'
         self.save()
 
-    def stop(self):
-        self.log("Stopping experiment and flagging as inactive.")
+    def deactivate(self):
+        self.log("Deactivating experiment and flagging as inactive.")
         self.status = 'INACTIVE'
         self.save()
 
