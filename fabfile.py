@@ -150,7 +150,7 @@ def setup():
     pip()
 
 def _restart_command():
-    return 'service %(apache)s restart' % env
+    return 'service %(apache)s restart && supervisorctl restart vcweb-sockjs' % env
 
 def clean():
     with cd(env.project_path):
