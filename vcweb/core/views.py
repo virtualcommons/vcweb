@@ -522,7 +522,7 @@ def participant_ready(request):
     if valid_form:
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group__experiment'), pk=form.cleaned_data['participant_group_id'])
         experiment = pgr.group.experiment
-        prdv = ParticipantRoundDataValue.objects.get_or_create(participant_group_relationship=pgr,
+        prdv, created = ParticipantRoundDataValue.objects.get_or_create(participant_group_relationship=pgr,
                 round_data=experiment.get_round_data(), parameter=get_participant_ready_parameter())
         prdv.submitted = True
         prdv.boolean_value = True
