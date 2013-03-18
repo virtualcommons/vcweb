@@ -532,5 +532,6 @@ def participant_ready(request):
     return JsonResponse(dumps({'success': valid_form}))
 
 def handler500(request):
+    logger.debug("handling 500 request")
     return render_to_response('500.html', context_instance=RequestContext(request))
 
