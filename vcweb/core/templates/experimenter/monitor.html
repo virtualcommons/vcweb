@@ -9,11 +9,15 @@
     <div class='span6'>
         <ul class='nav nav-list' data-bind="if: isActive">
             <li class='nav-header'>round management</li>
-            <li><a class='confirm-experiment-action' name='advance_to_next_round' href='javascript:void()' data-content='Stops the current round if necessary and advances to the next round.'><i class='icon-step-forward'></i>advance to next round</a></li>
-            <li data-bind="ifnot: isRoundInProgress"><a class='confirm-experiment-action' name='start_round' href='start-round' data-content='Starts the round.'><i class='icon-play'></i>start round</a></li>
-            <li data-bind="if: isRoundInProgress"><a class='confirm-experiment-action' name='end_round' href='end-round' data-content='Stops the current round.'><i class='icon-stop'></i>end round</a></li>
-            <li><a href='javascript:void();' id='refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i>refresh all participants</a></li>
-            <li class='divider'></li>
+            <li>
+            <div class='btn-toolbar'>
+                <div class='btn-group'>
+                    <a class='btn btn-success confirm-experiment-action' data-bind="css: { disabled: isRoundInProgress }" name='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
+                    <a class='btn btn-success confirm-experiment-action' name='advance_to_next_round' data-content='Advances to the next round and starts it.'><i class='icon-step-forward'></i> next round</a>
+                    <!-- FIXME: disabled for the time being<a class='btn btn-primary' id='refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i> refresh participants</a> -->
+                </div>
+            </div>
+            </li>
         </ul>
         {% comment %} should offer different actions (start + reset) to experiments that has already been activated / started {% endcomment %}
         <div data-bind='if: isArchived()'>
@@ -53,18 +57,17 @@
             <li>Registered participants: <span data-bind='text:participantCount' class='badge badge-info'></span></li>
         </ul>
         <div class='alert alert-message alert-block'>
-            <h4><i class='icon-download'></i>Download Data</h4>
+            <h4><i class='icon-download'></i> Download Data</h4>
             <ul class='inline'>
                 <li><a href='download/csv'><img src='{{STATIC_URL}}images/famfamfam/page_white_text.png' alt='csv' />csv</a></li>
                 <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/>xls</a></li>
             </ul>
-        </div>
-        <div class='alert alert-message'>
             <h4><i class='icon-download-alt'></i>Download Configuration Files</h4>
             <ul class='inline'>
                 <li><a href='export/configuration.xml'><i class='icon-cog'></i>xml</a></li>
                 <li><a href='export/configuration.json'><i class='icon-pencil'></i>json</a></li>
             </ul>
+            <a class='btn btn-info confirm-experiment-action' name='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i> archive</a>
         </div>
     </div>
     <div class='span6'>
@@ -173,6 +176,10 @@
                 var self = $(this);
                 var description = self.attr("data-content");
                 var action = self.attr("name");
+                if (self.hasClass('disabled')) {
+                    console.debug("disabled action " + action + " - ignoring");
+                    return false;
+                }
                 bootbox.confirm(description + "  Continue?", function(confirmed) {
                     if (confirmed) {
                         Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {'pk': {{experiment.pk}}, 'action':action});
@@ -188,7 +195,7 @@
             });
             return experimentModel;
         }
-        $('[data-content]').popover();
+        $('[data-content]').popover({placement: 'top', trigger: 'hover'});
         // initialize experiment model JSON from experiment model
         initialize(experimentModelJson);
     });
