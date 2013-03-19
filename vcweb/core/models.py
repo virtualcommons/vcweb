@@ -689,24 +689,33 @@ class Experiment(models.Model):
                 current_group = self.group_set.reverse()[0]
         return current_group.add_participant(participant)
 
-    def allocate_groups(self, randomize=True):
+    def allocate_groups(self, randomize=True, preserve_existing_groups=False, session_id=None):
         logger.debug("allocating groups for %s (randomize? %s)" % (self, randomize))
         # clear out all existing groups
         # FIXME: record previous mappings in activity log.
         gs = self.group_set
-        if gs.count() > 0:
-            self.log("reallocating groups, deleting old groups")
-            gqs = gs.all()
-            for g in gqs:
-                self.log("reallocating group %s" % g.participant_group_relationship_set.all())
-            gqs.delete()
-        # seed the initial group.
         max_group_size = self.experiment_configuration.max_group_size
-        logger.debug("creating group with max size %d", max_group_size)
-        current_group = self.group_set.create(number=1, max_size=max_group_size)
         participants = list(self.participant_set.all())
         if randomize:
             random.shuffle(participants)
+        if gs.count() > 0:
+            if preserve_existing_groups:
+                # verify incoming session id is an actual value
+                if session_id is None:
+                    round_configuration = self.current_round
+                    session_id = round_configuration.session_id
+                    if session_id is None:
+                        logger.error("Trying to create a new set of groups but no session id has been set on %s.  Aborting.", round_configuration)
+                        raise ValueError("Cannot allocate new groups and preserve existing groups without an appropriate session id set on this round configuration %s" % round_configuration)
+            else:
+                self.log("reallocating groups, deleting old groups")
+                gqs = gs.all()
+                for g in gqs:
+                    self.log("reallocating/deleting group %s" % g.participant_group_relationship_set.all())
+                gqs.delete()
+        # seed the initial group.
+        current_group = self.group_set.create(number=self.group_set.count(), max_size=max_group_size, session_id=session_id)
+        logger.debug("created initial group %s", current_group)
         for p in participants:
             pgr = self.add_participant(p, current_group)
             current_group = pgr.group
@@ -752,6 +761,9 @@ class Experiment(models.Model):
             logger.debug("already created round data: %s", round_data)
         return round_data
 
+    def create_new_groups(self):
+        pass
+
     def start_round(self, sender=None):
         logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
         self.status = Experiment.Status.ROUND_IN_PROGRESS
@@ -761,13 +773,10 @@ class Experiment(models.Model):
         self.ready_participants = 0
         self.save()
         self.log('Starting round')
-        current_round_configuration = self.current_round
         if current_round_configuration.randomize_groups:
-            # check if we need to preserve existing groups
-            if round_configuration.preserve_existing_groups:
-                create_new_groups()
-            else:
-                allocate_groups()
+            self.allocate_groups(
+                    preserve_existing_groups=current_round_configuration.preserve_existing_groups,
+                    session_id=current_round_configuration.session_id)
         if sender is None:
             sender = intern(self.experiment_metadata.namespace.encode('utf8'))
         # notify registered game handlers
@@ -1081,7 +1090,7 @@ class Parameter(models.Model):
             ('string', 'String value'),
             ('foreignkey', 'Foreign key'),
             ('float', 'Floating-point number'),
-            ('boolean', 'True/False'),
+            ('boolean', 'Boolean value (true/false)'),
             ('enum', 'Enumeration'))
 
     # FIXME: arcane, see if we can encapsulate this better.  used to provide sane default values for each parameter type
@@ -1466,7 +1475,8 @@ class Group(models.Model):
         return ParticipantRoundDataValue.objects.filter(**criteria)
 
     def create_next_group(self):
-        return Group.objects.create(number=self.number + 1, max_size=self.max_size, experiment=self.experiment)
+        return Group.objects.create(number=self.number + 1, max_size=self.max_size, experiment=self.experiment,
+                session_id=self.session_id)
 
     """
     Adds the given participant to this group or a new group if this group is is_full.
