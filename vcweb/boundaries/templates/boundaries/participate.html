@@ -342,7 +342,6 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             model.isTimerRunning = ko.computed(function() {
                 return model.secondsLeft() > 0;
             });
-            model.templateName = ko.observable("WELCOME");
             // activate instructions click bindings
             model.activateInstructionsPageOne = function() {
                 model.templateName('GENERAL_INSTRUCTIONS');
@@ -477,19 +476,6 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             $('#harvestDecision').keyup(function() {
                 $('#harvestDecision').val(this.value.match(/\d+/));
             });
-            $('#pick-template').change(function() {
-                var templateName = $(this).val();
-                console.debug("switching to template: " + templateName);
-                if (templateName === "PRACTICE") {
-                    templateName = "REGULAR";
-                    experimentModel.practiceRound(true);
-                }
-                else if (templateName === "REGULAR") {
-                    experimentModel.practiceRound(false);
-                }
-                experimentModel.templateName(templateName);
-            });
-
         }
         //send the message when submit is clicked
         var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");

@@ -137,6 +137,16 @@
         </div>
     </div>
 </div>
+<div id='progress-modal' class='modal hide fade'>
+    <div class='model-header'>
+        <h3>Updating experiment status</h3>
+    </div>
+    <div class='modal-body'>
+        <div class='progress progress-striped active'>
+            <div id='progress-bar' class='bar' style='width: 50%'></div>
+        </div>
+    </div>
+</div>
 {% endblock page %}
 {% block javascript %}
 {{ block.super }}
@@ -159,6 +169,7 @@
         function update(experimentModel) {
             return function(data) {
                 ko.mapping.fromJS(data, experimentModel);
+                $('#progress-modal').modal('hide');
             }
         }
         function initialize(experimentModelJson) {
@@ -183,6 +194,7 @@
                 bootbox.confirm(description + "  Continue?", function(confirmed) {
                     if (confirmed) {
                         Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {'pk': {{experiment.pk}}, 'action':action});
+                        $('#progress-modal').modal({keyboard: false});
                     }
                     return false;
                 });

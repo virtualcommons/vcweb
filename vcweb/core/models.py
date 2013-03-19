@@ -528,11 +528,11 @@ class Experiment(models.Model):
 
     def get_participant_group_relationship(self, participant):
         session_id = self.current_round.session_id
-        if session_id is None:
-            return ParticipantGroupRelationship.objects.get(group__experiment=self, participant=participant)
-        else:
+        if session_id:
             return ParticipantGroupRelationship.objects.get(group__experiment=self, participant=participant,
                     group__session_id=session_id)
+        else:
+            return ParticipantGroupRelationship.objects.get(group__experiment=self, participant=participant)
 
     def all_participants_have_submitted(self):
         return ParticipantRoundDataValue.objects.filter(submitted=False, round_data=self.current_round_data).count() == 0
@@ -888,13 +888,14 @@ class RoundConfiguration(models.Model):
 # maps round type name to (description, default_template_name)
     ROUND_TYPES_DICT = dict(
             WELCOME=('Initial welcome round', 'welcome.html'),
+            GENERAL_INSTRUCTIONS=('General instructions round (introduction)', 'general-instructions.html'),
             REGULAR=('Regular experiment round', 'participate.html'),
             CHAT=('Chat round', 'chat.html'),
             DEBRIEFING=('Debriefing round', 'debriefing.html'),
             INSTRUCTIONS=('Instructions round', 'instructions.html'),
             PRACTICE=('Practice round', 'practice.html'),
             QUIZ=('Quiz round', 'quiz.html'))
-    ROUND_TYPES = (CHAT, DEBRIEFING, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR, WELCOME) = sorted(ROUND_TYPES_DICT.keys())
+    ROUND_TYPES = (CHAT, DEBRIEFING, GENERAL_INSTRUCTIONS, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR, WELCOME) = sorted(ROUND_TYPES_DICT.keys())
 
     ROUND_TYPE_CHOICES = Choices(*[(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES])
     PLAYABLE_ROUND_CONFIGURATIONS = (PRACTICE, REGULAR)
@@ -958,12 +959,16 @@ class RoundConfiguration(models.Model):
         if not self.is_instructions_round:
             logger.warning("tried to get custom instructions for a non-instructions round %s", self)
             return None
-        instructions_template = select_template([self.template_path])
-        if context_dict is None:
-            context_dict = {}
-        context_dict.update(kwargs, session_number=self.session_id)
-        c = Context(context_dict)
-        return instructions_template.render(c)
+        try:
+            instructions_template = select_template([self.template_path])
+            if context_dict is None:
+                context_dict = {}
+            context_dict.update(kwargs, session_number=self.session_id)
+            c = Context(context_dict)
+            return instructions_template.render(c)
+        except:
+            logger.warning("no template found for custom instructions: %s", self.template_path)
+            return None
 
     @property
     def template_path(self):

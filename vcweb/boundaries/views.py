@@ -5,7 +5,7 @@ from vcweb.core import dumps
 from vcweb.core.decorators import participant_required
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
-        ParticipantExperimentRelationship, ChatMessage, ParticipantRoundDataValue)
+        ParticipantExperimentRelationship, ChatMessage, ParticipantRoundDataValue, GroupRelationship)
 from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_harvest_decision_parameter,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
@@ -54,6 +54,7 @@ def submit_harvest_decision(request, experiment_id=None):
     return JsonResponse(dumps({'success': False }))
 
 
+# FIXME: need to distinguish between instructions / welcome rounds and practice/regular rounds
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
@@ -65,7 +66,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     regrowth_rate = get_regrowth_rate(current_round)
     cost_of_living = get_cost_of_living(current_round)
     own_group = participant_group_relationship.group
-    own_resource_level = 0
+    own_resource_level = get_resource_level(own_group)
     last_harvest_decision = get_last_harvest_decision(participant_group_relationship, round_data=previous_round_data)
     experiment_model_dict['playerData'] = [{
         'id': pgr.participant_number,
@@ -86,7 +87,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             if group != own_group:
                 group_data.append({
                     'groupId': unicode(group),
-                    'resourceLevel': resource_level,
+                    'resourceLevel': get_resource_level(group),
                     'totalStorage': get_total_storage(group),
                     'regrowthRate': regrowth_rate,
                     'costOfLiving': cost_of_living,
@@ -95,13 +96,22 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 
 # round / experiment configuration data
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
-    experiment_model_dict['roundType'] = current_round.round_type
     experiment_model_dict['regrowthRate'] = regrowth_rate
     experiment_model_dict['costOfLiving'] = cost_of_living
     experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
-    experiment_model_dict['dollarsPerToken'] = ec.exchange_rate
-    experiment_model_dict['chatEnabled'] = current_round.chat_enabled
+    experiment_model_dict['dollarsPerToken'] = float(ec.exchange_rate)
+    experiment_model_dict['roundType'] = current_round.round_type
+    experiment_model_dict['practiceRound'] = current_round.is_practice_round
+    experiment_model_dict['chatEnabled'] = False
+    if current_round.is_regular_round:
+        experiment_model_dict['chatEnabled'] = current_round.chat_enabled
+    if current_round.is_practice_round:
+        experiment_model_dict['templateName'] = 'REGULAR'
+    else:
+        experiment_model_dict['templateName'] = current_round.round_type
+
+
 # FIXME: defaults hard coded in for now
     experiment_model_dict['maxEarnings'] = 20.00
     experiment_model_dict['warningCountdownTime'] = 10
@@ -112,7 +122,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 # FIXME: these need to be looked up
     experiment_model_dict['maxHarvestDecision'] = 10
     experiment_model_dict['hasSubmit'] = False
-    experiment_model_dict['practiceRound'] = current_round.is_practice_round
     experiment_model_dict['instructions'] = current_round.get_custom_instructions()
     experiment_model_dict.update(**kwargs)
     return dumps(experiment_model_dict)
