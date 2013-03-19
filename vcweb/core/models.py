@@ -761,9 +761,6 @@ class Experiment(models.Model):
             logger.debug("already created round data: %s", round_data)
         return round_data
 
-    def create_new_groups(self):
-        pass
-
     def start_round(self, sender=None):
         logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
         self.status = Experiment.Status.ROUND_IN_PROGRESS
@@ -773,9 +770,9 @@ class Experiment(models.Model):
         self.ready_participants = 0
         self.save()
         self.log('Starting round')
+        current_round_configuration = self.current_round
         if current_round_configuration.randomize_groups:
-            self.allocate_groups(
-                    preserve_existing_groups=current_round_configuration.preserve_existing_groups,
+            self.allocate_groups(preserve_existing_groups=current_round_configuration.preserve_existing_groups,
                     session_id=current_round_configuration.session_id)
         if sender is None:
             sender = intern(self.experiment_metadata.namespace.encode('utf8'))
@@ -896,7 +893,7 @@ class RoundConfiguration(models.Model):
             QUIZ=('Quiz round', 'quiz.html'))
     ROUND_TYPES = (CHAT, DEBRIEFING, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR, WELCOME) = sorted(ROUND_TYPES_DICT.keys())
 
-    ROUND_TYPE_CHOICES = Choices((round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES)
+    ROUND_TYPE_CHOICES = Choices(*[(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES])
     PLAYABLE_ROUND_CONFIGURATIONS = (PRACTICE, REGULAR)
 
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configuration_set')
@@ -930,10 +927,8 @@ class RoundConfiguration(models.Model):
     survey_url = models.URLField(null=True, blank=True)
     """ external survey url """
     chat_enabled = models.BooleanField(default=False, help_text=_("Is chat enabled in this round?"))
-    create_group_clusters = models.BooleanField(default=False, help_text=_('''Create relationships (clusters) of groups
-        that can share group cluster data values'''))
-    group_cluster_size = models.PositiveIntegerField(default=2, help_text=_('''How many groups should be clustered
-    together at a time?'''))
+    create_group_clusters = models.BooleanField(default=False, help_text=_("Create relationships (clusters) of groups that can share group cluster data values"))
+    group_cluster_size = models.PositiveIntegerField(default=2, help_text=_("How many groups should be clustered together at a time?"))
     randomize_groups = models.BooleanField(default=False, help_text=_("Shuffle participants into new groups when the round begins?"))
     """ Should groups be randomized at the start of the round? """
     preserve_existing_groups = models.BooleanField(default=True, help_text=_("This option is only useful if randomize_groups is set to true.  If we are randomizing groups, should existing groups (if any) be preserved?"))
@@ -1840,7 +1835,7 @@ class ChatMessageQuerySet(models.query.QuerySet):
         if round_data is None:
             round_data = experiment.current_round_data
         for participant_group_relationship in ParticipantGroupRelationship.objects.for_experiment(experiment):
-            yield ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
+            ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
                     string_value=message,
                     round_data=round_data)
 
