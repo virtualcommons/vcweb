@@ -28,6 +28,7 @@ def participate(request, experiment_id=None):
     return render_to_response('boundaries/participate.html', {
         'auth_token': participant.authentication_token,
         'experiment': experiment,
+        'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant)
         'participant_group_relationship': pgr,
         'experimentModelJson': get_view_model_json(experiment, pgr),
         },

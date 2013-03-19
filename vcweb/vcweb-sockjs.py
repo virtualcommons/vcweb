@@ -163,7 +163,7 @@ class ConnectionManager(object):
     '''
     def connections(self, group):
         experiment = group.experiment
-        for participant_group_relationship in group.participant_group_relationship_set.select_related(depth=1).all():
+        for participant_group_relationship in group.participant_group_relationship_set.select_related('participant').all():
             ''' only return currently connected connections in this group '''
             participant = participant_group_relationship.participant
             participant_tuple = (participant.pk, experiment.pk)

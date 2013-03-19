@@ -450,7 +450,7 @@ class Experiment(models.Model):
 
     @property
     def playable_round_data(self):
-        return self.round_data_set.select_related(depth=1).filter(round_configuration__round_type__in=RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS,
+        return self.round_data_set.select_related('experiment', 'round_configuration').filter(round_configuration__round_type__in=RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS,
                 round_configuration__sequence_number__lte=self.current_round_sequence_number)
 
     @property
@@ -522,6 +522,9 @@ class Experiment(models.Model):
     @property
     def all_participants_ready(self):
         return self.ready_participants >= self.participant_set.count()
+
+    def get_participant_experiment_relationship(self, participant):
+        return self.participant_relationship_set.get(participant=participant)
 
     def get_participant_group_relationship(self, participant):
         session_id = self.current_round.session_id
@@ -1592,6 +1595,8 @@ class Participant(CommonsUser):
     birthdate = models.DateField(null=True, blank=True)
     address = models.ForeignKey(Address, null=True, blank=True)
 
+    '''
+    FIXME: move these into a ParticipantQuerySet with PassThroughManager if needed
     @property
     def active_experiments(self):
         return self.experiment_relationship_set.filter(experiment__status=Experiment.Status.ACTIVE)
@@ -1604,14 +1609,9 @@ class Participant(CommonsUser):
     def completed_experiments(self):
         return self.experiments_with_status(Experiment.Status.COMPLETED)
 
-    def get_participant_experiment_relationship(self, experiment):
-        return ParticipantExperimentRelationship.objects.select_related(depth=1).get(participant=self, experiment=experiment)
-
-    def get_participant_group_relationship(self, experiment):
-        return ParticipantGroupRelationship.objects.get_relationship(self, experiment)
-
     def experiments_with_status(self, status=Experiment.Status.ACTIVE):
         return self.experiment_relationship_set.filter(experiment__status=status)
+    '''
 
     class Meta:
         ordering = ['user']
