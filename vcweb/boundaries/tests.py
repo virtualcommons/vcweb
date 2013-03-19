@@ -17,5 +17,3 @@ class InitialDataTest(BaseTest):
         expected_parameter_names = ('survival_cost', 'storage', 'player_status')
         for p in ps:
             self.assertTrue(p.name in expected_parameter_names)
-            
-

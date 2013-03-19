@@ -47,8 +47,8 @@ def get_cost_of_living_parameter():
 def get_observe_other_group_parameter():
     return Parameter.objects.for_round(name='observe_other_group')
 
-def can_observe_other_group(round_configuration):
-    return round_configuration.get_parameter_value(parameter=get_observe_other_group_parameter(), default=False).boolean_value
+def can_observe_other_group(experiment_configuration):
+    return experiment_configuration.get_parameter_value(parameter=get_observe_other_group_parameter(), default=False).boolean_value
 
 # players can either be dead or alive
 def get_player_status_dv(participant_group_relationship_id):

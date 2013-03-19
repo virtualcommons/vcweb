@@ -9,7 +9,7 @@ from vcweb.core.models import (is_participant, is_experimenter, Experiment, Part
 from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_harvest_decision_parameter,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
-        get_last_harvest_decision)
+        get_last_harvest_decision, can_observe_other_group)
 import logging
 import random
 
@@ -65,7 +65,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     cost_of_living = get_cost_of_living(current_round)
     own_group = participant_group_relationship.group
     own_resource_level = 0
-    last_harvest_decision = get_last_harvest_decision(pgr, round_data=previous_round_data)
+    last_harvest_decision = get_last_harvest_decision(participant_group_relationship, round_data=previous_round_data)
     experiment_model_dict['playerData'] = [{
         'id': pgr.participant_number,
         'lastHarvestDecision': last_harvest_decision,
@@ -97,8 +97,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['roundType'] = current_round.round_type
     experiment_model_dict['regrowthRate'] = regrowth_rate
     experiment_model_dict['costOfLiving'] = cost_of_living
-    experiment_model_dict['participantNumber'] = pgr.participant_number
-    experiment_model_dict['participantGroupId'] = pgr.pk
+    experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
+    experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     experiment_model_dict['dollarsPerToken'] = ec.exchange_rate
     experiment_model_dict['chatEnabled'] = round_configuration.chat_enabled
 # FIXME: defaults hard coded in for now
@@ -106,7 +106,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['warningCountdownTime'] = 10
 
     experiment_model_dict['lastHarvestDecision'] = last_harvest_decision
-    experiment_model_dict['storage'] = get_storage(pgr, current_round_data)
+    experiment_model_dict['storage'] = get_storage(participant_group_relationship, current_round_data)
     experiment_model_dict['resourceLevel'] = own_resource_level
 # FIXME: these need to be looked up
     experiment_model_dict['maxHarvestDecision'] = 10

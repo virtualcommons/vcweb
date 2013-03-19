@@ -215,13 +215,13 @@ class ExperimentConfiguration(models.Model):
     def get_parameter_value(self, parameter=None, name=None, default=None):
         if parameter is None and name is None:
             logger.error("Can't find a parameter value with no name or parameter, returning default")
-            return default
+            return DefaultValue(default)
         try:
             if parameter:
                 return self.experiment_parameter_value_set.get(parameter=parameter)
             elif name:
                 return self.experiment_parameter_value_set.get(parameter__name=name)
-        except ExperimentParameterValue.DoesNotExist:
+        except ExperimentParameterValue.DoesNotExist as e:
             logger.debug("no experiment configuration parameter value found: (%s, %s) returning default %s", parameter,
                     name, default)
             return DefaultValue(default)
