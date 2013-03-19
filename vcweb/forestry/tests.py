@@ -206,14 +206,14 @@ class ForestryParametersTest(BaseTest):
                 data_value.save()
                 self.assertEqual(100, data_value.value)
             self.assertEqual(e.get_round_data().group_data_value_set.count(), GroupRoundDataValue.objects.filter(group__experiment=e, round_data=round_data).count())
-            self.assertEqual(e.parameters(scope=Parameter.GROUP_SCOPE).count(), 3)
+            self.assertEqual(e.parameters(scope=Parameter.Scope.GROUP).count(), 3)
             data_round_number += 1
 
     def test_data_parameters(self):
         e = self.experiment
         # FIXME: horrible tests, improve
         self.assertEqual(6, e.parameters().count())
-        for data_param in e.parameters(scope=Parameter.GROUP_SCOPE).all():
+        for data_param in e.parameters(scope=Parameter.Scope.GROUP).all():
             logger.debug("inspecting data param %s" % data_param)
             self.assertEqual(data_param.type, 'int', 'Currently all group data parameters for the forestry experiment are ints.')
 
@@ -223,7 +223,7 @@ class ForestryParametersTest(BaseTest):
         e.activate()
         e.start_round()
         round_data = e.get_round_data()
-        for data_param in e.parameters(scope=Parameter.PARTICIPANT_SCOPE).all():
+        for data_param in e.parameters(scope=Parameter.Scope.PARTICIPANT).all():
             for p in self.participants:
                 per = ParticipantExperimentRelationship.objects.get(participant=p, experiment=e)
                 pgr = ParticipantGroupRelationship.objects.get(group__experiment=e, participant=p)
@@ -235,7 +235,7 @@ class ForestryParametersTest(BaseTest):
 
     def test_data_values(self):
         e = self.create_participant_data_values()
-        num_participant_parameters = e.parameters(scope=Parameter.PARTICIPANT_SCOPE).count()
+        num_participant_parameters = e.parameters(scope=Parameter.Scope.PARTICIPANT).count()
         self.assertEqual(e.participant_set.count() * num_participant_parameters, ParticipantRoundDataValue.objects.filter(round_data__experiment=e, parameter__type='int').count(),
                 'There should be %s participants * %s total data parameters = %s' % (e.participant_set.count(), num_participant_parameters, e.participant_set.count() * num_participant_parameters))
 

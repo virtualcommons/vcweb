@@ -93,7 +93,7 @@ class BaseVcwebTest(TestCase):
                 template_name=template_name
                 )
 
-    def create_new_parameter(self, name='vcweb.test.parameter', scope='EXPERIMENT_SCOPE', parameter_type='string'):
+    def create_new_parameter(self, name='vcweb.test.parameter', scope=Parameter.Scope.EXPERIMENT, parameter_type='string'):
         return Parameter.objects.create(experiment_metadata=self.experiment_metadata, creator=self.experimenter, name=name, scope=scope, type=parameter_type)
 
     def create_new_group(self, max_size=10, experiment=None):
@@ -245,7 +245,7 @@ class ExperimentTest(BaseVcwebTest):
                         parameter=parameter)
                 self.assertFalse(created)
             for pgr in group.participant_group_relationship_set.all():
-                for parameter in e.parameters(scope=Parameter.PARTICIPANT_SCOPE):
+                for parameter in e.parameters(scope=Parameter.Scope.PARTICIPANT):
                     participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(round_data=current_round_data, participant_group_relationship=pgr, parameter=parameter)
                     self.assertFalse(created)
 
@@ -264,7 +264,7 @@ class GroupTest(BaseVcwebTest):
                 self.assertEqual(g.get_scalar_data_value(parameter=data_value.parameter), test_data_value)
 
     def test_transfer_to_next_round(self):
-        parameter = self.create_new_parameter(scope=Parameter.GROUP_SCOPE, name='test_group_parameter', parameter_type='int')
+        parameter = self.create_new_parameter(scope=Parameter.Scope.GROUP, name='test_group_parameter', parameter_type='int')
         test_data_value = 37
         e = self.experiment
         first_pass = True
@@ -327,17 +327,6 @@ class ParticipantExperimentRelationshipTest(BaseVcwebTest):
 
 
 class RoundConfigurationTest(BaseVcwebTest):
-
-    def test_round_configuration_enums(self):
-        self.assertEqual(len(RoundConfiguration.ROUND_TYPES), len(RoundConfiguration.ROUND_TYPES_DICT))
-        self.assertEqual(RoundConfiguration.PRACTICE, 'PRACTICE')
-        self.assertEqual(RoundConfiguration.REGULAR, 'REGULAR')
-        choices = RoundConfiguration.ROUND_TYPE_CHOICES
-        self.assertEqual(len(choices), len(RoundConfiguration.ROUND_TYPES_DICT))
-        for pair in choices:
-            self.assertTrue(pair[0] in RoundConfiguration.ROUND_TYPES_DICT.keys())
-            self.assertTrue(pair[0] in RoundConfiguration.ROUND_TYPES)
-            self.assertFalse(pair[1].isupper())
 
     def test_parameterized_value(self):
         e = self.experiment

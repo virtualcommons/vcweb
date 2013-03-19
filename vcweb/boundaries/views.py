@@ -61,20 +61,17 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     previous_round_data = experiment.get_round_data(round_configuration=previous_round)
 
     experiment_model_dict = experiment.as_dict(include_round_data=False, attrs={})
-    group_data = []
-    player_data = []
     regrowth_rate = get_regrowth_rate(current_round)
     cost_of_living = get_cost_of_living(current_round)
     own_group = participant_group_relationship.group
     own_resource_level = 0
-    for pgr in own_group.participant_group_relationship_set.all():
-        player_data.append({
+    last_harvest_decision = get_last_harvest_decision(pgr, round_data=previous_round_data)
+    experiment_model_dict['playerData'] = {
             'id': pgr.participant_number,
-            # FIXME: replace with lookup of last harvest decision, if it exists
-            'lastHarvestDecision': get_last_harvest_decision(pgr, round_data=previous_round_data),
+            'lastHarvestDecision': last_harvest_decision,
             'storage': get_storage(pgr, current_round_data),
-            })
-    experiment_model_dict['playerData'] = player_data
+            } for pgr in own_group.participant_group_relationship_set.all()
+
 
     experiment_model_dict['chatMessages'] = [
             { 'pk': cm.pk,
@@ -85,22 +82,19 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             for cm in ChatMessage.objects.for_group(own_group)
             ]
     experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
-    experiment_model_dict['groupData'] = group_data
-# FIXME: replace with group cluster lookups
-    for group in experiment.group_set.all():
-        resource_level = get_resource_level(group)
-        if group == own_group:
-            own_resource_level = resource_level
-        group_data.append({
-            'groupId': unicode(group),
-            'resourceLevel': resource_level,
-            'totalStorage': get_total_storage(group),
-            'regrowthRate': regrowth_rate,
-            'costOfLiving': cost_of_living,
-            })
-    experiment_model_dict['otherGroupResourceLevel'] = random.randint(50, 100)
-    experiment_model_dict['otherGroupAverageHarvest'] = random.uniform(0, 10)
-    experiment_model_dict['otherGroupAverageStorage'] = random.uniform(10, 30)
+    if not current_round.is_practice_round and can_observe_other_group(current_round):
+        gr = GroupRelationship.objects.select_related('cluster').get(group=own_group)
+        group_data = []
+        for group in gr.cluster.group_set.all():
+            if group != own_group:
+                group_data.append({
+                    'groupId': unicode(group),
+                    'resourceLevel': resource_level,
+                    'totalStorage': get_total_storage(group),
+                    'regrowthRate': regrowth_rate,
+                    'costOfLiving': cost_of_living,
+                    })
+        experiment_model_dict['groupData'] = group_data
 
 # round / experiment configuration data
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
@@ -109,18 +103,19 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['costOfLiving'] = cost_of_living
     experiment_model_dict['participantNumber'] = pgr.participant_number
     experiment_model_dict['participantGroupId'] = pgr.pk
+    experiment_model_dict['dollarsPerToken'] = ec.exchange_rate
+    experiment_model_dict['chatEnabled'] = round_configuration.chat_enabled
 # FIXME: defaults hard coded in for now
-    experiment_model_dict['dollarsPerToken'] = 0.20
     experiment_model_dict['maxEarnings'] = 20.00
     experiment_model_dict['warningCountdownTime'] = 10
 
-# FIXME: these need to be looked up
-    experiment_model_dict['lastHarvestDecision'] = 5
-    experiment_model_dict['maxHarvestDecision'] = 10
-    experiment_model_dict['storage'] = 20
+    experiment_model_dict['lastHarvestDecision'] = last_harvest_decision
+    experiment_model_dict['storage'] = get_storage(pgr, current_round_data)
     experiment_model_dict['resourceLevel'] = own_resource_level
+# FIXME: these need to be looked up
+    experiment_model_dict['maxHarvestDecision'] = 10
     experiment_model_dict['hasSubmit'] = False
-    experiment_model_dict['practiceRound'] = False
+    experiment_model_dict['practiceRound'] = round_configuration.is_practice_round
     experiment_model_dict['instructions'] = current_round.get_custom_instructions(session_number=get_session_number(current_round))
     experiment_model_dict.update(**kwargs)
     return dumps(experiment_model_dict)

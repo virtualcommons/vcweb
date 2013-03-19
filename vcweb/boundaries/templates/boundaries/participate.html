@@ -5,56 +5,6 @@
 <link rel='stylesheet' href='{% static "css/boundaries/style.css" %}'/>
 {% endblock %}
 {% block content %}
-<form class='form-inline'>
-    <h2>Experimenter Panel</h2>
-    <!--
-    <div class='control-group'>
-        <label class='control-label' for='set-resource-level'>Resource level</label>
-        <div class='controls'>
-            0 <input type='range' id='set-resource-level' data-bind='value: resourceLevel' min='0' max='100' /> 100
-        </div>
-    </div>
-    <div class='control-group'>
-        <label class='control-label' for='set-survival-cost'>Survival cost</label>
-        <div class='controls'>
-            <input class='input-small' type='number' id='set-survival-cost' data-bind='value:costOfLiving' />
-        </div>
-    </div>
-    <div class='control-group'>
-        <label class='control-label' for='set-storage'>Storage</label>
-        <div class='controls'>
-            <input class='input-small' type='number' id='set-storage' data-bind='value:storage' />
-        </div>
-    </div>
-    <div class='control-group'>
-        <label class='control-label' for='set-regrowth-rate'>Regrowth rate</label>
-        <div class='controls'>
-            <input class='input-small' step='0.1' type='number' id='set-regrowth-rate' data-bind='value:regrowthRate' />
-        </div>
-    </div>
-    -->
-    <div class='control-group'>
-        <div class='controls'>
-            <label class='control-label' for='pick-template'>Round template</label>
-            <select id='pick-template' data-bind='value: templateName()'>
-                <option value='WELCOME'>Welcome</option>
-                <option value='GENERAL_INSTRUCTIONS'>Instructions</option>
-                <option value='GENERAL_INSTRUCTIONS2'>Instructions page 2</option>
-                <option value='GENERAL_INSTRUCTIONS3'>Instructions page 3</option>
-                <option value='PRACTICE_ROUND_INSTRUCTIONS'>Practice Round Instructions</option>
-                <option value='PRACTICE'>Practice round</option>
-                <option value='REGULAR'>Actual round</option>
-            </select>
-        </div>
-    </div>
-    <h3>Timers</h3>
-    <div class='control-group'>
-        <div class='controls'>
-            <button data-bind='click: startHarvestDecisionTimer' type='button' class='btn btn-primary'>Start harvest decision timer</button>
-            <button data-bind='click: startChatTimer' type='button' class='btn btn-primary'>Start chat timer</button>
-        </div>
-    </div>
-</form>
 <div data-bind='template: { name: templateName() }'>
 </div>
 {% endblock content %}
@@ -302,10 +252,10 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
 </div>
 <h3>Forest</h3>
 <div data-bind='if: practiceRound'>
-<div class='alert alert-error alert-block'>
-<h4>PRACTICE ROUND</h4>
-This is a practice round.  The decisions you make in this round will <b>NOT</b> contribute to your earnings.
-</div>
+    <div class='alert alert-error alert-block'>
+        <h4>PRACTICE ROUND</h4>
+        This is a practice round.  The decisions you make in this round will <b>NOT</b> contribute to your earnings.
+    </div>
 </div>
 
 <div data-bind="ifnot: isResourceEmpty" id='resourceDisplay'>
@@ -321,53 +271,51 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
     <div class='alert alert-error'>There are no more resources to harvest. Please wait until the next round begins.</div>
 </div>
 <div data-bind='if: hasSubmit'>
-<div class='alert alert-error'>
-    You have submitted a decision to harvest <span class='badge badge-important' data-bind='text: harvestDecision'></span> resources.
-</div>
+    <div class='alert alert-error'>
+        You have submitted a decision to harvest <span class='badge badge-important' data-bind='text: harvestDecision'></span> resources.
+    </div>
 </div>
 
-<h3>Observe Other Group</h3>
-<div class='row'>
-<div class='span4'>
-<table>
-<tr>
-<td>
-<button class='btn' data-bind='click: showOtherGroup'><i class='icon-eye-open'></i> Observe</a>
-</td>
-<td>
-<img src='{{STATIC_URL}}/images/boundaries/observe.png' alt='observe'>
-</td>
-</tr>
-</table>
-</div>
-<div class='span5'>
-<div data-bind='if: shouldShowOtherGroup'>
-<table class='table table-bordered table-condensed'>
-<caption>Observation Results</caption>
-<thead>
-<tr><th></th><th>Other Group</th></tr>
-</thead>
-<tbody>
-<tr><td>trees in forest</td><td data-bind='text:otherGroupResourceLevel()'></td></tr>
-<tr><td>average harvest</td><td data-bind='text:otherGroupAverageHarvest().toFixed(1)'></td></tr>
-<tr><td>average storage</td><td data-bind='text:otherGroupAverageStorage().toFixed(1)'></td></tr>
-</tbody>
-</table>
-</div>
-</div>
+<div data-bind='if: canObserveOtherGroup'>
+    <h3>Observe Other Group</h3>
+    <div class='row'>
+        <div class='span4'>
+            <table>
+                <tr>
+                    <td><button class='btn' data-bind='click: showOtherGroup'><i class='icon-eye-open'></i> Observe</a></td>
+                    <td><img src='{{STATIC_URL}}/images/boundaries/observe.png' alt='observe'></td>
+                </tr>
+            </table>
+        </div>
+        <div class='span5'>
+            <div data-bind='if: shouldShowOtherGroup'>
+                <table class='table table-bordered table-condensed'>
+                    <caption>Observation Results</caption>
+                    <thead>
+                        <tr><th></th><th>Other Group</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>trees in forest</td><td data-bind='text:otherGroupResourceLevel()'></td></tr>
+                        <tr><td>average harvest</td><td data-bind='text:otherGroupAverageHarvest().toFixed(1)'></td></tr>
+                        <tr><td>average storage</td><td data-bind='text:otherGroupAverageStorage().toFixed(1)'></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 <h3>Harvest</h3>
 <div data-bind='ifnot: isResourceEmpty'>
-<form id='vcweb-form' action='' method='post' class='form-inline'>
-    {% csrf_token %}
-    <div class='control-group'>
-        <div class='controls'>
-            <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
-            <input id='harvestDecision' type="number" size="1" maxlength="1" name='harvest_decision' class='required' min="0" data-bind="value: harvestDecision, attr: { max: maxHarvestDecision }" /> 
-            <button id='submitDecision' data-bind='click: submitDecision' type='submit' class='btn'>Harvest</button>
+    <form id='vcweb-form' action='' method='post' class='form-inline'>
+        {% csrf_token %}
+        <div class='control-group'>
+            <div class='controls'>
+                <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
+                <input id='harvestDecision' type="number" size="1" maxlength="1" name='harvest_decision' class='required' min="0" data-bind="value: harvestDecision, attr: { max: maxHarvestDecision }" /> 
+                <button id='submitDecision' data-bind='click: submitDecision' type='submit' class='btn'>Harvest</button>
+            </div>
         </div>
-    </div>
-</form>
+    </form>
 </div>
 </script>
 <script type="text/javascript">
@@ -421,7 +369,6 @@ This is a practice round.  The decisions you make in this round will <b>NOT</b> 
             model.showOtherGroup = function() {
                 model.shouldShowOtherGroup(true);
             }
-            model.chatEnabled = ko.observable(false);
             model.shouldShowOtherGroup = ko.observable(false);
             model.harvestDecision = ko.observable(0);
             model.numberOfTreesPerRow = ko.observable(10);

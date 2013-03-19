@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 EXPERIMENT_METADATA_NAME = intern('bound')
 MAX_RESOURCE_LEVEL = 240
 
+'''
+Experiment Parameters and Metadata Accessors
+'''
 @simplecache
 def get_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace=EXPERIMENT_METADATA_NAME)
@@ -41,8 +44,11 @@ def get_cost_of_living_parameter():
     return Parameter.objects.for_round(name='cost_of_living')
 
 @simplecache
-def get_exchange_rate_parameter():
-    return Parameter.objects.for_experiment(name='exchange_rate')
+def get_observe_other_group_parameter():
+    return Parameter.objects.for_round(name='observe_other_group')
+
+def can_observe_other_group(round_configuration):
+    return round_configuration.get_parameter_value(parameter=get_observe_other_group_parameter(), default=False).boolean_value
 
 # players can either be dead or alive
 def get_player_status_dv(participant_group_relationship_id):

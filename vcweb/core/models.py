@@ -631,9 +631,9 @@ class Experiment(models.Model):
     def initialize_data_values(self, group_parameters=None, participant_parameters=None, round_data=None):
         logger.debug("initializing [participant params: %s]  [group parameters: %s] ", participant_parameters, group_parameters)
         if group_parameters is None:
-            group_parameters = self.parameters(scope=Parameter.GROUP_SCOPE)
+            group_parameters = self.parameters(scope=Parameter.Scope.GROUP)
         if participant_parameters is None:
-            participant_parameters = self.parameters(scope=Parameter.PARTICIPANT_SCOPE)
+            participant_parameters = self.parameters(scope=Parameter.Scope.PARTICIPANT)
         if round_data is None:
             round_data = self.current_round_data
         for group in self.group_set.select_related('parameter').all():
@@ -884,7 +884,7 @@ class RoundConfiguration(models.Model):
             QUIZ=('Quiz round', 'quiz.html'))
     ROUND_TYPES = (CHAT, DEBRIEFING, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR, WELCOME) = sorted(ROUND_TYPES_DICT.keys())
 
-    ROUND_TYPE_CHOICES = [(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES]
+    ROUND_TYPE_CHOICES = Choices((round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES)
     PLAYABLE_ROUND_CONFIGURATIONS = (PRACTICE, REGULAR)
 
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configuration_set')
@@ -903,7 +903,6 @@ class RoundConfiguration(models.Model):
     """ instructions, if any, to display before the round begins """
     debriefing = models.TextField(null=True, blank=True)
     """ debriefing, if any, to display after the round ends """
-# FIXME: replace with model_utils Choices
     round_type = models.CharField(max_length=32,
                                   choices=ROUND_TYPE_CHOICES,
                                   default=REGULAR)
@@ -1055,36 +1054,35 @@ def _fk_converter(fk_cls):
 
 class ParameterQuerySet(models.query.QuerySet):
     def for_participant(self, **kwargs):
-        return self.get(scope=Parameter.PARTICIPANT_SCOPE, **kwargs)
+        return self.get(scope=Parameter.Scope.PARTICIPANT, **kwargs)
 
     def for_group(self, **kwargs):
-        return self.get(scope=Parameter.GROUP_SCOPE, **kwargs)
+        return self.get(scope=Parameter.Scope.GROUP, **kwargs)
 
     def for_group_round(self, **kwargs):
-        return self.get(scope=Parameter.GROUP_ROUND_SCOPE, **kwargs)
+        return self.get(scope=Parameter.Scope.GROUP_ROUND, **kwargs)
 
     def for_round(self, **kwargs):
-        return self.get(scope=Parameter.ROUND_SCOPE, **kwargs)
+        return self.get(scope=Parameter.Scope.ROUND, **kwargs)
 
     def for_experiment(self, **kwargs):
-        return self.get(scope=Parameter.EXPERIMENT_SCOPE, **kwargs)
+        return self.get(scope=Parameter.Scope.EXPERIMENT, **kwargs)
 
 class ParameterPassThroughManager(PassThroughManager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
 
 class Parameter(models.Model):
-    PARAMETER_TYPES = (('int', 'Integer'),
-                       ('string', 'String'),
-                       ('foreignkey', 'Foreign key'),
-                       ('float', 'Floating-point number'),
-                       ('boolean', (('True', True), ('False', False))),
-                       ('enum', 'Enumeration'))
+    ParameterType = Choices(('int', 'Integer value'),
+            ('string', 'String value'),
+            ('foreignkey', 'Foreign key'),
+            ('float', 'Floating-point number'),
+            ('boolean', 'True/False'),
+            ('enum', 'Enumeration'))
 
     # FIXME: arcane, see if we can encapsulate this better.  used to provide sane default values for each parameter type
     # when the parameter is null
-    NONE_VALUES_DICT = dict(map(lambda x,y: (x[0], y), PARAMETER_TYPES, [0, '', -1, 0.0, False, None]))
-    #dict(zip([parameter_type[0] for parameter_type in PARAMETER_TYPES], [0, '', 0.0, False, None]))
+    NONE_VALUES_DICT = dict(map(lambda x,y: (x[0], y), ParameterType, [0, '', -1, 0.0, False, None]))
 
     CONVERTERS = {
             'int': int,
@@ -1100,23 +1098,18 @@ class Parameter(models.Model):
     NOTE: they expect already validated string data and will throw ValueErrors
     on invalid input.
     '''
-    GROUP_SCOPE = 'group'
-    GROUP_ROUND_SCOPE = 'group_round'
-    PARTICIPANT_SCOPE = 'participant'
-    ROUND_SCOPE = 'round'
-    EXPERIMENT_SCOPE = 'experiment'
 
-    SCOPE_CHOICES = ((ROUND_SCOPE, 'Parameter applies just for this round'),
-                     (EXPERIMENT_SCOPE, 'Parameter applies to this entire experiment'),
-                     (GROUP_SCOPE, 'Parameter applies to the entire group for the duration of the experiment'),
-                     (GROUP_ROUND_SCOPE, 'Parameter applies to the entire group for a given round'),
-                     (PARTICIPANT_SCOPE, 'Parameter is for a single participant'))
+    Scope = Choices(('round', 'ROUND', 'Parameter applies to the entire round across all groups'),
+            ('experiment', 'EXPERIMENT', 'Parameter applies to the entire experiment across all groups and rounds'),
+            ('group', 'GROUP', 'Parameter applies to a group for the duration of the experiment'),
+            ('group_round', 'GROUP_ROUND', 'Parameter applies to a group for a given round'),
+            ('participant', 'PARTICIPANT', 'Parameter applies for a single participant'))
 
-    scope = models.CharField(max_length=32, choices=SCOPE_CHOICES, default=ROUND_SCOPE)
+    scope = models.CharField(max_length=32, choices=Scope, default=Scope.ROUND)
     name = models.CharField(max_length=255, unique=True)
     display_name = models.CharField(max_length=255, null=True, blank=True)
     description = models.CharField(max_length=512, null=True, blank=True)
-    type = models.CharField(max_length=32, choices=PARAMETER_TYPES)
+    type = models.CharField(max_length=32, choices=ParameterType)
     class_name = models.CharField(max_length=64, null=True, blank=True, help_text='Model classname in the form of appname.modelname, e.g., "core.Experiment".  Only applicable for foreign key parameters.')
     default_value_string = models.CharField(max_length=255, null=True, blank=True)
     date_created = models.DateTimeField(default=datetime.now)
@@ -1322,7 +1315,7 @@ class Group(models.Model):
 
     @property
     def data_parameters(self):
-        return Parameter.objects.filter(experiment_metadata=self.experiment.experiment_metadata, scope=Parameter.GROUP_SCOPE)
+        return Parameter.objects.filter(experiment_metadata=self.experiment.experiment_metadata, scope=Parameter.Scope.GROUP)
 
     @property
     def current_round_data(self):
@@ -1717,11 +1710,14 @@ class ParticipantGroupRelationship(models.Model):
     def get_data_value(self, parameter=None, round_data=None, default=None):
         if round_data is None:
             round_data = self.current_round_data
-        if parameter is not None:
-            return ParticipantRoundDataValue.objects.get(round_data=round_data, parameter=parameter,
-                    participant_group_relationship=self)
-        logger.warning("unable to retrieve data value with parameter %s, returning default value %s", parameter, default)
-        return DefaultValue(default)
+        try:
+            return ParticipantRoundDataValue.objects.get(round_data=round_data, parameter=parameter, participant_group_relationship=self)
+        except ParticipantRoundDataValue.DoesNotExist as e:
+            if default is None:
+                raise e
+            else:
+                logger.warning("unable to retrieve ParticipantRoundDataValue with parameter %s, returning default value %s", parameter, default)
+                return DefaultValue(default)
 
     def set_data_value(self, parameter=None, value=None, round_data=None):
         if round_data is None:
@@ -1812,10 +1808,6 @@ class ParticipantRoundDataValue(ParameterizedValue):
 #        unique_together = (('parameter', 'participant_group_relationship'),)
 
 
-@simplecache
-def get_chat_message_parameter():
-    return Parameter.objects.get(name='chat_message', scope=Parameter.PARTICIPANT_SCOPE)
-
 class ChatMessageQuerySet(models.query.QuerySet):
 
     def for_group(self, group=None, **kwargs):
@@ -1874,18 +1866,6 @@ class ChatMessage(ParticipantRoundDataValue):
 
     class Meta:
         ordering = ['date_created']
-
-@simplecache
-def get_comment_parameter():
-    return Parameter.objects.get(name='comment', scope=Parameter.PARTICIPANT_SCOPE)
-
-@simplecache
-def get_like_parameter():
-    return Parameter.objects.get(name='like', scope=Parameter.PARTICIPANT_SCOPE)
-
-@simplecache
-def get_participant_ready_parameter():
-    return Parameter.objects.get(name='participant_ready', scope=Parameter.PARTICIPANT_SCOPE)
 
 class Comment(ParticipantRoundDataValue):
     def __init__(self, *args, **kwargs):
@@ -1959,6 +1939,25 @@ class SpoolParticipantStatistics(models.Model):
     discharges = models.PositiveIntegerField(default=0)
     participations = models.PositiveIntegerField(default=0)
     invitations = models.PositiveIntegerField(default=0)
+
+''' parameter accessors '''
+@simplecache
+def get_chat_message_parameter():
+    return Parameter.objects.get(name='chat_message', scope=Parameter.Scope.PARTICIPANT)
+
+@simplecache
+def get_comment_parameter():
+    return Parameter.objects.get(name='comment', scope=Parameter.Scope.PARTICIPANT)
+
+@simplecache
+def get_like_parameter():
+    return Parameter.objects.get(name='like', scope=Parameter.Scope.PARTICIPANT)
+
+@simplecache
+def get_participant_ready_parameter():
+    return Parameter.objects.get(name='participant_ready', scope=Parameter.Scope.PARTICIPANT)
+
+
 
 def is_experimenter(user, experimenter=None):
     """
