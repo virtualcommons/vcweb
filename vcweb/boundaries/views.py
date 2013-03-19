@@ -100,7 +100,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     experiment_model_dict['dollarsPerToken'] = ec.exchange_rate
-    experiment_model_dict['chatEnabled'] = round_configuration.chat_enabled
+    experiment_model_dict['chatEnabled'] = current_round.chat_enabled
 # FIXME: defaults hard coded in for now
     experiment_model_dict['maxEarnings'] = 20.00
     experiment_model_dict['warningCountdownTime'] = 10
