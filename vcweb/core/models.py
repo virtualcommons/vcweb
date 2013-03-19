@@ -277,9 +277,12 @@ class Experiment(models.Model):
     currently unused, but kept here in the event that we want to allow participants to authenticate with this
     authentication_code either in lieu or in addition to their own user password.
     """
-    current_round_sequence_number = models.PositiveIntegerField(default=1)
+    current_round_sequence_number = models.PositiveIntegerField(default=1, help_text=_('''Used to identify which round the
+    experiment is currently running, should be a sequential number ranging from 1 to N'''))
     """ Each round is assigned a sequential sequence number, ranging from 1 to N.  Used to identify which round the
     experiment is currently running. """
+    current_repeated_round_sequence_number = models.PositiveIntegerField(default=0, help_text=_('''For repeating rounds,
+    the number of times the round has been repeated, used to keep track of when to move on from a repeating round.'''))
     experimenter = models.ForeignKey(Experimenter)
     """ the user running this experiment """
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
@@ -930,6 +933,7 @@ class RoundConfiguration(models.Model):
             Group/ParticipantGroupRelationship models that can live in conjunction with the existing
             Group/ParticipantGroupRelationship models.
             '''))
+    repeat = models.PositiveIntegerField(default=0, help_text=_('If set to a positive integer n, this round will repeat itself n times with the same configuration and parameter values.'))
 
     @property
     def custom_template_name(self):

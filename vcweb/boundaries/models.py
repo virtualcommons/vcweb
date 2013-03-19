@@ -45,14 +45,14 @@ def get_cost_of_living_parameter():
 
 @simplecache
 def get_observe_other_group_parameter():
-    return Parameter.objects.for_experiment(name='observe_other_group')
+    return Parameter.objects.for_round(name='observe_other_group')
 
 @simplecache
 def get_shared_resource_parameter():
-    return Parameter.objects.for_experiment(name='shared_resource')
+    return Parameter.objects.for_round(name='shared_resource')
 
-def can_observe_other_group(experiment_configuration):
-    return experiment_configuration.get_parameter_value(parameter=get_observe_other_group_parameter(), default=False).boolean_value
+def can_observe_other_group(round_configuration):
+    return round_configuration.get_parameter_value(parameter=get_observe_other_group_parameter(), default=False).boolean_value
 
 # players can either be dead or alive
 def get_player_status_dv(participant_group_relationship_id):
