@@ -111,14 +111,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 # FIXME: these need to be looked up
     experiment_model_dict['maxHarvestDecision'] = 10
     experiment_model_dict['hasSubmit'] = False
-    experiment_model_dict['practiceRound'] = round_configuration.is_practice_round
-    experiment_model_dict['instructions'] = current_round.get_custom_instructions(session_number=get_session_number(current_round))
+    experiment_model_dict['practiceRound'] = current_round.is_practice_round
+    experiment_model_dict['instructions'] = current_round.get_custom_instructions()
     experiment_model_dict.update(**kwargs)
     return dumps(experiment_model_dict)
-
-def get_session_number(round_configuration):
-    # FIXME: brittle but alternatives are messy and time consuming, refactor later
-    if round_configuration.sequence_number > 22:
-        return 2
-    else:
-        return 1

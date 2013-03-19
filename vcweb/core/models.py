@@ -958,7 +958,7 @@ class RoundConfiguration(models.Model):
         instructions_template = select_template([self.template_path])
         if context_dict is None:
             context_dict = {}
-        context_dict.update(kwargs)
+        context_dict.update(kwargs, session_number=self.session_id)
         c = Context(context_dict)
         return instructions_template.render(c)
 
