@@ -12,7 +12,7 @@
             <li>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
-                    <a class='btn btn-success' data-bind="css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
+                    <a class='btn btn-success confirm-experiment-action' data-bind="css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
                     <a class='btn btn-success' data-bind='click: advanceToNextRound' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='icon-step-forward'></i> next round</a>
                     <a class='btn btn-success' data-bind='click: refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i> refresh participants</a>
                 </div>
@@ -44,7 +44,7 @@
                 </div>
                 <div class='btn-toolbar'>
                     <div class='btn-group'>
-                        <a data-content='Activate this experiment after all participants have been registered and you are ready to collect data.'
+                        <a data-content='Activate to begin collecting data for this experiment.'
                             class='btn btn-success confirm-experiment-action' data-action='activate'><i class='icon-off'></i> activate</a>
                     </div>
                 </div>
@@ -186,7 +186,9 @@
             confirmExperimentAction(element, function(confirmed, action) {
                 $('#progress-modal').modal('show');
                 Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {'pk': {{experiment.pk}}, 'action':action});
-                callback(confirmed, action);
+                if (callback) {
+                    callback(confirmed, action);
+                }
             });
         }
         function confirmExperimentAction(element, callback) {
@@ -221,7 +223,7 @@
             };
             $('a.confirm-experiment-action').on("click", function(evt) {
                 evt.preventDefault();
-                confirmExperimentAction(this);
+                confirmExperimentControllerAction(this, experimentModel);
                 return false;
             });
             return experimentModel;

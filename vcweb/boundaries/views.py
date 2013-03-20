@@ -61,40 +61,11 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     current_round_data = experiment.current_round_data
     previous_round = experiment.previous_round
     previous_round_data = experiment.get_round_data(round_configuration=previous_round)
-
-    experiment_model_dict = experiment.as_dict(include_round_data=False, attrs={})
-    regrowth_rate = get_regrowth_rate(current_round)
-    cost_of_living = get_cost_of_living(current_round)
-    own_group = participant_group_relationship.group
-    own_resource_level = get_resource_level(own_group)
-    last_harvest_decision = get_last_harvest_decision(participant_group_relationship, round_data=previous_round_data)
-    experiment_model_dict['playerData'] = [{
-        'id': pgr.participant_number,
-        'lastHarvestDecision': last_harvest_decision,
-        'storage': get_storage(pgr, current_round_data),
-        } for pgr in own_group.participant_group_relationship_set.all()]
-    experiment_model_dict['chatMessages'] = [{
-        'pk': cm.pk,
-        'participant_number': cm.participant_group_relationship.participant_number,
-        'message': cm.string_value,
-        'date_created': cm.date_created.strftime("%I:%M:%S")
-        } for cm in ChatMessage.objects.for_group(own_group)]
-    experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
-    if not current_round.is_practice_round and can_observe_other_group(current_round):
-        gr = GroupRelationship.objects.select_related('cluster').get(group=own_group)
-        group_data = []
-        for group in gr.cluster.group_set.all():
-            if group != own_group:
-                group_data.append({
-                    'groupId': unicode(group),
-                    'resourceLevel': get_resource_level(group),
-                    'totalStorage': get_total_storage(group),
-                    'regrowthRate': regrowth_rate,
-                    'costOfLiving': cost_of_living,
-                    })
-        experiment_model_dict['groupData'] = group_data
+    experiment_model_dict = experiment.to_dict(include_round_data=False, attrs={})
 
 # round / experiment configuration data
+    regrowth_rate = get_regrowth_rate(current_round)
+    cost_of_living = get_cost_of_living(current_round)
     experiment_model_dict['readyParticipants'] = experiment.ready_participants
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
     experiment_model_dict['regrowthRate'] = regrowth_rate
@@ -113,15 +84,43 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     else:
         experiment_model_dict['templateName'] = current_round.round_type
 
+# participant group data parameters are only needed if this round is a data round or the previous round was a data round
+    if previous_round.is_playable_round or current_round.is_playable_round:
+        own_group = participant_group_relationship.group
+        own_resource_level = get_resource_level(own_group)
+        last_harvest_decision = get_last_harvest_decision(participant_group_relationship, round_data=previous_round_data)
+        experiment_model_dict['playerData'] = [{
+            'id': pgr.participant_number,
+            'lastHarvestDecision': last_harvest_decision,
+            'storage': get_storage(pgr, current_round_data),
+            } for pgr in own_group.participant_group_relationship_set.all()]
+        experiment_model_dict['chatMessages'] = [{
+            'pk': cm.pk,
+            'participant_number': cm.participant_group_relationship.participant_number,
+            'message': cm.string_value,
+            'date_created': cm.date_created.strftime("%I:%M:%S")
+            } for cm in ChatMessage.objects.for_group(own_group)]
+        experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
+        experiment_model_dict['lastHarvestDecision'] = last_harvest_decision
+        experiment_model_dict['storage'] = get_storage(participant_group_relationship, current_round_data)
+        experiment_model_dict['resourceLevel'] = own_resource_level
+        if not current_round.is_practice_round and can_observe_other_group(current_round):
+            gr = GroupRelationship.objects.select_related('cluster').get(group=own_group)
+            group_data = []
+            for group in gr.cluster.group_set.all():
+                if group != own_group:
+                    group_data.append({
+                        'groupId': unicode(group),
+                        'resourceLevel': get_resource_level(group),
+                        'totalStorage': get_total_storage(group),
+                        'regrowthRate': regrowth_rate,
+                        'costOfLiving': cost_of_living,
+                        })
+            experiment_model_dict['groupData'] = group_data
 
 # FIXME: defaults hard coded in for now
     experiment_model_dict['maxEarnings'] = 20.00
     experiment_model_dict['warningCountdownTime'] = 10
-
-    experiment_model_dict['lastHarvestDecision'] = last_harvest_decision
-    experiment_model_dict['storage'] = get_storage(participant_group_relationship, current_round_data)
-    experiment_model_dict['resourceLevel'] = own_resource_level
-# FIXME: these need to be looked up
     experiment_model_dict['maxHarvestDecision'] = 10
     experiment_model_dict['hasSubmit'] = False
     experiment_model_dict['instructions'] = current_round.get_custom_instructions()
