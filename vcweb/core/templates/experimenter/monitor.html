@@ -12,8 +12,8 @@
             <li>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
-                    <a class='btn btn-success confirm-experiment-action' data-bind="css: { disabled: isRoundInProgress }" name='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
-                    <a class='btn btn-success confirm-experiment-action' data-bind='click: advanceToNextRound' name='advance_to_next_round' data-content='Advances to the next round and starts it.'><i class='icon-step-forward'></i> next round</a>
+                    <a class='btn btn-success' data-bind="css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
+                    <a class='btn btn-success' data-bind='click: advanceToNextRound' data-action='advance_to_next_round' data-content='Advances to the next round and starts it.'><i class='icon-step-forward'></i> next round</a>
                     <a class='btn btn-success' data-bind='click: refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i> refresh participants</a>
                 </div>
             </div>
@@ -42,10 +42,12 @@
                     existing data).
                     </p>
                 </div>
-                <ul class='nav nav-list'>
-                    <li><a data-content='Activate this experiment after all participants have been registered and you are ready to collect data.'
-                        class='confirm-experiment-action' name='activate' href='activate'><i class='icon-off'></i>activate</a></li>
-                </ul>
+                <div class='btn-toolbar'>
+                    <div class='btn-group'>
+                        <a data-content='Activate this experiment after all participants have been registered and you are ready to collect data.'
+                            class='btn btn-success confirm-experiment-action' data-action='activate'><i class='icon-off'></i> activate</a>
+                    </div>
+                </div>
             </div>
         </div>
         <ul class='nav nav-list'>
@@ -67,7 +69,7 @@
                 <li><a href='export/configuration.xml'><i class='icon-cog'></i>xml</a></li>
                 <li><a href='export/configuration.json'><i class='icon-pencil'></i>json</a></li>
             </ul>
-            <a class='btn btn-info confirm-experiment-action' name='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i> archive</a>
+            <a class='btn btn-info confirm-experiment-action' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i> archive</a>
         </div>
     </div>
     <div class='span6'>
@@ -157,14 +159,21 @@
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
-            model.advanceToNextRound = function(model, evt) {
-
-                return false;
+            model.advanceToNextRound = function(localModel, evt) {
+                confirmExperimentControllerAction(evt.target, model, function(confirmed) {
+                    if (confirmed) {
+                        console.debug("advancing to next round, notify all participants");
+                    }
+                });
             };
             model.refreshAllParticipants = function(model, evt) {
-                sendRefreshEvent();
-                return false;
-            };
+                confirmExperimentAction(evt.target, function(confirmed, action) {
+                    if (confirmed) {
+                        console.debug("sending refresh event");
+                        sendRefreshEvent();
+                    }
+                });
+            }
             model.addMessage = function(data) {
                 model.messages.unshift(data.message);
             };
@@ -172,6 +181,26 @@
                 return model.participantCount() > 0;
             });
             return model;
+        }
+        function confirmExperimentControllerAction(element, experimentModel, callback) {
+            confirmExperimentAction(element, 
+                    function(confirmed, action) {
+                        Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {'pk': {{experiment.pk}}, 'action':action});
+                        });
+        }
+        function confirmExperimentAction(element, callback) {
+            var self = $(element);
+            var description = self.attr("data-content");
+            var action = self.attr("data-action");
+            if (self.hasClass('disabled')) {
+                console.debug("disabled action " + action + " - ignoring");
+                return false;
+            }
+            bootbox.confirm(description + "  Continue?", function(confirmed) {
+                if (confirmed && callback) {
+                    callback(confirmed, action);
+                }
+            });
         }
         function update(experimentModel) {
             return function(data) {
@@ -193,19 +222,7 @@
             };
             $('a.confirm-experiment-action').on("click", function(evt) {
                 evt.preventDefault();
-                var self = $(this);
-                var description = self.attr("data-content");
-                var action = self.attr("name");
-                if (self.hasClass('disabled')) {
-                    console.debug("disabled action " + action + " - ignoring");
-                    return false;
-                }
-                bootbox.confirm(description + "  Continue?", function(confirmed) {
-                    if (confirmed) {
-                        Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {'pk': {{experiment.pk}}, 'action':action});
-                    }
-                    return false;
-                });
+                confirmExperimentAction(this);
                 return false;
             });
             return experimentModel;
