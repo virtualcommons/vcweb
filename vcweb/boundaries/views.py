@@ -98,6 +98,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
     experiment_model_dict['regrowthRate'] = regrowth_rate
     experiment_model_dict['costOfLiving'] = cost_of_living
+    experiment_model_dict['totalNumberOfParticipants'] = experiment.participant_set.count()
     experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     experiment_model_dict['dollarsPerToken'] = float(ec.exchange_rate)

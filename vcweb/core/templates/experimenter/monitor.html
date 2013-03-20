@@ -13,8 +13,8 @@
             <div class='btn-toolbar'>
                 <div class='btn-group'>
                     <a class='btn btn-success confirm-experiment-action' data-bind="css: { disabled: isRoundInProgress }" name='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
-                    <a class='btn btn-success confirm-experiment-action' name='advance_to_next_round' data-content='Advances to the next round and starts it.'><i class='icon-step-forward'></i> next round</a>
-                    <!-- FIXME: disabled for the time being<a class='btn btn-primary' id='refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i> refresh participants</a> -->
+                    <a class='btn btn-success confirm-experiment-action' data-bind='click: advanceToNextRound' name='advance_to_next_round' data-content='Advances to the next round and starts it.'><i class='icon-step-forward'></i> next round</a>
+                    <a class='btn btn-success' data-bind='click: refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i> refresh participants</a>
                 </div>
             </div>
             </li>
@@ -74,7 +74,6 @@
         <h4>Experiment Log</h4>
         <div id='experiment-messages' class='alert' data-bind='foreach: messages'>
             <div>
-                <button class='close' data-dismiss='alert'>&times;</button>
                 <span data-bind='text: $data'></span>
             </div>
         </div>
@@ -155,12 +154,20 @@
 <script type='text/javascript'>
     var experimentModelJson = $.parseJSON("{{ experiment.to_json|escapejs }}");
     $(function() {
-        function ExperimentModel (experimentModelJson) {
+        function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
-            model.addMessage = function (evt) {
-                model.messages.unshift(evt.message);
-            }
+            model.advanceToNextRound = function(model, evt) {
+
+                return false;
+            };
+            model.refreshAllParticipants = function(model, evt) {
+                sendRefreshEvent();
+                return false;
+            };
+            model.addMessage = function(data) {
+                model.messages.unshift(data.message);
+            };
             model.hasParticipants = ko.computed(function() {
                 return model.participantCount() > 0;
             });
@@ -168,8 +175,10 @@
         }
         function update(experimentModel) {
             return function(data) {
+                console.debug("updating experiment model with data:");
+                console.debug(data);
                 ko.mapping.fromJS(data, experimentModel);
-                $('#progress-modal').modal('hide');
+                console.debug("done");
             }
         }
         function initialize(experimentModelJson) {
@@ -194,15 +203,9 @@
                 bootbox.confirm(description + "  Continue?", function(confirmed) {
                     if (confirmed) {
                         Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {'pk': {{experiment.pk}}, 'action':action});
-                        $('#progress-modal').modal({keyboard: false});
                     }
                     return false;
                 });
-            });
-            // FIXME: replace these with click data-binding
-            $('#refreshAllParticipants').click(function(evt) {
-                evt.preventDefault();
-                sendRefreshEvent();
                 return false;
             });
             return experimentModel;

@@ -8,7 +8,6 @@ from itertools import chain
 from raven.contrib.tornado import AsyncSentryClient
 from sockjs.tornado import SockJSRouter, SockJSConnection
 from tornado import web, ioloop
-from tornado.escape import xhtml_escape
 import tornadoredis
 
 sys.path.append( path.abspath(path.join(path.dirname(path.abspath(__file__)), '..')) )
@@ -358,7 +357,7 @@ class ExperimenterConnection(BaseConnection):
 
     def handle_refresh(self, event, experiment, experimenter):
         notified_participants = connection_manager.send_refresh(experimenter, experiment)
-        self.send(create_message_event("Refreshed %s participants" % notified_participants))
+        self.send(create_message_event("Refreshed all connected participant pgr_ids=%s)" % notified_participants))
 
     def on_close(self):
         #self.client.unsubscribe(self.default_channel)

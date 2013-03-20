@@ -30,14 +30,21 @@
     </div>
 </div>
 </div>
-
 {% endblock sidebar %}
-
 {% block javascript %}
 {{ block.super }}
 <!-- ko templates -->
 <script type='text/html' id='CHAT'>
 {% include "forms/chat-template.html" %}
+</script>
+<script type='text/html' id='WAITING_ROOM'>
+<h3>Waiting Room</h3>
+<div>
+Please wait.  The experiment will continue shortly once all the participants are ready.
+</div>
+<div class='progress progress-success progress-striped active'>
+<div class='bar' data-bind='style: { width: readyParticipantsPercentage() + "%" }'></div>
+</div>
 </script>
 <script type='text/html' id='WELCOME'>
 <h3>Welcome</h3>
@@ -352,6 +359,12 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             model.activateInstructionsPageThree = function() {
                 model.templateName('GENERAL_INSTRUCTIONS3');
             };
+            model.activateWaitingRoomPage = function() {
+                model.templateName('WAITING_ROOM');
+            }
+            model.readyParticipantsPercentage = ko.computed(function() {
+                return (model.readyParticipants() / model.totalNumberOfParticipants()) * 100;
+            });
             model.activatePracticeRoundInstructions = function() {
                 model.templateName("PRACTICE_ROUND_INSTRUCTIONS");
             }
@@ -363,6 +376,9 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 $.post('/experiment/participant-ready', { participant_group_id: {{ participant_group_relationship.pk }} }, function(response) {
                     console.debug("successfully posted to server, notifying sockjs: " + response);
                     getWebSocket().send(createMessageEvent("Instructions completed", "client_ready"));
+                    // FIXME: transition to a waiting screen
+                    model.readyParticipant();
+                    model.activateWaitingRoomPage();
                 });
             }
             model.showOtherGroup = function() {
