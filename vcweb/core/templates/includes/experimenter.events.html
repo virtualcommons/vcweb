@@ -1,4 +1,7 @@
 <script type="text/javascript">
+function createUpdateEvent() {
+    return createMessageEvent("Update all participants", "update_participants");
+}
 function createRefreshEvent() {
     return createMessageEvent("Refresh all clients", "refresh");
 }
@@ -28,6 +31,9 @@ function createMessageEvent(message, event_type) {
 }
 function createChatEvent(message) {
     return createMessageEvent(message);
+}
+function sendUpdateEvent() {
+    getWebSocket().send(createUpdateEvent());
 }
 function sendRefreshEvent() {
     var webSocket = getWebSocket();

@@ -140,7 +140,7 @@
 </div>
 <div id='progress-modal' class='modal hide fade'>
     <div class='model-header'>
-        <h3>Updating experiment status</h3>
+        <h3>Updating experiment data</h3>
     </div>
     <div class='modal-body'>
         <div class='progress progress-striped active'>
@@ -163,6 +163,7 @@
                 confirmExperimentControllerAction(evt.target, model, function(confirmed) {
                     if (confirmed) {
                         console.debug("advancing to next round, notify all participants");
+                        sendUpdateEvent();
                     }
                 });
             };

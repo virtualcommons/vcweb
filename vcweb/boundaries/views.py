@@ -53,6 +53,11 @@ def submit_harvest_decision(request, experiment_id=None):
             logger.debug("field %s had errors %s", field, field.errors)
     return JsonResponse(dumps({'success': False }))
 
+@participant_required
+def get_view_model(request, experiment_id=None):
+    experiment = get_object_or_404(Experiment.select_related('experiment_metadata', 'experiment_configuration'), pk=experiment_id)
+    pgr = experiment.get_participant_group_relationship(request.user.participant)
+    return JsonResponse(get_view_model_json(experiment, pgr))
 
 # FIXME: need to distinguish between instructions / welcome rounds and practice/regular rounds
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):

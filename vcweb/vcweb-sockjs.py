@@ -188,6 +188,9 @@ class ConnectionManager(object):
             connection.send(REFRESH_EVENT)
         return participant_connections
 
+    def send_update(self, experimenter, experiment):
+        pass
+
     def send_goto(self, experimenter, experiment, url):
         notified_participants = []
         message = json.dumps({'event_type': 'goto', 'url': url})
@@ -358,6 +361,10 @@ class ExperimenterConnection(BaseConnection):
     def handle_refresh(self, event, experiment, experimenter):
         notified_participants = connection_manager.send_refresh(experimenter, experiment)
         self.send(create_message_event("Refreshed all connected participant pgr_ids=%s)" % notified_participants))
+
+    def handle_update_participants(self, event, experiment, experimenter):
+        notified_participants = connection_manager.send_update(experimenter, experiment)
+        self.send(create_message_event("Updating all connected participants pgr_ids=%s)" % notified_participants))
 
     def on_close(self):
         #self.client.unsubscribe(self.default_channel)

@@ -96,9 +96,10 @@ class Dashboard(ListView, TemplateResponseMixin):
 # FIXME: could also use collections.defaultdict or regroup template tag to
 # accomplish this..
             experiment_dict = {}
-            for experiment in user.participant.experiments.exclude(status__in=(Experiment.INACTIVE, Experiment.PAUSED, Experiment.COMPLETED)):
+# FIXME: this needs to be refactored
+            for experiment in user.participant.experiments.exclude(status__in=(Experiment.Status.INACTIVE, Experiment.Status.PAUSED, Experiment.Status.COMPLETED)):
                 if not experiment.experiment_metadata in experiment_dict:
-                    experiment_dict[experiment.experiment_metadata] = dict([(choice[0], list()) for choice in Experiment.STATUS])
+                    experiment_dict[experiment.experiment_metadata] = dict([(choice[0], list()) for choice in Experiment.Status])
                 experiment_dict[experiment.experiment_metadata][experiment.status].append(experiment)
                 logger.info("experiment_dict %s", experiment_dict)
             return experiment_dict

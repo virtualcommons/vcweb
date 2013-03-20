@@ -7,6 +7,16 @@
 {% block content %}
 <div data-bind='template: { name: templateName() }'>
 </div>
+<div id='progress-modal' class='modal hide fade'>
+    <div class='model-header'>
+        <h3>Updating experiment data</h3>
+    </div>
+    <div class='modal-body'>
+        <div class='progress progress-striped active'>
+            <div id='progress-bar' class='bar' style='width: 100%'></div>
+        </div>
+    </div>
+</div>
 {% endblock content %}
 
 {% block sidebar %}
@@ -433,9 +443,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 var formData = $('#vcweb-form').serialize();
                 $.post('submit-harvest-decision', formData, function(jsonString) {
                     console.log(jsonString);
-                    // FIXME: should probably update the entire model after we remove the test panel
-                    // update(data.experimentModelJson);
-                    // ko.mapping.fromJSON(data.experimentModelJson, model);
+                    //update($.parseJSON(jsonString.experimentModelJson));
                     model.secondsLeft(0);
                     model.hasSubmit(true);
                     model.clearCurrentInterval();
@@ -451,6 +459,14 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                     $('#chatText').focus();
                 }
             }
+            model.update = function() {
+                $.get('view-model', { participant_group_id: {{ participant_group_relationship.pk }} }, function(data) {
+                    console.debug("retrieved view model successfully");
+                    console.debug(data);
+                    ko.mapping.fromJS(data, model);
+                    $('#progress-modal').modal('hide');
+                });
+            }
             model.disableChat = function() {
                 $('#content').removeClass('span6').addClass('span9');
                 $('#sidebar').removeClass('span6').addClass('span3');
@@ -465,11 +481,6 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             }
             return model;
         }
-        function update(experimentModel) {
-            return function(data) {
-                ko.mapping.fromJS(data, experimentModel);
-            }
-        }
         function initialize(experimentModelJson) {
             var experimentModel = new ExperimentModel(experimentModelJson);
             ko.applyBindings(experimentModel);
@@ -483,17 +494,18 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                         experimentModel.chatMessages.unshift(data);
                         console.debug("received chat message:" + json);
                         break;
+                    case 'update':
+                        $('#progress-modal').modal('show');
+                        experimentModel.update();
                     default:
                         console.debug("unhandled json message:" + json);
                         break;
                 }
-                update(json);
             };
             $('#harvestDecision').keyup(function() {
                 $('#harvestDecision').val(this.value.match(/\d+/));
             });
         }
-        //send the message when submit is clicked
         var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
         initialize(experimentModelJson);
     });
