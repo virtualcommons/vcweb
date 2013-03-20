@@ -71,6 +71,7 @@ def create_message_event(message, event_type='info'):
     return json.dumps({ 'message': message, 'event_type': event_type})
 
 REFRESH_EVENT = json.dumps({ 'event_type': 'refresh' })
+UPDATE_EVENT = json.dumps({ 'event_type': 'update' })
 DISCONNECTION_EVENT = create_message_event('Your session has expired and you have been disconnected.  You can only have one window open to a vcweb page.')
 UNAUTHORIZED_EVENT = create_message_event("You do not appear to be authorized to perform this action.  If this problem persists, please contact us.")
 
@@ -169,6 +170,9 @@ class ConnectionManager(object):
             if participant_tuple in self.participant_to_connection:
                 yield (participant_group_relationship.pk, self.participant_to_connection[participant_tuple])
 
+    '''
+    generator function yielding all (participant group relationship id, connection) tuples for the given experiment
+    '''
     def all_participants(self, experimenter, experiment):
         experimenter_key = (experimenter.pk, experiment.pk)
         if experimenter_key in self.experimenter_to_connection:
@@ -181,23 +185,14 @@ class ConnectionManager(object):
     experimenter functions
     '''
     def send_refresh(self, experimenter, experiment):
-        participant_connections = []
-        for (participant_group_pk, connection) in self.all_participants(experimenter, experiment):
-            logger.debug("sending refresh to %s, %s", participant_group_pk, connection)
-            participant_connections.append(participant_group_pk)
-            connection.send(REFRESH_EVENT)
-        return participant_connections
+        return self.broadcast(experimenter, experiment, REFRESH_EVENT)
 
-    def send_update(self, experimenter, experiment):
-        pass
+    def send_update_event(self, experimenter, experiment):
+        return self.broadcast(experimenter, experiment, UPDATE_EVENT)
 
     def send_goto(self, experimenter, experiment, url):
-        notified_participants = []
         message = json.dumps({'event_type': 'goto', 'url': url})
-        for (participant_group_pk, connection) in self.all_participants(experimenter, experiment):
-            connection.send(message)
-            notified_participants.append(participant_group_pk)
-        return notified_participants
+        return self.broadcast(experimenter, experiment, message)
 
     def send_to_experimenter(self, json, experiment_id=None, experimenter_id=None, experiment=None):
         if experimenter_id is None and experiment_id is None:
@@ -213,8 +208,16 @@ class ConnectionManager(object):
             logger.debug("no experimenter found with pk %s in experimenters set %s", experimenter_tuple,
                     self.experimenter_to_connection)
 
+    def broadcast(self, experimenter, experiment, message):
+        participant_connections = []
+        for (participant_group_id, connection) in self.all_participants(experimenter, experiment):
+            participant_connections.append(participant_group_id)
+            connection.send(message)
+        logger.debug("sent message %s to %s", message, participant_connections)
+        return participant_connections
+
     def send_to_group(self, group, json):
-        for participant_group_pk, connection in self.connections(group):
+        for participant_group_id, connection in self.connections(group):
             connection.send(json)
         self.send_to_experimenter(json, experiment=group.experiment)
 
@@ -363,7 +366,7 @@ class ExperimenterConnection(BaseConnection):
         self.send(create_message_event("Refreshed all connected participant pgr_ids=%s)" % notified_participants))
 
     def handle_update_participants(self, event, experiment, experimenter):
-        notified_participants = connection_manager.send_update(experimenter, experiment)
+        notified_participants = connection_manager.send_update_event(experimenter, experiment)
         self.send(create_message_event("Updating all connected participants pgr_ids=%s)" % notified_participants))
 
     def on_close(self):
