@@ -366,7 +366,7 @@ class Experiment(models.Model):
         Generator function for all participant group relationships in this experiment
         '''
         session_id = self.current_round.session_id
-        if session_id is not None:
+        if session_id:
             groups = self.group_set.filter(session_id=session_id)
         else:
             groups = self.group_set.all()
@@ -759,6 +759,7 @@ class Experiment(models.Model):
         round_data, created = self.round_data_set.get_or_create(round_configuration=self.current_round)
         if self.experiment_configuration.is_experimenter_driven:
             # create participant ready data values for every round in experimenter driven experiments
+            logger.debug("creating participant ready participant round data values")
             for pgr in self.participant_group_relationships:
                 ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, boolean_value=False,
                         parameter=get_participant_ready_parameter(), round_data=round_data)

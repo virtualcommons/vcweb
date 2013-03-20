@@ -99,10 +99,11 @@ def round_started_handler(sender, experiment=None, **kwargs):
     round_configuration = experiment.current_round
     logger.debug("setting up round %s", round_configuration)
     # initialize group and participant data values
-    experiment.initialize_data_values(
-            group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
-            participant_parameters=[get_harvest_decision_parameter(), get_storage_parameter(), get_player_status_parameter()]
-            )
+    if round_configuration.is_playable_round:
+        experiment.initialize_data_values(
+                group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
+                participant_parameters=[get_harvest_decision_parameter(), get_storage_parameter(), get_player_status_parameter()]
+                )
     '''
     during a practice or regular round, set up resource levels and participant
     harvest decision parameters
