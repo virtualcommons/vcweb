@@ -144,7 +144,7 @@
     </div>
     <div class='modal-body'>
         <div class='progress progress-striped active'>
-            <div id='progress-bar' class='bar' style='width: 50%'></div>
+            <div id='progress-bar' class='bar' style='width: 100%'></div>
         </div>
     </div>
 </div>
@@ -183,10 +183,11 @@
             return model;
         }
         function confirmExperimentControllerAction(element, experimentModel, callback) {
-            confirmExperimentAction(element, 
-                    function(confirmed, action) {
-                        Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {'pk': {{experiment.pk}}, 'action':action});
-                        });
+            confirmExperimentAction(element, function(confirmed, action) {
+                $('#progress-modal').modal('show');
+                Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {'pk': {{experiment.pk}}, 'action':action});
+                callback(confirmed, action);
+            });
         }
         function confirmExperimentAction(element, callback) {
             var self = $(element);
@@ -204,10 +205,8 @@
         }
         function update(experimentModel) {
             return function(data) {
-                console.debug("updating experiment model with data:");
-                console.debug(data);
                 ko.mapping.fromJS(data, experimentModel);
-                console.debug("done");
+                $('#progress-modal').modal('hide');
             }
         }
         function initialize(experimentModelJson) {
