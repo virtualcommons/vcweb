@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, Http404
-from django.shortcuts import render_to_response, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.template.context import RequestContext
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, FormView, TemplateView
@@ -199,7 +199,7 @@ def account_profile(request):
         form = ParticipantAccountForm()
     else:
         form = ExperimenterAccountForm(instance=user.experimenter)
-    return render_to_response('account/profile.html', { 'form': form }, context_instance=RequestContext(request))
+    return render(request, 'account/profile.html', { 'form': form })
 
 ''' participant views '''
 class ParticipantMixin(object):
@@ -210,8 +210,7 @@ class ParticipantMixin(object):
 @login_required
 def instructions(request, namespace=None):
     if namespace is not None:
-        return render_to_response('%s/instructions.html' % namespace,
-                context_instance=RequestContext(request))
+        return render(request, '%s/instructions.html' % namespace)
     else:
         return redirect('home')
 
@@ -241,7 +240,7 @@ class SingleExperimentMixin(SingleObjectMixin):
 
     def get_object(self, queryset=None):
         pk = self.kwargs.get('pk', None)
-        experiment = get_object_or_404(Experiment, pk=pk)
+        experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration', 'experimenter'), pk=pk)
         return self.check_user(experiment)
 
 class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
@@ -266,10 +265,14 @@ class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, Templa
         self.experiment = self.object = self.get_object()
         self.process()
         context = self.get_context_data(object=self.object)
-        return self.render_to_response(context)
+        return self.render(request, context)
 
-class MonitorExperimentView(ExperimenterSingleExperimentMixin, DetailView):
-    template_name = 'experimenter/monitor.html'
+def monitor(request, pk=None):
+    experiment = get_object_or_404(Experiment.objects.select_related('experiment_configuration', 'experimenter'), pk=pk)
+    return render(request, 'experimenter/monitor.html', {
+        'experiment': experiment,
+        'experimentModelJson': experiment.to_json(),
+        })
 
 def upload_excel_participants_file(request):
     if request.method == 'POST':
@@ -340,9 +343,8 @@ class AddExperimentView(ExperimenterMixin, TemplateView):
 
 @experimenter_required
 def add_experiment(request):
-    return render_to_response('experimenter/add-experiment.html',
-            { 'experiment_list': ExperimentMetadata.objects.all() },
-            context_instance=RequestContext(request))
+    return render('experimenter/add-experiment.html',
+            { 'experiment_list': ExperimentMetadata.objects.all() })
 
 class DataExportMixin(ExperimenterSingleExperimentMixin):
     file_extension = '.csv'
@@ -531,6 +533,5 @@ def participant_ready(request):
     return JsonResponse(dumps({'success': valid_form}))
 
 def handler500(request):
-    logger.debug("handling 500 request")
-    return render_to_response('500.html', context_instance=RequestContext(request))
+    return render(request, '500.html')
 

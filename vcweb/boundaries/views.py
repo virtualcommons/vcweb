@@ -1,5 +1,5 @@
 from django.http import Http404
-from django.shortcuts import render_to_response, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.template.context import RequestContext
 from vcweb.core import dumps
 from vcweb.core.decorators import participant_required
@@ -24,14 +24,13 @@ def participate(request, experiment_id=None):
         raise Http404
 
 # sends view model JSON to the template to be processed by knockout
-    return render_to_response('boundaries/participate.html', {
+    return render(request, 'boundaries/participate.html', {
         'auth_token': participant.authentication_token,
         'experiment': experiment,
         'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
         'participant_group_relationship': pgr,
         'experimentModelJson': get_view_model_json(experiment, pgr),
-        },
-        context_instance=RequestContext(request))
+        })
 
 @participant_required
 def submit_harvest_decision(request, experiment_id=None):

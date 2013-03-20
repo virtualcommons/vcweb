@@ -87,10 +87,13 @@ def _render_experiment_monitor_block(block, experiment, request):
 
 @experimenter_required
 @dajaxice_register
-def submit_experimenter_notes(request, experiment_id, notes=None):
+def save_experimenter_notes(request, experiment_id, notes=None):
     experiment = _get_experiment(request, experiment_id)
-    if notes:
-        current_round_data = experiment.current_round_data
+    current_round_data = experiment.current_round_data
+    current_experimenter_notes = current_round_data.experimenter_notes
+    if notes and notes != current_round_data.experimenter_notes:
+        if current_experimenter_notes:
+            experiment.log("Replacing existing experimenter notes: %s" % current_experimenter_notes)
         current_round_data.experimenter_notes = notes
         current_round_data.save()
         return dumps({ 'success': True })

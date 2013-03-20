@@ -827,6 +827,7 @@ class Experiment(models.Model):
             rc = round_data.round_configuration
             all_round_data.append({
                 'roundDataId': "roundData_%s" % round_data.pk,
+                'experimenterNotes': round_data.experimenter_notes,
                 'roundType': rc.get_round_type_display(),
                 'roundNumber':rc.round_number,
                 'groupDataValues': group_data_values,
