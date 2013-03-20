@@ -79,6 +79,13 @@
                 <span data-bind='text: $data'></span>
             </div>
         </div>
+        <h4>Notes</h4>
+        <form id="experimenterLogForm" class='form-horizontal'>
+            <div class='controls-row'>
+                <textarea class='input-block-level' id='experimenterNotes' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3" id='experimenterNote'></textarea>
+                <button id='submitExperimenterNotesButton' class='btn btn-primary' type='submit' data-bind='click: submitExperimenterNotes'>Save</button>
+            </div>
+        </form>
     </div>
 </div>
 <h3>Experiment Data</h3>
@@ -159,6 +166,15 @@
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
+            model.submitExperimenterNotes = function(localModel, evt) {
+                var notes = $('#experimenterNotes').val();
+                Dajaxice.vcweb.core.submit_experimenter_notes(function(data) {
+                    if (data.success) {
+                        $('#submitExperimenterNotesButton').val('Saved!');
+                    }
+                },
+                { 'experiment_id': {{ experiment.pk }}, 'notes': notes });
+            }
             model.advanceToNextRound = function(localModel, evt) {
                 confirmExperimentControllerAction(evt.target, model, function(confirmed) {
                     if (confirmed) {

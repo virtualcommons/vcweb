@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from vcweb import settings
 from vcweb.core.views import (Dashboard, LoginView, LogoutView, RegistrationView, MonitorExperimentView, CloneExperimentView,
         RegisterEmailListView, RegisterSimpleParticipantsView, ClearParticipantsExperimentView, add_experiment,
-        Participate, download_data, export_configuration, experiment_controller, api_logger, participant_ready)
+        Participate, download_data, export_configuration, api_logger, participant_ready)
 
 import logging
 import urllib
@@ -31,13 +31,8 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^experiment/(?P<pk>\d+)/download/(?P<file_type>[\w]+)$', download_data, name='download_data'),
     url(r'^experiment/(?P<pk>\d+)/export/configuration(?P<file_extension>.[\w]+)$', export_configuration, name='export_configuration'),
 # experiment controller actions are the most general, needs to be matched at the very end
-    url(r'^experiment/(?P<pk>\d+)/(?P<experiment_action>[\w-]+)$', experiment_controller, name='experiment_controller'),
     # deliberately match any prefix to api/2525/log
     url(r'api/log/(?P<participant_group_id>\d+)$', api_logger, name='api-logger'),
-    )
-# add ajax actions
-urlpatterns += patterns('vcweb.core.ajax',
-    url(r'^ajax/(?P<pk>\d+)/(<?P<experiment_action[\w-]+)$', 'experiment_controller'),
     )
 
 def foursquare_auth_dict(**kwargs):

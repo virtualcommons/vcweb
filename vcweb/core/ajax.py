@@ -76,7 +76,7 @@ def direct_block_to_template(request, template, block, extra_context=None, mimet
     return HttpResponse(render_template_block(t, block, c), mimetype=mimetype)
 
 def _get_experiment(request, pk):
-    experiment = get_object_or_404(Experiment, pk=pk)
+    experiment = get_object_or_404(Experiment.objects.select_related('experimenter'), pk=pk)
     if request.user.experimenter == experiment.experimenter:
         return experiment
     raise Experiment.DoesNotExist("Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter, pk))
@@ -87,6 +87,19 @@ def _render_experiment_monitor_block(block, experiment, request):
 
 @experimenter_required
 @dajaxice_register
+def submit_experimenter_notes(request, experiment_id, notes=None):
+    experiment = _get_experiment(request, experiment_id)
+    if notes:
+        current_round_data = experiment.current_round_data
+        current_round_data.experimenter_notes = notes
+        current_round_data.save()
+        return dumps({ 'success': True })
+    else:
+        return dumps({ 'success': False })
+
+
+@experimenter_required
+@dajaxice_register
 def get_experiment_model(request, pk):
     return _get_experiment(request, pk).to_json()
 
@@ -94,14 +107,12 @@ def get_experiment_model(request, pk):
 @dajaxice_register
 def experiment_controller(request, pk, action=None):
     experiment = _get_experiment(request, pk)
-    if experiment.experimenter == request.user.experimenter:
-        try:
-            experiment.invoke(action)
-            return experiment.to_json()
-        except AttributeError as e:
-            logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
-
-    return dumps({
-        'success': False,
-        'message': 'Invalid experiment action %s' % action
-        })
+    try:
+        experiment.invoke(action)
+        return experiment.to_json()
+    except AttributeError as e:
+        logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
+        return dumps({
+            'success': False,
+            'message': 'Invalid experiment action %s' % action
+            })

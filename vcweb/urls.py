@@ -24,7 +24,7 @@ urlpatterns = patterns('',
     url(r'^accounts/password_reset/done/$', 'django.contrib.auth.views.password_reset_done', { 'template_name': 'account/password_reset_done.html' }),
     url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$', 'django.contrib.auth.views.password_reset_confirm'),
     url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete'),
-
+# dajaxice core
     url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
 
     # FIXME: ideally this should be set up dynamically by iterating through each
@@ -48,8 +48,5 @@ urlpatterns = patterns('',
 handler500 = 'vcweb.core.views.handler500'
 
 if settings.DEBUG:
-    urlpatterns += patterns('',
-            (r'^500/$', TemplateView.as_view(template_name='500.html'),),
-    )
     urlpatterns += staticfiles_urlpatterns()
 

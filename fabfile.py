@@ -8,7 +8,7 @@ import os, sys, shutil, logging
 logger = logging.getLogger(__name__)
 
 # needed to push vcweb.settings onto the path.
-sys.path.append(os.path.abspath('.'))
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 # default env configuration
 env.python = 'python'
@@ -136,8 +136,7 @@ def loc():
     env.apache = 'apache2'
     env.hosts = ['localhost']
 
-def staticg():
-    local('%(python)s manage.py generate_static_dajaxice > static/js/dajaxice.core.js' % env)
+def collectstatic():
     local('%(python)s manage.py collectstatic' % env)
 
 def setup():

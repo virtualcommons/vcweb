@@ -1,3 +1,4 @@
+{% load dajaxice_templatetags %}
 {% load tags %}
 {% load url from future %}
 {% load static from staticfiles %}
@@ -140,12 +141,7 @@
         <script type='text/javascript' src='{{STATIC_URL}}js/ko/knockout.mapping.min.js'></script>
         <script type='text/javascript' src='{{STATIC_URL}}js/common.js'></script>
         <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/d3/3.0.1/d3.v3.min.js'></script>
-        {% if DEBUG %}
-        {% load dajaxice_templatetags %}
         {% dajaxice_js_import %}
-        {% else %}
-        <script type='text/javascript' src='{{STATIC_URL}}js/dajaxice.core.js' charset='utf-8'></script>
-        {% endif %}
         {% block javascript %}
         {% endblock %}
     </footer>
