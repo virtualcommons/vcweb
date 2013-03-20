@@ -1270,8 +1270,7 @@ class ParameterizedValue(models.Model):
                 'date_created': self.date_created,
                 'short_date_created': self.date_created.strftime('%I:%M:%S'),
                 'parameter_name': p.name,
-                'parameter_label': p.label,
-                'parameter': self.parameter
+                'parameter_label': p.label
                 }
         data['value'] = unicode(self.cached_value if cacheable else self.value)
         return data

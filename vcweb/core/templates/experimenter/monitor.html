@@ -14,7 +14,8 @@
                 <div class='btn-group'>
                     <a class='btn btn-success confirm-experiment-action' data-bind="css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
                     <a class='btn btn-success' data-bind='click: advanceToNextRound' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='icon-step-forward'></i> next round</a>
-                    <a class='btn btn-success' data-bind='click: refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i> refresh participants</a>
+                    <a class='btn btn-success' data-bind='click: refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-exchange'></i> refresh participants</a>
+                    <a class='btn btn-primary' data-bind='click: update' data-content='Refresh this page with the latest data from the server.' ><i class='icon-refresh'></i> update</a>
                 </div>
             </div>
             </li>
@@ -85,7 +86,7 @@
         <h4>Experimenter Notes (<span data-bind='text: roundSequenceLabel'></span>)</h4>
         <form id="experimenterNotesForm" class='form-inline'>
             <div class='controls'>
-                <textarea class='input-block-level' id='experimenterNotes' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3" id='experimenterNote'></textarea>
+                <textarea class='input-block-level' id='experimenterNotes' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
                 <button id='submitExperimenterNotesButton' class='btn btn-primary' type='submit' data-bind='click: saveExperimenterNotes'>Save</button>
             </div>
         </form>
@@ -169,6 +170,7 @@
 {% include "includes/experimenter.events.html" %}
 {% include "includes/sockjs.html" %}
 <script type='text/javascript'>
+// FIXME: we should verify if exposing this here is the "right" thing to do.
     var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
     $(function() {
         function ExperimentModel(experimentModelJson) {
@@ -181,7 +183,11 @@
                         $('#submitExperimenterNotesButton').val('Saved!');
                     }
                 },
-                { 'experiment_id': {{ experiment.pk }}, 'notes': notes });
+                { experiment_id: {{ experiment.pk }}, notes: notes });
+            }
+            model.update = function(localModel, evt) {
+                $('#progress-modal').modal('show');
+                Dajaxice.vcweb.core.get_experiment_model(update(model), {pk: {{experiment.pk}}});
             }
             model.advanceToNextRound = function(localModel, evt) {
                 confirmExperimentControllerAction(evt.target, model, function(confirmed) {
@@ -210,7 +216,7 @@
         function confirmExperimentControllerAction(element, experimentModel, callback) {
             confirmExperimentAction(element, function(confirmed, action) {
                 $('#progress-modal').modal('show');
-                Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {'pk': {{experiment.pk}}, 'action':action});
+                Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {pk: {{experiment.pk}}, 'action':action});
                 if (callback) {
                     callback(confirmed, action);
                 }
