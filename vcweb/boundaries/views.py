@@ -95,6 +95,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['groupData'] = group_data
 
 # round / experiment configuration data
+    experiment_model_dict['readyParticipants'] = experiment.ready_participants
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
     experiment_model_dict['regrowthRate'] = regrowth_rate
     experiment_model_dict['costOfLiving'] = cost_of_living

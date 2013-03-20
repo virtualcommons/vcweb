@@ -13,7 +13,7 @@
             <div class='btn-toolbar'>
                 <div class='btn-group'>
                     <a class='btn btn-success' data-bind="css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
-                    <a class='btn btn-success' data-bind='click: advanceToNextRound' data-action='advance_to_next_round' data-content='Advances to the next round and starts it.'><i class='icon-step-forward'></i> next round</a>
+                    <a class='btn btn-success' data-bind='click: advanceToNextRound' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='icon-step-forward'></i> next round</a>
                     <a class='btn btn-success' data-bind='click: refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-refresh'></i> refresh participants</a>
                 </div>
             </div>
@@ -69,7 +69,7 @@
                 <li><a href='export/configuration.xml'><i class='icon-cog'></i>xml</a></li>
                 <li><a href='export/configuration.json'><i class='icon-pencil'></i>json</a></li>
             </ul>
-            <a class='btn btn-info confirm-experiment-action' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i> archive</a>
+            <a class='btn btn-danger confirm-experiment-action' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i> archive</a>
         </div>
     </div>
     <div class='span6'>

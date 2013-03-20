@@ -246,7 +246,7 @@ class ForestryParametersTest(BaseTest):
             participant_data_values = round_data.participant_data_value_set.filter(participant_group_relationship__participant=p)
             logger.debug("XXX: participant data values: %s", participant_data_values)
             self.assertEqual(participant_data_values.count(), 2)
-            pexpr = p.get_participant_experiment_relationship(e)
+            pexpr = e.get_participant_experiment_relationship(p)
             logger.debug("relationship %s" % pexpr)
             for dv in participant_data_values.filter(parameter__type='int'):
                 logger.debug("verifying data value %s" % dv)

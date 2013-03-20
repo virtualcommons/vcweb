@@ -316,8 +316,6 @@ class Experiment(models.Model):
     """ elapsed time in seconds for the current round. """
     amqp_exchange_name = models.CharField(max_length=64, default="vcweb.default.exchange")
 
-    ready_participants = models.PositiveIntegerField(default=0, help_text=_("The number of participants ready to move on to the next round."))
-
     cached_round_sequence_number = None
     ''' used to cache the round configuration '''
 
@@ -520,11 +518,15 @@ class Experiment(models.Model):
         return self.current_round.instructions
 
     @property
+    def ready_participants(self):
+        return ParticipantRoundDataValue.objects.filter(parameter=get_participant_ready_parameter(), round_data=self.current_round_data, boolean_value=True).count()
+
+    @property
     def all_participants_ready(self):
-        return self.ready_participants >= self.participant_set.count()
+        return self.ready_participants == self.participant_set.count()
 
     def get_participant_experiment_relationship(self, participant):
-        return self.participant_relationship_set.get(participant=participant)
+        return self.participant_relationship_set.select_related('participant__user').get(participant=participant)
 
     def get_participant_group_relationship(self, participant):
         session_id = self.current_round.session_id
@@ -770,7 +772,6 @@ class Experiment(models.Model):
         self.create_round_data()
         self.current_round_elapsed_time = 0
         self.current_round_start_time = datetime.now()
-        self.ready_participants = 0
         self.save()
         self.log('Starting round')
         current_round_configuration = self.current_round
