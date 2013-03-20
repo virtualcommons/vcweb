@@ -887,7 +887,8 @@ class Experiment(models.Model):
         ordering = ['date_created', 'status']
 
 class RoundConfiguration(models.Model):
-# maps round type name to (description, default_template_name)
+    # FIXME: refactor this into a single data structure
+    # maps round type name to (description, default_template_name)
     ROUND_TYPES_DICT = dict(
             WELCOME=('Initial welcome round', 'welcome.html'),
             GENERAL_INSTRUCTIONS=('General instructions round (introduction)', 'general-instructions.html'),
@@ -899,8 +900,8 @@ class RoundConfiguration(models.Model):
             QUIZ=('Quiz round', 'quiz.html'))
     ROUND_TYPES = (CHAT, DEBRIEFING, GENERAL_INSTRUCTIONS, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR, WELCOME) = sorted(ROUND_TYPES_DICT.keys())
 
-    ROUND_TYPE_CHOICES = Choices(*[(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES])
-    PLAYABLE_ROUND_CONFIGURATIONS = (PRACTICE, REGULAR)
+    RoundType = Choices(*[(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES])
+    PLAYABLE_ROUND_CONFIGURATIONS = (RoundType.PRACTICE, RoundType.REGULAR)
 
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configuration_set')
     sequence_number = models.PositiveIntegerField(help_text='Used internally to determine the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5')
@@ -919,8 +920,8 @@ class RoundConfiguration(models.Model):
     debriefing = models.TextField(null=True, blank=True)
     """ debriefing, if any, to display after the round ends """
     round_type = models.CharField(max_length=32,
-                                  choices=ROUND_TYPE_CHOICES,
-                                  default=REGULAR)
+                                  choices=RoundType,
+                                  default=RoundType.REGULAR)
     """
     name of a custom template to be used this round.  e.g., if set to
     quiz_2.html in the forestry experiment app, this would be loaded from
@@ -982,27 +983,27 @@ class RoundConfiguration(models.Model):
 
     @property
     def is_debriefing_round(self):
-        return self.round_type == RoundConfiguration.DEBRIEFING
+        return self.round_type == RoundConfiguration.RoundType.DEBRIEFING
 
     @property
     def is_chat_round(self):
-        return self.round_type == RoundConfiguration.CHAT
+        return self.round_type == RoundConfiguration.RoundType.CHAT
 
     @property
     def is_instructions_round(self):
-        return self.round_type == RoundConfiguration.INSTRUCTIONS
+        return self.round_type in (RoundConfiguration.RoundType.INSTRUCTIONS, RoundConfiguration.RoundType.GENERAL_INSTRUCTIONS)
 
     @property
     def is_quiz_round(self):
-        return self.round_type == RoundConfiguration.QUIZ
+        return self.round_type == RoundConfiguration.RoundType.QUIZ
 
     @property
     def is_practice_round(self):
-        return self.round_type == RoundConfiguration.PRACTICE
+        return self.round_type == RoundConfiguration.RoundType.PRACTICE
 
     @property
     def is_regular_round(self):
-        return self.round_type == RoundConfiguration.REGULAR
+        return self.round_type == RoundConfiguration.RoundType.REGULAR
 
     @property
     def is_playable_round(self):

@@ -59,11 +59,11 @@ class ForestryViewsTest(BaseTest):
 
     def test_get_template(self):
         e = self.experiment
-        rc = self.create_new_round_configuration(round_type=RoundConfiguration.QUIZ, template_name='quiz_23.html')
+        rc = self.create_new_round_configuration(round_type=RoundConfiguration.RoundType.QUIZ, template_name='quiz_23.html')
         e.current_round_sequence_number = rc.sequence_number
         self.assertEqual(e.current_round_template, 'forestry/quiz_23.html', 'should return specified quiz_template')
 
-        rc = self.create_new_round_configuration(round_type=RoundConfiguration.QUIZ)
+        rc = self.create_new_round_configuration(round_type=RoundConfiguration.RoundType.QUIZ)
         e.current_round_sequence_number = rc.sequence_number
         self.assertEqual(e.current_round_template, 'forestry/quiz.html', 'should return default quiz.html')
 

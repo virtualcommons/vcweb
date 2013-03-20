@@ -48,9 +48,14 @@
 {% include "forms/chat-template.html" %}
 </script>
 <script type='text/html' id='WAITING_ROOM'>
-<h3>Waiting Room</h3>
+<h3>Waiting for other participants</h3>
 <div>
 Please wait.  The experiment will continue shortly once all the participants are ready.
+<p>
+<span class='badge'
+data-bind='css: { "badge-important": readyParticipants() < (totalNumberOfParticipants() / 2), "badge-success": readyParticipants() > (totalNumberOfParticipants() / 2)}, text: readyParticipants'></span> of <span class='badge badge-success' data-bind='text: totalNumberOfParticipants'></span> participants are ready.
+</p>
+</div>
 </div>
 <div class='progress progress-success progress-striped active'>
 <div class='bar' data-bind='style: { width: readyParticipantsPercentage() + "%" }'></div>
@@ -386,8 +391,6 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 $.post('/experiment/participant-ready', { participant_group_id: {{ participant_group_relationship.pk }} }, function(response) {
                     console.debug("successfully posted to server, notifying sockjs: " + response);
                     getWebSocket().send(createMessageEvent("Instructions completed", "client_ready"));
-                    // FIXME: transition to a waiting screen
-                    model.readyParticipant();
                     model.activateWaitingRoomPage();
                 });
             }

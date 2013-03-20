@@ -11,7 +11,6 @@ from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
         get_last_harvest_decision, can_observe_other_group)
 import logging
-import random
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +54,7 @@ def submit_harvest_decision(request, experiment_id=None):
 
 @participant_required
 def get_view_model(request, experiment_id=None):
-    experiment = get_object_or_404(Experiment.select_related('experiment_metadata', 'experiment_configuration'), pk=experiment_id)
+    experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'), pk=experiment_id)
     pgr = experiment.get_participant_group_relationship(request.user.participant)
     return JsonResponse(get_view_model_json(experiment, pgr))
 
@@ -72,13 +71,17 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     regrowth_rate = get_regrowth_rate(current_round)
     cost_of_living = get_cost_of_living(current_round)
     experiment_model_dict['readyParticipants'] = experiment.ready_participants
-    experiment_model_dict['participantsPerGroup'] = ec.max_group_size
-    experiment_model_dict['regrowthRate'] = regrowth_rate
     experiment_model_dict['costOfLiving'] = cost_of_living
+# instructions round parameters
+    if current_round.is_instructions_round:
+        experiment_model_dict['participantsPerGroup'] = ec.max_group_size
+        experiment_model_dict['regrowthRate'] = regrowth_rate
+        experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
+        experiment_model_dict['dollarsPerToken'] = float(ec.exchange_rate)
+
     experiment_model_dict['totalNumberOfParticipants'] = experiment.participant_set.count()
     experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
-    experiment_model_dict['dollarsPerToken'] = float(ec.exchange_rate)
     experiment_model_dict['roundType'] = current_round.round_type
     experiment_model_dict['practiceRound'] = current_round.is_practice_round
     experiment_model_dict['chatEnabled'] = False
@@ -105,11 +108,12 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             'message': cm.string_value,
             'date_created': cm.date_created.strftime("%I:%M:%S")
             } for cm in ChatMessage.objects.for_group(own_group)]
-        experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
+# FIXME: this is redundant
         experiment_model_dict['lastHarvestDecision'] = last_harvest_decision
         experiment_model_dict['storage'] = get_storage(participant_group_relationship, current_round_data)
         experiment_model_dict['resourceLevel'] = own_resource_level
-        if not current_round.is_practice_round and can_observe_other_group(current_round):
+        experiment_model_dict['canObserveOtherGroup'] = can_observe_other_group(current_round)
+        if not current_round.is_practice_round and experiment_model_dict['canObserveOtherGroup']:
             gr = GroupRelationship.objects.select_related('cluster').get(group=own_group)
             group_data = []
             for group in gr.cluster.group_set.all():
