@@ -3,7 +3,7 @@
         "pk": 255,
         "model": "auth.user",
         "fields": {
-            "username": "diego.galafassi@gmail.com",
+            "username": "diegogalafassi@gmail.com",
             "first_name": "Diego",
             "last_name": "Galafassi",
             "is_active": true,
@@ -70,7 +70,6 @@
             "start_date_time": null,
             "current_round_elapsed_time": 0,
             "tick_duration": "",
-            "slug": "broker-experiment",
             "authentication_code": "broker_test",
             "total_elapsed_time": 0,
             "current_round_start_time": null,
