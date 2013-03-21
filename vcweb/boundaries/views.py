@@ -55,6 +55,7 @@ def submit_harvest_decision(request, experiment_id=None):
 def get_view_model(request, experiment_id=None):
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'), pk=experiment_id)
     pgr = experiment.get_participant_group_relationship(request.user.participant)
+    logger.debug("getting view model for participant: %s", pgr)
     return JsonResponse(get_view_model_json(experiment, pgr))
 
 # FIXME: need to distinguish between instructions / welcome rounds and practice/regular rounds

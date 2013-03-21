@@ -14,8 +14,8 @@
                 <div class='btn-group'>
                     <a class='btn btn-success' data-bind="click: confirmExperimentAction, css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
                     <a class='btn btn-success' data-bind='click: advanceToNextRound' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='icon-step-forward'></i> next round</a>
-                    <a class='btn btn-success' data-bind='click: refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-exchange'></i> refresh participants</a>
-                    <a class='btn btn-primary' data-bind='click: update' data-content='Refresh this page with the latest data from the server.' ><i class='icon-refresh'></i> update</a>
+                    <a class='btn btn-success' data-bind='click: refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-exchange'></i> refresh participants</a>-->
+                    <a class='btn btn-primary' data-bind='click: update' data-content='Refresh this page with the latest data from the server.' ><i class='icon-refresh'></i></a>
                     <a class='btn btn-danger' data-bind='click: confirmExperimentAction' data-action='deactivate' data-content='Deactivates this experiment.'><i class='icon-off'></i></a>
                 </div>
             </div>
@@ -188,7 +188,6 @@
                 Dajaxice.vcweb.core.get_experiment_model(update(model), {pk: {{experiment.pk}}});
             }
             model.confirmExperimentAction = function(experimentModel, evt) {
-                console.debug(evt.target);
                 confirmExperimentControllerAction(evt.target, model);
             }
             model.advanceToNextRound = function(localModel, evt) {
@@ -199,11 +198,11 @@
                     }
                 });
             };
-            model.refreshAllParticipants = function(model, evt) {
+            model.refreshAllParticipants = function(localModel, evt) {
                 confirmAction(evt.target, function(confirmed, action) {
                     if (confirmed) {
-                        console.debug("sending refresh event");
-                        sendRefreshEvent();
+                        console.debug("sending update event");
+                        sendUpdateEvent();
                     }
                 });
             }
@@ -218,10 +217,13 @@
         function confirmExperimentControllerAction(element, experimentModel, callback) {
             confirmAction(element, function(confirmed, action) {
                 $('#progress-modal').modal('show');
-                Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {pk: {{experiment.pk}}, 'action':action});
-                if (callback) {
-                    callback(confirmed, action);
-                }
+                Dajaxice.vcweb.core.experiment_controller(function(data) {
+                    ko.mapping.fromJS(data, experimentModel);
+                    if (callback) {
+                        callback(confirmed, action);
+                    }
+                    $('#progress-modal').modal('hide');
+                }, {pk: {{experiment.pk}}, 'action':action});
             });
         }
         function confirmAction(element, callback) {
@@ -240,8 +242,6 @@
         }
         function update(experimentModel) {
             return function(data) {
-                ko.mapping.fromJS(data, experimentModel);
-                $('#progress-modal').modal('hide');
             }
         }
         function initialize(experimentModelJson) {

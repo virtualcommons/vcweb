@@ -12,7 +12,6 @@ from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from django.template import Context
 from django.template.loader import select_template
-from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
 from model_utils.managers import InheritanceManager, PassThroughManager
@@ -150,7 +149,6 @@ class CommonsUser(models.Model):
 
     class Meta:
         abstract = True
-
 
 class Experimenter(CommonsUser):
     approved = models.BooleanField(default=False)
@@ -760,8 +758,8 @@ class Experiment(models.Model):
             # create participant ready data values for every round in experimenter driven experiments
             logger.debug("creating participant ready participant round data values")
             for pgr in self.participant_group_relationships:
-                ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, boolean_value=False,
-                        parameter=get_participant_ready_parameter(), round_data=round_data)
+                ParticipantRoundDataValue.objects.get_or_create(participant_group_relationship=pgr,
+                        parameter=get_participant_ready_parameter(), round_data=round_data, defaults={'boolean_value': False})
         if not created:
             logger.debug("already created round data: %s", round_data)
         return round_data

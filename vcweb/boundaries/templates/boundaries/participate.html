@@ -500,6 +500,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                     case 'update':
                         $('#progress-modal').modal('show');
                         experimentModel.update();
+                        break;
                     default:
                         console.debug("unhandled json message:" + json);
                         break;
