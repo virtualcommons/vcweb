@@ -852,7 +852,7 @@ class Experiment(models.Model):
         if include_round_data:
             experiment_dict['allRoundData'] = self.all_round_data()
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
-            experiment_dict['messages'] = [escape(log) for log in self.activity_log_set.order_by('-date_created')]
+            experiment_dict['messages'] = [unicode(log) for log in self.activity_log_set.order_by('-date_created')]
             experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes
         return experiment_dict
 
