@@ -393,6 +393,10 @@ class Experiment(models.Model):
         return "/%s/configure" % self.get_absolute_url()
 
     @property
+    def monitor_url(self):
+        return "%s/monitor" % self.controller_url
+
+    @property
     def complete_url(self):
         return "%s/complete" % self.controller_url
 
@@ -400,11 +404,6 @@ class Experiment(models.Model):
     def deactivate_url(self):
         return "%s/deactivate" % self.controller_url
 
-    @property
-    def monitor_url(self):
-        return "%s/monitor" % self.controller_url
-
-# FIXME: deprecate and remove this, should be a POST not a GET
     @property
     def clone_url(self):
         return "%s/clone" % self.controller_url
@@ -740,7 +739,7 @@ class Experiment(models.Model):
         self.save()
 
     def invoke(self, action_name):
-        if action_name in ('advance_to_next_round', 'end_round', 'start_round', 'activate', 'complete'):
+        if action_name in ('advance_to_next_round', 'end_round', 'start_round', 'activate', 'deactivate', 'complete'):
             getattr(self, action_name)()
         else:
             raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action_name, self))
@@ -796,7 +795,9 @@ class Experiment(models.Model):
         return signals.round_ended.send_robust(sender, experiment=self, round_configuration=self.current_round)
 
     def activate(self):
-        if not self.is_active:
+        if self.is_archived:
+            logger.debug("ignoring request to activate archived experiment, need manual intervention to perform this as it would wipe existing data.")
+        elif not self.is_active:
             self.allocate_groups()
             self.status = Experiment.Status.ACTIVE
             self.start_date_time = datetime.now()

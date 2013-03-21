@@ -153,6 +153,11 @@ class GeoCheckinForm(forms.Form):
     heading = forms.FloatField(required=False)
     speed = forms.FloatField(required=False)
 
+class ExperimentActionForm(forms.Form):
+    action = forms.CharField(max_length=64)
+    experiment_id = forms.IntegerField(widget=forms.HiddenInput)
+    experimenter_id = forms.IntegerField(widget=forms.HiddenInput)
+
 class LikeForm(forms.Form):
     target_id = forms.IntegerField(widget=forms.HiddenInput)
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)

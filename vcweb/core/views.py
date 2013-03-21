@@ -90,7 +90,7 @@ class Dashboard(ListView, TemplateResponseMixin):
     def get_queryset(self):
         user = self.request.user
         if is_experimenter(user):
-            return Experiment.objects.filter(experimenter__pk=self.request.user.experimenter.pk)
+            return Experiment.objects.select_related('experimenter', 'experiment_metadata', 'experiment_configuration').filter(experimenter__pk=self.request.user.experimenter.pk)
         else:
 # nested dictionary, {ExperimentMetadata -> { status -> [experiments,...] }}
 # FIXME: could also use collections.defaultdict or regroup template tag to
@@ -265,7 +265,7 @@ class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, Templa
         self.experiment = self.object = self.get_object()
         self.process()
         context = self.get_context_data(object=self.object)
-        return self.render(request, context)
+        return self.render_to_response(context)
 
 def monitor(request, pk=None):
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_configuration', 'experimenter'), pk=pk)
@@ -464,6 +464,16 @@ def download_data_excel(request, pk=None):
         raise NotImplementedError("Not finished")
     except Experiment.DoesNotExist as e:
         logger.warning(e)
+
+@experimenter_required
+def deactivate(request, pk=None):
+    experiment = get_object_or_404(Experiment, pk=pk)
+    experimenter = request.user.experimenter
+    if experimenter == experiment.experimenter:
+        experiment.deactivate()
+        return redirect('core:monitor_experiment', pk=pk)
+    logger.warning("Invalid experiment deactivation request for %s by %s", experiment, experimenter)
+    return redirect('core:dashboard')
 
 @experimenter_required
 def experiment_controller(request, pk=None, experiment_action=None):

@@ -3,7 +3,7 @@
 {% block page %}
 {{ block.super }}
 <h3>Experimenter Dashboard</h3>
-{% comment %} FIXME: going to need to refine this UI as the list of experiments grows {% endcomment %}
+{% comment %} FIXME: UI refinement needed as the list of experiments grows {% endcomment %}
 <div id="experiment-list">
     {% for e in experiments %}
     <div class='alert alert-message'>
@@ -24,8 +24,8 @@
                 <i class='icon-trash'></i> clear all participants</a></li>
             {% endif %}
             {% if e.is_active %}
-            <a data-content='Mark this experiment as completed' href='{{e.complete_url}}' class='btn confirm-experiment-action'><i class='icon-save'></i> archive</a>
-            <a data-content='deactivate this experiment' href='{{e.deactivate_url}}' class='btn confirm-experiment-action'><i class='icon-off'></i> deactivate</a>
+            <a data-action='complete' data-content='Mark this experiment as completed' href='{{e.complete_url}}' class='btn confirm-experiment-action'><i class='icon-save'></i> archive</a>
+            <a data-action='deactivate' data-content='deactivate this experiment' href='{{e.deactivate_url}}' class='btn confirm-experiment-action'><i class='icon-off'></i> deactivate</a>
             {% else %}
             <a class='btn' data-content='Configure this experiment' href='{{e.configure_url}}'><i class='icon-wrench'></i> configure</a>
             {% endif %}
@@ -43,25 +43,21 @@
 {{ block.super }}
 <script type='text/javascript'>
     $(function() {
-        $('.confirm-experiment-action', $('#experiment-list')).each(function() {
-            var confirmable = $(this);
-            var description = confirmable.attr("data-content");
-            confirmable.click(function() {
-                confirmable.fastConfirm({
-                    questionText: description + "  Continue?",
-                    onProceed: function(trigger) {
-                        $(trigger).fastConfirm('close');
-                        window.location = $(trigger).attr("href");
-                    },
-                    onCancel: function(trigger) {
-                        $(trigger).fastConfirm('close');
-                    }
-                });
+        $('a.confirm-experiment-action').on("click", function(evt) {
+            evt.preventDefault();
+            var self = $(this);
+            var description = self.attr("data-content");
+            var href = self.attr("href");
+            if (self.hasClass('disabled')) {
+                console.debug("disabled action " + action + " - ignoring");
                 return false;
+            }
+            bootbox.confirm(description + "  Continue?", function(confirmed) {
+                if (confirmed) {
+                    window.location = self.attr("href");
+                }
             });
-        });
-        $('.experiment-menu').each(function() {
-            $(this).find('li:last a').attr('style', 'background-image: none;');
+            return false;
         });
     });
 </script>

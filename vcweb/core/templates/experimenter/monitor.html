@@ -12,10 +12,11 @@
             <li>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
-                    <a class='btn btn-success confirm-experiment-action' data-bind="css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
+                    <a class='btn btn-success' data-bind="click: confirmExperimentAction, css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
                     <a class='btn btn-success' data-bind='click: advanceToNextRound' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='icon-step-forward'></i> next round</a>
                     <a class='btn btn-success' data-bind='click: refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-exchange'></i> refresh participants</a>
                     <a class='btn btn-primary' data-bind='click: update' data-content='Refresh this page with the latest data from the server.' ><i class='icon-refresh'></i> update</a>
+                    <a class='btn btn-danger' data-bind='click: confirmExperimentAction' data-action='deactivate' data-content='Deactivates this experiment.'><i class='icon-off'></i></a>
                 </div>
             </div>
             </li>
@@ -35,25 +36,22 @@
                 </div>
             </div>
             <div data-bind="if: hasParticipants">
-                <div class='alert alert-info alert-block'>
-                    <h3>Inactive Experiment</h3>
+                <div class='alert alert-message'>
+                    <h4>Inactive Experiment</h4>
                     <p>
                     There are <span data-bind='text:participantCount' class='badge badge-info'></span> registered participants.
-                    Activate the experiment whenever you are ready to collect data. (NOTE: this will wipe away any
-                    existing data).
+                    You can activate the experiment whenever you are ready to collect data. 
                     </p>
-                </div>
-                <div class='btn-toolbar'>
-                    <div class='btn-group'>
-                        <a data-content='Activate to begin collecting data for this experiment.'
-                            class='btn btn-success confirm-experiment-action' data-action='activate'><i class='icon-off'></i> activate</a>
-                    </div>
+                    <p class='text-error'>NOTE: activating an experiment <b>will delete all existing data</b>
+                    </p>
+                    <a data-content='Starts this experiment, assigns participants to groups, etc.'
+                        class='btn btn-success' data-bind='click: confirmExperimentAction' data-action='activate'><i class='icon-off'></i> activate</a>
                 </div>
             </div>
         </div>
         <ul class='nav nav-list'>
             <li class='nav-header'>round status</li>
-            <li><span data-bind='text:roundSequenceLabel'></span></li>
+            <li><b class='text-info' data-bind='text:roundSequenceLabel'></b></li>
             <li><span data-bind='text:roundStatusLabel'></span></li>
             <li>Experiment started on: <span data-bind='text:currentRoundStartTime'></span></li>
             <li>Time remaining: <span data-bind='text:timeRemaining'></span></li>
@@ -70,7 +68,7 @@
                 <li><a href='export/configuration.xml'><i class='icon-cog'></i>xml</a></li>
                 <li><a href='export/configuration.json'><i class='icon-pencil'></i>json</a></li>
             </ul>
-            <a class='btn btn-danger confirm-experiment-action' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i> archive</a>
+            <a class='btn btn-danger' data-bind='click: confirmExperimentAction' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i> archive</a>
         </div>
     </div>
     <div class='span6'>
@@ -189,6 +187,10 @@
                 $('#progress-modal').modal('show');
                 Dajaxice.vcweb.core.get_experiment_model(update(model), {pk: {{experiment.pk}}});
             }
+            model.confirmExperimentAction = function(experimentModel, evt) {
+                console.debug(evt.target);
+                confirmExperimentControllerAction(evt.target, model);
+            }
             model.advanceToNextRound = function(localModel, evt) {
                 confirmExperimentControllerAction(evt.target, model, function(confirmed) {
                     if (confirmed) {
@@ -198,7 +200,7 @@
                 });
             };
             model.refreshAllParticipants = function(model, evt) {
-                confirmExperimentAction(evt.target, function(confirmed, action) {
+                confirmAction(evt.target, function(confirmed, action) {
                     if (confirmed) {
                         console.debug("sending refresh event");
                         sendRefreshEvent();
@@ -214,7 +216,7 @@
             return model;
         }
         function confirmExperimentControllerAction(element, experimentModel, callback) {
-            confirmExperimentAction(element, function(confirmed, action) {
+            confirmAction(element, function(confirmed, action) {
                 $('#progress-modal').modal('show');
                 Dajaxice.vcweb.core.experiment_controller(update(experimentModel), {pk: {{experiment.pk}}, 'action':action});
                 if (callback) {
@@ -222,7 +224,7 @@
                 }
             });
         }
-        function confirmExperimentAction(element, callback) {
+        function confirmAction(element, callback) {
             var self = $(element);
             var description = self.attr("data-content");
             var action = self.attr("data-action");
@@ -252,11 +254,6 @@
                 console.log("Received event: " + evt);
                 experimentModel.addMessage(jQuery.parseJSON(evt.data));
             };
-            $('a.confirm-experiment-action').on("click", function(evt) {
-                evt.preventDefault();
-                confirmExperimentControllerAction(this, experimentModel);
-                return false;
-            });
             return experimentModel;
         }
         $('[data-content]').popover({placement: 'top', trigger: 'hover'});
