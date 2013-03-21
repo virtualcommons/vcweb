@@ -855,8 +855,7 @@ class Experiment(models.Model):
             experiment_dict['allRoundData'] = self.all_round_data()
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
             experiment_dict['messages'] = [unicode(log) for log in self.activity_log_set.order_by('-date_created')]
-            if self.is_round_in_progress:
-                experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes
+            experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes if self.is_round_in_progress else ''
         return experiment_dict
 
     def as_dict(self, *args, **kwargs):
