@@ -2,9 +2,10 @@ from django.dispatch import receiver
 from vcweb.core import signals, simplecache
 from vcweb.core.models import ExperimentMetadata, Parameter, ParticipantRoundDataValue
 from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_regrowth_rate,
-        get_group_harvest_parameter, get_reset_resource_level_parameter, get_resource_level, get_initial_resource_level
-        as forestry_initial_resource_level, set_resource_level, get_regrowth_parameter, get_resource_level_parameter,
-        has_resource_level, get_resource_level_dv, get_harvest_decisions, set_group_harvest, set_regrowth)
+        get_group_harvest_parameter, get_reset_resource_level_parameter, get_resource_level,
+        get_initial_resource_level as forestry_initial_resource_level, set_resource_level, get_regrowth_parameter,
+        get_resource_level_parameter, has_resource_level, get_resource_level_dv, get_harvest_decisions,
+        set_group_harvest, set_regrowth)
 
 import logging
 
@@ -37,7 +38,7 @@ def get_survival_cost_parameter():
 
 @simplecache
 def get_max_harvest_decision_parameter():
-    return Parameter.objects.for_round(name='max_harvest_decision')
+    return Parameter.objects.for_experiment(name='max_harvest_decision')
 
 @simplecache
 def get_cost_of_living_parameter():
@@ -63,6 +64,9 @@ def get_player_status_dv(participant_group_relationship_id):
 
 def get_initial_resource_level(round_configuration, default=MAX_RESOURCE_LEVEL):
     return forestry_initial_resource_level(round_configuration, default)
+
+def get_max_harvest(experiment):
+    return experiment.get_parameter_value(parameter=get_max_harvest_decision_parameter(), default=10).int_value
 
 def get_cost_of_living(current_round):
     return current_round.get_parameter_value(get_cost_of_living_parameter(), default=5).int_value
@@ -104,11 +108,11 @@ def round_started_handler(sender, experiment=None, **kwargs):
                 group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
                 participant_parameters=[get_harvest_decision_parameter(), get_storage_parameter(), get_player_status_parameter()]
                 )
-    '''
-    during a practice or regular round, set up resource levels and participant
-    harvest decision parameters
-    '''
 
+    '''
+    during a practice or regular round, set up resource levels, participant harvest decision parameters, and possibly
+    group formation
+    '''
     if should_reset_resource_level(round_configuration):
         initial_resource_level = get_initial_resource_level(round_configuration)
         logger.debug("Resetting resource level for %s to %d", round_configuration, initial_resource_level)

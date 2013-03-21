@@ -12,11 +12,15 @@
             <li>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
-                    <a class='btn btn-success' data-bind="click: confirmExperimentAction, css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
-                    <a class='btn btn-success' data-bind='click: advanceToNextRound' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='icon-step-forward'></i> next round</a>
-                    <a class='btn btn-success' data-bind='click: updateParticipants' data-content='Updates all connected participants.' ><i class='icon-exchange'></i> update</a>
-                    <a class='btn btn-primary' data-bind='click: update' data-content='Update this page and pull the latest data from the server.' ><i class='icon-refresh'></i></a>
-                    <a class='btn btn-danger' data-bind='click: confirmExperimentAction' data-action='deactivate' data-content='Deactivates this experiment.'><i class='icon-off'></i></a>
+                    <a class='btn btn-success' data-bind="click: confirmExperimentControllerAction.bind($data, true), css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
+                    <a class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, true)' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='icon-step-forward'></i> next round</a>
+                </div>
+            </div>
+            <div class='btn-toolbar'>
+                <div class='btn-group'>
+                    <a class='btn btn-success' data-bind='click: updateParticipants' data-content='Updates all connected participants.' ><i class='icon-exchange'></i> update participants</a>
+                    <a class='btn btn-primary' data-bind='click: update' data-content='Update this page and pull the latest data from the server.' ><i class='icon-refresh'></i> refresh data</a>
+                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment.'><i class='icon-off'></i> deactivate</a>
                 </div>
             </div>
             </li>
@@ -45,7 +49,7 @@
                     <p class='text-error'>NOTE: activating an experiment <b>will delete all existing data</b>
                     </p>
                     <a data-content='Starts this experiment, assigns participants to groups, etc.'
-                        class='btn btn-success' data-bind='click: confirmExperimentAction' data-action='activate'><i class='icon-off'></i> activate</a>
+                        class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='activate'><i class='icon-off'></i> activate</a>
                 </div>
             </div>
         </div>
@@ -68,7 +72,7 @@
                 <li><a href='export/configuration.xml'><i class='icon-cog'></i>xml</a></li>
                 <li><a href='export/configuration.json'><i class='icon-pencil'></i>json</a></li>
             </ul>
-            <a class='btn btn-danger' data-bind='css: { disabled: isArchived}, click: confirmExperimentAction' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i> archive</a>
+            <a class='btn btn-danger' data-bind='css: { disabled: isArchived}, click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i> archive</a>
         </div>
     </div>
     <div class='span6'>
@@ -182,27 +186,30 @@
                 },
                 { experiment_id: {{ experiment.pk }}, notes: notes });
             }
-// FIXME: code duplication here, prime candidate for refactoring
+            // FIXME: factor out the code duplication with this and confirmExperimentControllerAction for
+            // showing the modal and invoking the ajax call if possible
             model.update = function(localModel, evt) {
                 $('#progress-modal').modal('show');
                 Dajaxice.vcweb.core.get_experiment_model(function (data) { ko.mapping.fromJS(data, model); $('#progress-modal').modal('hide');}, {pk: {{experiment.pk}}});
             }
-            model.confirmExperimentAction = function(m, evt) {
+            model.confirmExperimentControllerAction = function(updateParticipants, localModel, evt) {
                 element = evt.target;
+                console.debug(element);
                 if ($(element).hasClass('disabled')) {
-                    console.debug("aborting.");
-                    return;
+                    console.debug("aborting disabled action: " + element);
+                    return false;
                 }
-                confirmExperimentControllerAction(element, model);
-            }
-            model.advanceToNextRound = function(m, evt) {
-                confirmExperimentControllerAction(evt.target, m, function(confirmed) {
-                    if (confirmed) {
-                        console.debug("advancing to next round, notify all participants");
-                        sendUpdateEvent();
-                    }
+                confirmAction(element, function(confirmed, action) {
+                    $('#progress-modal').modal('show');
+                    Dajaxice.vcweb.core.experiment_controller(function(data) {
+                        ko.mapping.fromJS(data, experimentModel);
+                        if (updateParticipants) {
+                            sendUpdateEvent();
+                        }
+                        $('#progress-modal').modal('hide');
+                    }, {pk: {{experiment.pk}}, 'action':action});
                 });
-            };
+            }
             model.updateParticipants = function(m, evt) {
                 confirmAction(evt.target, function(confirmed, action) {
                     if (confirmed) {
@@ -218,18 +225,6 @@
                 return model.participantCount() > 0;
             });
             return model;
-        }
-        function confirmExperimentControllerAction(element, experimentModel, callback) {
-            confirmAction(element, function(confirmed, action) {
-                $('#progress-modal').modal('show');
-                Dajaxice.vcweb.core.experiment_controller(function(data) {
-                    ko.mapping.fromJS(data, experimentModel);
-                    if (callback) {
-                        callback(confirmed, action);
-                    }
-                    $('#progress-modal').modal('hide');
-                }, {pk: {{experiment.pk}}, 'action':action});
-            });
         }
         function confirmAction(element, callback) {
             var self = $(element);
