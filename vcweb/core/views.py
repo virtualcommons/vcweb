@@ -326,9 +326,10 @@ class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, FormView
 # FIXME: these last two use GET (which should be idempotent) to modify database state which makes HTTP sadful
 class CloneExperimentView(ExperimenterSingleExperimentView):
     def process(self):
-        return self.experiment.clone()
+        self.experiment = self.experiment.clone()
+        return self.experiment
     def render_to_response(self, context):
-        return redirect('core:dashboard')
+        return redirect('core:monitor_experiment', pk=self.experiment.pk)
 
 class ClearParticipantsExperimentView(ExperimenterSingleExperimentView):
     def process(self):

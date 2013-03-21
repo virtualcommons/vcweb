@@ -736,6 +736,16 @@ class Experiment(models.Model):
         self.current_round_sequence_number = max(self.current_round_sequence_number - 1, 1)
         self.save()
 
+    def move_to_next_round(self):
+        if self.is_round_in_progress:
+            self.end_round()
+        if self.has_next_round:
+            self.current_round_elapsed_time = 0
+            self.current_round_sequence_number += 1
+            return True
+        else:
+            logger.warning("trying to advance past the last round - no-op")
+
     def invoke(self, action_name):
         if action_name in ('advance_to_next_round', 'end_round', 'start_round', 'activate', 'deactivate', 'complete'):
             getattr(self, action_name)()
@@ -743,14 +753,8 @@ class Experiment(models.Model):
             raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action_name, self))
 
     def advance_to_next_round(self):
-        if self.is_round_in_progress:
-            self.end_round()
-        if self.has_next_round:
-            self.current_round_elapsed_time = 0
-            self.current_round_sequence_number += 1
+        if self.move_to_next_round():
             self.start_round()
-        else:
-            logger.warning("trying to advance past the last round - no-op")
 
     def create_round_data(self):
         round_data, created = self.round_data_set.get_or_create(round_configuration=self.current_round)
@@ -851,7 +855,8 @@ class Experiment(models.Model):
             experiment_dict['allRoundData'] = self.all_round_data()
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
             experiment_dict['messages'] = [unicode(log) for log in self.activity_log_set.order_by('-date_created')]
-            experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes
+            if self.is_round_in_progress:
+                experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes
         return experiment_dict
 
     def as_dict(self, *args, **kwargs):

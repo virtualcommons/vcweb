@@ -14,8 +14,8 @@
                 <div class='btn-group'>
                     <a class='btn btn-success' data-bind="click: confirmExperimentAction, css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
                     <a class='btn btn-success' data-bind='click: advanceToNextRound' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='icon-step-forward'></i> next round</a>
-                    <a class='btn btn-success' data-bind='click: refreshAllParticipants' data-content='Sends a page refresh to all connected participants.' ><i class='icon-exchange'></i> refresh participants</a>-->
-                    <a class='btn btn-primary' data-bind='click: update' data-content='Refresh this page with the latest data from the server.' ><i class='icon-refresh'></i></a>
+                    <a class='btn btn-success' data-bind='click: updateParticipants' data-content='Updates all connected participants.' ><i class='icon-exchange'></i> update</a>
+                    <a class='btn btn-primary' data-bind='click: update' data-content='Update this page and pull the latest data from the server.' ><i class='icon-refresh'></i></a>
                     <a class='btn btn-danger' data-bind='click: confirmExperimentAction' data-action='deactivate' data-content='Deactivates this experiment.'><i class='icon-off'></i></a>
                 </div>
             </div>
@@ -68,7 +68,7 @@
                 <li><a href='export/configuration.xml'><i class='icon-cog'></i>xml</a></li>
                 <li><a href='export/configuration.json'><i class='icon-pencil'></i>json</a></li>
             </ul>
-            <a class='btn btn-danger' data-bind='click: confirmExperimentAction' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i> archive</a>
+            <a class='btn btn-danger' data-bind='css: { disabled: isArchived}, click: confirmExperimentAction' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i> archive</a>
         </div>
     </div>
     <div class='span6'>
@@ -84,7 +84,7 @@
         <h4>Experimenter Notes (<span data-bind='text: roundSequenceLabel'></span>)</h4>
         <form id="experimenterNotesForm" class='form-inline'>
             <div class='controls'>
-                <textarea class='input-block-level' id='experimenterNotes' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
+                <textarea class='input-block-level' id='experimenterNotesText' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
                 <button id='submitExperimenterNotesButton' class='btn btn-primary' type='submit' data-bind='click: saveExperimenterNotes'>Save</button>
             </div>
         </form>
@@ -168,14 +168,13 @@
 {% include "includes/experimenter.events.html" %}
 {% include "includes/sockjs.html" %}
 <script type='text/javascript'>
-// FIXME: we should verify if exposing this here is the "right" thing to do.
     var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
     $(function() {
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
             model.saveExperimenterNotes = function(localModel, evt) {
-                var notes = $('#experimenterNotes').val();
+                var notes = $('#experimenterNotesText').val();
                 Dajaxice.vcweb.core.save_experimenter_notes(function(data) {
                     if (data.success) {
                         $('#submitExperimenterNotesButton').val('Saved!');
@@ -187,18 +186,23 @@
                 $('#progress-modal').modal('show');
                 Dajaxice.vcweb.core.get_experiment_model(update(model), {pk: {{experiment.pk}}});
             }
-            model.confirmExperimentAction = function(experimentModel, evt) {
-                confirmExperimentControllerAction(evt.target, model);
+            model.confirmExperimentAction = function(m, evt) {
+                element = evt.target;
+                if ($(element).hasClass('disabled')) {
+                    console.debug("aborting.");
+                    return;
+                }
+                confirmExperimentControllerAction(element, model);
             }
-            model.advanceToNextRound = function(localModel, evt) {
-                confirmExperimentControllerAction(evt.target, model, function(confirmed) {
+            model.advanceToNextRound = function(m, evt) {
+                confirmExperimentControllerAction(evt.target, m, function(confirmed) {
                     if (confirmed) {
                         console.debug("advancing to next round, notify all participants");
                         sendUpdateEvent();
                     }
                 });
             };
-            model.refreshAllParticipants = function(localModel, evt) {
+            model.updateParticipants = function(m, evt) {
                 confirmAction(evt.target, function(confirmed, action) {
                     if (confirmed) {
                         console.debug("sending update event");
@@ -214,7 +218,7 @@
             });
             return model;
         }
-        function confirmExperimentControllerAction(element, experimentModel, callback) {
+        function confirmExperimentControllerAction(element, m, callback) {
             confirmAction(element, function(confirmed, action) {
                 $('#progress-modal').modal('show');
                 Dajaxice.vcweb.core.experiment_controller(function(data) {

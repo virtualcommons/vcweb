@@ -4,7 +4,6 @@ from vcweb import settings
 from vcweb.core.views import (Dashboard, LoginView, LogoutView, RegistrationView, monitor, CloneExperimentView,
         RegisterEmailListView, RegisterSimpleParticipantsView, ClearParticipantsExperimentView, add_experiment,
         Participate, download_data, export_configuration, api_logger, participant_ready, deactivate)
-
 import logging
 import urllib
 
