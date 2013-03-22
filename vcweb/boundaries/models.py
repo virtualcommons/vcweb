@@ -110,8 +110,8 @@ def round_started_handler(sender, experiment=None, **kwargs):
                 )
 
     '''
-    during a practice or regular round, set up resource levels, participant harvest decision parameters, and possibly
-    group formation
+    during a practice or regular round, set up resource levels, participant harvest decision parameters, and group
+    formation
     '''
     if should_reset_resource_level(round_configuration):
         initial_resource_level = get_initial_resource_level(round_configuration)
@@ -130,7 +130,7 @@ def round_ended_handler(sender, experiment=None, **kwargs):
     '''
     current_round_configuration = experiment.current_round
     logger.debug("ending boundaries round: %s", current_round_configuration)
-# FIXME: max resource level might need to be read from the experiment / round configuration instead
+# FIXME: should really read max resource level from the experiment / round configuration instead
     max_resource_level = MAX_RESOURCE_LEVEL
     for group in experiment.group_set.all():
         logger.debug("group %s has resource level", group)

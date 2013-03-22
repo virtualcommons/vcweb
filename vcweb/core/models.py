@@ -1043,7 +1043,7 @@ class RoundConfiguration(models.Model):
         return Template(template_string).substitute(kwargs, round_number=self.display_number, participant_id=participant_id)
 
     def __unicode__(self):
-        return u"%s %s (%s)" % (self.get_round_type_display(), self.sequence_label, self.experiment_configuration)
+        return u"%s %s (%s %s)" % (self.get_round_type_display(), self.sequence_label, self.experiment_configuration, self.session_id)
 
     @property
     def display_label(self):
