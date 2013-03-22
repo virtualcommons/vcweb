@@ -1126,11 +1126,15 @@ class Parameter(models.Model):
             ('float', 'Floating-point number'),
             ('boolean', 'Boolean value (true/false)'),
             ('enum', 'Enumeration'))
-
+    Scope = Choices(('round', 'ROUND', 'Parameter applies to the entire round across all groups'),
+            ('experiment', 'EXPERIMENT', 'Parameter applies to the entire experiment across all groups and rounds'),
+            ('group', 'GROUP', 'Parameter applies to a group for the duration of the experiment'),
+            ('group_round', 'GROUP_ROUND', 'Parameter applies to a group for a given round'),
+            ('group_cluster_round', 'GROUP_CLUSTER_ROUND', 'Parameter applies to a group cluster for a given round'),
+            ('participant', 'PARTICIPANT', 'Parameter applies for a single participant for a given round'))
     # FIXME: arcane, see if we can encapsulate this better.  used to provide sane default values for each parameter type
     # when the parameter is null
     NONE_VALUES_DICT = dict(map(lambda x,y: (x[0], y), ParameterType, [0, '', -1, 0.0, False, None]))
-
     CONVERTERS = {
             'int': int,
             'string':str,
@@ -1145,13 +1149,6 @@ class Parameter(models.Model):
     NOTE: they expect already validated string data and will throw ValueErrors
     on invalid input.
     '''
-
-    Scope = Choices(('round', 'ROUND', 'Parameter applies to the entire round across all groups'),
-            ('experiment', 'EXPERIMENT', 'Parameter applies to the entire experiment across all groups and rounds'),
-            ('group', 'GROUP', 'Parameter applies to a group for the duration of the experiment'),
-            ('group_round', 'GROUP_ROUND', 'Parameter applies to a group for a given round'),
-            ('participant', 'PARTICIPANT', 'Parameter applies for a single participant'))
-
     scope = models.CharField(max_length=32, choices=Scope, default=Scope.ROUND)
     name = models.CharField(max_length=255, unique=True)
     display_name = models.CharField(max_length=255, null=True, blank=True)

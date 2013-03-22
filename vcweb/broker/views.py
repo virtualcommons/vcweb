@@ -68,8 +68,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 # experiment configuration data
     experiment_model_dict['maxHarvestDecision'] = 10
     experiment_model_dict['maxEarnings'] = 20.00
-    experiment_model_dict['localBonus'] = experiment_configuration.get_parameter_value(name='local_bonus', default=50).int_value
-    experiment_model_dict['globalBonus'] = experiment_configuration.get_parameter_value(name='global_bonus', default=50).int_value
+    experiment_model_dict['localBonus'] = experiment_configuration.get_parameter_value(name='group_local_bonus', default=50).int_value
+    experiment_model_dict['globalBonus'] = experiment_configuration.get_parameter_value(name='group_cluster_bonus', default=50).int_value
 
 # round configuration data
     experiment_model_dict['chatEnabled'] = True
@@ -92,13 +92,12 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 
     experiment_model_dict['networkStructureImageBackgroundUrl'] = "{{ STATIC_URL }}images/broker/SES.jpg"
 
-
 # round data
 # group data values
 # FIXME: make sure round_setup initializes these GroupRoundDataValues properly by looking them up from the
 # RoundConfiguration and assigning them
-    experiment_model_dict['localThreshold'] = group.get_data_value(parameter_name='local_threshold', round_data=round_data, default=5).int_value
-    experiment_model_dict['globalThreshold'] = group.get_data_value(parameter_name='global_threshold', round_data=round_data, default=5).int_value
+    experiment_model_dict['localThreshold'] = group.get_data_value(parameter_name='group_local_bonus_threshold', round_data=round_data, default=5).int_value
+    experiment_model_dict['globalThreshold'] = group.get_data_value(parameter_name='group_cluster_bonus_threshold', round_data=round_data, default=22).int_value
 
     # data from the last round
     experiment_model_dict['lastRoundHarvestDecision'] = 5
