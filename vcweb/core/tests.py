@@ -249,6 +249,10 @@ class ExperimentTest(BaseVcwebTest):
                     participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(round_data=current_round_data, participant_group_relationship=pgr, parameter=parameter)
                     self.assertFalse(created)
 
+class GroupClusterTest(BaseVcwebTest):
+    def test_group_cluster(self):
+        pass
+
 class GroupTest(BaseVcwebTest):
     def test_set_data_value_activity_log(self):
         e = self.advance_to_data_round()

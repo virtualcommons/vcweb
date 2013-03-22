@@ -670,25 +670,26 @@ class Experiment(models.Model):
         parameter_set = self.experiment_metadata.parameter_set
         return parameter_set.filter(scope=scope) if scope else parameter_set
 
-    def add_participant(self, participant, current_group=None):
+    def add_participant(self, participant, current_group=None, max_group_size=None):
         # FIXME: simplify logic where possible
         if participant not in self.participant_set.all():
             logger.warning("participant %s not a member of this experiment %s, adding them", participant, self)
             ParticipantExperimentRelationship.objects.create(participant=participant, experiment=self,
                     created_by=participant.user)
         pgrs = ParticipantGroupRelationship.objects.filter(group__experiment=self, participant=participant)
-        # FIXME: full strictness should be pgrs.count() == 0
-        if pgrs.count() > 0:
-            # return this ParticipantGroupRelationship if this participant is already a member of a group in this experiment.
-            return pgrs.all()[0]
-
         if current_group is None:
             if self.group_set.count() == 0:
                 # create a new group
-                current_group = self.group_set.create(number=1, max_size=self.experiment_configuration.max_group_size)
+                current_group = self.group_set.create(number=0, max_size=max_group_size)
             else:
                 # pick the last group in group_set
                 current_group = self.group_set.reverse()[0]
+        if pgrs.count() > 0:
+            # ensure that any existing group that this participant is in has a different session id from this group
+            for pgr in pgrs:
+                if pgr.group.session_id == current_group.session_id:
+                    logger.error("Participant %s is already in a group %s with the same session id, not adding them to %s", participant, pgr.group, current_group)
+                    return pgr
         return current_group.add_participant(participant)
 
     def allocate_groups(self, randomize=True, preserve_existing_groups=False, session_id=None):
@@ -718,18 +719,17 @@ class Experiment(models.Model):
                 gqs.delete()
         # seed the initial group.
         current_group = self.group_set.create(number=self.group_set.count(), max_size=max_group_size, session_id=session_id)
-        logger.debug("created initial group %s", current_group)
         for p in participants:
-            pgr = self.add_participant(p, current_group)
+            pgr = self.add_participant(p, current_group, max_group_size)
             current_group = pgr.group
         self.create_group_clusters()
 
-    def create_group_cluster(self):
+    def create_group_clusters(self):
         round_configuration = self.current_round
         session_id = round_configuration.session_id
         if round_configuration.create_group_clusters:
             group_cluster_size = round_configuration.group_cluster_size
-            groups = list(self.group_set.all())
+            groups = list(self.group_set.filter(session_id=session_id))
             if len(groups) % group_cluster_size != 0:
                 logger.error("trying to create clusters of size %s but we have %s groups which isn't evenly divisible - aborting.",
                         group_cluster_size, len(groups))
