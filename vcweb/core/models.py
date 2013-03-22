@@ -735,11 +735,11 @@ class Experiment(models.Model):
                         group_cluster_size, len(groups))
                 return
             random.shuffle(groups)
-            g = GroupCluster.objects.create(session_id=session_id, experiment=self)
+            gc = GroupCluster.objects.create(session_id=session_id, experiment=self)
             for group in groups:
-                if g.group_set.count() == group_cluster_size:
-                    g = GroupCluster.objects.create(session_id=session_id, experiment=self)
-                g.group_set.add(group)
+                if gc.group_relationship_set.count() == group_cluster_size:
+                    gc = GroupCluster.objects.create(session_id=session_id, experiment=self)
+                gc.add(group)
 
     def get_round_configuration(self, sequence_number):
         return RoundConfiguration.objects.get(experiment_configuration__experiment=self, sequence_number=sequence_number)
@@ -1538,6 +1538,9 @@ class GroupCluster(models.Model):
     session_id = models.CharField(max_length=64, null=True, blank=True)
     experiment = models.ForeignKey(Experiment)
 
+    def add(self, group):
+        return GroupRelationship.objects.create(cluster=self, group=group)
+
     def __unicode__(self):
         return u"group cluster %s (%s)" % (self.name, self.experiment)
 
@@ -1546,7 +1549,7 @@ class GroupCluster(models.Model):
 
 class GroupRelationship(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
-    cluster = models.ForeignKey(GroupCluster, related_name='group_set')
+    cluster = models.ForeignKey(GroupCluster, related_name='group_relationship_set')
     group = models.ForeignKey(Group)
 
     def __unicode__(self):
