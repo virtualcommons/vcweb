@@ -8,7 +8,6 @@ from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_d
         set_group_harvest, set_regrowth)
 
 import logging
-
 logger = logging.getLogger(__name__)
 
 # FIXME: hacky, should figure out a better way to bind this module with the ExperimentMetadata instance that it is

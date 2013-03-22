@@ -7,7 +7,8 @@ from vcweb.core.http import JsonResponse
 from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
         ParticipantExperimentRelationship, RoundConfiguration, ChatMessage, ParticipantRoundDataValue)
 
-from vcweb.broker.models import get_max_harvest_hours, get_harvest_decision_parameter, get_conservation_hours_parameter
+from vcweb.broker.models import (get_max_harvest_hours, get_harvest_decision_parameter,
+        get_conservation_decision_parameter, set_harvest_decision, set_conservation_decision)
 
 import random
 
@@ -25,13 +26,9 @@ def submit_decision(request, experiment_id=None):
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         harvest_hours = form.cleaned_data['integer_decision']
         conservation_hours = get_max_harvest_hours(experiment) - harvest_hours
-        round_data = experiment.get_round_data()
-        ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, int_value=harvest_hours,
-                round_data=round_data, parameter=get_harvest_decision_parameter())
-        pgr.participant_data_value_set.create(int_value=conservation_hours, round_data=round_data,
-                parameter=get_conservation_hours_parameter())
-        # set harvest decision for participant
-        # FIXME: inconsistency, GET returns HTML and POST return JSON..
+        round_data = experiment.current_round_data
+        set_harvest_decision(pgr, harvest_hours, round_data=round_data)
+        set_conservation_decision(pgr, conservation_hours, round_data=round_data)
         return JsonResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr)}))
     for field in form:
         if field.errors:
