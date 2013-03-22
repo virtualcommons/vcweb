@@ -700,6 +700,7 @@ class Experiment(models.Model):
         participants = list(self.participant_set.all())
         if randomize:
             random.shuffle(participants)
+
         if gs.count() > 0:
             if preserve_existing_groups:
                 # verify incoming session id is an actual value
@@ -721,6 +722,24 @@ class Experiment(models.Model):
         for p in participants:
             pgr = self.add_participant(p, current_group)
             current_group = pgr.group
+        self.create_group_clusters()
+
+    def create_group_cluster(self):
+        round_configuration = self.current_round
+        session_id = round_configuration.session_id
+        if round_configuration.create_group_clusters:
+            group_cluster_size = round_configuration.group_cluster_size
+            groups = list(self.group_set.all())
+            if len(groups) % group_cluster_size != 0:
+                logger.error("trying to create clusters of size %s but we have %s groups which isn't evenly divisible - aborting.",
+                        group_cluster_size, len(groups))
+                return
+            random.shuffle(groups)
+            g = GroupCluster.objects.create(session_id=session_id, experiment=self)
+            for group in groups:
+                if g.group_set.count() == group_cluster_size:
+                    g = GroupCluster.objects.create(session_id=session_id, experiment=self)
+                g.group_set.add(group)
 
     def get_round_configuration(self, sequence_number):
         return RoundConfiguration.objects.get(experiment_configuration__experiment=self, sequence_number=sequence_number)
@@ -1520,6 +1539,7 @@ class GroupCluster(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
     name = models.CharField(max_length=64, null=True, blank=True)
     session_id = models.CharField(max_length=64, null=True, blank=True)
+    max_size = models.PositiveIntegerField(default=0)
     experiment = models.ForeignKey(Experiment)
 
     def __unicode__(self):
