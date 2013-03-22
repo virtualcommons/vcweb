@@ -5,7 +5,7 @@ from vcweb.core import dumps
 from vcweb.core.forms import ParticipantGroupIdForm, SingleIntegerDecisionForm
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
-        ParticipantExperimentRelationship, ChatMessage, ParticipantRoundDataValue)
+        ParticipantExperimentRelationship, RoundConfiguration, ChatMessage, ParticipantRoundDataValue)
 
 from vcweb.broker.models import get_max_harvest_hours, get_harvest_decision_parameter, get_conservation_hours_parameter
 
@@ -47,6 +47,7 @@ def participate(request, experiment_id=None):
 
     return render(request, 'broker/participate.html', {
         'experiment': experiment,
+        'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
         'participant_group_relationship': participant_group_relationship,
         'experimentModelJson': get_view_model_json(experiment, participant_group_relationship),
         })
@@ -76,7 +77,9 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['networkStructure'] = 10
     practice_round = round_configuration.is_practice_round
     experiment_model_dict['practiceRound'] = practice_round
-
+    experiment_model_dict['templateName'] = round_configuration.round_type
+    if practice_round:
+        experiment_model_dict['templateName'] = RoundConfiguration.RoundType.REGULAR
     if practice_round and round_configuration.sequence_number == 3:
         experiment_model_dict['isFirstPracticeRound'] = True
         experiment_model_dict['isSecondPracticeRound'] = False

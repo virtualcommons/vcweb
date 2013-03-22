@@ -369,12 +369,13 @@
                             <td>
                                 <div>
                                         <div class='control-group'>
-                                            <div class='controls'>
-                                                <input id='participantGroupId' type='hidden' name='participant_group_id'/>
+                                            <div class='controls input-append'>
+                                                <input id='participantGroupId' type='hidden' name='participant_group_id' value="{{ participant_group_relationship.pk }}"/>
                                                 <input id='harvestDecisionId' type="number" size="1" maxlength="1"
-                                                       name='harvest_decision'
-                                                       class='required' min="0"
+                                                       name='integer_decision'
+                                                       class='required input-mini' min="0"
                                                        data-bind="value: harvestDecision, attr: { max: maxHarvestDecision }"/>
+                                                <span class='add-on'>hrs</span>
 
                                                 <button id='submitDecision' data-bind='click: submitDecision'
                                                         type='submit' class='btn'>
@@ -390,10 +391,11 @@
                             <td>
                                 <div>
 
-                                        <div class='controls'>
+                                        <div class='input-append'>
                                           <input id='conservationDecision' type="number" size="1" maxlength="1"
-                                                   name='conservation_decision' class='disabled' min="0"
+                                                   name='conservation_decision' class='input-mini disabled' disabled min="0"
                                                    data-bind="value: conservationDecision"/>
+                                            <span class='add-on'>hrs</span>
                                         </div>
 
 
@@ -469,6 +471,7 @@
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
 
+
             model.isTimeOut = ko.observable(0)
             model.hasSubmit = ko.observable(0)
             model.secondsLeft = ko.observable(0);
@@ -513,7 +516,6 @@
                             }
                         });
             };
-            model.templateName = ko.observable("WELCOME");
             // activate instructions click bindings
             model.activateInstructionsPageOne = function () {
                 model.templateName('GENERAL_INSTRUCTIONS');
@@ -540,19 +542,17 @@
             model.networkStructure = ko.observable("{{STATIC_URL}}images/broker/SES.jpg");
             model.networkStructureImageWidth = ko.observable("600px");
             model.networkStructureImageHeight = ko.observable("80px");
-            model.finishedInstructions = function () {
-                {% comment %}console.debug("instructions were finished, notifying experimenter");
+            model.participantReady = function () {
                 $.post('/experiment/participant-ready', { participant_group_id: {{ participant_group_relationship.pk }} }, function (response) {
                     console.debug("successfully posted to server, notifying sockjs: " + response);
-                    getWebSocket().send(createMessageEvent("Instructions completed", "client_ready"));{% endcomment %}
-                model.templateName("PRACTICE");
-
-            }
+                    getWebSocket().send(createMessageEvent("Participant ready", "client_ready"));
+                });
+            };
             model.chatEnabled = ko.observable(false);  // round configurations
             model.chatOptionEnabled = ko.observable(false); // round configurations
             model.harvestDecision = ko.observable(0);
             model.conservationDecision = ko.computed(function () {
-                return model.conservationDecision == model.maxHarvestDecision() - model.harvestDecision();
+                return model.maxHarvestDecision() - model.harvestDecision();
             });
 //             model.numberOfTreesPerRow = ko.observable(10);
 //             model.isResourceEmpty = ko.computed(function() {
@@ -603,21 +603,20 @@
                                 },
                                 1000));
             };
-            //            model.submitDecision = function(data, evt) {
-//                 if (evt) {
-//                     evt.preventDefault();
-//                 }
-//                 var formData = $('#vcweb-form').serialize();
-//                 $.post('submit-harvest-decision', formData, function(jsonString) {
-//                     console.log(jsonString);
-//                     // FIXME: should probably update the entire model after we remove the test panel
-//                     // update(data.experimentModelJson);
-//                     // ko.mapping.fromJSON(data.experimentModelJson, model);
-//                     model.secondsLeft(0);
-//                     model.hasSubmit(true);
-//                     model.clearCurrentInterval();
-//                 });
-//             }
+            model.submitDecision = function(data, evt) {
+                 var formData = $('#vcweb-form').serialize();
+                 $.post('submit-decision', formData, function(response) {
+                     console.log(response);
+                     if (response.success) {
+                         console.debug("updating view model");
+                         ko.mapping.fromJSON(response.experimentModelJson, model);
+                         getWebSocket().send()
+                     }
+                     // model.secondsLeft(0);
+                     // model.hasSubmit(true);
+                     // model.clearCurrentInterval();
+                 });
+             };
 //             model.submitChatMessage = function(data, evt) {
 //                 evt.preventDefault();
 //                 console.log("clicking chat message");
@@ -654,6 +653,7 @@
         function initialize(experimentModelJson) {
             var experimentModel = new ExperimentModel(experimentModelJson);
             ko.applyBindings(experimentModel);
+            console.debug("CURRENT TEMPLATE: " + experimentModel.templateName());
             var s = connect();
             s.onmessage = function (json) {
                 console.debug(json);
@@ -664,7 +664,7 @@
                         experimentModel.chatMessages.unshift(data);
                         console.debug("received chat message:" + json);
                         break;
-                    case 'update_view_model':
+                    case 'update':
                         console.debug("updating view model");
                         experimentModel.update();
                         break;
@@ -784,6 +784,7 @@
 
         var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
         initialize(experimentModelJson);
+
     });
     </script>
 {% endblock %}
