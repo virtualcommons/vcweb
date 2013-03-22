@@ -202,7 +202,7 @@
                 confirmAction(element, function(confirmed, action) {
                     $('#progress-modal').modal('show');
                     Dajaxice.vcweb.core.experiment_controller(function(data) {
-                        ko.mapping.fromJS(data, experimentModel);
+                        ko.mapping.fromJS(data, model);
                         if (updateParticipants) {
                             sendUpdateEvent();
                         }
