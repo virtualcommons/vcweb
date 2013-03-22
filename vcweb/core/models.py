@@ -1536,7 +1536,6 @@ class GroupCluster(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
     name = models.CharField(max_length=64, null=True, blank=True)
     session_id = models.CharField(max_length=64, null=True, blank=True)
-    max_size = models.PositiveIntegerField(default=0)
     experiment = models.ForeignKey(Experiment)
 
     def __unicode__(self):
