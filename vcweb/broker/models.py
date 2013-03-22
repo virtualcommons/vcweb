@@ -1,8 +1,8 @@
 from django.db import models
 from django.dispatch import receiver
 from vcweb.core import signals, simplecache
-from vcweb.core.models import Parameter, ParticipantRoundDataValue
-from vcweb.forestry.models import get_harvest_decision_parameter, set_harvest_decision
+from vcweb.core.models import (Parameter, ParticipantRoundDataValue, GroupCluster)
+from vcweb.forestry.models import get_harvest_decision_parameter, set_harvest_decision, get_harvest_decision
 
 import logging
 logger = logging.getLogger(__name__)
@@ -39,6 +39,10 @@ def get_group_cluster_bonus_threshold_parameter():
 def get_group_local_bonus_threshold_parameter():
     return Parameter.objects.get(name='group_local_bonus_threshold')
 
+def get_conservation_decision(participant_group_relationship, round_data=None):
+    return participant_group_relationship.get_data_value(parameter=get_conservation_decision_parameter(),
+            round_data=round_data, default=0).int_value
+
 def set_conservation_decision(participant_group_relationship, value, round_data=None):
     if round_data is None:
         round_data = participant_group_relationship.current_round_data
@@ -47,6 +51,12 @@ def set_conservation_decision(participant_group_relationship, value, round_data=
             round_data=round_data)
     prdv.int_value = value
     prdv.save()
+
+def get_group_local_bonus_threshold(round_configuration):
+    return round_configuration.get_parameter_value(parameter=get_group_local_bonus_parameter(), default=5).int_value
+
+def get_group_cluster_bonus_threshold(round_configuration):
+    return round_configuration.get_parameter_value(parameter=get_group_cluster_bonus_parameter(), default=22).int_value
 
 @receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
 def round_started_handler(sender, experiment=None, **kwargs):
@@ -70,3 +80,22 @@ def round_ended_handler(sender, experiment=None, **kwargs):
     '''
     current_round_configuration = experiment.current_round
     logger.debug("ending boundaries round: %s", current_round_configuration)
+    round_data = experiment.current_round_data
+    if current_round_configuration.is_playable_round:
+        local_threshold = get_group_local_bonus_threshold(current_round_configuration)
+        group_cluster_threshold = get_group_cluster_bonus_threshold(current_round_configuration)
+        for group_cluster in GroupCluster.objects.for_experiment(experiment):
+            group_cluster_conservation_hours = 0
+            for group_relationship in group_cluster.group_relationship_set.all():
+                group_conservation_hours = 0
+                group = group_relationship.group
+                for pgr in group.participant_group_relationship_set.all():
+                    conservation_hours = get_conservation_decision(pgr, round_data=round_data)
+                    group_conservation_hours += conservation_hours
+                # calculate local group conservation bonus
+                local_bonus = calculate_group_local_bonus(group_conservation_hours, local_threshold)
+                group.set_data_value(parameter=get_group_local_bonus_parameter(), value=local_bonus)
+                group_cluster_conservation_hours += group_conservation_hours
+            group_cluster_bonus = calculate_group_cluster_bonus(group_cluster_conservation_hours,
+                    group_cluster_threshold)
+            group_cluster.set_data_value(parameter=get_group_cluster_bonus_parameter(), value=group_cluster_bonus)

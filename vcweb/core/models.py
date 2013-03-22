@@ -1532,14 +1532,30 @@ class Group(models.Model):
     class Meta:
         ordering = ['experiment', 'number']
 
+class GroupClusterQuerySet(models.query.QuerySet):
+    def for_experiment(self, experiment, **kwargs):
+        return self.prefetch_related('group_relationship_set').filter(experiment=experiment, **kwargs)
+
 class GroupCluster(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
     name = models.CharField(max_length=64, null=True, blank=True)
     session_id = models.CharField(max_length=64, null=True, blank=True)
     experiment = models.ForeignKey(Experiment)
 
+    objects = PassThroughManager.for_queryset_class(GroupClusterQuerySet)()
+
     def add(self, group):
         return GroupRelationship.objects.create(cluster=self, group=group)
+
+    def set_data_value(self, parameter=None, value=None, round_data=None):
+        if parameter is None or value is None:
+            raise ValueError("need a parameter and value to set")
+        if round_data is None:
+            round_data = self.experiment.current_round_data
+# FIXME: this should follow the get / set style of the other setters, but we're not initializing cluster data values yet
+        return GroupClusterDataValue.objects.create(group_cluster=self,
+                round_data=round_data, value=value, parameter=parameter)
+
 
     def __unicode__(self):
         return u"group cluster %s (%s)" % (self.name, self.experiment)

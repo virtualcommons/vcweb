@@ -8,7 +8,8 @@ from vcweb.core.models import (is_participant, is_experimenter, Experiment, Part
         ParticipantExperimentRelationship, RoundConfiguration, ChatMessage, ParticipantRoundDataValue)
 
 from vcweb.broker.models import (get_max_harvest_hours, get_harvest_decision_parameter,
-        get_conservation_decision_parameter, set_harvest_decision, set_conservation_decision)
+        get_conservation_decision_parameter, set_harvest_decision, set_conservation_decision, get_harvest_decision,
+        get_conservation_decision)
 
 import random
 
@@ -60,6 +61,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     group = participant_group_relationship.group
     experiment_configuration = experiment.experiment_configuration
     round_configuration = experiment.current_round
+    previous_round_data = experiment.get_round_data(round_configuration=experiment.previous_round)
     round_data = experiment.current_round_data
 
 # experiment configuration data
@@ -97,7 +99,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['globalThreshold'] = group.get_data_value(parameter_name='group_cluster_bonus_threshold', round_data=round_data, default=22).int_value
 
     # data from the last round
-    experiment_model_dict['lastRoundHarvestDecision'] = 5
+    experiment_model_dict['lastRoundHarvestDecision'] = get_harvest_decision(participant_group_relationship, round_data=previous_round_data)
+    experiment_model_dict['lastRoundConservationDecision'] = get_conservation_decision(participant_group_relationship, round_data=previous_round_data)
     experiment_model_dict['lastRoundMyGroupConservation'] = 10
     experiment_model_dict['lastRoundGlobalConservation'] = 10
     experiment_model_dict['lastRoundGroupLocalBonus'] = 10
