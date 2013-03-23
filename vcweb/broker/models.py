@@ -68,7 +68,8 @@ def round_started_handler(sender, experiment=None, **kwargs):
     # initialize group and participant data values
     if round_configuration.is_playable_round:
         experiment.initialize_data_values(
-                group_parameters=(get_group_local_bonus_parameter(), get_group_cluster_bonus_parameter()),
+                group_cluster_parameters=(get_group_cluster_bonus_parameter(),),
+                group_parameters=(get_group_local_bonus_parameter(),),
                 participant_parameters=[get_harvest_decision_parameter(), get_conservation_decision_parameter(), get_participant_link_parameter()]
                 )
 

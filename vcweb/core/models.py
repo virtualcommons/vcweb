@@ -633,14 +633,24 @@ class Experiment(models.Model):
             users.append(user)
         self.register_participants(users=users, institution=institution, password=password)
 
-    def initialize_data_values(self, group_parameters=None, participant_parameters=None, round_data=None):
+# FIXME: figure out how to declaratively do this so experiments can more easily notify "I have these data values to
+# initialize at the start of each round.
+    def initialize_data_values(self, group_parameters=None, participant_parameters=None, group_cluster_parameters=None, round_data=None):
         logger.debug("initializing [participant params: %s]  [group parameters: %s] ", participant_parameters, group_parameters)
         if group_parameters is None:
             group_parameters = self.parameters(scope=Parameter.Scope.GROUP)
         if participant_parameters is None:
             participant_parameters = self.parameters(scope=Parameter.Scope.PARTICIPANT)
+        if group_cluster_parameters is None:
+            group_cluster_parameters = self.parameters(scope=Parameter.Scope.GROUP_CLUSTER_ROUND)
         if round_data is None:
             round_data = self.current_round_data
+
+# create group cluster parameter data values
+        for group_cluster in self.group_cluster_set.all():
+            for parameter in group_cluster_parameters:
+                gcdv, created = GroupClusterDataValue.objects.get_or_create(round_data=round_data, parameter=parameter, cluster=group_cluster)
+
         for group in self.group_set.select_related('parameter').all():
             for parameter in group_parameters:
                 group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter)
@@ -1547,15 +1557,21 @@ class GroupCluster(models.Model):
     def add(self, group):
         return GroupRelationship.objects.create(cluster=self, group=group)
 
+    def get_data_value(self, parameter=None, round_data=None):
+        if parameter is None:
+            raise ValueError("cannot get a data value without a parameter")
+        if round_data is None:
+            round_data = self.experiment.current_round_data
+        return GroupClusterDataValue.objects.get(group_cluster=self, round_data=round_data, parameter=parameter)
+
     def set_data_value(self, parameter=None, value=None, round_data=None):
         if parameter is None or value is None:
             raise ValueError("need a parameter and value to set")
         if round_data is None:
             round_data = self.experiment.current_round_data
-# FIXME: this should follow the get / set style of the other setters, but we're not initializing cluster data values yet
-        return GroupClusterDataValue.objects.create(group_cluster=self,
-                round_data=round_data, value=value, parameter=parameter)
-
+        gcdv = GroupClusterDataValue.objects.get(group_cluster=self, round_data=round_data, parameter=parameter)
+        gcdv.value = value
+        gcdv.save()
 
     def __unicode__(self):
         return u"group cluster %s (%s)" % (self.name, self.experiment)
