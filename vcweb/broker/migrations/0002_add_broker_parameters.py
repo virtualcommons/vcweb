@@ -26,13 +26,13 @@ class Migration(DataMigration):
                 creator=experimenter)
         Parameter.objects.create(
                 name='group_local_bonus',
-                scope='group_round',
+                scope='group',
                 type='int',
                 description='Local group bonus based on summed group conservation',
                 creator=experimenter)
         Parameter.objects.create(
                 name='group_cluster_bonus',
-                scope='group_cluster_round',
+                scope='group_cluster',
                 type='int',
                 description='Group cluster bonus based on summed group cluster conservation',
                 creator=experimenter)

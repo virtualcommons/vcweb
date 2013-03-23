@@ -61,6 +61,13 @@ def get_player_status_dv(participant_group_relationship_id):
 
 ''' value accessors '''
 
+def get_shared_resource_level(group, round_data=None):
+    if round_data is None:
+        round_data = group.current_round_data
+    group_relationship = GroupRelationship.objects.select_related('group_cluster').get(group=group)
+    cluster = group_relationship.cluster
+    return cluster.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data).int_value
+
 def get_initial_resource_level(round_configuration, default=MAX_RESOURCE_LEVEL):
     return forestry_initial_resource_level(round_configuration, default)
 
@@ -129,7 +136,7 @@ def round_ended_handler(sender, experiment=None, **kwargs):
     '''
     current_round_configuration = experiment.current_round
     logger.debug("ending boundaries round: %s", current_round_configuration)
-# FIXME: should really read max resource level from the experiment / round configuration instead
+# FIXME: should read max resource level from the experiment / round configuration instead
     max_resource_level = MAX_RESOURCE_LEVEL
     for group in experiment.group_set.all():
         logger.debug("group %s has resource level", group)

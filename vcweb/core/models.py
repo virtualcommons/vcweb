@@ -642,7 +642,7 @@ class Experiment(models.Model):
         if participant_parameters is None:
             participant_parameters = self.parameters(scope=Parameter.Scope.PARTICIPANT)
         if group_cluster_parameters is None:
-            group_cluster_parameters = self.parameters(scope=Parameter.Scope.GROUP_CLUSTER_ROUND)
+            group_cluster_parameters = self.parameters(scope=Parameter.Scope.GROUP_CLUSTER)
         if round_data is None:
             round_data = self.current_round_data
 
@@ -1116,32 +1116,33 @@ class ParameterQuerySet(models.query.QuerySet):
     def for_group(self, **kwargs):
         return self.get(scope=Parameter.Scope.GROUP, **kwargs)
 
-    def for_group_round(self, **kwargs):
-        return self.get(scope=Parameter.Scope.GROUP_ROUND, **kwargs)
-
     def for_round(self, **kwargs):
         return self.get(scope=Parameter.Scope.ROUND, **kwargs)
 
     def for_experiment(self, **kwargs):
         return self.get(scope=Parameter.Scope.EXPERIMENT, **kwargs)
 
+    def for_group_cluster(self, **kwargs):
+        return self.get(scope=Parameter.Scope.GROUP_CLUSTER, **kwargs)
+
 class ParameterPassThroughManager(PassThroughManager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
 
 class Parameter(models.Model):
-    ParameterType = Choices(('int', 'Integer value'),
+    ParameterType = Choices(
+            ('int', 'Integer value'),
             ('string', 'String value'),
             ('foreignkey', 'Foreign key'),
             ('float', 'Floating-point number'),
             ('boolean', 'Boolean value (true/false)'),
             ('enum', 'Enumeration'))
-    Scope = Choices(('round', 'ROUND', 'Parameter applies to the entire round across all groups'),
-            ('experiment', 'EXPERIMENT', 'Parameter applies to the entire experiment across all groups and rounds'),
-            ('group', 'GROUP', 'Parameter applies to a group for the duration of the experiment'),
-            ('group_round', 'GROUP_ROUND', 'Parameter applies to a group for a given round'),
-            ('group_cluster_round', 'GROUP_CLUSTER_ROUND', 'Parameter applies to a group cluster for a given round'),
-            ('participant', 'PARTICIPANT', 'Parameter applies for a single participant for a given round'))
+    Scope = Choices(
+            ('round', 'ROUND', 'Round configuration parameter applies across all groups for a given round'),
+            ('experiment', 'EXPERIMENT', 'Experiment configuration parameter applies to the entire experiment across all groups and rounds'),
+            ('group', 'GROUP', 'Parameter applies to a group for a given round'),
+            ('group_cluster', 'GROUP_CLUSTER', 'Group cluster data parameter applies to a single group cluster for a given round'),
+            ('participant', 'PARTICIPANT', 'Participant data parameter applies for a single participant for a given round'))
     # FIXME: arcane, see if we can encapsulate this better.  used to provide sane default values for each parameter type
     # when the parameter is null
     NONE_VALUES_DICT = dict(map(lambda x,y: (x[0], y), ParameterType, [0, '', -1, 0.0, False, None]))
