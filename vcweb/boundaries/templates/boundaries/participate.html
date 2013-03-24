@@ -194,7 +194,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
 <a href='javascript:void();' data-bind='click: activateInstructionsPageThree'>Back</a>
 </li>
 <li class='next'>
-<a href='javascript: void();' data-bind='click: finishedInstructions'>I have fully read and understand these instructions</a>
+<a href='javascript: void();' data-bind='click: participantReady'>I have fully read and understand these instructions</a>
 </li>
 </ul>
 </script>
@@ -386,11 +386,12 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             model.activateTreatmentInstructions = function() {
                 model.templateName("TREATMENT_INSTRUCTIONS");
             }
-            model.finishedInstructions = function() {
-                console.debug("instructions were finished, notifying experimenter");
+            model.participantReady = function() {
                 $.post('/experiment/participant-ready', { participant_group_id: {{ participant_group_relationship.pk }} }, function(response) {
-                    console.debug("successfully posted to server, notifying sockjs: " + response);
-                    getWebSocket().send(createMessageEvent("Instructions completed", "client_ready"));
+                    console.debug("successfully posted to server, notifying sockjs");
+                    console.debug(response);
+                    getWebSocket().send(createMessageEvent("Participant finished reading instructions", "client_ready"));
+                    model.readyParticipants(response.number_of_ready_participants);
                     model.activateWaitingRoomPage();
                 });
             }
@@ -500,6 +501,13 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                     case 'update':
                         $('#progress-modal').modal('show');
                         experimentModel.update();
+                        break;
+                    case 'participant_ready':
+                        $.get('/experiment/{{experiment.pk}}/ready-participants', function(response) {
+                                console.debug("ready participants response");
+                                console.debug(response)
+                                experimentModel.readyParticipants(response.number_of_ready_participants);
+                        });
                         break;
                     default:
                         console.debug("unhandled json message:" + json);

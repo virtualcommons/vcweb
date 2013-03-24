@@ -1432,7 +1432,7 @@ class Group(models.Model):
         return round_configuration_value
 
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None, default=None):
-        ''' returns a tuple of (scalar data value, entity DataValue).  if no entity data value exists, returns (default value, None) '''
+        # FIXME: factor out the duplication in all the get_data_value methods
         if round_data is None:
             round_data = self.current_round_data
         criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
@@ -1558,12 +1558,18 @@ class GroupCluster(models.Model):
     def add(self, group):
         return GroupRelationship.objects.create(cluster=self, group=group)
 
-    def get_data_value(self, parameter=None, round_data=None):
+    def get_data_value(self, parameter=None, round_data=None, default=None):
+        # FIXME: factor out the duplication in all the get_data_value methods
         if parameter is None:
             raise ValueError("cannot get a data value without a parameter")
         if round_data is None:
             round_data = self.experiment.current_round_data
-        return GroupClusterDataValue.objects.get(group_cluster=self, round_data=round_data, parameter=parameter)
+        try:
+            return GroupClusterDataValue.objects.get(group_cluster=self, round_data=round_data, parameter=parameter)
+        except GroupClusterDataValue.DoesNotExist as e:
+            if default is None:
+                raise e
+            return DefaultValue(default)
 
     def set_data_value(self, parameter=None, value=None, round_data=None):
         if parameter is None or value is None:
@@ -1785,6 +1791,7 @@ class ParticipantGroupRelationship(models.Model):
         return self.group.get_round_configuration_value(**kwargs)
 
     def get_data_value(self, parameter=None, round_data=None, default=None):
+        # FIXME: factor out the duplication in all the get_data_value methods
         if round_data is None:
             round_data = self.current_round_data
         try:

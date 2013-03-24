@@ -532,16 +532,25 @@ def api_logger(request, participant_group_id=None):
 @participant_required
 def participant_ready(request):
     form = ParticipantGroupIdForm(request.POST or None)
-    valid_form = form.is_valid()
-    if valid_form:
+    if form.is_valid():
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group__experiment'), pk=form.cleaned_data['participant_group_id'])
         experiment = pgr.group.experiment
+        round_data = experiment.current_round_data
         prdv = ParticipantRoundDataValue.objects.get(participant_group_relationship=pgr,
-                round_data=experiment.get_round_data(), parameter=get_participant_ready_parameter())
+                round_data=round_data, parameter=get_participant_ready_parameter())
         prdv.submitted = True
         prdv.boolean_value = True
         prdv.save()
-    return JsonResponse(dumps({'success': valid_form}))
+        n = ParticipantRoundDataValue.objects.filter(round_data=round_data, parameter=get_participant_ready_parameter()).count()
+        return JsonResponse(dumps({'success': True, 'number_of_ready_participants': n}))
+    return JsonResponse(dumps({'success': False}))
+
+@participant_required
+def number_of_ready_participants(request, pk=None):
+    experiment = get_object_or_404(Experiment, pk=pk)
+    n = ParticipantRoundDataValue.objects.filter(round_data=experiment.current_round_data,
+            parameter=get_participant_ready_parameter(), boolean_value=True).count()
+    return JsonResponse(dumps({'success': True, 'number_of_ready_participants': n}))
 
 def handler500(request):
     return render(request, '500.html')

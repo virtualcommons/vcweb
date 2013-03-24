@@ -114,7 +114,6 @@ def round_started_handler(sender, experiment=None, **kwargs):
                 group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
                 participant_parameters=[get_harvest_decision_parameter(), get_storage_parameter(), get_player_status_parameter()]
                 )
-
     '''
     during a practice or regular round, set up resource levels, participant harvest decision parameters, and group
     formation

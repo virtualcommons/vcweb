@@ -185,14 +185,14 @@ class ConnectionManager(object):
     experimenter functions
     '''
     def send_refresh(self, experimenter, experiment):
-        return self.broadcast(experimenter, experiment, REFRESH_EVENT)
+        return self.broadcast(experiment, REFRESH_EVENT, experimenter)
 
     def send_update_event(self, experimenter, experiment):
-        return self.broadcast(experimenter, experiment, UPDATE_EVENT)
+        return self.broadcast(experiment, UPDATE_EVENT, experimenter)
 
     def send_goto(self, experimenter, experiment, url):
         message = json.dumps({'event_type': 'goto', 'url': url})
-        return self.broadcast(experimenter, experiment, message)
+        return self.broadcast(experiment, message, experimenter)
 
     def send_to_experimenter(self, json, experiment_id=None, experimenter_id=None, experiment=None):
         if experimenter_id is None and experiment_id is None:
@@ -208,7 +208,12 @@ class ConnectionManager(object):
             logger.debug("no experimenter found with pk %s in experimenters set %s", experimenter_tuple,
                     self.experimenter_to_connection)
 
-    def broadcast(self, experimenter, experiment, message):
+    def broadcast(self, experiment=None, message=None, experimenter=None):
+        if experimenter is None:
+            experimenter = experiment.experimenter
+        if message is None:
+            logger.error("Tried to broadcast an empty message to %s", experiment)
+            raise ValueError("Cannot broadcast an empty message to %s" % experiment)
         participant_connections = []
         for (participant_group_id, connection) in self.all_participants(experimenter, experiment):
             participant_connections.append(participant_group_id)
@@ -279,8 +284,7 @@ class ParticipantConnection(BaseConnection):
         logger.debug("handling client ready event %s for experiment %s", event, experiment)
         (per, valid) = self.verify_auth_token(event)
         if valid:
-            connection_manager.send_to_experimenter(create_message_event("Participant %s is ready." % per.participant),
-                    experiment=experiment)
+            connection_manager.broadcast(experiment, create_message_event("Participant %s is ready." % per.participant, event_type='participant_ready'))
         else:
             logger.warning("Invalid auth token for participant %s", per)
             self.send(UNAUTHORIZED_EVENT)
