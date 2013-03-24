@@ -541,16 +541,13 @@ def participant_ready(request):
         prdv.submitted = True
         prdv.boolean_value = True
         prdv.save()
-        n = ParticipantRoundDataValue.objects.filter(round_data=round_data, parameter=get_participant_ready_parameter()).count()
-        return JsonResponse(dumps({'success': True, 'number_of_ready_participants': n}))
+        return JsonResponse(dumps({'success': True, 'number_of_ready_participants': experiment.number_of_ready_participants}))
     return JsonResponse(dumps({'success': False}))
 
 @participant_required
-def number_of_ready_participants(request, pk=None):
+def get_number_of_ready_participants(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
-    n = ParticipantRoundDataValue.objects.filter(round_data=experiment.current_round_data,
-            parameter=get_participant_ready_parameter(), boolean_value=True).count()
-    return JsonResponse(dumps({'success': True, 'number_of_ready_participants': n}))
+    return JsonResponse(dumps({'success': True, 'number_of_ready_participants': experiment.number_of_ready_participants}))
 
 def handler500(request):
     return render(request, '500.html')

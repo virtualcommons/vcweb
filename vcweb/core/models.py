@@ -515,7 +515,7 @@ class Experiment(models.Model):
         return self.current_round.instructions
 
     @property
-    def ready_participants(self):
+    def number_of_ready_participants(self):
         return ParticipantRoundDataValue.objects.filter(parameter=get_participant_ready_parameter(), round_data=self.current_round_data, boolean_value=True).count()
 
     @property
@@ -1551,7 +1551,7 @@ class GroupCluster(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
     name = models.CharField(max_length=64, null=True, blank=True)
     session_id = models.CharField(max_length=64, null=True, blank=True)
-    experiment = models.ForeignKey(Experiment)
+    experiment = models.ForeignKey(Experiment, related_name='group_cluster_set')
 
     objects = PassThroughManager.for_queryset_class(GroupClusterQuerySet)()
 
@@ -2040,7 +2040,6 @@ def get_like_parameter():
 @simplecache
 def get_participant_ready_parameter():
     return Parameter.objects.get(name='participant_ready', scope=Parameter.Scope.PARTICIPANT)
-
 
 
 def is_experimenter(user, experimenter=None):
