@@ -4,7 +4,7 @@ from vcweb.core.models import ExperimentMetadata, Parameter, ParticipantRoundDat
 from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_regrowth_rate,
         get_group_harvest_parameter, get_reset_resource_level_parameter, get_resource_level,
         get_initial_resource_level as forestry_initial_resource_level, set_resource_level, get_regrowth_parameter,
-        get_resource_level_parameter, has_resource_level, get_resource_level_dv, get_harvest_decisions,
+        get_resource_level_parameter, has_resource_level, get_resource_level_dv as get_forestry_resource_level_dv, get_harvest_decisions,
         set_group_harvest, set_regrowth)
 
 import logging
@@ -48,8 +48,10 @@ def get_observe_other_group_parameter():
     return Parameter.objects.for_round(name='observe_other_group')
 
 @simplecache
-def get_shared_resource_parameter():
+def get_shared_resource_enabled_parameter():
     return Parameter.objects.for_round(name='shared_resource')
+
+''' value accessors '''
 
 def can_observe_other_group(round_configuration):
     return round_configuration.get_parameter_value(parameter=get_observe_other_group_parameter(), default=False).boolean_value
@@ -58,15 +60,32 @@ def can_observe_other_group(round_configuration):
 def get_player_status_dv(participant_group_relationship_id):
     return ParticipantRoundDataValue.objects.get(parameter=get_player_status_parameter(), participant_group_relationship__pk=participant_group_relationship_id)
 
+def is_shared_resource_enabled(round_configuration):
+    return round_configuration.get_parameter_value(parameter=get_shared_resource_enabled_parameter(), default=False).boolean_value
 
-''' value accessors '''
+def get_resource_level_dv(group, round_data=None, round_configuration=None):
+    '''
+    Returns either the GroupClusterDataValue (shared resource condition) or the GroupRoundDataValue (standard
+    resource per group condition) for the given group
+    '''
+    if round_data is None:
+        round_data = group.current_round_data
+    if round_configuration is None:
+        round_configuration = round_data.round_configuration
+    if is_shared_resource_enabled(round_configuration):
+        return get_shared_resource_level_dv(group, round_data)
+    else:
+        return get_forestry_resource_level_dv(group, round_data)
 
 def get_shared_resource_level(group, round_data=None):
+    return get_shared_resource_level_dv(group, round_data).int_value
+
+def get_shared_resource_level_dv(group, round_data=None):
     if round_data is None:
         round_data = group.current_round_data
     group_relationship = GroupRelationship.objects.select_related('group_cluster').get(group=group)
     cluster = group_relationship.cluster
-    return cluster.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data).int_value
+    return cluster.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data)
 
 def get_initial_resource_level(round_configuration, default=MAX_RESOURCE_LEVEL):
     return forestry_initial_resource_level(round_configuration, default)
@@ -124,8 +143,10 @@ def round_started_handler(sender, experiment=None, **kwargs):
         round_data = experiment.get_round_data(round_configuration)
         for group in experiment.group_set.all():
             ''' set resource level to initial default '''
-            group.log("Setting resource level to initial value [%s]" % initial_resource_level)
-            set_resource_level(group, initial_resource_level, round_data=round_data)
+            existing_resource_level = get_resource_level_dv(group, round_data, round_configuration)
+            group.log("Setting resource level (%s) to initial value [%s]" % (existing_resource_level, initial_resource_level))
+            existing_resource_level.int_value = initial_resource_level
+            existing_resource.save()
 
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
 def round_ended_handler(sender, experiment=None, **kwargs):
@@ -133,31 +154,36 @@ def round_ended_handler(sender, experiment=None, **kwargs):
     calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth.
     also responsible for transferring those parameters to the next round as needed.
     '''
-    current_round_configuration = experiment.current_round
-    logger.debug("ending boundaries round: %s", current_round_configuration)
-# FIXME: should read max resource level from the experiment / round configuration instead
+    round_configuration = experiment.current_round
+    round_data = experiment.get_round_data(round_configuration)
+    logger.debug("ending boundaries round: %s", round_configuration)
     max_resource_level = MAX_RESOURCE_LEVEL
-    for group in experiment.group_set.all():
-        logger.debug("group %s has resource level", group)
-        if has_resource_level(group):
+# FIXME: need to clarify logic for keeping track of resource levels across rounds
+    if round_configuration.is_playable_round:
+        for group in experiment.group_set.all():
             current_resource_level_dv = get_resource_level_dv(group)
             current_resource_level = current_resource_level_dv.int_value
-            if current_round_configuration.is_playable_round:
-                total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
-                logger.debug("total harvest for playable round: %d", total_harvest)
-                if current_resource_level > 0 and total_harvest > 0:
-                    group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level))
-                    set_group_harvest(group, total_harvest)
-                    current_resource_level = max(current_resource_level - total_harvest, 0)
-                    # implements regrowth function inline
-                    # FIXME: parameterize regrowth rate.
-                    regrowth = current_resource_level / 10
-                    group.log("Regrowth: adding %s to current resource level %s" % (regrowth, current_resource_level))
-                    set_regrowth(group, regrowth)
-                    current_resource_level_dv.int_value = min(current_resource_level + regrowth, max_resource_level)
-                    current_resource_level_dv.save()
-            ''' transfer resource levels across chat and quiz rounds if they exist '''
+            q = ParticipantRoundDataValue.objects.for_group(group=group,
+                    parameter=get_harvest_decision_parameter(), round_data=round_data).aggregate(total_harvest=Sum('int_value'))
+            total_harvest = q['total_harvest']
+            logger.debug("total harvest for playable round: %d", total_harvest)
+            if current_resource_level > 0 and total_harvest > 0:
+                group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level))
+                set_group_harvest(group, total_harvest)
+                current_resource_level = max(current_resource_level - total_harvest, 0)
+                resource_regrowth = calculate_regrowth(current_resource_level)
+# FIXME: if this is a shared resource we should only be doing this once for the shared resource (otherwise we'll apply
+# regrowth two or more times depending on group cluster size)
+                group.log("Regrowth: adding %s to current resource level %s" % (resource_regrowth, current_resource_level))
+                set_regrowth(group, resource_regrowth)
+                current_resource_level_dv.int_value = min(current_resource_level + resource_regrowth, max_resource_level)
+                current_resource_level_dv.save()
+            ''' XXX: transfer resource levels across chat and quiz rounds if they exist '''
             if experiment.has_next_round:
                 ''' set group round data resource_level for each group + regrowth '''
                 group.log("Transferring resource level %s to next round" % current_resource_level_dv.int_value)
                 group.copy_to_next_round(current_resource_level_dv)
+
+def calculate_regrowth(resource_level):
+    # FIXME: re-implement based on Tim's logic, this is leftover from forestry
+    return resource_level / 10
