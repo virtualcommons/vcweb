@@ -70,7 +70,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 # round / experiment configuration data
     regrowth_rate = get_regrowth_rate(current_round)
     cost_of_living = get_cost_of_living(current_round)
-    experiment_model_dict['readyParticipants'] = experiment.ready_participants
     experiment_model_dict['costOfLiving'] = cost_of_living
 # instructions round parameters
     if current_round.is_instructions_round:
