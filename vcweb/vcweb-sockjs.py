@@ -219,6 +219,7 @@ class ConnectionManager(object):
             participant_connections.append(participant_group_id)
             connection.send(message)
         logger.debug("sent message %s to %s", message, participant_connections)
+        self.send_to_experimenter(message, experiment=experiment)
         return participant_connections
 
     def send_to_group(self, group, json):
