@@ -2,7 +2,7 @@ from django.db.models import Sum
 from django.dispatch import receiver
 from vcweb.core import signals, simplecache
 from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, GroupRelationship, GroupCluster, GroupClusterDataValue)
-from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_regrowth_rate,
+from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_regrowth_rate_parameter,
                                    get_group_harvest_parameter, get_reset_resource_level_parameter, get_resource_level,
                                    get_initial_resource_level as forestry_initial_resource_level, set_resource_level, get_regrowth_parameter,
                                    get_resource_level_parameter, has_resource_level, get_resource_level_dv as get_unshared_resource_level_dv, get_harvest_decisions,
@@ -64,6 +64,9 @@ def get_shared_resource_enabled_parameter():
 
 
 ''' value accessors '''
+
+def get_regrowth_rate(round_configuration):
+    return round_configuration.get_parameter_value(parameter=get_regrowth_rate_parameter(), default=0.40).float_value
 
 
 def can_observe_other_group(round_configuration):
@@ -205,7 +208,7 @@ def adjust_harvest_decisions(current_resource_level, group, group_size, round_da
     return adjusted_harvest
 
 
-def adjust_resource_level(experiment, group, round_data, max_resource_level=MAX_RESOURCE_LEVEL):
+def adjust_resource_level(experiment, group, round_data, regrowth_rate, max_resource_level=MAX_RESOURCE_LEVEL):
     current_resource_level_dv = get_resource_level_dv(group)
     current_resource_level = current_resource_level_dv.int_value
     total_harvest = get_total_harvest(group, round_data)
@@ -221,7 +224,7 @@ def adjust_resource_level(experiment, group, round_data, max_resource_level=MAX_
         group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level))
         set_group_harvest(group, total_harvest, round_data)
         current_resource_level = current_resource_level - total_harvest
-        resource_regrowth = calculate_regrowth(current_resource_level)
+        resource_regrowth = calculate_regrowth(current_resource_level, regrowth_rate, max_resource_level)
         group.log("Regrowth: adding %s to current resource level %s" % (resource_regrowth, current_resource_level))
         set_regrowth(group, resource_regrowth, round_data)
         current_resource_level_dv.int_value = min(current_resource_level + resource_regrowth, max_resource_level)
@@ -235,7 +238,7 @@ def adjust_resource_level(experiment, group, round_data, max_resource_level=MAX_
 
 # FIXME: a lot of duplication between this and adjust_resource_level, see if we can reduce it by operating on group
 # cluster data values instead of group data values
-def adjust_shared_resource_level(experiment, group_cluster, round_data, max_resource_level=MAX_RESOURCE_LEVEL):
+def adjust_shared_resource_level(experiment, group_cluster, round_data, regrowth_rate, max_resource_level=MAX_RESOURCE_LEVEL):
     shared_resource_level_dv = get_shared_resource_level_dv(cluster=group_cluster, round_data=round_data)
     shared_resource_level = shared_resource_level_dv.int_value
     shared_group_harvest = 0
@@ -255,7 +258,7 @@ def adjust_shared_resource_level(experiment, group_cluster, round_data, max_reso
         set_group_harvest(group, group_harvest, round_data)
         shared_resource_level = shared_resource_level - group_harvest
     # set regrowth after shared_resource_level has been modified by all groups in this cluster
-    resource_regrowth = calculate_regrowth(shared_resource_level)
+    resource_regrowth = calculate_regrowth(shared_resource_level, regrowth_rate, max_resource_level)
     group.log("Regrowth: adding %s to shared resource level %s" % (resource_regrowth, shared_resource_level))
     group_cluster.set_data_value(parameter=get_regrowth_parameter(), round_data=round_data,
             value=resource_regrowth)
@@ -275,17 +278,17 @@ def round_ended_handler(sender, experiment=None, **kwargs):
     round_configuration = experiment.current_round
     round_data = experiment.get_round_data(round_configuration)
     logger.debug("ending boundaries round: %s", round_configuration)
-    # FIXME: need to clarify logic for keeping track of resource levels across rounds
     if round_configuration.is_playable_round:
+        regrowth_rate = get_regrowth_rate(round_configuration)
         if is_shared_resource_enabled(round_configuration):
             for group_cluster in GroupCluster.objects.for_experiment(experiment,
                                                                      session_id=round_configuration.session_id):
-                adjust_shared_resource_level(experiment, group_cluster, round_data)
+                adjust_shared_resource_level(experiment, group_cluster, round_data, regrowth_rate)
         else:
             for group in experiment.group_set.all():
-                adjust_resource_level(experiment, group, round_data)
+                adjust_resource_level(experiment, group, round_data, regrowth_rate)
 
 
-def calculate_regrowth(resource_level):
-    # FIXME: re-implement based on Tim's logic, this is leftover from forestry
-    return resource_level / 10
+def calculate_regrowth(resource_level, regrowth_rate, max_resource_level=MAX_RESOURCE_LEVEL):
+    return (regrowth_rate * resource_level) * (1 - (resource_level / float(max_resource_level)))
+
