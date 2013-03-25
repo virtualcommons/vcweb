@@ -516,7 +516,7 @@ class Experiment(models.Model):
 
     @property
     def number_of_ready_participants(self):
-        if self.is_active:
+        if self.is_round_in_progress:
             return ParticipantRoundDataValue.objects.filter(parameter=get_participant_ready_parameter(), round_data=self.current_round_data, boolean_value=True).count()
         else:
             return 0
@@ -768,16 +768,6 @@ class Experiment(models.Model):
         self.current_round_sequence_number = max(self.current_round_sequence_number - 1, 1)
         self.save()
 
-    def move_to_next_round(self):
-        if self.is_round_in_progress:
-            self.end_round()
-        if self.has_next_round:
-            self.current_round_elapsed_time = 0
-            self.current_round_sequence_number += 1
-            return True
-        else:
-            logger.warning("trying to advance past the last round - no-op")
-
     def invoke(self, action_name):
         if action_name in ('advance_to_next_round', 'end_round', 'start_round', 'activate', 'deactivate', 'complete'):
             getattr(self, action_name)()
@@ -785,8 +775,14 @@ class Experiment(models.Model):
             raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action_name, self))
 
     def advance_to_next_round(self):
-        if self.move_to_next_round():
+        if self.is_round_in_progress:
+            self.end_round()
+        if self.has_next_round:
+            self.current_round_elapsed_time = 0
+            self.current_round_sequence_number += 1
             self.start_round()
+        else:
+            logger.warning("trying to advance past the last round - no-op")
 
     def create_round_data(self):
         round_data, created = self.round_data_set.get_or_create(round_configuration=self.current_round)
