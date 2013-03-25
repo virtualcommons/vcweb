@@ -181,7 +181,7 @@
                 var notes = $('#experimenterNotesText').val();
                 Dajaxice.vcweb.core.save_experimenter_notes(function(data) {
                     if (data.success) {
-                        $('#submitExperimenterNotesButton').val('Saved!');
+                        model.addMessage("Saved experimenter notes.");
                     }
                 },
                 { experiment_id: {{ experiment.pk }}, notes: notes });

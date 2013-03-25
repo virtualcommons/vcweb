@@ -523,7 +523,7 @@ class Experiment(models.Model):
 
     @property
     def all_participants_ready(self):
-        return self.ready_participants == self.participant_set.count()
+        return self.number_of_ready_participants == self.participant_set.count()
 
     def get_participant_experiment_relationship(self, participant):
         return self.participant_relationship_set.select_related('participant__user').get(participant=participant)
