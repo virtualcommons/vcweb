@@ -267,12 +267,19 @@ class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, Templa
         context = self.get_context_data(object=self.object)
         return self.render_to_response(context)
 
+@experimenter_required
 def monitor(request, pk=None):
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_configuration', 'experimenter'), pk=pk)
-    return render(request, 'experimenter/monitor.html', {
-        'experiment': experiment,
-        'experimentModelJson': experiment.to_json(),
-        })
+    user = request.user
+    if is_experimenter(user, experiment.experimenter):
+        return render(request, 'experimenter/monitor.html', {
+            'experiment': experiment,
+            'experimentModelJson': experiment.to_json(),
+            })
+    else:
+        logger.warning("unauthorized access to experiment %s by user %s", experiment, user)
+        raise PermissionDenied("You do not have access to %s" % experiment)
+
 
 def upload_excel_participants_file(request):
     if request.method == 'POST':
