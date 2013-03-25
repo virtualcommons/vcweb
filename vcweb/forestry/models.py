@@ -31,24 +31,23 @@ def get_regrowth_rate(current_round, default=0.1):
 def has_resource_level(group=None):
     return group.has_data_parameter(parameter=get_resource_level_parameter())
 
-# FIXME: revamp
 def get_harvest_decision(participant_group_relationship, round_data=None):
     if round_data is None:
         round_data = participant_group_relationship.get_round_data()
     try:
-        return ParticipantRoundDataValue.objects.get(participant_group_relationship=participant_group_relationship,
-                round_data=round_data, parameter__name='harvest_decision')
+        return ParticipantRoundDataValue.objects.for_participant(participant_group_relationship=participant_group_relationship,
+                round_data=round_data, parameter=get_harvest_decision_parameter())
     except ParticipantRoundDataValue.DoesNotExist:
         return None
 
 def get_harvest_decisions(group=None):
     return group.get_participant_data_values(parameter__name='harvest_decision') if group else []
 
-def set_regrowth(group, value):
-    group.set_data_value(parameter=get_regrowth_parameter(), value=value)
+def set_regrowth(group, value, round_data=None):
+    group.set_data_value(parameter=get_regrowth_parameter(), value=value, round_data=round_data)
 
-def set_group_harvest(group, value):
-    group.set_data_value(parameter=get_group_harvest_parameter(), value=value)
+def set_group_harvest(group, value, round_data=None):
+    group.set_data_value(parameter=get_group_harvest_parameter(), value=value, round_data=round_data)
 
 def should_reset_resource_level(round_configuration):
     return round_configuration.get_parameter_value(parameter=get_reset_resource_level_parameter(), default=False).boolean_value

@@ -1459,6 +1459,7 @@ class Group(models.Model):
 
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
         criteria = dict([
+            ('is_active', True),
             ('parameter__pk', parameter.pk) if parameter else ('parameter__name', parameter_name),
             ('round_data__pk', self.current_round_data.pk if round_data is None else round_data.pk)
             ])
@@ -1559,13 +1560,14 @@ class GroupCluster(models.Model):
         return GroupRelationship.objects.create(cluster=self, group=group)
 
     def get_data_value(self, parameter=None, round_data=None, default=None):
-        # FIXME: factor out the duplication in all the get_data_value methods
+        # FIXME: factor out duplication in the various get_data_value methods
         if parameter is None:
             raise ValueError("cannot get a data value without a parameter")
         if round_data is None:
             round_data = self.experiment.current_round_data
         try:
-            return GroupClusterDataValue.objects.get(group_cluster=self, round_data=round_data, parameter=parameter)
+            return GroupClusterDataValue.objects.get(group_cluster=self, round_data=round_data, parameter=parameter,
+                    is_active=True)
         except GroupClusterDataValue.DoesNotExist as e:
             if default is None:
                 raise e
@@ -1579,6 +1581,21 @@ class GroupCluster(models.Model):
         gcdv = GroupClusterDataValue.objects.get(group_cluster=self, round_data=round_data, parameter=parameter)
         gcdv.value = value
         gcdv.save()
+
+    def copy_to_next_round(self, data_value):
+        e = self.experiment
+        if e.is_last_round:
+            logger.error("Trying to transfer data value %s past the last round of the experiment",
+                    data_value)
+            return None
+        parameter = data_value.parameter
+        value = data_value.value
+        next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
+        gcdv, created = GroupClusterDataValue.objects.get_or_create(group=self, round_data=next_round_data, parameter=parameter)
+        logger.debug("transferred group cluster data value: %s (%s)", gcdv, created)
+        gcdv.value = value
+        gcdv.save()
+        return gcdv
 
     def __unicode__(self):
         return u"group cluster %s (%s)" % (self.name, self.experiment)
@@ -1795,7 +1812,7 @@ class ParticipantGroupRelationship(models.Model):
         if round_data is None:
             round_data = self.current_round_data
         try:
-            return ParticipantRoundDataValue.objects.get(round_data=round_data, parameter=parameter, participant_group_relationship=self)
+            return ParticipantRoundDataValue.objects.get(is_active=True, round_data=round_data, parameter=parameter, participant_group_relationship=self)
         except ParticipantRoundDataValue.DoesNotExist as e:
             if default is None:
                 raise e
@@ -1823,13 +1840,25 @@ class ParticipantGroupRelationship(models.Model):
         ordering = ['group', 'participant_number']
 
 class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
-    def for_group(self, group=None, **kwargs):
+    def for_participant(self, participant_group_relationship=None, **kwargs):
+        if participant_group_relationship is None:
+            raise ValueError("Must specify a participant_group_relationship keyword in this query")
         return self.select_related(
                 'parameter',
                 'participant_group_relationship__participant__user',
                 'participant_group_relationship__group',
                 'target_data_value__participant_group_relationship',
-                ).filter(participant_group_relationship__group=group, **kwargs).order_by('-date_created')
+                ).filter(participant_group_relationship=participant_group_relationship, is_active=True, **kwargs).order_by('-date_created')
+
+    def for_group(self, group=None, **kwargs):
+        if group is None:
+            raise ValueError("Must specify a group in this query")
+        return self.select_related(
+                'parameter',
+                'participant_group_relationship__participant__user',
+                'participant_group_relationship__group',
+                'target_data_value__participant_group_relationship',
+                ).filter(participant_group_relationship__group=group, is_active=True, **kwargs).order_by('-date_created')
 
 class ParticipantRoundDataValue(ParameterizedValue):
     def __init__(self, *args, **kwargs):
