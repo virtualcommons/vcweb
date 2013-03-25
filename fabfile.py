@@ -88,7 +88,7 @@ def _virtualenv(executor, *commands, **kwargs):
 
 def pip():
     ''' looks for requirements.pip in the django project directory '''
-    _virtualenv(local, 'pip install -r %(project_path)s/vcweb/requirements.pip' % env)
+    _virtualenv(local, 'pip install -U -r %(project_path)s/vcweb/requirements.pip' % env)
     #with cd(env.virtualenv_path):
     #    sudo_chain('chgrp -R %(deploy_group)s .' % env, 'chmod -R g+rw' % env, pty=True)
 
