@@ -516,7 +516,10 @@ class Experiment(models.Model):
 
     @property
     def number_of_ready_participants(self):
-        return ParticipantRoundDataValue.objects.filter(parameter=get_participant_ready_parameter(), round_data=self.current_round_data, boolean_value=True).count()
+        if self.is_active:
+            return ParticipantRoundDataValue.objects.filter(parameter=get_participant_ready_parameter(), round_data=self.current_round_data, boolean_value=True).count()
+        else:
+            return 0
 
     @property
     def all_participants_ready(self):
