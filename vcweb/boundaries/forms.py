@@ -1,4 +1,4 @@
-from vcweb.core.forms import ParticipantGroupIdForm
+from vcweb.core.forms import ParticipantGroupIdForm, SingleIntegerDecisionForm
 from vcweb.forestry import forms
 
 

@@ -290,7 +290,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
     </div>
     <div class='alert alert-error'>There are no more resources to harvest. Please wait until the next round begins.</div>
 </div>
-<div data-bind='if: hasSubmit'>
+<div data-bind='if: submitted'>
     <div class='alert alert-error'>
         You have submitted a decision to harvest <span class='badge badge-important' data-bind='text: harvestDecision'></span> resources.
     </div>
@@ -332,11 +332,13 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
         <div class='input-prepend'>
             <span class='add-on'><i class='icon-leaf'></i></span>
             <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
-            <select name='harvest_decision' required="required" form="vcweb-form" data-bind='value: harvestDecision'>
+            <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: harvestDecision'>
+            <select id='harvestDecisionSelect' required="required" form="vcweb-form" data-bind='value: harvestDecision'>
             {% for i in harvest_decision_choices %}
             <option>{{i}}</option>
             {% endfor %}
             </select>
+
         </div>
         <button id='submitDecision' data-bind='click: submitDecision' type='submit' class='btn btn-primary'>Submit</button>
         </div>
@@ -410,7 +412,6 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 model.shouldShowOtherGroup(true);
             }
             model.shouldShowOtherGroup = ko.observable(false);
-            model.harvestDecision = ko.observable(0);
             model.numberOfTreesPerRow = ko.observable(10);
             model.isResourceEmpty = ko.computed(function() {
                 return model.resourceLevel() == 0;
@@ -446,14 +447,14 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                         1000));
             };
             model.submitDecision = function(data, evt) {
+                var formData = $('#vcweb-form').serialize();
                 model.setFormDisabled("#vcweb-form", true);
                 model.setFormDisabled("#chat-form", true);
-                var formData = $('#vcweb-form').serialize();
+                console.debug(formData);
                 $.post('submit-harvest-decision', formData, function(jsonString) {
                     console.log(jsonString);
                     //update($.parseJSON(jsonString.experimentModelJson));
                     model.secondsLeft(0);
-                    model.hasSubmit(true);
                     model.clearCurrentInterval();
                 });
             }
@@ -530,9 +531,6 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                         break;
                 }
             };
-            $('#harvestDecision').keyup(function() {
-                $('#harvestDecision').val(this.value.match(/\d+/));
-            });
         }
         var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
         initialize(experimentModelJson);

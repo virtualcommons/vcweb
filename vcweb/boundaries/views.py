@@ -4,7 +4,7 @@ from vcweb.core import dumps
 from vcweb.core.decorators import participant_required
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage, GroupRelationship)
-from vcweb.boundaries.forms import HarvestDecisionForm
+from vcweb.boundaries.forms import SingleIntegerDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_max_harvest,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
         get_last_harvest_decision, get_harvest_decision_dv, set_harvest_decision, can_observe_other_group, get_player_status)
@@ -33,15 +33,16 @@ def participate(request, experiment_id=None):
 
 @participant_required
 def submit_harvest_decision(request, experiment_id=None):
-    form = HarvestDecisionForm(request.POST or None)
+    form = SingleIntegerDecisionForm(request.POST or None)
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     if form.is_valid():
-        logger.debug("handing POST request, cleaned data: %s", form.cleaned_data)
         participant_group_id = form.cleaned_data['participant_group_id']
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-        harvest_decision = form.cleaned_data['harvest_decision']
+        harvest_decision = form.cleaned_data['integer_decision']
         set_harvest_decision(pgr, harvest_decision, experiment.current_round_data, submitted=True)
         return JsonResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr)}))
+    else:
+        logger.debug("form was invalid: %s", form)
     for field in form:
         if field.errors:
             logger.debug("field %s had errors %s", field, field.errors)
@@ -106,6 +107,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['submitted'] = harvest_decision.submitted
         if harvest_decision.submitted:
             # user has already submit a harvest decision this round
+            logger.debug("already submitted, setting harvest decision to %s", harvest_decision.int_value)
             experiment_model_dict['harvestDecision'] = harvest_decision.int_value
 
         experiment_model_dict['chatMessages'] = [{
