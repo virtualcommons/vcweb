@@ -78,6 +78,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
         experiment_model_dict['dollarsPerToken'] = float(ec.exchange_rate)
 
+    experiment_model_dict['resourceLevel'] = 0
     experiment_model_dict['totalNumberOfParticipants'] = experiment.participant_set.count()
     experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
@@ -86,10 +87,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['chatEnabled'] = False
     if current_round.is_regular_round:
         experiment_model_dict['chatEnabled'] = current_round.chat_enabled
-    if current_round.is_practice_round:
-        experiment_model_dict['templateName'] = 'REGULAR'
-    else:
-        experiment_model_dict['templateName'] = current_round.round_type
 
 # participant group data parameters are only needed if this round is a data round or the previous round was a data round
     if previous_round.is_playable_round or current_round.is_playable_round:
@@ -98,7 +95,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         last_harvest_decision = get_last_harvest_decision(participant_group_relationship, round_data=previous_round_data)
         experiment_model_dict['playerData'] = [{
             'id': pgr.participant_number,
-            'lastHarvestDecision': last_harvest_decision,
+            'lastHarvestDecision': get_last_harvest_decision(pgr, round_data=previous_round_data),
             'storage': get_storage(pgr, current_round_data),
             } for pgr in own_group.participant_group_relationship_set.all()]
         experiment_model_dict['chatMessages'] = [{
@@ -107,7 +104,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             'message': cm.string_value,
             'date_created': cm.date_created.strftime("%I:%M:%S")
             } for cm in ChatMessage.objects.for_group(own_group)]
-# FIXME: this is redundant
+# FIXME: some redundancy with playerData
         experiment_model_dict['lastHarvestDecision'] = last_harvest_decision
         experiment_model_dict['storage'] = get_storage(participant_group_relationship, current_round_data)
         experiment_model_dict['resourceLevel'] = own_resource_level
@@ -128,6 +125,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 
 # FIXME: defaults hard coded in for now
     experiment_model_dict['maxEarnings'] = 20.00
+    experiment_model_dict['maximumResourcesToDisplay'] = 20
     experiment_model_dict['warningCountdownTime'] = 10
     experiment_model_dict['maxHarvestDecision'] = 10
     experiment_model_dict['hasSubmit'] = False

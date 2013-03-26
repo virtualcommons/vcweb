@@ -65,6 +65,7 @@ def get_shared_resource_enabled_parameter():
 
 ''' value accessors '''
 
+''' round and experiment configuration accessors '''
 def get_regrowth_rate(round_configuration):
     return round_configuration.get_parameter_value(parameter=get_regrowth_rate_parameter(), default=0.40).float_value
 
@@ -78,7 +79,22 @@ def is_shared_resource_enabled(round_configuration):
     return round_configuration.get_parameter_value(parameter=get_shared_resource_enabled_parameter(),
                                                    default=False).boolean_value
 
+def get_initial_resource_level(round_configuration, default=MAX_RESOURCE_LEVEL):
+    return forestry_initial_resource_level(round_configuration, default)
 
+def should_reset_resource_level(round_configuration):
+    return round_configuration.get_parameter_value(parameter=get_reset_resource_level_parameter(),
+                                                   default=False).boolean_value
+
+def get_cost_of_living(round_configuration):
+    return round_configuration.get_parameter_value(get_cost_of_living_parameter(), default=5).int_value
+
+
+def get_max_harvest(experiment):
+    return experiment.get_parameter_value(parameter=get_max_harvest_decision_parameter(), default=10).int_value
+
+
+''' group data accessors '''
 def get_resource_level_dv(group, round_data=None, round_configuration=None):
     '''
     Returns either the GroupClusterDataValue (shared resource condition) or the GroupRoundDataValue (standard
@@ -106,25 +122,14 @@ def get_shared_resource_level_dv(group=None, round_data=None, cluster=None):
         cluster = group_relationship.cluster
     return cluster.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data)
 
+''' participant data value accessors '''
 
-def get_initial_resource_level(round_configuration, default=MAX_RESOURCE_LEVEL):
-    return forestry_initial_resource_level(round_configuration, default)
-
-
-def get_max_harvest(experiment):
-    return experiment.get_parameter_value(parameter=get_max_harvest_decision_parameter(), default=10).int_value
+def get_storage_dv(participant_group_relationship, round_data=None, default=None):
+    return participant_group_relationship.get_data_value(parameter=get_storage_parameter(), round_data=round_data, default=default)
 
 
-def get_cost_of_living(current_round):
-    return current_round.get_parameter_value(get_cost_of_living_parameter(), default=5).int_value
-
-
-def get_storage_dv(participant_group_relationship, round_data=None):
-    return participant_group_relationship.get_data_value(parameter=get_storage_parameter(), round_data=round_data)
-
-
-def get_storage(participant_group_relationship, round_data=None):
-    return get_storage_dv(participant_group_relationship, round_data).int_value
+def get_storage(participant_group_relationship, round_data=None, default=0):
+    return get_storage_dv(participant_group_relationship, round_data, default).int_value
 
 # returns the sum of all stored resources for each member in the group
 def get_total_storage(group):
@@ -133,15 +138,22 @@ def get_total_storage(group):
     return sum([pdv.value for pdv in group.get_participant_data_values(parameter=get_storage_parameter())])
 
 
-def set_storage(participant_group_relationship, value=0):
-    storage_dv = participant_group_relationship.set_data_value(parameter=get_storage_parameter(), value=value)
-    logger.debug("set storage variable: %s", storage_dv)
+def set_storage(participant_group_relationship, round_data, value):
+    storage_dv = get_storage_dv(participant_group_relationship, round_data)
+    storage_dv.int_value = value
+    storage_dv.save()
     return storage_dv
 
+def get_player_status(participant_group_relationship, round_data):
+    return participant_group_relationship.get_data_value(parameter=get_player_status_parameter(),
+            round_data=round_data).boolean_value
 
-def should_reset_resource_level(round_configuration):
-    return round_configuration.get_parameter_value(parameter=get_reset_resource_level_parameter(),
-                                                   default=False).boolean_value
+def set_player_status(participant_group_relationship, round_data, value):
+    status_dv = participant_group_relationship.get_data_value(parameter=get_player_status_parameter(),
+            round_data=round_data)
+    status_dv.boolean_value = value
+    status_dv.save()
+    return status_dv
 
 
 def get_last_harvest_decision(participant_group_relationship, round_data=None):
@@ -179,6 +191,9 @@ def round_started_handler(sender, experiment=None, **kwargs):
                 "Setting resource level (%s) to initial value [%s]" % (existing_resource_level, initial_resource_level))
             existing_resource_level.int_value = initial_resource_level
             existing_resource_level.save()
+            # FIXME: make sure that this is expected behavior - if the resource level is reset, reset storage to 0
+            ParticipantRoundDataValue.objects.for_group(group, parameter=get_storage_parameter(),
+                    round_data=round_data).update(int_value=0)
 
 
 def get_total_harvest(group, round_data):
@@ -200,11 +215,14 @@ def adjust_harvest_decisions(current_resource_level, group, group_size, round_da
                                                 parameter=get_harvest_decision_parameter(),
                                                 round_data=round_data).update(is_active=False)
     # create new harvest decision data values
+    cost_of_living = get_cost_of_living(round_data.round_configuration)
     for pgr in group.participant_group_relationship_set.all():
         ParticipantRoundDataValue.objects.create(round_data=round_data,
                                                  participant_group_relationship=pgr,
                                                  parameter=get_harvest_decision_parameter(),
                                                  int_value=individual_harvest)
+        updated_storage = get_storage(pgr, round_data) + individual_harvest - cost_of_living
+        set_storage(pgr, round_data, updated_storage)
     return adjusted_harvest
 
 

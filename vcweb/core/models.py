@@ -1747,12 +1747,12 @@ class ParticipantExperimentRelationship(models.Model):
 
 class ParticipantGroupRelationshipQuerySet(models.query.QuerySet):
 
-    def for_experiment(self, experiment):
-        return self.select_related('group', 'participant').filter(group__experiment=experiment)
+    def for_experiment(self, experiment, **kwargs):
+        return self.select_related('group', 'participant').filter(group__experiment=experiment, **kwargs)
 
 # FIXME: deprecated, for backwards compatibility
-    def by_experiment(self, experiment):
-        return self.for_experiment(experiment)
+    def by_experiment(self, experiment, **kwargs):
+        return self.for_experiment(experiment, **kwargs)
 
     def get_relationship(self, participant, experiment):
         try:

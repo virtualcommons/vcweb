@@ -4,13 +4,10 @@ from vcweb.core import signals, simplecache
 import logging
 logger = logging.getLogger(__name__)
 
-def forestry_second_tick():
-    print "Monitoring Forestry Experiments."
-    '''
-    check all forestry experiments.
-    '''
+EXPERIMENT_METADATA_NAME = intern('forestry')
+MAX_RESOURCE_LEVEL = 100
 
-def get_resource_level_dv(group, round_data=None, default=100):
+def get_resource_level_dv(group, round_data=None, default=MAX_RESOURCE_LEVEL):
     return group.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data, default=default)
 
 def get_resource_level(group, round_data=None, **kwargs):
@@ -52,7 +49,7 @@ def set_group_harvest(group, value, round_data=None):
 def should_reset_resource_level(round_configuration):
     return round_configuration.get_parameter_value(parameter=get_reset_resource_level_parameter(), default=False).boolean_value
 
-def get_initial_resource_level(round_configuration, default=100):
+def get_initial_resource_level(round_configuration, default=MAX_RESOURCE_LEVEL):
     return round_configuration.get_parameter_value(parameter=get_initial_resource_level_parameter(), default=default).int_value
 
 def get_max_harvest_decision(resource_level):
@@ -115,7 +112,8 @@ def set_harvest_decision(participant_group_relationship=None, value=None, round_
 def set_resource_level(group, value, round_data=None):
     return group.set_data_value(parameter=get_resource_level_parameter(), round_data=round_data, value=value)
 
-def round_setup(experiment, **kwargs):
+@receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
+def round_started_handler(sender, experiment=None, **kwargs):
     round_configuration = experiment.current_round
     logger.debug("setting up boundaries round %s", round_configuration)
     if round_configuration.is_playable_round:
@@ -143,14 +141,16 @@ def round_setup(experiment, **kwargs):
                 group.log("Setting resource level to initial value [%s]" % initial_resource_level)
                 set_resource_level(group, initial_resource_level, round_data=round_data)
 
-def round_teardown(experiment, **kwargs):
+@receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
+def round_ended_handler(sender, experiment=None, **kwargs):
+    logger.debug("forestry handling round ended signal")
     '''
     calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth.
     also responsible for transferring those parameters to the next round as needed.
     '''
     current_round_configuration = experiment.current_round
     logger.debug("current round: %s", current_round_configuration)
-    max_resource_level = 100
+    max_resource_level = MAX_RESOURCE_LEVEL
     for group in experiment.group_set.all():
         # FIXME: simplify logic
         logger.debug("group %s has resource level", group)
@@ -176,28 +176,3 @@ def round_teardown(experiment, **kwargs):
                 ''' set group round data resource_level for each group + regrowth '''
                 group.log("Transferring resource level %s to next round" % current_resource_level_dv.int_value)
                 group.copy_to_next_round(current_resource_level_dv)
-
-'''
-FIXME: figure out a better way to tie these signal handlers to a specific
-ExperimentMetadata instance.  Using ExperimentMetadata.namespace is problematic
-due to the python builtin id used by dispatcher.py and utf-8 strings...
-for an example, try
-e = Experiment.objects.get(pk=1)
-id(e.namespace)
-id(u'forestry')
-id(repr(u'forestry'))
-id(repr(e.namespace))
-even using django.util.encodings smart_unicode and smart_str functions don't help.
-'''
-FORESTRY_SENDER = intern('forestry')
-@receiver(signals.round_started, sender=FORESTRY_SENDER)
-def round_started_handler(sender, experiment=None, **kwargs):
-    round_setup(experiment, **kwargs)
-
-@receiver(signals.round_ended, sender=FORESTRY_SENDER)
-def round_ended_handler(sender, experiment=None, **kwargs):
-    logger.debug("forestry handling round ended signal")
-    round_teardown(experiment, **kwargs)
-
-
-

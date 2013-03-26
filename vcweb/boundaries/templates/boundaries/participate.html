@@ -234,7 +234,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
         <h3>My Status</h3>
         <div data-bind='if: isTimerRunning'>
         <div class='alert alert-error'>
-        <b><i class='icon-time'></i> Time left:</b> 
+        <b><i class='icon-time'></i> Time left:</b>
          <span data-bind='text: secondsLeft'></span>s
         </div>
         </div>
@@ -347,6 +347,14 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             var model = ko.mapping.fromJS(experimentModelJson);
             model.secondsLeft = ko.observable(0);
             model.currentInterval = ko.observable();
+            model.templateName = ko.computed(function() {
+                switch ( model.roundType() ) {
+                    case 'PRACTICE':
+                        return 'REGULAR';
+                    default:
+                        return model.roundType();
+                }
+            });
             model.setCurrentInterval = function(intervalId) {
                 model.clearCurrentInterval();
                 model.currentInterval(intervalId);
@@ -402,11 +410,11 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             model.harvestDecision = ko.observable(0);
             model.numberOfTreesPerRow = ko.observable(10);
             model.isResourceEmpty = ko.computed(function() {
-                return model.resourceLevel == 0;
+                return model.resourceLevel() == 0;
             })
             model.resourcesToDisplay = ko.computed(function() {
-                if (model.resourceLevel > 0) {
-                    return Math.min(model.resourceLevel, model.maximumResourcesToDisplay());
+                if (model.resourceLevel() > 0) {
+                    return Math.min(model.resourceLevel(), model.maximumResourcesToDisplay());
                 }
                 return 0;
             });
