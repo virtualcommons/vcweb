@@ -13,17 +13,40 @@ class Migration(DataMigration):
         Parameter = orm['core.Parameter']
         experimenter = Experimenter.objects.get(pk=1)
         Parameter.objects.create(
+<<<<<<< local
                 name='payoff',
+=======
+                name='participant_payoff',
+>>>>>>> other
                 scope='participant',
+<<<<<<< local
                 type='float',
                 description='earning each participant gets at each round',
+=======
+                type='int',
+                description='the earning each participant gets at each round',
+>>>>>>> other
                 creator=experimenter)
 
 
+<<<<<<< local
+=======
+
+>>>>>>> other
     def backwards(self, orm):
         "Write your backwards methods here."
         Parameter = orm['core.Parameter']
+<<<<<<< local
         Parameter.objects.get(name='payoff').delete()
+=======
+        Parameter.objects.get(name='conservation_decision').delete()
+        Parameter.objects.get(name='max_hours').delete()
+        Parameter.objects.get(name='group_local_bonus').delete()
+        Parameter.objects.get(name='group_cluster_bonus').delete()
+        Parameter.objects.get(name='participant_link').delete()
+        Parameter.objects.get(name='group_local_bonus_threshold').delete()
+        Parameter.objects.get(name='group_cluster_bonus_threshold').delete()
+>>>>>>> other
 
     models = {
         u'auth.group': {

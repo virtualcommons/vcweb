@@ -18,13 +18,17 @@ def get_participant_link_parameter():
     return Parameter.objects.get(name='participant_link')
 
 @simplecache
+def get_participant_payoff_parameter():
+    return Parameter.objects.get(name='participant_payoff')
+
+
+@simplecache
 def get_conservation_decision_parameter():
     return Parameter.objects.get(name='conservation_decision')
 
 @simplecache
 def get_payoff_parameter():
     return Parameter.objects.get(name='payoff')
-
 
 ''' group round parameters '''
 @simplecache
@@ -75,7 +79,7 @@ def round_started_handler(sender, experiment=None, **kwargs):
         experiment.initialize_data_values(
                 group_cluster_parameters=(get_group_cluster_bonus_parameter(),),
                 group_parameters=(get_group_local_bonus_parameter(),),
-                participant_parameters=[get_harvest_decision_parameter(), get_conservation_decision_parameter(), get_participant_link_parameter()]
+                participant_parameters=[get_harvest_decision_parameter(), get_conservation_decision_parameter(), get_participant_link_parameter(), get_participant_payoff_parameter()]
                 )
 
 
@@ -138,5 +142,3 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                     payoff = (participant_conservation_dict[pgr] * group_local_bonus_dict[group]) + \
                                          (get_harvest_decision(pgr, round_data) * group_cluster_bonus_dict[group_cluster])
                     pgr.set_data_value(parameter=get_payoff_parameter(), round_data=round_data, value=payoff)
-
-
