@@ -82,24 +82,17 @@ def round_started_handler(sender, experiment=None, **kwargs):
                 participant_parameters=[get_harvest_decision_parameter(), get_conservation_decision_parameter(), get_participant_link_parameter(), get_participant_payoff_parameter()]
                 )
 
-
 def calculate_group_local_bonus(group_conservation_hours, local_threshold):
     if group_conservation_hours > local_threshold:
-        return ()
+        return 1.5
     else:
-        return ()
-
-def calculate_group_local_bonus(group_conservation_hours, local_threshold):
-    if group_conservation_hours > local_threshold:
-        return (1.5)
-    else:
-        return (1)
+        return 1
 
 def calculate_group_cluster_bonus(group_conservation_hours, local_threshold):
     if group_conservation_hours > local_threshold:
-        return (2)
+        return 2
     else:
-        return (1)
+        return 1
 
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
 def round_ended_handler(sender, experiment=None, **kwargs):
@@ -125,15 +118,14 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                     conservation_hours = get_conservation_decision(pgr, round_data=round_data)
                     participant_conservation_dict[pgr] = conservation_hours
                     group_conservation_hours += conservation_hours
-                local_bonus = calculate_group_local_bonus(group_conservation_hours, get_group_local_bonus_parameter())
+                local_bonus = calculate_group_local_bonus(group_conservation_hours, local_threshold)
                 group_local_bonus_dict[group] = local_bonus
-                group.set_data_value(parameter=get_group_local_bonus_parameter(), value=local_bonus)
+                group.set_data_value(parameter=get_group_local_bonus_parameter(), round_data=round_data, value=local_bonus)
 
                 group_cluster_conservation_hours += group_conservation_hours
-            group_cluster_bonus = calculate_group_cluster_bonus(group_cluster_conservation_hours,
-                    group_cluster_threshold)
+            group_cluster_bonus = calculate_group_cluster_bonus(group_cluster_conservation_hours, group_cluster_threshold)
             group_cluster_bonus_dict[group_cluster] = group_cluster_bonus
-            group_cluster.set_data_value(parameter=get_group_cluster_bonus_parameter(), value=group_cluster_bonus)
+            group_cluster.set_data_value(parameter=get_group_cluster_bonus_parameter(), round_data=round_data, value=group_cluster_bonus)
     ## needs revision:
         for group_cluster in GroupCluster.objects.for_experiment(experiment):
             for group_relationship in group_cluster.group_relationship_set.all():
