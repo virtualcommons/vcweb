@@ -9,9 +9,9 @@ from vcweb.core.models import (is_participant, is_experimenter, Experiment, Part
 from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_harvest_decision_parameter,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
-        get_last_harvest_decision, set_harvest_decision, can_observe_other_group)
-import logging
+        get_last_harvest_decision, set_harvest_decision, can_observe_other_group, get_player_status)
 
+import logging
 logger = logging.getLogger(__name__)
 
 @participant_required
@@ -93,12 +93,14 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['playerData'] = [{
         'id': pgr.participant_number,
         'lastHarvestDecision': get_last_harvest_decision(pgr, round_data=previous_round_data),
+        'alive': get_player_status(pgr, current_round_data),
         'storage': get_storage(pgr, current_round_data),
         } for pgr in own_group.participant_group_relationship_set.all()]
     # FIXME: redundancy with playerData
     experiment_model_dict['lastHarvestDecision'] = last_harvest_decision
     experiment_model_dict['storage'] = get_storage(participant_group_relationship, current_round_data)
     experiment_model_dict['resourceLevel'] = own_resource_level
+    experiment_model_dict['alive'] = get_player_status(participant_group_relationship, current_round_data)
     # participant group data parameters are only needed if this round is a data round or the previous round was a data round
     if previous_round.is_playable_round or current_round.is_playable_round:
         experiment_model_dict['chatMessages'] = [{

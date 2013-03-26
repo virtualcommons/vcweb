@@ -424,34 +424,33 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 return model.resourcesToDisplay() * 30 + "px";
             });
             model.resourceImageHeight = ko.observable("79px");
-            model.startChatTimer = function() {
+            model.startRound = function() {
                 model.enableChat();
+                model.setFormDisabled(true);
                 model.secondsLeft(60);
                 model.setCurrentInterval(
                         setInterval(function() {
                             model.tick();
+                            if (model.secondsLeft() == 30) {
+                                model.setFormDisabled(false);
+                            }
                             if (! model.isTimerRunning()) {
+                                model.submitDecision();
                                 model.disableChat();
                                 model.clearCurrentInterval();
                             }
                         },
                         1000));
             };
-            model.startHarvestDecisionTimer = function() { 
-                model.secondsLeft(10);
-                model.setCurrentInterval(setInterval(function() {
-                    model.tick();
-                    if (! model.isTimerRunning()) {
-                        model.submitDecision();
-                        model.clearCurrentInterval();
-                    }
-                },
-                1000));
-            };
+            model.setFormDisabled = function(toggle) {
+                // disable all form inputs
+                $('#vcweb-form :input').attr("disabled", toggle);
+            }
             model.submitDecision = function(data, evt) {
                 if (evt) {
                     evt.preventDefault();
                 }
+                model.setFormDisabled(true);
                 var formData = $('#vcweb-form').serialize();
                 $.post('submit-harvest-decision', formData, function(jsonString) {
                     console.log(jsonString);
