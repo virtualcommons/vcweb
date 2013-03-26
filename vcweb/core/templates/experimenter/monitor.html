@@ -12,6 +12,9 @@
             <li>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
+                    {% if DEBUG %}
+                    <a class='btn btn-success' data-bind="click: confirmExperimentControllerAction.bind($data, true)" data-action='move_to_previous_round' data-content='Go back to the previous round.'><i class='icon-step-backward'></i> back</a>
+                    {% endif %}
                     <a class='btn btn-success' data-bind="click: confirmExperimentControllerAction.bind($data, true), css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
                     <a class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, true)' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='icon-step-forward'></i> next round</a>
                 </div>

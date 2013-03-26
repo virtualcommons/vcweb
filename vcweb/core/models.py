@@ -796,7 +796,7 @@ class Experiment(models.Model):
         self.save()
 
     def invoke(self, action_name):
-        if action_name in ('advance_to_next_round', 'end_round', 'start_round', 'activate', 'deactivate', 'complete'):
+        if action_name in ('advance_to_next_round', 'end_round', 'start_round', 'move_to_previous_round', 'activate', 'deactivate', 'complete'):
             getattr(self, action_name)()
         else:
             raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action_name, self))
