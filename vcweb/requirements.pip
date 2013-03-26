@@ -1,4 +1,5 @@
 Django
+fabric
 django-dajaxice
 django-extensions
 django-kronos
