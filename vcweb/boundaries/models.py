@@ -2,10 +2,10 @@ from django.db.models import Sum
 from django.dispatch import receiver
 from vcweb.core import signals, simplecache
 from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, GroupRelationship, GroupCluster, GroupClusterDataValue)
-from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_regrowth_rate_parameter,
+from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_harvest_decision_dv, get_regrowth_rate_parameter,
                                    get_group_harvest_parameter, get_reset_resource_level_parameter, get_resource_level,
-                                   get_initial_resource_level as forestry_initial_resource_level, set_resource_level, get_regrowth_parameter,
-                                   get_resource_level_parameter, has_resource_level, get_resource_level_dv as get_unshared_resource_level_dv, 
+                                   get_initial_resource_level as forestry_initial_resource_level, get_regrowth_parameter,
+                                   get_resource_level_parameter, get_resource_level_dv as get_unshared_resource_level_dv,
                                    set_group_harvest, set_regrowth, set_harvest_decision)
 
 import logging
@@ -91,7 +91,7 @@ def get_cost_of_living(round_configuration):
 
 
 def get_max_harvest(experiment):
-    return experiment.get_parameter_value(parameter=get_max_harvest_decision_parameter(), default=10).int_value
+    return experiment.experiment_configuration.get_parameter_value(parameter=get_max_harvest_decision_parameter(), default=10).int_value
 
 
 ''' group data accessors '''

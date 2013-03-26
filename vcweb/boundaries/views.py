@@ -1,15 +1,13 @@
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
-from django.template.context import RequestContext
 from vcweb.core import dumps
 from vcweb.core.decorators import participant_required
 from vcweb.core.http import JsonResponse
-from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
-        ParticipantExperimentRelationship, ChatMessage, ParticipantRoundDataValue, GroupRelationship)
+from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage, GroupRelationship)
 from vcweb.boundaries.forms import HarvestDecisionForm
-from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_harvest_decision_parameter,
+from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_max_harvest,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
-        get_last_harvest_decision, set_harvest_decision, can_observe_other_group, get_player_status)
+        get_last_harvest_decision, get_harvest_decision_dv, set_harvest_decision, can_observe_other_group, get_player_status)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -23,10 +21,11 @@ def participate(request, experiment_id=None):
     if experiment.experiment_metadata != get_experiment_metadata() or pgr.participant != request.user.participant:
         raise Http404
 
-# sends view model JSON to the template to be processed by knockout
+# FIXME: should limit harvest_decision_choices by min(max_harvest, resource_level / group.size)
     return render(request, 'boundaries/participate.html', {
         'auth_token': participant.authentication_token,
         'experiment': experiment,
+        'harvest_decision_choices': range(get_max_harvest(experiment) + 1),
         'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
         'participant_group_relationship': pgr,
         'experimentModelJson': get_view_model_json(experiment, pgr),
@@ -103,6 +102,12 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['alive'] = get_player_status(participant_group_relationship, current_round_data)
     # participant group data parameters are only needed if this round is a data round or the previous round was a data round
     if previous_round.is_playable_round or current_round.is_playable_round:
+        harvest_decision = get_harvest_decision_dv(participant_group_relationship, current_round_data)
+        experiment_model_dict['submitted'] = harvest_decision.submitted
+        if harvest_decision.submitted:
+            # user has already submit a harvest decision this round
+            experiment_model_dict['harvestDecision'] = harvest_decision.int_value
+
         experiment_model_dict['chatMessages'] = [{
             'pk': cm.pk,
             'participant_number': cm.participant_group_relationship.participant_number,

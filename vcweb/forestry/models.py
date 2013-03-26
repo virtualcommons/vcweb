@@ -28,8 +28,11 @@ def get_regrowth_rate(current_round, default=0.1):
 def has_resource_level(group=None):
     return group.has_data_parameter(parameter=get_resource_level_parameter())
 
-def get_harvest_decision(participant_group_relationship, round_data=None):
-    return participant_group_relationship.get_data_value(round_data=round_data, parameter=get_harvest_decision_parameter(), default=0).int_value
+def get_harvest_decision_dv(participant_group_relationship, round_data=None, default=0):
+    return participant_group_relationship.get_data_value(round_data=round_data, parameter=get_harvest_decision_parameter(), default=default)
+
+def get_harvest_decision(participant_group_relationship, round_data=None, default=0):
+    return get_harvest_decision_dv(participant_group_relationship, round_data, default).int_value
 
 def get_harvest_decisions(group=None):
     return group.get_participant_data_values(parameter__name='harvest_decision') if group else []

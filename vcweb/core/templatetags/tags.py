@@ -4,8 +4,6 @@
 
 from django import template
 register = template.Library()
-import logging
-logger = logging.getLogger(__name__)
 
 @register.simple_tag
 def active(request, pattern):
@@ -16,3 +14,6 @@ def active_re(request, pattern):
     import re
     return 'active' if re.search(pattern, request.path) else 'inactive'
 
+@register.filter
+def mkrange(value):
+    return range(value)
