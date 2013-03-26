@@ -144,12 +144,12 @@ def set_storage(participant_group_relationship, round_data, value):
     storage_dv.save()
     return storage_dv
 
-def get_player_status_dv(participant_group_relationship, round_data):
+def get_player_status_dv(participant_group_relationship, round_data, default=True):
     return participant_group_relationship.get_data_value(parameter=get_player_status_parameter(),
-            round_data=round_data)
+            round_data=round_data, default=default)
 
-def get_player_status(participant_group_relationship, round_data):
-    return get_player_status_dv(participant_group_relationship, round_data).boolean_value
+def get_player_status(participant_group_relationship, round_data, default=True):
+    return get_player_status_dv(participant_group_relationship, round_data, default).boolean_value
 
 def set_player_status(participant_group_relationship, round_data, value):
     status_dv =  get_player_status_dv(participant_group_relationship, round_data)

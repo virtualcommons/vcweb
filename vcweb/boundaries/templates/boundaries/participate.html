@@ -23,7 +23,7 @@
 <div data-bind='if: chatEnabled'>
 <h3>Chat</h3>
 <div class='chat-sidebar well'>
-    <form id="chatform" class='form-inline'>
+    <form id="chat-form" class='form-inline'>
         <div class='input-prepend input-append'>
             <span class='add-on'><i class='text-info icon-comment'></i></span>
             <input style='width: 100%;' class='chat-action' id='chatText' type="text" placeholder="Enter a chat message">
@@ -44,9 +44,6 @@
 {% block javascript %}
 {{ block.super }}
 <!-- ko templates -->
-<script type='text/html' id='CHAT'>
-{% include "forms/chat-template.html" %}
-</script>
 <script type='text/html' id='WAITING_ROOM'>
 <h3>Waiting for other participants</h3>
 <div>
@@ -426,13 +423,13 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             model.resourceImageHeight = ko.observable("79px");
             model.startRound = function() {
                 model.enableChat();
-                model.setFormDisabled(true);
+                model.setFormDisabled("#vcweb-form", true);
                 model.secondsLeft(60);
                 model.setCurrentInterval(
                         setInterval(function() {
                             model.tick();
                             if (model.secondsLeft() == 30) {
-                                model.setFormDisabled(false);
+                                model.setFormDisabled("#vcweb-form", false);
                             }
                             if (! model.isTimerRunning()) {
                                 model.submitDecision();
@@ -442,15 +439,12 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                         },
                         1000));
             };
-            model.setFormDisabled = function(toggle) {
-                // disable all form inputs
-                $('#vcweb-form :input').prop("disabled", toggle);
-            }
             model.submitDecision = function(data, evt) {
                 if (evt) {
                     evt.preventDefault();
                 }
-                model.setFormDisabled(true);
+                model.setFormDisabled("#vcweb-form", true);
+                model.setFormDisabled("#chat-form", true);
                 var formData = $('#vcweb-form').serialize();
                 $.post('submit-harvest-decision', formData, function(jsonString) {
                     console.log(jsonString);
@@ -471,23 +465,30 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 }
             }
             model.update = function() {
-                $.get('view-model', { participant_group_id: {{ participant_group_relationship.pk }} }, function(data) {
+                $.get('view-model', { participant_group_id: model.participantGroupId() }, function(data) {
                     console.debug("retrieved view model successfully");
                     console.debug(data);
                     ko.mapping.fromJS(data, model);
                     $('#progress-modal').modal('hide');
                 });
             }
+            model.setFormDisabled = function(formId, disabled) {
+                // disable all form inputs
+                if (formId.indexOf("#") != 0) {
+                    formId = "#" + formId;
+                }
+                $(formId + " :input").prop("disabled", disabled);
+            }
             model.disableChat = function() {
-                $('#content').removeClass('span6').addClass('span9');
-                $('#sidebar').removeClass('span6').addClass('span3');
-                $('.chat-action').addClass('disabled').attr('disabled', true);
+                // $('#content').removeClass('span6').addClass('span9');
+                // $('#sidebar').removeClass('span6').addClass('span3');
+                model.setFormDisabled("#chat-form", true);
                 model.chatEnabled(false);
             }
             model.enableChat = function() {
-                $('#content').removeClass('span9').addClass('span6');
-                $('#sidebar').removeClass('span3').addClass('span6');
-                $('.chat-action').removeClass('disabled').attr('disabled', false);
+                // $('#content').removeClass('span9').addClass('span6');
+                // $('#sidebar').removeClass('span3').addClass('span6');
+                model.setFormDisabled("#chat-form", false);
                 model.chatEnabled(true);
             }
             return model;
