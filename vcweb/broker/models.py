@@ -21,6 +21,11 @@ def get_participant_link_parameter():
 def get_conservation_decision_parameter():
     return Parameter.objects.get(name='conservation_decision')
 
+@simplecache
+def get_payoff_parameter():
+    return Parameter.objects.get(name='payoff')
+
+
 ''' group round parameters '''
 @simplecache
 def get_group_local_bonus_parameter():
@@ -73,6 +78,25 @@ def round_started_handler(sender, experiment=None, **kwargs):
                 participant_parameters=[get_harvest_decision_parameter(), get_conservation_decision_parameter(), get_participant_link_parameter()]
                 )
 
+
+def calculate_group_local_bonus(group_conservation_hours, local_threshold):
+    if group_conservation_hours > local_threshold:
+        return ()
+    else:
+        return ()
+
+def calculate_group_local_bonus(group_conservation_hours, local_threshold):
+    if group_conservation_hours > local_threshold:
+        return (1.5)
+    else:
+        return (1)
+
+def calculate_group_cluster_bonus(group_conservation_hours, local_threshold):
+    if group_conservation_hours > local_threshold:
+        return (2)
+    else:
+        return (1)
+
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
 def round_ended_handler(sender, experiment=None, **kwargs):
     '''
@@ -80,8 +104,11 @@ def round_ended_handler(sender, experiment=None, **kwargs):
     also responsible for transferring those parameters to the next round as needed.
     '''
     current_round_configuration = experiment.current_round
-    logger.debug("ending boundaries round: %s", current_round_configuration)
+    logger.debug("ending broker round: %s", current_round_configuration)
     round_data = experiment.current_round_data
+    group_local_bonus_dict = {}
+    group_cluster_bonus_dict = {}
+    participant_conservation_dict = {}
     if current_round_configuration.is_playable_round:
         local_threshold = get_group_local_bonus_threshold(current_round_configuration)
         group_cluster_threshold = get_group_cluster_bonus_threshold(current_round_configuration)
@@ -92,11 +119,24 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                 group = group_relationship.group
                 for pgr in group.participant_group_relationship_set.all():
                     conservation_hours = get_conservation_decision(pgr, round_data=round_data)
+                    participant_conservation_dict[pgr] = conservation_hours
                     group_conservation_hours += conservation_hours
-                # calculate local group conservation bonus
-                local_bonus = calculate_group_local_bonus(group_conservation_hours, local_threshold)
+                local_bonus = calculate_group_local_bonus(group_conservation_hours, get_group_local_bonus_parameter())
+                group_local_bonus_dict[group] = local_bonus
                 group.set_data_value(parameter=get_group_local_bonus_parameter(), value=local_bonus)
+
                 group_cluster_conservation_hours += group_conservation_hours
             group_cluster_bonus = calculate_group_cluster_bonus(group_cluster_conservation_hours,
                     group_cluster_threshold)
+            group_cluster_bonus_dict[group_cluster] = group_cluster_bonus
             group_cluster.set_data_value(parameter=get_group_cluster_bonus_parameter(), value=group_cluster_bonus)
+    ## needs revision:
+        for group_cluster in GroupCluster.objects.for_experiment(experiment):
+            for group_relationship in group_cluster.group_relationship_set.all():
+                group = group_relationship.group
+                for pgr in group.participant_group_relationship_set.all():
+                    payoff = (participant_conservation_dict[pgr] * group_local_bonus_dict[group]) + \
+                                         (get_harvest_decision(pgr, round_data) * group_cluster_bonus_dict[group_cluster])
+                    pgr.set_data_value(parameter=get_payoff_parameter(), round_data=round_data, value=payoff)
+
+
