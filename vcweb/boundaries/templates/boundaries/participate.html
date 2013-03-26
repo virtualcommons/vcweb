@@ -444,7 +444,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             };
             model.setFormDisabled = function(toggle) {
                 // disable all form inputs
-                $('#vcweb-form :input').attr("disabled", toggle);
+                $('#vcweb-form :input').prop("disabled", toggle);
             }
             model.submitDecision = function(data, evt) {
                 if (evt) {
