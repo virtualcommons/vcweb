@@ -39,6 +39,9 @@ syncdb_commands = [
         '%(python)s manage.py migrate' % env,
         ]
 
+def migrate():
+    local("{python} manage.py migrate".format(python=env.python), capture=False)
+
 def psh():
     local("{python} manage.py shell_plus".format(python=env.python), capture=False)
 
