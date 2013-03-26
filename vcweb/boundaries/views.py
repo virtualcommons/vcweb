@@ -9,7 +9,7 @@ from vcweb.core.models import (is_participant, is_experimenter, Experiment, Part
 from vcweb.boundaries.forms import HarvestDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_harvest_decision_parameter,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
-        get_last_harvest_decision, can_observe_other_group)
+        get_last_harvest_decision, set_harvest_decision, can_observe_other_group)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -41,10 +41,7 @@ def submit_harvest_decision(request, experiment_id=None):
         participant_group_id = form.cleaned_data['participant_group_id']
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         harvest_decision = form.cleaned_data['harvest_decision']
-        ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr, int_value=harvest_decision,
-                round_data=experiment.current_round_data, parameter=get_harvest_decision_parameter())
-        # set harvest decision for participant
-        # FIXME: inconsistency, GET returns HTML and POST return JSON..
+        set_harvest_decision(pgr, harvest_decision, experiment.current_round_data)
         return JsonResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr)}))
     for field in form:
         if field.errors:
@@ -88,26 +85,28 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     if current_round.is_regular_round:
         experiment_model_dict['chatEnabled'] = current_round.chat_enabled
 
-# participant group data parameters are only needed if this round is a data round or the previous round was a data round
+    # FIXME: these need to be added so KO doesn't get unhappy when we switch templates from instructions rounds to
+    # practice rounds.
+    own_group = participant_group_relationship.group
+    own_resource_level = get_resource_level(own_group)
+    last_harvest_decision = get_last_harvest_decision(participant_group_relationship, round_data=previous_round_data)
+    experiment_model_dict['playerData'] = [{
+        'id': pgr.participant_number,
+        'lastHarvestDecision': get_last_harvest_decision(pgr, round_data=previous_round_data),
+        'storage': get_storage(pgr, current_round_data),
+        } for pgr in own_group.participant_group_relationship_set.all()]
+    # FIXME: redundancy with playerData
+    experiment_model_dict['lastHarvestDecision'] = last_harvest_decision
+    experiment_model_dict['storage'] = get_storage(participant_group_relationship, current_round_data)
+    experiment_model_dict['resourceLevel'] = own_resource_level
+    # participant group data parameters are only needed if this round is a data round or the previous round was a data round
     if previous_round.is_playable_round or current_round.is_playable_round:
-        own_group = participant_group_relationship.group
-        own_resource_level = get_resource_level(own_group)
-        last_harvest_decision = get_last_harvest_decision(participant_group_relationship, round_data=previous_round_data)
-        experiment_model_dict['playerData'] = [{
-            'id': pgr.participant_number,
-            'lastHarvestDecision': get_last_harvest_decision(pgr, round_data=previous_round_data),
-            'storage': get_storage(pgr, current_round_data),
-            } for pgr in own_group.participant_group_relationship_set.all()]
         experiment_model_dict['chatMessages'] = [{
             'pk': cm.pk,
             'participant_number': cm.participant_group_relationship.participant_number,
             'message': cm.string_value,
             'date_created': cm.date_created.strftime("%I:%M:%S")
             } for cm in ChatMessage.objects.for_group(own_group)]
-# FIXME: some redundancy with playerData
-        experiment_model_dict['lastHarvestDecision'] = last_harvest_decision
-        experiment_model_dict['storage'] = get_storage(participant_group_relationship, current_round_data)
-        experiment_model_dict['resourceLevel'] = own_resource_level
         experiment_model_dict['canObserveOtherGroup'] = can_observe_other_group(current_round)
         if not current_round.is_practice_round and experiment_model_dict['canObserveOtherGroup']:
             gr = GroupRelationship.objects.select_related('cluster').get(group=own_group)

@@ -374,25 +374,25 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             });
             // activate instructions click bindings
             model.activateInstructionsPageOne = function() {
-                model.templateName('GENERAL_INSTRUCTIONS');
+                model.roundType('GENERAL_INSTRUCTIONS');
             };
             model.activateInstructionsPageTwo = function() {
-                model.templateName('GENERAL_INSTRUCTIONS2');
+                model.roundType('GENERAL_INSTRUCTIONS2');
             };
             model.activateInstructionsPageThree = function() {
-                model.templateName('GENERAL_INSTRUCTIONS3');
+                model.roundType('GENERAL_INSTRUCTIONS3');
             };
             model.activateWaitingRoomPage = function() {
-                model.templateName('WAITING_ROOM');
+                model.roundType('WAITING_ROOM');
             }
             model.readyParticipantsPercentage = ko.computed(function() {
                 return (model.readyParticipants() / model.totalNumberOfParticipants()) * 100;
             });
             model.activatePracticeRoundInstructions = function() {
-                model.templateName("PRACTICE_ROUND_INSTRUCTIONS");
+                model.roundType("PRACTICE_ROUND_INSTRUCTIONS");
             }
             model.activateTreatmentInstructions = function() {
-                model.templateName("TREATMENT_INSTRUCTIONS");
+                model.roundType("TREATMENT_INSTRUCTIONS");
             }
             model.participantReady = function() {
                 $.post('/experiment/participant-ready', { participant_group_id: {{ participant_group_relationship.pk }} }, function(response) {

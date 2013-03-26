@@ -41,6 +41,33 @@ class DefaultValue(object):
     def __getattr__(self, name):
         return self.value
 
+class ParameterizedValueQuerySetMixin(models.query.QuerySet):
+    def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
+        return dict([
+            ('is_active', True),
+            ('parameter', parameter) if parameter else ('parameter__name', parameter_name),
+            ('round_data', self.current_round_data if round_data is None else round_data)
+            ], **kwargs)
+
+    def set_data_value(self, parameter=None, value=None, round_data=None, **kwargs):
+        if parameter is None or value is None or round_data is None:
+            raise ValueError("need parameter, value, and round data to set")
+        dv = self.get(round_data=round_data, parameter=parameter, **kwargs)
+        dv.value = value
+        dv.save()
+
+    def get_data_value(self, parameter=None, parameter_name=None, round_data=None, default=None):
+        if round_data is None:
+            round_data = self.current_round_data
+        criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
+        try:
+            return self.data_value_set.select_related('parameter', 'group', 'round_data').get(**criteria)
+        except self.model.DoesNotExist as e:
+            if default is None:
+                raise e
+            else:
+                return DefaultValue(default)
+
 class AutoDateTimeField(models.DateTimeField):
     def pre_save(self, model_instance, add):
         return datetime.now()
@@ -1373,10 +1400,7 @@ class Group(models.Model):
 
     @property
     def current_round_data(self):
-        return self.experiment.get_round_data(round_configuration=self.current_round)
-
-    def get_round_data(self, round_configuration=None):
-        return self.experiment.get_round_data(round_configuration)
+        return self.experiment.current_round_data
 
     @property
     def is_full(self):
@@ -1781,9 +1805,6 @@ class ParticipantGroupRelationship(models.Model):
     @property
     def current_round_data(self):
         return self.group.current_round_data
-
-    def get_round_data(self, round_configuration=None):
-        return self.group.get_round_data(round_configuration)
 
     @property
     def full_name(self):

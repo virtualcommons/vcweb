@@ -29,13 +29,7 @@ def has_resource_level(group=None):
     return group.has_data_parameter(parameter=get_resource_level_parameter())
 
 def get_harvest_decision(participant_group_relationship, round_data=None):
-    if round_data is None:
-        round_data = participant_group_relationship.get_round_data()
-    try:
-        return ParticipantRoundDataValue.objects.for_participant(participant_group_relationship=participant_group_relationship,
-                round_data=round_data, parameter=get_harvest_decision_parameter())
-    except ParticipantRoundDataValue.DoesNotExist:
-        return None
+    return participant_group_relationship.get_data_value(round_data=round_data, parameter=get_harvest_decision_parameter(), default=0).int_value
 
 def get_harvest_decisions(group=None):
     return group.get_participant_data_values(parameter__name='harvest_decision') if group else []
@@ -102,10 +96,7 @@ def get_initial_resource_level_parameter():
 def set_harvest_decision(participant_group_relationship=None, value=None, round_data=None):
     if round_data is None:
         round_data = participant_group_relationship.current_round_data
-    prdv = ParticipantRoundDataValue.objects.get(parameter=get_harvest_decision_parameter(), 
-            participant_group_relationship=participant_group_relationship,
-            round_data=round_data
-            )
+    prdv = participant_group_relationship.get_data_value(parameter=get_harvest_decision_parameter(), round_data=round_data)
     prdv.int_value = value
     prdv.save()
 
