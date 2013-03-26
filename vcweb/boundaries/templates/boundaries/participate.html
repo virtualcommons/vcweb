@@ -395,7 +395,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 model.roundType("TREATMENT_INSTRUCTIONS");
             }
             model.participantReady = function() {
-                $.post('/experiment/participant-ready', { participant_group_id: {{ participant_group_relationship.pk }} }, function(response) {
+                $.post('/experiment/participant-ready', { participant_group_id: model.participantGroupId() }, function(response) {
                     console.debug("successfully posted to server, notifying sockjs");
                     console.debug(response);
                     getWebSocket().send(createMessageEvent("Participant finished reading instructions", "client_ready"));

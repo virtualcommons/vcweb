@@ -93,10 +93,11 @@ def get_reset_resource_level_parameter():
 def get_initial_resource_level_parameter():
     return Parameter.objects.for_round(name='initial_resource_level')
 
-def set_harvest_decision(participant_group_relationship=None, value=None, round_data=None):
+def set_harvest_decision(participant_group_relationship=None, value=None, round_data=None, submitted=False):
     if round_data is None:
         round_data = participant_group_relationship.current_round_data
     prdv = participant_group_relationship.get_data_value(parameter=get_harvest_decision_parameter(), round_data=round_data)
+    prdv.submitted = submitted
     prdv.int_value = value
     prdv.save()
 

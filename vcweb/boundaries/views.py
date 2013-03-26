@@ -41,7 +41,7 @@ def submit_harvest_decision(request, experiment_id=None):
         participant_group_id = form.cleaned_data['participant_group_id']
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         harvest_decision = form.cleaned_data['harvest_decision']
-        set_harvest_decision(pgr, harvest_decision, experiment.current_round_data)
+        set_harvest_decision(pgr, harvest_decision, experiment.current_round_data, submitted=True)
         return JsonResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr)}))
     for field in form:
         if field.errors:

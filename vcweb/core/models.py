@@ -1321,6 +1321,7 @@ class ParameterizedValue(models.Model):
         converted_value = self.parameter.convert(obj)
         setattr(self, self.parameter.value_field_name, converted_value)
 
+
     def to_dict(self, cacheable=False, **kwargs):
         p = self.parameter
         data = {'pk' : self.pk,
@@ -1606,20 +1607,19 @@ class GroupCluster(models.Model):
         gcdv.value = value
         gcdv.save()
 
-    def copy_to_next_round(self, data_value):
+    def copy_to_next_round(self, *data_values):
         e = self.experiment
         if e.is_last_round:
-            logger.error("Trying to transfer data value %s past the last round of the experiment",
-                    data_value)
-            return None
-        parameter = data_value.parameter
-        value = data_value.value
-        next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
-        gcdv, created = GroupClusterDataValue.objects.get_or_create(group=self, round_data=next_round_data, parameter=parameter)
-        logger.debug("transferred group cluster data value: %s (%s)", gcdv, created)
-        gcdv.value = value
-        gcdv.save()
-        return gcdv
+            logger.error("Trying to transfer data values %s past the last round of the experiment, aborting",
+                    data_values)
+        else:
+            next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
+            for data_value in data_values:
+                parameter = data_value.parameter
+                gcdv, created = GroupClusterDataValue.objects.get_or_create(group=self, round_data=next_round_data, parameter=parameter)
+                logger.debug("transferred group cluster data value: %s (%s)", gcdv, created)
+                gcdv.value = data_value.value
+                gcdv.save()
 
     def __unicode__(self):
         return u"group cluster %s (%s)" % (self.name, self.experiment)
@@ -1853,6 +1853,16 @@ class ParticipantGroupRelationship(models.Model):
             return pdv
         else:
             logger.warning("Unable to set data value %s on round data %s for %s", value, round_data, parameter)
+
+    def copy_to_next_round(self, *data_values):
+        e = self.experiment
+        next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
+        for existing_dv in data_values:
+            parameter = existing_dv.parameter
+            new_dv, created = ParticipantRoundDataValue.objects.get_or_create(participant_group_relationship=self,
+                    round_data=next_round_data, parameter=parameter)
+            new_dv.value = existing_dv.value
+            new_dv.save()
 
     def __unicode__(self):
         return u"{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)

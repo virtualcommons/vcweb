@@ -231,7 +231,7 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
 # FIXME: would be nicer to extend Group behavior and have group.get_total_harvest() instead of
 # get_total_harvest(group, ...) 
     total_harvest = get_total_harvest(group, round_data)
-    logger.debug("total harvest for playable round: %d", total_harvest)
+    logger.debug("Harvest: total group harvest for playable round: %s", total_harvest)
     if current_resource_level > 0 and total_harvest > 0:
         if total_harvest > current_resource_level:
             # divide remaining trees evenly among every participant
@@ -285,6 +285,7 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
     shared_resource_level_dv.save()
     if experiment.has_next_round:
         ''' transfer shared resource levels to next round '''
+        group.log("Transferring shared resource level %s to next round" % current_resource_level_dv.int_value)
         group_cluster.copy_to_next_round(shared_resource_level_dv)
 
 def update_participants(experiment, round_data):
@@ -292,14 +293,17 @@ def update_participants(experiment, round_data):
     for pgr in experiment.participant_group_relationships:
         player_status_dv = get_player_status_dv(pgr, round_data)
         harvest_decision = get_harvest_decision(pgr, round_data)
-        existing_storage = get_storage(pgr, round_data)
-        updated_storage = existing_storage + harvest_decision - cost_of_living
+        storage_dv = get_storage_dv(pgr, round_data)
+        updated_storage = storage_dv.int_value + harvest_decision - cost_of_living
         if updated_storage < 0:
             # player has "died"
             player_status_dv.boolean_value = False
             player_status_dv.save()
-
-        set_storage(pgr, round_data, updated_storage)
+        storage_dv.int_value = updated_storage
+        storage_dv.save()
+        logger.debug("updating participant %s (storage: %s, harvest: %s, status: %s)", pgr, storage_dv.int_value,
+                harvest_decision, player_status_dv.boolean_value)
+        pgr.copy_to_next_round(player_status_dv, storage_dv)
 
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
 def round_ended_handler(sender, experiment=None, **kwargs):
@@ -312,7 +316,10 @@ def round_ended_handler(sender, experiment=None, **kwargs):
     logger.debug("ending boundaries round: %s", round_configuration)
     if round_configuration.is_playable_round:
         regrowth_rate = get_regrowth_rate(round_configuration)
-# FIXME: generify and merge update_shared_resource_level and update_resource_level to operate on "group-like" objects
+        # zero out unsubmitted harvest decisions
+        ParticipantRoundDataValue.objects.filter(round_data=round_data, parameter=get_harvest_decision_parameter(),
+                submitted=False).update(int_value=0)
+        # FIXME: generify and merge update_shared_resource_level and update_resource_level to operate on "group-like" objects if possible
         if is_shared_resource_enabled(round_configuration):
             for group_cluster in GroupCluster.objects.for_experiment(experiment,
                                                                      session_id=round_configuration.session_id):

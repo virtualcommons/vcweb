@@ -540,7 +540,9 @@ def api_logger(request, participant_group_id=None):
 def participant_ready(request):
     form = ParticipantGroupIdForm(request.POST or None)
     if form.is_valid():
-        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group__experiment'), pk=form.cleaned_data['participant_group_id'])
+        participant_group_id = form.cleaned_data.get('participant_group_id')
+        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group__experiment'),
+                pk=participant_group_id)
         experiment = pgr.group.experiment
         round_data = experiment.current_round_data
         prdv = ParticipantRoundDataValue.objects.get(participant_group_relationship=pgr,
