@@ -1009,7 +1009,7 @@ class RoundConfiguration(models.Model):
     """ external survey url """
     chat_enabled = models.BooleanField(default=False, help_text=_("Is chat enabled in this round?"))
     create_group_clusters = models.BooleanField(default=False, help_text=_("Create relationships (clusters) of groups that can share group cluster data values"))
-    group_cluster_size = models.PositiveIntegerField(default=2, help_text=_("How many groups should be clustered together at a time?"))
+    group_cluster_size = models.PositiveIntegerField(null=True, blank=True, default=2, help_text=_("How many groups should form a cluster?"))
     randomize_groups = models.BooleanField(default=False, help_text=_("Shuffle participants into new groups when the round begins?"))
     """ Should groups be randomized at the start of the round? """
     preserve_existing_groups = models.BooleanField(default=True, help_text=_("This option is only useful if randomize_groups is set to true.  If we are randomizing groups, should existing groups (if any) be preserved?"))

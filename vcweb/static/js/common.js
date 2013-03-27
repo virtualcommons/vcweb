@@ -10,6 +10,10 @@ function scrollToBottom(element) {
 function formatCurrency(floatValue) {
     return "$" + floatValue.toFixed(2);
 }
+var INT_REGEX = /^\d+$/;
+function isInt(value) {
+    return INT_REGEX.test(value);
+}
 function csrfSafeMethod(method) {
     // these HTTP methods do not require CSRF protection
     return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));

@@ -444,20 +444,21 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             });
             model.resourceImageHeight = ko.observable("79px");
             model.startRound = function() {
+                if (model.submitted() || ! model.alive()) {
+                    model.disableHarvestForm();
+                    model.disableChatForm();
+                    return;
+                }
                 console.debug("starting round");
-                model.enableChat();
-                var intRegex = /^\d+$/;
-                if (intRegex.test(model.timeRemaining()) && model.timeRemaining() > 0) {
+                if (isInt(model.timeRemaining()) && model.timeRemaining() > 0) {
+                    model.setupChat();
                     model.secondsLeft(model.timeRemaining());
                     model.setCurrentInterval(
                         setInterval(function() {
                             model.tick();
-                            if (model.secondsLeft() == 30 && !model.submitted()) {
-                                model.setFormDisabled("#vcweb-form", false);
-                            }
+                            model.setFormDisabled("#vcweb-form", model.secondsLeft() > 30);
                             if (! model.isTimerRunning()) {
                                 model.submitDecision();
-                                model.disableChat();
                                 model.clearCurrentInterval();
                             }
                         },
@@ -468,6 +469,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 model.setFormDisabled("#vcweb-form", false);
                 var formData = $('#vcweb-form').serialize();
                 model.setFormDisabled("#vcweb-form", true);
+                model.disableChat();
                 model.setFormDisabled("#chat-form", true);
                 console.debug(formData);
                 $.post('submit-harvest-decision', formData, function(response) {
@@ -506,29 +508,26 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 }
                 $(formId + " :input").prop("disabled", disabled);
             }
-            model.disableChat = function() {
-                // $('#content').removeClass('span6').addClass('span9');
-                // $('#sidebar').removeClass('span6').addClass('span3');
-                model.setFormDisabled("#chat-form", true);
+            model.enableHarvestForm = function() {
+                model.setFormDisabled("#vcweb-form", false);
             }
-            model.enableChat = function() {
-                if (! model.chatEnabled()) {
-                    return;
-                }
-                // $('#content').removeClass('span9').addClass('span6');
-                // $('#sidebar').removeClass('span3').addClass('span6');
+            model.disableHarvestForm = function() {
                 model.setFormDisabled("#vcweb-form", true);
+            }
+            model.enableChatForm = function() {
                 model.setFormDisabled("#chat-form", false);
             }
+            model.disableChatForm = function() {
+                model.setFormDisabled("#chat-form", true);
+            }
+            model.setupChat = function() {
+                chatEnabled = model.chatEnabled();
+                model.setFormDisabled("#chat-form", ! chatEnabled);
+                if (chatEnabled) {
+                    model.disableHarvestForm();
+                }
+            }
             model.afterRenderTemplate = function(elements) {
-                model.setFormDisabled("#chat-form", ! model.chatEnabled());
-                if (model.submitted() || ! model.alive()) {
-                    model.setFormDisabled("#vcweb-form", true);
-                    model.setFormDisabled("#chat-form", true);
-                }
-                else {
-                    model.setFormDisabled("#vcweb-form", false);
-                }
                 if (model.templateName() === "REGULAR") {
                     model.startRound()
                 }

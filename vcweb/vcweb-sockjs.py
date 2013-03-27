@@ -208,7 +208,7 @@ class ConnectionManager(object):
             logger.debug("no experimenter found with pk %s in experimenters set %s", experimenter_tuple,
                     self.experimenter_to_connection)
 
-    def broadcast(self, experiment=None, message=None, experimenter=None):
+    def broadcast(self, experiment=None, message=None, experimenter=None, notify_experimenter=True):
         if experimenter is None:
             experimenter = experiment.experimenter
         if message is None:
@@ -219,7 +219,8 @@ class ConnectionManager(object):
             participant_connections.append(participant_group_id)
             connection.send(message)
         logger.debug("sent message %s to %s", message, participant_connections)
-        self.send_to_experimenter(message, experiment=experiment)
+        if notify_experimenter:
+            self.send_to_experimenter(message, experiment=experiment)
         return participant_connections
 
     def send_to_group(self, group, json):
@@ -228,7 +229,6 @@ class ConnectionManager(object):
         self.send_to_experimenter(json, experiment=group.experiment)
 
 connection_manager = ConnectionManager()
-
 
 # replace with namedtuple
 class Struct:
