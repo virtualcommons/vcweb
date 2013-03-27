@@ -893,7 +893,7 @@ class Experiment(models.Model):
                 })
         return all_round_data
 
-    def to_dict(self, include_round_data=True, *args, **kwargs):
+    def to_dict(self, include_round_data=True, default_value_dict=None, attrs=None, *args, **kwargs):
         ec = self.experiment_configuration
         experiment_dict = {
                 'roundStatusLabel': self.status_label,
@@ -912,6 +912,10 @@ class Experiment(models.Model):
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
             experiment_dict['messages'] = [unicode(log) for log in self.activity_log_set.order_by('-date_created')]
             experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes if self.is_round_in_progress else ''
+        if default_value_dict:
+            experiment_dict.update(default_value_dict, **kwargs)
+        if attrs:
+            experiment_dict.update([(attr, getattr(self, attr, None)) for attr in attrs])
         return experiment_dict
 
     def as_dict(self, *args, **kwargs):

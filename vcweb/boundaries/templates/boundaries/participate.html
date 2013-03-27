@@ -21,13 +21,12 @@
 {% endblock content %}
 
 {% block sidebar %}
-<div data-bind='if: chatEnabled'>
 <h3>Chat</h3>
 <div class='chat-sidebar well'>
     <form id="chat-form" class='form-inline'>
         <div class='input-prepend input-append'>
             <span class='add-on'><i class='text-info icon-comment'></i></span>
-            <input style='width: 100%;' class='chat-action' id='chatText' type="text" placeholder="Enter a chat message">
+            <input class='chat-action input-block-level' id='chatText' type="text" placeholder="Enter a chat message">
             <button class='btn' data-bind='click: submitChatMessage'>Send</button>
         </div>
     </form>
@@ -39,7 +38,6 @@
             </p>
         </div>
     </div>
-</div>
 </div>
 {% endblock sidebar %}
 {% block javascript %}
@@ -439,7 +437,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             model.startRound = function() {
                 model.enableChat();
                 model.setFormDisabled("#vcweb-form", true);
-                model.secondsLeft(60);
+                model.secondsLeft(model.roundDuration());
                 model.setCurrentInterval(
                         setInterval(function() {
                             model.tick();
@@ -508,6 +506,9 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 if (model.submitted()) {
                     model.setFormDisabled("#vcweb-form", true);
                     model.setFormDisabled("#chat-form", true);
+                }
+                if (model.roundType() === "REGULAR") {
+                    model.startRound()
                 }
             }
             return model;

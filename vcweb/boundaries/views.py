@@ -55,6 +55,16 @@ def get_view_model(request, experiment_id=None):
     logger.debug("getting view model for participant: %s", pgr)
     return JsonResponse(get_view_model_json(experiment, pgr))
 
+experiment_model_defaults = {
+        'submitted': False,
+        'chatEnabled': False,
+        'resourceLevel': 0,
+        'maxEarnings': 20.00,
+        'maximumResourcesToDisplay': 20,
+        'warningCountdownTime': 10,
+        'maxHarvestDecision': 10,
+        'harvestDecision': 0,
+        }
 # FIXME: need to distinguish between instructions / welcome rounds and practice/regular rounds
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
@@ -62,10 +72,10 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     current_round_data = experiment.current_round_data
     previous_round = experiment.previous_round
     previous_round_data = experiment.get_round_data(round_configuration=previous_round)
-    experiment_model_dict = experiment.to_dict(include_round_data=False, attrs={})
-    experiment_model_dict['submitted'] = False
+    experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
 
 # round / experiment configuration data
+    experiment_model_dict['roundDuration'] = current_round.duration
     regrowth_rate = get_regrowth_rate(current_round)
     cost_of_living = get_cost_of_living(current_round)
     experiment_model_dict['costOfLiving'] = cost_of_living
@@ -74,15 +84,12 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['participantsPerGroup'] = ec.max_group_size
         experiment_model_dict['regrowthRate'] = regrowth_rate
         experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
-        experiment_model_dict['dollarsPerToken'] = float(ec.exchange_rate)
 
-    experiment_model_dict['resourceLevel'] = 0
     experiment_model_dict['totalNumberOfParticipants'] = experiment.participant_set.count()
     experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     experiment_model_dict['roundType'] = current_round.round_type
     experiment_model_dict['practiceRound'] = current_round.is_practice_round
-    experiment_model_dict['chatEnabled'] = False
     if current_round.is_regular_round:
         experiment_model_dict['chatEnabled'] = current_round.chat_enabled
 
@@ -133,11 +140,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             experiment_model_dict['groupData'] = group_data
 
 # FIXME: defaults hard coded in for now
-    experiment_model_dict['maxEarnings'] = 20.00
-    experiment_model_dict['maximumResourcesToDisplay'] = 20
-    experiment_model_dict['warningCountdownTime'] = 10
-    experiment_model_dict['maxHarvestDecision'] = 10
-    experiment_model_dict['hasSubmit'] = False
     experiment_model_dict['instructions'] = current_round.get_custom_instructions()
     experiment_model_dict.update(**kwargs)
     return dumps(experiment_model_dict)
