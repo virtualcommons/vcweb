@@ -61,6 +61,12 @@ def set_conservation_decision(participant_group_relationship, value, round_data=
     prdv.int_value = value
     prdv.save()
 
+def get_payoff_dv(participant_group_relationship, round_data=None, default=0):
+    return participant_group_relationship.get_data_value(round_data=round_data, parameter=get_payoff_parameter(), default=default)
+
+def get_payoff(participant_group_relationship, round_data=None, default=0):
+    return get_payoff_dv(participant_group_relationship, round_data, default).int_value
+
 def get_group_local_bonus_threshold(round_configuration):
     return round_configuration.get_parameter_value(parameter=get_group_local_bonus_parameter(), default=5).int_value
 

@@ -9,13 +9,14 @@ from vcweb.core.models import (is_participant, is_experimenter, Experiment, Part
 
 from vcweb.broker.models import (get_max_harvest_hours, get_harvest_decision_parameter,
         get_conservation_decision_parameter, set_harvest_decision, set_conservation_decision, get_harvest_decision,
-        get_conservation_decision)
+        get_conservation_decision, get_payoff)
 
 import random
 
 import logging
 
 logger = logging.getLogger(__name__)
+totalEarning =
 
 @participant_required
 def submit_decision(request, experiment_id=None):
@@ -105,7 +106,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['lastRoundGlobalConservation'] = 10
     experiment_model_dict['lastRoundGroupLocalBonus'] = 10
     experiment_model_dict['lastRoundGroupGlobalBonus'] = 10
-    experiment_model_dict['lastRoundHarvestPayOff'] = 5
+    experiment_model_dict['lastRoundHarvestPayOff'] = get_payoff(participant_group_relationship, round_data=previous_round_data)
     experiment_model_dict['totalEarning'] = 100
     number_of_connected_groups = round_configuration.get_parameter_value(name='number_of_connected_groups', default=2).int_value
     experiment_model_dict['participantsPerSubGroup'] = group.max_size
