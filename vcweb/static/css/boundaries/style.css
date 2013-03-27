@@ -1,6 +1,19 @@
 .chat-sidebar {
-    height: 600px;
-    padding: 10px;
+    background-color: #f5f5f5;
+    border: 1px solid #e3e3e3;
+    padding: 0px 0px 0px 0px;
+    margin: 0px;
+    height: 520px;
+}
+.chat-messages {
+    padding: 5px;
+}
+#chat-div {
+    overflow: auto;
+    height: inherit;
+}
+#chatMessage {
+    width: auto;
 }
 .boundaries-status-dashboard p {
     padding-top: 15px;

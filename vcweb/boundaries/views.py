@@ -40,7 +40,10 @@ def submit_harvest_decision(request, experiment_id=None):
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         harvest_decision = form.cleaned_data['integer_decision']
         set_harvest_decision(pgr, harvest_decision, experiment.current_round_data, submitted=True)
-        return JsonResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr)}))
+        message = "harvested %s trees" % harvest_decision
+        experiment.log(message)
+        return JsonResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr),
+            'message': message}))
     else:
         logger.debug("form was invalid: %s", form)
     for field in form:
@@ -64,6 +67,7 @@ experiment_model_defaults = {
         'warningCountdownTime': 10,
         'maxHarvestDecision': 10,
         'harvestDecision': 0,
+        'chatMessages': [],
         }
 # FIXME: need to distinguish between instructions / welcome rounds and practice/regular rounds
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
@@ -124,6 +128,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             'message': cm.string_value,
             'date_created': cm.date_created.strftime("%I:%M:%S")
             } for cm in ChatMessage.objects.for_group(own_group)]
+        logger.debug("chat messages: %s", experiment_model_dict['chatMessages'])
         experiment_model_dict['canObserveOtherGroup'] = can_observe_other_group(current_round)
         if not current_round.is_practice_round and experiment_model_dict['canObserveOtherGroup']:
             gr = GroupRelationship.objects.select_related('cluster').get(group=own_group)

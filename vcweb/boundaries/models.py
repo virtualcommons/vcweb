@@ -294,6 +294,7 @@ def update_participants(experiment, round_data):
         player_status_dv = get_player_status_dv(pgr, round_data)
         player_alive = player_status_dv.boolean_value
         if not player_alive:
+            logger.debug("Skipping deceased participant %s", pgr)
             continue
         harvest_decision = get_harvest_decision(pgr, round_data)
         storage_dv = get_storage_dv(pgr, round_data)
