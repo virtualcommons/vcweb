@@ -68,7 +68,6 @@
             "experiment_metadata": 7,
             "status": "INACTIVE",
             "start_date_time": null,
-            "current_round_elapsed_time": 0,
             "tick_duration": "",
             "authentication_code": "broker_test",
             "total_elapsed_time": 0,
