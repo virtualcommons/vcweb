@@ -16,7 +16,6 @@ import random
 import logging
 
 logger = logging.getLogger(__name__)
-totalEarning =
 
 @participant_required
 def submit_decision(request, experiment_id=None):
