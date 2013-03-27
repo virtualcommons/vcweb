@@ -33,7 +33,6 @@
     {
         "fields": {
             "authentication_code": "TEST_FORESTRY",
-            "current_round_elapsed_time": 0,
             "current_round_sequence_number": 1,
             "duration": "1h",
             "experiment_configuration": 1,
