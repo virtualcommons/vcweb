@@ -37,10 +37,10 @@ def submit_harvest_decision(request, experiment_id=None):
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         harvest_decision = form.cleaned_data['integer_decision']
         set_harvest_decision(pgr, harvest_decision, experiment.current_round_data, submitted=True)
-        message = "%s harvested %s trees" % (pgr.participant, harvest_decision)
-        experiment.log(message)
+        message = "%s harvested %s trees"
+        experiment.log(message % (pgr.participant, harvest_decision))
         return JsonResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr),
-            'message': message}))
+            'message': message % (pgr.participant_handle, harvest_decision)}))
     else:
         logger.debug("form was invalid: %s", form)
     for field in form:
