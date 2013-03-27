@@ -6,7 +6,7 @@
 <link rel='stylesheet' href='{% static "css/boundaries/style.css" %}'/>
 {% endblock %}
 {% block content %}
-<div data-bind='template: { name: templateName() }'>
+<div data-bind='template: { name: templateName(), afterRender: afterRenderTemplate }'>
 </div>
 <div id='progress-modal' class='modal hide fade'>
     <div class='model-header'>
@@ -228,7 +228,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
 </script>
 <script type='text/html' id='REGULAR'>
 <div class='row'>
-    <div class='span4'>
+    <div class='span5'>
         <h3>My Status</h3>
         <div data-bind='if: isTimerRunning'>
         <div class='alert alert-error'>
@@ -236,17 +236,22 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
          <span data-bind='text: secondsLeft'></span>s
         </div>
         </div>
-        <div class='alert alert-message'>
-            You harvested <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span> <i class='icon-leaf'></i></strong> trees last round.
+        <div class='row'>
+        <div class='alert boundaries-status-dashboard span2'>
+        <h4>Last harvest <i class='icon-info-sign' data-content="The number of trees you harvested last round."></i> </h4>
+        <p>
+        <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span> <i class='icon-leaf'></i></strong>
+        </p>
         </div>
-        <div class='alert alert-message'>
-            You have <strong class='text-success'><span data-bind='text: storage'></span> <i class='icon-leaf'></i></strong> trees stored.  
+        <div class='alert boundaries-status-dashboard span2'>
+            <h4>Storage <i class='icon-info-sign' data-bind='attr: {"data-content": "You need at least " + costOfLiving() + " trees to survive each round."}'></i> </h4>
+            <p>
+            <strong data-bind='css: { "text-error": storage() < costOfLiving(), "text-success": storage() > costOfLiving()}'><span data-bind='text: storage'></span> <i class='icon-leaf'></i></strong>
+            </p>
         </div>
-        <div class='alert alert-error'>
-            <i class='icon-warning-sign'></i> You need at least <strong class='text-success'><span data-bind='text: costOfLiving'></span> <i class='icon-leaf'></i></strong> trees to survive each round.
         </div>
     </div>
-    <div class='span5'>
+    <div class='span4'>
         <h3>Group Status</h3>
         <table class='table table-bordered table-condensed'>
             <thead>
@@ -291,11 +296,11 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
     <div style='padding: 8px; margin: auto; border: solid 1px; background: url("{{STATIC_URL}}images/forestry/deforestation.jpg") no-repeat center; height: 282px; width:425px;'>
         &nbsp;
     </div>
-    <div class='alert alert-error'>There are no more resources to harvest. Please wait until the next round begins.</div>
+    <div class='alert alert-error'>There are no more trees to harvest. Please wait until the next round begins.</div>
 </div>
 <div data-bind='if: submitted'>
     <div class='alert alert-error'>
-        You have submitted a decision to harvest <span class='badge badge-important' data-bind='text: harvestDecision'></span> resources.
+        You have already submitted a harvest decision for <span class='badge badge-success' data-bind='text: harvestDecision'></span> trees.
     </div>
 </div>
 
@@ -327,7 +332,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
         </div>
     </div>
 </div>
-<br>
+<h3>Harvest</h3>
 <div data-bind='ifnot: isResourceEmpty'>
     <form id='vcweb-form' action='' method='post' class='form-horizontal' >
         {% csrf_token %}
@@ -476,6 +481,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                     console.debug("retrieved view model successfully");
                     console.debug(data);
                     ko.mapping.fromJS(data, model);
+                    model.afterRenderTemplate();
                     $('#progress-modal').modal('hide');
                 });
             }
@@ -498,16 +504,17 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 model.setFormDisabled("#chat-form", false);
                 model.chatEnabled(true);
             }
+            model.afterRenderTemplate = function(elements) {
+                if (model.submitted()) {
+                    model.setFormDisabled("#vcweb-form", true);
+                    model.setFormDisabled("#chat-form", true);
+                }
+            }
             return model;
         }
         function initialize(experimentModelJson) {
             var experimentModel = new ExperimentModel(experimentModelJson);
             ko.applyBindings(experimentModel);
-            if (experimentModel.submitted()) {
-                experimentModel.setFormDisabled("#vcweb-form", true);
-                experimentModel.setFormDisabled("#chat-form", true);
-            }
-
             var s = connect();
             s.onmessage = function(json) {
                 console.debug(json);
@@ -537,6 +544,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
         }
         var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
         initialize(experimentModelJson);
+        $('[data-content]').popover({placement: 'top', trigger: 'hover'});
     });
 </script>
 {% endblock %}

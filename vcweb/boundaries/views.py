@@ -63,6 +63,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     previous_round = experiment.previous_round
     previous_round_data = experiment.get_round_data(round_configuration=previous_round)
     experiment_model_dict = experiment.to_dict(include_round_data=False, attrs={})
+    experiment_model_dict['submitted'] = False
 
 # round / experiment configuration data
     regrowth_rate = get_regrowth_rate(current_round)
