@@ -446,11 +446,13 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             model.startRound = function() {
                 console.debug("starting round");
                 model.enableChat();
-                model.secondsLeft(model.timeRemaining());
-                model.setCurrentInterval(
+                var intRegex = /^\d+$/;
+                if (intRegex.test(model.timeRemaining()) && model.timeRemaining() > 0) {
+                    model.secondsLeft(model.timeRemaining());
+                    model.setCurrentInterval(
                         setInterval(function() {
                             model.tick();
-                            if (model.secondsLeft() == 30) {
+                            if (model.secondsLeft() == 30 && !model.submitted()) {
                                 model.setFormDisabled("#vcweb-form", false);
                             }
                             if (! model.isTimerRunning()) {
@@ -460,8 +462,10 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                             }
                         },
                         1000));
+                }
             };
             model.submitDecision = function(data, evt) {
+                model.setFormDisabled("#vcweb-form", false);
                 var formData = $('#vcweb-form').serialize();
                 model.setFormDisabled("#vcweb-form", true);
                 model.setFormDisabled("#chat-form", true);

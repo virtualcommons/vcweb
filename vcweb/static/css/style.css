@@ -82,7 +82,10 @@ li.pull-right {
     margin-bottom: 10px;
 }
 #experiment-messages {
-    height: 230px;
+    height: 280px;
+    width: auto;
+    padding: 5px 0px 5px 0px;
+    margin: 5px 0px 5px 0px;
     overflow: auto;
 }
 .left-divider {

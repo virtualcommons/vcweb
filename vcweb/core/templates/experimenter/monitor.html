@@ -111,10 +111,12 @@
         </div>
     </div>
     <div class='span6'>
-        <h4>Experiment Log</h4>
-        <div id='experiment-messages' class='alert' data-bind='foreach: messages'>
-            <div>
-                <span data-bind='text: $data'></span>
+        <div style='padding-right: 8px;' class='alert alert-messages'>
+            <h4>EXPERIMENT LOG</h4>
+            <div  id='experiment-messages' data-bind='foreach: messages'>
+                <div>
+                    <span data-bind='text: $data'></span>
+                </div>
             </div>
         </div>
         {% comment %}
@@ -321,7 +323,16 @@
             var s = connect("/experimenter");
             s.onmessage = function(evt) {
                 console.log("Received event: " + evt);
-                experimentModel.addMessage(jQuery.parseJSON(evt.data));
+                experiment_event = $.parseJSON(evt.data);
+                switch (experiment_event.event_type) {
+                    case 'chat':
+                        experimentModel.addMessage("Participant " + experiment_event.participant_number + ": " + experiment_event.message);
+                        break;
+                    case 'info':
+                    default:
+                        experimentModel.addMessage(experiment_event.message);
+                        break;
+                }
             };
             return experimentModel;
             // FIXME: this won't quite work
