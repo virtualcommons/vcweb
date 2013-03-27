@@ -21,10 +21,11 @@
 {% endblock content %}
 
 {% block sidebar %}
+<div data-bind='ifnot: instructionsRound'>
 <h3>Chat</h3>
 <div data-bind='ifnot: chatEnabled'>
     <div class='alert alert-info'>
-        <i class='icon-info-sign'></i> Chat is disabled until the next round begins.
+        <i class='icon-warning-sign'></i> Chat is currently disabled.
     </div>
 </div>
 <form id="chat-form" class='form-inline'>
@@ -43,6 +44,7 @@
             </p>
         </div>
     </div>
+</div>
 </div>
 {% endblock sidebar %}
 {% block javascript %}
@@ -233,25 +235,27 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
 <div class='row'>
     <div class='span5'>
         <h3>My Status</h3>
-        <div data-bind='if: isTimerRunning'>
-        <div class='alert alert-error'>
-        <b><i class='icon-time'></i> Time left:</b>
-         <span data-bind='text: secondsLeft'></span>s
-        </div>
-        </div>
         <div class='row'>
-        <div class='alert boundaries-status-dashboard span2'>
-        <h4>Last harvest <i class='icon-info-sign' data-content="The number of trees you harvested last round."></i> </h4>
-        <p>
-        <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span> <i class='icon-leaf'></i></strong>
-        </p>
-        </div>
-        <div class='alert boundaries-status-dashboard span2'>
-            <h4>Storage <i class='icon-info-sign' data-bind='attr: {"data-content": "You need at least " + costOfLiving() + " trees to survive each round."}'></i> </h4>
-            <p>
-            <strong data-bind='css: { "text-error": storage() < costOfLiving(), "text-success": storage() > costOfLiving()}'><span data-bind='text: storage'></span> <i class='icon-leaf'></i></strong>
-            </p>
-        </div>
+            <div class='alert boundaries-status-dashboard span2'>
+                <h4>Last harvest <i class='icon-info-sign' data-content="The number of trees you harvested last round."></i> </h4>
+                <p>
+                <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span> <i class='icon-leaf'></i></strong>
+                </p>
+            </div>
+            <div class='alert boundaries-status-dashboard span1'>
+                <h4>Storage <i class='icon-info-sign' data-bind='attr: {"data-content": "You need at least " + costOfLiving() + " trees to survive each round."}'></i> </h4>
+                <p>
+                <strong data-bind='css: { "text-error": storage() < costOfLiving(), "text-success": storage() > costOfLiving()}'><span data-bind='text: storage'></span> <i class='icon-leaf'></i></strong>
+                </p>
+            </div>
+            <div class='alert boundaries-status-dashboard span1'>
+                <h4><i class='icon-time'></i> Time</h4>
+                <p>
+                <strong data-bind='css: { "text-error": secondsLeft() < warningCountdownTime(), "text-info": secondsLeft() > warningCountdownTime()}'>
+                    <span data-bind='text: secondsLeft'></span> s
+                </strong>
+                </p>
+            </div>
         </div>
     </div>
     <div class='span4'>
@@ -303,7 +307,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
 </div>
 <div data-bind='if: submitted'>
     <div class='alert alert-error'>
-        You have already submitted a harvest decision for <span class='badge badge-success' data-bind='text: harvestDecision'></span> trees.
+        You have submitted a harvest decision for <span class='badge badge-success' data-bind='text: harvestDecision'></span> trees.
     </div>
 </div>
 
@@ -440,8 +444,9 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             });
             model.resourceImageHeight = ko.observable("79px");
             model.startRound = function() {
+                console.debug("starting round");
                 model.enableChat();
-                model.secondsLeft(model.roundDuration());
+                model.secondsLeft(model.timeRemaining());
                 model.setCurrentInterval(
                         setInterval(function() {
                             model.tick();
@@ -503,12 +508,16 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 model.setFormDisabled("#chat-form", true);
             }
             model.enableChat = function() {
+                if (! model.chatEnabled()) {
+                    return;
+                }
                 // $('#content').removeClass('span9').addClass('span6');
                 // $('#sidebar').removeClass('span3').addClass('span6');
                 model.setFormDisabled("#vcweb-form", true);
                 model.setFormDisabled("#chat-form", false);
             }
             model.afterRenderTemplate = function(elements) {
+                model.setFormDisabled("#chat-form", ! model.chatEnabled());
                 if (model.submitted() || ! model.alive()) {
                     model.setFormDisabled("#vcweb-form", true);
                     model.setFormDisabled("#chat-form", true);
@@ -516,7 +525,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 else {
                     model.setFormDisabled("#vcweb-form", false);
                 }
-                if (model.roundType() === "REGULAR") {
+                if (model.templateName() === "REGULAR") {
                     model.startRound()
                 }
             }

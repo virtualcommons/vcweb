@@ -7,28 +7,34 @@
 <h3>{{experiment}}</h3>
 <div class='row-fluid'>
     <div class='span6'>
-        <ul class='nav nav-list' data-bind="if: isActive">
-            <li class='nav-header'>round management</li>
-            <li>
+        <div class='alert alert-white' data-bind='if: isActive'>
+            <h4>ROUND MANAGEMENT</h4>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
-                    {% if DEBUG %}
                     <a class='btn btn-success' data-bind="click: confirmExperimentControllerAction.bind($data, true)" data-action='move_to_previous_round' data-content='Go back to the previous round.'><i class='icon-step-backward'></i> back</a>
-                    {% endif %}
-                    <a class='btn btn-success' data-bind="click: confirmExperimentControllerAction.bind($data, true), css: { disabled: isRoundInProgress }" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
+                    <a class='btn btn-success' data-bind="visible: isRoundInProgress, click: confirmExperimentControllerAction.bind($data, true)" data-action='end_round' data-content='Ends the round.'><i class='icon-stop'></i> end round</a>
+                    <a class='btn btn-success' data-bind="visible: ! isRoundInProgress(), click: confirmExperimentControllerAction.bind($data, true)" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
                     <a class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, true)' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='icon-step-forward'></i> next round</a>
                 </div>
             </div>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
-                    <a class='btn btn-success' data-bind='click: updateParticipants' data-content='Updates all connected participants.' ><i class='icon-exchange'></i> update participants</a>
-                    <a class='btn btn-primary' data-bind='click: update' data-content='Update this page and pull the latest data from the server.' ><i class='icon-refresh'></i> refresh data</a>
+                    <a class='btn btn-primary' data-bind='click: updateParticipants' data-content='Updates all connected participants.' ><i class='icon-exchange'></i> update participants</a>
+                    <a class='btn btn-primary' data-bind='click: update' data-content='Updates this pagedata.' ><i class='icon-refresh'></i> refresh this page</a>
+                </div>
+            </div>
+            <div class='btn-toolbar'>
+                <div class='btn-group'>
+                    <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
+                        data-action='restart_round' data-content='Restart the round.  This will reset timers and perform any additional round started setup logic.'>
+                        <i class='icon-circle-arrow-left'></i> restart round</a>
+                    <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
+                        data-action='restart_round' data-content='Restart the round.  This will reset timers and perform any additional round started setup logic.'>
+                        <i class='icon-circle-arrow-up'></i> restart experiment</a>
                     <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment.'><i class='icon-off'></i> deactivate</a>
                 </div>
             </div>
-            </li>
-        </ul>
-        {% comment %} should offer different actions (start + reset) to experiments that has already been activated / started {% endcomment %}
+        </div>
         <div data-bind='if: isArchived()'>
             <div class='alert alert-success'>
                 <i class='icon-save'></i> This experiment has been archived.
@@ -47,23 +53,49 @@
                     <h4>Inactive Experiment</h4>
                     <p>
                     There are <span data-bind='text:participantCount' class='badge badge-info'></span> registered participants.
-                    You can activate the experiment whenever you are ready to collect data. 
+                    Activate the experiment whenever you are ready to collect data.
                     </p>
-                    <p class='text-error'>NOTE: activating an experiment <b>will delete all existing data</b>
+                    <p class='text-error'>NOTE: activating an experiment <b>deletes all existing data</b>
                     </p>
                     <a data-content='Starts this experiment, assigns participants to groups, etc.'
                         class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='activate'><i class='icon-off'></i> activate</a>
                 </div>
             </div>
         </div>
-        <ul class='nav nav-list'>
-            <li class='nav-header'>round status</li>
-            <li><b class='text-info' data-bind='text:roundSequenceLabel'></b></li>
-            <li><span data-bind='text:roundStatusLabel'></span></li>
-            <li>Experiment started on: <span data-bind='text:currentRoundStartTime'></span></li>
-            <li>Time remaining: <span data-bind='text:timeRemaining'></span></li>
-            <li>Registered participants: <span data-bind='text:participantCount' class='badge badge-info'></span></li>
-        </ul>
+        <div class='well' style='padding-top: 5px; padding-bottom: 5px; margin-bottom: 0px;'>
+            <h5>ROUND STATUS</h5>
+            <div><b class='text-info' data-bind='text:roundSequenceLabel'></b></div>
+            <div><span data-bind='text:roundStatusLabel'></span></div>
+            <div>Round started on: <span data-bind='text:currentRoundStartTime'></span></div>
+            <div>Time remaining: <span data-bind='text:timeRemaining'></span></div>
+        </div>
+        <div class='accordion-group'>
+                <div class='accordion-heading'>
+                    <a class='accordion-toggle' data-toggle='collapse'
+                        data-parent='#registeredParticipantsAccordion' href='#registeredParticipants'>
+                        Registered participants: <span id='participantCountId' data-bind='text:participantCount' class='badge badge-info'></span>
+                    </a>
+                </div>
+                <div id='registeredParticipants' class='accordion-body collapse'>
+                    <div class='accordion-inner'>
+                        <table class='table table-compact table-striped table-bordered'>
+                            <thead><tr><th>Group</th><th>PGR PK</th><th>Participant</th></tr></thead>
+                            <tbody>
+                                {% regroup registeredParticipants by group as group_list %}
+                                {% for group in group_list %}
+                                {% for item in group.list %}
+                                <tr>
+                                    <td>{{ item.group }}</td>
+                                    <td>{{ item.participant_group_relationship.pk }}</td>
+                                    <td>{{ item.participant_group_relationship.participant.email }}, {{ item.participant_group_relationship.participant_handle}} </td>
+                                </tr>
+                                {% endfor %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         <div class='alert alert-message alert-block'>
             <h4><i class='icon-download'></i> Download Data</h4>
             <ul class='inline'>
@@ -213,6 +245,12 @@
                     }, {pk: {{experiment.pk}}, 'action':action});
                 });
             }
+            model.startOrStopExperimentAction = ko.computed(function() {
+                    return model.isRoundInProgress() ? "stop_round" : "start_round";
+                    });
+            model.startOrStopExperimentActionText = ko.computed(function() {
+                    return model.isRoundInProgress() ? "stop" : "start";
+                    });
             model.updateParticipants = function(m, evt) {
                 confirmAction(evt.target, function(confirmed, action) {
                     if (confirmed) {
@@ -254,6 +292,8 @@
                 experimentModel.addMessage(jQuery.parseJSON(evt.data));
             };
             return experimentModel;
+            // FIXME: this won't quite work
+            // $('#participantCountId').popover({ html: true, title: "Participants", content: experimentModel.registeredParticipants() });
         }
         $('[data-content]').popover({placement: 'top', trigger: 'hover'});
         // initialize experiment model JSON from experiment model

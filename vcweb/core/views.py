@@ -272,8 +272,10 @@ def monitor(request, pk=None):
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_configuration', 'experimenter'), pk=pk)
     user = request.user
     if is_experimenter(user, experiment.experimenter):
+        registered_participants = [ { "group": unicode(pgr.group), "participant_group_relationship": pgr } for pgr in experiment.participant_group_relationships ]
         return render(request, 'experimenter/monitor.html', {
             'experiment': experiment,
+            'registeredParticipants': registered_participants,
             'experimentModelJson': experiment.to_json(),
             })
     else:

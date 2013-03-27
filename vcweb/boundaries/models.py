@@ -204,6 +204,7 @@ def round_started_handler(sender, experiment=None, **kwargs):
             # reset all player statuses to True
             ParticipantRoundDataValue.objects.for_group(group, parameter=get_player_status_parameter(),
                     round_data=round_data).update(boolean_value=True)
+    # FIXME: start server side timer
 
 
 def get_total_harvest(group, round_data):

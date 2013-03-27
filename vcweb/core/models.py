@@ -274,17 +274,6 @@ class ExperimentQuerySet(models.query.QuerySet):
         return self.filter(status='COMPLETED', **kwargs)
     def active(self, **kwargs):
         return self.filter(status__in=('ACTIVE', 'ROUND_IN_PROGRESS'), **kwargs)
-    def increment_elapsed_time(self, status='ROUND_IN_PROGRESS', amount=60):
-        logger.debug("filtering on status %s", status)
-        if status is not None:
-            es = self.filter(status=status)
-            es.update(current_round_elapsed_time=models.F('current_round_elapsed_time') + amount,
-                    total_elapsed_time=models.F('total_elapsed_time') + amount)
-            # check each experiment's total_elapsed_time against the total allotted time and
-            # issue round_stopped signals to experiments that need to be stopped.
-            for experiment in es.all():
-                logger.debug("checking elapsed time on experiment %s", experiment)
-                experiment.check_elapsed_time()
 
 class Experiment(models.Model):
     """
@@ -336,8 +325,6 @@ class Experiment(models.Model):
     started, incremented by the heartbeat monitor.
     """
     current_round_start_time = models.DateTimeField(null=True, blank=True)
-    """ current round start time """
-    current_round_elapsed_time = models.PositiveIntegerField(default=0)
     """ elapsed time in seconds for the current round. """
     amqp_exchange_name = models.CharField(max_length=64, default="vcweb.default.exchange")
 
@@ -359,8 +346,17 @@ class Experiment(models.Model):
         return self.is_round_in_progress and self.current_round.is_playable_round
 
     @property
+    def current_round_elapsed_time(self):
+        if self.current_round_start_time:
+            return datetime.now() - self.current_round_start_time
+        return timedelta(0)
+
+    @property
     def time_remaining(self):
-        return self.current_round.duration - self.current_round_elapsed_time
+        tr = self.current_round.duration - self.current_round_elapsed_time.seconds
+        if tr < 0:
+            return u"Expired %s seconds ago" % abs(tr)
+        return tr
 
     @property
     def is_timed_round(self):
@@ -795,8 +791,10 @@ class Experiment(models.Model):
         self.current_round_sequence_number = max(self.current_round_sequence_number - 1, 1)
         self.save()
 
+    ACCEPTABLE_ACTIONS = ('advance_to_next_round', 'end_round', 'start_round', 'move_to_previous_round', 'activate',
+            'deactivate', 'complete', 'restart_round', 'restart')
     def invoke(self, action_name):
-        if action_name in ('advance_to_next_round', 'end_round', 'start_round', 'move_to_previous_round', 'activate', 'deactivate', 'complete'):
+        if action_name in Experiment.ACCEPTABLE_ACTIONS:
             getattr(self, action_name)()
         else:
             raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action_name, self))
@@ -805,7 +803,6 @@ class Experiment(models.Model):
         if self.is_round_in_progress:
             self.end_round()
         if self.has_next_round:
-            self.current_round_elapsed_time = 0
             self.current_round_sequence_number += 1
             self.start_round()
         else:
@@ -827,7 +824,6 @@ class Experiment(models.Model):
         logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
         self.status = Experiment.Status.ROUND_IN_PROGRESS
         self.create_round_data()
-        self.current_round_elapsed_time = 0
         self.current_round_start_time = datetime.now()
         self.save()
         self.log('Starting round')
@@ -841,9 +837,11 @@ class Experiment(models.Model):
         logger.debug("About to send round started signal with sender %s", sender)
         return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(), round_configuration=current_round_configuration)
 
+    def stop_round(self, sender=None, **kwargs):
+        self.end_round()
+
     def end_round(self, sender=None):
         self.status = Experiment.Status.ACTIVE
-        self.current_round_elapsed_time = max(self.current_round_elapsed_time, self.current_round.duration)
         self.save()
         self.log('Ending round with elapsed time %s' % self.current_round_elapsed_time)
         sender = intern(self.experiment_metadata.namespace.encode('utf8')) if sender is None else sender
@@ -860,6 +858,17 @@ class Experiment(models.Model):
             self.start_date_time = datetime.now()
             self.save()
         return self
+
+    def restart(self):
+        self.log("Restarting experiment entirely from the first round.")
+        self.deactivate()
+        self.current_round_sequence_number = 1
+        self.activate()
+        self.start_round()
+
+    def restart_round(self):
+        self.stop_round()
+        self.start_round()
 
     def complete(self):
         self.log("Marking as COMPLETED")

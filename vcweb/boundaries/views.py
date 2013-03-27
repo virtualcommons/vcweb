@@ -64,6 +64,7 @@ experiment_model_defaults = {
         'warningCountdownTime': 10,
         'harvestDecision': 0,
         'chatMessages': [],
+        'instructionsRound': False,
         }
 # FIXME: need to distinguish between instructions / welcome rounds and practice/regular rounds
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
@@ -76,12 +77,14 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 
 # round / experiment configuration data
     experiment_model_dict['roundDuration'] = current_round.duration
+    experiment_model_dict['timeRemaining'] = experiment.time_remaining
     regrowth_rate = get_regrowth_rate(current_round)
     cost_of_living = get_cost_of_living(current_round)
     experiment_model_dict['costOfLiving'] = cost_of_living
     experiment_model_dict['maxHarvestDecision'] = get_max_allowed_harvest_decision(participant_group_relationship, current_round_data, ec)
 # instructions round parameters
     if current_round.is_instructions_round:
+        experiment_model_dict['instructionsRound'] = True
         experiment_model_dict['participantsPerGroup'] = ec.max_group_size
         experiment_model_dict['regrowthRate'] = regrowth_rate
         experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
@@ -116,8 +119,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['submitted'] = harvest_decision.submitted
         if harvest_decision.submitted:
             # user has already submit a harvest decision this round
-            logger.debug("already submitted, setting harvest decision to %s", harvest_decision.int_value)
             experiment_model_dict['harvestDecision'] = harvest_decision.int_value
+            logger.debug("already submitted, setting harvest decision to %s", experiment_model_dict['harvestDecision'])
 
         experiment_model_dict['chatMessages'] = [{
             'pk': cm.pk,
@@ -125,7 +128,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             'message': cm.string_value,
             'date_created': cm.date_created.strftime("%I:%M:%S")
             } for cm in ChatMessage.objects.for_group(own_group)]
-        logger.debug("chat messages: %s", experiment_model_dict['chatMessages'])
         experiment_model_dict['canObserveOtherGroup'] = can_observe_other_group(current_round)
         if not current_round.is_practice_round and experiment_model_dict['canObserveOtherGroup']:
             gr = GroupRelationship.objects.select_related('cluster').get(group=own_group)
@@ -143,5 +145,4 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 
 # FIXME: defaults hard coded in for now
     experiment_model_dict['instructions'] = current_round.get_custom_instructions()
-    experiment_model_dict.update(**kwargs)
     return dumps(experiment_model_dict)
