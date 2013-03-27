@@ -90,8 +90,13 @@ def get_cost_of_living(round_configuration):
     return round_configuration.get_parameter_value(get_cost_of_living_parameter(), default=5).int_value
 
 
-def get_max_harvest(experiment):
-    return experiment.experiment_configuration.get_parameter_value(parameter=get_max_harvest_decision_parameter(), default=10).int_value
+def get_max_harvest_decision(experiment_configuration):
+    return experiment_configuration.get_parameter_value(parameter=get_max_harvest_decision_parameter(), default=10).int_value
+
+def get_max_allowed_harvest_decision(participant_group_relationship, round_data=None, experiment_configuration=None):
+    group = participant_group_relationship.group
+    resource_level = get_resource_level(group, round_data)
+    return min(get_max_harvest_decision(experiment_configuration), resource_level / group.size)
 
 
 ''' group data accessors '''

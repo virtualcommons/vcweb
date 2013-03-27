@@ -5,7 +5,7 @@ from vcweb.core.decorators import participant_required
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage, GroupRelationship)
 from vcweb.boundaries.forms import SingleIntegerDecisionForm
-from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_max_harvest,
+from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
         get_last_harvest_decision, get_harvest_decision_dv, set_harvest_decision, can_observe_other_group, get_player_status)
 
@@ -20,12 +20,9 @@ def participate(request, experiment_id=None):
     pgr = experiment.get_participant_group_relationship(participant)
     if experiment.experiment_metadata != get_experiment_metadata() or pgr.participant != request.user.participant:
         raise Http404
-
-# FIXME: should limit harvest_decision_choices by min(max_harvest, resource_level / group.size)
     return render(request, 'boundaries/participate.html', {
         'auth_token': participant.authentication_token,
         'experiment': experiment,
-        'harvest_decision_choices': range(get_max_harvest(experiment) + 1),
         'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
         'participant_group_relationship': pgr,
         'experimentModelJson': get_view_model_json(experiment, pgr),
@@ -65,7 +62,6 @@ experiment_model_defaults = {
         'maxEarnings': 20.00,
         'maximumResourcesToDisplay': 20,
         'warningCountdownTime': 10,
-        'maxHarvestDecision': 10,
         'harvestDecision': 0,
         'chatMessages': [],
         }
@@ -83,6 +79,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     regrowth_rate = get_regrowth_rate(current_round)
     cost_of_living = get_cost_of_living(current_round)
     experiment_model_dict['costOfLiving'] = cost_of_living
+    experiment_model_dict['maxHarvestDecision'] = get_max_allowed_harvest_decision(participant_group_relationship, current_round_data, ec)
 # instructions round parameters
     if current_round.is_instructions_round:
         experiment_model_dict['participantsPerGroup'] = ec.max_group_size
