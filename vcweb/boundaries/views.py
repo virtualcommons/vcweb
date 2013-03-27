@@ -94,6 +94,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     experiment_model_dict['roundType'] = current_round.round_type
     experiment_model_dict['practiceRound'] = current_round.is_practice_round
+    experiment_model_dict['showChatRooms'] = True
+
     if current_round.is_regular_round:
         experiment_model_dict['chatEnabled'] = current_round.chat_enabled
 
