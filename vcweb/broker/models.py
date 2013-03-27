@@ -19,7 +19,7 @@ def get_participant_link_parameter():
 
 @simplecache
 def get_participant_payoff_parameter():
-    return Parameter.objects.get(name='participant_payoff')
+    return Parameter.objects.get(name='payoff')
 
 
 @simplecache

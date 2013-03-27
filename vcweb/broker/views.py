@@ -5,7 +5,7 @@ from vcweb.core import dumps
 from vcweb.core.forms import ParticipantGroupIdForm, SingleIntegerDecisionForm
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
-        ParticipantExperimentRelationship, RoundConfiguration, ChatMessage, ParticipantRoundDataValue)
+        ParticipantExperimentRelationship, RoundConfiguration, ChatMessage, ParticipantRoundDataValue, Parameter)
 
 from vcweb.broker.models import (get_max_harvest_hours, get_harvest_decision_parameter,
         get_conservation_decision_parameter, set_harvest_decision, set_conservation_decision, get_harvest_decision,
@@ -14,8 +14,43 @@ from vcweb.broker.models import (get_max_harvest_hours, get_harvest_decision_par
 import random
 
 import logging
+from vcweb.broker.forms import ChatPreferenceForm
 
 logger = logging.getLogger(__name__)
+
+
+def get_chat_between_group_parameter():
+    return Parameter.objects.get(Name="chat_between_group")
+
+def get_chat_within_group_parameter():
+    return Parameter.objects.get(Name="chat_within_group")
+
+@participant_required
+def submit_chat_preference (request, experiment_id=None,):
+    form = ChatPreferenceForm(request.POST or None)
+    experiment = get_object_or_404(Experiment, pk=experiment_id)
+    if form.is_valid():
+        logger.debug("handing POST request, cleaned data: %s", form.cleaned_data)
+        participant_group_id = form.cleaned_data['participant_group_id']
+        pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        round_data = experiment.current_round_data
+        chat_within_group = form.cleaned_data['chat_within_group']
+        chat_between_group = form.cleaned_data['chat_between_group']
+        pgr.set_data_value(parameter=get_chat_within_group_parameter(), value=chat_within_group, round_data=round_data)
+        pgr.set_data_value(parameter=get_chat_between_group_parameter(), value=chat_between_group, round_data=round_data)
+        ncwg = ParticipantRoundDataValue.objects.filter(parameter=get_chat_within_group_parameter(), round_data=round_data, submitted=True).count()
+        ncbg = ParticipantRoundDataValue.objects.filter(parameter=get_chat_between_group_parameter(), round_data=round_data, submitted=True).count()
+        np = experiment.participant_set.count()
+        response_dict = {
+            'success': True,
+            'all_participants_submitted': False,
+        }
+        if ncwg == np and ncbg == np:
+            # everyone submitted a chat preference decision, create participant linkages
+
+            response_dict['all_participants_submitted'] = True
+        return JsonResponse(dumps(response_dict))
+    return JsonResponse(dumps({'success': False}))
 
 @participant_required
 def submit_decision(request, experiment_id=None):
