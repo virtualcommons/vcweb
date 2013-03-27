@@ -27,9 +27,9 @@
                 <div class='btn-group'>
                     <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
                         data-action='restart_round' data-content='Restart the round.  This will reset timers and perform any additional round started setup logic.'>
-                        <i class='icon-circle-arrow-left'></i> restart round</a>
+                        <i class='icon-repeat'></i> restart round</a>
                     <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
-                        data-action='restart_round' data-content='Restart the round.  This will reset timers and perform any additional round started setup logic.'>
+                        data-action='restart' data-content='Restart the entire experiment.  This will reset all data and start the experiment over at round 1.'>
                         <i class='icon-circle-arrow-up'></i> restart experiment</a>
                     <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment.'><i class='icon-off'></i> deactivate</a>
                 </div>
@@ -78,21 +78,21 @@
                 </div>
                 <div id='registeredParticipants' class='accordion-body collapse'>
                     <div class='accordion-inner'>
+                        {% regroup registeredParticipants by group as group_list %}
+                        {% for group in group_list %}
                         <table class='table table-compact table-striped table-bordered'>
-                            <thead><tr><th>Group</th><th>PGR PK</th><th>Participant</th></tr></thead>
+                            <caption class='text-info'><b>{{ group.grouper }} (PK: {{group.grouper.pk}})</b></caption>
+                            <thead><tr><th>PGR PK</th><th>Participant</th></tr></thead>
                             <tbody>
-                                {% regroup registeredParticipants by group as group_list %}
-                                {% for group in group_list %}
                                 {% for item in group.list %}
                                 <tr>
-                                    <td>{{ item.group }}</td>
                                     <td>{{ item.participant_group_relationship.pk }}</td>
-                                    <td>{{ item.participant_group_relationship.participant.email }}, {{ item.participant_group_relationship.participant_handle}} </td>
+                                    <td>{{ item.participant_group_relationship.participant_handle}} <i class='icon-resize-horizontal'></i> {{ item.participant_group_relationship.participant }}</td>
                                 </tr>
-                                {% endfor %}
                                 {% endfor %}
                             </tbody>
                         </table>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -212,6 +212,25 @@
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
+            model.currentInterval = ko.observable();
+            model.setCurrentInterval = function(intervalId) {
+                model.clearCurrentInterval();
+                model.currentInterval(intervalId);
+            }
+            model.clearCurrentInterval = function() {
+                console.debug("clearing current interval: " + model.currentInterval());
+                if (model.currentInterval()) {
+                    clearInterval(model.currentInterval());
+                    model.currentInterval(undefined);
+                }
+            }
+            model.tick = function() {
+                model.timeRemaining(model.timeRemaining() - 1);
+                if (model.timeRemaining() < 0) {
+                    model.addMessage("Round time has expired!");
+                    model.clearCurrentInterval();
+                }
+            }
             model.saveExperimenterNotes = function(localModel, evt) {
                 var notes = $('#experimenterNotesText').val();
                 Dajaxice.vcweb.core.save_experimenter_notes(function(data) {
@@ -225,9 +244,21 @@
             // showing the modal and invoking the ajax call if possible
             model.update = function(localModel, evt) {
                 $('#progress-modal').modal('show');
-                Dajaxice.vcweb.core.get_experiment_model(function (data) { ko.mapping.fromJS(data, model); $('#progress-modal').modal('hide');}, {pk: {{experiment.pk}}});
+                Dajaxice.vcweb.core.get_experiment_model(function(data) {
+                        console.debug("model has time remaining: " + model.timeRemaining());
+                        ko.mapping.fromJS(data, model);
+                        model.startTimer();
+                        $('#progress-modal').modal('hide');
+
+                        },
+                        {pk: {{experiment.pk}}});
             }
-            model.confirmExperimentControllerAction = function(updateParticipants, localModel, evt) {
+            model.startTimer = function() {
+                if (model.timeRemaining() > 0) {
+                    model.setCurrentInterval( setInterval( model.tick, 1000 ) );
+                }
+            };
+            model.confirmExperimentControllerAction = function(shouldUpdateParticipants, localModel, evt) {
                 element = evt.target;
                 console.debug(element);
                 if ($(element).hasClass('disabled')) {
@@ -238,7 +269,8 @@
                     $('#progress-modal').modal('show');
                     Dajaxice.vcweb.core.experiment_controller(function(data) {
                         ko.mapping.fromJS(data, model);
-                        if (updateParticipants) {
+                        model.startTimer();
+                        if (shouldUpdateParticipants) {
                             sendUpdateEvent();
                         }
                         $('#progress-modal').modal('hide');
