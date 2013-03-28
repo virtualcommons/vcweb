@@ -382,13 +382,11 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             model.secondsLeft = ko.observable(0);
             model.currentInterval = ko.observable();
             model.templateName = ko.computed(function() {
-                // FIXME: not sure about this style of template name manipulation, maybe it's still more straightforward
-                // to just have a templateName observable instead of a computed..
-                switch ( model.roundType() ) {
+                switch ( model.templateId() ) {
                     case 'PRACTICE':
                         return 'REGULAR';
                     default:
-                        return model.roundType();
+                        return model.templateId();
                 }
             });
             model.setCurrentInterval = function(intervalId) {
@@ -409,8 +407,8 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 return model.secondsLeft() > 0;
             });
             // activate instructions click bindings
-            model.activateTemplate = function(templateName) {
-                model.roundType(templateName);
+            model.activateTemplate = function(templateId) {
+                model.templateId(templateId);
             }
             model.readyParticipantsPercentage = ko.computed(function() {
                 return (model.readyParticipants() / model.totalNumberOfParticipants()) * 100;

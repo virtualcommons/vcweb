@@ -1015,6 +1015,8 @@ class RoundConfiguration(models.Model):
             help_text=_('''The name of the template to use to render when executing this round.
                         This file should exist in your templates directory as your-experiment-namespace/template-name.html,
                         e.g., if set to foo.html, vcweb will look for templates/forestry/foo.html'''))
+    template_id = models.CharField(max_length=128, null=True, blank=True,
+            help_text=_('A HTML template ID to use in a single page app, e.g., KO template'))
     survey_url = models.URLField(null=True, blank=True)
     """ external survey url """
     chat_enabled = models.BooleanField(default=False, help_text=_("Is chat enabled in this round?"))
