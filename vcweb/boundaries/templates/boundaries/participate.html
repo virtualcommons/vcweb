@@ -124,7 +124,7 @@ forest status.  Similarly, they may observe your group in the same way.
 Please wait.  The experiment will continue shortly once all the participants are ready.
 <p>
 <span class='badge'
-data-bind='css: { "badge-important": readyParticipants() < (totalNumberOfParticipants() / 2), "badge-success": readyParticipants() > (totalNumberOfParticipants() / 2)}, text: readyParticipants'></span> of <span class='badge badge-success' data-bind='text: totalNumberOfParticipants'></span> participants are ready.
+data-bind='css: { "badge-important": readyParticipants() < (participantCount() / 2), "badge-success": readyParticipants() > (participantCount() / 2)}, text: readyParticipants'></span> of <span class='badge badge-success' data-bind='text: participantCount'></span> participants are ready.
 </p>
 </div>
 </div>
@@ -438,7 +438,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 model.templateName(name);
             }
             model.readyParticipantsPercentage = ko.computed(function() {
-                return (model.readyParticipants() / model.totalNumberOfParticipants()) * 100;
+                return (model.readyParticipants() / model.participantCount()) * 100;
             });
             model.participantReady = function() {
                 $.post('/experiment/participant-ready', { participant_group_id: model.participantGroupId() }, function(response) {

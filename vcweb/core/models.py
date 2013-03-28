@@ -936,7 +936,6 @@ class Experiment(models.Model):
                 'isArchived': self.is_archived,
                 'exchangeRate': float(ec.exchange_rate),
                 'readyParticipants': self.number_of_ready_participants,
-                'totalNumberOfParticipants': self.participant_set.count(),
                 }
         if include_round_data:
             experiment_dict['allRoundData'] = self.all_round_data()
