@@ -455,7 +455,12 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                     model.setCurrentInterval(
                         setInterval(function() {
                             model.tick();
-                            model.setFormDisabled("#vcweb-form", model.secondsLeft() > 30);
+                            if (model.secondsLeft() > 30 && ! model.isPracticeRound()) {
+                                model.disableHarvestForm();
+                            }
+                            else {
+                                model.enableHarvestForm();
+                            }
                             if (! model.isTimerRunning()) {
                                 model.submitDecision();
                                 model.clearCurrentInterval();
@@ -465,11 +470,10 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 }
             };
             model.submitDecision = function(data, evt) {
-                model.setFormDisabled("#vcweb-form", false);
+                model.enableHarvestForm();
                 var formData = $('#vcweb-form').serialize();
-                model.setFormDisabled("#vcweb-form", true);
-                model.disableChat();
-                model.setFormDisabled("#chat-form", true);
+                model.disableHarvestForm();
+                model.disableChatForm();
                 console.debug(formData);
                 $.post('submit-harvest-decision', formData, function(response) {
                     console.log(response);
@@ -520,11 +524,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 model.setFormDisabled("#chat-form", true);
             }
             model.setupChat = function() {
-                chatEnabled = model.chatEnabled();
-                model.setFormDisabled("#chat-form", ! chatEnabled);
-                if (chatEnabled) {
-                    model.disableHarvestForm();
-                }
+                model.setFormDisabled("#chat-form", ! model.chatEnabled());
             }
             model.afterRenderTemplate = function(elements) {
                 if (model.templateId() === "REGULAR") {
