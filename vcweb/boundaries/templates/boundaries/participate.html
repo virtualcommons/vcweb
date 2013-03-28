@@ -1,5 +1,4 @@
 {% extends "participant/base.html" %}
-{% load tags %}
 {% load static %}
 {% block head %}
 {{ block.super }}
@@ -19,12 +18,11 @@
     </div>
 </div>
 {% endblock content %}
-
 {% block sidebar %}
-<div data-bind='ifnot: instructionsRound'>
+<div data-bind='ifnot: isInstructionsRound'>
 <h3>Chat</h3>
 <div data-bind='ifnot: chatEnabled'>
-    <div class='alert alert-info'>
+    <div class='alert alert-error'>
         <i class='icon-warning-sign'></i> Chat is currently disabled.
     </div>
 </div>
@@ -53,16 +51,72 @@
 <script type='text/html' id='PRACTICE_ROUND_RESULTS'>
     <h3>Practice Round Results</h3>
     <p>
-    If this had been been a paid session, you would have earned <span class='text-gold' data-bind='text: formatCurrency(totalEarnings)'></span>.
+    You harvested <span class='badge badge-success' data-bind='text: storage'></span> trees.
+    If this had been been a paid session, you would have earned <strong class='text-success' data-bind='text: totalEarnings'></strong>.
     </p>
     <p>
     We will now move on to the <strong>paid rounds.</strong>
     </p>
     <ul class='pager'>
         <li class='next'>
-        <a data-bind='click: activateTemplate.bind($data, "PAID_EXPERIMENT_INSTRUCTIONS")'>Ok, continue</a>
+        <a href='javascript: void()' data-bind='click: activateTemplate.bind($data, "PAID_EXPERIMENT_INSTRUCTIONS")'>Ok, continue</a>
         </li>
     </ul>
+</script>
+<script type='text/html' id='PAID_EXPERIMENT_INSTRUCTIONS'>
+    <h2>Paid Experiment Instructions</h2>
+    <h3>Two Sessions</h3>
+    <p>
+    This experiment is composed of two different, unconnected sessions.  Your group will be randomly selected for each
+    session, so you will be playing with a different group each time.  We will pay you for one of these two sessions,
+    chosen at random.  You have exactly 50% chance of being paid for your earnings in each session.
+    </p>
+    <h3>Group and Individual Status</h3>
+    <p>
+    You will be able to observe the status of the members of your group each round.  Likewise group members will see
+    your status, and those of the group.
+    </p>
+    <h3>Group Chat</h3>
+    <p>
+    You will be able to text chat with the other members of your group.  Once you have made a harvest decision, you will
+    no longer be able to contribute to the chat for that round.
+    </p>
+    <h3>Harvest Choice</h3>
+    <p>
+    You will have a maximum of <i class='icon-clock'></i><span data-bind='text: roundDuration'></span> seconds to make a
+    harvest decision each round.  A countdown will alert you when there are 
+    <span data-bind='text: warningCountdownTime'></span> seconds remaining to make a harvest choice.  When the countdown
+    reaches zero, any value you have selected will be submitted.  <strong>The default harvest is zero.</strong>
+    </p>
+
+    <ul class='pager'>
+        <li class='previous'>
+        <a href='javascript: void()' data-bind='click: activateTemplate.bind($data, "PRACTICE_ROUND_RESULTS")'>Back</a>
+        </li>
+        <li class='next'>
+        <a href='javascript: void()' data-bind='click: participantReady'>Ok, I understand</a>
+        </li>
+    </ul>
+</script>
+<script type='text/html' id='TREATMENT_A_INSTRUCTIONS'>
+<h3>Session <span data-bind='text: sessionId'></span> Instructions</h3>
+<p>
+In this session, there are two groups or villages.  Each group has a forest that the other group cannot harvest.  Both
+forests have the same growth capacity.  In addition, you may observe the other group, their storage amounts, and their
+forest status.  Similarly, they may observe your group in the same way.
+</p>
+<h3>Key points</h3>
+<ul>
+    <li>Two groups</li>
+    <li>Each group has an <b>exclusive</b> forest of the same size</li>
+    <li>You may observe the other group</li>
+    <li>They may observe your group</li>
+</ul>
+<ul class='pager'>
+    <li class='next'>
+    <a href='javascript: void()' data-bind='click: participantReady'>Ok, I am ready to start</a>
+    </li>
+</ul>
 </script>
 <script type='text/html' id='WAITING_ROOM'>
 <h3>Waiting for other participants</h3>
@@ -116,7 +170,7 @@ before joining again.
 <h4>Cash payment</h4>
 <p>
 If you collect enough tokens to pay living expenses until the end of the session you will be paid in cash 
-<strong data-bind='text: formatCurrency(dollarsPerToken())'></strong> for each token you have.  It is possible that you
+<strong data-bind='text: formatCurrency(exchangeRate())'></strong> for each token you have.  It is possible that you
 could earn as much as <strong data-bind='text: formatCurrency(maxEarnings())'></strong> for the entire experiment.
 However, the final outcome depends on your choices and those of your group members.
 </p>
@@ -214,36 +268,6 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
 <a href='javascript: void();' data-bind='click: participantReady'>I have fully read and understand these instructions</a>
 </li>
 </ul>
-</script>
-<script type='text/html' id='PAID_EXPERIMENT_INSTRUCTIONS'>
-<h2>Paid Experiment Instructions</h2>
-<h3>Two Sessions</h3>
-<p>
-This experiment is composed of two different, unconnected sessions.  Your group will be randomly selected for each
-session, so you will be playing with a different group each time.  We will pay you for one of these two sessions, chosen
-at random.  You have exactly 50% chance of being paid for your earnings in either session.
-</p>
-<h3>Group and Individual Status</h3>
-<p>
-You will be able to observe the status of the members of your group each round.  Likewise your group members can see
-your status and those of the group.
-</p>
-<h3>Group Chat</h3>
-<p>
-You will be able to chat with the other members of your group via group text chat.  Once you have made a harvest
-decision, you will no longer be able to chat for that round.
-</p>
-<h3>Harvest Choice</h3>
-<p>
-You will have a maximum of <i class='icon-clock'></i><span data-bind='text: roundDuration'></span> seconds to make a
-harvest decision each round.  A countdown will alert you when there are 
-<span data-bind='text: warningCountdownTime'></span> seconds remaining to make a harvest choice.  When the countdown
-reaches zero, any value you have selected will be submitted.  <strong>The default harvest is zero.</strong>
-</p>
-</script>
-<script type='text/html' id='INSTRUCTIONS'>
-    <div data-bind='html: instructions'>
-    </div>
 </script>
 <script type='text/html' id='REGULAR'>
 <div class='row'>
@@ -381,6 +405,9 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             var model = ko.mapping.fromJS(experimentModelJson);
             model.secondsLeft = ko.observable(0);
             model.currentInterval = ko.observable();
+            model.totalEarnings = ko.computed(function() {
+                return formatCurrency(model.storage() * model.exchangeRate());
+            });
             model.templateId = ko.computed(function() {
                 switch ( model.templateName() ) {
                     case 'PRACTICE':

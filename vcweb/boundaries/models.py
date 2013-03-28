@@ -162,7 +162,6 @@ def set_player_status(participant_group_relationship, round_data, value):
     status_dv.save()
     return status_dv
 
-
 def get_last_harvest_decision(participant_group_relationship, round_data=None):
     return participant_group_relationship.get_data_value(parameter=get_harvest_decision_parameter(),
                                                          round_data=round_data, default=0).int_value

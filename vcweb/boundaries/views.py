@@ -69,8 +69,9 @@ experiment_model_defaults = {
         'maximumResourcesToDisplay': 20,
         'warningCountdownTime': 10,
         'harvestDecision': 0,
+        'roundDuration': 60,
         'chatMessages': [],
-        'instructionsRound': False,
+        'isInstructionsRound': False,
         }
 # FIXME: need to distinguish between instructions / welcome rounds and practice/regular rounds
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
@@ -82,15 +83,15 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
 
 # round / experiment configuration data
-    experiment_model_dict['roundDuration'] = current_round.duration
     experiment_model_dict['timeRemaining'] = experiment.time_remaining
+    experiment_model_dict['sessionId'] = current_round.session_id
     regrowth_rate = get_regrowth_rate(current_round)
     cost_of_living = get_cost_of_living(current_round)
     experiment_model_dict['costOfLiving'] = cost_of_living
     experiment_model_dict['maxHarvestDecision'] = get_max_allowed_harvest_decision(participant_group_relationship, current_round_data, ec)
 # instructions round parameters
     if current_round.is_instructions_round:
-        experiment_model_dict['instructionsRound'] = True
+        experiment_model_dict['isInstructionsRound'] = True
         experiment_model_dict['participantsPerGroup'] = ec.max_group_size
         experiment_model_dict['regrowthRate'] = regrowth_rate
         experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
@@ -149,6 +150,4 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
                         })
             experiment_model_dict['groupData'] = group_data
 
-# FIXME: defaults hard coded in for now
-    experiment_model_dict['instructions'] = current_round.get_custom_instructions()
     return dumps(experiment_model_dict)

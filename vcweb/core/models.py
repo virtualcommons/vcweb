@@ -766,9 +766,8 @@ class Experiment(models.Model):
         else:
             logger.debug("no existing groups, proceeding")
         # seed the initial group.
-        current_group = self.group_set.create(number=self.group_set.count(), max_size=max_group_size, session_id=session_id)
         for p in participants:
-            pgr = self.add_participant(p, current_group, max_group_size)
+            pgr = self.add_participant(p, max_group_size=max_group_size)
             current_group = pgr.group
         self.create_group_clusters()
 
@@ -807,7 +806,7 @@ class Experiment(models.Model):
             'deactivate', 'complete', 'restart_round', 'restart')
     def invoke(self, action_name):
         if action_name in Experiment.ACCEPTABLE_ACTIONS:
-            getattr(self, action_name)()
+            return getattr(self, action_name)()
         else:
             raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action_name, self))
 
@@ -816,7 +815,7 @@ class Experiment(models.Model):
             self.end_round()
         if self.has_next_round:
             self.current_round_sequence_number += 1
-            self.start_round()
+            return self.start_round()
         else:
             logger.warning("trying to advance past the last round - no-op")
 
@@ -835,18 +834,21 @@ class Experiment(models.Model):
     def start_round(self, sender=None):
         logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
         self.status = Experiment.Status.ROUND_IN_PROGRESS
-        self.create_round_data()
-        self.current_round_start_time = datetime.now()
-        self.save()
-        self.log('Starting round')
         current_round_configuration = self.current_round
         if current_round_configuration.randomize_groups:
-            self.allocate_groups(preserve_existing_groups=current_round_configuration.preserve_existing_groups,
+            self.allocate_groups(
+                    preserve_existing_groups=current_round_configuration.preserve_existing_groups,
                     session_id=current_round_configuration.session_id)
+        # XXX: must create round data AFTER group allocation so that any participant round data values
+        # (participant ready parameters for instance) are associated with the correct participant group
+        # relationships.
+        self.create_round_data()
+        self.current_round_start_time = datetime.now()
+        self.log('Starting round')
+        self.save()
+        # notify registered game handlers
         if sender is None:
             sender = intern(self.experiment_metadata.namespace.encode('utf8'))
-        # notify registered game handlers
-        logger.debug("About to send round started signal with sender %s", sender)
         return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(), round_configuration=current_round_configuration)
 
     def stop_round(self, sender=None, **kwargs):
@@ -925,7 +927,7 @@ class Experiment(models.Model):
                 'isRoundInProgress': self.is_round_in_progress,
                 'isActive': self.is_active,
                 'isArchived': self.is_archived,
-                'dollarsPerToken': float(ec.exchange_rate),
+                'exchangeRate': float(ec.exchange_rate),
                 'readyParticipants': self.number_of_ready_participants,
                 'totalNumberOfParticipants': self.participant_set.count(),
                 }
@@ -1048,6 +1050,9 @@ class RoundConfiguration(models.Model):
         return RoundConfiguration.ROUND_TYPES_DICT[self.round_type][1]
 
     def get_custom_instructions(self, context_dict=None, **kwargs):
+        '''
+        FIXME: deprecated in favor of RoundConfiguration.template_id approach
+        '''
         if not self.is_instructions_round:
             logger.warning("tried to get custom instructions for a non-instructions round %s", self)
             return None

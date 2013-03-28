@@ -111,7 +111,8 @@ def get_experiment_model(request, pk):
 def experiment_controller(request, pk, action=None):
     experiment = _get_experiment(request, pk)
     try:
-        experiment.invoke(action)
+        response_tuples = experiment.invoke(action)
+        logger.debug("invoking action %s, results: %s", action, str(response_tuples))
         return experiment.to_json()
     except AttributeError as e:
         logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
