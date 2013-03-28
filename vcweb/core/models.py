@@ -779,11 +779,14 @@ class Experiment(models.Model):
         session_id = round_configuration.session_id
         logger.debug("creating group clusters with session id %s", session_id)
         if round_configuration.create_group_clusters:
-            # NOTE: misconfiguration can cause data loss
-            # delete any group clusters with the same session id
-            self.group_cluster_set.filter(session_id=session_id).delete()
+            gcs = self.group_cluster_set.filter()
+            gs = self.group_set.filter()
+            if session_id:
+                gcs = gcs.filter(session_id=session_id)
+                gs = gs.filter(session_id=session_id)
+            gcs.delete()
             group_cluster_size = round_configuration.group_cluster_size
-            groups = list(self.group_set.filter(session_id=session_id))
+            groups = list(gs)
             if len(groups) % group_cluster_size != 0:
                 logger.error("trying to create clusters of size %s but we have %s groups which isn't evenly divisible - aborting.",
                         group_cluster_size, len(groups))
@@ -793,6 +796,7 @@ class Experiment(models.Model):
             for group in groups:
                 if gc.group_relationship_set.count() == group_cluster_size:
                     gc = GroupCluster.objects.create(session_id=session_id, experiment=self)
+# adding group clusters
                 gc.add(group)
 
     def get_round_configuration(self, sequence_number):
@@ -877,7 +881,7 @@ class Experiment(models.Model):
             self.allocate_groups()
             self.status = Experiment.Status.ACTIVE
             self.date_activated = datetime.now()
-            self.save()
+            self.start_round()
         return self
 
     def restart(self):
