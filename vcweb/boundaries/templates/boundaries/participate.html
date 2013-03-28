@@ -50,6 +50,20 @@
 {% block javascript %}
 {{ block.super }}
 <!-- ko templates -->
+<script type='text/html' id='PRACTICE_ROUND_RESULTS'>
+    <h3>Practice Round Results</h3>
+    <p>
+    If this had been been a paid session, you would have earned <span class='text-gold' data-bind='text: formatCurrency(totalEarnings)'></span>.
+    </p>
+    <p>
+    We will now move on to the <strong>paid rounds.</strong>
+    </p>
+    <ul class='pager'>
+        <li class='next'>
+        <a data-bind='click: activateTemplate.bind($data, "PAID_EXPERIMENT_INSTRUCTIONS")'>Ok, continue</a>
+        </li>
+    </ul>
+</script>
 <script type='text/html' id='WAITING_ROOM'>
 <h3>Waiting for other participants</h3>
 <div>
@@ -108,7 +122,7 @@ However, the final outcome depends on your choices and those of your group membe
 </p>
 <ul class='pager'>
 <li class='next'>
-<a href='javascript: void();' data-bind='click: activateInstructionsPageTwo'>OK, I understand</a>
+<a href='javascript: void();' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS2")'>OK, I understand</a>
 </li>
 </ul>
 </div>
@@ -137,10 +151,10 @@ split between the 4 participants in your group, the forest has a capacity to pro
 </p>
 <ul class='pager'>
 <li class='previous'>
-<a href='javascript: void();' data-bind='click: activateInstructionsPageOne' >Back</a>
+<a href='javascript: void();' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS")' >Back</a>
 </li>
 <li class='next'>
-<a href='javascript: void();' data-bind='click: activateInstructionsPageThree' >OK, I understand</a>
+<a href='javascript: void();' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS3")' >OK, I understand</a>
 </li>
 </ul>
 </div>
@@ -161,10 +175,10 @@ please click the button to continue.
 </p>
 <ul class='pager'>
 <li class='previous'>
-<a href='javascript: void();' data-bind='click: activateInstructionsPageTwo' >Back</a>
+<a href='javascript: void();' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS2")' >Back</a>
 </li>
 <li class='next'>
-<a href='javascript: void();' data-bind='click: activatePracticeRoundInstructions'>OK, Continue to practice rounds</a>
+<a href='javascript: void();' data-bind='click: activateTemplate.bind($data, "PRACTICE_ROUND_INSTRUCTIONS")'>OK, Continue to practice rounds</a>
 </li>
 </ul>
 </div>
@@ -194,7 +208,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
 </p>
 <ul class='pager'>
 <li class='previous'>
-<a href='javascript:void();' data-bind='click: activateInstructionsPageThree'>Back</a>
+<a href='javascript:void();' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS3")'>Back</a>
 </li>
 <li class='next'>
 <a href='javascript: void();' data-bind='click: participantReady'>I have fully read and understand these instructions</a>
@@ -368,6 +382,8 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             model.secondsLeft = ko.observable(0);
             model.currentInterval = ko.observable();
             model.templateName = ko.computed(function() {
+                // FIXME: not sure about this style of template name manipulation, maybe it's still more straightforward
+                // to just have a templateName observable instead of a computed..
                 switch ( model.roundType() ) {
                     case 'PRACTICE':
                         return 'REGULAR';
@@ -393,34 +409,19 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 return model.secondsLeft() > 0;
             });
             // activate instructions click bindings
-            model.activateInstructionsPageOne = function() {
-                model.roundType('GENERAL_INSTRUCTIONS');
-            };
-            model.activateInstructionsPageTwo = function() {
-                model.roundType('GENERAL_INSTRUCTIONS2');
-            };
-            model.activateInstructionsPageThree = function() {
-                model.roundType('GENERAL_INSTRUCTIONS3');
-            };
-            model.activateWaitingRoomPage = function() {
-                model.roundType('WAITING_ROOM');
+            model.activateTemplate = function(templateName) {
+                model.roundType(templateName);
             }
             model.readyParticipantsPercentage = ko.computed(function() {
                 return (model.readyParticipants() / model.totalNumberOfParticipants()) * 100;
             });
-            model.activatePracticeRoundInstructions = function() {
-                model.roundType("PRACTICE_ROUND_INSTRUCTIONS");
-            }
-            model.activateTreatmentInstructions = function() {
-                model.roundType("TREATMENT_INSTRUCTIONS");
-            }
             model.participantReady = function() {
                 $.post('/experiment/participant-ready', { participant_group_id: model.participantGroupId() }, function(response) {
                     console.debug("successfully posted to server, notifying sockjs");
                     console.debug(response);
                     getWebSocket().send(createMessageEvent("Participant finished reading instructions", "client_ready"));
                     model.readyParticipants(response.number_of_ready_participants);
-                    model.activateWaitingRoomPage();
+                    model.activateTemplate("WAITING_ROOM");
                 });
             }
             model.showOtherGroup = function() {
