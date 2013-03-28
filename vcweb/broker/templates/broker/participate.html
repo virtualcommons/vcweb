@@ -493,26 +493,21 @@
             });
             model.setupFirstPracticeRoundTour = function () {
                 // set up first bootstrap tour
-                var tourFirst = new Tour({
-                    useLocalStorage: true,
-                    onShow: function(tour) {
-                        alert("showing tour");
-                    }
-                });
+                var tourFirst = new Tour();
                 tourFirst.addStep({
-                    element: "harvestDecisionId",
+                    element: "#harvestDecisionId",
                     title: "Here's where you insert your harvesting decision",
                     content: "For this practice round, go ahead and put 6 hours into harvesting. Each round you will have a maximum of 6  minute to make a harvest decision.", /* content of the popover */
                     placement: "right"
                 });
                 tourFirst.addStep({
-                    element: "conservationDecision",
+                    element: "#conservationDecision",
                     title: "Your conservation decision",
                     content: "Note that the rest of your available hours will be put into conservation.",
                     placement: "right"
                 });
                 tourFirst.addStep({
-                    element: "submitDecision",
+                    element: "#submitDecision",
                     title: "Submit your decision",
                     content: "Now click here to submit your harvest choice. Your choice will be submitted automatically when time is up. A countdown will alert you when there are 10 seconds remaining to make a harvest. The default harvest is zero.", /* content of the popover */
                     placement: "right"
@@ -525,43 +520,43 @@
             model.setupSecondPracticeRoundTour = function () {
                 var tourSecond = new Tour();
                 tourSecond.addStep({
-                    element: "lastRoundHarvestPayOff",
+                    element: "#lastRoundHarvestPayOff",
                     title: "Your round earnings",
                     content: "Here you will see how much you earned in each round. You receive 0.6 from harvesting. Because everyone contributed 4 hours to conservation, resulting in 8 hours for group A and 8 hours for group B.",
                     placement: "right"
                 });
                 tourSecond.addStep({
-                    element: "lastRoundGroupLocalBonus",
+                    element: "#lastRoundGroupLocalBonus",
                     title: "Bonus",
                     content: "So the standard revenue of $0.10/hour has been increased by 50% you receive an extra $0.30 and your total is $0.90.  If the sum within your group was less than 5 hours you would not receive benefits. ",
                     placement: "right"
                 });
                 tourSecond.addStep({
-                    element: "lastRoundMyGroupConservation",
+                    element: "#lastRoundMyGroupConservation",
                     title: "Bonus",
                     content: "If the sum of conservation time of all players were more than 22 hours you would get a further increase of 50% in the revenues.",
                     placement: "right"
                 });
                 tourSecond.addStep({
-                    element: "totalEarning",
+                    element: "#totalEarning",
                     title: "Total Earning",
                     content: "Here you can your total earning throughout the game",
                     placement: "right"
                 });
 
                 tourSecond.addStep({
-                    element: "totalEarning",
+                    element: "#totalEarning",
                     title: "Communication",
                     content: "At some point during the game you will have the option of communicating to other players. Communication to the other player within your group is FREE. Communication with the other group costs 2 hours.",
                 });
                 tourSecond.addStep({
-                    element: "totalEarning",
+                    element: "#totalEarning",
                     title: "",
                     content: "For this practice, go ahead and choose 'Communication within Group' and 'Communication with other Group'",
 
                 });
                 tourSecond.addStep({
-                    element: "totalEarning",
+                    element: "#totalEarning",
                     title: "Chat rooms",
                     content: "Communication will happen through these chat windows. Communications is time bound. Each message you send will be targeted a single player. Go ahead and send a message. It will not be seen by others for this practice.",
                     onHide: function (tourSecond) {
@@ -570,7 +565,7 @@
 
                 });
                 tourSecond.addStep({
-                    element: "totalEarning",
+                    element: "#totalEarning",
                     title: "Chat rooms",
                     content: "Remember that all your choices are independent and none will see what your decisions are.",
                 });
