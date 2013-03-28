@@ -100,6 +100,12 @@ def get_max_allowed_harvest_decision(participant_group_relationship, round_data=
 
 
 ''' group data accessors '''
+def get_average_harvest(group, round_data):
+    return get_total_harvest(group, round_data) / float(group.size)
+
+def get_average_storage(group, round_data):
+    return get_total_storage(group, round_data) / float(group.size)
+
 def get_resource_level_dv(group, round_data=None, round_configuration=None):
     '''
     Returns either the GroupClusterDataValue (shared resource condition) or the GroupRoundDataValue (standard
@@ -137,11 +143,9 @@ def get_storage(participant_group_relationship, round_data=None, default=0):
     return get_storage_dv(participant_group_relationship, round_data, default).int_value
 
 # returns the sum of all stored resources for each member in the group
-def get_total_storage(group):
-    # FIXME: int_value would be more performant but storage isn't being initialized properly yet and value returns an
-    # appropriate default value
-    return sum([pdv.value for pdv in group.get_participant_data_values(parameter=get_storage_parameter())])
-
+def get_total_storage(group, round_data):
+    q = ParticipantRoundDataValue.objects.for_group(group=group, parameter=get_storage_parameter(), round_data=round_data).aggregate(total_storage=Sum('int_value'))
+    return q['total_storage']
 
 def set_storage(participant_group_relationship, round_data, value):
     storage_dv = get_storage_dv(participant_group_relationship, round_data)

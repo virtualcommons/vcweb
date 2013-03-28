@@ -129,10 +129,10 @@ class ConnectionManager(object):
             if experimenter_tuple in self.experimenter_to_connection:
                 del self.experimenter_to_connection[experimenter_tuple]
 
-    def get_participant_group_relationship(self, connection):
+    def get_participant_group_relationship(self, connection, experiment):
         (participant_pk, experiment_pk) = self.connection_to_participant[connection]
         logger.debug("Looking for ParticipantGroupRelationship with tuple (%s, %s)", participant_pk, experiment_pk)
-        return ParticipantGroupRelationship.objects.get(participant__pk=participant_pk, group__experiment__pk = experiment_pk)
+        return experiment.get_participant_group_relationship(participant_pk)
 
     def get_participant_experiment_tuple(self, connection):
         return self.connection_to_participant[connection]
@@ -314,7 +314,7 @@ class ParticipantConnection(BaseConnection):
     def handle_chat(self, event, experiment, **kwargs):
         (per, valid) = self.verify_auth_token(event)
         if valid:
-            pgr = connection_manager.get_participant_group_relationship(self)
+            pgr = connection_manager.get_participant_group_relationship(self, experiment)
             current_round_data = experiment.current_round_data
             # FIXME: should chat message be created via post to Django form instead?
             chat_message = ChatMessage.objects.create(participant_group_relationship=pgr,

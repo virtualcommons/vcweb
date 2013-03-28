@@ -8,7 +8,7 @@ from vcweb.boundaries.forms import SingleIntegerDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
         get_last_harvest_decision, get_harvest_decision_dv, get_harvest_decision_parameter, set_harvest_decision,
-        can_observe_other_group, get_player_status)
+        can_observe_other_group, get_player_status, get_average_harvest, get_average_storage)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -71,6 +71,7 @@ experiment_model_defaults = {
         'harvestDecision': 0,
         'roundDuration': 60,
         'chatMessages': [],
+        'canObserveOtherGroup': False,
         'isInstructionsRound': False,
         }
 # FIXME: need to distinguish between instructions / welcome rounds and practice/regular rounds
@@ -135,19 +136,11 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             'message': cm.string_value,
             'date_created': cm.date_created.strftime("%I:%M:%S")
             } for cm in ChatMessage.objects.for_group(own_group)]
-        experiment_model_dict['canObserveOtherGroup'] = can_observe_other_group(current_round)
-        if not current_round.is_practice_round and experiment_model_dict['canObserveOtherGroup']:
-            gr = GroupRelationship.objects.select_related('cluster').get(group=own_group)
-            group_data = []
-            for group in gr.cluster.group_set.all():
-                if group != own_group:
-                    group_data.append({
-                        'groupId': unicode(group),
-                        'resourceLevel': get_resource_level(group),
-                        'totalStorage': get_total_storage(group),
-                        'regrowthRate': regrowth_rate,
-                        'costOfLiving': cost_of_living,
-                        })
-            experiment_model_dict['groupData'] = group_data
+        if can_observe_other_group(current_round):
+            experiment_model_dict['canObserveOtherGroup'] = True
+            other_group = own_group.get_related_group()
+            experiment_model_dict['otherGroupResourceLevel'] = get_resource_level(other_group, current_round_data)
+            experiment_model_dict['otherGroupAverageHarvest'] = get_average_harvest(other_group, current_round_data)
+            experiment_model_dict['otherGroupAverageStorage'] = get_average_storage(other_group, current_round_data)
 
     return dumps(experiment_model_dict)

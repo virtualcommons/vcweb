@@ -557,13 +557,15 @@ class Experiment(models.Model):
     def get_participant_experiment_relationship(self, participant):
         return self.participant_relationship_set.select_related('participant__user').get(participant=participant)
 
-    def get_participant_group_relationship(self, participant):
+    def get_participant_group_relationship(self, participant=None, participant_pk=None):
         session_id = self.current_round.session_id
+        criteria = dict([
+            ('group__experiment', self),
+            ('participant__pk', participant_pk) if participant_pk else ('participant', participant),
+            ])
         if session_id:
-            return ParticipantGroupRelationship.objects.get(group__experiment=self, participant=participant,
-                    group__session_id=session_id)
-        else:
-            return ParticipantGroupRelationship.objects.get(group__experiment=self, participant=participant)
+            criteria['group__session_id'] = session_id
+        return ParticipantGroupRelationship.objects.get(**criteria)
 
     def all_participants_have_submitted(self):
         return ParticipantRoundDataValue.objects.filter(submitted=False, round_data=self.current_round_data).count() == 0
@@ -1454,9 +1456,9 @@ class Group(models.Model):
         return self.activity_log_set.filter(round_configuration=self.current_round)
 
     def get_related_group(self):
-        ''' FIXME: currently only assumes single relationships '''
+        ''' FIXME: currently only assumes single paired relationships '''
         gr = GroupRelationship.objects.get(group=self)
-        related_gr = GroupRelationship.objects.get(~models.Q(group=self), cluster=gr.cluster)
+        related_gr = GroupRelationship.objects.select_related('group').get(~models.Q(group=self), cluster=gr.cluster)
         return related_gr.group
 
     def log(self, log_message):
