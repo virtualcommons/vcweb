@@ -1875,6 +1875,15 @@ class ParticipantGroupRelationship(models.Model):
     def group_number(self):
         return self.group.number
 
+    def set_participant_ready(self, round_data=None):
+        if round_data is None:
+            round_data = self.current_round_data
+        dv = self.get_data_value(parameter=get_participant_ready_parameter(), round_data=round_data)
+        dv.submitted = True
+        dv.boolean_value = True
+        dv.save()
+        return dv
+
     def get_round_configuration_value(self, **kwargs):
         return self.group.get_round_configuration_value(**kwargs)
 

@@ -549,11 +549,7 @@ def participant_ready(request):
                 pk=participant_group_id)
         experiment = pgr.group.experiment
         round_data = experiment.current_round_data
-        prdv = ParticipantRoundDataValue.objects.get(participant_group_relationship=pgr,
-                round_data=round_data, parameter=get_participant_ready_parameter())
-        prdv.submitted = True
-        prdv.boolean_value = True
-        prdv.save()
+        pgr.set_participant_ready(round_data)
         return JsonResponse(dumps(_ready_participants_dict(experiment)))
     else:
         return JsonResponse(dumps({'success': False, 'message': "Invalid form"}))

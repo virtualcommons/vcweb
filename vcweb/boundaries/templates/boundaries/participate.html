@@ -445,12 +445,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                     console.debug("successfully posted to server, notifying sockjs");
                     console.debug(response);
                     model.readyParticipants(response.number_of_ready_participants);
-                    getWebSocket().send(createMessageEvent("Participant finished reading instructions", "client_ready"));
-                    /*
-                    if (response.all_participants_ready) {
-                        getWebSocket().send(createAllParticipantsReadyEvent());
-                    }
-                    */
+                    getWebSocket().send(createReadyEvent("Participant finished reading instructions"));
                     model.activateTemplate("WAITING_ROOM");
                 });
             }
@@ -509,19 +504,11 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 console.debug(formData);
                 $.post('submit-harvest-decision', formData, function(response) {
                     console.log(response);
-                    // FIXME: this is dangerous, could potentially lead to advancing rounds multiple times if something
-                    // haywire in the participant.  Should only be activatable by the Experimenter.
-                    /*
-                    console.log("all participants ready?");
-                    if (response.all_participants_submitted) {
-                        getWebSocket().send(createAllParticipantsReadyEvent());
-                    }
-                    */
                     model.update($.parseJSON(response.experimentModelJson));
                     // FIXME: forward the response message to the chat window should be handled completely on the server
                     // side instead of ping-ponging to the client side back to the real time server back out to all
                     // clients in this group
-                    getWebSocket().send(createMessageEvent(response.message));
+                    getWebSocket().send(createReadyEvent(response.message));
                     model.clearCurrentInterval();
                 });
             }

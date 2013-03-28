@@ -38,13 +38,13 @@ def submit_harvest_decision(request, experiment_id=None):
         harvest_decision = form.cleaned_data['integer_decision']
         round_data = experiment.current_round_data
         set_harvest_decision(pgr, harvest_decision, round_data, submitted=True)
+        pgr.set_participant_ready(round_data)
         message = "%s harvested %s trees"
         experiment.log(message % (pgr.participant, harvest_decision))
         response_dict = {
                 'success': True,
                 'experimentModelJson': get_view_model_json(experiment, pgr),
                 'message': message % (pgr.participant_handle, harvest_decision),
-                'all_participants_submitted': experiment.all_participants_submitted(get_harvest_decision_parameter(), round_data)
                 }
         return JsonResponse(dumps(response_dict))
     else:

@@ -618,7 +618,7 @@
             }
             model.participantReady = function () {
                 $.post('/experiment/participant-ready', { participant_group_id: model.participantGroupId() }, function (response) {
-                    getWebSocket().send(createMessageEvent("Participant finished reading instructions", "client_ready"));
+                    getWebSocket().send(createReadyEvent("Participant finished reading instructions"));
                     model.readyParticipants(response.number_of_ready_participants);
                     model.activateWaitingRoomPage();
                 });

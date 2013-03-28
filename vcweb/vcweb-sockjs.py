@@ -70,6 +70,10 @@ def create_chat_event(message):
 def create_message_event(message, event_type='info'):
     return json.dumps({ 'message': message, 'event_type': event_type})
 
+REFRESH_EVENT_TYPE = 'refresh'
+UPDATE_EVENT_TYPE = 'update'
+READY_EVENT_TYPE = 'participant_ready'
+
 REFRESH_EVENT = json.dumps({ 'event_type': 'refresh' })
 UPDATE_EVENT = json.dumps({ 'event_type': 'update' })
 DISCONNECTION_EVENT = create_message_event('Your session has expired and you have been disconnected.  You can only have one window open to a vcweb page.')
@@ -290,11 +294,11 @@ class ParticipantConnection(BaseConnection):
             logger.warning("Invalid auth token for participant %s", per)
             self.send(UNAUTHORIZED_EVENT)
 
-    def handle_client_ready(self, event, experiment, **kwargs):
-        logger.debug("handling client ready event %s for experiment %s", event, experiment)
+    def handle_participant_ready(self, event, experiment, **kwargs):
+        logger.debug("handling participant ready event %s for experiment %s", event, experiment)
         (per, valid) = self.verify_auth_token(event)
         if valid:
-            connection_manager.broadcast(experiment, create_message_event("Participant %s is ready." % per.participant, event_type='participant_ready'))
+            connection_manager.broadcast(experiment, create_message_event("Participant %s is ready." % per.participant, event_type=READY_EVENT_TYPE))
         else:
             logger.warning("Invalid auth token for participant %s", per)
             self.send(UNAUTHORIZED_EVENT)
