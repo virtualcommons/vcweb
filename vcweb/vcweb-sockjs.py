@@ -298,7 +298,10 @@ class ParticipantConnection(BaseConnection):
         logger.debug("handling participant ready event %s for experiment %s", event, experiment)
         (per, valid) = self.verify_auth_token(event)
         if valid:
-            connection_manager.broadcast(experiment, create_message_event("Participant %s is ready." % per.participant, event_type=READY_EVENT_TYPE))
+            if not event.message:
+                event.message = "Participant %s is ready." % per.participant
+        # FIXME: any reason to bootstrap this
+            connection_manager.broadcast(experiment, create_message_event(event.message, event_type=READY_EVENT_TYPE))
         else:
             logger.warning("Invalid auth token for participant %s", per)
             self.send(UNAUTHORIZED_EVENT)
