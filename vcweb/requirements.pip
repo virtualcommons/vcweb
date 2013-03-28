@@ -7,7 +7,6 @@ django-model-utils
 django-social-auth
 django-mptt
 psycopg2
-simplejson
 tornado
 sockjs-tornado
 tornado-redis
