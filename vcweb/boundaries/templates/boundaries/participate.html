@@ -555,12 +555,14 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 model.setFormDisabled("#chat-form", true);
             }
             model.setupChat = function() {
-                model.setFormDisabled("#chat-form", ! model.chatEnabled());
+                var chatDisabled = model.isPracticeRound() || ! model.chatEnabled();
+                model.setFormDisabled("#chat-form", chatDisabled);
             }
             model.afterRenderTemplate = function(elements) {
                 if (model.templateId() === "REGULAR") {
                     model.startRound()
                 }
+                model.setupChat();
             }
             return model;
         }
