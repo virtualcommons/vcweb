@@ -260,7 +260,7 @@
                     model.setCurrentInterval( setInterval( model.tick, 1000 ) );
                 }
             };
-            model.nextRound = function() {
+            model.advanceToNextRound = function() {
                 $('#progress-modal').modal('show');
                 Dajaxice.vcweb.core.experiment_controller(function(data) {
                         ko.mapping.fromJS(data, model);
@@ -294,6 +294,14 @@
             model.startOrStopExperimentActionText = ko.computed(function() {
                     return model.isRoundInProgress() ? "stop" : "start";
                     });
+            model.checkAllParticipantsReady = function() {
+                $.get('/experiment/{{experiment.pk}}/check-ready-participants', function(response) {
+                    if (response.all_participants_ready) {
+                        model.addMessage("All participants are ready, advancing to next round");
+                        model.advanceToNextRound();
+                    }
+                });
+            }
             model.updateParticipants = function(m, evt) {
                 confirmAction(evt.target, function(confirmed, action) {
                     if (confirmed) {
@@ -336,8 +344,8 @@
                     case 'update':
                         console.debug("FIXME: ignoring update requests, patch sockjs broadcast to not send certain messages");
                         break;
-                    case 'all_participants_ready':
-                        experimentModel.nextRound();
+                    case 'participant_ready':
+                        experimentModel.checkAllParticipantsReady();
                     case 'chat':
                     case 'info':
                     default:

@@ -554,20 +554,19 @@ def participant_ready(request):
         prdv.submitted = True
         prdv.boolean_value = True
         prdv.save()
-        number_of_ready_participants = experiment.number_of_ready_participants
-        all_participants_ready = (number_of_ready_participants == experiment.number_of_participants)
-        return JsonResponse(dumps({
-            'success': True,
-            'number_of_ready_participants': number_of_ready_participants,
-            'all_participants_ready': all_participants_ready
-            }))
+        return JsonResponse(dumps(_ready_participants_dict(experiment)))
     else:
         return JsonResponse(dumps({'success': False, 'message': "Invalid form"}))
 
-@participant_required
+def _ready_participants_dict(experiment):
+    number_of_ready_participants = experiment.number_of_ready_participants
+    all_participants_ready = (number_of_ready_participants == experiment.number_of_participants)
+    return { 'success': True, 'number_of_ready_participants': number_of_ready_participants, 'all_participants_ready': all_participants_ready }
+
+@login_required
 def get_number_of_ready_participants(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
-    return JsonResponse(dumps({'success': True, 'number_of_ready_participants': experiment.number_of_ready_participants}))
+    return JsonResponse(dumps(_ready_participants_dict(experiment)))
 
 def handler500(request):
     return render(request, '500.html')
