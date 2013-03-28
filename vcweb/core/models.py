@@ -674,23 +674,20 @@ class Experiment(models.Model):
             round_data = self.current_round_data
 
 # create group cluster parameter data values
-        logger.debug("creating group cluster data values")
         for group_cluster in self.group_cluster_set.all():
             for parameter in group_cluster_parameters:
                 gcdv, created = GroupClusterDataValue.objects.get_or_create(round_data=round_data, parameter=parameter, group_cluster=group_cluster)
-                logger.debug("%s (%s)", gcdv, created)
+                #logger.debug("%s (%s)", gcdv, created)
 
-        logger.debug("creating group data values")
         for group in self.group_set.select_related('parameter').all():
             for parameter in group_parameters:
                 group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter)
-                logger.debug("%s (%s)", group_data_value, created)
+                #logger.debug("%s (%s)", group_data_value, created)
             if participant_parameters:
-                logger.debug("creating participant data values")
                 for pgr in group.participant_group_relationship_set.all():
                     for parameter in participant_parameters:
                         participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(round_data=round_data, participant_group_relationship=pgr, parameter=parameter)
-                        logger.debug("%s (%s)", participant_data_value, created)
+                #        logger.debug("%s (%s)", participant_data_value, created)
 
     def log(self, log_message):
         if log_message:
@@ -973,7 +970,7 @@ class Experiment(models.Model):
 
 class RoundConfiguration(models.Model):
     # FIXME: refactor this into a single data structure
-    # maps round type name to (description, default_template_name)
+    # maps round type name to (description, default_template_filename)
     ROUND_TYPES_DICT = dict(
             WELCOME=('Initial welcome round', 'welcome.html'),
             GENERAL_INSTRUCTIONS=('General instructions round (introduction)', 'general-instructions.html'),

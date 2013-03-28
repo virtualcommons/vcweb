@@ -86,11 +86,11 @@ class BaseVcwebTest(TestCase):
                 yield self.experiment
             e.advance_to_next_round()
 
-    def create_new_round_configuration(self, round_type='REGULAR', template_name=None):
+    def create_new_round_configuration(self, round_type='REGULAR', template_filename=None):
         return RoundConfiguration.objects.create(experiment_configuration=self.experiment_configuration,
                 sequence_number=(self.experiment_configuration.last_round_sequence_number + 1),
                 round_type=round_type,
-                template_name=template_name
+                template_filename=template_filename
                 )
 
     def create_new_parameter(self, name='vcweb.test.parameter', scope=Parameter.Scope.EXPERIMENT, parameter_type='string'):

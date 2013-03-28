@@ -15,7 +15,7 @@ class ForestryRoundSignalTest(BaseTest):
 
     def test_round_ended_signal(self):
         e = self.test_round_started_signal()
-        self.verify_round_ended(e, lambda e: e.end_round(sender=FORESTRY_SENDER))
+        self.verify_round_ended(e, lambda e: e.end_round(sender=EXPERIMENT_METADATA_NAME))
 
     def test_round_started_signal(self):
         e = self.advance_to_data_round()
@@ -27,7 +27,7 @@ class ForestryRoundSignalTest(BaseTest):
         e = self.advance_to_data_round()
         # manually invoke round_setup, otherwise start_round should work as
         # well (but that's tested in the signal tests)
-        round_setup(e)
+        round_setup(None, e)
         for group in e.group_set.all():
             self.verify_resource_level(group)
         return e
@@ -53,13 +53,13 @@ class ForestryRoundSignalTest(BaseTest):
 
     def test_round_ended(self):
         e = self.test_round_setup()
-        self.verify_round_ended(e, lambda experiment: round_teardown(experiment))
+        self.verify_round_ended(e, lambda experiment: round_ended(None, experiment))
 
 class ForestryViewsTest(BaseTest):
 
     def test_get_template(self):
         e = self.experiment
-        rc = self.create_new_round_configuration(round_type=RoundConfiguration.RoundType.QUIZ, template_name='quiz_23.html')
+        rc = self.create_new_round_configuration(round_type=RoundConfiguration.RoundType.QUIZ, template_filename='quiz_23.html')
         e.current_round_sequence_number = rc.sequence_number
         self.assertEqual(e.current_round_template, 'forestry/quiz_23.html', 'should return specified quiz_template')
 

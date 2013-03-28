@@ -108,7 +108,7 @@ def set_resource_level(group, value, round_data=None):
     return group.set_data_value(parameter=get_resource_level_parameter(), round_data=round_data, value=value)
 
 @receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
-def round_started_handler(sender, experiment=None, **kwargs):
+def round_setup(sender, experiment=None, **kwargs):
     round_configuration = experiment.current_round
     logger.debug("setting up boundaries round %s", round_configuration)
     if round_configuration.is_playable_round:
@@ -137,7 +137,7 @@ def round_started_handler(sender, experiment=None, **kwargs):
                 set_resource_level(group, initial_resource_level, round_data=round_data)
 
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
-def round_ended_handler(sender, experiment=None, **kwargs):
+def round_ended(sender, experiment=None, **kwargs):
     logger.debug("forestry handling round ended signal")
     '''
     calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth.
