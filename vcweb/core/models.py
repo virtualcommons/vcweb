@@ -940,7 +940,7 @@ class Experiment(models.Model):
         if include_round_data:
             experiment_dict['allRoundData'] = self.all_round_data()
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
-            experiment_dict['messages'] = [unicode(log) for log in self.activity_log_set.order_by('-date_created')]
+            experiment_dict['messages'] = [str(log) for log in self.activity_log_set.order_by('-date_created')]
             experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes if self.is_round_in_progress else ''
         if default_value_dict:
             experiment_dict.update(default_value_dict, **kwargs)

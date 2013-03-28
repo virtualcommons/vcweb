@@ -2,8 +2,8 @@ from django.core.cache import cache
 from vcweb.core.models import ExperimentMetadata
 from vcweb.core.urls import foursquare_venue_search_url, foursquare_categories_url
 import logging
-import simplejson as json
 import urllib2
+import json
 logger = logging.getLogger(__name__)
 
 class ExperimentService(object):
