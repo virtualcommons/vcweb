@@ -444,8 +444,11 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 $.post('/experiment/participant-ready', { participant_group_id: model.participantGroupId() }, function(response) {
                     console.debug("successfully posted to server, notifying sockjs");
                     console.debug(response);
-                    getWebSocket().send(createMessageEvent("Participant finished reading instructions", "client_ready"));
                     model.readyParticipants(response.number_of_ready_participants);
+                    getWebSocket().send(createMessageEvent("Participant finished reading instructions", "client_ready"));
+                    if (response.all_participants_ready) {
+                        getWebSocket().send(createAllParticipantsReadyEvent());
+                    }
                     model.activateTemplate("WAITING_ROOM");
                 });
             }
@@ -504,6 +507,8 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 console.debug(formData);
                 $.post('submit-harvest-decision', formData, function(response) {
                     console.log(response);
+                    // FIXME: this is dangerous, could potentially lead to advancing rounds multiple times if something
+                    // haywire in the participant.  Should only be activatable by the Experimenter.
                     console.log("all participants ready?");
                     if (response.all_participants_submitted) {
                         getWebSocket().send(createAllParticipantsReadyEvent());
@@ -585,9 +590,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                         break;
                     case 'participant_ready':
                         $.get('/experiment/{{experiment.pk}}/ready-participants', function(response) {
-                                console.debug("ready participants response");
-                                console.debug(response)
-                                experimentModel.readyParticipants(response.number_of_ready_participants);
+                            experimentModel.readyParticipants(response.number_of_ready_participants);
                         });
                         break;
                     default:

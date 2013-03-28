@@ -320,12 +320,14 @@ class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, FormView
 
     def form_valid(self, form):
         number_of_participants = form.cleaned_data.get('number_of_participants')
+        username_suffix = form.cleaned_data.get('username_suffix')
         email_suffix = form.cleaned_data.get('email_suffix')
         experiment = self.object
         experiment_passcode = form.cleaned_data.get('experiment_passcode')
         experiment.setup_test_participants(count=number_of_participants,
                 institution=form.institution,
                 email_suffix=email_suffix,
+                username_suffix=username_suffix,
                 password=experiment_passcode)
         return super(RegisterSimpleParticipantsView, self).form_valid(form)
 
@@ -552,8 +554,15 @@ def participant_ready(request):
         prdv.submitted = True
         prdv.boolean_value = True
         prdv.save()
-        return JsonResponse(dumps({'success': True, 'number_of_ready_participants': experiment.number_of_ready_participants}))
-    return JsonResponse(dumps({'success': False}))
+        number_of_ready_participants = experiment.number_of_ready_participants
+        all_participants_ready = (number_of_ready_participants == experiment.number_of_participants)
+        return JsonResponse(dumps({
+            'success': True,
+            'number_of_ready_participants': number_of_ready_participants,
+            'all_participants_ready': all_participants_ready
+            }))
+    else:
+        return JsonResponse(dumps({'success': False, 'message': "Invalid form"}))
 
 @participant_required
 def get_number_of_ready_participants(request, pk=None):

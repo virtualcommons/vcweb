@@ -383,6 +383,10 @@ class Experiment(models.Model):
                 self.sequence_label)
 
     @property
+    def number_of_participants(self):
+        return self.participant_set.count()
+
+    @property
     def participant_group_relationships(self):
         '''
         Generator function for all participant group relationships in this experiment
@@ -650,13 +654,13 @@ class Experiment(models.Model):
         return msg
 
     ''' FIXME: get rid of hardcoded defaults for the slovakia pretest '''
-    def setup_test_participants(self, count=20, institution=None, email_suffix='sav.sk', password='test'):
+    def setup_test_participants(self, count=20, institution=None, email_suffix='mailinator.com', username_suffix='asu', password='test'):
         if self.participant_set.count() > 0:
             logger.warning("This experiment %s already has %d participants - aborting", self, self.participant_set.count())
             return
         users = []
         for i in xrange(1, count+1):
-            email = u's%d@%s' % (i, email_suffix)
+            email = u's%d%s@%s' % (i, username_suffix, email_suffix)
             try:
                 user = User.objects.get(username=email)
             except User.DoesNotExist:
