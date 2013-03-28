@@ -747,7 +747,7 @@ class Experiment(models.Model):
         gs = self.group_set
         if gs.count() > 0:
             if preserve_existing_groups:
-                self.log("preserving existing groups")
+                logger.debug("preserving existing groups")
                 # verify incoming session id is an actual value
                 if session_id is None:
                     round_configuration = self.current_round
@@ -756,25 +756,26 @@ class Experiment(models.Model):
                         logger.error("Trying to create a new set of groups but no session id has been set on %s.  Aborting.", round_configuration)
                         raise ValueError("Cannot allocate new groups and preserve existing groups without an appropriate session id set on this round configuration %s" % round_configuration)
             else:
-                self.log("reallocating groups, deleting old groups")
+                logger.debug("deleting old groups")
                 gqs = gs.all()
                 for g in gqs:
                     self.log("reallocating/deleting group %s" % g.participant_group_relationship_set.all())
                 gqs.delete()
-                self.group_cluster_set.delete()
-                self.log("deleted all groups: %s" % str(gqs))
-        else:
-            logger.debug("no existing groups, proceeding")
-        # seed the initial group.
+# add each participant to the next available group
+        current_group = None
         for p in participants:
-            pgr = self.add_participant(p, max_group_size=max_group_size)
+            pgr = self.add_participant(p, current_group, max_group_size)
             current_group = pgr.group
         self.create_group_clusters()
 
     def create_group_clusters(self):
         round_configuration = self.current_round
         session_id = round_configuration.session_id
+        logger.debug("creating group clusters with session id %s", session_id)
         if round_configuration.create_group_clusters:
+            # NOTE: misconfiguration can cause data loss
+            # delete any group clusters with the same session id
+            self.group_cluster_set.filter(session_id=session_id).delete()
             group_cluster_size = round_configuration.group_cluster_size
             groups = list(self.group_set.filter(session_id=session_id))
             if len(groups) % group_cluster_size != 0:
@@ -1665,7 +1666,7 @@ class GroupCluster(models.Model):
                 gcdv.save()
 
     def __unicode__(self):
-        return u"group cluster %s (%s)" % (self.name, self.experiment)
+        return u"GroupCluster #%s %s (%s)" % (self.pk, self.session_id, self.experiment)
 
     class Meta:
         ordering = ['date_created']
@@ -1676,7 +1677,7 @@ class GroupRelationship(models.Model):
     group = models.ForeignKey(Group)
 
     def __unicode__(self):
-        return u"group %s in cluster %s" % (self.group, self.cluster)
+        return u"%s -> %s" % (self.group, self.cluster)
 
     class Meta:
         ordering = ['date_created']
