@@ -38,12 +38,10 @@
             "experiment_configuration": 1,
             "experiment_metadata": 1,
             "experimenter": 1,
-            "start_date_time": null,
             "status": "INACTIVE",
             "tick_duration": "10s",
             "date_created": "2010-09-07",
-            "last_modified": "2010-09-07 12:23:37",
-            "total_elapsed_time": 0
+            "last_modified": "2010-09-07 12:23:37"
         },
         "model": "core.experiment",
         "pk": 1

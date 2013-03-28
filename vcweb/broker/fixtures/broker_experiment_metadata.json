@@ -67,10 +67,9 @@
         "fields": {
             "experiment_metadata": 7,
             "status": "INACTIVE",
-            "start_date_time": null,
+            "date_activated": null,
             "tick_duration": "",
             "authentication_code": "broker_test",
-            "total_elapsed_time": 0,
             "current_round_start_time": null,
             "last_modified": "2013-02-13T15:53:45.902",
             "experimenter": 7,

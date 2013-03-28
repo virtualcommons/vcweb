@@ -234,7 +234,7 @@ def like(request):
         # FIXME: either needs a uniqueness constraint to ensure that duplicates don't get created or add guards when we
         # retrieve them to only send back the latest one (feels hacky).  See
         # https://bitbucket.org/virtualcommons/vcweb/issue/59/get_or_create-issues-for-likes
-        round_data = participant_group_relationship.get_round_data()
+        round_data = participant_group_relationship.current_round_data
         Like.objects.create(round_data=round_data, participant_group_relationship=participant_group_relationship, target_data_value=target)
         logger.debug("Participant %s liked %s", participant_group_relationship, target)
         return JsonResponse(dumps({'success': True, 'viewModel': get_view_model_json(participant_group_relationship)}))
@@ -257,7 +257,7 @@ def post_comment(request):
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         Comment.objects.create(
                 string_value=message,
-                round_data=participant_group_relationship.get_round_data(),
+                round_data=participant_group_relationship.current_round_data,
                 participant_group_relationship=participant_group_relationship,
                 target_data_value=target)
         logger.debug("Participant %s commented '%s' on %s", participant_group_relationship.participant, message, target)
@@ -328,7 +328,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     if round_configuration is None:
         round_configuration = experiment.current_round
     if round_data is None:
-        round_data = experiment.get_round_data(round_configuration)
+        round_data = experiment.current_round_data
     compare_other_group = can_view_other_groups(round_configuration=round_configuration)
     group_data = []
     for group in experiment.group_set.all():

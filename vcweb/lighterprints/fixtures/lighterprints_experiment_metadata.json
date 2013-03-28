@@ -67,7 +67,6 @@
     {
         "fields": {
             "authentication_code": "TEST_LIGHTERPRINTS",
-            "current_round_elapsed_time": 0,
             "current_round_sequence_number": 1,
             "duration": "1h",
             "experiment_configuration": 4,
@@ -75,12 +74,11 @@
                 "lighterprints"
             ],
             "experimenter": 1,
-            "start_date_time": null,
+            "date_activated": null,
             "status": "INACTIVE",
             "date_created": "2011-07-07 15:12:07",
             "last_modified": "2011-07-07 15:13:03",
-            "tick_duration": "10s",
-            "total_elapsed_time": 0
+            "tick_duration": "10s"
         },
         "model": "core.experiment",
         "pk": 4

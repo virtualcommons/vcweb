@@ -16,7 +16,7 @@ class BaseVcwebTest(TestCase):
     forestry_test_data, and a number of participants, experiments, etc.,
     based on the forestry experiment
     """
-    fixtures = ['test_users_participants', 'forestry_test_data']
+    fixtures = ['forestry_experiment_metadata']
 
     def load_experiment(self, experiment_metadata=None, **kwargs):
         if experiment_metadata is None:
@@ -210,18 +210,11 @@ class ExperimentTest(BaseVcwebTest):
             experiment.advance_to_next_round()
             self.assertTrue(experiment.current_round_sequence_number == round_number)
 
-    def test_increment_elapsed_time(self):
+    def test_elapsed_time(self):
         experiment = self.experiment
         experiment.activate()
-        current_round_elapsed_time = experiment.current_round_elapsed_time
-        self.assertTrue(current_round_elapsed_time == 0)
-        total_elapsed_time = experiment.total_elapsed_time
-        self.assertTrue(total_elapsed_time == 0)
-        delta = 120
-        Experiment.objects.increment_elapsed_time(status=experiment.status, amount=delta)
-        experiment = Experiment.objects.get(pk=self.experiment.pk)
-        self.assertEqual(experiment.current_round_elapsed_time, current_round_elapsed_time + delta)
-        self.assertEqual(experiment.total_elapsed_time, total_elapsed_time + delta)
+        self.assertTrue(experiment.current_round_elapsed_time.seconds == 0)
+        # FIXME: exercise current_round_elapsed_time and total_elapsed_time
 
     def test_instructions_round_parameters(self):
         e = self.experiment

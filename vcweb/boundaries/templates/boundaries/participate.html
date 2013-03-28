@@ -6,7 +6,7 @@
 <link rel='stylesheet' href='{% static "css/boundaries/style.css" %}'/>
 {% endblock %}
 {% block content %}
-<div data-bind='template: { name: templateName(), afterRender: afterRenderTemplate }'>
+<div data-bind='template: { name: templateId(), afterRender: afterRenderTemplate }'>
 </div>
 <div id='progress-modal' class='modal hide fade'>
     <div class='model-header'>
@@ -381,12 +381,12 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
             var model = ko.mapping.fromJS(experimentModelJson);
             model.secondsLeft = ko.observable(0);
             model.currentInterval = ko.observable();
-            model.templateName = ko.computed(function() {
-                switch ( model.templateId() ) {
+            model.templateId = ko.computed(function() {
+                switch ( model.templateName() ) {
                     case 'PRACTICE':
                         return 'REGULAR';
                     default:
-                        return model.templateId();
+                        return model.templateName();
                 }
             });
             model.setCurrentInterval = function(intervalId) {
@@ -407,8 +407,8 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 return model.secondsLeft() > 0;
             });
             // activate instructions click bindings
-            model.activateTemplate = function(templateId) {
-                model.templateId(templateId);
+            model.activateTemplate = function(name) {
+                model.templateName(name);
             }
             model.readyParticipantsPercentage = ko.computed(function() {
                 return (model.readyParticipants() / model.totalNumberOfParticipants()) * 100;
@@ -527,7 +527,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 }
             }
             model.afterRenderTemplate = function(elements) {
-                if (model.templateName() === "REGULAR") {
+                if (model.templateId() === "REGULAR") {
                     model.startRound()
                 }
             }

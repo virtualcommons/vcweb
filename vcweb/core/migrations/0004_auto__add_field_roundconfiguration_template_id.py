@@ -8,15 +8,36 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # rename field 'RoundConfiguration.template_name' to 'RoundConfiguration.template_filename'
+        db.rename_column(u'core_roundconfiguration', 'template_name', 'template_filename')
+
         # Adding field 'RoundConfiguration.template_id'
         db.add_column(u'core_roundconfiguration', 'template_id',
                       self.gf('django.db.models.fields.CharField')(max_length=128, null=True, blank=True),
                       keep_default=False)
 
+        # Renaming field 'Experiment.start_date_time' to 'Experiment.date_activated'
+        db.rename_column(u'core_experiment', 'start_date_time', 'date_activated')
+
+        # Deleting field 'Experiment.total_elapsed_time'
+        db.delete_column(u'core_experiment', 'total_elapsed_time')
+
 
     def backwards(self, orm):
+        # Rename field 'RoundConfiguration.template_filename'
+        db.rename_column(u'core_roundconfiguration', 'template_filename', 'template_name')
+
         # Deleting field 'RoundConfiguration.template_id'
         db.delete_column(u'core_roundconfiguration', 'template_id')
+
+        # Renaming field 'Experiment.date_activated' to 'Experiment.start_date_time'
+        db.rename_column(u'core_experiment', 'date_activated', 'start_date_time')
+
+        # Adding field 'Experiment.total_elapsed_time'
+        db.add_column(u'core_experiment', 'total_elapsed_time',
+                      self.gf('django.db.models.fields.PositiveIntegerField')(default=0),
+                      keep_default=False)
+
 
 
     models = {
@@ -87,6 +108,7 @@ class Migration(SchemaMigration):
             'current_repeated_round_sequence_number': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'current_round_sequence_number': ('django.db.models.fields.PositiveIntegerField', [], {'default': '1'}),
             'current_round_start_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            'date_activated': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'duration': ('django.db.models.fields.CharField', [], {'max_length': '32', 'null': 'True', 'blank': 'True'}),
             'experiment_configuration': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['core.ExperimentConfiguration']"}),
@@ -94,10 +116,8 @@ class Migration(SchemaMigration):
             'experimenter': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['core.Experimenter']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'last_modified': ('vcweb.core.models.AutoDateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'start_date_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'status': ('django.db.models.fields.CharField', [], {'default': "'INACTIVE'", 'max_length': '32'}),
-            'tick_duration': ('django.db.models.fields.CharField', [], {'max_length': '32', 'null': 'True', 'blank': 'True'}),
-            'total_elapsed_time': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'})
+            'tick_duration': ('django.db.models.fields.CharField', [], {'max_length': '32', 'null': 'True', 'blank': 'True'})
         },
         u'core.experimentactivitylog': {
             'Meta': {'object_name': 'ExperimentActivityLog', '_ormbases': [u'core.ActivityLog']},
@@ -363,8 +383,8 @@ class Migration(SchemaMigration):
             'sequence_number': ('django.db.models.fields.PositiveIntegerField', [], {}),
             'session_id': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'}),
             'survey_url': ('django.db.models.fields.URLField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'template_id': ('django.db.models.fields.CharField', [], {'max_length': '128', 'null': 'True', 'blank': 'True'}),
-            'template_name': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'})
+            'template_filename': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'}),
+            'template_id': ('django.db.models.fields.CharField', [], {'max_length': '128', 'null': 'True', 'blank': 'True'})
         },
         u'core.rounddata': {
             'Meta': {'ordering': "['round_configuration']", 'unique_together': "(('round_configuration', 'experiment'),)", 'object_name': 'RoundData'},

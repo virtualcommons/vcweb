@@ -312,18 +312,13 @@ class Experiment(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
 # FIXME: inherit from TimeFramedModel instead?
-    start_date_time = models.DateTimeField(null=True, blank=True)
+    date_activated = models.DateTimeField(null=True, blank=True)
     # how long this experiment should run in a date format
     # 1w2d = 1 week 2 days = 9d
     duration = models.CharField(max_length=32, null=True, blank=True)
     tick_duration = models.CharField(max_length=32, null=True, blank=True)
     """ how often the experiment_metadata server should tick. """
 
-    total_elapsed_time = models.PositiveIntegerField(default=0)
-    """
-    total elapsed time in seconds since this experiment_metadata was
-    started, incremented by the heartbeat monitor.
-    """
     current_round_start_time = models.DateTimeField(null=True, blank=True)
     """ elapsed time in seconds for the current round. """
     amqp_exchange_name = models.CharField(max_length=64, default="vcweb.default.exchange")
@@ -344,6 +339,12 @@ class Experiment(models.Model):
     @property
     def is_data_round_in_progress(self):
         return self.is_round_in_progress and self.current_round.is_playable_round
+
+    @property
+    def total_elapsed_time(self):
+        if self.date_activated:
+            return datetime.now() - self.date_activated
+        return timedelta(0)
 
     @property
     def current_round_elapsed_time(self):
@@ -864,7 +865,7 @@ class Experiment(models.Model):
         elif not self.is_active:
             self.allocate_groups()
             self.status = Experiment.Status.ACTIVE
-            self.start_date_time = datetime.now()
+            self.date_activated = datetime.now()
             self.save()
         return self
 
@@ -1011,8 +1012,8 @@ class RoundConfiguration(models.Model):
     quiz_2.html in the forestry experiment app, this would be loaded from
     forestry/templates/forestry/quiz_2.html
     """
-    template_name = models.CharField(max_length=64, null=True, blank=True,
-            help_text=_('''The name of the template to use to render when executing this round.
+    template_filename = models.CharField(max_length=64, null=True, blank=True,
+            help_text=_('''The filename of the template to use to render when executing this round.
                         This file should exist in your templates directory as your-experiment-namespace/template-name.html,
                         e.g., if set to foo.html, vcweb will look for templates/forestry/foo.html'''))
     template_id = models.CharField(max_length=128, null=True, blank=True,
@@ -1037,11 +1038,11 @@ class RoundConfiguration(models.Model):
     repeat = models.PositiveIntegerField(default=0, help_text=_('If set to a positive integer n, this round will repeat itself n times with the same configuration and parameter values.'))
 
     @property
-    def custom_template_name(self):
-        return self.template_name if self.template_name else self.default_template_name
+    def custom_template_filename(self):
+        return self.template_filename if self.template_filename else self.default_template_filename
 
     @property
-    def default_template_name(self):
+    def default_template_filename(self):
         return RoundConfiguration.ROUND_TYPES_DICT[self.round_type][1]
 
     def get_custom_instructions(self, context_dict=None, **kwargs):
@@ -1060,8 +1061,12 @@ class RoundConfiguration(models.Model):
             return None
 
     @property
+    def template_name(self):
+        return self.template_id if self.template_id else self.round_type
+
+    @property
     def template_path(self):
-        return "%s/%s" % (self.experiment_configuration.namespace, self.custom_template_name)
+        return "%s/%s" % (self.experiment_configuration.namespace, self.custom_template_filename)
 
     @property
     def round_number(self):

@@ -33,7 +33,7 @@ def update_active_experiments(sender, time=None, start=None, send_emails=True, *
     messages = []
     for experiment in active_experiments:
         # calculate total carbon savings and decide if they move on to the next level
-        round_data = experiment.get_round_data()
+        round_data = experiment.current_round_data
         for group in experiment.group_set.all():
             promoted = False
             completed = False
@@ -64,7 +64,7 @@ LIGHTERPRINTS_SENDER = intern('lighterprints')
 @receiver(signals.round_started, sender=LIGHTERPRINTS_SENDER)
 def round_started_handler(sender, experiment=None, **kwargs):
     logger.debug("experiment %s started" % experiment)
-    round_data = experiment.get_round_data()
+    round_data = experiment.current_round_data
     # FIXME: experiment.initialize_parameters could do some of this except for setting the default values properly
     footprint_level_parameter = get_footprint_level_parameter()
     experiment_completed_parameter = get_experiment_completed_parameter()
@@ -318,7 +318,7 @@ def get_treatment_type_parameter():
 
 def get_footprint_level_dv(group, round_data=None):
     if round_data is None:
-        round_data = group.get_round_data()
+        round_data = group.current_round_data
     return GroupRoundDataValue.objects.get(group=group, round_data=round_data, parameter=get_footprint_level_parameter())
 
 def get_footprint_level(group, **kwargs):
@@ -326,7 +326,7 @@ def get_footprint_level(group, **kwargs):
 
 def get_experiment_completed_dv(group, round_data=None):
     if round_data is None:
-        round_data = group.get_round_data()
+        round_data = group.current_round_data
     return GroupRoundDataValue.objects.get(group=group, round_data=round_data,
             parameter=get_experiment_completed_parameter())
 
@@ -440,7 +440,7 @@ def get_available_activities(participant_group_relationship=None, ignore_time=Fa
         logger.debug("requesting available activities for pgr %s (%d)", participant_group_relationship, participant_group_relationship.pk)
         # FIXME: push this logic into the manager / queryset?
         experiment = participant_group_relationship.group.experiment
-        group_level = get_footprint_level(participant_group_relationship.group, round_data=experiment.get_round_data())
+        group_level = get_footprint_level(participant_group_relationship.group, round_data=experiment.current_round_data)
         if ignore_time:
             # don't worry about the time, just return all activities at this participant's group level
             return Activity.objects.at_level(group_level)
@@ -504,7 +504,7 @@ def is_activity_available(activity, participant_group_relationship, **kwargs):
     return check_activity_availability(activity, participant_group_relationship, **kwargs) == ActivityStatus.AVAILABLE
 
 def do_activity(activity, participant_group_relationship):
-    round_data = participant_group_relationship.get_round_data()
+    round_data = participant_group_relationship.current_round_data
     if is_activity_available(activity, participant_group_relationship, round_data=round_data):
         logger.debug("activity %s was available", activity)
         return ParticipantRoundDataValue.objects.create(parameter=get_activity_performed_parameter(),
@@ -544,7 +544,7 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
     if end is None:
         end = start + timedelta(1)
     if round_data is None:
-        round_data = group.get_round_data
+        round_data = group.current_round_data
     activities_performed_qs = ParticipantRoundDataValue.objects.for_group(group, parameter=get_activity_performed_parameter(), round_data=round_data, date_created__range=(start, end))
     for activity_performed_dv in activities_performed_qs:
         activity_points = activity_points_cache[activity_performed_dv.int_value]
