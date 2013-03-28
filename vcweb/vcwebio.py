@@ -6,7 +6,7 @@ from itertools import chain
 import os
 import sys
 import logging
-import simplejson
+import json
 
 sys.path.append(os.path.abspath('.'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
@@ -18,7 +18,7 @@ from vcweb import settings
 logger = logging.getLogger('tornadio.vcweb')
 
 def info_json(message):
-    return simplejson.dumps({'message_type': 'info', 'message': message})
+    return json.dumps({'message_type': 'info', 'message': message})
 
 class ConnectionManager:
     '''
@@ -36,7 +36,7 @@ class ConnectionManager:
     FIXME: consider refactoring core so that an "all" group always exists in an
     experiment.
     '''
-    refresh_json = simplejson.dumps({ 'message_type': 'refresh' })
+    refresh_json = json.dumps({ 'message_type': 'refresh' })
 
     def __str__(self):
         return u"Participants: %s------Experimenters: %s" % (self.participant_to_connection, self.experimenter_to_connection)
@@ -129,30 +129,30 @@ class ConnectionManager:
 
     def send_goto(self, connection, experiment, url):
         notified_participants = []
-        json = simplejson.dumps({'message_type': 'goto', 'url': url})
+        goto_json = json.dumps({'message_type': 'goto', 'url': url})
         for (participant_group_pk, connection) in self.all_participants(connection, experiment):
-            connection.send(json)
+            connection.send(goto_json)
             notified_participants.append(participant_group_pk)
         return notified_participants
 
 
-    def send_to_experimenter(self, experimenter_tuple, json):
+    def send_to_experimenter(self, experimenter_tuple, message):
         (experimenter_pk, experiment_pk) = experimenter_tuple
-        logger.debug("sending %s to experimenter %s", json, experimenter_tuple)
+        logger.debug("sending %s to experimenter %s", message, experimenter_tuple)
         if experimenter_tuple in self.experimenter_to_connection:
             connection = self.experimenter_to_connection[experimenter_tuple]
             logger.debug("sending to connection %s", connection)
-            connection.send(json)
+            connection.send(message)
         else:
             logger.debug("no experimenter found with pk %s", experimenter_pk)
             logger.debug("all experimenters: %s", self.experimenter_to_connection)
 
-    def send_to_group(self, group, json):
+    def send_to_group(self, group, message):
         for participant_group_pk, connection in self.connections(group):
-            connection.send(json)
+            connection.send(message)
         experiment = group.experiment
         experimenter = experiment.experimenter
-        self.send_to_experimenter((experimenter.pk, experiment.pk), json)
+        self.send_to_experimenter((experimenter.pk, experiment.pk), message)
 
 # replace with namedtuple
 class Struct:
@@ -212,7 +212,7 @@ class ParticipantHandler(tornadio2.SocketConnection):
             experiment = participant_experiment_relationship.experiment
             experimenter_tuple = (experiment.experimenter.pk, experiment.pk)
             connection_manager.send_to_experimenter(experimenter_tuple,
-                        simplejson.dumps({
+                        json.dumps({
                             'message': "Participant %s connected." % participant_experiment_relationship.participant,
                             'message_type': 'info',
                             }))
@@ -240,9 +240,9 @@ class ParticipantHandler(tornadio2.SocketConnection):
                 event.participant_data_value_pk = prdv.pk
                 event.participant_number = participant_group_relationship.participant_number
                 event.participant_group = participant_group_relationship.group_number
-                json = simplejson.dumps(event.__dict__)
-                logger.debug("submit event json: %s", json)
-                connection_manager.send_to_experimenter(experimenter_tuple, json)
+                message = json.dumps(event.__dict__)
+                logger.debug("submit event json: %s", message)
+                connection_manager.send_to_experimenter(experimenter_tuple, message)
                 if experiment.all_participants_have_submitted():
                     connection_manager.send_to_experimenter(
                             experimenter_tuple,
@@ -258,7 +258,7 @@ class ParticipantHandler(tornadio2.SocketConnection):
                         value=xhtml_escape(event.message),
                         round_data=current_round_data
                         )
-                chat_json = simplejson.dumps({
+                chat_json = json.dumps({
                     "pk": chat_message.pk,
                     'round_data_pk': current_round_data.pk,
                     'participant': unicode(participant_group_relationship.participant),
