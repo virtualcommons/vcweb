@@ -260,6 +260,15 @@
                     model.setCurrentInterval( setInterval( model.tick, 1000 ) );
                 }
             };
+            model.nextRound = function() {
+                $('#progress-modal').modal('show');
+                Dajaxice.vcweb.core.experiment_controller(function(data) {
+                        ko.mapping.fromJS(data, model);
+                        model.startTimer();
+                        sendUpdateEvent();
+                        $('#progress-modal').modal('hide');
+                    }, {pk: {{experiment.pk}}, 'action':"advance_to_next_round"});
+            }
             model.confirmExperimentControllerAction = function(shouldUpdateParticipants, localModel, evt) {
                 element = evt.target;
                 console.debug(element);
@@ -327,6 +336,8 @@
                     case 'update':
                         console.debug("FIXME: ignoring update requests, patch sockjs broadcast to not send certain messages");
                         break;
+                    case 'all_participants_ready':
+                        experimentModel.nextRound();
                     case 'chat':
                     case 'info':
                     default:

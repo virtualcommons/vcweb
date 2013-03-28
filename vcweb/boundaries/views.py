@@ -7,7 +7,8 @@ from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMes
 from vcweb.boundaries.forms import SingleIntegerDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
-        get_last_harvest_decision, get_harvest_decision_dv, set_harvest_decision, can_observe_other_group, get_player_status)
+        get_last_harvest_decision, get_harvest_decision_dv, get_harvest_decision_parameter, set_harvest_decision,
+        can_observe_other_group, get_player_status)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -21,7 +22,6 @@ def participate(request, experiment_id=None):
     if experiment.experiment_metadata != get_experiment_metadata() or pgr.participant != request.user.participant:
         raise Http404
     return render(request, 'boundaries/participate.html', {
-        'auth_token': participant.authentication_token,
         'experiment': experiment,
         'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
         'participant_group_relationship': pgr,
@@ -36,11 +36,17 @@ def submit_harvest_decision(request, experiment_id=None):
         participant_group_id = form.cleaned_data['participant_group_id']
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         harvest_decision = form.cleaned_data['integer_decision']
-        set_harvest_decision(pgr, harvest_decision, experiment.current_round_data, submitted=True)
+        round_data = experiment.current_round_data
+        set_harvest_decision(pgr, harvest_decision, round_data, submitted=True)
         message = "%s harvested %s trees"
         experiment.log(message % (pgr.participant, harvest_decision))
-        return JsonResponse(dumps({ 'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr),
-            'message': message % (pgr.participant_handle, harvest_decision)}))
+        response_dict = {
+                'success': True,
+                'experimentModelJson': get_view_model_json(experiment, pgr),
+                'message': message % (pgr.participant_handle, harvest_decision),
+                'all_participants_submitted': experiment.all_participants_submitted(get_harvest_decision_parameter(), round_data)
+                }
+        return JsonResponse(dumps(response_dict))
     else:
         logger.debug("form was invalid: %s", form)
     for field in form:
@@ -92,7 +98,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     experiment_model_dict['templateName'] = current_round.template_name
-    experiment_model_dict['practiceRound'] = current_round.is_practice_round
+    experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
 
     if current_round.is_regular_round:
         experiment_model_dict['chatEnabled'] = current_round.chat_enabled

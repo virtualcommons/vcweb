@@ -281,6 +281,15 @@ class ParticipantConnection(BaseConnection):
     def handle_submit(self, event, experiment, **kwargs):
         pass
 
+    def handle_all_participants_ready(self, event, experiment, **kwargs):
+        logger.debug("all participants ready to move on to the next round for %s", experiment)
+        (per, valid) = self.verify_auth_token(event)
+        if valid:
+            connection_manager.send_to_experimenter(create_message_event("All participants are ready to move on to the next round.", event_type="all_participants_ready"), experiment=experiment)
+        else:
+            logger.warning("Invalid auth token for participant %s", per)
+            self.send(UNAUTHORIZED_EVENT)
+
     def handle_client_ready(self, event, experiment, **kwargs):
         logger.debug("handling client ready event %s for experiment %s", event, experiment)
         (per, valid) = self.verify_auth_token(event)

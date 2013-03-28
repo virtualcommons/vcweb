@@ -545,6 +545,11 @@ class Experiment(models.Model):
         else:
             return 0
 
+    def all_participants_submitted(self, parameter, round_data=None):
+        if round_data is None:
+            round_data = self.current_round_data
+        return ParticipantRoundDataValue.objects.filter(parameter=parameter, submitted=True, round_data=round_data).count() == self.participant_set.count()
+
     @property
     def all_participants_ready(self):
         return self.number_of_ready_participants == self.participant_set.count()

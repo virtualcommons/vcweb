@@ -300,7 +300,7 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
     </div>
 </div>
 <h3>Forest</h3>
-<div data-bind='if: practiceRound'>
+<div data-bind='if: isPracticeRound'>
     <div class='alert alert-error alert-block'>
         <h4>PRACTICE ROUND</h4>
         This is a practice round.  The decisions you make in this round will <b>NOT</b> contribute to your earnings.
@@ -477,6 +477,10 @@ reaches zero, any value you have selected will be submitted.  <strong>The defaul
                 console.debug(formData);
                 $.post('submit-harvest-decision', formData, function(response) {
                     console.log(response);
+                    console.log("all participants ready?");
+                    if (response.all_participants_submitted) {
+                        getWebSocket().send(createAllParticipantsReadyEvent());
+                    }
                     model.update($.parseJSON(response.experimentModelJson));
                     // FIXME: forward the response message to the chat window should be handled completely on the server
                     // side instead of ping-ponging to the client side back to the real time server back out to all

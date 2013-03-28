@@ -5,6 +5,9 @@ function createConnectionEvent() {
 function createReconnectionEvent() {
     return createMessageEvent("Reconnecting from disconnect", "reconnect");
 }
+function createAllParticipantsReadyEvent() {
+    return createMessageEvent("All participants ready", "all_participants_ready");
+}
 function createMessageEvent(payload, event_type) {
     if (! event_type) {
         event_type = "chat";
