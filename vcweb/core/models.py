@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.core import mail, serializers
@@ -662,7 +662,7 @@ class Experiment(models.Model):
 # FIXME: figure out how to declaratively do this so experiments can more easily notify "I have these data values to
 # initialize at the start of each round.
     def initialize_data_values(self, group_parameters=None, participant_parameters=None, group_cluster_parameters=None, round_data=None):
-        logger.debug("initializing [participant params: %s]  [group parameters: %s] ", participant_parameters, group_parameters)
+        logger.debug("initializing [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
         if group_parameters is None:
             group_parameters = self.parameters(scope=Parameter.Scope.GROUP)
         if participant_parameters is None:
@@ -673,19 +673,23 @@ class Experiment(models.Model):
             round_data = self.current_round_data
 
 # create group cluster parameter data values
+        logger.debug("creating group cluster data values")
         for group_cluster in self.group_cluster_set.all():
             for parameter in group_cluster_parameters:
-                gcdv, created = GroupClusterDataValue.objects.get_or_create(round_data=round_data, parameter=parameter, cluster=group_cluster)
+                gcdv, created = GroupClusterDataValue.objects.get_or_create(round_data=round_data, parameter=parameter, group_cluster=group_cluster)
+                logger.debug("%s (%s)", gcdv, created)
 
+        logger.debug("creating group data values")
         for group in self.group_set.select_related('parameter').all():
             for parameter in group_parameters:
                 group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter)
-        #        logger.debug("%s (%s)", group_data_value, created)
+                logger.debug("%s (%s)", group_data_value, created)
             if participant_parameters:
+                logger.debug("creating participant data values")
                 for pgr in group.participant_group_relationship_set.all():
                     for parameter in participant_parameters:
                         participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(round_data=round_data, participant_group_relationship=pgr, parameter=parameter)
-        #                logger.debug("%s (%s)", participant_data_value, created)
+                        logger.debug("%s (%s)", participant_data_value, created)
 
     def log(self, log_message):
         if log_message:
@@ -732,14 +736,15 @@ class Experiment(models.Model):
         logger.debug("allocating groups for %s (randomize? %s)" % (self, randomize))
         # clear out all existing groups
         # FIXME: record previous mappings in activity log.
-        gs = self.group_set
         max_group_size = self.experiment_configuration.max_group_size
         participants = list(self.participant_set.all())
         if randomize:
             random.shuffle(participants)
 
+        gs = self.group_set
         if gs.count() > 0:
             if preserve_existing_groups:
+                self.log("preserving existing groups")
                 # verify incoming session id is an actual value
                 if session_id is None:
                     round_configuration = self.current_round
@@ -753,6 +758,10 @@ class Experiment(models.Model):
                 for g in gqs:
                     self.log("reallocating/deleting group %s" % g.participant_group_relationship_set.all())
                 gqs.delete()
+                self.group_cluster_set.delete()
+                self.log("deleted all groups: %s" % str(gqs))
+        else:
+            logger.debug("no existing groups, proceeding")
         # seed the initial group.
         current_group = self.group_set.create(number=self.group_set.count(), max_size=max_group_size, session_id=session_id)
         for p in participants:
@@ -915,6 +924,7 @@ class Experiment(models.Model):
                 'isArchived': self.is_archived,
                 'dollarsPerToken': float(ec.exchange_rate),
                 'readyParticipants': self.number_of_ready_participants,
+                'totalNumberOfParticipants': self.participant_set.count(),
                 }
         if include_round_data:
             experiment_dict['allRoundData'] = self.all_round_data()
@@ -1427,6 +1437,12 @@ class Group(models.Model):
     @property
     def current_round_activity_log(self):
         return self.activity_log_set.filter(round_configuration=self.current_round)
+
+    def get_related_group(self):
+        ''' FIXME: currently only assumes single relationships '''
+        gr = GroupRelationship.objects.get(group=self)
+        related_gr = GroupRelationship.objects.get(~models.Q(group=self), cluster=gr.cluster)
+        return related_gr.group
 
     def log(self, log_message):
         if log_message:
@@ -1985,7 +2001,7 @@ class ChatMessageQuerySet(models.query.QuerySet):
 
 class ChatMessage(ParticipantRoundDataValue):
     target_participant = models.ForeignKey(ParticipantGroupRelationship, null=True, blank=True, related_name='target_participant_chat_message_set')
-    """ if set, this is a targeted message to the other participant in this group.  If null, this is a broadcast message to the entire group """
+    """ if set, this is a targeted message to another participant.  If null, broadcast message to the entire group """
     objects = PassThroughManager.for_queryset_class(ChatMessageQuerySet)()
 
     def __init__(self, *args, **kwargs):

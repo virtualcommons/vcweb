@@ -9,65 +9,29 @@ class Migration(DataMigration):
     def forwards(self, orm):
         "Write your forwards methods here."
         # Note: Remember to use orm['appname.ModelName'] rather than "from appname.models..."
-        Experimenter = orm['core.Experimenter']
         Parameter = orm['core.Parameter']
+        Experimenter = orm['core.Experimenter']
         experimenter = Experimenter.objects.get(pk=1)
         Parameter.objects.create(
-                name='conservation_decision',
-                type='int',
-                description='Number of hours devoted to conservation',
+                name='chat_within_group',
+                scope='participant',
+                type='boolean',
+                description='Does this participant want to chat within their own group?',
                 creator=experimenter)
         Parameter.objects.create(
-                name='max_hours',
-                scope='experiment',
-                type='int',
-                default_value_string="10",
-                description='Maximum number of hours available to devote to conservation or harvesting',
-                creator=experimenter)
-        Parameter.objects.create(
-                name='group_local_bonus',
-                scope='group',
-                type='int',
-                description='Local group bonus based on summed group conservation',
-                creator=experimenter)
-        Parameter.objects.create(
-                name='group_cluster_bonus',
-                scope='group_cluster',
-                type='int',
-                description='Group cluster bonus based on summed group cluster conservation',
-                creator=experimenter)
-        Parameter.objects.create(
-                name='participant_link',
+                name='chat_between_group',
                 scope='participant',
                 type='foreignkey',
-                class_name='core.ParticipantGroupRelationship',
-                description='Linkage between two participant group relationships (e.g., an edge)',
-                creator=experimenter)
-        Parameter.objects.create(
-                name='group_local_bonus_threshold',
-                scope='round',
-                type='int',
-                default_value_string="5",
-                description="Local group bonus threshold for conservation hours contributed by the entire group to receive a bonus",
-                creator=experimenter)
-        Parameter.objects.create(
-                name='group_cluster_bonus_threshold',
-                scope='round',
-                type='int',
-                default_value_string="22",
-                description="Group cluster bonus threshold for conservation hours contributed by the entire group cluster to receive a bonus",
+                class_name='core.Group',
+                description='Does this participant want to chat with another group?',
                 creator=experimenter)
 
     def backwards(self, orm):
         "Write your backwards methods here."
         Parameter = orm['core.Parameter']
-        Parameter.objects.get(name='conservation_decision').delete()
-        Parameter.objects.get(name='max_hours').delete()
-        Parameter.objects.get(name='group_local_bonus').delete()
-        Parameter.objects.get(name='group_cluster_bonus').delete()
-        Parameter.objects.get(name='participant_link').delete()
-        Parameter.objects.get(name='group_local_bonus_threshold').delete()
-        Parameter.objects.get(name='group_cluster_bonus_threshold').delete()
+        Parameter.objects.get(name='chat_within_group').delete()
+        Parameter.objects.get(name='chat_between_group').delete()
+
 
     models = {
         u'auth.group': {
@@ -135,7 +99,6 @@ class Migration(DataMigration):
             'amqp_exchange_name': ('django.db.models.fields.CharField', [], {'default': "'vcweb.default.exchange'", 'max_length': '64'}),
             'authentication_code': ('django.db.models.fields.CharField', [], {'default': "'vcweb.auth.code'", 'max_length': '32'}),
             'current_repeated_round_sequence_number': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
-            'current_round_elapsed_time': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'current_round_sequence_number': ('django.db.models.fields.PositiveIntegerField', [], {'default': '1'}),
             'current_round_start_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
@@ -243,9 +206,8 @@ class Migration(DataMigration):
         u'core.groupcluster': {
             'Meta': {'ordering': "['date_created']", 'object_name': 'GroupCluster'},
             'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'experiment': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['core.Experiment']"}),
+            'experiment': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'group_cluster_set'", 'to': u"orm['core.Experiment']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'max_size': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'}),
             'session_id': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'})
         },
@@ -265,7 +227,7 @@ class Migration(DataMigration):
         },
         u'core.grouprelationship': {
             'Meta': {'ordering': "['date_created']", 'object_name': 'GroupRelationship'},
-            'cluster': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'group_set'", 'to': u"orm['core.GroupCluster']"}),
+            'cluster': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'group_relationship_set'", 'to': u"orm['core.GroupCluster']"}),
             'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'group': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['core.Group']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
@@ -404,7 +366,7 @@ class Migration(DataMigration):
             'display_number': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'duration': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'experiment_configuration': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'round_configuration_set'", 'to': u"orm['core.ExperimentConfiguration']"}),
-            'group_cluster_size': ('django.db.models.fields.PositiveIntegerField', [], {'default': '2'}),
+            'group_cluster_size': ('django.db.models.fields.PositiveIntegerField', [], {'default': '2', 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'instructions': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'last_modified': ('vcweb.core.models.AutoDateTimeField', [], {'default': 'datetime.datetime.now'}),

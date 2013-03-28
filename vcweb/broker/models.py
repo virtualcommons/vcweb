@@ -14,13 +14,20 @@ def get_max_harvest_hours(experiment):
 
 ''' participant parameters '''
 @simplecache
+def get_chat_between_group_parameter():
+    return Parameter.objects.get(name="chat_between_group")
+
+@simplecache
+def get_chat_within_group_parameter():
+    return Parameter.objects.get(name="chat_within_group")
+
+@simplecache
 def get_participant_link_parameter():
     return Parameter.objects.get(name='participant_link')
 
 @simplecache
 def get_participant_payoff_parameter():
     return Parameter.objects.get(name='payoff')
-
 
 @simplecache
 def get_conservation_decision_parameter():
@@ -85,7 +92,10 @@ def round_started_handler(sender, experiment=None, **kwargs):
         experiment.initialize_data_values(
                 group_cluster_parameters=(get_group_cluster_bonus_parameter(),),
                 group_parameters=(get_group_local_bonus_parameter(),),
-                participant_parameters=[get_harvest_decision_parameter(), get_conservation_decision_parameter(), get_participant_link_parameter(), get_participant_payoff_parameter()]
+                participant_parameters=(get_harvest_decision_parameter(), get_conservation_decision_parameter(),
+                    get_participant_link_parameter(), get_participant_payoff_parameter(),
+                    get_chat_between_group_parameter(), get_chat_within_group_parameter(),
+                    )
                 )
 
 def calculate_group_local_bonus(group_conservation_hours, local_threshold):

@@ -1,3 +1,5 @@
+from collections import defaultdict
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, render, redirect
 from vcweb.core.models import Experiment, ParticipantGroupRelationship
 from vcweb.core.decorators import participant_required
@@ -5,11 +7,13 @@ from vcweb.core import dumps
 from vcweb.core.forms import ParticipantGroupIdForm, SingleIntegerDecisionForm
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
+        GroupRelationship, GroupCluster,
         ParticipantExperimentRelationship, RoundConfiguration, ChatMessage, ParticipantRoundDataValue, Parameter)
 
 from vcweb.broker.models import (get_max_harvest_hours, get_harvest_decision_parameter,
         get_conservation_decision_parameter, set_harvest_decision, set_conservation_decision, get_harvest_decision,
-        get_conservation_decision, get_payoff)
+        get_conservation_decision, get_payoff, get_chat_within_group_parameter, get_chat_between_group_parameter,
+        get_participant_link_parameter)
 
 import random
 
@@ -19,25 +23,22 @@ from vcweb.broker.forms import ChatPreferenceForm
 logger = logging.getLogger(__name__)
 
 
-def get_chat_between_group_parameter():
-    return Parameter.objects.get(Name="chat_between_group")
-
-def get_chat_within_group_parameter():
-    return Parameter.objects.get(Name="chat_within_group")
-
 @participant_required
-def submit_chat_preference (request, experiment_id=None,):
+def submit_chat_preferences(request, experiment_id=None):
     form = ChatPreferenceForm(request.POST or None)
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     if form.is_valid():
-        logger.debug("handing POST request, cleaned data: %s", form.cleaned_data)
+        logger.debug("handling POST request, cleaned data: %s", form.cleaned_data)
         participant_group_id = form.cleaned_data['participant_group_id']
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         round_data = experiment.current_round_data
         chat_within_group = form.cleaned_data['chat_within_group']
         chat_between_group = form.cleaned_data['chat_between_group']
         pgr.set_data_value(parameter=get_chat_within_group_parameter(), value=chat_within_group, round_data=round_data)
-        pgr.set_data_value(parameter=get_chat_between_group_parameter(), value=chat_between_group, round_data=round_data)
+        if chat_between_group:
+            related_group = pgr.group.get_related_group()
+            pgr.set_data_value(parameter=get_chat_between_group_parameter(), value=related_group.pk, round_data=round_data)
+
         ncwg = ParticipantRoundDataValue.objects.filter(parameter=get_chat_within_group_parameter(), round_data=round_data, submitted=True).count()
         ncbg = ParticipantRoundDataValue.objects.filter(parameter=get_chat_between_group_parameter(), round_data=round_data, submitted=True).count()
         np = experiment.participant_set.count()
@@ -46,7 +47,27 @@ def submit_chat_preference (request, experiment_id=None,):
             'all_participants_submitted': False,
         }
         if ncwg == np and ncbg == np:
-            # everyone submitted a chat preference decision, create participant linkages
+            logger.debug("calculating participant participant linkages")
+            # everyone submitted a chat preference decision, create participant linkages between groups
+            between_group_dvs = ParticipantRoundDataValue.objects.filter(parameter=get_chat_between_group_parameter(), round_data=round_data, submitted=True)
+            group_to_participants = defaultdict(list)
+            for dv in between_group_dvs:
+                group_to_participants[dv.participant_group_relationship.group].append((dv.participant_group_relationship, dv.value))
+            [random.shuffle(v) for v in group_to_participants.values()]
+            for group, participant_list in group_to_participants.items():
+                for item in participant_list:
+                    (pgr, target_group) = item
+                    logger.debug("pgr %s wants to talk to %s", pgr, target_group)
+                    willing_participants = group_to_participants[target_group]
+                    if willing_participants:
+                        (wpgr, wpgr_group) = willing_participants.pop()
+                        logger.debug("creating edges between %s -> %s", pgr, wpgr)
+                        # create two edges between these two participants
+                        pgr.set_data_value(parameter=get_participant_link_parameter(), round_data=round_data, value=wpgr.pk)
+                        wpgr.set_data_value(parameter=get_participant_link_parameter(), round_data=round_data, value=pgr.pk)
+                    else:
+                        # no more willing participants, break to outer loop
+                        break
 
             response_dict['all_participants_submitted'] = True
         return JsonResponse(dumps(response_dict))
@@ -91,22 +112,31 @@ def get_view_model(request, experiment_id=None):
     participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=request.GET.get('participant_group_id'))
     return JsonResponse(get_view_model_json(experiment, participant_group_relationship))
 
+experiment_model_defaults = {
+        'chatEnabled': True,
+        'maxHarvestDecision': 10,
+        'maxEarnings': 20.00,
+        'showChatRooms': True,
+        'harvestDecision': 0,
+        'betweenGroupChatMessages': [],
+        'withinGroupChatMessages': [],
+        }
+
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
-    experiment_model_dict = experiment.to_dict(include_round_data=False)
+    experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
     group = participant_group_relationship.group
     experiment_configuration = experiment.experiment_configuration
     round_configuration = experiment.current_round
     previous_round_data = experiment.get_round_data(round_configuration=experiment.previous_round)
     round_data = experiment.current_round_data
 
+# experiment data
+    experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
 # experiment configuration data
-    experiment_model_dict['maxHarvestDecision'] = 10
-    experiment_model_dict['maxEarnings'] = 20.00
     experiment_model_dict['localBonus'] = experiment_configuration.get_parameter_value(name='group_local_bonus', default=50).int_value
     experiment_model_dict['globalBonus'] = experiment_configuration.get_parameter_value(name='group_cluster_bonus', default=50).int_value
 
 # round configuration data
-    experiment_model_dict['chatEnabled'] = True
     experiment_model_dict['roundDuration'] = 10
     experiment_model_dict['networkStructure'] = 10
     practice_round = round_configuration.is_practice_round
@@ -124,7 +154,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['isFirstPracticeRound'] = False
         experiment_model_dict['isSecondPracticeRound'] = False
 
-    experiment_model_dict['networkStructureImageBackgroundUrl'] = "{{ STATIC_URL }}images/broker/SES.jpg"
+    #experiment_model_dict['networkStructureImageBackgroundUrl'] = "{{ STATIC_URL }}images/broker/SES.jpg"
 
 # round data
 # group data values

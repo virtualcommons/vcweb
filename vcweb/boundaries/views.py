@@ -89,12 +89,10 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['regrowthRate'] = regrowth_rate
         experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
 
-    experiment_model_dict['totalNumberOfParticipants'] = experiment.participant_set.count()
     experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     experiment_model_dict['roundType'] = current_round.round_type
     experiment_model_dict['practiceRound'] = current_round.is_practice_round
-    experiment_model_dict['showChatRooms'] = True
 
     if current_round.is_regular_round:
         experiment_model_dict['chatEnabled'] = current_round.chat_enabled
