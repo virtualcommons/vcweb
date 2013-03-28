@@ -22,8 +22,7 @@
         <div>
             Please wait. The experiment will continue shortly once all the participants are ready.
             <p>
-<span class='badge'
-      data-bind='css: { "badge-important": readyParticipants() < (totalNumberOfParticipants() / 2), "badge-success": readyParticipants() > (totalNumberOfParticipants() / 2)}, text: readyParticipants'></span>
+            <span class='badge' data-bind='css: { "badge-important": readyParticipants() < (totalNumberOfParticipants() / 2), "badge-success": readyParticipants() > (totalNumberOfParticipants() / 2)}, text: readyParticipants'></span>
                 of <span class='badge badge-success' data-bind='text: totalNumberOfParticipants'></span> participants
                 are ready.
             </p>
@@ -288,6 +287,7 @@
             This is a practice round. The decisions you make in this round will <b>NOT</b> contribute to your
             earnings.
                 <span data-bind="if: isFirstPracticeRound">
+                <button class='btn btn-primary' data-bind='click: setupFirstPracticeRoundTour'>Tour</button>
                     <a href="#" data-bind="">Show me 1st Instructions again</a>
                 </span>
 
@@ -493,26 +493,102 @@
             });
             model.setupFirstPracticeRoundTour = function () {
                 // set up first bootstrap tour
-                alert("setting up first practice round tour");
-
+                var tourFirst = new Tour({
+                    useLocalStorage: true,
+                    onShow: function(tour) {
+                        alert("showing tour");
+                    }
+                });
+                tourFirst.addStep({
+                    element: "harvestDecisionId",
+                    title: "Here's where you insert your harvesting decision",
+                    content: "For this practice round, go ahead and put 6 hours into harvesting. Each round you will have a maximum of 6  minute to make a harvest decision.", /* content of the popover */
+                    placement: "right"
+                });
+                tourFirst.addStep({
+                    element: "conservationDecision",
+                    title: "Your conservation decision",
+                    content: "Note that the rest of your available hours will be put into conservation.",
+                    placement: "right"
+                });
+                tourFirst.addStep({
+                    element: "submitDecision",
+                    title: "Submit your decision",
+                    content: "Now click here to submit your harvest choice. Your choice will be submitted automatically when time is up. A countdown will alert you when there are 10 seconds remaining to make a harvest. The default harvest is zero.", /* content of the popover */
+                    placement: "right"
+                });
+                tourFirst.start(true);
+                tour = tourFirst;
+                console.debug("set up tour");
+                console.debug(tour);
             };
             model.setupSecondPracticeRoundTour = function () {
-                alert("setting up second practice round tour");
+                var tourSecond = new Tour();
+                tourSecond.addStep({
+                    element: "lastRoundHarvestPayOff",
+                    title: "Your round earnings",
+                    content: "Here you will see how much you earned in each round. You receive 0.6 from harvesting. Because everyone contributed 4 hours to conservation, resulting in 8 hours for group A and 8 hours for group B.",
+                    placement: "right"
+                });
+                tourSecond.addStep({
+                    element: "lastRoundGroupLocalBonus",
+                    title: "Bonus",
+                    content: "So the standard revenue of $0.10/hour has been increased by 50% you receive an extra $0.30 and your total is $0.90.  If the sum within your group was less than 5 hours you would not receive benefits. ",
+                    placement: "right"
+                });
+                tourSecond.addStep({
+                    element: "lastRoundMyGroupConservation",
+                    title: "Bonus",
+                    content: "If the sum of conservation time of all players were more than 22 hours you would get a further increase of 50% in the revenues.",
+                    placement: "right"
+                });
+                tourSecond.addStep({
+                    element: "totalEarning",
+                    title: "Total Earning",
+                    content: "Here you can your total earning throughout the game",
+                    placement: "right"
+                });
 
+                tourSecond.addStep({
+                    element: "totalEarning",
+                    title: "Communication",
+                    content: "At some point during the game you will have the option of communicating to other players. Communication to the other player within your group is FREE. Communication with the other group costs 2 hours.",
+                });
+                tourSecond.addStep({
+                    element: "totalEarning",
+                    title: "",
+                    content: "For this practice, go ahead and choose 'Communication within Group' and 'Communication with other Group'",
+
+                });
+                tourSecond.addStep({
+                    element: "totalEarning",
+                    title: "Chat rooms",
+                    content: "Communication will happen through these chat windows. Communications is time bound. Each message you send will be targeted a single player. Go ahead and send a message. It will not be seen by others for this practice.",
+                    onHide: function (tourSecond) {
+                        // post a dummy message to the chat... "Here's an example of a reply message"
+                    }
+
+                });
+                tourSecond.addStep({
+                    element: "totalEarning",
+                    title: "Chat rooms",
+                    content: "Remember that all your choices are independent and none will see what your decisions are.",
+                });
+                tourSecond.start();
             };
             model.update = function () {
                 $.get('view-model', { participant_group_id: model.participantGroupId(), },
-                        function (response) {
-                            console.debug("updating with response: ");
-                            console.debug(response);
-                            ko.mapping.fromJS(response, model);
-                            if (model.isFirstPracticeRound()) {
-                                model.setupFirstPracticeRoundTour();
-                            }
-                            else if (model.isSecondPracticeRound()) {
-                                model.setupSecondPracticeRoundTour();
-                            }
-                        });
+                      function (response) {
+                          console.debug("updating with response: ");
+                          console.debug(response);
+                          ko.mapping.fromJS(response, model);
+                          if (model.isFirstPracticeRound()) {
+                              model.setupFirstPracticeRoundTour();
+                          }
+                          else if (model.isSecondPracticeRound()) {
+                              model.setupSecondPracticeRoundTour();
+                          }
+                      });
             };
             // activate instructions click bindings
             model.activateInstructionsPageOne = function () {
@@ -555,54 +631,54 @@
             model.conservationDecision = ko.computed(function () {
                 return model.maxHarvestDecision() - model.harvestDecision();
             });
-//             model.numberOfTreesPerRow = ko.observable(10);
-//             model.isResourceEmpty = ko.computed(function() {
-//                 return model.resourceLevel() == 0;
-//             });
-//             model.resourcesToDisplay = ko.computed(function() {
-//                 if (model.resourceLevel() > 0) {
-//                     return Math.min(model.resourceLevel(), 20);
-//                 }
-//                 return 0;
-//             });
+            //             model.numberOfTreesPerRow = ko.observable(10);
+            //             model.isResourceEmpty = ko.computed(function() {
+            //                 return model.resourceLevel() == 0;
+            //             });
+            //             model.resourcesToDisplay = ko.computed(function() {
+            //                 if (model.resourceLevel() > 0) {
+            //                     return Math.min(model.resourceLevel(), 20);
+            //                 }
+            //                 return 0;
+            //             });
 
-//          
+            //          
             model.startChatTimer = function () {
                 model.enableChat();
                 model.secondsLeft(60);
                 model.setCurrentInterval(
-                        setInterval(function () {
-                                    model.tick();
-                                    if (!model.isTimerRunning()) {
-                                        model.disableChat();
-                                        model.clearCurrentInterval();
-                                    }
-                                },
-                                1000));
+                    setInterval(function () {
+                    model.tick();
+                    if (!model.isTimerRunning()) {
+                        model.disableChat();
+                        model.clearCurrentInterval();
+                    }
+                },
+                1000));
             };
             model.startHarvestDecisionTimer = function () {
                 model.secondsLeft(10);
                 model.setCurrentInterval(setInterval(function () {
-                            model.tick();
-                            if (!model.isTimerRunning()) {
-                                model.submitDecision();
-                                model.clearCurrentInterval();
-                            }
-                        },
-                        1000));
+                    model.tick();
+                    if (!model.isTimerRunning()) {
+                        model.submitDecision();
+                        model.clearCurrentInterval();
+                    }
+                },
+                1000));
             };
             model.startChatOptionTimer = function () {
                 model.enableChatOption();
                 model.secondsLeft(10);
                 model.setCurrentInterval(
-                        setInterval(function () {
-                                    model.tick();
-                                    if (!model.isTimerRunning()) {
-                                        model.disableChatOption();
-                                        model.clearCurrentInterval();
-                                    }
-                                },
-                                1000));
+                    setInterval(function () {
+                    model.tick();
+                    if (!model.isTimerRunning()) {
+                        model.disableChatOption();
+                        model.clearCurrentInterval();
+                    }
+                },
+                1000));
             };
             model.submitDecision = function (data, evt) {
                 var formData = $('#vcweb-form').serialize();
@@ -618,36 +694,6 @@
                     // model.clearCurrentInterval();
                 });
             };
-//             model.submitChatMessage = function(data, evt) {
-//                 evt.preventDefault();
-//                 console.log("clicking chat message");
-//                 var message = $('#chatText').val();
-//                 if (message) {
-//                     $('#chatText').val('');
-//                     getWebSocket().send(createMessageEvent(message));
-//                     $('#chatText').focus();
-//                 }
-//             }
-//             model.disableChat = function() {
-//                 $('#content').removeClass('span6').addClass('span9');
-//                 $('#sidebar').removeClass('span6').addClass('span3');
-//                 $('.chat-action').addClass('disabled').attr('disabled', true);
-//                 model.chatEnabled(false);
-//             }
-//             model.enableChat = function() {
-//                 $('#content').removeClass('span9').addClass('span6');
-//                 $('#sidebar').removeClass('span3').addClass('span6');
-//                 $('.chat-action').removeClass('disabled').attr('disabled', false);
-//                 model.chatEnabled(true);
-//             }
-//             
-//              model.disableChatOption = function() {
-//                 model.chatOptionEnabled(false);
-//             }
-//             model.enableChatOption = function() {
-//                 model.chatOptionEnabled(true);
-//             }
-//             
             return model;
         }
 
@@ -663,129 +709,22 @@
                 switch (data.event_type) {
                     case 'chat':
                         experimentModel.withinGroupChatMessages.unshift(data);
-                        break;
+                    break;
                     case 'update':
                         console.debug("updating view model");
                         experimentModel.update();
                         break;
                     case 'participant_ready':
                         experimentModel.readyParticipants(Math.min(experimentModel.totalNumberOfParticipants(), experimentModel.readyParticipants() + 1));
-                        // FIXME: replace with this later
-                        // experimentModel.checkReadyParticipants();
-                        break;
+                    // FIXME: replace with this later
+                    // experimentModel.checkReadyParticipants();
+                    break;
 
                     default:
                         console.debug("unhandled json message:" + json);
-                        break;
+                    break;
                 }
             };
-//             $('#harvestDecision').keyup(function() {
-//                 $('#harvestDecision').val(this.value.match(/\d+/));
-//             });
-            $('#pick-template').change(function () {
-                var templateName = $(this).val();
-                console.debug("switching to template: " + templateName);
-                if (templateName === "PRACTICE") {
-                    templateName = "REGULAR";
-                    experimentModel.practiceRound(true);
-                    if (experimentModel.isFirstPracticeRound) {
-                        console.debug("starting first practice round tour");
-
-                        var tourFirst = new Tour({
-                            useLocalStorage: true
-                        });
-                        tourFirst.addStep({
-                            element: "harvestDecisionId",
-                            title: "Here's where you insert your harvesting decision",
-                            content: "For this practice round, go ahead and put 6 hours into harvesting. Each round you will have a maximum of 6  minute to make a harvest decision.", /* content of the popover */
-                            placement: "right"
-                        });
-                        tourFirst.addStep({
-                            element: "conservationDecision",
-                            title: "Your conservation decision",
-                            content: "Note that the rest of your available hours will be put into conservation.",
-                            placement: "right"
-                        });
-                        tourFirst.addStep({
-                            element: "submitDecision",
-                            title: "Submit your decision",
-                            content: "Now click here to submit your harvest choice. Your choice will be submitted automatically when time is up. A countdown will alert you when there are 10 seconds remaining to make a harvest. The default harvest is zero.", /* content of the popover */
-                            placement: "right"
-                        });
-                        tourFirst.start(true);
-                        tour = tourFirst;
-                        console.debug("tour started");
-
-
-                    } else if (experimentModel.isSecondPracticeRound) {
-                        var tourSecond = new Tour();
-                        alert("second tour");
-                        tourSecond.addStep({
-                            element: "lastRoundHarvestPayOff",
-                            title: "Your round earnings",
-                            content: "Here you will see how much you earned in each round. You receive 0.6 from harvesting. Because everyone contributed 4 hours to conservation, resulting in 8 hours for group A and 8 hours for group B.",
-                            placement: "right"
-                        });
-                        tourSecond.addStep({
-                            element: "lastRoundGroupLocalBonus",
-                            title: "Bonus",
-                            content: "So the standard revenue of $0.10/hour has been increased by 50% you receive an extra $0.30 and your total is $0.90.  If the sum within your group was less than 5 hours you would not receive benefits. ",
-                            placement: "right"
-                        });
-                        tourSecond.addStep({
-                            element: "lastRoundMyGroupConservation",
-                            title: "Bonus",
-                            content: "If the sum of conservation time of all players were more than 22 hours you would get a further increase of 50% in the revenues.",
-                            placement: "right"
-                        });
-                        tourSecond.addStep({
-                            element: "totalEarning",
-                            title: "Total Earning",
-                            content: "Here you can your total earning throughout the game",
-                            placement: "right"
-                        });
-
-                        tourSecond.addStep({
-                            element: "totalEarning",
-                            title: "Communication",
-                            content: "At some point during the game you will have the option of communicating to other players. Communication to the other player within your group is FREE. Communication with the other group costs 2 hours.",
-                        });
-                        tourSecond.addStep({
-                            element: "totalEarning",
-                            title: "",
-                            content: "For this practice, go ahead and choose 'Communication within Group' and 'Communication with other Group'",
-
-                        });
-                        tourSecond.addStep({
-                            element: "totalEarning",
-                            title: "Chat rooms",
-                            content: "Communication will happen through these chat windows. Communications is time bound. Each message you send will be targeted a single player. Go ahead and send a message. It will not be seen by others for this practice.",
-                            onHide: function (tourSecond) {
-                                // post a dummy message to the chat... "Here's an example of a reply message"
-                            }
-
-                        });
-                        tourSecond.addStep({
-                            element: "totalEarning",
-                            title: "Chat rooms",
-                            content: "Remember that all your choices are independent and none will see what your decisions are.",
-                        });
-                        tourSecond.start();
-
-
-                    }
-                }
-                else if (templateName === "REGULAR") {
-                    experimentModel.practiceRound(false);
-                }
-                experimentModel.templateName(templateName);
-            });
-//             $('#pick-network-structure').change(function() {
-//                 var networkStructure = $(this).val();
-//                 console.debug("choosing network structure: " + networkStructure);  
-//                 experimentModel.networkStructure(networkStructure);
-//             });
-
         }
 
         var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
@@ -793,4 +732,4 @@
 
     });
     </script>
-{% endblock %}
+    {% endblock %}
