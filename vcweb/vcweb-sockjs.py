@@ -328,7 +328,7 @@ class ParticipantConnection(BaseConnection):
                     string_value=event.message,
                     round_data=current_round_data
                     )
-            connection_manager.send_to_group(pgr.group, json.dumps(chat_message.to_dict()))
+            connection_manager.send_to_group(pgr.group, chat_message.to_json())
 
     def on_message(self, json_string):
         logger.debug("message: %s", json_string)

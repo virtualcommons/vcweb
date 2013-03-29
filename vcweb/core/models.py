@@ -478,7 +478,7 @@ class Experiment(models.Model):
 
     @property
     def all_chat_messages(self):
-        return ChatMessage.objects.filter(round_data__experiment=self)
+        return ChatMessage.objects.filter(round_data__experiment=self).reverse()
 
     @property
     def all_quiz_questions(self):
@@ -2073,6 +2073,9 @@ class ChatMessage(ParticipantRoundDataValue):
                 event_type='chat',
                 )
         return data
+
+    def to_json(self, **kwargs):
+        return dumps(self.to_dict())
 
     def __unicode__(self):
         """ return this participant's sequence number combined with the message """

@@ -580,8 +580,9 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 model.setFormDisabled("#chat-form", true);
             }
             model.setupChat = function() {
-                var chatDisabled = model.isPracticeRound() || ! model.chatEnabled();
+                var chatDisabled = model.isPracticeRound() || ! model.chatEnabled() || ! model.alive();
                 model.setFormDisabled("#chat-form", chatDisabled);
+                model.chatEnabled(! chatDisabled);
             }
             model.afterRenderTemplate = function(elements) {
                 if (model.templateId() === "REGULAR") {
