@@ -254,7 +254,7 @@ def adjust_harvest_decisions(current_resource_level, group, group_size, round_da
 
 
 def update_resource_level(experiment, group, round_data, regrowth_rate, max_resource_level=None):
-    if max_resource_level:
+    if max_resource_level is None:
         max_resource_level = get_max_resource_level(experiment.experiment_configuration)
     current_resource_level_dv = get_resource_level_dv(group, round_data)
     current_resource_level = current_resource_level_dv.int_value
@@ -365,6 +365,6 @@ def round_ended_handler(sender, experiment=None, **kwargs):
         update_participants(experiment, round_data)
 
 
-def calculate_regrowth(resource_level, regrowth_rate, max_resource_level=MAX_RESOURCE_LEVEL):
+def calculate_regrowth(resource_level, regrowth_rate, max_resource_level=240):
     return (regrowth_rate * resource_level) * (1 - (resource_level / float(max_resource_level)))
 
