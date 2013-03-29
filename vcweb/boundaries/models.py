@@ -86,9 +86,7 @@ def get_max_resource_level(experiment_configuration):
     return RESOURCES_PER_PARTICIPANT * experiment_configuration.max_group_size
 
 def get_initial_resource_level(round_configuration, default=None):
-    if default is None:
-        default = get_max_resource_level(round_configuration.experiment_configuration)
-    return forestry_initial_resource_level(round_configuration, default)
+    return get_max_resource_level(round_configuration.experiment_configuration)
 
 def should_reset_resource_level(round_configuration):
     return round_configuration.get_parameter_value(parameter=get_reset_resource_level_parameter(),
