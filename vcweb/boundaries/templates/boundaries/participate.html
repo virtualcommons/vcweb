@@ -36,7 +36,7 @@
 <div class='chat-sidebar'>
     <div id='chat-div'>
         <div class='chat-messages' data-bind='foreach: chatMessages'>
-            <i class='icon-user muted'></i> <strong>Participant <span data-bind='text: participant_number'></strong><b class='pull-right muted' data-bind='text: date_created'></b>
+            <i class='icon-user muted'></i> <strong>Participant <span data-bind='text: participant_number'></strong><b class='pull-right muted' data-bind='text: short_date_created'></b>
             <p>
             <small><i class='icon-double-angle-right'></i></small> <span data-bind='text: message'></span>
             </p>
@@ -312,19 +312,19 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
         <h3>My Status</h3>
         <div class='row'>
             <div class='alert boundaries-status-dashboard span2'>
-                <h4>Last harvest <i class='icon-info-sign' data-content="The number of trees you harvested last round."></i> </h4>
+                <h4 id="dashboard-last-harvest">Last harvest <i class='icon-info-sign' data-content="The number of trees you harvested last round."></i> </h4>
                 <p>
                 <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span> <i class='icon-leaf'></i></strong>
                 </p>
             </div>
-            <div class='alert boundaries-status-dashboard span1'>
-                <h4>Storage <i class='icon-info-sign' data-bind='attr: {"data-content": "You need at least " + costOfLiving() + " trees to survive each round."}'></i> </h4>
+            <div class='alert boundaries-status-dashboard span2'>
+                <h4 id='dashboard-storage'>Storage <i class='icon-info-sign' data-bind='attr: {"data-content": "You need at least " + costOfLiving() + " trees to survive each round."}'></i> </h4>
                 <p>
                 <strong data-bind='css: { "text-error": storage() < costOfLiving(), "text-success": storage() > costOfLiving()}'><span data-bind='text: storage'></span> <i class='icon-leaf'></i></strong>
                 </p>
             </div>
             <div class='alert boundaries-status-dashboard span1'>
-                <h4><i class='icon-time'></i> Time</h4>
+                <h4 id='dashboard-time'><i class='icon-time'></i> Time</h4>
                 <p>
                 <strong data-bind='css: { "text-error": secondsLeft() < warningCountdownTime(), "text-info": secondsLeft() > warningCountdownTime()}'>
                     <span data-bind='text: secondsLeft'></span> s
@@ -447,6 +447,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     </form>
 </div>
 </script>
+<script src='{% static "js/bootstrap-tour.js" %}'></script>
 <script type="text/javascript">
     $(function() {
         function ExperimentModel(experimentModelJson) {
@@ -465,6 +466,28 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                         return model.templateName();
                 }
             });
+            model.setupTour = function() {
+                var tour = new Tour();
+                tour.addStep({ element: "#dashboard-last-harvest", title: "Last harvest", 
+                    placement: "top",
+                    content: "Your last round's harvest decision will be displayed here.  Since this is the first practice round this is currently 0."
+                    });
+                tour.addStep({ element: "#dashboard-storage", title: "Storage",
+                        placement: "top",
+                        content: "Your total storage will be displayed here.  You must have at least " +
+                        experimentModel.costOfLiving() + " trees stored to survive each round."});
+                tour.addStep({ element: "#dashboard-time", title: "Time Left",
+                        placement: "top",
+                        content: "The time remaining in this round will be displayed here.  It will turn red when " +
+                        experimentModel.warningCountdownTime() + " seconds are left."});
+                tour.addStep({ element: "#chatMessage", title: "Text Chat",
+                        placement: "left",
+                        content: "If chat is enabled, you can communicate with your group by typing messages into this box and hitting the enter key or clicking 'Send'."});
+                tour.addStep({ element: "#harvestDecisionSelect", title: "Harvest Decision",
+                        placement: "top",
+                        content: "Enter the number of trees you'd like to harvest here.  For the purposes of this practice round, please select 10 now and click the 'Submit' button."});
+                tour.start();
+            }
             model.setCurrentInterval = function(intervalId) {
                 model.clearCurrentInterval();
                 model.currentInterval(intervalId);
@@ -519,6 +542,9 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             });
             model.resourceImageHeight = ko.observable("79px");
             model.startRound = function() {
+                if (model.showTour()) {
+                    model.setupTour();
+                }
                 if (model.submitted() || ! model.alive()) {
                     model.disableHarvestForm();
                     model.disableChatForm();
@@ -639,9 +665,9 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                         break;
                 }
             };
+            return experimentModel;
         }
-        var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
-        initialize(experimentModelJson);
+        var experimentModel = initialize($.parseJSON("{{ experimentModelJson|escapejs }}"));
         $('[data-content]').popover({placement: 'top', trigger: 'hover'});
     });
 </script>

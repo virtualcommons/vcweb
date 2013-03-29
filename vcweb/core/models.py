@@ -392,11 +392,7 @@ class Experiment(models.Model):
         Generator function for all participant group relationships in this experiment
         '''
         session_id = self.current_round.session_id
-        if session_id:
-            groups = self.group_set.filter(session_id=session_id)
-        else:
-            groups = self.group_set.all()
-        for group in groups:
+        for group in self.group_set.filter(session_id=session_id):
             for pgr in group.participant_group_relationship_set.all():
                 yield pgr
 
@@ -863,10 +859,12 @@ class Experiment(models.Model):
         # notify registered game handlers
         if sender is None:
             sender = intern(self.experiment_metadata.namespace.encode('utf8'))
-        return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(), round_configuration=current_round_configuration)
+        signal_tuple = signals.round_started.send_robust(sender, experiment=self, time=datetime.now(), round_configuration=current_round_configuration)
+        logger.debug("round started signal returned %s", signal_tuple)
+        return signal_tuple
 
     def stop_round(self, sender=None, **kwargs):
-        self.end_round()
+        return self.end_round()
 
     def end_round(self, sender=None):
         self.status = Experiment.Status.ACTIVE

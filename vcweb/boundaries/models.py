@@ -314,13 +314,14 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
         group_cluster.copy_to_next_round(shared_resource_level_dv)
 
 def update_participants(experiment, round_data):
+    logger.debug("updating participants")
     cost_of_living = get_cost_of_living(round_data.round_configuration)
     for pgr in experiment.participant_group_relationships:
         player_status_dv = get_player_status_dv(pgr, round_data)
+        storage_dv = get_storage_dv(pgr, round_data)
         player_alive = player_status_dv.boolean_value
         if player_alive:
             harvest_decision = get_harvest_decision(pgr, round_data)
-            storage_dv = get_storage_dv(pgr, round_data)
             updated_storage = storage_dv.int_value + harvest_decision - cost_of_living
             if updated_storage < 0:
                 # player has "died"
