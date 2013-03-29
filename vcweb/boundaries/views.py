@@ -131,12 +131,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             experiment_model_dict['harvestDecision'] = harvest_decision.int_value
             logger.debug("already submitted, setting harvest decision to %s", experiment_model_dict['harvestDecision'])
 
-        experiment_model_dict['chatMessages'] = [{
-            'pk': cm.pk,
-            'participant_number': cm.participant_group_relationship.participant_number,
-            'message': cm.string_value,
-            'date_created': cm.date_created.strftime("%I:%M:%S")
-            } for cm in ChatMessage.objects.for_group(own_group)]
+        experiment_model_dict['chatMessages'] = [cm.to_dict() for cm in ChatMessage.objects.for_group(own_group)]
+        logger.debug("chat messages: %s", experiment_model_dict['chatMessages'])
         if can_observe_other_group(current_round):
             experiment_model_dict['canObserveOtherGroup'] = True
             other_group = own_group.get_related_group()

@@ -719,7 +719,7 @@ class Experiment(models.Model):
         parameter_set = self.experiment_metadata.parameter_set
         return parameter_set.filter(scope=scope) if scope else parameter_set
 
-    def add_participant(self, participant, current_group=None, max_group_size=None):
+    def add_participant(self, participant, current_group=None, max_group_size=None, session_id=None):
         # FIXME: simplify logic where possible
         if participant not in self.participant_set.all():
             logger.warning("participant %s not a member of this experiment %s, adding them", participant, self)
@@ -727,12 +727,15 @@ class Experiment(models.Model):
                     created_by=participant.user)
         pgrs = ParticipantGroupRelationship.objects.filter(group__experiment=self, participant=participant)
         if current_group is None:
-            if self.group_set.count() == 0:
+            # try to add them to the last group in group_set with the same session id
+            session_id_groups  = self.group_set.filter(session_id=session_id)
+            if session_id_groups:
+                current_group = session_id_groups.reverse()[0]
+            number_of_groups = self.group_set.count()
+            if current_group is None or number_of_groups == 0:
                 # create a new group
-                current_group = self.group_set.create(number=0, max_size=max_group_size)
-            else:
-                # pick the last group in group_set
-                current_group = self.group_set.reverse()[0]
+                current_group = self.group_set.create(number=number_of_groups, max_size=max_group_size, session_id=session_id)
+
         if pgrs.count() > 0:
             # ensure that any existing group that this participant is in has a different session id from this group
             for pgr in pgrs:
@@ -742,7 +745,7 @@ class Experiment(models.Model):
         return current_group.add_participant(participant)
 
     def allocate_groups(self, randomize=True, preserve_existing_groups=False, session_id=None):
-        logger.debug("allocating groups for %s (randomize? %s)" % (self, randomize))
+        logger.debug("allocating groups for %s with session_id %s (randomize? %s)" % (self, session_id, randomize))
         # clear out all existing groups
         # FIXME: record previous mappings in activity log.
         max_group_size = self.experiment_configuration.max_group_size
@@ -770,7 +773,7 @@ class Experiment(models.Model):
 # add each participant to the next available group
         current_group = None
         for p in participants:
-            pgr = self.add_participant(p, current_group, max_group_size)
+            pgr = self.add_participant(p, current_group, max_group_size, session_id)
             current_group = pgr.group
         self.create_group_clusters()
 
@@ -2059,10 +2062,16 @@ class ChatMessage(ParticipantRoundDataValue):
 
     def to_dict(self, **kwargs):
         data = super(ChatMessage, self).to_dict(cacheable=True)
-        data['message'] = self.message
+        pgr = self.participant_group_relationship
         group = self.participant_group_relationship.group
-        data['group_id'] = group.pk
-        data['group'] = unicode(group)
+        data.update(
+                message=self.message,
+                group_id=group.pk,
+                group=unicode(group),
+                participant_handle=pgr.participant_handle,
+                participant_number=pgr.participant_number,
+                event_type='chat',
+                )
         return data
 
     def __unicode__(self):

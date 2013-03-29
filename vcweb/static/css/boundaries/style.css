@@ -23,6 +23,8 @@
     border-bottom: 1px solid #ccc;
 }
 .boundaries-status-dashboard {
-    height: 80px;
+    height: 100px;
+    min-width: 80px;
+    margin-right: 0px;
     padding: 8px 8px 8px 8px;
 }

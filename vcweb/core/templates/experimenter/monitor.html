@@ -132,6 +132,21 @@
     </div>
 </div>
 <h3>Experiment Data</h3>
+<div class='accordion' id='experiment-chat-accordion'>
+    <div class='accordion-group'>
+        <div class='accordion-heading'>
+            <a class='accordion-toggle' data-toggle='collapse' data-parent='#experiment-chat-accordion' href='#experiment-chat-messages'>All Chat Messages</a>
+        </div>
+        <div id='experiment-chat-messages' class='scrollable-messages accordion-body collapse'>
+            <div class='alert' data-bind='foreach: chatMessages'>
+                <div>
+                    <span data-bind='text: participant_handle'></span>(<span data-bind='text: group'></span>): <strong data-bind='text: message'></strong>
+                    <span class='pull-right' data-bind='text: short_date_created'></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class='accordion' id='round-data-accordion' data-bind='foreach: allRoundData'>
     <div class='accordion-group'>
@@ -175,20 +190,6 @@
                     </tr>
                     </tbody>
                 </table>
-            </div>
-        </div>
-    </div>
-</div>
-<div class='accordion' id='experiment-chat-accordion'>
-    <div class='accordion-group'>
-        <div class='accordion-heading'>
-            <a class='accordion-toggle' data-toggle='collapse' data-parent='#experiment-chat-accordion' href='#experiment-chat-messages'>All Chat Messages</a>
-        </div>
-        <div id='experiment-chat-messages' class='scrollable-messages accordion-body collapse'>
-            <div class='alert' data-bind='foreach: chatMessages'>
-                <div>
-                    (<span data-bind='text: group'></span>) <span data-bind='text: message'></span>
-                </div>
             </div>
         </div>
     </div>
@@ -347,6 +348,8 @@
                     case 'participant_ready':
                         experimentModel.checkAllParticipantsReady();
                     case 'chat':
+                        experimentModel.chatMessages.unshift(experiment_event);
+                        break;
                     case 'info':
                     default:
                         experimentModel.addMessage(experiment_event.message);

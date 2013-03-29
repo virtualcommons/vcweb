@@ -143,10 +143,19 @@ def get_storage(participant_group_relationship, round_data=None, default=0):
     dv = get_storage_dv(participant_group_relationship, round_data, default)
     return default if dv.int_value is None else dv.int_value
 
+
+def _zero_if_none(value):
+    return 0 if value is None else value
+
+def get_total_harvest(group, round_data):
+    q = ParticipantRoundDataValue.objects.for_group(group=group, parameter=get_harvest_decision_parameter(), round_data=round_data).aggregate(total_harvest=Sum('int_value'))
+    return _zero_if_none(q['total_harvest'])
+
+
 # returns the sum of all stored resources for each member in the group
 def get_total_storage(group, round_data):
     q = ParticipantRoundDataValue.objects.for_group(group=group, parameter=get_storage_parameter(), round_data=round_data).aggregate(total_storage=Sum('int_value'))
-    return q['total_storage']
+    return _zero_if_none(q['total_storage'])
 
 def set_storage(participant_group_relationship, round_data, value):
     storage_dv = get_storage_dv(participant_group_relationship, round_data)
@@ -209,10 +218,6 @@ def round_started_handler(sender, experiment=None, **kwargs):
             ParticipantRoundDataValue.objects.for_group(group, parameter=get_player_status_parameter(),
                     round_data=round_data).update(boolean_value=True)
 
-
-def get_total_harvest(group, round_data):
-    q = ParticipantRoundDataValue.objects.for_group(group=group, parameter=get_harvest_decision_parameter(), round_data=round_data).aggregate(total_harvest=Sum('int_value'))
-    return q['total_harvest']
 
 
 def adjust_harvest_decisions(current_resource_level, group, group_size, round_data, total_harvest):

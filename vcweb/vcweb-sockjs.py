@@ -227,10 +227,10 @@ class ConnectionManager(object):
             self.send_to_experimenter(message, experiment=experiment)
         return participant_connections
 
-    def send_to_group(self, group, json):
+    def send_to_group(self, group, event):
         for participant_group_id, connection in self.connections(group):
-            connection.send(json)
-        self.send_to_experimenter(json, experiment=group.experiment)
+            connection.send(event)
+        self.send_to_experimenter(event, experiment=group.experiment)
 
 connection_manager = ConnectionManager()
 
@@ -328,15 +328,7 @@ class ParticipantConnection(BaseConnection):
                     string_value=event.message,
                     round_data=current_round_data
                     )
-            chat_message = json.dumps({
-                "pk": chat_message.pk,
-                'round_data_pk': current_round_data.pk,
-                'participant_number': pgr.participant_number,
-                "date_created": chat_message.date_created.strftime("%I:%M:%S"),
-                "message" : event.message,
-                "event_type": 'chat',
-                })
-            connection_manager.send_to_group(pgr.group, chat_message)
+            connection_manager.send_to_group(pgr.group, dumps(chat_message.to_dict()))
 
     def on_message(self, json_string):
         logger.debug("message: %s", json_string)
