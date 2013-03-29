@@ -94,7 +94,7 @@
         <a href='javascript: void()' data-bind='click: activateTemplate.bind($data, "PRACTICE_ROUND_RESULTS")'>Back</a>
         </li>
         <li class='next'>
-        <a href='javascript: void()' data-bind='click: participantReady'>Ok, I understand</a>
+        <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantHandle() + " finished paid experiment instructions") '>Ok, I understand</a>
         </li>
     </ul>
 </script>
@@ -114,7 +114,24 @@ forest status.  Similarly, they may observe your group in the same way.
 </ul>
 <ul class='pager'>
     <li class='next'>
-    <a href='javascript: void()' data-bind='click: participantReady'>Ok, I am ready to start</a>
+    <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantHandle() + " finished treatment A instructions")'>Ok, I am ready to start</a>
+    </li>
+</ul>
+</script>
+<script type='text/html' id='TREATMENT_D_INSTRUCTIONS'>
+<h3>Session <span data-bind='text: sessionId'></span> Instructions</h3>
+<p>
+In this session, there are two groups or villages.  Both groups are sharing a forest to harvest.  The shared forest has
+twice the capacity of a single-group forest.  
+</p>
+<h3>Key points</h3>
+<ul>
+    <li>Two groups</li>
+    <li>Groups share a forest</li>
+</ul>
+<ul class='pager'>
+    <li class='next'>
+    <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantHandle() + " finished treatment D instructions")'>Ok, I am ready to start</a>
     </li>
 </ul>
 </script>
@@ -265,7 +282,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
 <a href='javascript:void();' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS3")'>Back</a>
 </li>
 <li class='next'>
-<a href='javascript: void();' data-bind='click: participantReady'>I have fully read and understand these instructions</a>
+<a href='javascript: void();' data-bind='click: participantReady.bind($data, participantHandle() + " finished practice round instructions")'>I have fully read and understand these instructions</a>
 </li>
 </ul>
 </script>
@@ -317,6 +334,12 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 <td>Storage</td>
                 <!-- ko foreach: playerData -->
                 <td data-bind='text: storage'></td>
+                <!-- /ko -->
+            </tr>
+            <tr>
+                <td>Alive</td>
+                <!-- ko foreach: playerData -->
+                <td data-bind='text: alive'></td>
                 <!-- /ko -->
             </tr>
             </tbody>
@@ -378,6 +401,13 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     </div>
 </div>
 <h3>Harvest</h3>
+<div data-bind='ifnot: alive'>
+    <div class='alert alert-error'>
+        <b><i class='icon-ambulance'></i></b> You didn't harvest enough trees to meet the cost of living and are now
+        <b>deceased</b>.  You will not be able to chat or submit harvest decisions until this session is over.
+        Please wait quietly.
+    </div>
+</div>
 <div data-bind='ifnot: isResourceEmpty'>
     <form id='vcweb-form' action='' method='post' class='form-horizontal' >
         {% csrf_token %}
@@ -440,12 +470,12 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             model.readyParticipantsPercentage = ko.computed(function() {
                 return (model.readyParticipants() / model.participantCount()) * 100;
             });
-            model.participantReady = function() {
+            model.participantReady = function(message) {
                 $.post('/experiment/participant-ready', { participant_group_id: model.participantGroupId() }, function(response) {
                     console.debug("successfully posted to server, notifying sockjs");
                     console.debug(response);
                     model.readyParticipants(response.number_of_ready_participants);
-                    getWebSocket().send(createReadyEvent("Participant finished reading instructions"));
+                    getWebSocket().send(createReadyEvent(message));
                     model.activateTemplate("WAITING_ROOM");
                 });
             }

@@ -90,23 +90,24 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     cost_of_living = get_cost_of_living(current_round)
     experiment_model_dict['costOfLiving'] = cost_of_living
     experiment_model_dict['maxHarvestDecision'] = get_max_allowed_harvest_decision(participant_group_relationship, current_round_data, ec)
+    experiment_model_dict['templateName'] = current_round.template_name
+    experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
 # instructions round parameters
     if current_round.is_instructions_round:
         experiment_model_dict['isInstructionsRound'] = True
         experiment_model_dict['participantsPerGroup'] = ec.max_group_size
         experiment_model_dict['regrowthRate'] = regrowth_rate
         experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
-
-    experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
-    experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
-    experiment_model_dict['templateName'] = current_round.template_name
-    experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
-
     if current_round.is_regular_round:
         experiment_model_dict['chatEnabled'] = current_round.chat_enabled
 
-    # FIXME: these need to be added so KO doesn't get unhappy when we switch templates from instructions rounds to
-    # practice rounds.
+# participant data
+    experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
+    experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
+    experiment_model_dict['participantHandle'] = participant_group_relationship.participant_handle
+ 
+    # FIXME: these should only need to be added for playable rounds but KO gets unhappy when we switch templates from
+    # instructions rounds to practice rounds.
     own_group = participant_group_relationship.group
     own_resource_level = get_resource_level(own_group)
     last_harvest_decision = get_last_harvest_decision(participant_group_relationship, round_data=previous_round_data)

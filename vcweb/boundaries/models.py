@@ -140,7 +140,8 @@ def get_storage_dv(participant_group_relationship, round_data=None, default=None
 
 
 def get_storage(participant_group_relationship, round_data=None, default=0):
-    return get_storage_dv(participant_group_relationship, round_data, default).int_value
+    dv = get_storage_dv(participant_group_relationship, round_data, default)
+    return default if dv.int_value is None else dv.int_value
 
 # returns the sum of all stored resources for each member in the group
 def get_total_storage(group, round_data):
@@ -301,20 +302,18 @@ def update_participants(experiment, round_data):
     for pgr in experiment.participant_group_relationships:
         player_status_dv = get_player_status_dv(pgr, round_data)
         player_alive = player_status_dv.boolean_value
-        if not player_alive:
-            logger.debug("Skipping deceased participant %s", pgr)
-            continue
-        harvest_decision = get_harvest_decision(pgr, round_data)
-        storage_dv = get_storage_dv(pgr, round_data)
-        updated_storage = storage_dv.int_value + harvest_decision - cost_of_living
-        if updated_storage < 0:
-            # player has "died"
-            player_status_dv.boolean_value = False
-            player_status_dv.save()
-        storage_dv.int_value = updated_storage
-        storage_dv.save()
-        logger.debug("updating participant %s (storage: %s, harvest: %s, status: %s)", pgr, storage_dv.int_value,
-                harvest_decision, player_status_dv.boolean_value)
+        if player_alive:
+            harvest_decision = get_harvest_decision(pgr, round_data)
+            storage_dv = get_storage_dv(pgr, round_data)
+            updated_storage = storage_dv.int_value + harvest_decision - cost_of_living
+            if updated_storage < 0:
+                # player has "died"
+                player_status_dv.boolean_value = False
+                player_status_dv.save()
+            storage_dv.int_value = updated_storage
+            storage_dv.save()
+            logger.debug("updating participant %s (storage: %s, harvest: %s, status: %s)", pgr, storage_dv.int_value,
+                    harvest_decision, player_status_dv.boolean_value)
         pgr.copy_to_next_round(player_status_dv, storage_dv)
 
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
