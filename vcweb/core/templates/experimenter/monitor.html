@@ -345,11 +345,12 @@
                     case 'update':
                         console.debug("FIXME: ignoring update requests, patch sockjs broadcast to not send certain messages");
                         break;
-                    case 'participant_ready':
-                        experimentModel.checkAllParticipantsReady();
                     case 'chat':
                         experimentModel.chatMessages.unshift(experiment_event);
                         break;
+                    case 'participant_ready':
+                        experimentModel.checkAllParticipantsReady();
+                        // explicit fall through
                     case 'info':
                     default:
                         experimentModel.addMessage(experiment_event.message);

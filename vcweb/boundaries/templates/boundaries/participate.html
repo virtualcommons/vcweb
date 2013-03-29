@@ -48,6 +48,26 @@
 {% block javascript %}
 {{ block.super }}
 <!-- ko templates -->
+<script type='text/html' id='TREATMENT_RESULTS'>
+    <h3>Session <span data-bind='text: sessionId'></span> Summary</h3>
+    <table class='table table-compact'>
+        <thead>
+            <tr><th>Trees left in the forest</th><th>Trees harvested</th><th>Trees in storage</th><th>Earnings</th></tr>
+        </thead>
+        <tbody>
+            <tr><td data-bind='text: resourceLevel'></td><td data-bind='text: totalHarvest'></td><td data-bind='text:storage'></td><td class='text-success' data-bind='text: totalEarnings'></td></tr>
+        </tbody>
+    </table>
+    <div class='alert alert-info'>
+        <i class='icon-info-sign'></i> Remember, only <b>one</b> of your sessions will be selected at random for
+        payment.  We will now move on to the next session.
+    </div>
+    <ul class='pager'>
+        <li class='next'>
+        <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantHandle() + " finished reading session summary.") '>Ok, I'm ready</a>
+        </li>
+    </ul>
+</script>
 <script type='text/html' id='PRACTICE_ROUND_RESULTS'>
     <h3>Practice Round Results</h3>
     <p>

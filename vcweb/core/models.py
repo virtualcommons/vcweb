@@ -875,7 +875,9 @@ class Experiment(models.Model):
         sender = intern(self.experiment_metadata.namespace.encode('utf8')) if sender is None else sender
         #sender = self.namespace.encode('utf-8')
         logger.debug("about to send round ended signal with sender %s", sender)
-        return signals.round_ended.send_robust(sender, experiment=self, round_configuration=self.current_round)
+        signal_tuple = signals.round_ended.send_robust(sender, experiment=self, round_configuration=self.current_round)
+        logger.debug("signal tuple: %s", signal_tuple)
+        return signal_tuple
 
     def activate(self):
         if self.is_archived:
@@ -1637,6 +1639,10 @@ class GroupCluster(models.Model):
 
     objects = PassThroughManager.for_queryset_class(GroupClusterQuerySet)()
 
+    @property
+    def size(self):
+        return self.group_relationship_set.count()
+
     def add(self, group):
         return GroupRelationship.objects.create(cluster=self, group=group)
 
@@ -1672,9 +1678,9 @@ class GroupCluster(models.Model):
             next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
             for data_value in data_values:
                 parameter = data_value.parameter
-                gcdv, created = GroupClusterDataValue.objects.get_or_create(group=self, round_data=next_round_data, parameter=parameter)
-                logger.debug("transferred group cluster data value: %s (%s)", gcdv, created)
+                gcdv, created = GroupClusterDataValue.objects.get_or_create(group_cluster=self, round_data=next_round_data, parameter=parameter)
                 gcdv.value = data_value.value
+                logger.debug("transferred group cluster data value: %s (%s)", gcdv, created)
                 gcdv.save()
 
     def __unicode__(self):

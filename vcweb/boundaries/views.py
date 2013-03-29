@@ -8,7 +8,7 @@ from vcweb.boundaries.forms import SingleIntegerDecisionForm
 from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
         get_last_harvest_decision, get_harvest_decision_dv, get_harvest_decision_parameter, set_harvest_decision,
-        can_observe_other_group, get_player_status, get_average_harvest, get_average_storage)
+        can_observe_other_group, get_player_status, get_average_harvest, get_average_storage, get_total_harvest)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -73,6 +73,7 @@ experiment_model_defaults = {
         'chatMessages': [],
         'canObserveOtherGroup': False,
         'isInstructionsRound': False,
+        'totalHarvest': 0,
         }
 # FIXME: need to distinguish between instructions / welcome rounds and practice/regular rounds
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
@@ -100,6 +101,9 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
     if current_round.is_regular_round:
         experiment_model_dict['chatEnabled'] = current_round.chat_enabled
+
+    if current_round.is_debriefing_round:
+        experiment_model_dict['totalHarvest'] = get_total_harvest(participant_group_relationship, current_round.session_id)
 
 # participant data
     experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
