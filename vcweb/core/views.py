@@ -313,7 +313,7 @@ class RegisterEmailListView(ExperimenterSingleExperimentMixin, FormView):
                 password=experiment.authentication_code)
         return super(RegisterEmailListView, self).form_valid(form)
     def get_success_url(self):
-        return reverse('core:dashboard')
+        return reverse('core:monitor_experiment', kwargs={'pk':self.object.pk})
 
 class RegisterTestParticipantsView(ExperimenterSingleExperimentMixin, FormView):
     form_class = RegisterTestParticipantsForm
@@ -333,7 +333,6 @@ class RegisterTestParticipantsView(ExperimenterSingleExperimentMixin, FormView):
         return super(RegisterTestParticipantsView, self).form_valid(form)
 
     def get_success_url(self):
-
         return reverse('core:monitor_experiment', kwargs={'pk':self.object.pk})
 
 # FIXME: these last two use GET (which should be idempotent) to modify database state which makes HTTP sadful
