@@ -557,7 +557,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                     model.setCurrentInterval(
                         setInterval(function() {
                             model.tick();
-                            if (model.secondsLeft() > 30 && ! model.isPracticeRound()) {
+                            if (model.secondsLeft() > 30 && model.waitThirtySeconds()) {
                                 model.disableHarvestForm();
                             }
                             else {

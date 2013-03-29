@@ -73,6 +73,7 @@ experiment_model_defaults = {
         'chatMessages': [],
         'canObserveOtherGroup': False,
         'isInstructionsRound': False,
+        'waitThirtySeconds': False,
         'totalHarvest': 0,
         }
 # FIXME: need to distinguish between instructions / welcome rounds and practice/regular rounds
@@ -94,6 +95,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['templateName'] = current_round.template_name
     experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
     experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
+# FIXME: extend this to first 3 regular rounds of each session as well?
+    experiment_model_dict['waitThirtySeconds'] = current_round.is_practice_round and current_round.sequence_number < 6
 # instructions round parameters
     if current_round.is_instructions_round:
         experiment_model_dict['isInstructionsRound'] = True
@@ -137,7 +140,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             logger.debug("already submitted, setting harvest decision to %s", experiment_model_dict['harvestDecision'])
 
         experiment_model_dict['chatMessages'] = [cm.to_dict() for cm in ChatMessage.objects.for_group(own_group)]
-        logger.debug("chat messages: %s", experiment_model_dict['chatMessages'])
         if can_observe_other_group(current_round):
             experiment_model_dict['canObserveOtherGroup'] = True
             other_group = own_group.get_related_group()

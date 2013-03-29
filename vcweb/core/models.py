@@ -1907,7 +1907,6 @@ class ParticipantGroupRelationship(models.Model):
             if default is None:
                 raise e
             else:
-                logger.warning("unable to retrieve ParticipantRoundDataValue with parameter %s, returning default value %s", parameter, default)
                 return DefaultValue(default)
 
     def set_data_value(self, parameter=None, value=None, round_data=None):

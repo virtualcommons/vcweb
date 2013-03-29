@@ -120,7 +120,6 @@ def get_resource_level_dv(group, round_data=None, round_configuration=None, clus
     if round_configuration is None:
         round_configuration = round_data.round_configuration
     if is_shared_resource_enabled(round_configuration):
-        logger.debug("returning shared resource level")
         return get_shared_resource_level_dv(group, round_data, cluster)
     else:
         return get_unshared_resource_level_dv(group, round_data)
@@ -256,7 +255,7 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
 # get_total_group_harvest(group, ...), see if we can enable this dynamically
     total_harvest = get_total_group_harvest(group, round_data)
     logger.debug("Harvest: total group harvest for playable round: %s", total_harvest)
-    if current_resource_level > 0 and total_harvest > 0:
+    if current_resource_level > 0:
         if total_harvest > current_resource_level:
             # divide remaining trees evenly among every participant
             group_size = group.size
