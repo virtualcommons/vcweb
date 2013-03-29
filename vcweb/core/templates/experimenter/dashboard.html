@@ -17,7 +17,7 @@
             <a class='btn' data-content='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'>
                 <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> register participants</a>
             <a data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.' 
-                class='btn' href='{{e.controller_url}}/register-simple'>
+                class='btn' href='{{e.controller_url}}/register-test-participants'>
                 <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> test participants</a>
             {% else %}
             <a data-content='Remove all participants from the experiment, including any data they may have generated.' href='{{e.controller_url}}/clear-participants' class='btn confirm-experiment-action'>

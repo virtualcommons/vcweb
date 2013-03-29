@@ -7,7 +7,7 @@
 <h3>{{experiment}}</h3>
 <div class='row-fluid'>
     <div class='span6'>
-        <div class='alert alert-white' data-bind='if: isActive'>
+        <div class='alert alert-white' data-bind='visible: isActive'>
             <h4>ROUND MANAGEMENT</h4>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
@@ -45,7 +45,7 @@
                 <div class='alert alert-error alert-block'>
                     <h4>No participants</h4>
                     <i class='icon-warning-sign'></i><a href='{{experiment.controller_url}}/register-email-list'>Register bulk email addresses</a> or
-                    <a href='{{experiment.controller_url}}/register-simple'>add test participants</a>?
+                    <a href='{{experiment.controller_url}}/register-test-participants'>add test participants</a>?
                 </div>
             </div>
             <div data-bind="if: hasParticipants">

@@ -285,9 +285,12 @@
             <h4>PRACTICE ROUND</h4>
             This is a practice round. The decisions you make in this round will <b>NOT</b> contribute to your
             earnings.
+                <span data-bind='if: isSecondPracticeRound'>
+                <button class='btn btn-primary' data-bind='click: setupSecondPracticeRoundTour'>Tutorial</button>
+                </span>
+
                 <span data-bind="if: isFirstPracticeRound">
-                <button class='btn btn-primary' data-bind='click: setupFirstPracticeRoundTour'>Tour</button>
-                    <a href="#" data-bind="">Show me 1st Instructions again</a>
+                <button class='btn btn-primary' data-bind='click: setupFirstPracticeRoundTour'>Tutorial</button>
                 </span>
 
         </div>
@@ -518,6 +521,7 @@
                 console.debug(tour);
             };
             model.setupSecondPracticeRoundTour = function () {
+                console.debug("starting second tour");
                 var tourSecond = new Tour();
                 tourSecond.addStep({
                     element: "#lastRoundHarvestPayOff",
@@ -569,7 +573,7 @@
                     title: "Chat rooms",
                     content: "Remember that all your choices are independent and none will see what your decisions are.",
                 });
-                tourSecond.start();
+                tourSecond.start(true);
             };
             model.update = function () {
                 $.get('view-model', { participant_group_id: model.participantGroupId(), },

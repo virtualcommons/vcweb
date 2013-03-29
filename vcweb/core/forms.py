@@ -122,8 +122,8 @@ class RegisterParticipantsForm(forms.Form):
         return self.cleaned_data
 
 
-class RegisterSimpleParticipantsForm(RegisterParticipantsForm):
-    username_suffix = forms.CharField(min_length=3, initial='asu', 
+class RegisterTestParticipantsForm(RegisterParticipantsForm):
+    username_suffix = forms.CharField(min_length=3, initial='asu',
             help_text=_('''Appended to every generated username before the "@" symbol, e.g., s1asu@foo.com'''))
     email_suffix = forms.CharField(min_length=3, initial='mailinator.com',
             help_text=_('''

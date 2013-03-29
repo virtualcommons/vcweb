@@ -13,7 +13,7 @@ from django.views.generic.edit import UpdateView
 from vcweb.core import dumps
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
-        ParticipantGroupIdForm, RegisterEmailListParticipantsForm, RegisterSimpleParticipantsForm,
+        ParticipantGroupIdForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
         RegisterExcelParticipantsForm, LogMessageForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
@@ -315,9 +315,9 @@ class RegisterEmailListView(ExperimenterSingleExperimentMixin, FormView):
     def get_success_url(self):
         return reverse('core:dashboard')
 
-class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, FormView):
-    form_class = RegisterSimpleParticipantsForm
-    template_name = 'experimenter/register-simple-participants.html'
+class RegisterTestParticipantsView(ExperimenterSingleExperimentMixin, FormView):
+    form_class = RegisterTestParticipantsForm
+    template_name = 'experimenter/register-test-participants.html'
 
     def form_valid(self, form):
         number_of_participants = form.cleaned_data.get('number_of_participants')
@@ -330,10 +330,11 @@ class RegisterSimpleParticipantsView(ExperimenterSingleExperimentMixin, FormView
                 email_suffix=email_suffix,
                 username_suffix=username_suffix,
                 password=experiment_passcode)
-        return super(RegisterSimpleParticipantsView, self).form_valid(form)
+        return super(RegisterTestParticipantsView, self).form_valid(form)
 
     def get_success_url(self):
-        return reverse('core:dashboard')
+
+        return reverse('core:monitor_experiment', kwargs={'pk':self.object.pk})
 
 # FIXME: these last two use GET (which should be idempotent) to modify database state which makes HTTP sadful
 class CloneExperimentView(ExperimenterSingleExperimentView):

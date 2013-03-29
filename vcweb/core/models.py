@@ -738,6 +738,7 @@ class Experiment(models.Model):
                 if pgr.group.session_id == current_group.session_id:
                     logger.error("Participant %s is already in a group %s with the same session id, not adding them to %s", participant, pgr.group, current_group)
                     return pgr
+        logger.debug("adding participant %s to group %s", participant, current_group)
         return current_group.add_participant(participant)
 
     def allocate_groups(self, randomize=True, preserve_existing_groups=False, session_id=None):
@@ -776,8 +777,8 @@ class Experiment(models.Model):
     def create_group_clusters(self):
         round_configuration = self.current_round
         session_id = round_configuration.session_id
-        logger.debug("creating group clusters with session id %s", session_id)
         if round_configuration.create_group_clusters:
+            logger.debug("creating group clusters with session id %s", session_id)
             gcs = self.group_cluster_set.filter()
             gs = self.group_set.filter()
             if session_id:
