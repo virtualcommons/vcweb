@@ -392,6 +392,9 @@ class Experiment(models.Model):
         Generator function for all participant group relationships in this experiment
         '''
         session_id = self.current_round.session_id
+        if not session_id:
+            # force session_id to be None if it turned into the empty string somehow
+            session_id = None
         for group in self.group_set.filter(session_id=session_id):
             for pgr in group.participant_group_relationship_set.all():
                 yield pgr
@@ -670,7 +673,7 @@ class Experiment(models.Model):
 # FIXME: figure out how to declaratively do this so experiments can more easily notify "I have these data values to
 # initialize at the start of each round.
     def initialize_data_values(self, group_parameters=None, participant_parameters=None, group_cluster_parameters=None, round_data=None):
-        logger.debug("initializing [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
+        #logger.debug("initializing [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
         if group_parameters is None:
             group_parameters = self.parameters(scope=Parameter.Scope.GROUP)
         if participant_parameters is None:

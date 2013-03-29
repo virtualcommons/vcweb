@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def participate(request, experiment_id=None):
     participant = request.user.participant
     logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
-    experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration').prefetch_related('group_set', 'experiment_configuration__round_configuration_set'), pk=experiment_id)
+    experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'), pk=experiment_id)
     pgr = experiment.get_participant_group_relationship(participant)
     if experiment.experiment_metadata != get_experiment_metadata() or pgr.participant != request.user.participant:
         raise Http404
@@ -58,7 +58,6 @@ def submit_harvest_decision(request, experiment_id=None):
 def get_view_model(request, experiment_id=None):
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'), pk=experiment_id)
     pgr = experiment.get_participant_group_relationship(request.user.participant)
-    logger.debug("getting view model for participant: %s", pgr)
     return JsonResponse(get_view_model_json(experiment, pgr))
 
 experiment_model_defaults = {

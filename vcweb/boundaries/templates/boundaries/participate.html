@@ -335,7 +335,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     </div>
     <div class='span4'>
         <h3>Group Status</h3>
-        <table class='table table-bordered table-condensed'>
+        <table class='table table-bordered table-condensed table-striped'>
             <thead>
                 <tr><th>Player</th>
                     <!-- ko foreach: playerData -->
@@ -359,7 +359,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             <tr>
                 <td>Alive</td>
                 <!-- ko foreach: playerData -->
-                <td data-bind='text: alive'></td>
+                <td data-bind='css: { "text-error": ! alive(), "text-success": alive() }, text: alive() ? "Yes" : "No"'></td>
                 <!-- /ko -->
             </tr>
             </tbody>
