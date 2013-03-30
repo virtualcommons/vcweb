@@ -387,15 +387,23 @@ class Experiment(models.Model):
         return self.participant_set.count()
 
     @property
-    def participant_group_relationships(self):
-        '''
-        Generator function for all participant group relationships in this experiment
-        '''
+    def current_session_id(self):
         session_id = self.current_round.session_id
         if not session_id:
             # force session_id to be None if it turned into the empty string somehow
             session_id = None
-        for group in self.group_set.filter(session_id=session_id):
+        return session_id
+
+    @property
+    def groups(self):
+        (group for group in self.group_set.filter(session_id=self.current_session_id))
+
+    @property
+    def participant_group_relationships(self):
+        '''
+        Generator function for all participant group relationships in this experiment
+        '''
+        for group in self.groups:
             for pgr in group.participant_group_relationship_set.all():
                 yield pgr
 
@@ -673,7 +681,7 @@ class Experiment(models.Model):
 # FIXME: figure out how to declaratively do this so experiments can more easily notify "I have these data values to
 # initialize at the start of each round.
     def initialize_data_values(self, group_parameters=None, participant_parameters=None, group_cluster_parameters=None, round_data=None):
-        #logger.debug("initializing [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
+        # logger.debug("initializing [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
         if group_parameters is None:
             group_parameters = self.parameters(scope=Parameter.Scope.GROUP)
         if participant_parameters is None:
@@ -689,7 +697,9 @@ class Experiment(models.Model):
                 gcdv, created = GroupClusterDataValue.objects.get_or_create(round_data=round_data, parameter=parameter, group_cluster=group_cluster)
                 #logger.debug("%s (%s)", gcdv, created)
 
-        for group in self.group_set.select_related('parameter').all():
+# FIXME: this is wrong, need to create a way to iterate over the "active" groups in the experiment (e.g., when they
+# switch from one session to another)
+        for group in self.groups:
             for parameter in group_parameters:
                 group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter)
                 #logger.debug("%s (%s)", group_data_value, created)
