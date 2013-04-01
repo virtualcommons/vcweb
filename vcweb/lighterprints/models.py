@@ -93,6 +93,13 @@ class ActivityQuerySet(models.query.QuerySet):
         else:
             return self.filter(level=level)
 
+    def total(self, pks=None, field_name='points', **kwargs):
+        logger.debug("getting total for pks %s", pks)
+        if not pks:
+            return 0
+        q = self.filter(pk__in=pks,**kwargs).aggregate(total=Sum(field_name))
+        return q['total']
+
 class ActivityManager(TreeManager, PassThroughManager):
     def upcoming(self, level=1):
         current_time = datetime.now().time()
@@ -597,9 +604,13 @@ def create_group_summary_emails(group, level, promoted=False, completed=False, r
         messages.append(msg)
     return messages
 
-def get_individual_points(participant_group_relationship):
-    today = date.today()
-    yesterday = today - timedelta(1)
+def get_individual_points(participant_group_relationship, end_date=None):
+    if end_date is None:
+        end_date = date.today()
+    start_date = end_date - timedelta(1)
     prdvs = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship,
-            date_created__range=(yesterday, today), parameter=get_activity_performed_parameter())
-    return sum(prdv.value.points for prdv in prdvs)
+            date_created__range=(start_date, end_date), parameter=get_activity_performed_parameter())
+    pks = prdvs.values_list('int_value', flat=True)
+    return Activity.objects.total(pks=pks)
+    # FIXME: this creates a query per participant round data value because of the design of foreign key data values.
+    #return sum(prdv.value.points for prdv in prdvs)

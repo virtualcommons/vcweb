@@ -55,7 +55,6 @@ class UpdateLevelTest(BaseTest):
     def test_daily_points(self):
         e = self.experiment
         e.activate()
-        e.start_round()
         current_round_data = e.get_round_data()
 # initialize participant carbon savings
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
@@ -75,7 +74,6 @@ class GroupActivityTest(BaseTest):
     def test_group_activity(self):
         e = self.experiment
         e.activate()
-        e.start_round()
         performed_activities = self.perform_activities()
         for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
             (group_activity, chat_messages) = get_group_activity(pgr)
@@ -85,7 +83,6 @@ class GroupActivityTest(BaseTest):
     def test_group_activity_email(self):
         e = self.experiment
         e.activate()
-        e.start_round()
         self.perform_activities()
         for group in e.group_set.all():
             messages = create_group_summary_emails(group, 2)
@@ -97,7 +94,6 @@ class ActivityTest(BaseTest):
         logger.debug("testing do activity view")
         e = self.experiment
         e.activate()
-        e.start_round()
 # gets all activities with no params
         activities = get_available_activities()
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
@@ -138,10 +134,17 @@ class ActivityTest(BaseTest):
                 self.assertIsNotNone(json_object['viewModel']);
 
 class GroupScoreTest(ActivityTest):
+    def test_individual_points(self):
+        e = self.experiment
+        e.activate()
+        performed_activities = self.perform_activities()
+        for pgr in e.participant_group_relationships:
+            self.assertEqual(get_individual_points(pgr), 0)
+            self.assertTrue(get_individual_points(pgr, end_date=date.today() + timedelta(1)) > 0)
+
     def test_group_score(self):
         e = self.experiment
         e.activate()
-        e.start_round()
         performed_activities = self.perform_activities()
         expected_avg_points_per_person = sum([activity.points for activity in performed_activities])
         for group in e.group_set.all():
