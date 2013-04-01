@@ -390,13 +390,13 @@ class Experiment(models.Model):
     def current_session_id(self):
         session_id = self.current_round.session_id
         if not session_id:
-            # force session_id to be None if it turned into the empty string somehow
+            # force session_id to be None if empty (looks like this can happen via the admin interface)
             session_id = None
         return session_id
 
     @property
     def groups(self):
-        (group for group in self.group_set.filter(session_id=self.current_session_id))
+        return (group for group in self.group_set.filter(session_id=self.current_session_id))
 
     @property
     def participant_group_relationships(self):
