@@ -23,6 +23,8 @@ import re
 import string
 logger = logging.getLogger(__name__)
 
+EXPERIMENT_METADATA_NAME = intern('lighterprints')
+
 @receiver(signals.midnight_tick)
 def update_active_experiments(sender, time=None, start=None, send_emails=True, **kwargs):
 # since this happens at midnight we need to look at the previous day
@@ -34,7 +36,7 @@ def update_active_experiments(sender, time=None, start=None, send_emails=True, *
     for experiment in active_experiments:
         # calculate total carbon savings and decide if they move on to the next level
         round_data = experiment.current_round_data
-        for group in experiment.group_set.all():
+        for group in experiment.groups:
             promoted = False
             completed = False
             footprint_level_grdv = get_footprint_level_dv(group, round_data=round_data)
@@ -60,111 +62,24 @@ def update_active_experiments(sender, time=None, start=None, send_emails=True, *
     if send_emails:
         mail.get_connection().send_messages(messages)
 
-LIGHTERPRINTS_SENDER = intern('lighterprints')
-@receiver(signals.round_started, sender=LIGHTERPRINTS_SENDER)
+@receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
 def round_started_handler(sender, experiment=None, **kwargs):
-    logger.debug("experiment %s started" % experiment)
+    logger.debug("starting lighter footprints %s", experiment)
     round_data = experiment.current_round_data
     # FIXME: experiment.initialize_parameters could do some of this except for setting the default values properly
     footprint_level_parameter = get_footprint_level_parameter()
     experiment_completed_parameter = get_experiment_completed_parameter()
-    for group in experiment.group_set.all():
-        round_data.group_data_value_set.create(group=group, parameter=footprint_level_parameter, int_value=1)
-        round_data.group_data_value_set.create(group=group, parameter=experiment_completed_parameter, boolean_value=False)
+    experiment.initialize_data_values(
+            group_parameters=( footprint_level_parameter, experiment_completed_parameter, ),
+            round_data=round_data,
+            defaults={
+                footprint_level_parameter: 1,
+                experiment_completed_parameter: False
+                }
+            )
+
 
 ActivityStatus = enum('AVAILABLE', 'COMPLETED', 'UNAVAILABLE')
-
-class GreenButtonIntervalBlock(models.Model):
-    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='gb_interval_block_set')
-    date_created = models.DateTimeField(default=datetime.now)
-    date = models.DateTimeField()
-    start = models.PositiveIntegerField(_('Seconds from epoch from GB data'))
-    total_duration = models.PositiveIntegerField(_('Total duration for this interval block'))
-
-class GreenButtonIntervalReading(models.Model):
-    interval_block = models.ForeignKey(GreenButtonIntervalBlock, related_name='interval_reading_set')
-    date_created = models.DateTimeField(default=datetime.now)
-    date = models.DateTimeField()
-    seconds_from_epoch = models.PositiveIntegerField(_('Number of seconds from epoch from GB data, should be the same as date'))
-    watt_hours = models.PositiveIntegerField(_('Energy meter reading in watt-hours'))
-    millicents = models.PositiveIntegerField(_('total millicents cost for this interval'), null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
-
-class GreenButtonParser(object):
-    xmlns = { 'gb': 'http://naesb.org/espi' }
-
-    def __init__(self, xmltree=None, fh=None, **kwargs):
-        if xmltree is not None:
-            self.xmltree = xmltree
-        elif fh is not None:
-            fh.seek(0)
-            self.xmltree = etree.parse(fh)
-        else:
-            logger.warning("parser initialized without valid xmltree, make sure you set it before using any methods.")
-
-    def find(self, expr, node=None, **kwargs):
-        if node is None:
-            node = self.xmltree
-        return node.find(expr, namespaces=self.xmlns)
-
-    def findall(self, expr, node=None, **kwargs):
-        if node is None:
-            node = self.xmltree
-        return node.findall(expr, namespaces=self.xmlns)
-
-    def interval_block(self):
-        return self.find('//gb:IntervalBlock')
-
-    def interval_readings(self, node=None):
-        return self.findall('gb:IntervalReading', node)
-
-    def interval_data(self, node=None):
-        return self.find('gb:interval', node)
-
-    def extract(self, node, exprs=None, converter=int):
-        ''' returns a dict of expr -> value for each expr '''
-        return collections.defaultdict(lambda: None, [(expr, converter(self.find('gb:%s' % expr, node).text)) for expr in exprs])
-
-    def get_interval_data(self, node=None):
-        interval_data = self.interval_data(node)
-        return self.extract(interval_data, exprs=['duration', 'start'])
-
-    def get_interval_reading_data(self, interval_reading_node):
-        time_period = self.find('gb:timePeriod', interval_reading_node)
-        data = self.extract(time_period, exprs=['duration', 'start'])
-        data.update(self.extract(interval_reading_node, exprs=['value', 'cost']))
-        return data
-
-    def create_interval_block(self, participant_group_relationship):
-        interval_block = self.interval_block()
-        interval_data = self.get_interval_data(interval_block)
-        start = interval_data['start']
-        total_duration = interval_data['duration']
-        existing_interval_blocks = GreenButtonIntervalBlock.objects.filter(start=start)
-        if existing_interval_blocks.count() > 0:
-            logger.warning("green button data already exists, deleting existing set: %s", existing_interval_blocks)
-            existing_interval_blocks.delete()
-        gb_interval_block = GreenButtonIntervalBlock.objects.create(date=datetime.fromtimestamp(start), start=start,
-                total_duration=total_duration, participant_group_relationship=participant_group_relationship)
-        return interval_block, gb_interval_block
-
-    def create_interval_reading(self, interval_reading_node, gb_interval_block):
-        data = self.get_interval_reading_data(interval_reading_node)
-        start = data['start']
-        gb_interval_reading = gb_interval_block.interval_reading_set.create(
-                date=datetime.fromtimestamp(start),
-                seconds_from_epoch=start,
-                watt_hours=data['value'],
-                millicents=data['cost'])
-        return interval_reading_node, gb_interval_reading
-
-    def create_models(self, participant_group_relationship):
-        interval_block_node, gb_interval_block = self.create_interval_block(participant_group_relationship)
-        models = [gb_interval_block]
-        for interval_reading_node in self.interval_readings(interval_block_node):
-            gb_interval_reading = self.create_interval_reading(interval_reading_node, gb_interval_block)
-            models.append(gb_interval_reading)
-        return models
 
 class ActivityQuerySet(models.query.QuerySet):
     """
@@ -547,6 +462,7 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
         round_data = group.current_round_data
     activities_performed_qs = ParticipantRoundDataValue.objects.for_group(group, parameter=get_activity_performed_parameter(), round_data=round_data, date_created__range=(start, end))
     for activity_performed_dv in activities_performed_qs:
+        logger.debug("checking activity performed: %s", activity_performed_dv)
         activity_points = activity_points_cache[activity_performed_dv.int_value]
         total_group_points += activity_points
         if activity_performed_dv.participant_group_relationship == participant_group_relationship:
@@ -686,4 +602,4 @@ def get_individual_points(participant_group_relationship):
     yesterday = today - timedelta(1)
     prdvs = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship,
             date_created__range=(yesterday, today), parameter=get_activity_performed_parameter())
-    return sum([prdv.value.points for prdv in prdvs])
+    return sum(prdv.value.points for prdv in prdvs)

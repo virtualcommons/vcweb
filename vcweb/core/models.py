@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime, timedelta
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
@@ -23,6 +24,7 @@ from vcweb.core import signals, simplecache, dumps
 
 import base64
 import hashlib
+import itertools
 import logging
 import random
 import re
@@ -399,13 +401,15 @@ class Experiment(models.Model):
         return (group for group in self.group_set.filter(session_id=self.current_session_id))
 
     @property
+    def active_group_clusters(self):
+        return (group_cluster for group_cluster in self.group_cluster_set.filter(session_id=self.current_session_id))
+
+    @property
     def participant_group_relationships(self):
         '''
-        Generator function for all participant group relationships in this experiment
+        Generator function for all active participant group relationships in this experiment
         '''
-        for group in self.groups:
-            for pgr in group.participant_group_relationship_set.all():
-                yield pgr
+        return itertools.chain.from_iterable(group.participant_group_relationship_set.all() for group in self.groups)
 
     @property
     def display_name(self):
@@ -680,33 +684,34 @@ class Experiment(models.Model):
 
 # FIXME: figure out how to declaratively do this so experiments can more easily notify "I have these data values to
 # initialize at the start of each round.
-    def initialize_data_values(self, group_parameters=None, participant_parameters=None, group_cluster_parameters=None, round_data=None):
+# XXX: it can be dangerous to use empty lists as initial keyword args but we only iterate over them (e.g.,
+# http://effbot.org/zone/default-values.htm)
+# defaults map parameter model instances to their default initial value, e.g., { footprint-level-parameter: 1, resource-level-parameter: 100 }
+    def initialize_data_values(self, group_parameters=[], participant_parameters=[], group_cluster_parameters=[], round_data=None, defaults={}):
         # logger.debug("initializing [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
-        if group_parameters is None:
-            group_parameters = self.parameters(scope=Parameter.Scope.GROUP)
-        if participant_parameters is None:
-            participant_parameters = self.parameters(scope=Parameter.Scope.PARTICIPANT)
-        if group_cluster_parameters is None:
-            group_cluster_parameters = self.parameters(scope=Parameter.Scope.GROUP_CLUSTER)
         if round_data is None:
             round_data = self.current_round_data
-
+        parameter_defaults = defaultdict(dict)
+        for parameter in itertools.chain(participant_parameters, group_parameters, group_cluster_parameters):
+            if parameter in defaults:
+                parameter_defaults[parameter] = { parameter.value_field_name: defaults[parameter] }
+        logger.debug("parameter default values: %s", parameter_defaults)
 # create group cluster parameter data values
-        for group_cluster in self.group_cluster_set.all():
-            for parameter in group_cluster_parameters:
-                gcdv, created = GroupClusterDataValue.objects.get_or_create(round_data=round_data, parameter=parameter, group_cluster=group_cluster)
-                #logger.debug("%s (%s)", gcdv, created)
-
-# FIXME: this is wrong, need to create a way to iterate over the "active" groups in the experiment (e.g., when they
-# switch from one session to another)
+        if group_cluster_parameters:
+            for group_cluster in self.active_group_clusters:
+                for parameter in group_cluster_parameters:
+                    gcdv, created = GroupClusterDataValue.objects.get_or_create(round_data=round_data, parameter=parameter, group_cluster=group_cluster,
+                            defaults=parameter_defaults[parameter])
+                    #logger.debug("%s (%s)", gcdv, created)
         for group in self.groups:
             for parameter in group_parameters:
-                group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter)
+                group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter, defaults=parameter_defaults[parameter])
                 #logger.debug("%s (%s)", group_data_value, created)
             if participant_parameters:
                 for pgr in group.participant_group_relationship_set.all():
                     for parameter in participant_parameters:
-                        participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(round_data=round_data, participant_group_relationship=pgr, parameter=parameter)
+                        participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(round_data=round_data, participant_group_relationship=pgr, parameter=parameter,
+                                defaults=parameter_defaults[parameter])
                 #        logger.debug("%s (%s)", participant_data_value, created)
 
     def log(self, log_message):
@@ -751,7 +756,6 @@ class Experiment(models.Model):
                 if pgr.group.session_id == current_group.session_id:
                     logger.error("Participant %s is already in a group %s with the same session id, not adding them to %s", participant, pgr.group, current_group)
                     return pgr
-        logger.debug("adding participant %s to group %s", participant, current_group)
         return current_group.add_participant(participant)
 
     def allocate_groups(self, randomize=True, preserve_existing_groups=False, session_id=None):
@@ -1626,6 +1630,7 @@ class Group(models.Model):
 
         ''' add the participant to this group if there is room, otherwise create and add to a fresh group '''
         group = self if self.is_open else self.create_next_group()
+        logger.debug("adding participant %s to group %s", participant, group)
         pgr = ParticipantGroupRelationship.objects.create(participant=participant,
                 group=group,
                 round_joined=self.experiment.current_round,

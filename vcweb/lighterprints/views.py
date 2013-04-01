@@ -331,7 +331,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         round_data = experiment.current_round_data
     compare_other_group = can_view_other_groups(round_configuration=round_configuration)
     group_data = []
-    for group in experiment.group_set.all():
+    for group in experiment.groups:
         (average_points, total_points, total_participant_points) = get_group_score(group, participant_group_relationship=participant_group_relationship, round_data=round_data)
         group_level = get_footprint_level(group, round_data=round_data)
         points_to_next_level = get_points_to_next_level(group_level)
