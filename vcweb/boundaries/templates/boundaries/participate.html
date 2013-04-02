@@ -26,11 +26,11 @@
         <i class='icon-warning-sign'></i> Chat is currently disabled.
     </div>
 </div>
-<form id="chat-form" class='form-inline'>
+<form id="chat-form" class='form-inline' data-bind='submit: submitChatMessage' >
     <div class='input-prepend input-append'>
         <span class='add-on'><i class='text-info icon-comment'></i></span>
         <input id='chatMessage' type="text" placeholder="Enter a chat message">
-        <button class='btn btn-primary' data-bind='click: submitChatMessage'>Send</button>
+        <button class='btn btn-primary'>Send</button>
     </div>
 </form>
 <div class='chat-sidebar'>
@@ -386,12 +386,6 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     </div>
     <div class='alert alert-error'>There are no more trees to harvest. Please wait until the next round begins.</div>
 </div>
-<div data-bind='if: submitted'>
-    <div class='alert alert-error'>
-        You have submitted a harvest decision for <span class='badge badge-success' data-bind='text: harvestDecision'></span> trees.
-    </div>
-</div>
-
 <div data-bind='if: canObserveOtherGroup'>
     <h3>Observe Other Group</h3>
     <div class='row'>
@@ -421,6 +415,13 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     </div>
 </div>
 <h3>Harvest</h3>
+<div data-bind='if: submitted'>
+    <div class='alert alert-success'>
+        <i class='icon-leaf'></i> You have submitted a harvest decision for <span class='badge badge-info'
+        data-bind='text: harvestDecision'></span> trees.  Please wait quietly while the rest of the participants submit
+        their decisions.
+    </div>
+</div>
 <div data-bind='ifnot: alive'>
     <div class='alert alert-error'>
         <b><i class='icon-ambulance'></i></b> You didn't harvest enough trees to meet the cost of living and are now
@@ -428,21 +429,17 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     </div>
 </div>
 <div data-bind='ifnot: isResourceEmpty'>
-    <form id='vcweb-form' action='' method='post' class='form-horizontal' >
+    <form id='vcweb-form' data-bind='submit: submitDecision' action='' method='post' class='form-horizontal' >
         {% csrf_token %}
-        <div class='control-group'>
+        <div id='harvestDecisionDiv' data-bind='visible: !submitted()' class='control-group'>
         <div class='input-prepend'>
             <span class='add-on'><i class='icon-leaf'></i></span>
             <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
             <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: harvestDecision'>
-            <select id='harvestDecisionSelect' required="required" form="vcweb-form" data-bind='value: harvestDecision'>
-                <!-- ko foreach: ko.utils.range(0, maxHarvestDecision()) -->
-                <option data-bind='value: $data, text: $data'></option>
-                <!-- /ko -->
+            <select id='harvestDecisionSelect' name='harvest_decision' required="required" form="vcweb-form" data-bind='options: harvestDecisionOptions, value: harvestDecision'>
             </select>
-
         </div>
-        <button id='submitDecision' data-bind='click: submitDecision' type='submit' class='btn btn-primary'>Submit</button>
+        <button id='submitDecision' type='submit' class='btn btn-primary'>Submit</button>
         </div>
     </form>
 </div>
@@ -453,6 +450,9 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
+            model.harvestDecisionOptions = ko.computed(function() {
+                return ko.utils.range(0, model.maxHarvestDecision());
+            });
             model.secondsLeft = ko.observable(0);
             model.currentInterval = ko.observable();
             model.totalEarnings = ko.computed(function() {
@@ -479,7 +479,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 tour.addStep({ element: "#dashboard-time", title: "Time Left",
                         placement: "top",
                         content: "The time remaining in this round will be displayed here.  It will turn red when " +
-                        experimentModel.warningCountdownTime() + " seconds are left."});
+                        model.warningCountdownTime() + " seconds are left."});
                 tour.addStep({ element: "#chatMessage", title: "Text Chat",
                         placement: "left",
                         content: "If chat is enabled, you can communicate with your group by typing messages into this box and hitting the enter key or clicking 'Send'."});
@@ -552,6 +552,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                     model.disableChatForm();
                     return;
                 }
+                model.enableHarvestForm();
                 console.debug("starting round");
                 if (isInt(model.timeRemaining()) && model.timeRemaining() > 0) {
                     model.setupChat();
@@ -559,12 +560,6 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                     model.setCurrentInterval(
                         setInterval(function() {
                             model.tick();
-                            if (model.secondsLeft() > 30 && model.waitThirtySeconds()) {
-                                model.disableHarvestForm();
-                            }
-                            else {
-                                model.enableHarvestForm();
-                            }
                             if (! model.isTimerRunning()) {
                                 model.submitDecision();
                                 model.clearCurrentInterval();
@@ -574,29 +569,27 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 }
             };
             model.submitDecision = function(data, evt) {
-                model.enableHarvestForm();
                 var formData = $('#vcweb-form').serialize();
-                model.disableHarvestForm();
-                model.disableChatForm();
+                model.submitted(true);
                 console.debug(formData);
                 $.post('submit-harvest-decision', formData, function(response) {
                     console.log(response);
                     // model.update($.parseJSON(response.experimentModelJson));
                     getWebSocket().send(createReadyEvent(response.message));
-                    model.submitted(true);
                     model.clearCurrentInterval();
                     model.secondsLeft(0);
                 });
+                return false;
             }
             model.submitChatMessage = function(data, evt) {
-                evt.preventDefault();
-                console.log("clicking chat message");
+                console.log("submitting chat message");
                 var message = $('#chatMessage').val();
                 if (message) {
                     $('#chatMessage').val('');
                     getWebSocket().send(createMessageEvent(message));
                     $('#chatMessage').focus();
                 }
+                return false;
             }
             model.update = function() {
                 $.get('view-model', { participant_group_id: model.participantGroupId() }, function(data) {
@@ -615,10 +608,10 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 $(formId + " :input").prop("disabled", disabled);
             }
             model.enableHarvestForm = function() {
-                model.setFormDisabled("#vcweb-form", false);
+                $('#harvestDecisionDiv').show();
             }
             model.disableHarvestForm = function() {
-                model.setFormDisabled("#vcweb-form", true);
+                $('#harvestDecisionDiv').hide();
             }
             model.enableChatForm = function() {
                 model.setFormDisabled("#chat-form", false);
@@ -632,10 +625,12 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 model.chatEnabled(! chatDisabled);
             }
             model.afterRenderTemplate = function(elements) {
+                console.debug("after render template: " + model.harvestDecision());
                 if (model.templateId() === "REGULAR") {
                     model.startRound()
                 }
                 model.setupChat();
+                $('[data-content]').popover({placement: 'top', trigger: 'hover'});
             }
             return model;
         }
@@ -643,14 +638,14 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             var experimentModel = new ExperimentModel(experimentModelJson);
             ko.applyBindings(experimentModel);
             var s = connect();
-            s.onmessage = function(json) {
-                console.debug(json);
-                var data = $.parseJSON(json.data);
+            s.onmessage = function(message) {
+                console.debug(message);
+                var data = $.parseJSON(message.data);
                 console.debug(data);
                 switch (data.event_type) {
                     case 'chat':
+                        console.debug("received chat message:" + message);
                         experimentModel.chatMessages.unshift(data);
-                        console.debug("received chat message:" + json);
                         break;
                     case 'update':
                         $('#progress-modal').modal('show');
@@ -662,14 +657,14 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                         });
                         break;
                     default:
-                        console.debug("unhandled json message:" + json);
+                        console.debug("unhandled message:" + message);
                         break;
                 }
             };
             return experimentModel;
         }
-        var experimentModel = initialize($.parseJSON("{{ experimentModelJson|escapejs }}"));
-        $('[data-content]').popover({placement: 'top', trigger: 'hover'});
+        model = initialize($.parseJSON("{{ experimentModelJson|escapejs }}"));
     });
+    var model;
 </script>
 {% endblock %}
