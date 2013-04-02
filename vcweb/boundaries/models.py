@@ -289,6 +289,17 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
         set_regrowth(group, resource_regrowth, round_data)
         current_resource_level_dv.int_value = min(current_resource_level + resource_regrowth, max_resource_level)
         current_resource_level_dv.save()
+    else:
+        group.log("current resource level is 0, no one can harvest")
+        set_group_harvest(group, 0, round_data)
+        ParticipantRoundDataValue.objects.for_group(group, parameter=get_harvest_decision_parameter(),
+                round_data=round_data).update(is_active=False)
+        for pgr in group.participant_group_relationship_set.all():
+            # Create adjusted data values
+            ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr,
+                    round_data=round_data, parameter=get_harvest_decision_parameter(),
+                    int_value=0)
+
 
     ''' XXX: transfer resource levels across chat and quiz rounds if they exist '''
     if experiment.has_next_round:

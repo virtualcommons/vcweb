@@ -25,14 +25,16 @@ class AdjustHarvestDecisionsTest(BaseTest):
     def test_adjust_harvest_decisions(self):
         e = self.experiment
         e.activate()
-        self.create_harvest_decisions()
-        for g in e.groups:
-            set_resource_level(g, 25)
-        e.end_round()
-        for g in e.groups:
-            self.assertEqual(get_resource_level(g), 0)
-        for pgr in e.participant_group_relationships:
-            self.assertEqual(5, get_harvest_decision(pgr))
+        for rl in range(1, 40):
+            e.start_round()
+            self.create_harvest_decisions()
+            for g in e.groups:
+                set_resource_level(g, rl)
+            e.end_round()
+            for g in e.groups:
+                self.assertEqual(get_resource_level(g), 0)
+            for pgr in self.participant_group_relationships:
+                self.assertTrue(get_harvest_decision(pgr) <= 8)
 
 class InitialDataTest(BaseTest):
     def test_experiment_metadata(self):
