@@ -236,6 +236,9 @@ connection_manager = ConnectionManager()
 
 # replace with namedtuple
 class Struct:
+    def to_json(self):
+        return json.dumps(self.__dict__)
+
     def __init__(self, **attributes):
         self.__dict__.update(attributes)
 
@@ -298,10 +301,9 @@ class ParticipantConnection(BaseConnection):
         logger.debug("handling participant ready event %s for experiment %s", event, experiment)
         (per, valid) = self.verify_auth_token(event)
         if valid:
-            if getattr(event, 'message', None):
+            if not getattr(event, 'message', None):
                 event.message = "Participant %s is ready." % per.participant
-        # FIXME: any reason to bootstrap this
-            connection_manager.broadcast(experiment, create_message_event(event.message, event_type=READY_EVENT_TYPE))
+            connection_manager.broadcast(experiment, event.to_json())
         else:
             logger.warning("Invalid auth token for participant %s", per)
             self.send(UNAUTHORIZED_EVENT)

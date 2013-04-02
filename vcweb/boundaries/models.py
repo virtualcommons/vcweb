@@ -19,7 +19,7 @@ EXPERIMENT_METADATA_NAME = intern('bound')
 MAX_RESOURCE_LEVEL = 240
 MAX_SHARED_RESOURCE_LEVEL = 480
 
-RESOURCES_PER_PARTICIPANT = 60
+INITIAL_RESOURCES_PER_PARTICIPANT_PER_ROUND = 3
 
 '''
 Experiment Parameters and Metadata Accessors
@@ -82,11 +82,14 @@ def is_shared_resource_enabled(round_configuration):
     return round_configuration.get_parameter_value(parameter=get_shared_resource_enabled_parameter(),
                                                    default=False).boolean_value
 
-def get_max_resource_level(experiment_configuration):
-    return RESOURCES_PER_PARTICIPANT * experiment_configuration.max_group_size
+def get_max_resource_level(round_configuration):
+    ec = round_configuration.experiment_configuration
+# FIXME: number of rounds currently hard coded to be 20 for regular rounds, 10 for practice rounds
+    number_of_rounds = 20 if round_configuration.is_regular_round else 10
+    return INITIAL_RESOURCES_PER_PARTICIPANT_PER_ROUND * ec.max_group_size * number_of_rounds
 
 def get_initial_resource_level(round_configuration, default=None):
-    return get_max_resource_level(round_configuration.experiment_configuration)
+    return get_max_resource_level(round_configuration)
 
 def should_reset_resource_level(round_configuration):
     return round_configuration.get_parameter_value(parameter=get_reset_resource_level_parameter(),
@@ -212,7 +215,7 @@ def round_started_handler(sender, experiment=None, **kwargs):
     formation
     '''
     if should_reset_resource_level(round_configuration):
-        initial_resource_level = get_max_resource_level(round_configuration.experiment_configuration)
+        initial_resource_level = get_max_resource_level(round_configuration)
         logger.debug("Resetting resource level for %s to %d", round_configuration, initial_resource_level)
         round_data = experiment.get_round_data(round_configuration)
         for group in experiment.group_set.filter(session_id=round_configuration.session_id):
@@ -269,7 +272,7 @@ def adjust_harvest_decisions(current_resource_level, group, round_data, total_ha
 
 def update_resource_level(experiment, group, round_data, regrowth_rate, max_resource_level=None):
     if max_resource_level is None:
-        max_resource_level = get_max_resource_level(experiment.experiment_configuration)
+        max_resource_level = get_max_resource_level(round_data.round_configuration)
     current_resource_level_dv = get_resource_level_dv(group, round_data)
     current_resource_level = current_resource_level_dv.int_value
 # FIXME: would be nicer to extend Group behavior and have group.get_total_harvest() instead of
@@ -287,6 +290,7 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
         resource_regrowth = calculate_regrowth(current_resource_level, regrowth_rate, max_resource_level)
         group.log("Regrowth: adding %s to current resource level %s" % (resource_regrowth, current_resource_level))
         set_regrowth(group, resource_regrowth, round_data)
+        # clamp resource
         current_resource_level_dv.int_value = min(current_resource_level + resource_regrowth, max_resource_level)
         current_resource_level_dv.save()
     else:
@@ -308,11 +312,11 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
         group.copy_to_next_round(current_resource_level_dv)
 
 
-# FIXME: try to reduce duplication between this and update_resource_level
+# FIXME: reduce duplication between this and update_resource_level
 def update_shared_resource_level(experiment, group_cluster, round_data, regrowth_rate, max_resource_level=None):
     logger.debug("updating shared resource level")
     if max_resource_level is None:
-        max_resource_level = get_max_resource_level(experiment.experiment_configuration)
+        max_resource_level = get_max_resource_level(round_data.round_configuration)
     max_resource_level = max_resource_level * group_cluster.size
     shared_resource_level_dv = get_shared_resource_level_dv(cluster=group_cluster, round_data=round_data)
     shared_resource_level = shared_resource_level_dv.int_value
@@ -336,6 +340,7 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
     resource_regrowth = calculate_regrowth(shared_resource_level, regrowth_rate, max_resource_level)
     group.log("Regrowth: adding %s to shared resource level %s" % (resource_regrowth, shared_resource_level))
     group_cluster.set_data_value(parameter=get_regrowth_parameter(), round_data=round_data, value=resource_regrowth)
+    # clamp resource level to max_resource_level
     shared_resource_level_dv.int_value = min(shared_resource_level + resource_regrowth, max_resource_level)
     shared_resource_level_dv.save()
     if experiment.has_next_round:
@@ -387,6 +392,6 @@ def round_ended_handler(sender, experiment=None, **kwargs):
         update_participants(experiment, round_data)
 
 
-def calculate_regrowth(resource_level, regrowth_rate, max_resource_level=240):
+def calculate_regrowth(resource_level, regrowth_rate, max_resource_level):
     return (regrowth_rate * resource_level) * (1 - (resource_level / float(max_resource_level)))
 
