@@ -5,7 +5,7 @@
 <link rel='stylesheet' href='{% static "css/boundaries/style.css" %}'/>
 {% endblock %}
 {% block content %}
-<h3>Round <span data-bind='text: roundSequenceLabel'></span></h3>
+<h3><span data-bind='text: roundSequenceLabel'></span></h3>
 <div data-bind='template: { name: templateId(), afterRender: afterRenderTemplate }'>
 </div>
 <div id='progress-modal' class='modal hide fade'>
@@ -336,11 +336,16 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     </div>
     <div class='span4'>
         <h3>Group Status</h3>
-        <table class='table table-bordered table-condensed table-striped'>
+        <table class='table table-bordered table-condensed'>
+            <colgroup>
+                <!-- ko foreach: playerData -->
+                <col data-bind='css: { success: id() == $root.participantGroupId() }'>
+                <!-- /ko -->
+            </colgroup>
             <thead>
                 <tr><th>Player</th>
                     <!-- ko foreach: playerData -->
-                    <th data-bind='text: id'></th>
+                    <th data-bind='text: number'></th>
                     <!-- /ko -->
                 </tr>
             </thead>
@@ -358,9 +363,9 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 <!-- /ko -->
             </tr>
             <tr>
-                <td>Alive</td>
+                <td>Status</td>
                 <!-- ko foreach: playerData -->
-                <td data-bind='css: { "text-error": ! alive(), "text-success": alive() }, text: alive() ? "Yes" : "No"'></td>
+                <td data-bind='css: { "text-error": ! alive(), "text-success": alive() }, text: alive() ? "Alive" : "Deceased"'></td>
                 <!-- /ko -->
             </tr>
             </tbody>
@@ -377,15 +382,23 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
 
 <div data-bind="ifnot: isResourceEmpty" id='resourceDisplay'>
     <div class='alert alert-info'>There are <strong class='badge badge-success' data-bind='text:resourceLevel'></strong> trees remaining in the forest.</div>
+    <div class='well'>
     <div data-bind='style: { width: resourceImageWidth, height: resourceImageHeight, background: resourceImageBackgroundUrl }'>
         &nbsp;
     </div>
+    </div>
 </div>
 <div data-bind="if: isResourceEmpty">
+    <div class='well'>
+    <center><img src="{% static 'images/forestry/deforestation.jpg' %}" class="img-polaroid" width="425"
+    height="282"></center>
+    </div>
+    <!-- this centers the image
     <div style='padding: 8px; margin: auto; border: solid 1px; background: url("{{STATIC_URL}}images/forestry/deforestation.jpg") no-repeat center; height: 282px; width:425px;'>
         &nbsp;
     </div>
-    <div class='alert alert-error'>There are no more trees to harvest. Please wait until the next round begins.</div>
+    -->
+    <div class='alert alert-error'><i class='icon-warning-sign'></i> There are no more trees to harvest. Please wait until the next round begins.</div>
 </div>
 <div data-bind='if: canObserveOtherGroup'>
     <h3>Observe Other Group</h3>
@@ -415,6 +428,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
         </div>
     </div>
 </div>
+<div data-bind='visible: ! isResourceEmpty()'>
 <h3>Harvest</h3>
 <div data-bind='if: submitted'>
     <div class='alert alert-success'>
@@ -443,6 +457,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
         <button id='submitDecisionButton' type='submit' class='btn btn-primary'>Submit</button>
         </div>
     </form>
+</div>
 </div>
 </script>
 <script src='{% static "js/bootstrap-tour.js" %}'></script>

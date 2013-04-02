@@ -113,6 +113,15 @@ li.pull-right {
 .text-gold {
     color: #DFB03D;
 }
+col.success {
+    background-color: #dff0d8;
+}
+col.warning {
+    background-color: #fcf8e3;
+}
+col.error {
+    background-color: #f2dede;
+}
 /*
 @font-face {
     font-family: Entypo;

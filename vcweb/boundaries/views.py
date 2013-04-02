@@ -118,7 +118,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     own_resource_level = get_resource_level(own_group)
     last_harvest_decision = get_last_harvest_decision(participant_group_relationship, round_data=previous_round_data)
     experiment_model_dict['playerData'] = [{
-        'id': pgr.participant_number,
+        'id': pgr.pk,
+        'number': pgr.participant_number,
         'lastHarvestDecision': get_last_harvest_decision(pgr, round_data=previous_round_data),
         'alive': get_player_status(pgr, current_round_data),
         'storage': get_storage(pgr, current_round_data),
@@ -142,7 +143,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             experiment_model_dict['canObserveOtherGroup'] = True
             other_group = own_group.get_related_group()
             experiment_model_dict['otherGroupResourceLevel'] = get_resource_level(other_group, current_round_data)
-            experiment_model_dict['otherGroupAverageHarvest'] = get_average_harvest(other_group, current_round_data)
+            experiment_model_dict['otherGroupAverageHarvest'] = get_average_harvest(other_group, previous_round_data)
             experiment_model_dict['otherGroupAverageStorage'] = get_average_storage(other_group, current_round_data)
 
     return dumps(experiment_model_dict)
