@@ -276,6 +276,8 @@ class ExperimentQuerySet(models.query.QuerySet):
         return self.filter(status='COMPLETED', **kwargs)
     def active(self, **kwargs):
         return self.filter(status__in=('ACTIVE', 'ROUND_IN_PROGRESS'), **kwargs)
+    def for_participant(self, participant, **kwargs):
+        return participant.experiments.filter(status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
 
 class Experiment(models.Model):
     """

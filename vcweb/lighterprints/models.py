@@ -468,6 +468,7 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
     if round_data is None:
         round_data = group.current_round_data
     activities_performed_qs = ParticipantRoundDataValue.objects.for_group(group, parameter=get_activity_performed_parameter(), round_data=round_data, date_created__range=(start, end))
+
     for activity_performed_dv in activities_performed_qs:
         logger.debug("checking activity performed: %s", activity_performed_dv)
         activity_points = activity_points_cache[activity_performed_dv.int_value]
@@ -611,6 +612,7 @@ def get_individual_points(participant_group_relationship, end_date=None):
     prdvs = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship,
             date_created__range=(start_date, end_date), parameter=get_activity_performed_parameter())
     pks = prdvs.values_list('int_value', flat=True)
+    # XXX: assumes that an Activity can only be performed once per round (day)
     return Activity.objects.total(pks=pks)
-    # FIXME: this creates a query per participant round data value because of the design of foreign key data values.
+    # this generates a query per participant round data value, very inefficient
     #return sum(prdv.value.points for prdv in prdvs)

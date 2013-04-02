@@ -91,18 +91,19 @@ class Dashboard(ListView, TemplateResponseMixin):
         user = self.request.user
         if is_experimenter(user):
             return Experiment.objects.select_related('experimenter', 'experiment_metadata', 'experiment_configuration').filter(experimenter__pk=self.request.user.experimenter.pk)
-        else:
+        elif is_participant(user):
 # nested dictionary, {ExperimentMetadata -> { status -> [experiments,...] }}
 # FIXME: could also use collections.defaultdict or regroup template tag to
 # accomplish this..
             experiment_dict = {}
 # FIXME: this needs to be refactored
-            for experiment in user.participant.experiments.exclude(status__in=(Experiment.Status.INACTIVE, Experiment.Status.PAUSED, Experiment.Status.COMPLETED)):
+            for experiment in Experiment.objects.for_participant(user.participant):
                 if not experiment.experiment_metadata in experiment_dict:
                     experiment_dict[experiment.experiment_metadata] = dict([(choice[0], list()) for choice in Experiment.Status])
                 experiment_dict[experiment.experiment_metadata][experiment.status].append(experiment)
                 logger.info("experiment_dict %s", experiment_dict)
             return experiment_dict
+
 
 def set_authentication_token(user, authentication_token=None):
     commons_user = None
@@ -112,7 +113,7 @@ def set_authentication_token(user, authentication_token=None):
         commons_user = user.experimenter
     else:
         logger.error("Invalid user: %s", user)
-        raise Http404
+        return
     logger.debug("%s authentication_token=%s", commons_user, authentication_token)
     commons_user.authentication_token = authentication_token
     commons_user.save()
