@@ -150,7 +150,7 @@ def get_storage_dv(participant_group_relationship, round_data=None, default=None
 
 def get_storage(participant_group_relationship, round_data=None, default=0):
     dv = get_storage_dv(participant_group_relationship, round_data, default)
-    return default if dv.int_value is None else dv.int_value
+    return max(default if dv.int_value is None else dv.int_value, 0)
 
 
 def _zero_if_none(value):

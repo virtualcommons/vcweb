@@ -112,7 +112,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     experiment_model_dict['participantHandle'] = participant_group_relationship.participant_handle
- 
     # FIXME: these should only need to be added for playable rounds but KO gets unhappy when we switch templates from
     # instructions rounds to practice rounds.
     own_group = participant_group_relationship.group
