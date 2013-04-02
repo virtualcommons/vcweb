@@ -5,6 +5,7 @@
 <link rel='stylesheet' href='{% static "css/boundaries/style.css" %}'/>
 {% endblock %}
 {% block content %}
+<h3>Round <span data-bind='text: roundSequenceLabel'></span></h3>
 <div data-bind='template: { name: templateId(), afterRender: afterRenderTemplate }'>
 </div>
 <div id='progress-modal' class='modal hide fade'>
