@@ -1,12 +1,38 @@
 """
 Tests for boundaries experiment
 """
-from django.test import TestCase
+from vcweb.core.tests import BaseVcwebTest
 from vcweb.core.models import Parameter
-from vcweb.boundaries.models import get_experiment_metadata
+from vcweb.boundaries.models import *
 
-class BaseTest(TestCase):
-    fixtures = [ 'boundaries_experiment_metadata' ]
+import logging
+logger = logging.getLogger(__name__)
+
+
+class BaseTest(BaseVcwebTest):
+    fixtures = [ 'boundaries_experiment_metadata', 'forestry_experiment_metadata', 'boundaries_parameters', ]
+
+    def create_harvest_decisions(self, value=10):
+        for pgr in self.experiment.participant_group_relationships:
+            logger.debug("setting harvest decision for %s to %s", pgr, value)
+            set_harvest_decision(pgr, value, submitted=True)
+
+    def setUp(self, **kwargs):
+        super(BaseTest, self).setUp(experiment_metadata=get_experiment_metadata(), **kwargs)
+        logger.debug("boundaries test loaded experiment %s", self.experiment)
+
+class AdjustHarvestDecisionsTest(BaseTest):
+    def test_adjust_harvest_decisions(self):
+        e = self.experiment
+        e.activate()
+        self.create_harvest_decisions()
+        for g in e.groups:
+            set_resource_level(g, 25)
+        e.end_round()
+        for g in e.groups:
+            self.assertEqual(get_resource_level(g), 0)
+        for pgr in e.participant_group_relationships:
+            self.assertEqual(5, get_harvest_decision(pgr))
 
 class InitialDataTest(BaseTest):
     def test_experiment_metadata(self):

@@ -4,7 +4,7 @@ from vcweb.core import signals, simplecache
 from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, GroupRelationship, GroupCluster, GroupClusterDataValue)
 from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_harvest_decision_dv, get_regrowth_rate_parameter,
                                    get_group_harvest_parameter, get_reset_resource_level_parameter, get_resource_level as get_unshared_resource_level,
-                                   get_initial_resource_level as forestry_initial_resource_level, get_regrowth_parameter,
+                                   get_initial_resource_level as forestry_initial_resource_level, get_regrowth_parameter, set_resource_level,
                                    get_resource_level_parameter, get_resource_level_dv as get_unshared_resource_level_dv,
                                    set_group_harvest, set_regrowth, set_harvest_decision)
 
@@ -100,10 +100,7 @@ def get_max_harvest_decision(experiment_configuration):
     return experiment_configuration.get_parameter_value(parameter=get_max_harvest_decision_parameter(), default=10).int_value
 
 def get_max_allowed_harvest_decision(participant_group_relationship, round_data=None, experiment_configuration=None):
-    group = participant_group_relationship.group
-    resource_level = get_resource_level(group, round_data)
-    return min(get_max_harvest_decision(experiment_configuration), resource_level / group.size)
-
+    return get_max_harvest_decision(experiment_configuration)
 
 def get_resource_level(group, round_data=None, round_configuration=None, cluster=None):
     return get_resource_level_dv(group, round_data, round_configuration, cluster).int_value
@@ -234,23 +231,40 @@ def round_started_handler(sender, experiment=None, **kwargs):
 
 
 
-def adjust_harvest_decisions(current_resource_level, group, group_size, round_data, total_harvest):
-    individual_harvest = current_resource_level / group_size
-    adjusted_harvest = individual_harvest * group_size
-    group.log(
-            "GROUP HARVEST ADJUSTMENT - original total harvest: %s, resource level: %s, individual harvest: %s, adjusted group harvest: %s" %
-        (total_harvest, current_resource_level, individual_harvest, adjusted_harvest))
-    # deactivate old participant round data value decisions
-    ParticipantRoundDataValue.objects.for_group(group=group,
-                                                parameter=get_harvest_decision_parameter(),
-                                                round_data=round_data).update(is_active=False)
-    # create new harvest decision data values
-    for pgr in group.participant_group_relationship_set.all():
-        ParticipantRoundDataValue.objects.create(round_data=round_data,
-                                                 participant_group_relationship=pgr,
-                                                 parameter=get_harvest_decision_parameter(),
-                                                 int_value=individual_harvest)
-    return adjusted_harvest
+def adjust_harvest_decisions(current_resource_level, group, round_data, total_harvest, group_size=0):
+    if group_size == 0:
+        group_size = group.size
+# pass in the group size to handle group cluster case
+    average_harvest = current_resource_level / group_size
+    group.log("GROUP HARVEST ADJUSTMENT - original total harvest: %s, resource level: %s, average harvest: %s" %
+        (total_harvest, current_resource_level, average_harvest))
+    hds = ParticipantRoundDataValue.objects.for_group(group=group, parameter=get_harvest_decision_parameter(),
+            round_data=round_data, int_value__gt=0).order_by('int_value')
+    total_adjusted_harvest = 0
+# FIXME: should be the same as group.size
+    total_number_of_decisions = hds.count()
+    logger.debug("total number of decisions: %s - group size: %s", total_number_of_decisions, group_size)
+    decisions_allocated = 0
+    for hd in hds:
+        if hd.int_value <= average_harvest:
+            group.log("preserving %s < average harvest" % hd)
+            total_adjusted_harvest += hd.int_value
+        else:
+# now to assign the overs, find out how much resource level is remaining
+            remaining_resource_level = current_resource_level - total_adjusted_harvest
+            remaining_decisions = total_number_of_decisions - decisions_allocated
+            average_harvest = remaining_resource_level / remaining_decisions
+            hd.is_active = False
+            hd.save()
+            logger.debug("Assigning %s to hd %s", average_harvest, hd)
+            ParticipantRoundDataValue.objects.create(participant_group_relationship=hd.participant_group_relationship,
+                    parameter=get_harvest_decision_parameter(), round_data=round_data, int_value=average_harvest,
+                    submitted=True)
+            total_adjusted_harvest += average_harvest
+        decisions_allocated += 1
+
+    logger.debug("harvested total %s", total_adjusted_harvest)
+    return total_adjusted_harvest
 
 
 def update_resource_level(experiment, group, round_data, regrowth_rate, max_resource_level=None):
@@ -264,10 +278,7 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
     logger.debug("Harvest: total group harvest for playable round: %s", total_harvest)
     if current_resource_level > 0:
         if total_harvest > current_resource_level:
-            # divide remaining trees evenly among every participant
-            group_size = group.size
-            adjusted_harvest = adjust_harvest_decisions(current_resource_level, group, group_size, round_data,
-                                                        total_harvest)
+            adjusted_harvest = adjust_harvest_decisions(current_resource_level, group, round_data, total_harvest)
             total_harvest = adjusted_harvest
 
         group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level))
@@ -295,11 +306,11 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
     shared_resource_level_dv = get_shared_resource_level_dv(cluster=group_cluster, round_data=round_data)
     shared_resource_level = shared_resource_level_dv.int_value
     shared_group_harvest = 0
-    total_group_size = 0
+    group_cluster_size = 0
     group_harvest_dict = {}
     for group_relationship in group_cluster.group_relationship_set.all():
         group = group_relationship.group
-        total_group_size += group.size
+        group_cluster_size += group.size
         group_harvest = get_total_group_harvest(group, round_data)
         group_harvest_dict[group] = group_harvest
         shared_group_harvest += group_harvest
@@ -307,7 +318,7 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
     for group, group_harvest in group_harvest_dict.items():
         if shared_group_harvest > shared_resource_level:
         # adjust each individual harvest for each group in this cluster
-            group_harvest = adjust_harvest_decisions(shared_resource_level, group, total_group_size, round_data, group_harvest)
+            group_harvest = adjust_harvest_decisions(shared_resource_level, group, round_data, group_harvest, group_size=group_cluster_size)
         set_group_harvest(group, group_harvest, round_data)
         shared_resource_level = shared_resource_level - group_harvest
     # set regrowth after shared_resource_level has been modified by all groups in this cluster

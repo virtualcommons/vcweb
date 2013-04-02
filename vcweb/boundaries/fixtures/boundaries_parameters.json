@@ -1,0 +1,67 @@
+[
+    {
+        "fields": {
+        	"name":"player_status",
+        	"experiment_metadata": 1,
+        	"creator": 1,
+        	"type": "int",
+                "date_created": "2011-01-01 15:13:03",
+                "last_modified": "2011-01-01 15:13:05",
+        	"scope": "participant"
+        },
+        "model": "core.parameter",
+        "pk": 1111
+    },
+    {
+        "fields": {
+        	"name":"regrowth_rate",
+        	"experiment_metadata": 1,
+        	"creator": 1,
+        	"type": "float",
+                "date_created": "2011-01-01 15:13:03",
+                "last_modified": "2011-01-01 15:13:05",
+        	"scope": "round"
+        },
+        "model": "core.parameter",
+        "pk": 1112
+    },
+    {
+        "fields": {
+        	"name":"cost_of_living",
+        	"experiment_metadata": 1,
+        	"creator": 1,
+        	"type": "float",
+                "date_created": "2011-01-01 15:13:03",
+                "last_modified": "2011-01-01 15:13:05",
+        	"scope": "round"
+        },
+        "model": "core.parameter",
+        "pk": 1113
+    },
+    {
+        "fields": {
+        	"name":"shared_resource",
+        	"experiment_metadata": 1,
+        	"creator": 1,
+        	"type": "boolean",
+                "date_created": "2011-01-01 15:13:03",
+                "last_modified": "2011-01-01 15:13:05",
+        	"scope": "round"
+        },
+        "model": "core.parameter",
+        "pk": 1114
+    },
+    {
+        "fields": {
+        	"name":"storage",
+        	"experiment_metadata": 1,
+        	"creator": 1,
+        	"type": "int",
+                "date_created": "2011-01-01 15:13:07",
+                "last_modified": "2011-01-01 15:15:05",
+        	"scope": "participant"
+        },
+        "model": "core.parameter",
+        "pk": 1115
+    }
+]

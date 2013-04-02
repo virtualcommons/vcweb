@@ -94,8 +94,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['templateName'] = current_round.template_name
     experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
     experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
-# FIXME: extend this to first 3 regular rounds of each session as well?
-    experiment_model_dict['waitThirtySeconds'] = current_round.is_practice_round and current_round.sequence_number < 6
+    # FIXME: extend this to first 3 regular rounds of each session as well?
+    # experiment_model_dict['waitThirtySeconds'] = current_round.is_practice_round and current_round.sequence_number < 6
 # instructions round parameters
     if current_round.is_instructions_round:
         experiment_model_dict['isInstructionsRound'] = True
