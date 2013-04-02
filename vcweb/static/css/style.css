@@ -122,6 +122,20 @@ col.warning {
 col.error {
     background-color: #f2dede;
 }
+.input-prepend.input-block-level {
+    display: table;
+    width: 100%;
+}
+.input-prepend.input-block-level .add-on {
+    display: table-cell;
+}
+.input-prepend.input-block-level > input {
+    box-sizing: border-box;
+    height: 30px;
+    display: table-cell;
+    width: 100%;
+    border-left-style: none;
+}
 /*
 @font-face {
     font-family: Entypo;
