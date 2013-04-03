@@ -260,7 +260,7 @@ div.lighterprints-scoreboard {
     color: #666666;
 }
 .lighterprints-scoreboard-xlarge {
-    font-size: 5em;
+    font-size: 4.6em;
     font-family: 'TrumpGothicWestW01-Bold', sans-serif;
     color: #666666;
 }
@@ -279,6 +279,12 @@ div.lighterprints-scoreboard h5 {
 }
 h3.popover-title {
     font-weight: bolder;
+}
+.chart {
+    margin-top: -25px;
+}
+.dashboard-content {
+    margin-top: -3px;
 }
 .lighterprints-gray {
     color: #D0D0D0;
