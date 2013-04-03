@@ -19,7 +19,7 @@ from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_auth
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_group_activity,
         can_view_other_groups, get_lighterprints_experiment_metadata, is_experiment_completed,
-        get_activity_performed_parameter, get_points_to_next_level, get_group_scores, get_footprint_level,
+        get_activity_performed_parameter, get_points_to_next_level, get_group_scores, get_group_score, get_footprint_level,
         get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining)
 
 from collections import defaultdict
