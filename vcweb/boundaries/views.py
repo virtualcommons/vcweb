@@ -38,7 +38,6 @@ def submit_harvest_decision(request, experiment_id=None):
         harvest_decision = form.cleaned_data['integer_decision']
         round_data = experiment.current_round_data
         set_harvest_decision(pgr, harvest_decision, round_data, submitted=True)
-        pgr.set_participant_ready(round_data)
         message = "%s harvested %s trees"
         experiment.log(message % (pgr.participant, harvest_decision))
         response_dict = {

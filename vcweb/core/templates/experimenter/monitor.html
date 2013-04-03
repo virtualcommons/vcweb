@@ -20,7 +20,7 @@
             <div class='btn-toolbar'>
                 <div class='btn-group'>
                     <a class='btn btn-primary' data-bind='click: updateParticipants' data-content='Updates all connected participants.' ><i class='icon-exchange'></i> update participants</a>
-                    <a class='btn btn-primary' data-bind='click: update' data-content='Updates this pagedata.' ><i class='icon-refresh'></i> refresh this page</a>
+                    <a class='btn btn-primary' data-bind='click: refresh' data-content='Updates this page.' ><i class='icon-refresh'></i> refresh this page</a>
                 </div>
             </div>
             <div class='btn-toolbar'>
@@ -76,6 +76,7 @@
                         Registered participants: <span id='participantCountId' data-bind='text:participantCount' class='badge badge-info'></span>
                     </a>
                 </div>
+                {% comment %} switch to KO for this, doesn't get updated properly when transitioning rounds {% endcomment %}
                 <div id='registeredParticipants' class='accordion-body collapse'>
                     <div class='accordion-inner'>
                         {% regroup registeredParticipants by group as group_list %}
@@ -229,6 +230,9 @@
             }
             model.tick = function() {
                 model.timeRemaining(model.timeRemaining() - 1);
+                if (model.timeRemaining() % 10 == 0) {
+                    model.checkAllParticipantsReady();
+                }
                 if (model.timeRemaining() < 0) {
                     model.addMessage("Round time has expired!");
                     model.clearCurrentInterval();
@@ -245,16 +249,19 @@
             }
             // FIXME: factor out the code duplication with this and confirmExperimentControllerAction for
             // showing the modal and invoking the ajax call if possible
+            model.refresh = function() {
+                console.debug("refreshing page");
+                window.location.reload(true);
+            }
             model.update = function(localModel, evt) {
                 $('#progress-modal').modal('show');
                 Dajaxice.vcweb.core.get_experiment_model(function(data) {
-                        console.debug("model has time remaining: " + model.timeRemaining());
-                        ko.mapping.fromJS(data, model);
-                        model.startTimer();
-                        $('#progress-modal').modal('hide');
-
-                        },
-                        {pk: {{experiment.pk}}});
+                    ko.mapping.fromJS(data, model);
+                    console.debug("time remaining: " + model.timeRemaining());
+                    model.startTimer();
+                    $('#progress-modal').modal('hide');
+                },
+                {pk: {{experiment.pk}}});
             }
             model.startTimer = function() {
                 if (model.timeRemaining() > 0) {
@@ -272,7 +279,6 @@
             }
             model.confirmExperimentControllerAction = function(shouldUpdateParticipants, localModel, evt) {
                 element = evt.target;
-                console.debug(element);
                 if ($(element).hasClass('disabled')) {
                     console.debug("aborting disabled action: " + element);
                     return false;
@@ -296,6 +302,7 @@
                     return model.isRoundInProgress() ? "stop" : "start";
                     });
             model.checkAllParticipantsReady = function() {
+                console.debug("checking if all participants are ready");
                 $.get('/experiment/{{experiment.pk}}/check-ready-participants', function(response) {
                     if (response.all_participants_ready) {
                         model.addMessage("All participants are ready, advancing to next round");
@@ -338,9 +345,9 @@
             ko.applyBindings(experimentModel);
             // establish sockjs websocket connection
             var s = connect("/experimenter");
-            s.onmessage = function(evt) {
-                console.log("Received event: " + evt);
-                experiment_event = $.parseJSON(evt.data);
+            s.onmessage = function(message) {
+                console.log("sockjs event: " + message);
+                experiment_event = $.parseJSON(message.data);
                 switch (experiment_event.event_type) {
                     case 'update':
                         console.debug("FIXME: ignoring update requests, patch sockjs broadcast to not send certain messages");
@@ -358,8 +365,6 @@
                 }
             };
             return experimentModel;
-            // FIXME: this won't quite work
-            // $('#participantCountId').popover({ html: true, title: "Participants", content: experimentModel.registeredParticipants() });
         }
         $('[data-content]').popover({placement: 'top', trigger: 'hover'});
         // initialize experiment model JSON from experiment model

@@ -99,10 +99,13 @@ def get_initial_resource_level_parameter():
 def set_harvest_decision(participant_group_relationship=None, value=None, round_data=None, submitted=False):
     if round_data is None:
         round_data = participant_group_relationship.current_round_data
-    prdv = participant_group_relationship.get_data_value(parameter=get_harvest_decision_parameter(), round_data=round_data)
-    prdv.submitted = submitted
-    prdv.int_value = value
-    prdv.save()
+# deactivate all previous harvest decisions in this round
+    ParticipantRoundDataValue.objects.for_participant(participant_group_relationship,
+            round_data=round_data).update(is_active=False)
+    return ParticipantRoundDataValue.objects.create(participant_group_relationship=participant_group_relationship,
+            parameter=get_harvest_decision_parameter(), round_data=round_data,
+            int_value=value,
+            submitted=True)
 
 def set_resource_level(group, value, round_data=None):
     return group.set_data_value(parameter=get_resource_level_parameter(), round_data=round_data, value=value)
@@ -153,6 +156,7 @@ def round_ended(sender, experiment=None, **kwargs):
             current_resource_level_dv = get_resource_level_dv(group)
             current_resource_level = current_resource_level_dv.int_value
             if current_round_configuration.is_playable_round:
+                # FIXME: update this to use django queryset aggregation ala boundaries experiment
                 total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
                 logger.debug("total harvest for playable round: %d", total_harvest)
                 if current_resource_level > 0 and total_harvest > 0:

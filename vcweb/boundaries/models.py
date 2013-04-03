@@ -201,15 +201,22 @@ def round_started_handler(sender, experiment=None, **kwargs):
         logger.error("Received round started signal with no experiment: %s", sender)
         raise ValueError("Received round started signal with no experiment")
     round_configuration = experiment.current_round
+    round_data = experiment.get_round_data(round_configuration)
     logger.debug("setting up round %s", round_configuration)
     # initialize group and participant data values
     if round_configuration.is_playable_round:
         experiment.initialize_data_values(
             group_cluster_parameters=(get_regrowth_parameter(), get_resource_level_parameter(),),
             group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter(),),
-            participant_parameters=(get_harvest_decision_parameter(), get_storage_parameter(),
+            participant_parameters=(get_storage_parameter(),
                                     get_player_status_parameter(),)
         )
+# check for dead participants and set their ready and harvest decision flags
+        deceased_participants = ParticipantRoundDataValue.objects.select_related('participant_group_relationship').filter(parameter=get_player_status_parameter(),
+                round_data=round_data, boolean_value=False)
+        for prdv in deceased_participants:
+            pgr = prdv.participant_group_relationship
+            set_harvest_decision(pgr, 0, round_data, submitted=True)
     '''
     during a practice or regular round, set up resource levels, participant harvest decision parameters, and group
     formation
@@ -217,7 +224,6 @@ def round_started_handler(sender, experiment=None, **kwargs):
     if should_reset_resource_level(round_configuration):
         initial_resource_level = get_max_resource_level(round_configuration)
         logger.debug("Resetting resource level for %s to %d", round_configuration, initial_resource_level)
-        round_data = experiment.get_round_data(round_configuration)
         for group in experiment.group_set.filter(session_id=round_configuration.session_id):
             ''' set resource level to initial default '''
             existing_resource_level = get_resource_level_dv(group, round_data, round_configuration)

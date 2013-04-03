@@ -938,7 +938,10 @@ class Experiment(models.Model):
         all_round_data = []
         for round_data in self.round_data_set.reverse():
             group_data_values = [gdv.to_dict() for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()]
-            participant_data_values = [pdv.to_dict(include_email=True, cacheable=True) for pdv in round_data.participant_data_value_set.select_related('participant_group_relationship__participant__user', 'parameter').all()]
+# FIXME: do this more efficiently
+            participant_data_values = [pdv.to_dict(include_email=True, cacheable=True) 
+                    for pdv 
+                    in round_data.participant_data_value_set.select_related('participant_group_relationship__participant__user', 'parameter').exclude(parameter=get_chat_message_parameter())]
             rc = round_data.round_configuration
             all_round_data.append({
                 'roundDataId': "roundData_%s" % round_data.pk,
