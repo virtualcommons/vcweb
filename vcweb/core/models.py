@@ -1973,6 +1973,14 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
                 'target_data_value__participant_group_relationship',
                 ).filter(participant_group_relationship=participant_group_relationship, is_active=True, **kwargs).order_by('-date_created')
 
+    def for_round(self, round_data=None, **kwargs):
+        if round_data is None:
+            raise ValueError("Must specify a round data object in this query")
+        return self.select_related(
+                'parameter',
+                'participant_group_relationship__group'
+                ).filter(round_data=round_data, is_active=True, **kwargs)
+
     def for_group(self, group=None, **kwargs):
         if group is None:
             raise ValueError("Must specify a group in this query")

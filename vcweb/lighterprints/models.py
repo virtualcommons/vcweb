@@ -13,7 +13,7 @@ from model_utils.managers import PassThroughManager
 from vcweb.core import signals, simplecache, enum
 from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, RoundParameterValue, ParticipantGroupRelationship, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
 from vcweb.core.services import fetch_foursquare_categories
-import collections
+from collections import defaultdict
 from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 from lxml import etree
@@ -279,7 +279,7 @@ def get_activity_status_dict(participant_group_relationship, activities, group_l
     upcoming_activities = Activity.objects.upcoming(level=group_level)
     # XXX: data value's int_value stores the fk directly, using .value does a fk lookup to restore the full entity
     # which we don't need
-    performed_activity_ids = [padv.int_value for padv in performed_activity_data_values]
+    performed_activity_ids = performed_activity_data_values.values_list('int_value', flat=True)
     available_activity_ids = [activity.pk for activity in available_activities if activity.pk not in performed_activity_ids]
     upcoming_activity_ids = [activity.pk for activity in upcoming_activities]
     status_dict = {}
@@ -314,7 +314,7 @@ def _activity_status_sort_key(activity_dict):
 def get_activity_availability_cache():
     aac = cache.get('activity_availability_cache')
     if aac is None:
-        aac = collections.defaultdict(list)
+        aac = defaultdict(list)
         for aa in ActivityAvailability.objects.select_related('activity').all():
             aac[aa.activity.pk].append(aa)
         cache.set('activity_availability_cache', aac)
@@ -452,10 +452,38 @@ def get_activity_points_cache():
 def average_points_per_person(group, start=None, end=None, round_data=None):
     return get_group_score(group, start=start, end=end, round_data=round_data)[0]
 
-# cache activity points
+# returns a tuple of (dict of group -> {average_group_points, total_group_points}, total_participant_points)
+def get_group_scores(round_data, participant_group_relationship=None, start=None, end=None):
+    activity_points_cache = get_activity_points_cache()
+    # establish date range
+    # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
+    total_participant_points = 0
+    if start is None:
+        start = date.today()
+    if end is None:
+        end = start + timedelta(1)
+    if round_data is None:
+        round_data = group.current_round_data
+    group_scores = defaultdict(lambda: defaultdict(lambda: 0))
+    activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=round_data, parameter=get_activity_performed_parameter(), date_created__range=(start, end))
+    for activity_performed_dv in activities_performed_qs:
+        activity_points = activity_points_cache[activity_performed_dv.int_value]
+        group_scores[activity_performed_dv.participant_group_relationship.group]['total_group_points'] += activity_points
+        if participant_group_relationship and activity_performed_dv.participant_group_relationship == participant_group_relationship:
+            total_participant_points += activity_points
+    for group, group_data_dict in group_scores.items():
+        group_size = group.size
+        total_group_points = group_data_dict['total_group_points']
+        average = total_group_points / group_size
+        group_data_dict['average_group_points'] = average
+        logger.debug("total carbon savings: %s divided by %s members = %s per person", total_group_points, group_size, average)
+    return (group_scores, total_participant_points)
+
+
 # returns a tuple of the average points per person and the total points for
 # the given group
 def get_group_score(group, start=None, end=None, participant_group_relationship=None, round_data=None, **kwargs):
+    # cache activity points
     activity_points_cache = get_activity_points_cache()
     # establish date range
     # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
@@ -470,7 +498,6 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
     activities_performed_qs = ParticipantRoundDataValue.objects.for_group(group, parameter=get_activity_performed_parameter(), round_data=round_data, date_created__range=(start, end))
 
     for activity_performed_dv in activities_performed_qs:
-        logger.debug("checking activity performed: %s", activity_performed_dv)
         activity_points = activity_points_cache[activity_performed_dv.int_value]
         total_group_points += activity_points
         if activity_performed_dv.participant_group_relationship == participant_group_relationship:

@@ -323,16 +323,20 @@ $(function() {
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
     // custom view model methods, some of these may be lifted into the model itself
-    var ctx = document.getElementById("todaysProgressChart").getContext("2d");
-    var data = [ 
-    { value: viewModel.averagePoints(), color: "#95CB29" }, 
-    { value: viewModel.pointsToNextLevel(), color: "#D0D0D0" },
-    ]
-    var progressChart = new Chart(ctx).Doughnut(data);
     viewModel.activateChallengesTab = activateTabFunctor('#challenges', '#lfp-navtabs');
     viewModel.activateDashboardTab = activateTabFunctor('#dashboard', '#lfp-navtabs');
     viewModel.activateHelpTab = activateTabFunctor('#help', '#lfp-navtabs');
     viewModel.activateGroupTab = activateTabFunctor('#group', '#lfp-navtabs');
+    viewModel.initializeChart = function() {
+        var todaysProgressContext = document.getElementById("todaysProgressChart").getContext("2d");
+        var progressChart = new Chart(todaysProgressContext).Doughnut(viewModel.todaysProgressChartData());
+    };
+    viewModel.todaysProgressChartData = ko.computed(function() {
+        return [ 
+        { value: viewModel.averagePoints(), color: "#95CB29" }, 
+        { value: viewModel.pointsToNextLevel(), color: "#D0D0D0" },
+        ]
+    });
     viewModel.postComment = function(targetModel) {
         var formData = $('#commentForm' + targetModel.pk()).serialize();
         $('.comment-popover').popover('hide');
@@ -355,28 +359,36 @@ $(function() {
                 targetModel.liked(data.success);
             });
     };
+    // FIXME: manually manipulating DOM elements via JQuery feels a bit hacky mixed in with KO's data binding
+    viewModel.showActivityPerformedModal = function() {
+        $('#activityPerformedModal .progress').removeClass('hide');
+        $('#activityPerformedModalText').addClass('hide');
+        $('#activityPerformedModal .btn').addClass('disabled');
+        $('#activityPerformedModal').modal();
+    };
+    viewModel.hideActivityPerformedModal = function() {
+        $('#activityPerformedModal .progress').addClass('hide');
+        $('#activityPerformedModalText').removeClass('hide');
+        $('#activityPerformedModal .btn').removeClass('disabled');
+    }
     viewModel.perform = function(challengeModel) {
         if (! challengeModel.availableNow()) {
             // FIXME: modal is slow, no feedback on this for now
             // model.errorMessage("The activity " + activityModel.display_name() + " is not currently available.");
             // $('#activityUnavailableModal').modal();
+            console.debug("tried to perform an activity that's not available right now");
+            console.debug(challengeModel);
             return;
         }
-        // FIXME: manually manipulating DOM elements via JQuery feels dirty when mixed in with KO's data binding
-        $('#activityPerformedModal .progress').removeClass('hide');
-        $('#activityPerformedModalText').addClass('hide');
-        $('#activityPerformedModal .btn').addClass('disabled');
-        $('#activityPerformedModal').modal();
+        viewModel.showActivityPerformedModal();
         var id = challengeModel.pk();
         var formData = $('#challengeForm' + id).serialize();
         $.post('/lighterprints/api/do-activity', formData, function(data) {
                 if (data.success) {
                     ko.mapping.fromJSON(data.viewModel, viewModel);
                     viewModel.lastPerformedActivity(challengeModel);
-                    // FIXME: find a better way to handle this?
-                    $('#activityPerformedModal .progress').addClass('hide');
-                    $('#activityPerformedModalText').removeClass('hide');
-                    $('#activityPerformedModal .btn').removeClass('disabled');
+                    viewModel.hideActivityPerformedModal();
+                    viewModel.initializeChart();
                 }
                 else {
                     console.debug("ERROR: " + data.message);
@@ -387,6 +399,7 @@ $(function() {
     };
     ko.applyBindings(viewModel);
     // FIXME: use $('.popover').popover() if we end up having a lot more of these.
+    viewModel.initializeChart();
     $('[data-content]').popover();
 });
 </script>
