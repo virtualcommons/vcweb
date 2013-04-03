@@ -27,9 +27,9 @@
                 </div>
             </div>
             <div style='display: none;' data-bind='visible: ! experimentCompleted()'>
-            <div class='alert alert-block alert-white'>
+            <div class='alert alert-block alert-white welcome-message'>
                 <button type="button" class="close" data-dismiss="alert"><i class='icon-remove-sign'></i></button>
-                <h2 class='muted'>Welcome to Lighter Footprints, <i class='lighterprints-blue'><span data-bind='text: groupName'></span>!</i></h2>
+                <h2 class='welcome-header lighterprints-dark-gray'>Welcome to Lighter Footprints, <i class='lighterprints-blue'><span data-bind='text: groupName'></span>!</i></h2>
                 <p>
                     You have been randomly placed in a group of {{ participant_group_relationship.group.size }}
                     participants. In this experiment you can perform virtual actions that represent green alternatives
@@ -187,13 +187,12 @@
         <div class='tab-pane' id='group'>
             <h1 class='header'><i class='icon-comment'></i> My Group</h1>
             <h3 class='underline'>Group Chat</h3>
-            <form class='form-inline' id='chat-form' data-bind='submit: submitChatMessage'>
-                <div style='width: 90%;' class='input-prepend'>
+            <form id='chat-form' data-bind='submit: submitChatMessage'>
+                <div class='input-prepend input-block-level'>
+                    <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.id}}'/>
                     <span class='add-on'><i class='icon-comment'></i></span>
-                    <input style='width: 90%;' type='text' id='chatText' name='message' placeholder='Send a message to your group' />
+                    <input type='text' id='chatText' name='message' placeholder='Send a message to your group' />
                 </div>
-                <button class='btn btn-lighterprints-blue' data-bind='click: submitChatMessage'>Send</button>
-                <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.id}}'/>
             </form>
             <div class='well alert-white scrollable-messages'>
                 <div data-bind='ifnot: hasChatMessages() '>
@@ -212,7 +211,7 @@
                                 </p>
                             </div>
                             <div class='span1'>
-                                <b class='pull-right'><span data-bind='text: date_created'></span> ago</b>
+                                <span class='pull-right'><span data-bind='text: date_created'></span> ago</span>
                             </div>
                         </div>
                     </div>
@@ -276,7 +275,7 @@
     {% if compare_other_group %}
     <h3 class='lighterprints-sidebar-header'><i class='text-gold icon-trophy'></i> Leaderboard</h3>
     <ul class='nav nav-list' data-bind='foreach: groupData'>
-        <li><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-lighterprints-green' data-bind='text: averagePoints'></span></li> 
+        <li class='leaderboard-group-name'><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-lighterprints-green' data-bind='text: averagePoints'></span></li> 
         <li class='divider'></li>
     </ul>
     {% endif %}
@@ -284,7 +283,7 @@
     <div data-bind='ifnot: hasGroupActivity()'>
         <div data-bind='template: { name: "no-group-activity-template" }'></div>
     </div>
-    <table class='table'>
+    <table class='table group-activity'>
         <tbody data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
         </tbody>
     </table>
@@ -508,9 +507,9 @@ $(function() {
         <img style='padding: 10px 0 0 20px;' data-bind='attr: {src: "{% static 'images/lighterprints/badges/' %}" + name() + ".png" }'>
     </div>
     <div class='span4'>
-        <h4 data-bind='css: status, text:display_name'></h4>
+        <h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
         <p>
-        <span data-bind='css: status, text:summary'></span>
+        <span data-bind='css: status, text: summary'></span>
         </p>
         <form data-bind='attr: { id: "challengeForm" + pk() }' class='form-horizontal' method='post'>
             <input data-bind='value: pk' type='hidden' name='activity_id' />
@@ -527,11 +526,14 @@ $(function() {
             {% endcomment %}
         </form>
     </div>
-    <div style='padding: 15px 0;' class='span2'>
+    <div style='margin-top: 10px; padding: 15px 0;' class='span2'>
         <table>
-        <tr><td><span class='lighterprints-scoreboard-large' data-bind='text:points'></td><td style='text-align: center;'><i class='icon-leaf lighterprints-green'></i></td></tr>
+            <tr>
+                <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: points'></span></td>
+                <td><i class='lighterprints-green icon-leaf icon-2x'></i></td>
+            </tr>
         </table>
-        <div data-bind='css: status'><i class='icon-time'></i> <strong><span data-bind='text: time_slots'></span></strong></div>
+        <div style='margin-top: 5px; padding: 5px 0;' data-bind='css: status'><i class='icon-time'></i> <strong><span data-bind='text: time_slots'></span></strong></div>
     </div>
 </div>
 </div>

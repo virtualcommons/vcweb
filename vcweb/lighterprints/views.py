@@ -331,10 +331,10 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         round_data = experiment.current_round_data
     compare_other_group = can_view_other_groups(round_configuration=round_configuration)
     group_data = []
-    (group_scores, total_participant_points) = get_group_scores(round_data, participant_group_relationship=participant_group_relationship)
+    (group_scores, total_participant_points) = get_group_scores(experiment, round_data, participant_group_relationship=participant_group_relationship)
 
     for group, group_data_dict in group_scores.items():
-        average_points = group_data_dict['average_points']
+        average_points = group_data_dict['average_group_points']
         total_points = group_data_dict['total_group_points']
         group_level = get_footprint_level(group, round_data=round_data)
         points_to_next_level = get_points_to_next_level(group_level)

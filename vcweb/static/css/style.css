@@ -41,9 +41,6 @@ label.error {
     overflow: auto;
     margin-bottom: 10px;
 }
-#chatText {
-    width: 65%;
-}
 .chat-message {
     margin-bottom: 5px;
 }

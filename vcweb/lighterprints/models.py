@@ -162,7 +162,7 @@ class Activity(MPTTModel):
         cv = cache.get(ck)
         if cv is None:
             if self.available_all_day:
-                cv = 'available all day'
+                cv = 'all day'
             else:
                 cv = ','.join([availability.time_slot for availability in self.availability_set.all()])
             cache.set(ck, cv)
@@ -453,7 +453,7 @@ def average_points_per_person(group, start=None, end=None, round_data=None):
     return get_group_score(group, start=start, end=end, round_data=round_data)[0]
 
 # returns a tuple of (dict of group -> {average_group_points, total_group_points}, total_participant_points)
-def get_group_scores(round_data, participant_group_relationship=None, start=None, end=None):
+def get_group_scores(experiment, round_data, participant_group_relationship=None, start=None, end=None):
     activity_points_cache = get_activity_points_cache()
     # establish date range
     # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
@@ -471,7 +471,8 @@ def get_group_scores(round_data, participant_group_relationship=None, start=None
         group_scores[activity_performed_dv.participant_group_relationship.group]['total_group_points'] += activity_points
         if participant_group_relationship and activity_performed_dv.participant_group_relationship == participant_group_relationship:
             total_participant_points += activity_points
-    for group, group_data_dict in group_scores.items():
+    for group in experiment.groups:
+        group_data_dict = group_scores[group]
         group_size = group.size
         total_group_points = group_data_dict['total_group_points']
         average = total_group_points / group_size
@@ -480,8 +481,8 @@ def get_group_scores(round_data, participant_group_relationship=None, start=None
     return (group_scores, total_participant_points)
 
 
-# returns a tuple of the average points per person and the total points for
-# the given group
+# FIXME: reduce code duplication here and get_group_scores
+# returns a tuple of the average points per person and the total points for the given group
 def get_group_score(group, start=None, end=None, participant_group_relationship=None, round_data=None, **kwargs):
     # cache activity points
     activity_points_cache = get_activity_points_cache()
