@@ -1,10 +1,10 @@
 Hello,
 
-Thanks in advance for participating in this experiment pretest. You have been randomly allocated to a group of 5, along
-with four other students who are also in ASB 328. You can earn extra credit points for the course by performing actions
-within the app to reduce your virtual carbon footprint. 
+Thanks in advance for participating in this experiment. You have been randomly allocated to a group of 5 along
+with four other participants who have also signed up for this experiment.  You have a chance to earn $100 by performing
+actions within the experiment to reduce your virtual carbon footprint.
 
-To access the experiment visit https://vcweb.asu.edu/accounts/login and login with the following credentials:
+To access the experiment visit {{experiment.participant_url}} and login with the following credentials:
 
     Email:          {{ participant.email }}
     Password:       {{ password }} 
@@ -13,16 +13,16 @@ You can reset your password by visiting
 
     https://vcweb.asu.edu/accounts/password/reset?email={{ participant.email }}
 
-The experiment will run starting Monday, February 25th until midnight on Friday, March 1st.  There are three levels to
+
+The experiment will run from Monday, April 8th until midnight on Friday, April 12th.  There are three levels to
 this experiment, and your group must reach specific average carbon footprint savings in order to advance to the next
-level.  This will be explained in more detail when you visit the app.
+level.  This will be explained in more detail when you visit the website.
 
-You can earn extra credit points based on the performance of your group:
+The probability of earning $100 is based on the performance of your group:
 
-* If your group completes level 3 by midnight on Wednesday, February 27th each member of your group will earn 10 points
-* If your group completes level 3 by midnight on Thursday, February 28th each member of your group will earn 8 points
-* If your group completes level 3 by midnight on Friday, March 1st, each member of your group will earn 6 points
-* If your group completes level 2 by midnight on Friday, March 1st, each member of your group will earn 4 points
-* If your group completes level 1 by midnight on Friday, March 1st, each member of your group will earn 2 points
-
-
+    * If your group completes level 3 by midnight on Wednesday, April 10th, your group has a 20% chance to earn $100
+    * If your group completes level 3 by midnight on Thursday, April 11th, your group has a 14% chance to earn $100
+    * If your group completes level 3 by midnight on Friday, April 12th, your group has a 8% chance to earn $100
+    * If your group completes level 2 by midnight on Friday, April 12th, your group has a 4% chance to earn $100
+    * If your group completes level 1 by midnight on Friday, April 12th, your group has a 2% chance to earn $100
+    * If your group does not complete level 1 by midnight on Friday, April 12th, your group will still have a 1% chance to earn $100
