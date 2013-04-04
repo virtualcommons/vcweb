@@ -348,8 +348,9 @@ class ClearParticipantsExperimentView(ExperimenterSingleExperimentView):
 
     def process(self):
         e = self.experiment
-        e.deactivate()
+        logger.debug("clearing all participants for experiment %s", e)
         ParticipantExperimentRelationship.objects.filter(experiment=e).delete()
+        e.deactivate()
         ParticipantGroupRelationship.objects.filter(group__experiment=e).delete()
         return e
 

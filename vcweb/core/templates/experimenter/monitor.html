@@ -83,12 +83,13 @@
                         {% for group in group_list %}
                         <table class='table table-compact table-striped table-bordered'>
                             <caption class='text-info'><b>{{ group.grouper }} (PK: {{group.grouper.pk}})</b></caption>
-                            <thead><tr><th>PGR PK</th><th>Participant</th></tr></thead>
+                            <thead><tr><th>PGR PK</th><th>Participant</th><th>Email</th></tr></thead>
                             <tbody>
                                 {% for item in group.list %}
                                 <tr>
                                     <td>{{ item.participant_group_relationship.pk }}</td>
-                                    <td>{{ item.participant_group_relationship.participant_handle}} <i class='icon-resize-horizontal'></i> {{ item.participant_group_relationship.participant }}</td>
+                                    <td>{{ item.participant_group_relationship.participant_handle}}</td>
+                                    <td>{{ item.participant_group_relationship.participant.email }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
