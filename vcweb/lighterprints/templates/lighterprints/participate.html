@@ -37,7 +37,8 @@
                 </p>
                 <p>
                     <i class='lighterprints-green icon-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by
-                    completing challenges.  Rank up by <b>increasing your group's average score.</b>.
+                    completing challenges.  Rank up by <b>increasing your group's average score, shown in the
+                        Today&quot;s Progress Chart.</b>.
                 </p>
                 <p>
                     <i class='icon-star text-gold'></i> Some challenges are unlocked all day, and others are only
@@ -51,7 +52,7 @@
             </div>
             <div class='row lighterprints-scoreboard'>
                 <div class='span2'>
-                    <h5><span class='lighterprints-scoreboard-uppercase'>Today's Score</span>
+                    <h5 id='todays-score'><span class='lighterprints-scoreboard-uppercase'>Today's Score</span>
                         <i id='score-info' style='margin:8px 0 0 0;' rel='popover' data-trigger='hover' data-placement='top' 
                             data-content="This is your group's average score for the day.  Complete high-value challenges to rank your group up." class='pull-right icon-info-sign'></i></h5>
                     <table>
@@ -62,7 +63,7 @@
                     </table>
                 </div>
                 <div class='span2 left-divider'>
-                    <h5><span class='lighterprints-scoreboard-uppercase'>Current Level</span></h5>
+                    <h5 id='current-level' ><span class='lighterprints-scoreboard-uppercase'>Current Level</span></h5>
                     <div class='dashboard-content'>
                         <div data-bind='if: experimentCompleted'>
                             <img class='group-level' width='120' height='70' src='{% static "images/lighterprints/experiment-completed.png"%}'>
@@ -73,7 +74,7 @@
                     </div>
                 </div>
                 <div class='span2 left-divider'>
-                    <h5><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span>
+                    <h5 id='todays-progress'><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span>
                         <i id='progress-info' style='padding: 0px 0px 0px 0px; margin: -1px 0px 0px -1px;' rel='popover' data-trigger='hover'
                             data-placement='top' data-content='This chart shows the average group score needed to advance to the next level.'
                             class='icon-info-sign'></i>
@@ -83,7 +84,7 @@
                     </div>
                 </div>
                 <div class='span2 left-divider'>
-                    <h5><span class='lighterprints-scoreboard-uppercase'>Time Remaining</span></h5>
+                    <h5 id='time-remaining'><span class='lighterprints-scoreboard-uppercase'>Time Remaining</span></h5>
                     <table>
                         <tr>
                             <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: hoursLeft'></span>h</td>
@@ -95,7 +96,7 @@
             <h3 class='underline'>Challenges</h3>
             <div class='tabbable challenge-tabs'>
                 <ul class='nav nav-tabs'>
-                    <li class='active'><a href='#unlocked-challenges' data-toggle='tab'><span class='text-gold'><i class='icon-star'></i> Unlocked</span></a></li>
+                    <li id='unlocked-challenge-tab' class='active'><a href='#unlocked-challenges' data-toggle='tab'><span class='text-gold'><i class='icon-star'></i> Unlocked</span></a></li>
                     <li><a href='#locked-challenges' data-toggle='tab'><i class='icon-lock'></i> Locked</a></li>
                 </ul>
                 <div class='tab-content challenges'>
@@ -306,6 +307,7 @@
 <script src="//fast.fonts.com/jsapi/e86344be-530a-495b-be28-7a22a9cda219.js"></script>
 <script src='{% static "js/lighterprints/model.js" %}'></script>
 <script src='{% static "js/Chart.min.js" %}'></script>
+<script src='{% static "js/bootstrap-tour.js" %}'></script>
 <script>
 $(function() {
     // XXX: set up bootstrap nav-tabs to be semi-refresh friendly, remove in production
@@ -326,6 +328,46 @@ $(function() {
     viewModel.activateDashboardTab = activateTabFunctor('#dashboard', '#lfp-navtabs');
     viewModel.activateHelpTab = activateTabFunctor('#help', '#lfp-navtabs');
     viewModel.activateGroupTab = activateTabFunctor('#group', '#lfp-navtabs');
+    viewModel.setup = function() {
+        viewModel.initializeChart();
+        viewModel.setupTour();
+    };
+    viewModel.setupTour = function() {
+        var tour = new Tour();
+        tour.addStep({
+            element: "#todays-score",
+            title: "Today's Score",
+            placement: "top",
+            content: "This is your group's average score for the day.  Complete high-value challenges to help your group advance to the next level."
+        });
+        tour.addStep({
+            element: "#current-level",
+            title: "Current Level",
+            placement: "top",
+            content: "This is your group's current level.  Each level unlocks 5 new challenges.  You are currently level " + viewModel.groupLevel() + "."
+        });
+        tour.addStep({
+            element: "#todays-progress",
+            placement: "top",
+            title: "Today's Progress",
+            content: "This chart displays your average group score in green and the total points needed to advance to the next level in gray.  To advance to level 2 your group average score needs to reach 50."
+        });
+        tour.addStep({
+            element: "#time-remaining",
+            placement: "top",
+            title: "Time Remaining",
+            content: "The time remaining before your group progress resets at midnight.  If your group doesn't earn enough points to advance to the next level by midnight, your point totals reset for the next day and you stay at the same level."
+        });
+        tour.addStep({
+            element: "#unlocked-challenge-tab",
+            title: "Perform Challenges",
+            content: "You can perform challenges by clicking on the green Perform button.  The points each challenge is worth is listed on the right."
+        });
+        if (viewModel.firstVisit()) {
+            tour.start(true);
+        }
+        tour.start();
+    }
     viewModel.initializeChart = function() {
         var todaysProgressContext = document.getElementById("todaysProgressChart").getContext("2d");
         var progressChart = new Chart(todaysProgressContext).Doughnut(viewModel.todaysProgressChartData());
@@ -398,7 +440,7 @@ $(function() {
     };
     ko.applyBindings(viewModel);
     // FIXME: use $('.popover').popover() if we end up having a lot more of these.
-    viewModel.initializeChart();
+    viewModel.setup();
     $('[data-content]').popover();
 });
 </script>
