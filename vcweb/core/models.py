@@ -834,9 +834,11 @@ class Experiment(models.Model):
 
     ACCEPTABLE_ACTIONS = ('advance_to_next_round', 'end_round', 'start_round', 'move_to_previous_round', 'activate',
             'deactivate', 'complete', 'restart_round', 'restart')
-    def invoke(self, action_name):
+    def invoke(self, action_name, experimenter=None):
         if action_name in Experiment.ACCEPTABLE_ACTIONS:
-            return getattr(self, action_name)()
+            logger.debug("experimenter %s invoking action %s", experimenter, action_name)
+            action = getattr(self, action_name)
+            return action()
         else:
             raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action_name, self))
 

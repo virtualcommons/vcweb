@@ -345,9 +345,14 @@ class CloneExperimentView(ExperimenterSingleExperimentView):
         return redirect('core:monitor_experiment', pk=self.experiment.pk)
 
 class ClearParticipantsExperimentView(ExperimenterSingleExperimentView):
+
     def process(self):
-        self.experiment.participant_set.all().delete()
-        return self.experiment
+        e = self.experiment
+        e.deactivate()
+        ParticipantExperimentRelationship.objects.filter(experiment=e).delete()
+        ParticipantGroupRelationship.objects.filter(group__experiment=e).delete()
+        return e
+
     def render_to_response(self, context):
         return redirect('core:dashboard')
 
