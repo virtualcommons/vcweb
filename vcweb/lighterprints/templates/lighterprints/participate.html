@@ -70,13 +70,13 @@
                         </div>
                         <div data-bind='ifnot: experimentCompleted'>
                             <img class='group-level' width="104" height="65" data-bind="attr: { src: '{% static "images/lighterprints/rank"%}' + groupLevel() + '.png' }">
-                        </div> 
+                        </div>
                     </div>
                 </div>
                 <div class='span2 left-divider'>
                     <h5 id='todays-progress'><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span>
                         <i id='progress-info' style='padding: 0px 0px 0px 0px; margin: -1px 0px 0px -1px;' rel='popover' data-trigger='hover'
-                            data-placement='top' data-content='This chart shows the average group score needed to advance to the next level.'
+                            data-placement='top' data-content='This chart shows your average group score (green) in relation to the average group score needed to advance to the next level (gray).'
                             class='icon-info-sign'></i>
                     </h5>
                     <div class='chart'>
@@ -213,7 +213,7 @@
                                 <i class='lighterprints-gray icon-user icon-2x'></i>
                             </div>
                             <div class='span6'>
-                                <strong data-bind='text: participant_name'></strong>
+                                <strong>Participant <span data-bind='text: participant_number'></span></strong>
                                 <p>
                                 <span data-bind='text: message'></span>
                                 </p>
@@ -357,7 +357,7 @@ $(function() {
             element: "#todays-progress",
             placement: "top",
             title: "Today's Progress",
-            content: "This chart displays your average group score in green and the total points needed to advance to the next level in gray.  To advance to level 2 your group average score needs to reach 50."
+            content: "This chart displays your average group score in green and the average group score needed to advance to the next level in gray.  To advance to level 2 your group average score needs to reach 50."
         });
         tour.addStep({
             element: "#time-remaining",
@@ -485,7 +485,7 @@ $(function() {
     <tr data-bind='if: $root.participantGroupId() != participant_group_id()'>
         <td class='group-activity-icon'><i class='icon-comment lighterprints-blue'></i></td>
         <td class='group-activity'>
-            <strong data-bind='text: participant_name'></strong>
+            Participant <strong data-bind='text: participant_number'></strong>
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
             <div>
             <span data-bind='if: target_parameter_name() === "activity_performed"'>
@@ -508,7 +508,7 @@ $(function() {
 <tr data-bind='if: $root.participantGroupId() != participant_group_id()'>
     <td class='group-activity-icon'><i class='icon-heart lighterprints-red'></i></td>
     <td class='group-activity'>
-        <strong data-bind='text: participant_name'></strong>
+        Participant <strong data-bind='text: participant_number'></strong>
         <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
         <div>liked your
             <span data-bind='if: target_parameter_name() === "activity_performed"'>
@@ -525,7 +525,7 @@ $(function() {
     <tr>
         <td class='group-activity-icon'><i class='icon-comment lighterprints-blue'></i></td>
         <td class='group-activity'>
-            <strong data-bind='text: participant_name'></strong>
+            <strong>Participant <span data-bind='text: participant_number'></span></strong>
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
             <div>
             <small><i class='icon-quote-left'></i></small>
@@ -540,7 +540,7 @@ $(function() {
     <tr>
         <td class='group-activity-icon'><i class='icon-star text-gold'></i></td>
         <td class='group-activity'>
-            <strong data-bind='text: participant_name'></strong>
+            <strong>Participant <span data-bind='text: participant_number'></span></strong>
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
             <div>earned <span class='lighterprints-green' data-bind='text:points'></span><i class='icon-leaf lighterprints-green'></i>
                 for <span data-bind='text: $root.groupName'></span> by completing <em><span data-bind='text: display_name'></span></em>.

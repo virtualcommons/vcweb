@@ -1447,7 +1447,7 @@ class Group(models.Model):
 
     @property
     def name(self):
-        return u"Group %s" % string.ascii_uppercase[max(self.number - 1, 0)]
+        return u"Group %s" % string.ascii_uppercase[self.number]
 
     @property
     def channel(self):
