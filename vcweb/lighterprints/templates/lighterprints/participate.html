@@ -334,13 +334,13 @@ $(function() {
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
     // custom view model methods, some of these may be lifted into the model itself
-    viewModel.tutorialTour = ko.observable(new Tour());
+    viewModel.tutorialTour = new Tour({ name: "lfpTutorial", labels: { end: "End tutorial", next: 'Next »', prev: '« Back' }});
     viewModel.setup = function() {
         viewModel.initializeChart();
         viewModel.setupTour();
     };
     viewModel.endTour = function() {
-        var tour = viewModel.tutorialTour();
+        var tour = viewModel.tutorialTour;
         if (tour.ended()) {
             return;
         }
@@ -348,7 +348,7 @@ $(function() {
         tour.end();
     }
     viewModel.setupTour = function() {
-        var tour = viewModel.tutorialTour();
+        var tour = viewModel.tutorialTour;
         tour.addStep({
             element: "#todays-score",
             title: "Today's Score",
@@ -385,7 +385,7 @@ $(function() {
     }
     viewModel.restartTour = function() {
         viewModel.activateDashboardTab();
-        viewModel.tutorialTour().restart();
+        viewModel.tutorialTour.restart();
     }
     viewModel.initializeChart = function() {
         var todaysProgressContext = document.getElementById("todaysProgressChart").getContext("2d");
