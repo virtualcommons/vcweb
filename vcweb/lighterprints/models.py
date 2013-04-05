@@ -121,14 +121,19 @@ class ActivityManager(TreeManager, PassThroughManager):
         return self._filter_by_availability(level, start_time__gte=current_time)
 
     def _filter_by_availability(self, level=1, **kwargs):
-        return [aa.activity for aa in ActivityAvailability.objects.select_related('activity').filter(models.Q(**kwargs)) if aa.activity.level <= level]
+        return ActivityAvailability.objects.select_related('activity').filter(models.Q(activity__level__lte=level, **kwargs)).values_list('activity', flat=True)
 
-    def currently_available(self, level=1, **kwargs):
-        current_time = datetime.now().time()
-        activities = self._filter_by_availability(level, start_time__lte=current_time, end_time__gte=current_time)
+    def currently_available(self, level=1, current_time=None, fetch_models=False, **kwargs):
+        ''' returns a list of available activity pks '''
+        if current_time is None:
+            current_time = datetime.now().time()
+        activity_ids = list(self._filter_by_availability(level, start_time__lte=current_time, end_time__gte=current_time))
 # add available all day activities
-        activities.extend(Activity.objects.filter(available_all_day=True, level__lte=level))
-        return activities
+        activity_ids.extend(Activity.objects.filter(available_all_day=True, level__lte=level).values_list('pk', flat=True))
+        if fetch_models:
+            return Activity.objects.filter(pk__in=activity_ids)
+        else:
+            return activity_ids
 
     def get_by_natural_key(self, name):
         return self.get(name=name)
@@ -286,17 +291,16 @@ def get_active_experiments():
 
 def get_activity_status_dict(participant_group_relationship, activities, group_level=1):
     today = datetime.combine(date.today(), time())
-    available_activities = Activity.objects.currently_available(participant_group_relationship=participant_group_relationship, level=group_level)
+    available_activity_ids = Activity.objects.currently_available(participant_group_relationship=participant_group_relationship, level=group_level)
 # filter out all activities that have already been performed today (activities may only be performed once a day)
     performed_activity_data_values = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter(),
-            int_value__in=[activity.id for activity in available_activities],
+            int_value__in=available_activity_ids,
             date_created__gte=today)
-    upcoming_activities = Activity.objects.upcoming(level=group_level)
+    upcoming_activity_ids = Activity.objects.upcoming(level=group_level)
     # XXX: data value's int_value stores the fk directly, using .value does a fk lookup to restore the full entity
     # which we don't need
     performed_activity_ids = performed_activity_data_values.values_list('int_value', flat=True)
-    available_activity_ids = [activity.pk for activity in available_activities if activity.pk not in performed_activity_ids]
-    upcoming_activity_ids = [activity.pk for activity in upcoming_activities]
+    available_activity_ids = filter(lambda pk: pk not in performed_activity_ids, available_activity_ids)
     status_dict = {}
     for activity in activities:
         if activity.pk in performed_activity_ids:
@@ -383,15 +387,15 @@ def get_available_activities(participant_group_relationship=None, ignore_time=Fa
             return Activity.objects.at_level(group_level)
 
         today = datetime.combine(date.today(), time())
-        available_activities = Activity.objects.currently_available(participant_group_relationship=participant_group_relationship, level=group_level)
+        available_activity_ids = Activity.objects.currently_available(participant_group_relationship=participant_group_relationship, level=group_level)
 # filter out all activities that have already been performed today (activities may only be performed once a day)
         performed_activity_data_values = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter(),
-                int_value__in=[activity.id for activity in available_activities],
+                int_value__in=available_activity_ids,
                 date_created__gte=today)
         # XXX: data value's int_value stores the fk directly, using .value does a fk lookup to restore the full entity
         # which we don't need
-        performed_activity_ids = [padv.int_value for padv in performed_activity_data_values]
-        return [activity for activity in available_activities if activity.id not in performed_activity_ids]
+        performed_activity_ids = performed_activity_data_values.values_list('int_value', flat=True)
+        return filter(lambda pk: pk not in performed_activity_ids, available_activity_ids)
 
 def check_already_performed_today(activity, participant_group_relationship):
     today = datetime.combine(date.today(), time())
