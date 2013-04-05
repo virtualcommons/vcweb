@@ -8,10 +8,10 @@
 {% block headerlinks %}
 <ul class='nav nav-tabs' id='lfp-navtabs'>
     <li><a class='brand'><img alt='footprint logo' src='{% static "images/lighterprints/logo.png"%}' width="25" height="25"> lighter<strong class='lighterprints-green'>footprints</strong></a></li>
-    <li class='active'><a href='#dashboard' data-toggle='tab'><i class='icon-dashboard'></i> Dashboard</a></li>
-    <li><a href='#challenges' data-toggle='tab'><i class='icon-star-empty'></i> Challenges</a></li>
-    <li><a href='#group' data-toggle='tab'><i class='icon-comments-alt'></i> My Group</a></li>
-    <li><a href='#help' data-toggle='tab'><i class='icon-question-sign'></i> Help</a></li>
+    <li class='active'><a href='#dashboard' data-bind='click: activateDashboardTab'><i class='icon-dashboard'></i> Dashboard</a></li>
+    <li><a href='#challenges' data-bind='click:activateChallengesTab'><i class='icon-star-empty'></i> Challenges</a></li>
+    <li><a href='#group' data-bind='click: activateGroupTab'><i class='icon-comments-alt'></i> My Group</a></li>
+    <li><a href='#help' data-bind='click: activateHelpTab'><i class='icon-question-sign'></i> Help</a></li>
 </ul>
 {% endblock %}
 {% block logo %}
@@ -163,7 +163,10 @@
             To participate, simply click on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a>, and select a challenge you'd like to perform.
             You can leave messages for the other members n your group via the <a href='#group' data-bind='click: activateGroupTab'>My Group tab</a> 
             or use the <a href='#dashboard' data-bind='click:activateDashboardTab'>Dashboard</a> to view your group's progress.
+            <br>
+            You can also <a href='#dashboard' data-bind='click: restartTour'>restart the tutorial</a>.
             </p>
+            
             <h3 id='faq' class='underline'>Frequently Asked Questions</h3>
             <div class='well alert-white'>
                 <h4>I performed an activity worth 15 points but only 3 points were added to Today's Progress and Today's Score.  Why?</h4>
@@ -331,16 +334,21 @@ $(function() {
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
     // custom view model methods, some of these may be lifted into the model itself
-    viewModel.activateChallengesTab = activateTabFunctor('#challenges', '#lfp-navtabs');
-    viewModel.activateDashboardTab = activateTabFunctor('#dashboard', '#lfp-navtabs');
-    viewModel.activateHelpTab = activateTabFunctor('#help', '#lfp-navtabs');
-    viewModel.activateGroupTab = activateTabFunctor('#group', '#lfp-navtabs');
+    viewModel.tutorialTour = ko.observable(new Tour());
     viewModel.setup = function() {
         viewModel.initializeChart();
         viewModel.setupTour();
     };
+    viewModel.endTour = function() {
+        var tour = viewModel.tutorialTour();
+        if (tour.ended()) {
+            return;
+        }
+        console.debug("ending tour");
+        tour.end();
+    }
     viewModel.setupTour = function() {
-        var tour = new Tour();
+        var tour = viewModel.tutorialTour();
         tour.addStep({
             element: "#todays-score",
             title: "Today's Score",
@@ -375,6 +383,10 @@ $(function() {
         }
         tour.start();
     }
+    viewModel.restartTour = function() {
+        viewModel.activateDashboardTab();
+        viewModel.tutorialTour().restart();
+    }
     viewModel.initializeChart = function() {
         var todaysProgressContext = document.getElementById("todaysProgressChart").getContext("2d");
         var progressChart = new Chart(todaysProgressContext).Doughnut(viewModel.todaysProgressChartData());
@@ -389,28 +401,10 @@ $(function() {
         }
         return data;
     });
-    viewModel.postComment = function(targetModel) {
-        var formData = $('#commentForm' + targetModel.pk()).serialize();
-        $('.comment-popover').popover('hide');
-        $.post('/lighterprints/api/comment', formData, function(response) {
-            if (response.success) {
-                ko.mapping.fromJSON(response.viewModel, viewModel);
-            }
-        });
-    };
-    viewModel.like = function(targetModel) {
-        // FIXME: if targetModel.likes already contains this participant's pgr.pk, don't allow for this again
-        if (targetModel.liked()) {
-            console.debug("this is already liked");
-            return;
-        }
-        targetModel.liked(true);
-        $.post('/lighterprints/api/like', 
-            {participant_group_id: {{ participant_group_relationship.pk }}, target_id: targetModel.pk()},
-            function(data) {
-                targetModel.liked(data.success);
-            });
-    };
+    viewModel.activateChallengesTab = activateTabFunctor('#challenges', '#lfp-navtabs', viewModel.endTour);
+    viewModel.activateDashboardTab = activateTabFunctor('#dashboard', '#lfp-navtabs', viewModel.endTour);
+    viewModel.activateHelpTab = activateTabFunctor('#help', '#lfp-navtabs', viewModel.endTour);
+    viewModel.activateGroupTab = activateTabFunctor('#group', '#lfp-navtabs', viewModel.endTour);
     // FIXME: manually manipulating DOM elements via JQuery feels a bit hacky mixed in with KO's data binding
     viewModel.showActivityPerformedModal = function() {
         $('#activityPerformedModal .progress').removeClass('hide');

@@ -55,6 +55,28 @@ function LighterFootprintsModel(modelJson) {
         $('#chatText').val('');
         return false;
     };
+    model.postComment = function(targetModel) {
+        var formData = $('#commentForm' + targetModel.pk()).serialize();
+        $('.comment-popover').popover('hide');
+        $.post('/lighterprints/api/comment', formData, function(response) {
+            if (response.success) {
+                ko.mapping.fromJSON(response.viewModel, model);
+            }
+        });
+    };
+    model.like = function(targetModel) {
+        // FIXME: if targetModel.likes already contains this participant's pgr.pk, don't allow for this again
+        if (targetModel.liked()) {
+            console.debug("target model: " + targetModel + " is already well-liked");
+            return;
+        }
+        targetModel.liked(true);
+        $.post('/lighterprints/api/like', {participant_group_id: model.participantGroupId(), target_id: targetModel.pk()},
+            function(data) {
+                targetModel.liked(data.success);
+            });
+    };
+
     model.lockedChallenges = ko.computed(function() {
             return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.locked() });
         });

@@ -18,12 +18,15 @@ function csrfSafeMethod(method) {
     // these HTTP methods do not require CSRF protection
     return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
 }
-function activateTabFunctor(tabHref, parentId) {
+function activateTabFunctor(tabHref, parentId, callback) {
     if (! parentId) {
         parentId = ".nav-tabs";
     }
     return function() {
         $(parentId + ' a[href="' + tabHref + '"]').tab('show');
+        if (callback && typeof(callback) === 'function') {
+            callback();
+        }
     }
 }
 var csrftoken = $.cookie('csrftoken');
