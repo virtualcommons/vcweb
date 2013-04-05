@@ -382,11 +382,12 @@ $(function() {
     viewModel.todaysProgressChartData = ko.computed(function() {
         var avgPoints = viewModel.averagePoints();
         var pointsToNextLevel = viewModel.pointsToNextLevel();
-        console.debug(avgPoints + " / " + pointsToNextLevel)
-        return [
-        { value: avgPoints, color: "#95CB29" },
-        { value: pointsToNextLevel - avgPoints, color: "#D0D0D0" },
-        ]
+        var data = [ { value: avgPoints, color: "#95CB29" } ]
+        var pointsNeeded = Math.max(0, pointsToNextLevel - avgPoints);
+        if (pointsNeeded > 0) {
+            data.push({ value: pointsNeeded, color: "#D0D0D0" });
+        }
+        return data;
     });
     viewModel.postComment = function(targetModel) {
         var formData = $('#commentForm' + targetModel.pk()).serialize();
