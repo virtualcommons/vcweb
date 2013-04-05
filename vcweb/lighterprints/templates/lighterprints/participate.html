@@ -53,7 +53,7 @@
             <div class='row lighterprints-scoreboard'>
                 <div class='span2'>
                     <h5 id='todays-score'><span class='lighterprints-scoreboard-uppercase'>Today's Score</span>
-                        <i id='score-info' style='margin:8px 0 0 0;' rel='popover' data-trigger='hover' data-placement='top' 
+                        <i id='score-info' style='margin:8px 0 0 0;' data-trigger='hover' data-placement='top' 
                             data-content="This is your group's average score for the day.  Complete high-value challenges to rank your group up." class='pull-right icon-info-sign'></i></h5>
                     <table>
                         <tr>
@@ -75,12 +75,12 @@
                 </div>
                 <div class='span2 left-divider'>
                     <h5 id='todays-progress'><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span>
-                        <i id='progress-info' style='padding: 0px 0px 0px 0px; margin: -1px 0px 0px -1px;' rel='popover' data-trigger='hover'
+                        <i id='progress-info' style='padding: 0px 0px 0px 0px; margin: -1px 0px 0px -1px;' data-trigger='hover'
                             data-placement='top' data-content='This chart shows your average group score (green) in relation to the average group score needed to advance to the next level (gray).'
                             class='icon-info-sign'></i>
                     </h5>
                     <div data-bind='popover: { content: "#todaysProgressChartPopoverContent", id: "todays-progress-chart-popover"}' class='chart'>
-                        <canvas rel='popover' id='todaysProgressChart' width="87" height="87"></canvas>
+                        <canvas id='todaysProgressChart' width="87" height="87"></canvas>
                     </div>
                 </div>
                 <div class='span2 left-divider'>
@@ -115,7 +115,7 @@
             </div>
         </div>
         <div class='tab-pane' id='challenges'>
-            <h1 class='header'><i class='icon-star'></i> Challenges</h2>
+            <h1 class='header'><i class='icon-star'></i> Challenges</h1>
             <div class='alert alert-block alert-white'>
                 <button type="button" class="close" data-dismiss="alert"><i class='icon-remove-sign'></i></button>
                 <h2>Complete challenges to earn green points.</h2>
@@ -267,7 +267,7 @@
         </div>
         <div id='activityPerformedModalText' data-bind='with: lastPerformedActivity' class='hide'>
             <div class='row-fluid pagination-centered'>
-                <img data-bind='attr: {src: "{% static 'images/lighterprints/badges/'%}" + name() + ".png" }'>
+                <img alt='Lighterprints Activity Badge' data-bind='attr: {src: "{% static 'images/lighterprints/badges/'%}" + name() + ".png" }'>
             </div>
             <h3>You completed a challenge!</h3>
             <p>
@@ -444,8 +444,8 @@ $(function() {
             });
     };
     ko.applyBindings(viewModel);
-    // FIXME: use $('.popover').popover() if we end up having a lot more of these.
     viewModel.setup();
+    // FIXME: more efficient way to select these?
     $('[data-content]').popover();
 });
 </script>
