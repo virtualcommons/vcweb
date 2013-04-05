@@ -36,7 +36,22 @@ def update_active_experiments(sender, time=None, start=None, send_emails=True, *
     for experiment in active_experiments:
         # calculate total carbon savings and decide if they move on to the next level
         round_data = experiment.current_round_data
-        for group in experiment.groups:
+        show_rankings = can_view_other_groups(round_data.round_configuration)
+        groups = list(experiment.groups)
+        number_of_groups = len(groups)
+        group_rankings = []
+        group_rank = 0
+        if show_rankings:
+            (group_scores_dict, total_participant_points) = get_group_scores(experiment, round_data, start=start)
+            sorted_group_scores = sorted(group_scores_dict.items(), key=lambda x: x[1]['average_group_points'], reverse=True)
+            group_rankings = [ g[0] for g in sorted_group_scores ]
+            logger.debug("sorted group scores %s - group rankings: %s", sorted_group_scores, group_rankings)
+        for group in groups:
+            experiment_completed_dv = get_experiment_completed_dv(group, round_data=round_data)
+            already_completed = experiment_completed_dv.boolean_value
+            if already_completed:
+                # skip this group if it's already completed the experiment.
+                continue
             promoted = False
             completed = False
             footprint_level_grdv = get_footprint_level_dv(group, round_data=round_data)
@@ -49,15 +64,15 @@ def update_active_experiments(sender, time=None, start=None, send_emails=True, *
                 footprint_level_grdv.save()
                 if current_level == 3:
                     completed = True
-# FIXME: store another group data parameter that says they've completed the experiment?
-            experiment_completed_dv = get_experiment_completed_dv(group, round_data=round_data)
-            already_completed = experiment_completed_dv.boolean_value
-            if not already_completed:
-                group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed, round_data=round_data)
-                messages.extend(group_summary_emails)
-                if completed:
-                    experiment_completed_dv.boolean_value = True
-                    experiment_completed_dv.save()
+            if show_rankings:
+                group_rank = group_rankings.index(group) + 1
+            group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed, round_data=round_data, 
+                    group_rank=group_rank, show_rankings=show_rankings, number_of_groups=number_of_groups)
+            messages.extend(group_summary_emails)
+            if completed:
+# store the completed flag
+                experiment_completed_dv.boolean_value = True
+                experiment_completed_dv.save()
     logger.debug("about to send nightly summary emails (%s): %s", send_emails, messages)
     if send_emails:
         mail.get_connection().send_messages(messages)
@@ -456,7 +471,6 @@ def average_points_per_person(group, start=None, end=None, round_data=None):
 def get_group_scores(experiment, round_data, participant_group_relationship=None, start=None, end=None):
     activity_points_cache = get_activity_points_cache()
     # establish date range
-    # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
     total_participant_points = 0
     if start is None:
         start = date.today()
@@ -487,7 +501,6 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
     # cache activity points
     activity_points_cache = get_activity_points_cache()
     # establish date range
-    # grab all of yesterday's participant data values, starting at 00:00:00 (midnight)
     total_group_points = 0
     total_participant_points = 0
     if start is None:
@@ -599,7 +612,7 @@ def abbreviated_timesince(date):
     s = re.sub(r'\smonths?', 'mo', s)
     return s.replace(',', '')
 
-def create_group_summary_emails(group, level, promoted=False, completed=False, round_data=None):
+def create_group_summary_emails(group, level, promoted=False, completed=False, round_data=None, **kwargs):
     logger.debug("creating group summary email for group %s", group)
 # FIXME: need some logic to select an email template based on the treatment type, or push into the template itself
     plaintext_template = select_template(['lighterprints/email/group-summary-email.txt'])
@@ -610,7 +623,7 @@ def create_group_summary_emails(group, level, promoted=False, completed=False, r
     number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group, date_created__gte=yesterday).count()
     messages = []
     for pgr in group.participant_group_relationship_set.all():
-        c = Context({
+        c = Context(dict({
             'experiment': experiment,
             'group_name': group.name,
             'summary_date': yesterday,
@@ -621,7 +634,7 @@ def create_group_summary_emails(group, level, promoted=False, completed=False, r
             'average_group_points': average_points_per_person(group, start=yesterday),
             'number_of_chat_messages': number_of_chat_messages,
             'individual_points': get_individual_points(pgr),
-                })
+            }, **kwargs))
         plaintext_content = plaintext_template.render(c)
         html_content = html_template.render(c)
         subject = 'Lighter Footprints Summary for %s' % yesterday
