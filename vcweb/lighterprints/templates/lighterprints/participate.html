@@ -79,8 +79,8 @@
                             data-placement='top' data-content='This chart shows your average group score (green) in relation to the average group score needed to advance to the next level (gray).'
                             class='icon-info-sign'></i>
                     </h5>
-                    <div class='chart'>
-                        <canvas id='todaysProgressChart' width="87" height="87"></canvas>
+                    <div data-bind='popover: { content: "#todaysProgressChartPopoverContent", id: "todays-progress-chart-popover"}' class='chart'>
+                        <canvas rel='popover' id='todaysProgressChart' width="87" height="87"></canvas>
                     </div>
                 </div>
                 <div class='span2 left-divider'>
@@ -380,9 +380,12 @@ $(function() {
         var progressChart = new Chart(todaysProgressContext).Doughnut(viewModel.todaysProgressChartData());
     };
     viewModel.todaysProgressChartData = ko.computed(function() {
-        return [ 
-        { value: viewModel.averagePoints(), color: "#95CB29" }, 
-        { value: viewModel.pointsToNextLevel(), color: "#D0D0D0" },
+        var avgPoints = viewModel.averagePoints();
+        var pointsToNextLevel = viewModel.pointsToNextLevel();
+        console.debug(avgPoints + " / " + pointsToNextLevel)
+        return [
+        { value: avgPoints, color: "#95CB29" },
+        { value: pointsToNextLevel - avgPoints, color: "#D0D0D0" },
         ]
     });
     viewModel.postComment = function(targetModel) {
@@ -452,6 +455,9 @@ $(function() {
 });
 </script>
 <!-- bootstrap popover templates -->
+<script type='text/html' id='todaysProgressChartPopoverContent'>
+   Your group progress: <span data-bind='text: averagePoints'></span> / <span data-bind='text:pointsToNextLevel'></span>
+</script>
 <script type='text/html' id='commentPopoverForm'>
 <form data-bind='attr: { id: "commentForm" + pk() }'>
 <textarea name='message' rows='3'></textarea>

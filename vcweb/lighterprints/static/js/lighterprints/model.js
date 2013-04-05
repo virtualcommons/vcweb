@@ -76,11 +76,14 @@ ko.bindingHandlers.popover = {
     init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
         var attribute = ko.utils.unwrapObservable(valueAccessor());
         var cssSelectorForPopoverTemplate = attribute.content;
+        var placement = attribute.placement || "top";
+        var trigger = attribute.trigger || "manual";
         var popOverTemplate = "<div id='"+attribute.id+"-popover'>" + $(cssSelectorForPopoverTemplate).html() + "</div>";
         $(element).popover({
             content: popOverTemplate,
             html: true,
-            trigger: 'manual'
+            trigger: trigger,
+            placement: placement
         });
         var popoverId = "comment-popover" + attribute.id;
         $(element).attr('id', popoverId);
