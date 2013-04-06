@@ -102,7 +102,7 @@ class EmailListField(forms.CharField):
 
 class RegisterParticipantsForm(forms.Form):
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
-    experiment_passcode = forms.CharField(min_length=3, label="Experiment passcode", help_text=_('The password used to login to your experiment.'), initial='test')
+    experiment_passcode = forms.CharField(required=False, min_length=3, label="Experiment passcode", help_text=_('The password used to login to your experiment.'), initial='test')
     institution_name = forms.CharField(min_length=3, label="Institution name",
             required=False, initial='Arizona State University',
             help_text=_('The name of the institution to be associated with these test participants'))
@@ -123,7 +123,7 @@ class RegisterParticipantsForm(forms.Form):
 
 
 class RegisterTestParticipantsForm(RegisterParticipantsForm):
-    username_suffix = forms.CharField(min_length=3, initial='asu',
+    username_suffix = forms.CharField(min_length=1, initial='asu',
             help_text=_('''Appended to every generated username before the "@" symbol, e.g., s1asu@foo.com'''))
     email_suffix = forms.CharField(min_length=3, initial='mailinator.com',
             help_text=_('''

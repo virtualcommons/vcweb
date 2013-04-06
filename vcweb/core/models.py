@@ -634,7 +634,7 @@ class Experiment(models.Model):
         if email_messages:
             mail.get_connection().send_messages(email_messages)
 
-    def create_registration_email(self, participant_experiment_relationship, password=None, **kwargs):
+    def create_registration_email(self, participant_experiment_relationship, password='', **kwargs):
         '''
         Override the email template by creating <experiment-namespace>/email/experiment-registration(txt|html) template files
         '''
@@ -644,7 +644,7 @@ class Experiment(models.Model):
         experiment = participant_experiment_relationship.experiment
         participant = participant_experiment_relationship.participant
         user = participant.user
-        if password is None:
+        if not password.strip():
             password = User.objects.make_random_password()
 # FIXME: this resets existing user passwords..
         user.set_password(password)
@@ -661,8 +661,9 @@ class Experiment(models.Model):
         if subject is None:
             subject = 'VCWEB: experiment registration for %s' % self.display_name
         experimenter_email = self.experimenter.email
-        to_address = [ participant_experiment_relationship.participant.email, experimenter_email ]
-        msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
+        to_address = [ participant_experiment_relationship.participant.email ]
+        bcc_address = [ experimenter_email ]
+        msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address, bcc_address)
         msg.attach_alternative(html_content, "text/html")
         return msg
 
