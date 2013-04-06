@@ -66,10 +66,10 @@
                     <h5 id='current-level' ><span class='lighterprints-scoreboard-uppercase'>Current Level</span></h5>
                     <div class='dashboard-content'>
                         <div data-bind='if: experimentCompleted'>
-                            <img class='group-level' width='120' height='70' src='{% static "images/lighterprints/experiment-completed.png"%}'>
+                            <img alt='Experiment Completed' class='group-level' width='120' height='70' src='{% static "images/lighterprints/experiment-completed.png"%}'>
                         </div>
                         <div data-bind='ifnot: experimentCompleted'>
-                            <img class='group-level' width="104" height="65" data-bind="attr: { src: '{% static "images/lighterprints/rank"%}' + groupLevel() + '.png' }">
+                            <img alt='Group Level' class='group-level' width="104" height="65" data-bind="attr: { src: '{% static "images/lighterprints/rank"%}' + groupLevel() + '.png' }">
                         </div>
                     </div>
                 </div>

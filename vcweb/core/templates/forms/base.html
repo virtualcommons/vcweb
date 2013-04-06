@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block  page %}
-<form id='vcweb-form' action='' method='post' class='form-horizontal'>
+<form id='vcweb-form' method='post' class='form-horizontal'>
 {% csrf_token %}
 {% block form %}
 {% endblock form %}
