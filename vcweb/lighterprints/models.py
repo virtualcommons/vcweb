@@ -495,7 +495,6 @@ def get_group_scores(experiment, round_data, participant_group_relationship=None
         total_group_points = group_data_dict['total_group_points']
         average = total_group_points / group_size
         group_data_dict['average_group_points'] = average
-        logger.debug("total carbon savings: %s divided by %s members = %s per person", total_group_points, group_size, average)
     return (group_scores, total_participant_points)
 
 

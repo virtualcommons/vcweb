@@ -352,16 +352,19 @@ class Experiment(models.Model):
 
     @property
     def current_round_elapsed_time(self):
-        if self.current_round_start_time:
+        if self.current_round_start_time and self.is_timed_round:
             return datetime.now() - self.current_round_start_time
         return timedelta(0)
 
     @property
     def time_remaining(self):
-        tr = self.current_round.duration - self.current_round_elapsed_time.seconds
-        if tr < 0:
-            return u"Expired %s seconds ago" % abs(tr)
-        return tr
+        if self.is_timed_round:
+            tr = self.current_round.duration - self.current_round_elapsed_time.seconds
+            if tr <= 0:
+                return u"Expired (%s seconds ago)" % abs(tr)
+            return tr
+        else:
+            return "Untimed round (advance manually or via automated checkpointing)"
 
     @property
     def is_timed_round(self):
@@ -630,7 +633,7 @@ class Experiment(models.Model):
                 p.institution = institution
                 p.save()
             per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=self.experimenter.user)
-            email_messages.append(self.create_registration_email(per, password=password))
+            email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created))
         if email_messages:
             mail.get_connection().send_messages(email_messages)
 

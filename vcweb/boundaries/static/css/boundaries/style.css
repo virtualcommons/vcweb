@@ -26,3 +26,7 @@
     margin-right: 0px;
     padding: 8px 8px 8px 8px;
 }
+.harvest-decision-resources td {
+    cursor: pointer;
+}
+

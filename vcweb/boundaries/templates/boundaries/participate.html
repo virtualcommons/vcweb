@@ -445,18 +445,37 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     <form id='vcweb-form' data-bind='submit: submitDecision' action='' method='post' class='form-horizontal' >
         {% csrf_token %}
         <div id='harvestDecisionDiv' data-bind='visible: !submitted()' class='control-group'>
-        <div class='input-prepend'>
-            <span class='add-on'><i class='icon-leaf'></i></span>
-            <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
-            <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: harvestDecision'>
-            <select id='harvestDecisionSelect' name='harvest_decision' required="required" form="vcweb-form" data-bind='options: harvestDecisionOptions, value: harvestDecision'>
-            </select>
-        </div>
-        <button id='submitDecisionButton' type='submit' class='btn btn-primary'>Submit</button>
+            <div data-bind='template: { name: "harvest-decision-multi-select-template" }'></div>
         </div>
     </form>
 </div>
 </div>
+</script>
+<script type='text/html' id='harvest-decision-multi-select-template'>
+    <table class='table'>
+        <tr class='row harvest-decision-resources' data-bind='foreach: harvestDecisionOptions'>
+            <td data-bind='attr: { id: "harvest-decision-td-" + $data }'>
+                <form data-bind='attr: { id: "multi-select-decision-form" + $data }'>
+                    <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: $root.participantGroupId'/>
+                    <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: $data'>
+                    <div class='harvest-decision-tree' data-bind='click: $root.submitDecision.bind($data, "#multi-select-decision-form" + $data)'>
+                        <img data-bind='attr: { src: $root.resourceImageUrl(), alt: "Harvest " + $data + " tree(s)."  }'><br>
+                        <span style='margin-left: 2px;' class='badge badge-success' data-bind='text: $data'></span>
+                    </div>
+                </form>
+            </td>
+        </tr>
+    </table>
+</script>
+<script type='text/html' id='harvest-decision-select-template'>
+    <div class='input-prepend'>
+        <span class='add-on'><i class='icon-leaf'></i></span>
+        <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
+        <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: harvestDecision'>
+        <select id='harvestDecisionSelect' name='harvest_decision' required="required" form="vcweb-form" data-bind='options: harvestDecisionOptions, value: harvestDecision'>
+        </select>
+    </div>
+    <button id='submitDecisionButton' type='submit' class='btn btn-primary'>Submit</button>
 </script>
 <script src='{% static "js/bootstrap-tour.js" %}'></script>
 <script type="text/javascript">
@@ -582,8 +601,13 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                         1000));
                 }
             };
-            model.submitDecision = function(data, evt) {
-                var formData = $('#vcweb-form').serialize();
+            model.submitDecision = function(formId, numberOfTrees) {
+                console.debug("formId: " + formId);
+                if (! formId) {
+                    formId = "#vcweb-form";
+                }
+                console.debug("number of trees: " + numberOfTrees);
+                var formData = $(formId).serialize();
                 model.submitted(true);
                 console.debug(formData);
                 $.post('submit-harvest-decision', formData, function(response) {
