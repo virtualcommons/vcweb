@@ -43,18 +43,34 @@ class DefaultValue(object):
     def __getattr__(self, name):
         return self.value
 
-class ParameterizedValueQuerySetMixin(models.query.QuerySet):
+class DataManagerMixin(object):
+
+    def copy_to_next_round(self, *data_values, **kwargs):
+        e = self.experiment
+        if e.is_last_round:
+            return
+        next_round_data = kwargs.get('next_round_data', None)
+        if not next_round_data:
+            next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
+        for existing_dv in data_values:
+            # Taking advantage of a trick from here:
+            # http://stackoverflow.com/questions/12182657/copy-or-clone-an-object-instance-in-django-python
+            existing_dv.pk = None
+            existing_dv.round_data = next_round_data
+            existing_dv.save()
+
+    '''
+    FIXME: these need more work to generify them properly
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
         return dict([
             ('is_active', True),
             ('parameter', parameter) if parameter else ('parameter__name', parameter_name),
             ('round_data', self.current_round_data if round_data is None else round_data)
             ], **kwargs)
-
     def set_data_value(self, parameter=None, value=None, round_data=None, **kwargs):
         if parameter is None or value is None or round_data is None:
             raise ValueError("need parameter, value, and round data to set")
-        dv = self.get(round_data=round_data, parameter=parameter, **kwargs)
+        dv = self.get_data_value(round_data=round_data, parameter=parameter, **kwargs)
         dv.value = value
         dv.save()
 
@@ -69,6 +85,7 @@ class ParameterizedValueQuerySetMixin(models.query.QuerySet):
                 raise e
             else:
                 return DefaultValue(default)
+    '''
 
 class AutoDateTimeField(models.DateTimeField):
     def pre_save(self, model_instance, add):
@@ -1442,7 +1459,7 @@ class RoundParameterValue(ParameterizedValue):
         rc = self.round_configuration
         return u"{0}:{1} -> [{2}: {3}]".format(rc.experiment_configuration, rc.sequence_label, self.parameter, self.value)
 
-class Group(models.Model):
+class Group(models.Model, DataManagerMixin):
     number = models.PositiveIntegerField()
     ''' internal numbering unique to the given experiment '''
     max_size = models.PositiveIntegerField(default=5)
@@ -1593,41 +1610,6 @@ class Group(models.Model):
             logger.warning("Trying to retrieve data value by name with no args")
         return None
 
-    def transfer_to_next_round(self, parameter=None, value=None, transfer_existing_value=True):
-        '''
-        Transfers the given parameter to the next round.  If parameter isn't set,
-        transfer all parameters to the next round.
-        FIXME: If this ends up being surprising or isn't desired behavior for
-        common use cases, revisit and remove.
-        '''
-        if self.experiment.is_last_round:
-            logger.warning("Trying to transfer parameter %s to next round but this is the last round", parameter)
-            return
-        value = self.get_scalar_data_value(parameter=parameter) if transfer_existing_value else value
-        if not parameter:
-            for p in self.data_parameters:
-                self.transfer_parameter(p, value)
-        else:
-            self.transfer_parameter(parameter, value)
-
-    def copy_to_next_round(self, data_value):
-        ''' copies the given data value to the next round if it exists and returns the newly created group data value'''
-        return self.transfer_parameter(data_value.parameter, data_value.value)
-
-    def transfer_parameter(self, parameter, value):
-        e = self.experiment
-        if e.is_last_round:
-            logger.error("Trying to transfer parameter (%s: %s) past the last round of the experiment",
-                    parameter, value)
-            return None
-        next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
-        logger.debug("next round data: %s (%s)", next_round_data, created)
-        gdv, created = GroupRoundDataValue.objects.get_or_create(group=self, round_data=next_round_data, parameter=parameter)
-        logger.debug("group data value: %s (%s)", gdv, created)
-        gdv.value = value
-        gdv.save()
-        return gdv
-
     def get_participant_data_values(self, **kwargs):
         criteria = self._data_parameter_criteria(participant_group_relationship__group=self, **kwargs)
         return ParticipantRoundDataValue.objects.filter(**criteria)
@@ -1665,7 +1647,7 @@ class GroupClusterQuerySet(models.query.QuerySet):
     def for_experiment(self, experiment, **kwargs):
         return self.prefetch_related('group_relationship_set').filter(experiment=experiment, **kwargs)
 
-class GroupCluster(models.Model):
+class GroupCluster(models.Model, DataManagerMixin):
     date_created = models.DateTimeField(default=datetime.now)
     name = models.CharField(max_length=64, null=True, blank=True)
     session_id = models.CharField(max_length=64, null=True, blank=True)
@@ -1702,21 +1684,6 @@ class GroupCluster(models.Model):
         gcdv = GroupClusterDataValue.objects.get(group_cluster=self, round_data=round_data, parameter=parameter)
         gcdv.value = value
         gcdv.save()
-
-    def copy_to_next_round(self, next_round_data=None, *data_values):
-        e = self.experiment
-        if e.is_last_round:
-            logger.error("Trying to transfer data values %s past the last round of the experiment, aborting",
-                    data_values)
-        else:
-            if not next_round_data:
-                next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
-            for data_value in data_values:
-                parameter = data_value.parameter
-                gcdv, created = GroupClusterDataValue.objects.get_or_create(group_cluster=self, round_data=next_round_data, parameter=parameter)
-                gcdv.value = data_value.value
-                logger.debug("transferred group cluster data value: %s (%s)", gcdv, created)
-                gcdv.save()
 
     def __unicode__(self):
         return u"GroupCluster #%s %s (%s)" % (self.pk, self.session_id, self.experiment)
@@ -1882,7 +1849,7 @@ class ParticipantGroupRelationshipQuerySet(models.query.QuerySet):
             logger.warning("Participant %s does not belong to a group in %s", participant, experiment)
             return None
 
-class ParticipantGroupRelationship(models.Model):
+class ParticipantGroupRelationship(models.Model, DataManagerMixin):
     """
     Many-to-many relationship entity storing a participant, group, their participant number in that group, the
     round in which they joined the group, and the datetime that they joined the group.
@@ -1959,16 +1926,6 @@ class ParticipantGroupRelationship(models.Model):
         else:
             logger.warning("Unable to set data value %s on round data %s for %s", value, round_data, parameter)
 
-    def copy_to_next_round(self, next_round_data=None, *data_values):
-        e = self.experiment
-        if not next_round_data:
-            next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
-        for existing_dv in data_values:
-            # Taking advantage of a trick from here:
-            # http://stackoverflow.com/questions/12182657/copy-or-clone-an-object-instance-in-django-python
-            existing_dv.pk = None
-            existing_dv.round_data = next_round_data
-            existing_dv.save()
 
     def __unicode__(self):
         return u"{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)
