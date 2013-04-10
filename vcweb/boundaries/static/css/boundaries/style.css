@@ -29,4 +29,7 @@
 .harvest-decision-resources td {
     cursor: pointer;
 }
+.harvest-decision-tree:hover {
+    background-color: yellow;
+}
 

@@ -886,8 +886,14 @@ class Experiment(models.Model):
         if sender is None:
             sender = intern(self.experiment_metadata.namespace.encode('utf8'))
         signal_tuple = signals.round_started.send_robust(sender, experiment=self, time=datetime.now(), round_configuration=current_round_configuration)
-        logger.debug("round started signal returned %s", signal_tuple)
+        self._check_signal_result(signal_tuple)
         return signal_tuple
+
+    def _check_signal_result(self, signal_tuple_list):
+        logger.debug("checking signal tuple list: %s", signal_tuple_list)
+        for signal_tuple in signal_tuple_list:
+            if signal_tuple[1] is not None:
+                logger.error("%s resulted in an error condition: %s", signal_tuple[0], signal_tuple[1])
 
     def stop_round(self, sender=None, **kwargs):
         return self.end_round()
@@ -900,7 +906,7 @@ class Experiment(models.Model):
         #sender = self.namespace.encode('utf-8')
         logger.debug("about to send round ended signal with sender %s", sender)
         signal_tuple = signals.round_ended.send_robust(sender, experiment=self, round_configuration=self.current_round)
-        logger.debug("signal tuple: %s", signal_tuple)
+        self._check_signal_result(signal_tuple)
         return signal_tuple
 
     def activate(self):
@@ -1697,13 +1703,14 @@ class GroupCluster(models.Model):
         gcdv.value = value
         gcdv.save()
 
-    def copy_to_next_round(self, *data_values):
+    def copy_to_next_round(self, next_round_data=None, *data_values):
         e = self.experiment
         if e.is_last_round:
             logger.error("Trying to transfer data values %s past the last round of the experiment, aborting",
                     data_values)
         else:
-            next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
+            if not next_round_data:
+                next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
             for data_value in data_values:
                 parameter = data_value.parameter
                 gcdv, created = GroupClusterDataValue.objects.get_or_create(group_cluster=self, round_data=next_round_data, parameter=parameter)
@@ -1952,15 +1959,16 @@ class ParticipantGroupRelationship(models.Model):
         else:
             logger.warning("Unable to set data value %s on round data %s for %s", value, round_data, parameter)
 
-    def copy_to_next_round(self, *data_values):
+    def copy_to_next_round(self, next_round_data=None, *data_values):
         e = self.experiment
-        next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
+        if not next_round_data:
+            next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
         for existing_dv in data_values:
-            parameter = existing_dv.parameter
-            new_dv, created = ParticipantRoundDataValue.objects.get_or_create(participant_group_relationship=self,
-                    round_data=next_round_data, parameter=parameter)
-            new_dv.value = existing_dv.value
-            new_dv.save()
+            # Taking advantage of a trick from here:
+            # http://stackoverflow.com/questions/12182657/copy-or-clone-an-object-instance-in-django-python
+            existing_dv.pk = None
+            existing_dv.round_data = next_round_data
+            existing_dv.save()
 
     def __unicode__(self):
         return u"{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)
