@@ -336,8 +336,9 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
         <h3>Group Status</h3>
         <table class='table table-bordered table-condensed'>
             <colgroup>
+                <col>
                 <!-- ko foreach: playerData -->
-                <col data-bind='css: { success: id() == $root.participantGroupId() }'>
+                <col data-bind='css: { "current-player": id() === $root.participantGroupId() }'>
                 <!-- /ko -->
             </colgroup>
             <thead>
@@ -351,19 +352,19 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             <tr>
                 <td>Last harvest</td>
                 <!-- ko foreach: playerData -->
-                <td data-bind='text: lastHarvestDecision'></td>
+                <td data-bind='text: lastHarvestDecision, css: { "current-player": id() === $root.participantGroupId() }'></td>
                 <!-- /ko -->
             </tr>
             <tr>
                 <td>Storage</td>
                 <!-- ko foreach: playerData -->
-                <td data-bind='text: storage'></td>
+                <td data-bind='text: storage, css: { "current-player": id() === $root.participantGroupId() }'></td>
                 <!-- /ko -->
             </tr>
             <tr>
                 <td>Status</td>
                 <!-- ko foreach: playerData -->
-                <td data-bind='css: { "text-error": ! alive(), "text-success": alive() }, text: alive() ? "Alive" : "Deceased"'></td>
+                <td data-bind='css: { "current-player": id() === $root.participantGroupId(), "text-error": ! alive(), "text-success": alive() }, text: alive() ? "Alive" : "Deceased"'></td>
                 <!-- /ko -->
             </tr>
             </tbody>

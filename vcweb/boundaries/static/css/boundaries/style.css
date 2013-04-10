@@ -39,3 +39,10 @@
     -webkit-border-radius: 4px;
     background-color: #dff0d8;
 }
+col.current-player {
+    background-color: #dff0d8;
+}
+.current-player {
+    font-weight: bold;
+    font-size: 1em;
+}
