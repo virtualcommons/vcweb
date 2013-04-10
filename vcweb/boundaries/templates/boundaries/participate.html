@@ -602,11 +602,9 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 }
             };
             model.submitDecision = function(formId, numberOfTrees) {
-                console.debug("formId: " + formId);
-                if (! formId) {
-                    formId = "#vcweb-form";
-                }
-                console.debug("number of trees: " + numberOfTrees);
+                formId = formId || "#vcweb-form";
+                numberOfTrees = numberOfTrees || 0;
+                console.debug("formId: " + formId + " -- number of trees: " + numberOfTrees);
                 var formData = $(formId).serialize();
                 model.submitted(true);
                 model.harvestDecision(numberOfTrees);
