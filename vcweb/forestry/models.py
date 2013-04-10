@@ -101,6 +101,7 @@ def set_harvest_decision(participant_group_relationship=None, value=None, round_
         round_data = participant_group_relationship.current_round_data
 # deactivate all previous harvest decisions in this round
     ParticipantRoundDataValue.objects.for_participant(participant_group_relationship,
+            parameter=get_harvest_decision_parameter(),
             round_data=round_data).update(is_active=False)
     return ParticipantRoundDataValue.objects.create(participant_group_relationship=participant_group_relationship,
             parameter=get_harvest_decision_parameter(), round_data=round_data,

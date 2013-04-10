@@ -356,7 +356,7 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
 def update_participants(experiment, round_data, round_configuration):
     logger.debug("updating participants")
     cost_of_living = get_cost_of_living(round_configuration)
-    next_round_data = experiment.round_data_set.get_or_create(round_configuration=experiment.next_round)
+    next_round_data, created = experiment.round_data_set.get_or_create(round_configuration=experiment.next_round)
     for pgr in experiment.participant_group_relationships:
         player_status_dv = get_player_status_dv(pgr, round_data)
         storage_dv = get_storage_dv(pgr, round_data)

@@ -711,7 +711,7 @@ class Experiment(models.Model):
 # http://effbot.org/zone/default-values.htm)
 # defaults map parameter model instances to their default initial value, e.g., { footprint-level-parameter: 1, resource-level-parameter: 100 }
     def initialize_data_values(self, group_parameters=[], participant_parameters=[], group_cluster_parameters=[], round_data=None, defaults={}):
-        # logger.debug("initializing [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
+        logger.debug("initializing [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
         if round_data is None:
             round_data = self.current_round_data
         parameter_defaults = defaultdict(dict)

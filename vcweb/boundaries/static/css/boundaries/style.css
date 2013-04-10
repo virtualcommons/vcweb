@@ -29,7 +29,13 @@
 .harvest-decision-resources td {
     cursor: pointer;
 }
-.harvest-decision-tree:hover {
-    background-color: yellow;
+.harvest-decision-tree {
+    padding: 3px 3px 3px 8px;
+    margin: 5px 5px 5px 5px;
 }
-
+.harvest-decision-tree:hover {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    -webkit-border-radius: 4px;
+    background-color: #dff0d8;
+}
