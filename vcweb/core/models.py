@@ -44,6 +44,33 @@ class DefaultValue(object):
         return self.value
 
 class DataManagerMixin(object):
+    '''
+    this mixin will only work on model classes that expose an "experiment" property.
+    '''
+    def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
+        # FIXME: do we need to provide a mechanism for finding inactive data values?
+        return dict([
+            ('is_active', True),
+            ('parameter', parameter) if parameter else ('parameter__name', parameter_name),
+            ('round_data', self.current_round_data if round_data is None else round_data)
+            ], **kwargs)
+
+    def get_data_value(self, parameter=None, parameter_name=None, round_data=None, filter=False, default=None):
+        if round_data is None:
+            round_data = self.experiment.current_round_data
+        criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
+        data_value_set = self.data_value_set.select_related('parameter')
+        data_value_class = data_value_set.model
+        try:
+            if filter:
+                return data_value_set.filter(**criteria)
+            else:
+                return data_value_set.get(**criteria)
+        except data_value_class.DoesNotExist as e:
+            if default is None:
+                raise e
+            else:
+                return DefaultValue(default)
 
     def copy_to_next_round(self, *data_values, **kwargs):
         e = self.experiment
@@ -61,12 +88,6 @@ class DataManagerMixin(object):
 
     '''
     FIXME: these need more work to generify them properly
-    def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
-        return dict([
-            ('is_active', True),
-            ('parameter', parameter) if parameter else ('parameter__name', parameter_name),
-            ('round_data', self.current_round_data if round_data is None else round_data)
-            ], **kwargs)
     def set_data_value(self, parameter=None, value=None, round_data=None, **kwargs):
         if parameter is None or value is None or round_data is None:
             raise ValueError("need parameter, value, and round data to set")
@@ -74,17 +95,6 @@ class DataManagerMixin(object):
         dv.value = value
         dv.save()
 
-    def get_data_value(self, parameter=None, parameter_name=None, round_data=None, default=None):
-        if round_data is None:
-            round_data = self.current_round_data
-        criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
-        try:
-            return self.data_value_set.select_related('parameter', 'group', 'round_data').get(**criteria)
-        except self.model.DoesNotExist as e:
-            if default is None:
-                raise e
-            else:
-                return DefaultValue(default)
     '''
 
 class AutoDateTimeField(models.DateTimeField):
@@ -1564,19 +1574,6 @@ class Group(models.Model, DataManagerMixin):
             logger.debug("no round configuration value found for parameter (%s, %s) in round: %s", parameter, name, current_round_configuration)
         return round_configuration_value
 
-    def get_data_value(self, parameter=None, parameter_name=None, round_data=None, default=None):
-        # FIXME: factor out the duplication in all the get_data_value methods
-        if round_data is None:
-            round_data = self.current_round_data
-        criteria = self._data_parameter_criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
-        try:
-            return self.data_value_set.select_related('parameter', 'group', 'round_data').get(**criteria)
-        except GroupRoundDataValue.DoesNotExist as e:
-            if default is None:
-                raise e
-            else:
-                return DefaultValue(default)
-
     def set_data_value(self, parameter=None, value=None, round_data=None, **kwargs):
         '''
         Not as efficient as a simple SQL update because we need to do some type
@@ -1662,19 +1659,6 @@ class GroupCluster(models.Model, DataManagerMixin):
     def add(self, group):
         return GroupRelationship.objects.create(cluster=self, group=group)
 
-    def get_data_value(self, parameter=None, round_data=None, default=None):
-        # FIXME: factor out duplication in the various get_data_value methods
-        if parameter is None:
-            raise ValueError("cannot get a data value without a parameter")
-        if round_data is None:
-            round_data = self.experiment.current_round_data
-        try:
-            return GroupClusterDataValue.objects.get(group_cluster=self, round_data=round_data, parameter=parameter,
-                    is_active=True)
-        except GroupClusterDataValue.DoesNotExist as e:
-            if default is None:
-                raise e
-            return DefaultValue(default)
 
     def set_data_value(self, parameter=None, value=None, round_data=None):
         if parameter is None or value is None:
@@ -1725,7 +1709,7 @@ class RoundData(models.Model):
         unique_together = (('round_configuration', 'experiment'),)
 
 class GroupClusterDataValue(ParameterizedValue):
-    group_cluster = models.ForeignKey(GroupCluster)
+    group_cluster = models.ForeignKey(GroupCluster, related_name='data_value_set')
     round_data = models.ForeignKey(RoundData, related_name='group_cluster_data_value_set')
 
 class GroupRoundDataValue(ParameterizedValue):
@@ -1901,18 +1885,6 @@ class ParticipantGroupRelationship(models.Model, DataManagerMixin):
     def get_round_configuration_value(self, **kwargs):
         return self.group.get_round_configuration_value(**kwargs)
 
-    def get_data_value(self, parameter=None, round_data=None, default=None):
-        # FIXME: factor out the duplication in all the get_data_value methods
-        if round_data is None:
-            round_data = self.current_round_data
-        try:
-            return ParticipantRoundDataValue.objects.get(is_active=True, round_data=round_data, parameter=parameter, participant_group_relationship=self)
-        except ParticipantRoundDataValue.DoesNotExist as e:
-            if default is None:
-                raise e
-            else:
-                return DefaultValue(default)
-
     def set_data_value(self, parameter=None, value=None, round_data=None):
         if round_data is None:
             round_data = self.current_round_data
@@ -1971,7 +1943,7 @@ class ParticipantRoundDataValue(ParameterizedValue):
     Represents one data point collected for a given Participant in a given Round.
     """
     round_data = models.ForeignKey(RoundData, related_name='participant_data_value_set')
-    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='participant_data_value_set')
+    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='data_value_set')
     submitted = models.BooleanField(default=False)
     target_data_value = models.ForeignKey('ParticipantRoundDataValue', related_name='target_data_value_set', null=True, blank=True)
     objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
