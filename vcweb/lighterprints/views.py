@@ -313,7 +313,7 @@ class CsvExportView(DataExportMixin, BaseDetailView):
         # write out participant summary
         writer.writerow(['Participant', 'Total Points'])
         for participant_group_relationship in experiment.participant_group_relationships:
-            performed_activities = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter())
+            performed_activities = participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter())
             total_points = 0
             for performed_activity in performed_activities:
                 total_points += performed_activity.value.points

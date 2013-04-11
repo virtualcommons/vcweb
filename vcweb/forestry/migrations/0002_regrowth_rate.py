@@ -280,7 +280,7 @@ class Migration(DataMigration):
             'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'last_modified': ('vcweb.core.models.AutoDateTimeField', [], {'default': 'datetime.datetime.now'}),
             'parameter': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['core.Parameter']"}),
-            'participant_group_relationship': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'participant_data_value_set'", 'to': "orm['core.ParticipantGroupRelationship']"}),
+            'participant_group_relationship': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'data_value_set'", 'to': "orm['core.ParticipantGroupRelationship']"}),
             'round_data': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'participant_data_value_set'", 'to': "orm['core.RoundData']"}),
             'string_value': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'submitted': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
@@ -335,7 +335,7 @@ class Migration(DataMigration):
             'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'last_modified': ('vcweb.core.models.AutoDateTimeField', [], {'default': 'datetime.datetime.now'}),
             'parameter': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['core.Parameter']"}),
-            'round_configuration': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'round_parameter_value_set'", 'to': "orm['core.RoundConfiguration']"}),
+            'round_configuration': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'parameter_value_set'", 'to': "orm['core.RoundConfiguration']"}),
             'string_value': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'})
         },
         'core.spoolparticipantstatistics': {

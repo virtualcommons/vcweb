@@ -293,7 +293,7 @@ def get_activity_status_dict(participant_group_relationship, activities, group_l
     today = datetime.combine(date.today(), time())
     available_activity_ids = Activity.objects.currently_available(participant_group_relationship=participant_group_relationship, level=group_level)
 # filter out all activities that have already been performed today (activities may only be performed once a day)
-    performed_activity_data_values = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter(),
+    performed_activity_data_values = participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(),
             int_value__in=available_activity_ids,
             date_created__gte=today)
     upcoming_activity_ids = Activity.objects.upcoming(level=group_level)
@@ -389,7 +389,7 @@ def get_available_activities(participant_group_relationship=None, ignore_time=Fa
         today = datetime.combine(date.today(), time())
         available_activity_ids = Activity.objects.currently_available(participant_group_relationship=participant_group_relationship, level=group_level)
 # filter out all activities that have already been performed today (activities may only be performed once a day)
-        performed_activity_data_values = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter(),
+        performed_activity_data_values = participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(),
                 int_value__in=available_activity_ids,
                 date_created__gte=today)
         # XXX: data value's int_value stores the fk directly, using .value does a fk lookup to restore the full entity
@@ -399,7 +399,7 @@ def get_available_activities(participant_group_relationship=None, ignore_time=Fa
 
 def check_already_performed_today(activity, participant_group_relationship):
     today = datetime.combine(date.today(), time())
-    already_performed = participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter(),
+    already_performed = participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(),
             int_value=activity.id,
             date_created__gt=today)
     return ActivityStatus.AVAILABLE if already_performed.count() == 0 else ActivityStatus.COMPLETED
@@ -457,7 +457,7 @@ def do_activity(activity, participant_group_relationship):
                 )
 
 def get_performed_activity_ids(participant_group_relationship):
-    return participant_group_relationship.participant_data_value_set.filter(parameter=get_activity_performed_parameter()).values_list('id', flat=True)
+    return participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter()).values_list('id', flat=True)
 
 def get_activity_points_cache():
     cv = 'activity_points_cache'
@@ -542,7 +542,7 @@ def should_advance_level(group, level, start=None, end=None, round_data=None, ma
 def get_activity_performed_counts(participant_group_relationship, activity_performed_parameter=None):
     if activity_performed_parameter is None:
         activity_performed_parameter = get_activity_performed_parameter()
-    return participant_group_relationship.participant_data_value_set.filter(parameter=activity_performed_parameter).values('int_value').order_by().annotate(count=models.Count('int_value'))
+    return participant_group_relationship.data_value_set.filter(parameter=activity_performed_parameter).values('int_value').order_by().annotate(count=models.Count('int_value'))
 
 def get_time_remaining():
     '''

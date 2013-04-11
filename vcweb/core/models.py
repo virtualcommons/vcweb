@@ -43,7 +43,22 @@ class DefaultValue(object):
     def __getattr__(self, name):
         return self.value
 
-class DataManagerMixin(object):
+class ParameterValueMixin(object):
+    def get_parameter_value(self, parameter=None, name=None, default=None):
+        if parameter is None and name is None:
+            logger.error("Can't lookup parameter values with no name or parameter, returning default %s", default)
+            return DefaultValue(default)
+        parameter_value_set = self.parameter_value_set
+        try:
+            if parameter:
+                return parameter_value_set.get(parameter=parameter)
+            elif name:
+                return parameter_value_set.get(parameter__name=name)
+        except parameter_value_set.model.DoesNotExist as e:
+            logger.debug("no parameter value exists: (%s, %s) returning default %s", parameter, name, default)
+            return DefaultValue(default)
+
+class DataValueMixin(object):
     '''
     this mixin will only work on model classes that expose an "experiment" property.
     '''
@@ -86,8 +101,6 @@ class DataManagerMixin(object):
             existing_dv.round_data = next_round_data
             existing_dv.save()
 
-    '''
-    FIXME: these need more work to generify them properly
     def set_data_value(self, parameter=None, value=None, round_data=None, **kwargs):
         if parameter is None or value is None or round_data is None:
             raise ValueError("need parameter, value, and round data to set")
@@ -95,7 +108,6 @@ class DataManagerMixin(object):
         dv.value = value
         dv.save()
 
-    '''
 
 class AutoDateTimeField(models.DateTimeField):
     def pre_save(self, model_instance, add):
@@ -219,7 +231,7 @@ class ExperimenterRequest(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
     approved = models.BooleanField(default=False)
 
-class ExperimentConfiguration(models.Model):
+class ExperimentConfiguration(models.Model, ParameterValueMixin):
     """
     The configuration for a given Experiment instance.  One ExperimentConfiguration can be applied to many Experiment
     instances but can only be associated to a single ExperimentMetadata record.
@@ -266,26 +278,13 @@ class ExperimentConfiguration(models.Model):
     def namespace(self):
         return self.experiment_metadata.namespace
 
-    def get_parameter_value(self, parameter=None, name=None, default=None):
-        if parameter is None and name is None:
-            logger.error("Can't find a parameter value with no name or parameter, returning default")
-            return DefaultValue(default)
-        try:
-            if parameter:
-                return self.experiment_parameter_value_set.get(parameter=parameter)
-            elif name:
-                return self.experiment_parameter_value_set.get(parameter__name=name)
-        except ExperimentParameterValue.DoesNotExist as e:
-            logger.debug("no experiment configuration parameter value found: (%s, %s) returning default %s", parameter,
-                    name, default)
-            return DefaultValue(default)
 
     def serialize(self, output_format='xml', **kwargs):
         if self.round_configuration_set.count() > 0:
             all_objects = []
             for rc in self.round_configuration_set.all():
                 all_objects.append(rc)
-                all_objects.extend(rc.round_parameter_value_set.all())
+                all_objects.extend(rc.parameter_value_set.all())
             all_objects.append(self)
             return serializers.serialize(output_format, all_objects, **kwargs)
 
@@ -1050,7 +1049,7 @@ class Experiment(models.Model):
     class Meta:
         ordering = ['date_created', 'status']
 
-class RoundConfiguration(models.Model):
+class RoundConfiguration(models.Model, ParameterValueMixin):
     # FIXME: refactor this into a single data structure
     # maps round type name to (description, default_template_filename)
     ROUND_TYPES_DICT = dict(
@@ -1181,18 +1180,6 @@ class RoundConfiguration(models.Model):
     @property
     def is_playable_round(self):
         return self.round_type in RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS
-
-    def get_parameter_value(self, parameter=None, name=None, default=None):
-        if parameter is None and name is None:
-            logger.error("Can't find a parameter value with no name or parameter, returning default")
-            return default
-        try:
-            if parameter:
-                return RoundParameterValue.objects.get(round_configuration=self, parameter=parameter)
-            elif name:
-                return RoundParameterValue.objects.get(round_configuration=self, parameter__name=name)
-        except RoundParameterValue.DoesNotExist:
-            return DefaultValue(default)
 
     def is_survey_enabled(self):
         try:
@@ -1453,7 +1440,7 @@ class ParameterizedValue(models.Model):
 
 # configuration parameters across the entire experiment
 class ExperimentParameterValue(ParameterizedValue):
-    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='experiment_parameter_value_set')
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='parameter_value_set')
 
     def __unicode__(self):
         ec = self.experiment_configuration
@@ -1463,13 +1450,13 @@ class RoundParameterValue(ParameterizedValue):
     """
     Represents a specific piece of round configuration data.
     """
-    round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_parameter_value_set')
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='parameter_value_set')
 
     def __unicode__(self):
         rc = self.round_configuration
         return u"{0}:{1} -> [{2}: {3}]".format(rc.experiment_configuration, rc.sequence_label, self.parameter, self.value)
 
-class Group(models.Model, DataManagerMixin):
+class Group(models.Model, DataValueMixin):
     number = models.PositiveIntegerField()
     ''' internal numbering unique to the given experiment '''
     max_size = models.PositiveIntegerField(default=5)
@@ -1644,7 +1631,7 @@ class GroupClusterQuerySet(models.query.QuerySet):
     def for_experiment(self, experiment, **kwargs):
         return self.prefetch_related('group_relationship_set').filter(experiment=experiment, **kwargs)
 
-class GroupCluster(models.Model, DataManagerMixin):
+class GroupCluster(models.Model, DataValueMixin):
     date_created = models.DateTimeField(default=datetime.now)
     name = models.CharField(max_length=64, null=True, blank=True)
     session_id = models.CharField(max_length=64, null=True, blank=True)
@@ -1833,7 +1820,7 @@ class ParticipantGroupRelationshipQuerySet(models.query.QuerySet):
             logger.warning("Participant %s does not belong to a group in %s", participant, experiment)
             return None
 
-class ParticipantGroupRelationship(models.Model, DataManagerMixin):
+class ParticipantGroupRelationship(models.Model, DataValueMixin):
     """
     Many-to-many relationship entity storing a participant, group, their participant number in that group, the
     round in which they joined the group, and the datetime that they joined the group.
