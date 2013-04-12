@@ -121,8 +121,6 @@ def minute_tick_handler(sender, time=None, **kwargs):
     handles each minute tick
     """
     logger.debug("handling minute tick signal at %s with kwargs %s", time, kwargs)
-    # inspect all active experiments and update their time left
-    Experiment.objects.increment_elapsed_time(status='ROUND_IN_PROGRESS')
 
 class ExperimentMetadataManager(models.Manager):
     def get_by_natural_key(self, key):
