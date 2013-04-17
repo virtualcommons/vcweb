@@ -1,7 +1,8 @@
 from django.db.models import Sum
 from django.dispatch import receiver
 from vcweb.core import signals, simplecache
-from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, GroupRelationship, GroupCluster, GroupClusterDataValue)
+from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, GroupRelationship,
+        GroupCluster, GroupClusterDataValue, RoundData, RoundConfiguration)
 from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_harvest_decision_dv, get_regrowth_rate_parameter,
                                    get_group_harvest_parameter, get_reset_resource_level_parameter, get_resource_level as get_unshared_resource_level,
                                    get_initial_resource_level as forestry_initial_resource_level, get_regrowth_parameter, set_resource_level,
@@ -152,6 +153,15 @@ def get_storage(participant_group_relationship, round_data=None, default=0):
     dv = get_storage_dv(participant_group_relationship, round_data, default)
     return max(default if dv.int_value is None else dv.int_value, 0)
 
+def get_all_session_storages(experiment, participant_group_relationship):
+    debriefing_session_round_data = RoundData.objects.filter(experiment=experiment,
+            round_configuration__round_type=RoundConfiguration.RoundType.DEBRIEFING,
+            round_configuration__session_id__isnull=False)
+    return ParticipantRoundDataValue.objects.filter(
+            participant_group_relationship=participant_group_relationship,
+            parameter=get_storage_parameter(),
+            round_data__in=debriefing_session_round_data).order_by('date_created')
+
 
 def _zero_if_none(value):
     return 0 if value is None else value
@@ -230,10 +240,10 @@ def round_started_handler(sender, experiment=None, **kwargs):
                 "Setting resource level (%s) to initial value [%s]" % (existing_resource_level, initial_resource_level))
             existing_resource_level.int_value = initial_resource_level
             existing_resource_level.save()
-            # FIXME: make sure that this is expected behavior - if the resource level is reset, reset storage to 0
+            # FIXME: verify that this is expected behavior - if the resource level is reset, reset storage to 0
             ParticipantRoundDataValue.objects.for_group(group, parameter=get_storage_parameter(),
                     round_data=round_data).update(int_value=0)
-            # reset all player statuses to True
+            # reset all player statuses to alive
             ParticipantRoundDataValue.objects.for_group(group, parameter=get_player_status_parameter(),
                     round_data=round_data).update(boolean_value=True)
 
