@@ -75,6 +75,8 @@ experiment_model_defaults = {
         'isInstructionsRound': False,
         'waitThirtySeconds': False,
         'totalHarvest': 0,
+        'sessionOneStorage': 0,
+        'sessionTwoStorage': 0,
         }
 # FIXME: need to distinguish between instructions / welcome rounds and practice/regular rounds
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
