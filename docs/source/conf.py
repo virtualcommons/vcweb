@@ -43,7 +43,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'vcweb'
-copyright = u'2011, Allen Lee'
+copyright = u'2013, Arizona Board of Regents'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

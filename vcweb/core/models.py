@@ -521,17 +521,6 @@ class Experiment(models.Model):
         return ChatMessage.objects.filter(round_data__experiment=self).reverse()
 
     @property
-    def all_quiz_questions(self):
-        # FIXME: use generator expression?
-        quiz_questions = list(self.default_quiz_questions.all())
-        quiz_questions.extend(self.current_round.quiz_questions.all())
-        return quiz_questions
-
-    @property
-    def current_round_quiz_questions(self):
-        return self.current_round.quiz_questions
-
-    @property
     def next_round(self):
        if self.has_next_round:
           return self.get_round_configuration(self.current_round_sequence_number + 1)
@@ -1210,6 +1199,10 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]
 
 class QuizQuestion(models.Model):
+    '''
+    FIXME: deprecated, place quiz and quiz logic inline in the client, have the form submit the responses and correct
+    answers to the server-side.
+    '''
     label = models.CharField(max_length=512)
     answer = models.CharField(max_length=64)
     input_type = models.CharField(max_length=32)
@@ -1738,24 +1731,6 @@ class Participant(CommonsUser):
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
     birthdate = models.DateField(null=True, blank=True)
     address = models.ForeignKey(Address, null=True, blank=True)
-
-    '''
-    FIXME: move these into a ParticipantQuerySet with PassThroughManager if needed
-    @property
-    def active_experiments(self):
-        return self.experiment_relationship_set.filter(experiment__status=Experiment.Status.ACTIVE)
-
-    @property
-    def inactive_experiments(self):
-        return self.experiment_relationship_set.exclude(experiment__status=Experiment.Status.ACTIVE)
-
-    @property
-    def completed_experiments(self):
-        return self.experiments_with_status(Experiment.Status.COMPLETED)
-
-    def experiments_with_status(self, status=Experiment.Status.ACTIVE):
-        return self.experiment_relationship_set.filter(experiment__status=status)
-    '''
 
     class Meta:
         ordering = ['user']
