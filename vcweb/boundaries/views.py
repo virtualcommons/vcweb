@@ -110,17 +110,22 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 
     if current_round.is_debriefing_round:
         experiment_model_dict['totalHarvest'] = get_total_harvest(participant_group_relationship, current_round.session_id)
+        if experiment.is_last_round:
+            (session_one_storage, session_two_storage) = get_all_session_storages(experiment, participant_group_relationship)
+            experiment_model_dict['sessionOneStorage'] = session_one_storage
+            experiment_model_dict['sessonTwoStorage'] = session_two_storage
 
-    if experiment.is_last_round:
+    if current_round.is_survey_enabled:
         # add last round data
         query_parameters = urlencode({
             'pid': participant_group_relationship.pk,
             'eid': experiment.pk
             })
-        experiment_model_dict['surveyUrl'] = "{0}?{1}".format(current_round.survey_url, query_parameters)
-        (session_one_storage, session_two_storage) = get_all_session_storages(experiment, participant_group_relationship)
-        experiment_model_dict['sessionOneStorage'] = session_one_storage
-        experiment_model_dict['sessonTwoStorage'] = session_two_storage
+        survey_url = current_round.survey_url
+        delimiter = '?'
+        if delimiter in survey_url:
+            delimiter = '&'
+        experiment_model_dict['surveyUrl'] = "{0}{1}{2}".format(current_round.survey_url, delimiter, query_parameters)
 
 
 # participant data

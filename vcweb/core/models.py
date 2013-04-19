@@ -38,6 +38,9 @@ FIXME: getting a bit monolithically unwieldy.  Consider splitting into models su
 """
 
 class DefaultValue(object):
+    '''
+    Simple object wrapper that returns the wrapped value on any attribute reference
+    '''
     def __init__(self, value):
         self.value = value
     def __getattr__(self, name):
@@ -1168,11 +1171,10 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     def is_playable_round(self):
         return self.round_type in RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS
 
+    @property
     def is_survey_enabled(self):
-        try:
-            return self.survey_url is not None
-        except:
-            return False
+        survey_url = getattr(self, 'survey_url', None)
+        return survey_url is not None and survey_url
 
     def get_debriefing(self, participant_id=None, **kwargs):
         return self.templatize(self.debriefing, participant_id, kwargs)
