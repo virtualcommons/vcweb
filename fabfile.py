@@ -1,14 +1,17 @@
-from fabric.api import local, run, sudo, cd, env, hide
-from fabric.contrib.console import confirm
-from fabric.contrib import django
+from fabric.api import local, run, sudo, cd, env, lcd, hosts
 from fabric.context_managers import settings as fab_settings
+from fabric.contrib import django
+from fabric.contrib.console import confirm
+from fabric.contrib.project import rsync_project
 
 import os, sys, shutil, logging
 
 logger = logging.getLogger(__name__)
 
+# default to current working directory
+env.project_path = os.path.dirname(__file__)
 # needed to push vcweb.settings onto the path.
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+sys.path.append(os.path.abspath(env.project_path))
 
 # default env configuration
 env.python = 'python'
@@ -19,12 +22,12 @@ env.virtualenv_path = "%s/.virtualenvs/%s" % (os.getenv("HOME"), env['project_na
 env.database = 'default'
 #env.virtualenv_path = '/opt/virtualenvs/%(project_name)s' % env
 env.deploy_path = '/opt/'
-# default to current working directory
-env.project_path = os.path.dirname(__file__)
 env.hosts = ['localhost']
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
 env.apache = 'httpd'
 env.applist = ['core', 'forestry', 'boundaries', 'lighterprints']
+env.docs_path = os.path.join(env.project_path, 'docs')
+env.remote_docs_path = '/home/csid/public_html/api/vcweb'
 env.apps = ' '.join(env.applist)
 
 # django integration for access to settings, etc.
@@ -39,6 +42,16 @@ syncdb_commands = [
         '%(python)s manage.py migrate' % env,
         ]
 
+
+@hosts('csid@commons.asu.edu')
+def docs():
+    with lcd(env.docs_path):
+        local("/usr/bin/make html")
+        rsync_project(env.remote_docs_path, 'build/html/')
+    with cd(env.remote_docs_path):
+        run('find . -type d -exec chmod a+rx {} \; && chmod -R a+r .')
+
+    
 def migrate():
     local("{python} manage.py migrate".format(python=env.python), capture=False)
 
@@ -170,13 +183,15 @@ def deploy():
     push()
     if confirm("Deploy to %(hosts)s ?" % env):
         with cd(env.project_path):
-            sudo_chain('hg pull && hg up -C',
+            sudo_chain(
+                    'hg pull && hg up -C',
                     'chmod g+s logs',
                     'chmod -R g+rw logs/',
                     user=env.deploy_user, pty=True)
             env.static_root = vcweb_settings.STATIC_ROOT
             _virtualenv(run,'%(python)s manage.py collectstatic' % env)
-            sudo_chain('chmod -R ug+rw .',
+            sudo_chain(
+                    'chmod -R ug+rw .',
                     'find %(static_root)s -type d -exec chmod a+x {} \;' % env,
                     'find %(static_root)s -type f -exec chmod a+r {} \;' % env,
                     'find . -type d -exec chmod ug+x {} \;',
