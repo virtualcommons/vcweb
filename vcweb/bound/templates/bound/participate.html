@@ -402,10 +402,12 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
 
 <div data-bind="ifnot: isResourceEmpty" id='resourceDisplay'>
     <div class='alert alert-info'>There are <strong class='badge badge-success' data-bind='text:resourceLevel'></strong> trees remaining in the forest.</div>
-    <div class='well'>
-    <div data-bind='style: { width: resourceImageWidth, height: resourceImageHeight, background: resourceImageBackgroundUrl }'>
+    <div data-bind='style: { width: uniformResourceImageWidth, height: uniformResourceImageHeight, background: resourceImageBackgroundUrl }'>
         &nbsp;
     </div>
+    {% comment %} FIXME: crummy use of "px" concatenation, use something like inPixels(..) instead? {% endcomment %}
+    <div data-bind='style: { width: leftoverResourceImageWidth, height: resourceImageHeight() + "px", background: resourceImageBackgroundUrl }'>
+        &nbsp;
     </div>
 </div>
 <div data-bind="if: isResourceEmpty">
@@ -589,18 +591,35 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             model.isResourceEmpty = ko.computed(function() {
                 return model.resourceLevel() == 0;
             })
+            model.resourcesPerRow = ko.observable(40);
+            model.resourceImageWidth = ko.observable(20);
+            model.resourceImageHeight = ko.observable(40);
+            model.rowsToDisplay = ko.computed(function() {
+                return Math.floor(model.resourceLevel() / model.resourcesPerRow());
+            });
+            model.individualResourcesToDisplay = ko.computed(function() {
+                return model.resourceLevel() % model.resourcesPerRow();
+            });
             model.resourcesToDisplay = ko.computed(function() {
                 if (model.resourceLevel() > 0) {
                     return Math.min(model.resourceLevel(), model.maximumResourcesToDisplay());
                 }
                 return 0;
             });
-            model.resourceImageUrl = ko.observable("{{STATIC_URL}}images/bound/deciduous-tree.png");
-            model.resourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/pine-tree.png')");
-            model.resourceImageWidth = ko.computed(function() {
-                return model.resourcesToDisplay() * 30 + "px";
+            model.resourceImageUrl = ko.observable("{{STATIC_URL}}images/bound/tree-inactive.png");
+            model.resourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/bound/tree-resource.png')");
+            model.uniformResourceImageWidth = ko.computed(function() {
+                return (model.resourcesPerRow() * model.resourceImageWidth()) + "px";
             });
-            model.resourceImageHeight = ko.observable("79px");
+            model.uniformResourceImageHeight = ko.computed(function() {
+                var rowsToDisplay = model.rowsToDisplay();
+                console.debug("displaying " + rowsToDisplay + " rows.");
+                return (rowsToDisplay * model.resourceImageHeight()) + "px";
+            });
+            model.leftoverResourceImageWidth = ko.computed(function() {
+                var remainder = model.resourceLevel() % model.resourcesPerRow();
+                return (remainder * model.resourceImageWidth()) + "px";
+            });
             model.startRound = function() {
                 // reset other group view
                 model.shouldShowOtherGroup(false);
