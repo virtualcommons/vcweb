@@ -413,10 +413,10 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     </div>
 </div>
 <div data-bind='ifnot: isResourceEmpty'>
-    <form id='vcweb-form' data-bind='submit: submitDecision' action='' method='post' class='form-horizontal' >
+    <form id='vcweb-form' method='post' class='form-horizontal' >
         {% csrf_token %}
-        <div id='harvestDecisionDiv' data-bind='visible: !submitted()' class='control-group'>
-            <div data-bind='template: { name: "harvest-decision-multi-select-template" }'></div>
+        <div id='harvestDecisionDiv' class='control-group'>
+            <div data-bind='template: { name: "harvest-decision-click-template" }'></div>
         </div>
     </form>
 </div>
@@ -478,16 +478,16 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
 </table>
 </div>
 </script>
-<script type='text/html' id='harvest-decision-multi-select-template'>
+<script type='text/html' id='harvest-decision-click-template'>
     <table class='table'>
         <tr class='row harvest-decision-resources' data-bind='foreach: harvestDecisionOptions'>
             <td data-bind='attr: { id: "harvest-decision-td-" + $data }'>
-                <form data-bind='attr: { id: "multi-select-decision-form" + $data }'>
+                <form data-bind='attr: { id: "harvest-decision-click-form" + $data }'>
                     <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: $root.participantGroupId'/>
                     <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: $data'>
-                    <div class='harvest-decision-tree' data-bind='click: $root.submitDecision.bind($data, "#multi-select-decision-form" + $data)'>
-                        <img width="40" height="40" data-bind='attr: { src: $root.resourceImageUrl(), alt: "Harvest " + $data + " tree(s)."  }'><br>
-                        <span style='margin-left: 2px;' class='badge badge-success' data-bind='text: $data'></span>
+                    <div class='harvest-decision-tree-div' data-bind='click: $root.submitDecision.bind($data, "#harvest-decision-click-form" + $data)'>
+                        <div data-bind='css: { selected: $root.isSelectedHarvestDecision($data), "harvest-decision-tree": $data > 0, "zero-harvest-decision": $data === 0}'></div>
+                        <span style='margin-left: 2px;' class='badge badge-info' data-bind='text: $data'></span>
                     </div>
                 </form>
             </td>
@@ -511,7 +511,11 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
             model.harvestDecisionOptions = ko.computed(function() {
-                return ko.utils.range(0, model.maxHarvestDecision());
+                var lowerBound = 0;
+                if (model.submitted()) {
+                    lowerBound = 1;
+                }
+                return ko.utils.range(lowerBound, model.maxHarvestDecision());
             });
             model.calculateEarnings = function(quantity) {
                 return function() {
@@ -616,7 +620,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 }
                 return 0;
             });
-            model.resourceImageUrl = ko.observable("{{STATIC_URL}}images/bound/tree-inactive.png");
+            model.inactiveResourceImageUrl = ko.observable("{{STATIC_URL}}images/bound/tree-inactive.png");
             model.resourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/bound/tree-resource.png')");
             model.blockResourceVisualizationImageWidth = function(resourceLevel) {
                 return (model.resourcesPerRow() * model.resourceImageWidth()) + "px";
@@ -636,12 +640,6 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 if (model.showTour()) {
                     model.setupTour();
                 }
-                if (model.submitted() || ! model.alive()) {
-                    model.disableHarvestForm();
-                    model.disableChatForm();
-                    return;
-                }
-                model.enableHarvestForm();
                 console.debug("starting round");
                 if (isInt(model.timeRemaining()) && model.timeRemaining() > 0) {
                     model.setupChat();
@@ -657,7 +655,14 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                         1000));
                 }
             };
+            model.isSelectedHarvestDecision = function(numberOfTrees) {
+                return model.submitted() && model.harvestDecision() >= numberOfTrees;
+            }
             model.submitDecision = function(formId, numberOfTrees) {
+                if (model.submitted()) {
+                    alert("Should we allow multiple submission?  Right now it is disabled.");
+                    return false;
+                }
                 formId = formId || "#vcweb-form";
                 numberOfTrees = numberOfTrees || 0;
                 console.debug("formId: " + formId + " -- number of trees: " + numberOfTrees);
