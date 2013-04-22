@@ -1,7 +1,7 @@
 from django.conf.urls.defaults import url, patterns
-from vcweb.boundaries.views import (participate, submit_harvest_decision, get_view_model)
+from vcweb.bound.views import (participate, submit_harvest_decision, get_view_model)
 
-urlpatterns = patterns('vcweb.boundaries.views',
+urlpatterns = patterns('vcweb.bound.views',
     url(r'^$', 'index', name='index'),
     url(r'^(?P<experiment_id>\d+)/configure$', 'configure', name='configure'),
     url(r'^(?P<experiment_id>\d+)/experimenter$', 'monitor_experiment', name='monitor_experiment'),

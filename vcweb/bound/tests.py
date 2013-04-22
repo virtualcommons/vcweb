@@ -1,16 +1,16 @@
 """
-Tests for boundaries experiment
+Tests for boundary effects experiment
 """
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.core.models import Parameter
-from vcweb.boundaries.models import *
+from vcweb.bound.models import *
 
 import logging
 logger = logging.getLogger(__name__)
 
 
 class BaseTest(BaseVcwebTest):
-    fixtures = [ 'boundaries_experiment_metadata', 'forestry_experiment_metadata', 'boundaries_parameters', ]
+    fixtures = [ 'bound_experiment_metadata', 'forestry_experiment_metadata', 'bound_parameters', ]
 
     def create_harvest_decisions(self, value=10):
         for pgr in self.experiment.participant_group_relationships:
@@ -19,7 +19,7 @@ class BaseTest(BaseVcwebTest):
 
     def setUp(self, **kwargs):
         super(BaseTest, self).setUp(experiment_metadata=get_experiment_metadata(), **kwargs)
-        logger.debug("boundaries test loaded experiment %s", self.experiment)
+        logger.debug("boundary effects test loaded experiment %s", self.experiment)
 
 class AdjustHarvestDecisionsTest(BaseTest):
     def test_adjust_harvest_decisions(self):

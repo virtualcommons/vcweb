@@ -401,5 +401,5 @@ class Migration(DataMigration):
         }
     }
 
-    complete_apps = ['core', 'boundaries']
+    complete_apps = ['core', 'bound']
     symmetrical = True

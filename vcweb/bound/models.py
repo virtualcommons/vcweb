@@ -392,7 +392,7 @@ def round_ended_handler(sender, experiment=None, **kwargs):
     '''
     round_configuration = experiment.current_round
     round_data = experiment.get_round_data(round_configuration)
-    logger.debug("ending boundaries round: %s", round_configuration)
+    logger.debug("ending boundary effects round: %s", round_configuration)
     if round_configuration.is_playable_round:
         regrowth_rate = get_regrowth_rate(round_configuration)
         harvest_decision_parameter = get_harvest_decision_parameter()

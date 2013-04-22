@@ -2,7 +2,7 @@
 {% load static %}
 {% block head %}
 {{ block.super }}
-<link rel='stylesheet' href='{% static "css/boundaries/style.css" %}'/>
+<link rel='stylesheet' href='{% static "css/bound/style.css" %}'/>
 {% endblock %}
 {% block content %}
 <h3><span data-bind='text: roundSequenceLabel'></span></h3>
@@ -331,19 +331,19 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     <div class='span5'>
         <h3>My Status</h3>
         <div class='row'>
-            <div class='alert boundaries-status-dashboard span2'>
+            <div class='alert bound-status-dashboard span2'>
                 <h4 id="dashboard-last-harvest">Last harvest <i class='icon-info-sign' data-content="The number of trees you harvested last round."></i> </h4>
                 <p>
                 <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span> <i class='icon-leaf'></i></strong>
                 </p>
             </div>
-            <div class='alert boundaries-status-dashboard span2'>
+            <div class='alert bound-status-dashboard span2'>
                 <h4 id='dashboard-storage'>Storage <i class='icon-info-sign' data-bind='attr: {"data-content": "You need at least " + costOfLiving() + " trees to survive each round."}'></i> </h4>
                 <p>
                 <strong data-bind='css: { "text-error": storage() < costOfLiving(), "text-success": storage() > costOfLiving()}'><span data-bind='text: storage'></span> <i class='icon-leaf'></i></strong>
                 </p>
             </div>
-            <div class='alert boundaries-status-dashboard span1'>
+            <div class='alert bound-status-dashboard span1'>
                 <h4 id='dashboard-time'><i class='icon-time'></i> Time</h4>
                 <p>
                 <strong data-bind='css: { "text-error": secondsLeft() < warningCountdownTime(), "text-info": secondsLeft() > warningCountdownTime()}'>
@@ -427,7 +427,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             <table>
                 <tr>
                     <td><button class='btn' data-bind='click: showOtherGroup'><i class='icon-eye-open'></i> Observe</a></td>
-                    <td><img src='{{STATIC_URL}}/images/boundaries/observe.png' alt='observe'></td>
+                    <td><img src='{{STATIC_URL}}/images/bound/observe.png' alt='observe'></td>
                 </tr>
             </table>
         </div>
@@ -595,7 +595,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 }
                 return 0;
             });
-            model.resourceImageUrl = ko.observable("{{STATIC_URL}}images/boundaries/deciduous-tree.png");
+            model.resourceImageUrl = ko.observable("{{STATIC_URL}}images/bound/deciduous-tree.png");
             model.resourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/pine-tree.png')");
             model.resourceImageWidth = ko.computed(function() {
                 return model.resourcesToDisplay() * 30 + "px";

@@ -493,6 +493,10 @@ class Experiment(models.Model):
         return "%s/%s" % (self.experiment_metadata.namespace, self.pk)
 
     @property
+    def participant_template(self):
+        return "%s/participate.html" % self.experiment_metadata.namespace
+
+    @property
     def current_round_template(self):
         return self.current_round.template_path
 

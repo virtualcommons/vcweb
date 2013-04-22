@@ -4,8 +4,8 @@ from vcweb.core import dumps
 from vcweb.core.decorators import participant_required
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage, GroupRelationship)
-from vcweb.boundaries.forms import SingleIntegerDecisionForm
-from vcweb.boundaries.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
+from vcweb.bound.forms import SingleIntegerDecisionForm
+from vcweb.bound.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
         get_all_session_storages, get_last_harvest_decision, get_harvest_decision_dv, get_harvest_decision_parameter,
         set_harvest_decision, can_observe_other_group, get_player_status, get_average_harvest, get_average_storage,
@@ -23,7 +23,7 @@ def participate(request, experiment_id=None):
     pgr = experiment.get_participant_group_relationship(participant)
     if experiment.experiment_metadata != get_experiment_metadata() or pgr.participant != request.user.participant:
         raise Http404
-    return render(request, 'boundaries/participate.html', {
+    return render(request, experiment.participant_template, {
         'experiment': experiment,
         'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
         'participant_group_relationship': pgr,

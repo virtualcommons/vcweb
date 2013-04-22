@@ -102,7 +102,7 @@ INSTALLED_APPS = (
         'vcweb.core',
         'vcweb.forestry',
         'vcweb.lighterprints',
-        'vcweb.boundaries',
+        'vcweb.bound',
         'vcweb.broker',
 #        'vcweb.sanitation',
         'dajaxice',

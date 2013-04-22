@@ -13,14 +13,14 @@
 }
 #chatMessage {
 }
-.boundaries-status-dashboard p {
+.bound-status-dashboard p {
     padding-top: 15px;
     font-size: 2em;
 }
-.boundaries-status-dashboard h4 {
+.bound-status-dashboard h4 {
     border-bottom: 1px solid #ccc;
 }
-.boundaries-status-dashboard {
+.bound-status-dashboard {
     height: 100px;
     width: 110px;
     margin-right: 0px;

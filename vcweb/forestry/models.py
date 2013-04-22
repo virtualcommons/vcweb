@@ -114,7 +114,7 @@ def set_resource_level(group, value, round_data=None):
 @receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
 def round_setup(sender, experiment=None, **kwargs):
     round_configuration = experiment.current_round
-    logger.debug("setting up boundaries round %s", round_configuration)
+    logger.debug("setting up forestry round %s", round_configuration)
     if round_configuration.is_playable_round:
         # participant parameter
         harvest_decision_parameter = get_harvest_decision_parameter()
