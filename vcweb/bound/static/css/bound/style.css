@@ -22,7 +22,7 @@
 }
 .bound-status-dashboard {
     height: 100px;
-    width: 110px;
+    width: 115px;
     margin-right: 0px;
     padding: 8px 8px 8px 8px;
 }
@@ -40,9 +40,11 @@
     background-color: #dff0d8;
 }
 col.current-player {
-    background-color: #dff0d8;
+    background-color: #ffb914;
 }
 .current-player {
     font-weight: bold;
-    font-size: 1em;
+    color: #145bff !important;
+}
+.group-status {
 }

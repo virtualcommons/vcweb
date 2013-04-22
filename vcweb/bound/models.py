@@ -191,8 +191,11 @@ def get_player_status_dv(participant_group_relationship, round_data, default=Tru
     return participant_group_relationship.get_data_value(parameter=get_player_status_parameter(),
             round_data=round_data, default=default)
 
-def get_player_status(participant_group_relationship, round_data, default=True):
+def is_player_alive(participant_group_relationship, round_data, default=True):
     return get_player_status_dv(participant_group_relationship, round_data, default).boolean_value
+
+def get_number_alive(group, round_data):
+    return ParticipantRoundDataValue.objects.for_group(group, parameter=get_player_status_parameter(), round_data=round_data, boolean_value=True).count()
 
 def set_player_status(participant_group_relationship, round_data, value):
     status_dv =  get_player_status_dv(participant_group_relationship, round_data)

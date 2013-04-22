@@ -1,3 +1,5 @@
+from collections import Counter
+from operator import itemgetter
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from vcweb.core import dumps
@@ -8,8 +10,8 @@ from vcweb.bound.forms import SingleIntegerDecisionForm
 from vcweb.bound.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
         get_all_session_storages, get_last_harvest_decision, get_harvest_decision_dv, get_harvest_decision_parameter,
-        set_harvest_decision, can_observe_other_group, get_player_status, get_average_harvest, get_average_storage,
-        get_total_harvest)
+        set_harvest_decision, can_observe_other_group, is_player_alive, get_average_harvest, get_average_storage,
+        get_total_harvest, get_number_alive)
 
 from urllib import urlencode
 import logging
@@ -137,18 +139,22 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     own_group = participant_group_relationship.group
     own_resource_level = get_resource_level(own_group)
     last_harvest_decision = get_last_harvest_decision(participant_group_relationship, round_data=previous_round_data)
+    # FIXME: redundancy with playerData and direct values
     experiment_model_dict['playerData'] = [{
         'id': pgr.pk,
         'number': pgr.participant_number,
         'lastHarvestDecision': get_last_harvest_decision(pgr, round_data=previous_round_data),
-        'alive': get_player_status(pgr, current_round_data),
+        'alive': is_player_alive(pgr, current_round_data),
         'storage': get_storage(pgr, current_round_data),
         } for pgr in own_group.participant_group_relationship_set.all()]
-    # FIXME: redundancy with playerData
     experiment_model_dict['lastHarvestDecision'] = last_harvest_decision
     experiment_model_dict['storage'] = get_storage(participant_group_relationship, current_round_data)
     experiment_model_dict['resourceLevel'] = own_resource_level
-    experiment_model_dict['alive'] = get_player_status(participant_group_relationship, current_round_data)
+    experiment_model_dict['alive'] = is_player_alive(participant_group_relationship, current_round_data)
+    experiment_model_dict['averageHarvest'] = get_average_harvest(own_group, previous_round_data)
+    experiment_model_dict['averageStorage'] = get_average_storage(own_group, current_round_data)
+    c = Counter(map(itemgetter('alive'), experiment_model_dict['playerData']))
+    experiment_model_dict['numberAlive'] = "%s out of %s" % (c[True], sum(c.values()))
     # participant group data parameters are only needed if this round is a data round or the previous round was a data round
     if previous_round.is_playable_round or current_round.is_playable_round:
         harvest_decision = get_harvest_decision_dv(participant_group_relationship, current_round_data)
@@ -165,5 +171,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             experiment_model_dict['otherGroupResourceLevel'] = get_resource_level(other_group, current_round_data)
             experiment_model_dict['otherGroupAverageHarvest'] = get_average_harvest(other_group, previous_round_data)
             experiment_model_dict['otherGroupAverageStorage'] = get_average_storage(other_group, current_round_data)
+            number_alive = get_number_alive(other_group, current_round_data)
+            experiment_model_dict['otherGroupNumberAlive'] = "%s out of %s" % (number_alive, other_group.size)
 
     return dumps(experiment_model_dict)
