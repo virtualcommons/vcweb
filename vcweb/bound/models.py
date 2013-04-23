@@ -425,5 +425,6 @@ def round_ended_handler(sender, experiment=None, **kwargs):
 def calculate_regrowth(resource_level, regrowth_rate, max_resource_level):
     if resource_level == max_resource_level:
         return 0
+    logger.debug("calculating regrowth: (%s * %s) * (1 - (%s / %s))", regrowth_rate, resource_level, resource_level, max_resource_level)
     return (regrowth_rate * resource_level) * (1 - (resource_level / float(max_resource_level)))
 

@@ -397,7 +397,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     </div>
 </div>
 <div class='row'>
-    <div class='span8' data-bind='template: { name: "resource-visualization-template" }'></div>
+    <div data-bind='css: { span8: ! canObserveOtherGroup() }, template: { name: "resource-visualization-template" }'></div>
 </div>
 <div class='row' data-bind='ifnot: isResourceEmpty()'>
     <div class='span8'>
@@ -475,6 +475,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             {% comment %} FIXME: crummy use of "px" concatenation, use something like inPixels(..) instead? {% endcomment %}
             <div data-bind='style: { width: remainderResourceImageWidth(otherGroupResourceLevel), height: resourceImageHeight() + "px", background: resourceImageBackgroundUrl }'></div>
         </div>
+        <br>
         <table class='table table-bordered table-condensed table-striped'>
             <tbody>
                 <tr><td>forest</td><td data-bind='text:otherGroupResourceLevel()'></td></tr>
@@ -598,10 +599,6 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                     model.activateTemplate("WAITING_ROOM");
                 });
             }
-            model.showOtherGroup = function() {
-                model.shouldShowOtherGroup(true);
-            }
-            model.shouldShowOtherGroup = ko.observable(false);
             model.numberOfTreesPerRow = ko.observable(10);
             model.isResourceEmpty = ko.computed(function() {
                 return model.resourceLevel() == 0;
@@ -643,20 +640,20 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 return (remainder * model.resourceImageWidth()) + "px";
             };
             model.startRound = function() {
-                // reset other group view
-                model.shouldShowOtherGroup(false);
                 if (model.showTour()) {
                     model.setupTour();
                 }
                 console.debug("starting round");
                 if (isInt(model.timeRemaining()) && model.timeRemaining() > 0) {
-                    model.setupChat();
                     model.secondsLeft(model.timeRemaining());
                     model.setCurrentInterval(
                         setInterval(function() {
                             model.tick();
                             if (! model.isTimerRunning()) {
-                                model.submitDecision();
+                                if (! model.submitted()) {
+                                    // don't auto-submit decisions if we have already submit one
+                                    model.submitDecision();
+                                }
                                 model.clearCurrentInterval();
                             }
                         },
@@ -726,6 +723,8 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 model.setFormDisabled("#chat-form", true);
             }
             model.setupChat = function() {
+                // FIXME: chat is disabled in practice rounds, when it's explicitly disabled, or if the participant is
+                // no longer alive
                 var chatDisabled = model.isPracticeRound() || ! model.chatEnabled() || ! model.alive();
                 model.setFormDisabled("#chat-form", chatDisabled);
                 model.chatEnabled(! chatDisabled);
