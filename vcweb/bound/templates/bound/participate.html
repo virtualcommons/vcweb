@@ -397,7 +397,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     </div>
 </div>
 <div class='row' data-bind='template: { name: "resource-visualization-template" }'></div>
-<div data-bind='visible: ! isResourceEmpty()'>
+<div class='row' data-bind='ifnot: isResourceEmpty()'>
 <h3>Harvest</h3>
 <div data-bind='if: submitted'>
     <div class='alert alert-success'>
@@ -454,6 +454,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     </tbody>
 </table>
 </div>
+
 <div data-bind='if: canObserveOtherGroup' class='span4'>
 <h4>Other Group</h4>
 <div class='alert alert-message'><strong class='badge badge-success' data-bind='text:otherGroupResourceLevel'></strong> trees</div>
@@ -476,7 +477,6 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
         <tr><td>number alive</td><td data-bind='text:otherGroupNumberAlive'></td></tr>
     </tbody>
 </table>
-</div>
 </div>
 </script>
 <script type='text/html' id='harvest-decision-click-template'>
