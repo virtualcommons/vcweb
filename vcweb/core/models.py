@@ -2011,7 +2011,6 @@ class ChatMessage(ParticipantRoundDataValue):
         data.update(
                 group_id=group.pk,
                 group=unicode(group),
-                participant_handle=pgr.participant_handle,
                 participant_number=pgr.participant_number,
                 event_type='chat',
                 )

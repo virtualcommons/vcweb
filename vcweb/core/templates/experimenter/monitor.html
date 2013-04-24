@@ -88,7 +88,7 @@
                                 {% for item in group.list %}
                                 <tr>
                                     <td>{{ item.participant_group_relationship.pk }}</td>
-                                    <td>{{ item.participant_group_relationship.participant_handle}}</td>
+                                    <td>{{ item.participant_group_relationship.participant_number}}</td>
                                     <td>{{ item.participant_group_relationship.participant.email }}</td>
                                 </tr>
                                 {% endfor %}
@@ -142,7 +142,7 @@
         <div id='experiment-chat-messages' class='scrollable-messages accordion-body collapse'>
             <div class='alert' data-bind='foreach: chatMessages'>
                 <div>
-                    <span data-bind='text: participant_handle'></span>(<span data-bind='text: group'></span>): <strong data-bind='text: value'></strong>
+                    <span data-bind='text: participant_number'></span>(<span data-bind='text: group'></span>): <strong data-bind='text: value'></strong>
                     <span class='pull-right' data-bind='text: short_date_created'></span>
                 </div>
             </div>

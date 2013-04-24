@@ -67,7 +67,7 @@
     </div>
     <ul class='pager'>
         <li class='next'>
-        <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantHandle() + " finished reading session summary.") '>Ok, I'm ready</a>
+        <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantGroupId() + " finished reading session summary.") '>Ok, I'm ready</a>
         </li>
     </ul>
 </script>
@@ -118,7 +118,7 @@
         <a href='javascript: void()' data-bind='click: activateTemplate.bind($data, "PRACTICE_ROUND_RESULTS")'>Back</a>
         </li>
         <li class='next'>
-        <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantHandle() + " finished paid experiment instructions") '>Ok, I understand</a>
+        <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantGroupId() + " finished paid experiment instructions") '>Ok, I understand</a>
         </li>
     </ul>
 </script>
@@ -158,7 +158,7 @@ forest status.  Similarly, they may observe your group in the same way.
 </ul>
 <ul class='pager'>
     <li class='next'>
-    <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantHandle() + " finished treatment A instructions")'>Ok, I am ready to start</a>
+    <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantGroupId() + " finished treatment A instructions")'>Ok, I am ready to start</a>
     </li>
 </ul>
 </script>
@@ -175,7 +175,7 @@ twice the capacity of a single-group forest.
 </ul>
 <ul class='pager'>
     <li class='next'>
-    <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantHandle() + " finished treatment D instructions")'>Ok, I am ready to start</a>
+    <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantGroupId() + " finished treatment D instructions")'>Ok, I am ready to start</a>
     </li>
 </ul>
 </script>
@@ -326,7 +326,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
 <a href='javascript:void();' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS3")'>Back</a>
 </li>
 <li class='next'>
-<a href='javascript: void();' data-bind='click: participantReady.bind($data, participantHandle() + " finished practice round instructions")'>I have fully read and understand these instructions</a>
+<a href='javascript: void();' data-bind='click: participantReady.bind($data, participantGroupId() + " finished practice round instructions")'>I have fully read and understand these instructions</a>
 </li>
 </ul>
 </script>
