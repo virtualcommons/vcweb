@@ -2009,7 +2009,6 @@ class ChatMessage(ParticipantRoundDataValue):
         pgr = self.participant_group_relationship
         group = self.participant_group_relationship.group
         data.update(
-                message=self.message,
                 group_id=group.pk,
                 group=unicode(group),
                 participant_handle=pgr.participant_handle,

@@ -51,7 +51,7 @@ $(function() {
     }
     var chatMessagesViewModel = new ChatMessagesViewModel();
     {% for chat_message in chat_messages %}
-        chatMessagesViewModel.addMessage({ message: {{chat_message.message}}, date_created: {{chat_message.date_created}}, sender: {{chat_message.sender}} });
+        chatMessagesViewModel.addMessage({ message: {{chat_message.value}}, date_created: {{chat_message.date_created}}, sender: {{chat_message.sender}} });
     {% endfor %}
     ko.applyBindings(chatMessagesViewModel);
     var s = connect('/participant');
