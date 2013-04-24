@@ -527,7 +527,7 @@ class Experiment(models.Model):
 
     @property
     def all_chat_messages(self):
-        return ChatMessage.objects.filter(round_data__experiment=self).reverse()
+        return ChatMessage.objects.for_experiment(self)
 
     @property
     def next_round(self):
@@ -1929,12 +1929,18 @@ class ParticipantRoundDataValue(ParameterizedValue):
 
 class ChatMessageQuerySet(models.query.QuerySet):
 
+    def for_experiment(self, experiment=None, **kwargs):
+        return self.select_related(
+                'parameter',
+                'participant_group_relationship__participant__user',
+                'participant_group_relationship__group',
+                ).filter(parameter=get_chat_message_parameter(), round_data__experiment=experiment, **kwargs)
+
     def for_group(self, group=None, **kwargs):
         return self.select_related(
                 'parameter',
                 'participant_group_relationship__participant__user',
                 'participant_group_relationship__group',
-                'target_data_value__participant_group_relationship',
                 ).filter(parameter=get_chat_message_parameter(), participant_group_relationship__group=group, **kwargs).order_by('-date_created')
 
     def message_all(self, experiment, message, round_data=None, **kwargs):
@@ -1991,7 +1997,7 @@ class ChatMessage(ParticipantRoundDataValue):
         return u"{0}: {1}".format(participant_number, self.value)
 
     class Meta:
-        ordering = ['date_created']
+        ordering = ['-date_created']
 
 class Comment(ParticipantRoundDataValue):
     def __init__(self, *args, **kwargs):
@@ -2008,7 +2014,7 @@ class Comment(ParticipantRoundDataValue):
         return data
 
     class Meta:
-        ordering = ['date_created']
+        ordering = ['-date_created']
 
 class Like(ParticipantRoundDataValue):
     def __init__(self, *args, **kwargs):

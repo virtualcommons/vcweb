@@ -274,7 +274,6 @@ def monitor(request, pk=None):
     user = request.user
     if is_experimenter(user, experiment.experimenter):
         registered_participants = [ { "group": pgr.group, "participant_group_relationship": pgr } for pgr in experiment.participant_group_relationships ]
-        logger.debug("registered participants: %s", registered_participants)
         return render(request, 'experimenter/monitor.html', {
             'experiment': experiment,
             'registeredParticipants': registered_participants,
