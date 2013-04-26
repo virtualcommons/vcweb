@@ -85,7 +85,6 @@
         "model": "core.roundconfiguration",
         "fields": {
             "round_type": "PRACTICE",
-            "template_name": "",
             "debriefing": "",
             "survey_url": "",
             "duration": 0,
