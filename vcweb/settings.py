@@ -305,7 +305,6 @@ try:
     import settings_local as local_settings
     has_local_settings = True
 except ImportError:
-    print "no local settings found.  create settings_local.py to override settings in a hg-ignored file"
     has_local_settings = False
 
 def add_settings_tuples(varname, local_settings):
@@ -329,7 +328,7 @@ if has_local_settings:
         print "error: %s" % e
         pass
 # for django-debug-toolbar
-INTERNAL_IPS = ('127.0.0.1','68.99.87.185',)
+INTERNAL_IPS = ('127.0.0.1',)
 DEBUG_TOOLBAR_CONFIG = {
         'INTERCEPT_REDIRECTS': False,
         }

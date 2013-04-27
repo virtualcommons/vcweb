@@ -15,56 +15,6 @@
         }
     },
     {
-        "pk": 14,
-        "model": "auth.user",
-        "fields": {
-            "username": "srelias@asu.edu",
-            "first_name": "Steven",
-            "last_name": "Elias",
-            "is_active": true,
-            "is_superuser": false,
-            "is_staff": true,
-            "last_login": "2011-07-21 11:26:11",
-            "groups": [],
-            "user_permissions": [
-                91,
-                92,
-                93,
-                94,
-                95,
-                96
-            ],
-            "password": "sha1$b6803$fdf4e561936dcf4d4986ee2820bcb4dbf08501d7",
-            "email": "srelias@asu.edu",
-            "date_joined": "2011-07-08 16:23:27"
-        }
-    },
-    {   
-        "pk": 15,
-        "model": "auth.user",
-        "fields": {
-            "username": "jmhastin@asu.edu",
-            "first_name": "Jenny",
-            "last_name": "Hastings",
-            "is_active": true,
-            "is_superuser": false,
-            "is_staff": true,
-            "last_login": "2012-02-17 12:26:12",
-            "groups": [],
-            "user_permissions": [
-                91,
-                92,
-                93,
-                94,
-                95,
-                96
-            ],
-            "password": "sha1$d5aa9$1b81860e131dffc257fd9437788652f19766ad09",
-            "email": "jmhastin@asu.edu",
-            "date_joined": "2012-02-17 12:26:12"
-        }
-    },
-    {
         "fields": {
             "authentication_code": "TEST_LIGHTERPRINTS",
             "current_round_sequence_number": 1,
@@ -82,6 +32,26 @@
         },
         "model": "core.experiment",
         "pk": 4
+    },
+    {
+        "pk": 33, 
+        "model": "core.experiment", 
+        "fields": {
+            "experiment_metadata": 3, 
+            "status": "INACTIVE", 
+            "tick_duration": "", 
+            "authentication_code": "vcweb.auth.code", 
+            "current_round_start_time": null, 
+            "last_modified": "2013-04-27T00:02:20.965", 
+            "experimenter": 8, 
+            "date_activated": null, 
+            "current_round_sequence_number": 1, 
+            "duration": "", 
+            "date_created": "2013-04-27T00:02:08", 
+            "experiment_configuration": 4, 
+            "current_repeated_round_sequence_number": 0, 
+            "amqp_exchange_name": "vcweb.default.exchange"
+        }
     },
     {
         "fields": {

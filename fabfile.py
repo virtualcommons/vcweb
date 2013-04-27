@@ -51,6 +51,10 @@ def docs():
     with cd(env.remote_docs_path):
         run('find . -type d -exec chmod a+rx {} \; && chmod -R a+r .')
 
+def testdata():
+    syncdb()
+    with cd(env.project_path):
+        _virtualenv(local, '%(python)s manage.py loaddata forestry_experiment_metadata lighterprints_experiment_metadata bound_experiment_metadata bound_parameters' % env)
     
 def migrate():
     local("{python} manage.py migrate".format(python=env.python), capture=False)
