@@ -247,7 +247,7 @@ class GroupClusterTest(BaseVcwebTest):
         pass
 
 class GroupTest(BaseVcwebTest):
-    def test_set_data_value_activity_log(self):
+    def test_set_data_value(self):
         e = self.advance_to_data_round()
         test_data_value = 10
         for g in e.group_set.all():
@@ -256,8 +256,6 @@ class GroupTest(BaseVcwebTest):
                 # XXX: pathological use of set_data_value, no point in doing it
                 # this way since typical usage would do a lookup by name.
                 g.set_data_value(parameter=data_value.parameter, value=test_data_value)
-                activity_log_counter += 1
-                self.assertEqual(activity_log_counter, GroupActivityLog.objects.filter(group=g).count())
                 self.assertEqual(g.get_scalar_data_value(parameter=data_value.parameter), test_data_value)
 
     def test_transfer_to_next_round(self):

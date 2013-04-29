@@ -71,7 +71,7 @@ def get_shared_resource_enabled_parameter():
 
 ''' round and experiment configuration accessors '''
 def get_regrowth_rate(round_configuration):
-    return round_configuration.get_parameter_value(parameter=get_regrowth_rate_parameter(), default=0.40).float_value
+    return round_configuration.get_parameter_value(name='regrowth_rate', default=0.40).float_value
 
 
 def can_observe_other_group(round_configuration):

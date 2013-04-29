@@ -25,9 +25,10 @@ env.deploy_path = '/opt/'
 env.hosts = ['localhost']
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
 env.apache = 'httpd'
-env.applist = ['core', 'forestry', 'boundaries', 'lighterprints']
+env.applist = ['core', 'forestry', 'bound', 'lighterprints', 'broker']
 env.docs_path = os.path.join(env.project_path, 'docs')
 env.remote_docs_path = '/home/csid/public_html/api/vcweb'
+env.testdata_fixtures = 'forestry_experiment_metadata lighterprints_experiment_metadata activities bound_experiment_metadata bound_parameters'
 env.apps = ' '.join(env.applist)
 
 # django integration for access to settings, etc.
@@ -54,7 +55,7 @@ def docs():
 def testdata():
     syncdb()
     with cd(env.project_path):
-        _virtualenv(local, '%(python)s manage.py loaddata forestry_experiment_metadata lighterprints_experiment_metadata bound_experiment_metadata bound_parameters' % env)
+        _virtualenv(local, '%(python)s manage.py loaddata %(testdata_fixtures)s' % env)
     
 def migrate():
     local("{python} manage.py migrate".format(python=env.python), capture=False)

@@ -105,8 +105,10 @@ class DataValueMixin(object):
             existing_dv.save()
 
     def set_data_value(self, parameter=None, value=None, round_data=None, **kwargs):
-        if parameter is None or value is None or round_data is None:
-            raise ValueError("need parameter, value, and round data to set")
+        if parameter is None or value is None:
+            raise ValueError("need parameter and value to set")
+        if round_data is None:
+            round_data = self.current_round_data
         dv = self.get_data_value(round_data=round_data, parameter=parameter, **kwargs)
         dv.value = value
         dv.save()
@@ -1558,19 +1560,6 @@ class Group(models.Model, DataValueMixin):
             logger.debug("no round configuration value found for parameter (%s, %s) in round: %s", parameter, name, current_round_configuration)
         return round_configuration_value
 
-    def set_data_value(self, parameter=None, value=None, round_data=None, **kwargs):
-        '''
-        Not as efficient as a simple SQL update because we need to do some type
-        conversion / processing to put the value into the appropriate field.
-        '''
-        if round_data is None:
-            round_data = self.current_round_data
-        self.log("setting group param %s => %s" % (parameter, value))
-        grdv = GroupRoundDataValue.objects.get(parameter=parameter, round_data=round_data, group=self)
-        grdv.value = value
-        grdv.save()
-        return grdv
-
     def _data_parameter_criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
         criteria = dict([
             ('is_active', True),
@@ -1643,15 +1632,6 @@ class GroupCluster(models.Model, DataValueMixin):
     def add(self, group):
         return GroupRelationship.objects.create(cluster=self, group=group)
 
-
-    def set_data_value(self, parameter=None, value=None, round_data=None):
-        if parameter is None or value is None:
-            raise ValueError("need a parameter and value to set")
-        if round_data is None:
-            round_data = self.experiment.current_round_data
-        gcdv = GroupClusterDataValue.objects.get(group_cluster=self, round_data=round_data, parameter=parameter)
-        gcdv.value = value
-        gcdv.save()
 
     def __unicode__(self):
         return u"GroupCluster #%s %s (%s)" % (self.pk, self.session_id, self.experiment)
@@ -1850,20 +1830,6 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
 
     def get_round_configuration_value(self, **kwargs):
         return self.group.get_round_configuration_value(**kwargs)
-
-    def set_data_value(self, parameter=None, value=None, round_data=None):
-        if round_data is None:
-            round_data = self.current_round_data
-        if parameter is not None and value is not None:
-            pdv = ParticipantRoundDataValue.objects.get(round_data=round_data, parameter=parameter, participant_group_relationship=self)
-            pdv.submitted = True
-            pdv.value = value
-            pdv.save()
-            # FIXME: parameterize / make explicit?
-            return pdv
-        else:
-            logger.warning("Unable to set data value %s on round data %s for %s", value, round_data, parameter)
-
 
     def __unicode__(self):
         return u"{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)
