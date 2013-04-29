@@ -228,7 +228,7 @@
                     </div>
                 </div>
             </div>
-            <h3 class='underline'>Group activity</h3>
+            <h3>Group activity</h3>
             <div data-bind='ifnot: hasGroupActivity() '>
                 <div data-bind='template: { name: "no-group-activity-template" }'></div>
             </div>
@@ -482,6 +482,7 @@ $(function() {
 </span>
 </div>
 </script>
+<!-- group activity templates, keyed by parameter name -->
 <script type='text/html' id='comment'>
     <tr data-bind='if: $root.participantGroupId() != participant_group_id()'>
         <td class='group-activity-icon'><i class='icon-comment lighterprints-blue'></i></td>
@@ -497,7 +498,7 @@ $(function() {
             </span>
             <div>
             <small><i class='icon-quote-left'></i></small>
-            <span data-bind='text:message'></span>
+            <span data-bind='text:value'></span>
             <small><i class='icon-quote-right'></i></small>
             </div>
             </div>
@@ -530,7 +531,7 @@ $(function() {
             <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
             <div>
             <small><i class='icon-quote-left'></i></small>
-            <span data-bind='text:message'></span>
+            <span data-bind='text:value'></span>
             <small><i class='icon-quote-right'></i></small>
             </div>
             <div data-bind="template: 'likeCommentTemplate'"></div>
