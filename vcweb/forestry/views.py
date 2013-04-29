@@ -117,7 +117,7 @@ def wait(request, experiment_id=None):
 class ParticipateView(SingleObjectTemplateResponseMixin, ParticipantSingleExperimentMixin, View):
     template_name_field = 'current_round_template'
 
-# FIXME: refactor the conditional logic here.
+# FIXME: refactor, replace conditional logic here with embedded KO templates
 @participant_required
 def participate(request, experiment_id=None):
     participant = request.user.participant
@@ -131,7 +131,6 @@ def participate(request, experiment_id=None):
         if current_round.is_instructions_round:
             return render_to_response(experiment.current_round_template, {
                 'participant_experiment_relationship': participant_experiment_relationship,
-                'next_round_instructions': experiment.next_round_instructions
                 },
                 context_instance=RequestContext(request))
 

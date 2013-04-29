@@ -324,12 +324,9 @@ class Experiment(models.Model):
     currently unused, but kept here in the event that we want to allow participants to authenticate with this
     authentication_code either in lieu or in addition to their own user password.
     """
-    current_round_sequence_number = models.PositiveIntegerField(default=1, help_text=_('''Used to identify which round the
-    experiment is currently running, should be a sequential number ranging from 1 to N'''))
-    """ Each round is assigned a sequential sequence number, ranging from 1 to N.  Used to identify which round the
-    experiment is currently running. """
-    current_repeated_round_sequence_number = models.PositiveIntegerField(default=0, help_text=_('''For repeating rounds,
-    the number of times the round has been repeated, used to keep track of when to move on from a repeating round.'''))
+    current_round_sequence_number = models.PositiveIntegerField(default=1, help_text=_('''One-based sequence number used to identify which round the experiment is currently running, should be a sequential number ranging from 1 to N'''))
+    """ Each round is assigned a sequential sequence number, ranging from 1 to N.  Used to identify which round the experiment is currently running. """
+    current_repeated_round_sequence_number = models.PositiveIntegerField(default=0, help_text=_('''For repeating rounds, the number of times the round has been repeated, used to keep track of when to move on from a repeating round.'''))
     experimenter = models.ForeignKey(Experimenter)
     """ the user running this experiment """
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
@@ -432,7 +429,7 @@ class Experiment(models.Model):
 
     @property
     def groups(self):
-        return (group for group in self.group_set.filter(session_id=self.current_session_id))
+        return self.group_set.filter(session_id=self.current_session_id)
 
     @property
     def active_group_clusters(self):
@@ -440,10 +437,7 @@ class Experiment(models.Model):
 
     @property
     def participant_group_relationships(self):
-        '''
-        Generator function for all active participant group relationships in this experiment
-        '''
-        return itertools.chain.from_iterable(group.participant_group_relationship_set.all() for group in self.groups)
+        return ParticipantGroupRelationship.objects.select_related('group').filter(group__in=self.groups)
 
     @property
     def display_name(self):
@@ -535,13 +529,6 @@ class Experiment(models.Model):
           return self.get_round_configuration(self.current_round_sequence_number + 1)
        else:
           return self.current_round
-
-    @property
-    def next_round_instructions(self):
-        if self.has_next_round:
-            return self.next_round.instructions
-        else:
-            return u'This is the final round.'
 
     @property
     def previous_round(self):
@@ -869,6 +856,7 @@ class Experiment(models.Model):
             raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action_name, self))
 
     def advance_to_next_round(self):
+        # FIXME: need to add repeating round logic
         if self.is_round_in_progress:
             self.end_round()
         if self.has_next_round:
@@ -878,7 +866,12 @@ class Experiment(models.Model):
             logger.warning("trying to advance past the last round - no-op")
 
     def create_round_data(self):
-        round_data, created = self.round_data_set.get_or_create(round_configuration=self.current_round)
+        current_round_configuration = self.current_round
+        ps = dict(round_configuration=current_round_configuration)
+        if current_round_configuration.is_repeating_round:
+            # create round data with repeating sequence number
+            ps['repeating_round_sequence_number'] = current_round_configuration.current_repeated_round_sequence_number
+        round_data, created = self.round_data_set.get_or_create(**ps)
         if self.experiment_configuration.is_experimenter_driven:
             # create participant ready data values for every round in experimenter driven experiments
             logger.debug("creating participant ready participant round data values")
@@ -1148,6 +1141,10 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     @property
     def round_number(self):
         return self.sequence_number if self.display_number == 0 else self.display_number
+
+    @property
+    def is_repeating_round(self):
+        return self.repeat > 0
 
     @property
     def is_debriefing_round(self):
@@ -1658,6 +1655,7 @@ class RoundData(models.Model):
     """
     experiment = models.ForeignKey(Experiment, related_name='round_data_set')
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_data_set')
+    repeating_round_sequence_number = models.PositiveIntegerField(default=0, help_text=_('''Repeating round's sequence number used to disambiguate round data in repeating rounds.'''))
     elapsed_time = models.PositiveIntegerField(default=0)
     experimenter_notes = models.TextField(null=True, blank=True)
 
