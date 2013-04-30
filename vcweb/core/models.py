@@ -58,7 +58,7 @@ class ParameterValueMixin(object):
             elif name:
                 return parameter_value_set.get(parameter__name=name)
         except parameter_value_set.model.DoesNotExist as e:
-            logger.debug("no parameter value exists: (%s, %s) returning default %s", parameter, name, default)
+            logger.debug("%s: (lookup %s %s) returning default %s", e, parameter, name, default)
             return DefaultValue(default)
 
 class DataValueMixin(object):
@@ -96,7 +96,7 @@ class DataValueMixin(object):
             return
         next_round_data = kwargs.get('next_round_data', None)
         if not next_round_data:
-            next_round_data, created = RoundData.objects.get_or_create(experiment=e, round_configuration=e.next_round)
+            next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round)
         for existing_dv in data_values:
             # Taking advantage of a trick from here:
             # http://stackoverflow.com/questions/12182657/copy-or-clone-an-object-instance-in-django-python
@@ -524,11 +524,17 @@ class Experiment(models.Model):
         return ChatMessage.objects.for_experiment(self)
 
     @property
+    def should_repeat(self):
+        cr = self.current_round
+        return cr.is_repeating_round and self.current_repeated_round_sequence_number < cr.repeat
+
+    @property
     def next_round(self):
-       if self.has_next_round:
-          return self.get_round_configuration(self.current_round_sequence_number + 1)
-       else:
-          return self.current_round
+        current_round = self.current_round
+        if not self.should_repeat and self.has_next_round:
+            return self.get_round_configuration(self.current_round_sequence_number + 1)
+        else:
+            return current_round
 
     @property
     def previous_round(self):
@@ -839,6 +845,7 @@ class Experiment(models.Model):
 
     # XXX: decide whether or not to include this ability in the interface.
     def move_to_previous_round(self):
+        # FIXME: doesn't take into account repeating rounds at the moment
         if self.is_round_in_progress:
             self.end_round()
         self.current_round_elased_time = 0
@@ -856,31 +863,34 @@ class Experiment(models.Model):
             raise AttributeError("Invalid experiment action %s requested of experiment %s" % (action_name, self))
 
     def advance_to_next_round(self):
-        # FIXME: need to add repeating round logic
         if self.is_round_in_progress:
             self.end_round()
-        if self.has_next_round:
+        if self.should_repeat:
+            self.current_repeated_round_sequence_number += 1
+        elif self.has_next_round:
             self.current_round_sequence_number += 1
-            return self.start_round()
         else:
             logger.warning("trying to advance past the last round - no-op")
+            return
+        return self.start_round()
 
-    def create_round_data(self):
-        current_round_configuration = self.current_round
-        ps = dict(round_configuration=current_round_configuration)
-        if current_round_configuration.is_repeating_round:
+    def get_or_create_round_data(self, round_configuration=None):
+        if round_configuration is None:
+            round_configuration = self.current_round
+        ps = dict(round_configuration=round_configuration)
+        if round_configuration.is_repeating_round:
             # create round data with repeating sequence number
-            ps['repeating_round_sequence_number'] = current_round_configuration.current_repeated_round_sequence_number
+            ps['repeating_round_sequence_number'] = round_configuration.current_repeated_round_sequence_number
         round_data, created = self.round_data_set.get_or_create(**ps)
         if self.experiment_configuration.is_experimenter_driven:
             # create participant ready data values for every round in experimenter driven experiments
-            logger.debug("creating participant ready participant round data values")
+            logger.debug("creating participant ready participant round data values for experimenter driven experiment")
             for pgr in self.participant_group_relationships:
                 ParticipantRoundDataValue.objects.get_or_create(participant_group_relationship=pgr,
                         parameter=get_participant_ready_parameter(), round_data=round_data, defaults={'boolean_value': False})
         if not created:
             logger.debug("already created round data: %s", round_data)
-        return round_data
+        return round_data, created
 
     def start_round(self, sender=None):
         logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
@@ -893,7 +903,7 @@ class Experiment(models.Model):
         # XXX: must create round data AFTER group allocation so that any participant round data values
         # (participant ready parameters for instance) are associated with the correct participant group
         # relationships.
-        self.create_round_data()
+        self.get_or_create_round_data()
         self.current_round_start_time = datetime.now()
         self.log('Starting round')
         self.save()
@@ -1668,7 +1678,7 @@ class RoundData(models.Model):
 
     class Meta:
         ordering = [ 'round_configuration' ]
-        unique_together = (('round_configuration', 'experiment'),)
+        unique_together = (('round_configuration', 'repeating_round_sequence_number', 'experiment'),)
 
 class GroupClusterDataValue(ParameterizedValue):
     group_cluster = models.ForeignKey(GroupCluster, related_name='data_value_set')

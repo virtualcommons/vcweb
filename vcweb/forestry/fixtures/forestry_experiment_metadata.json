@@ -270,7 +270,8 @@
         "is_required": false,
         "type": "int"
     }
-},    {
+},
+{
     "pk": 6,
     "model": "core.parameter",
     "fields": {
@@ -286,6 +287,23 @@
         "enum_choices": "",
         "is_required": false,
         "type": "int"
+    }
+},
+{
+    "pk": 19,
+    "model": "core.parameter",
+    "fields": {
+        "display_name": "Resource regrowth rate",
+        "description": "Resource regrowth scaling factor, a floating point number between 0 and 1.  A simple regrowth function could be defined as N * r + N, where N is the resource level and r is the regrowth rate.",
+        "name": "regrowth_rate",
+        "creator": 1,
+        "default_value_string": "",
+        "date_created": "2011-03-15 17:04:24",
+        "last_modified": "2011-03-15 17:04:24",
+        "scope": "round",
+        "enum_choices": "",
+        "is_required": false,
+        "type": "float"
     }
 },
 {

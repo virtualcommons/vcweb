@@ -1,26 +1,27 @@
 # -*- coding: utf-8 -*-
 import datetime
 from south.db import db
-from south.v2 import DataMigration
+from south.v2 import SchemaMigration
 from django.db import models
 
-class Migration(DataMigration):
+
+class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        "Write your forwards methods here."
-        # Note: Remember to use orm['appname.ModelName'] rather than "from appname.models..."
-        Parameter = orm['core.Parameter']
-        Experimenter = orm['core.Experimenter']
-        Parameter.objects.create(name='max_harvest_decision',
-                creator=Experimenter.objects.get(pk=1),
-                type='int',
-                scope='experiment',
-                default_value_string='10',
-                description='Maximum harvest decision a player can make in a typical harvesting experiment')
+        # Removing unique constraint on 'RoundData', fields ['round_configuration', 'experiment']
+        db.delete_unique(u'core_rounddata', ['round_configuration_id', 'experiment_id'])
+
+        # Adding unique constraint on 'RoundData', fields ['round_configuration', 'repeating_round_sequence_number', 'experiment']
+        db.create_unique(u'core_rounddata', ['round_configuration_id', 'repeating_round_sequence_number', 'experiment_id'])
 
 
     def backwards(self, orm):
-        "Write your backwards methods here."
+        # Removing unique constraint on 'RoundData', fields ['round_configuration', 'repeating_round_sequence_number', 'experiment']
+        db.delete_unique(u'core_rounddata', ['round_configuration_id', 'repeating_round_sequence_number', 'experiment_id'])
+
+        # Adding unique constraint on 'RoundData', fields ['round_configuration', 'experiment']
+        db.create_unique(u'core_rounddata', ['round_configuration_id', 'experiment_id'])
+
 
     models = {
         u'auth.group': {
@@ -75,12 +76,12 @@ class Migration(DataMigration):
             'zipcode': ('django.db.models.fields.CharField', [], {'max_length': '8', 'blank': 'True'})
         },
         u'core.chatmessage': {
-            'Meta': {'ordering': "['date_created']", 'object_name': 'ChatMessage', '_ormbases': [u'core.ParticipantRoundDataValue']},
+            'Meta': {'ordering': "['-date_created']", 'object_name': 'ChatMessage', '_ormbases': [u'core.ParticipantRoundDataValue']},
             u'participantrounddatavalue_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': u"orm['core.ParticipantRoundDataValue']", 'unique': 'True', 'primary_key': 'True'}),
             'target_participant': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'target_participant_chat_message_set'", 'null': 'True', 'to': u"orm['core.ParticipantGroupRelationship']"})
         },
         u'core.comment': {
-            'Meta': {'ordering': "['date_created']", 'object_name': 'Comment', '_ormbases': [u'core.ParticipantRoundDataValue']},
+            'Meta': {'ordering': "['-date_created']", 'object_name': 'Comment', '_ormbases': [u'core.ParticipantRoundDataValue']},
             u'participantrounddatavalue_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': u"orm['core.ParticipantRoundDataValue']", 'unique': 'True', 'primary_key': 'True'})
         },
         u'core.experiment': {
@@ -88,9 +89,9 @@ class Migration(DataMigration):
             'amqp_exchange_name': ('django.db.models.fields.CharField', [], {'default': "'vcweb.default.exchange'", 'max_length': '64'}),
             'authentication_code': ('django.db.models.fields.CharField', [], {'default': "'vcweb.auth.code'", 'max_length': '32'}),
             'current_repeated_round_sequence_number': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
-            'current_round_elapsed_time': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'current_round_sequence_number': ('django.db.models.fields.PositiveIntegerField', [], {'default': '1'}),
             'current_round_start_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            'date_activated': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'duration': ('django.db.models.fields.CharField', [], {'max_length': '32', 'null': 'True', 'blank': 'True'}),
             'experiment_configuration': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['core.ExperimentConfiguration']"}),
@@ -98,10 +99,8 @@ class Migration(DataMigration):
             'experimenter': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['core.Experimenter']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'last_modified': ('vcweb.core.models.AutoDateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'start_date_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'status': ('django.db.models.fields.CharField', [], {'default': "'INACTIVE'", 'max_length': '32'}),
-            'tick_duration': ('django.db.models.fields.CharField', [], {'max_length': '32', 'null': 'True', 'blank': 'True'}),
-            'total_elapsed_time': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'})
+            'tick_duration': ('django.db.models.fields.CharField', [], {'max_length': '32', 'null': 'True', 'blank': 'True'})
         },
         u'core.experimentactivitylog': {
             'Meta': {'object_name': 'ExperimentActivityLog', '_ormbases': [u'core.ActivityLog']},
@@ -206,7 +205,7 @@ class Migration(DataMigration):
             'boolean_value': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
             'date_created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now', 'db_index': 'True'}),
             'float_value': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'group_cluster': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['core.GroupCluster']"}),
+            'group_cluster': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'data_value_set'", 'to': u"orm['core.GroupCluster']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'int_value': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
@@ -356,7 +355,7 @@ class Migration(DataMigration):
             'display_number': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'duration': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'experiment_configuration': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'round_configuration_set'", 'to': u"orm['core.ExperimentConfiguration']"}),
-            'group_cluster_size': ('django.db.models.fields.PositiveIntegerField', [], {'default': '2'}),
+            'group_cluster_size': ('django.db.models.fields.PositiveIntegerField', [], {'default': '2', 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'instructions': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'last_modified': ('vcweb.core.models.AutoDateTimeField', [], {'default': 'datetime.datetime.now'}),
@@ -367,14 +366,16 @@ class Migration(DataMigration):
             'sequence_number': ('django.db.models.fields.PositiveIntegerField', [], {}),
             'session_id': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'}),
             'survey_url': ('django.db.models.fields.URLField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'template_name': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'})
+            'template_filename': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'}),
+            'template_id': ('django.db.models.fields.CharField', [], {'max_length': '128', 'null': 'True', 'blank': 'True'})
         },
         u'core.rounddata': {
-            'Meta': {'ordering': "['round_configuration']", 'unique_together': "(('round_configuration', 'experiment'),)", 'object_name': 'RoundData'},
+            'Meta': {'ordering': "['round_configuration']", 'unique_together': "(('round_configuration', 'repeating_round_sequence_number', 'experiment'),)", 'object_name': 'RoundData'},
             'elapsed_time': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'experiment': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'round_data_set'", 'to': u"orm['core.Experiment']"}),
             'experimenter_notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'repeating_round_sequence_number': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'round_configuration': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'round_data_set'", 'to': u"orm['core.RoundConfiguration']"})
         },
         u'core.roundparametervalue': {
@@ -401,5 +402,4 @@ class Migration(DataMigration):
         }
     }
 
-    complete_apps = ['core', 'bound']
-    symmetrical = True
+    complete_apps = ['core']
