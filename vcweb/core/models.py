@@ -512,7 +512,10 @@ class Experiment(models.Model):
     def get_round_data(self, round_configuration=None):
         if round_configuration is None:
             round_configuration = self.current_round
-        return RoundData.objects.select_related('round_configuration').get(experiment=self, round_configuration=round_configuration)
+        ps = dict(round_configuration=round_configuration)
+        if round_configuration.is_repeating_round:
+            ps.update(repeating_round_sequence_number=self.current_repeated_round_sequence_number)
+        return RoundData.objects.select_related('round_configuration').get(experiment=self, **ps)
 
     @property
     def playable_round_data(self):
@@ -880,7 +883,7 @@ class Experiment(models.Model):
         ps = dict(round_configuration=round_configuration)
         if round_configuration.is_repeating_round:
             # create round data with repeating sequence number
-            ps['repeating_round_sequence_number'] = round_configuration.current_repeated_round_sequence_number
+            ps['repeating_round_sequence_number'] = self.current_repeated_round_sequence_number
         round_data, created = self.round_data_set.get_or_create(**ps)
         if self.experiment_configuration.is_experimenter_driven:
             # create participant ready data values for every round in experimenter driven experiments

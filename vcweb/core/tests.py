@@ -323,6 +323,21 @@ class ParticipantExperimentRelationshipTest(BaseVcwebTest):
 
 class RoundConfigurationTest(BaseVcwebTest):
 
+    def test_repeating_round(self):
+        self.advance_to_data_round()
+        e = self.experiment
+        current_round = e.current_round
+        current_round.repeat = 5
+        current_round.save()
+        sn = e.current_round_sequence_number
+        csn = e.current_repeated_round_sequence_number
+        rd0 = e.current_round_data
+        self.assertEquals(csn, 0)
+        e.advance_to_next_round()
+        self.assertEquals(e.current_round_sequence_number, sn)
+        self.assertEquals(e.current_repeated_round_sequence_number, 1)
+        self.assertNotEqual(rd0, e.current_round_data)
+
     def test_parameterized_value(self):
         e = self.experiment
         p = Parameter.objects.create(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
