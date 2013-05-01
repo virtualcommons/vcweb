@@ -1,21 +1,19 @@
 from datetime import datetime, timedelta
-from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, Http404
-from django.shortcuts import get_object_or_404, render, redirect
-from django.utils.html import escape
+from django.http import Http404
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic.detail import DetailView, BaseDetailView
+from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
 from vcweb.core import unicodecsv
 from vcweb.core.decorators import participant_required
-from vcweb.core.forms import (ChatForm, LoginForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
+from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.services import foursquare_venue_search
-from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, set_authentication_token, json_response, get_active_experiment
+from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, json_response
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_group_activity,
         can_view_other_groups, get_lighterprints_experiment_metadata, is_experiment_completed,
@@ -265,26 +263,6 @@ def post_comment(request):
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
         return JsonResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
-
-@csrf_exempt
-def login(request):
-    form = LoginForm(request.POST or None)
-    try:
-        if form.is_valid():
-            user = form.user_cache
-            logger.debug("user was authenticated as %s, attempting to login", user)
-            auth.login(request, user)
-            set_authentication_token(user, request.session.session_key)
-            participant = user.participant
-# FIXME: defaulting to first active experiment... need to revisit this.
-            active_experiment = get_active_experiment(participant, experiment_metadata=get_lighterprints_experiment_metadata())
-            participant_group_relationship = active_experiment.get_participant_group_relationship(participant)
-            return JsonResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.id}))
-        else:
-            logger.debug("invalid form %s", form)
-    except Exception as e:
-        logger.debug("Invalid login: %s", e)
-    return JsonResponse(dumps({'success': False, 'message': "Invalid login"}))
 
 class CsvExportView(DataExportMixin, BaseDetailView):
     def export_data(self, response, experiment):

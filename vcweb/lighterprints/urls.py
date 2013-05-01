@@ -1,7 +1,7 @@
 from django.conf.urls.defaults import url, patterns
 from django.views.generic.base import TemplateView
 
-from vcweb.lighterprints.views import (post_chat_message, post_comment, perform_activity, login, participate,
+from vcweb.lighterprints.views import (post_chat_message, post_comment, perform_activity, participate,
         group_activity, like, get_notifications, update_notifications_since, group_score, CsvExportView, checkin,
         activity_performed_counts, get_view_model, mobile_participate)
 
@@ -16,7 +16,6 @@ urlpatterns = patterns('vcweb.lighterprints.views',
     url(r'^api/message', post_chat_message),
     url(r'^api/comment', post_comment),
     url(r'^api/like', like),
-    url(r'^api/login', login),
     url(r'^api/group-score/(?P<participant_group_id>\d+)', group_score),
     url(r'^api/notifications/clear', update_notifications_since),
     url(r'^api/notifications/(?P<participant_group_id>\d+)', get_notifications),
