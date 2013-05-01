@@ -48,7 +48,7 @@ class BaseVcwebTest(TestCase):
 
     @property
     def participant_group_relationships(self):
-        return ParticipantGroupRelationship.objects.filter(group__experiment=self.experiment)
+        return self.experiment.participant_group_relationships
 
     def create_new_experiment(self, experiment_metadata, experimenter=None):
         if experimenter is None:

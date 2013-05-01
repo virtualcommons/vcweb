@@ -278,7 +278,7 @@ def login(request):
             participant = user.participant
 # FIXME: defaulting to first active experiment... need to revisit this.
             active_experiment = get_active_experiment(participant, experiment_metadata=get_lighterprints_experiment_metadata())
-            participant_group_relationship = participant.get_participant_group_relationship(active_experiment)
+            participant_group_relationship = active_experiment.get_participant_group_relationship(participant)
             return JsonResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.id}))
         else:
             logger.debug("invalid form %s", form)
