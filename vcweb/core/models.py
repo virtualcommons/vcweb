@@ -871,7 +871,9 @@ class Experiment(models.Model):
         if self.should_repeat:
             self.current_repeated_round_sequence_number += 1
         elif self.has_next_round:
+# advance sequence number and blank out repeated round sequence number if necessary
             self.current_round_sequence_number += 1
+            self.current_repeated_round_sequence_number = 0
         else:
             logger.warning("trying to advance past the last round - no-op")
             return

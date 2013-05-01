@@ -333,10 +333,18 @@ class RoundConfigurationTest(BaseVcwebTest):
         csn = e.current_repeated_round_sequence_number
         rd0 = e.current_round_data
         self.assertEquals(csn, 0)
+        for i in range(1, 5):
+            e.advance_to_next_round()
+            self.assertEquals(e.current_round_sequence_number, sn)
+            logger.debug("current repeating round: %s", e.current_repeated_round_sequence_number)
+            self.assertEquals(e.current_repeated_round_sequence_number, i)
+            self.assertNotEqual(rd0, e.current_round_data)
+        ''' FIXME: doesn't currently work with round configuration setup
         e.advance_to_next_round()
-        self.assertEquals(e.current_round_sequence_number, sn)
-        self.assertEquals(e.current_repeated_round_sequence_number, 1)
-        self.assertNotEqual(rd0, e.current_round_data)
+        logger.debug("current repeating round: %s", e.current_repeated_round_sequence_number)
+        self.assertEquals(e.current_round_sequence_number, sn + 1)
+        self.assertEquals(e.current_repeated_round_sequence_number, 0)
+        '''
 
     def test_parameterized_value(self):
         e = self.experiment
