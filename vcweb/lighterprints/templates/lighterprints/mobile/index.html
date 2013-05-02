@@ -29,11 +29,11 @@
         </script>
         <!-- group activity templates, keyed by parameter name -->
         <script type='text/html' id='comment'>
-            <tr data-bind='if: $root.participantGroupId() != participant_group_id()'>
-                <td class='group-activity-icon'>
+            <li data-bind='if: $root.participantGroupId() != participant_group_id()'>
+                <div class='group-activity-icon'>
                     <span class='icon-comment lighterprints-blue'></span>
-                </td>
-                <td class='group-activity'>
+                </div>
+                <span class='group-activity'>
                     Participant <strong data-bind='text: participant_number'></strong>
                     <small class='pull-right muted'>
                         <span data-bind='text: date_created'></span>
@@ -53,15 +53,15 @@
                     </div>
                     <div data-bind='template: "likeCommentTemplate"'>
                     </div>
-                </td>
-            </tr>
+                </span>
+            </li>
         </script>
         <script type='text/html' id='like'>
-            <tr data-bind='if: $root.participantGroupId() != participant_group_id()'>
-                <td class='group-activity-icon'>
+            <li data-bind='if: $root.participantGroupId() != participant_group_id()'>
+                <span class='group-activity-icon'>
                     <span class='icon-heart lighterprints-red'></span>
-                </td>
-                <td class='group-activity'>
+                </span>
+                <span class='group-activity'>
                     Participant <strong data-bind='text: participant_number'></strong>
                     <small class='pull-right muted'>
                         <span data-bind='text: date_created'></span>
@@ -70,17 +70,14 @@
                         liked your<span data-bind='if: target_parameter_name() === "activity_performed"'>completed challenge, <em data-bind='text: target_data_value'></em></span>
                         <span data-bind='if: target_parameter_name() === "chat_message" || target_parameter_name() === "comment"'>message, &quot;<em data-bind='text: target_data_value'></em>&quot;</span>
                     </div>
-                </td>
-            </tr>
+                </span>
+            </li>
         </script>
         <script type='text/html' id='chat_message'>
-            <tr>
-                <td class='group-activity-icon'>
-                    <span class='icon-comment lighterprints-blue'></span>
-                </td>
-                <td class='group-activity'>
+            <li>
+            	<span class='icon-comment lighterprints-blue'></span>
                     <strong>Participant <span data-bind='text: participant_number'></span></strong>
-                    <small class='pull-right muted'>
+                    <small>
                         <span data-bind='text: date_created'></span>
                     </small>
                     <div>
@@ -94,32 +91,29 @@
                     </div>
                     <div data-bind="template: 'likeCommentTemplate'">
                     </div>
-                </td>
-            </tr>
+                </span>
+            </li>
         </script>
         <script type='text/html' id='activity_performed'>
-            <tr>
-                <td class='group-activity-icon'>
-                    <span class='icon-star text-gold'></span>
-                </td>
-                <td class='group-activity'>
+            <li>
+                <span class='icon-star text-gold'></span>
                     <strong>Participant <span data-bind='text: participant_number'></span></strong>
-                    <small class='pull-right muted'>
+                    <small>
                         <span data-bind='text: date_created'></span>
                     </small>
-                    <div>
+                    <span>
                         earned <span class='lighterprints-green' data-bind='text:points'></span>
                         <span class='icon-leaf lighterprints-green'></span>
                         for <span data-bind='text: $root.groupName'></span>
                         by completing <em><span data-bind='text: display_name'></span></em>.
-                    </div>
+                    </span>
                     <div data-bind="template: 'likeCommentTemplate'">
                     </div>
-                </td>
-            </tr>
+                </span>
+            </li>
         </script>
         <script type='text/html' id='challenges-template'>
-            <ul data-role="listview" data-inset="true" data-theme="d" data-bind='foreach: challenges'>
+            <ul id="challengesList" data-role="listview" data-inset="true" data-theme="d" data-bind='foreach: challenges'>
                 <li>
                     <div class='row challenge-row'>
                         <div class='span2'>
@@ -178,52 +172,44 @@
             <div data-role="content">
                 <form id="loginForm" class="ui-body">
                     <div data-role="fieldcontain">
-                        <label for="email">
-                            Email:
-                        </label>
+                        <label for="email">Email:</label>
                         <input type="email" name="email" id="email" value="" placeholder="Email">
-                        <label for="password">
-                            Password:
-                        </label>
+                        <label for="password">Password:</label>
                         <input type="password" name="password" id="password" value="" placeholder="Password">
                     </div><a href="#" data-theme="c" data-role="button" id="submitLogin" type="submit" class="center-button">
-                    	<span class="icon-user"></span>Login</a>
+                    	<span class="icon-user"></span> Login</a>
                 </form>
             </div>
         </div>
         <!-- /page loginPage--><!-- Start of #dashboardPage -->
         <div data-role="page" id="dashboardPage">
-            <div data-role="header" data-theme="a">
-                <div class="navbar">
-                    <img width="40px" height="40px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
-                    <a href="#popupMenu" style="float:right;" data-rel="popup" data-role="button" data-inline="true" data-icon="align-justify" data-iconpos="notext" data-theme="a"></a>
-                    <div data-role="popup" id="popupMenu" data-theme="a">
-                        <ul data-role="listview" data-inset="true" data-theme="a">
-                            <li>
-                                <a href="#navPage">Navigate</a>
-                            </li>
-                            <li>
-                               <a href="index.html" rel="external" data-role="button">logout</a>
-                            </li>
-                        </ul>
-                    </div>
+            <div data-role="header" data-theme="a" data-position="fixed">
+            	<div class="navbar">
+                <img width="40px" height="40px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
+                <a href="#popupMenu" style="float:right;" data-rel="popup" data-role="button" data-inline="true" data-icon="align-justify" data-iconpos="notext" data-theme="a"></a>
+                <div data-role="popup" id="popupMenu" data-theme="a">
+                    <ul data-role="listview" data-inset="true" data-theme="a">
+                        <li><a href="#dashboardPage" class="icon-gauge"> Dashboard</a></li>
+                        <li><a href="#challengesPage" class="icon-star"> Challenges</a></li>
+                        <li><a href="#myTeamPage" class="icon-user"> My Team</a></li>
+                    	<li><a href="#helpPage" class="icon-question"> Help</a></li>
+                	</ul>
                 </div>
+            	</div>
             </div>
             <div data-role="content">
+            	
+				<h2><span class="icon-gauge"></span> Team Dashboard</h2>
                 <div class="ui-bar">
-                    <h2><span class="icon-gauge"></span>Team Dashboard</h2>
                 </div>
                 <div class="ui-grid-a" data-inset="true">
                     <div class="ui-block-a">
-                        <div class="ui-bar ui-bar-d" style="height:120px">
-                            TODAY'S SCORE
-                            <br>
+                        <div class="ui-bar ui-bar-d" style="height:120px">TODAY'S SCORE<br>
                             <span data-bind="text: averagePoints"></span>
                         </div>
                     </div>
                     <div class="ui-block-b">
-                        <div class="ui-bar ui-bar-d" style="height:120px">
-                            CURRENT LEVEL
+                        <div class="ui-bar ui-bar-d" style="height:120px">CURRENT LEVEL
                             <div data-bind='if: experimentCompleted'>
                                 <img alt='Experiment Completed' class='group-level' width='120' height='70' src='https://vcweb.asu.edu/static/images/lighterprints/experiment-completed.png'>
                             </div>
@@ -235,40 +221,28 @@
                 </div><!-- /grid-a -->
                 <div class="ui-grid-a">
                     <div class="ui-block-a">
-                        <div class="ui-bar ui-bar-d" style="height:120px">
-                            TODAY"S PROGRESS
-                            <br>
+                        <div class="ui-bar ui-bar-d" style="height:120px">TODAY'S PROGRESS<br>
                             Your group progress: <span data-bind="text: averagePoints"></span>
                             <span data-bind="text:pointsToNextLevel"></span>
                         </div>
                     </div>
                     <div class="ui-block-b">
-                        <div class="ui-bar ui-bar-d" style="height:120px">
-                            TIME REMAINING
-                            <table>
-                                <tr>
-                                    <td>
-                                        <span data-bind="text: hoursLeft"></span>h
-                                    </td>
-                                    <td>
-                                        <span data-bind="text: minutesLeft"></span>m
-                                    </td>
-                                </tr>
+                        <div class="ui-bar ui-bar-d" style="height:120px">TIME REMAINING
+                            <table><tr><td><span data-bind="text: hoursLeft"></span>h</td>
+                                    <td><span data-bind="text: minutesLeft"></span>m</td></tr>
                             </table>
                         </div>
                     </div>
                 </div>
                 <br>
                 <br>
-                <h2><span class="icon-star"></span>Challenges</h2>
+                <h2><span class="icon-star"></span> Challenges</h2>
                 <div class="ui-bar-d">
                     <div data-role="navbar">
-                        <ul>
-                            <li>
-                                <a href="#" class="ui-btn-active"><span class="icon-star"></span>Unlocked</a>
+                        <ul id="challengesNavbarList">
+                            <li><a href="#" class="ui-btn-active"><span class="icon-star"></span>Unlocked</a>
                             </li>
-                            <li>
-                                <a href="#dashboardLockedChallengePage"><span class="icon-lock"></span>Locked</a>
+                            <li><a href="#dashboardLockedChallengePage"><span class="icon-lock"></span>Locked</a>
                             </li>
                         </ul>
                     </div>
@@ -279,7 +253,7 @@
                 </div>
                 <br>
                 <br>
-                <h2><span class="icon-trophy"></span>Leaderboard</h2>
+                <h2><span class="icon-trophy"></span> Leaderboard</h2>
                 <div class="ui-bar-d">
                     <ul data-role="listview" data-bind="foreach: groupData" data-inset="true" data-theme="b">
                         <li>
@@ -291,25 +265,25 @@
                 </div>
                 <br>
                 <br>
-                <h2><span class="icon-user"></span>Team Activity</h2>
+                <h2><span class="icon-user"></span> Team Activity</h2>
                 <div class="ui-bar-d">
                     <div data-bind='ifnot: hasGroupActivity()'>
                         <div data-bind='template: { name: "no-group-activity-template" }'>
                         </div>
                     </div>
-                    <table class='table group-activity'>
-                        <tbody data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
-                        </tbody>
-                    </table>
+                    <div class='table group-activity'>
+                        <ul data-role="listview" data-inset="true" data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <div data-role="footer" data-position="fixed" data-theme="c">
                 <div class="ui-bar-b" style="text-align: center;padding-top: 10px;padding-bottom: 10px;">
                     <div data-role="controlgroup" data-type="horizontal" data-theme="b">
-                        <a href="#" data-theme="b">Dashboard</a>
-                        <a href="#">Challenges</a>
-                        <a href="#">My Team</a>
-                        <a href="#">Help</a>
+                        <a href="#dashboardPage" data-theme="b">Dashboard</a>
+                        <a href="#challengesPage">Challenges</a>
+                        <a href="#myTeamPage">My Team</a>
+                        <a href="#helpPage">Help</a>
                     </div>
                     2013 Arizona Board Of Regents
                 </div>
@@ -318,22 +292,22 @@
                 </div>
             </div>
         </div>
-        <!-- /page dashboardPage--><!-- /page loginPage--><!-- Start of #navPage -->
-        <div data-role="page" id="navPage" data-position="fixed">
-            <div data-role="content">
-                <div class="ui-bar-d">
-                    <a href="#dashboardPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-gauge"></span>Dashboard</h2></a>
-                    <a href="#challengesPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-star"></span>Challenges</h2></a>
-                    <a href="#myTeamPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-user"></span>My Team</h2></a>
-                    <a href="#helpPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-question"></span>Help</h2></a>
-                    <a href="#" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-cog"></span>Settings</h2></a>
-                </div>
-                <br>
-                <br>
-            </div>
-        </div>
-        <!-- /page navPage--><!-- /page dashboardPage--><!-- Start of #dashboardLockedChallengePage -->
+        <!-- /page dashboardPage--><!-- Start of #dashboardLockedChallengePage -->
         <div data-role="page" id="dashboardLockedChallengePage">
+			<div data-role="header" data-theme="a" data-position="fixed">
+            	<div class="navbar">
+                <img width="40px" height="40px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
+                <a href="#popupMenu" style="float:right;" data-rel="popup" data-role="button" data-inline="true" data-icon="align-justify" data-iconpos="notext" data-theme="a"></a>
+                <div data-role="popup" id="popupMenu" data-theme="a">
+                    <ul data-role="listview" data-inset="true" data-theme="a">
+                        <li><a href="#dashboardPage" class="icon-gauge"> Dashboard</a></li>
+                        <li><a href="#challengesPage" class="icon-star"> Challenges</a></li>
+                        <li><a href="#myTeamPage" class="icon-user"> My Team</a></li>
+                    	<li><a href="#helpPage" class="icon-question"> Help</a></li>
+                	</ul>
+                </div>
+            	</div>
+            </div>
             <div data-role="content">
                 <h2><span class="icon-star"></span>Challenges</h2>
                 <div class="ui-bar-d">
@@ -359,9 +333,37 @@
                     </div>
                 </div>
             </div>
+			<div data-role="footer" data-position="fixed" data-theme="c">
+                <div class="ui-bar-b" style="text-align: center;padding-top: 10px;padding-bottom: 10px;">
+                    <div data-role="controlgroup" data-type="horizontal" data-theme="b">
+                        <a href="#dashboardPage" data-theme="b">Dashboard</a>
+                        <a href="#challengesPage">Challenges</a>
+                        <a href="#myTeamPage">My Team</a>
+                        <a href="#helpPage">Help</a>
+                    </div>
+                    2013 Arizona Board Of Regents
+                </div>
+                <div class="footerbar">
+                    <img width="50px" height="50px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong>footprints</strong>
+                </div>
+            </div>
         </div>
         <!-- /page dashboardLockedChallengePage--><!-- Start of first page: #challengesPage -->
         <div data-role="page" id="challengesPage">
+			<div data-role="header" data-theme="a" data-position="fixed">
+            	<div class="navbar">
+                <img width="40px" height="40px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
+                <a href="#popupMenu" style="float:right;" data-rel="popup" data-role="button" data-inline="true" data-icon="align-justify" data-iconpos="notext" data-theme="a"></a>
+                <div data-role="popup" id="popupMenu" data-theme="a">
+                    <ul data-role="listview" data-inset="true" data-theme="a">
+                        <li><a href="#dashboardPage" class="icon-gauge"> Dashboard</a></li>
+                        <li><a href="#challengesPage" class="icon-star"> Challenges</a></li>
+                        <li><a href="#myTeamPage" class="icon-user"> My Team</a></li>
+                    	<li><a href="#helpPage" class="icon-question"> Help</a></li>
+                	</ul>
+                </div>
+            	</div>
+            </div>
             <div data-role="content">
                 <h2><span class="icon-star"></span>Challenges</h2>
                 <div class="ui-bar-d">
@@ -381,9 +383,37 @@
                     </div>
                 </div>
             </div>
+			<div data-role="footer" data-position="fixed" data-theme="c">
+                <div class="ui-bar-b" style="text-align: center;padding-top: 10px;padding-bottom: 10px;">
+                    <div data-role="controlgroup" data-type="horizontal" data-theme="b">
+                        <a href="#dashboardPage" data-theme="b">Dashboard</a>
+                        <a href="#challengesPage">Challenges</a>
+                        <a href="#myTeamPage">My Team</a>
+                        <a href="#helpPage">Help</a>
+                    </div>
+                    2013 Arizona Board Of Regents
+                </div>
+                <div class="footerbar">
+                    <img width="50px" height="50px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong>footprints</strong>
+                </div>
+            </div>
         </div>
         <!-- /page challengesPage--><!-- Start of #lockedChallengePage -->
         <div data-role="page" id="lockedChallengePage">
+			<div data-role="header" data-theme="a" data-position="fixed">
+            	<div class="navbar">
+                <img width="40px" height="40px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
+                <a href="#popupMenu" style="float:right;" data-rel="popup" data-role="button" data-inline="true" data-icon="align-justify" data-iconpos="notext" data-theme="a"></a>
+                <div data-role="popup" id="popupMenu" data-theme="a">
+                    <ul data-role="listview" data-inset="true" data-theme="a">
+                        <li><a href="#dashboardPage" class="icon-gauge"> Dashboard</a></li>
+                        <li><a href="#challengesPage" class="icon-star"> Challenges</a></li>
+                        <li><a href="#myTeamPage" class="icon-user"> My Team</a></li>
+                    	<li><a href="#helpPage" class="icon-question"> Help</a></li>
+                	</ul>
+                </div>
+            	</div>
+            </div>
             <div data-role="content">
                 <h2><span class="icon-star"></span>Challenges</h2>
                 <div class="ui-bar-d">
@@ -409,9 +439,37 @@
                     </div>
                 </div>
             </div>
+			<div data-role="footer" data-position="fixed" data-theme="c">
+                <div class="ui-bar-b" style="text-align: center;padding-top: 10px;padding-bottom: 10px;">
+                    <div data-role="controlgroup" data-type="horizontal" data-theme="b">
+                        <a href="#dashboardPage" data-theme="b">Dashboard</a>
+                        <a href="#challengesPage">Challenges</a>
+                        <a href="#myTeamPage">My Team</a>
+                        <a href="#helpPage">Help</a>
+                    </div>
+                    2013 Arizona Board Of Regents
+                </div>
+                <div class="footerbar">
+                    <img width="50px" height="50px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong>footprints</strong>
+                </div>
+            </div>
         </div>
         <!-- /page lockedChallengePage--><!-- Start of page: #myTeamPage -->
         <div data-role="page" id="myTeamPage">
+			<div data-role="header" data-theme="a" data-position="fixed">
+            	<div class="navbar">
+                <img width="40px" height="40px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
+                <a href="#popupMenu" style="float:right;" data-rel="popup" data-role="button" data-inline="true" data-icon="align-justify" data-iconpos="notext" data-theme="a"></a>
+                <div data-role="popup" id="popupMenu" data-theme="a">
+                    <ul data-role="listview" data-inset="true" data-theme="a">
+                        <li><a href="#dashboardPage" class="icon-gauge"> Dashboard</a></li>
+                        <li><a href="#challengesPage" class="icon-star"> Challenges</a></li>
+                        <li><a href="#myTeamPage" class="icon-user"> My Team</a></li>
+                    	<li><a href="#helpPage" class="icon-question"> Help</a></li>
+                	</ul>
+                </div>
+            	</div>
+            </div>
             <div data-role="content" id="myTeam">
                 <h2><span class="icon-comment"></span>My Team</h2>
                 <div class="ui-bar-d">
@@ -419,33 +477,57 @@
                         No chat messages have been posted yet.
                     </div>
                     <div data-bind="if: hasChatMessages()">
-                        <ul data-role="listview" data-bind="foreach: chatMessages" data-inset="true" style="overflow-y: scroll;">
+                        <ul id="chatMessageList" data-role="listview" data-bind="foreach: chatMessages" data-inset="true" style="overflow-y: scroll;">
                             <li>
                                 <i class='icon-user icon-2x'></i>
                                 <span><strong>Participant <span data-bind="text: participant_number"></span></strong>
                                     <br>
                                     <span data-bind="text: value"></span>
                                     <br>
-                                    <span data-bind="text: date_created"></span>ago
+                                    <span data-bind="text: date_created"></span> ago
                                 </span>
                             </li>
                         </ul>
                     </div>
                     <form id="chat-form">
-                        <div class="innerblock">
+                        <div data-role="fieldcontain" class="innerblock">
                             <input type="hidden" name="participant_group_id" value="1005"><input type="text" id="chatText" name="message" placeholder="Send a message to your group">
-                            <fieldset>
-                                <div>
-                                    <a href="#" data-role="button" id="submitChatMessage" type="submit">SEND</a>
-                                </div>
-                            </fieldset>
-                        </div>
+                        </div><a href="#" data-role="button" id="submitChatMessage" type="submit">SEND</a>
                     </form>
                 </div>
             </div>
+			<div data-role="footer" data-position="fixed" data-theme="c">
+                <div class="ui-bar-b" style="text-align: center;padding-top: 10px;padding-bottom: 10px;">
+                    <div data-role="controlgroup" data-type="horizontal" data-theme="b">
+                        <a href="#dashboardPage" data-theme="b">Dashboard</a>
+                        <a href="#challengesPage">Challenges</a>
+                        <a href="#myTeamPage">My Team</a>
+                        <a href="#helpPage">Help</a>
+                    </div>
+                    2013 Arizona Board Of Regents
+                </div>
+                <div class="footerbar">
+                    <img width="50px" height="50px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong>footprints</strong>
+                </div>
+            </div>
         </div>
-        <!-- /page myTeamPage--><!-- Start of page: #modalPage --><!-- /page modalPage--><!-- Start of page: #helpPage -->
-        <div data-role="page" id="helpPage" data-close-btn="right">
+        <!-- /page myTeamPage-->
+		<!-- Start of page: #helpPage -->
+        <div data-role="page" id="helpPage">
+			<div data-role="header" data-theme="a" data-position="fixed">
+            	<div class="navbar">
+                <img width="40px" height="40px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
+                <a href="#popupMenu" style="float:right;" data-rel="popup" data-role="button" data-inline="true" data-icon="align-justify" data-iconpos="notext" data-theme="a"></a>
+                <div data-role="popup" id="popupMenu" data-theme="a">
+                    <ul data-role="listview" data-inset="true" data-theme="a">
+                        <li><a href="#dashboardPage" class="icon-gauge"> Dashboard</a></li>
+                        <li><a href="#challengesPage" class="icon-star"> Challenges</a></li>
+                        <li><a href="#myTeamPage" class="icon-user"> My Team</a></li>
+                    	<li><a href="#helpPage" class="icon-question"> Help</a></li>
+                	</ul>
+                </div>
+            	</div>
+            </div>
             <div data-role="content">
                 <h2><span class="icon-question"></span>Help</h2>
                 <div class="ui-bar-d" data-inset="true">
@@ -517,8 +599,23 @@
                     </ul>
                 </div>
             </div>
+			<div data-role="footer" data-position="fixed" data-theme="c">
+                <div class="ui-bar-b" style="text-align: center;padding-top: 10px;padding-bottom: 10px;">
+                    <div data-role="controlgroup" data-type="horizontal" data-theme="b">
+                        <a href="#dashboardPage" data-theme="b">Dashboard</a>
+                        <a href="#challengesPage">Challenges</a>
+                        <a href="#myTeamPage">My Team</a>
+                        <a href="#helpPage">Help</a>
+                    </div>
+                    2013 Arizona Board Of Regents
+                </div>
+                <div class="footerbar">
+                    <img width="50px" height="50px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong>footprints</strong>
+                </div>
+            </div>
         </div>
         <!-- /page helpPage-->
+		<!-- Start of page: #modalPage -->
         <div data-role="page" id="modalPage" data-close-btn="right">
             <div data-role="header">
                 <h1></h1>
@@ -538,6 +635,6 @@
                     <a href="#" data-role="button" data-rel="back" data-theme="b">OK</a>
                 </div>
             </div>
-        </div>
+        </div><!-- /page modalPage-->
     </body>
 </html>
