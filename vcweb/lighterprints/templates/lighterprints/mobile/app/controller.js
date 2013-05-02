@@ -40,15 +40,8 @@ function LighterFootprintsModel(modelJson){
         return model.availableActivities().length > 0;
     });
 	model.lastPerformedActivity = ko.observable();
-		
-    return model;
-}
-
-function initKOModel(response){
-    var viewModelData = $.parseJSON(response.view_model_json);
-    globalViewModel = new LighterFootprintsModel(viewModelData);
-    // custom view model methods, some of these may be lifted into the model itself
-    globalViewModel.perform = function(challengeModel){
+	
+	model.perform = function(challengeModel){
         if (!challengeModel.availableNow()) {
             console.debug("tried to perform an activity that's not available right now");
             console.debug(challengeModel);
@@ -58,8 +51,9 @@ function initKOModel(response){
         var formData = $('#challengeForm' + id).serialize();
         $.post('http://vcweb.asu.edu/lighterprints/api/do-activity', formData, function(data){
             if (data.success) {
-                ko.mapping.fromJSON(data.globalViewModel, globalViewModel);
-				globalViewModel.lastPerformedActivity(challengeModel);
+				console.debug(data);
+                ko.mapping.fromJSON(data.viewModel, model);
+				model.lastPerformedActivity(challengeModel);
 				 $.mobile.changePage($("#modalPage"),{transition: 'pop', role: 'dialog'});
             }
             else {
@@ -69,9 +63,27 @@ function initKOModel(response){
             }
         });
     };
-    
-    ko.applyBindings(globalViewModel);
-    
+		
+    return model;
+}
+
+function initKOModel(response){
+    var groupURL = "http://vcweb.asu.edu/lighterprints/api/view-model/" + participant_group_id;
+    $.ajax({
+        type: "GET",
+        url: groupURL,
+        dataType: "json",
+        cache: false,
+        success: function(response){
+            var viewModelData = $.parseJSON(response.view_model_json);
+            globalViewModel = new LighterFootprintsModel(viewModelData);
+			ko.applyBindings(globalViewModel);
+			$.mobile.changePage($("#dashboardPage"));
+        },
+        error: function(form, response){
+            alert(response.message);
+        }
+    });
 }
 
 $(document).live('pageinit', function(event){
@@ -82,7 +94,7 @@ $(document).live('pageinit', function(event){
         var formData = $("#loginForm").serialize();
         $.ajax({
             type: "POST",
-            url: "http://vcweb.asu.edu/lighterprints/api/view-model/1005",
+            url: "http://vcweb.asu.edu/lighterprints/api/login",
             cache: false,
             data: formData,
             dataType: "json",
@@ -92,9 +104,8 @@ $(document).live('pageinit', function(event){
                 }
                 else 
                     if (data.success == true) {
-                        initKOModel(data);
-						console.debug(data);
-                        $.mobile.changePage($("#dashboardPage"));
+						participant_group_id = data.participant_group_id;						
+                        initKOModel();
                     }
             },
             error: function(form, response){
@@ -107,7 +118,7 @@ $(document).live('pageinit', function(event){
         event.preventDefault();
 
         var formData = $('#chat-form').serialize();
-        $.post('https://vcweb.asu.edu/lighterprints/api/message', formData, function(response) {
+        $.post('http://vcweb.asu.edu/lighterprints/api/message', formData, function(response) {
                 if (response.success) {
                     console.debug("successful post - updated view model: ");
                     ko.mapping.fromJS(response.viewModel, globalViewModel);
@@ -118,7 +129,13 @@ $(document).live('pageinit', function(event){
                 }
             });
         $('#chatText').val('');
-        return false;
     });
+	$("#dashboardPage").bind('pageaftershow', function(event) {
+		$('#challengesList').listview('refresh');
+		//$('#challengesNavbarList').listview('refresh');
+	});
+	$("#myTeamPage").bind('pagebeforeshow', function(event) {
+		$('#chatMessageList').listview('refresh');
+	});
     
 });
