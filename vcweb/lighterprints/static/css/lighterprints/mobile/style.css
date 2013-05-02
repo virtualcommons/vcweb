@@ -1,0 +1,45 @@
+body{
+	text-align: left;
+}
+.navbar{
+	padding-left: 2px;
+	padding-top: 2px;
+	text-align: left;
+	font-size:20px;
+}
+
+.footerbar{
+	padding-top: 5px;
+	padding-bottom: 5px;
+	text-align:center;
+}
+.innerblock{
+	padding-left: 10px;
+	padding-right: 10px;
+	display: block;
+}
+.innerleft{
+	text-align:left;
+	padding-left: 2px;
+	padding-right: 10px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	display: block;
+}
+.innerbutton{
+	text-align:left;
+}
+#popupPanel-popup {
+    left: 0 !important;
+    right: auto !important;
+}
+#popupPanel {
+    width: 200px;
+    border: 1px solid #000;
+    border-right: none;
+    background: rgba(0,0,0,.5);
+    margin: -1px 0;
+}
+#popupPanel .ui-btn {
+    margin: 2em 15px;
+}
