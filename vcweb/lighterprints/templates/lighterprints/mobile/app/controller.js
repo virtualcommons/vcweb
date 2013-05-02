@@ -54,12 +54,11 @@ function LighterFootprintsModel(modelJson){
 				console.debug(data);
                 ko.mapping.fromJSON(data.viewModel, model);
 				model.lastPerformedActivity(challengeModel);
-				 $.mobile.changePage($("#modalPage"),{transition: 'pop', role: 'dialog'});
+				$.mobile.changePage($("#modalPage"),{transition: 'pop', role: 'dialog'});
+				$('#challengesList').listview('refresh');
             }
             else {
-                console.debug("ERROR: " + data.message);
-                globalViewModel.errorMessage("Unable to perform activity: " + data.message);
-                $('#activityUnavailableModal').modal();
+                console.debug("ERROR: Unable to perform activity: " + data.message);
             }
         });
     };
@@ -122,6 +121,7 @@ $(document).live('pageinit', function(event){
                 if (response.success) {
                     console.debug("successful post - updated view model: ");
                     ko.mapping.fromJS(response.viewModel, globalViewModel);
+					$('#chatMessageList').listview('refresh');
                 }
                 else {
                     console.debug("unable to post message to server");
@@ -130,22 +130,5 @@ $(document).live('pageinit', function(event){
             });
         $('#chatText').val('');
     });
-	$("#dashboardPage").bind('pageaftershow', function(event) {
-		$('#challengesList').listview('refresh');
-		//$('#challengesNavbarList').listview('refresh');
-	});
-	$("#myTeamPage").bind('pagebeforeshow', function(event) {
-		$('#chatMessageList').listview('refresh');
-	});
-	
-	$( "#popupPanel" ).on({
-		popupbeforeposition: function() {
-			var h = $( window ).height();
-			
-			$( "#popupPanel" )
-				.css( "height", h );
-		}
-	});
-    
 });
 
