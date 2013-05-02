@@ -137,5 +137,15 @@ $(document).live('pageinit', function(event){
 	$("#myTeamPage").bind('pagebeforeshow', function(event) {
 		$('#chatMessageList').listview('refresh');
 	});
+	
+	$( "#popupPanel" ).on({
+		popupbeforeposition: function() {
+			var h = $( window ).height();
+			
+			$( "#popupPanel" )
+				.css( "height", h );
+		}
+	});
     
 });
+
