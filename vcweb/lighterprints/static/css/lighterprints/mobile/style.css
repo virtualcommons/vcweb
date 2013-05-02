@@ -1,0 +1,104 @@
+body{
+	text-align: left;
+}
+.navbar{
+	padding-left: 2px;
+	padding-top: 2px;
+	text-align: left;
+	font-size:20px;
+}
+
+.footerbar{
+	padding-top: 5px;
+	padding-bottom: 5px;
+	text-align:center;
+}
+.innerblock{
+	padding-left: 10px;
+	padding-right: 10px;
+	display: block;
+}
+.innerleft{
+	text-align:left;
+	padding-left: 2px;
+	padding-right: 10px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	display: block;
+}
+.innerbutton{
+	text-align:left;
+}
+a.upcoming-challenge, a.expired-challenge, a.perform-challenge, a.completed-challenge {
+    text-transform: uppercase;
+    color: #FFF !important;
+    -webkit-font-smoothing: antialiased;
+    background-repeat: repeat-x;
+}
+a.upcoming-challenge {
+    background-color: hsl(0, 0%, 54%) !important;
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#f4f4f4", endColorstr="#898989");
+    background-image: -khtml-gradient(linear, left top, left bottom, from(#f4f4f4), to(#898989));
+    background-image: -moz-linear-gradient(top, #f4f4f4, #898989);
+    background-image: -ms-linear-gradient(top, #f4f4f4, #898989);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #f4f4f4), color-stop(100%, #898989));
+    background-image: -webkit-linear-gradient(top, #f4f4f4, #898989);
+    background-image: -o-linear-gradient(top, #f4f4f4, #898989);
+    background-image: linear-gradient(#f4f4f4, #898989);
+    border-color: #898989 #898989 hsl(0, 0%, 43.5%);
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.69);
+}
+a.expired-challenge {
+    background-color: hsl(0, 100%, 79%) !important;
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#ffbcbc", endColorstr="#ff9393");
+    background-image: -khtml-gradient(linear, left top, left bottom, from(#ffbcbc), to(#ff9393));
+    background-image: -moz-linear-gradient(top, #ffbcbc, #ff9393);
+    background-image: -ms-linear-gradient(top, #ffbcbc, #ff9393);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ffbcbc), color-stop(100%, #ff9393));
+    background-image: -webkit-linear-gradient(top, #ffbcbc, #ff9393);
+    background-image: -o-linear-gradient(top, #ffbcbc, #ff9393);
+    background-image: linear-gradient(#ffbcbc, #ff9393);
+    border-color: #ff9393 #ff9393 hsl(0, 100%, 77%);
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.13);
+}
+a.perform-challenge,a.completed-challenge {
+    background-color: hsl(96, 81%, 42%) !important;
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#66dd17", endColorstr="#59c114");
+    background-image: -khtml-gradient(linear, left top, left bottom, from(#66dd17), to(#59c114));
+    background-image: -moz-linear-gradient(top, #66dd17, #59c114);
+    background-image: -ms-linear-gradient(top, #66dd17, #59c114);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #66dd17), color-stop(100%, #59c114));
+    background-image: -webkit-linear-gradient(top, #66dd17, #59c114);
+    background-image: -o-linear-gradient(top, #66dd17, #59c114);
+    background-image: linear-gradient(#66dd17, #59c114);
+    border-color: #59c114 #59c114 hsl(96, 81%, 40.5%);
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.09);
+}
+.lighterprints-red {
+    color: #FF0066;
+}
+.lighterprints-blue {
+    color: #13a5e6;
+}
+.lighterprints-green {
+    color: #95CB29;
+}
+.badge-lighterprints-green {
+    background-color: #95CB29;
+    color: #FFFFFF;
+}
+.btn-lighterprints-blue {
+  background-color: #13a6e7 !important;
+  background-repeat: repeat-x;
+  background-image: -khtml-gradient(linear, left top, left bottom, from(#39bef3), to(#0a82b2));
+  background-image: -moz-linear-gradient(top, #39bef3, #0a82b2);
+  background-image: -ms-linear-gradient(top, #39bef3, #0a82b2);
+  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #39bef3), color-stop(100%, #0a82b2));
+  background-image: -webkit-linear-gradient(top, #39bef3, #0a82b2);
+  background-image: -o-linear-gradient(top, #39bef3, #0a82b2);
+  background-image: linear-gradient(#39bef3, #0a82b2);
+  border-color: #0a82b2 #0a82b2 hsl(197, 89%, 31.5%);
+  color: #fff !important;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.36);
+  -webkit-font-smoothing: antialiased;
+}
