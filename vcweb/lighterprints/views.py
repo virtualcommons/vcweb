@@ -375,7 +375,7 @@ def get_view_model(request, participant_group_id=None):
 def mobile_participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id)
-    pgr = participant.get_participant_group_relationship(experiment)
+    pgr = experiment.get_participant_group_relationship(participant)
     all_activities = Activity.objects.all()
     view_model_json = get_view_model_json(pgr, all_activities, experiment)
     return render(request, 'lighterprints/mobile/index.html', {

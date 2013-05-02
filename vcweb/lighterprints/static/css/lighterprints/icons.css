@@ -1,0 +1,76 @@
+@font-face {
+	font-family: 'lighterfootprints';
+	src:url('fonts/lighterfootprints.eot');
+	src:url('fonts/lighterfootprints.eot?#iefix') format('embedded-opentype'),
+		url('fonts/lighterfootprints.woff') format('woff'),
+		url('fonts/lighterfootprints.ttf') format('truetype'),
+		url('fonts/lighterfootprints.svg#lighterfootprints') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+/* Use the following CSS code if you want to have a class per icon */
+/*
+Instead of a list of all class selectors,
+you can use the generic selector below, but it's slower:
+[class*="icon-"]:before {
+*/
+.icon-gauge:before, .icon-question:before, .icon-comment:before, .icon-star:before, .icon-flag:before, .icon-cog:before, .icon-leaf:before, .icon-heart:before, .icon-warning:before, .icon-user:before, .icon-lock:before, .icon-clock:before, .icon-trophy:before, .icon-info:before, .icon-repeat:before, .icon-checkmark:before, .icon-cross:before {
+	font-family: 'lighterfootprints';
+	speak: none;
+	font-style: normal;
+	font-weight: normal;
+	line-height: 1;
+	-webkit-font-smoothing: antialiased;
+}
+.icon-gauge:before {
+	content: "\e000";
+}
+.icon-question:before {
+	content: "\e001";
+}
+.icon-comment:before {
+	content: "\e002";
+}
+.icon-star:before {
+	content: "\e003";
+}
+.icon-flag:before {
+	content: "\e004";
+}
+.icon-cog:before {
+	content: "\f013";
+}
+.icon-leaf:before {
+	content: "\e005";
+}
+.icon-heart:before {
+	content: "\e006";
+}
+.icon-warning:before {
+	content: "\e007";
+}
+.icon-user:before {
+	content: "\e008";
+}
+.icon-lock:before {
+	content: "\e009";
+}
+.icon-clock:before {
+	content: "\e00a";
+}
+.icon-trophy:before {
+	content: "\e00b";
+}
+.icon-info:before {
+	content: "\e00c";
+}
+.icon-repeat:before {
+	content: "\f01e";
+}
+.icon-checkmark:before {
+	content: "\e00d";
+}
+.icon-cross:before {
+	content: "\e00e";
+}
