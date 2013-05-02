@@ -129,6 +129,33 @@ def get_active_experiment(participant, experiment_metadata=None, **kwargs):
         return pers[0].experiment
     return None
 
+# FIXME: merge these with LogoutView / LoginView
+def api_logout(request):
+    user = request.user
+    set_authentication_token(user)
+    auth.logout(request)
+    return JsonResponse(dumps({'success': True}))
+
+# FIXME: assumes participant login
+def participant_api_login(request):
+    form = LoginForm(request.POST or None)
+    try:
+        if form.is_valid():
+            user = form.user_cache
+            logger.debug("user was authenticated as %s, attempting to login", user)
+            auth.login(request, user)
+            set_authentication_token(user, request.session.session_key)
+            participant = user.participant
+# FIXME: defaulting to first active experiment... need to revisit this.
+            active_experiment = get_active_experiment(participant)
+            participant_group_relationship = active_experiment.get_participant_group_relationship(participant)
+            return JsonResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.pk}))
+        else:
+            logger.debug("invalid form %s", form)
+    except Exception as e:
+        logger.debug("Invalid login: %s", e)
+    return JsonResponse(dumps({'success': False, 'message': "Invalid login"}))
+
 
 class LoginView(FormView, AnonymousMixin):
     form_class = LoginForm
