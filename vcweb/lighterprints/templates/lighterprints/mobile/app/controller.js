@@ -54,8 +54,7 @@ function LighterFootprintsModel(modelJson){
 				console.debug(data);
                 ko.mapping.fromJSON(data.viewModel, model);
 				model.lastPerformedActivity(challengeModel);
-				$.mobile.changePage($("#modalPage"),{transition: 'pop', role: 'dialog'});
-				$('#challengesList').listview('refresh');
+				 $.mobile.changePage($("#modalPage"),{transition: 'pop', role: 'dialog'});
             }
             else {
                 console.debug("ERROR: Unable to perform activity: " + data.message);
@@ -130,5 +129,9 @@ $(document).live('pageinit', function(event){
             });
         $('#chatText').val('');
     });
+	$("#dashboardPage").bind('pageaftershow', function(event) {
+		$('#challengesList').listview('refresh');
+		//$('#challengesNavbarList').listview('refresh');
+	});
 });
 
