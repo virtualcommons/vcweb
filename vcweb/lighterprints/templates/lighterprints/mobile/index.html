@@ -25,31 +25,29 @@
                 var viewModelData = $.parseJSON("{{view_model_json|escapejs}}");
                 var globalViewModel = new LighterFootprintsModel(viewModelData);
                 ko.applyBindings(globalViewModel);
-                $.mobile.changePage($("#dashboardPage"));
-				
+                
                 $("#submitChatMessage").click(function(event){
                     event.preventDefault();
                     if ($('#chatText').val()) {
-                    var formData = $('#chat-form').serialize();
-                    $.post('http://vcweb.asu.edu/lighterprints/api/message', formData, function(response){
-                        if (response.success) {
-                            console.debug("successful post - updated view model: ");
-                            ko.mapping.fromJS(response.viewModel, globalViewModel);
-							$('#chatMessageList').listview('refresh');
-                        }
-                        else {
-                            console.debug("unable to post message to server");
-                            console.debug(response);
-                        }
-                    });
-                    $('#chatText').val('');
-					}
-					else{
-						console.debug("No message found!");
-					}
+                        var formData = $('#chat-form').serialize();
+                        $.post('http://vcweb.asu.edu/lighterprints/api/message', formData, function(response){
+                            if (response.success) {
+                                console.debug("successful post - updated view model: ");
+                                ko.mapping.fromJS(response.viewModel, globalViewModel);
+								$('#chatMessageList').listview('refresh');
+                            }
+                            else {
+                                console.debug("unable to post message to server");
+                                console.debug(response);
+                            }
+                        });
+                        $('#chatText').val('');
+                    }
+                    else {
+                        console.debug("No message found!");
+                    }
                 });
             });
-            
         </script>
         <!-- knockout templates -->
         <script type='text/html' id='likeCommentTemplate'>
