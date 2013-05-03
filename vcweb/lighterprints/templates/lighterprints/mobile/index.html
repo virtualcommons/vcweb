@@ -47,6 +47,12 @@
                         console.debug("No message found!");
                     }
                 });
+				
+			$("#dashboardPage").on('pageshow', function(event){
+        		console.debug('dashboardPage pageshow');
+				$('#teamActivityList').listview('refresh');
+    		});
+
             });
         </script>
         <!-- knockout templates -->
@@ -280,7 +286,7 @@
                         </div>
                     </div>
                     <div class='table group-activity'>
-                        <ul data-role="listview" data-inset="true" data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
+                        <ul id="teamActivityList" data-role="listview" data-inset="true" data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
                         </ul>
                     </div>
                 </div>
