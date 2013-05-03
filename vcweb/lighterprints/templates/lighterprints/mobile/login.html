@@ -28,7 +28,7 @@
                 <img width="30px" height="30px" src="{% static 'images/lighterprints/logo.png' %}" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
             </div>
             <div data-role="content">
-                <form action='' method='POST' id="loginForm" class="ui-body">
+                <form action='/lighterprints/mobile/login' method='POST' id="loginForm" class="ui-body" data-ajax="false" >
                     <div data-role="fieldcontain">
                         <label for="email">
                             Email:
@@ -38,7 +38,7 @@
                             Password:
                         </label>
                         <input type="password" name="password" id="password" value="" placeholder="Password">
-                    </div><a href="#" data-theme="c" data-role="button" id="submitLogin" type="submit" class="center-button">
+                    </div><button data-theme="c" data-role="button" id="submitLogin" type="submit" class="center-button">
                         <span class="icon-user"></span> Login</a>
                 </form>
             </div>

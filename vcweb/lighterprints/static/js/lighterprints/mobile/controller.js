@@ -87,32 +87,6 @@ function initKOModel(response){
 }
 
 $(document).live('pageinit', function(event){
-	
-    $("#submitLogin").click(function(event){
-        event.preventDefault();
-        
-        var formData = $("#loginForm").serialize();
-        $.ajax({
-            type: "POST",
-            url: "/api/login",
-            cache: false,
-            data: formData,
-            dataType: "json",
-            success: function(data){
-                if (data.success == false) {
-                    alert("Invalid login!");
-                }
-                else if (data.success == true) {
-                    participant_group_id = data.participant_group_id;						
-                    initKOModel();
-                }
-            },
-            error: function(form, response){
-                alert(response.message);
-            }
-        });
-    });
-	
 	 $("#submitChatMessage").click(function(event){
         event.preventDefault();
 
