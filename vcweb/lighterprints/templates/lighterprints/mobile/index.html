@@ -21,24 +21,8 @@
         <script src='{% static "js/lighterprints/mobile/controller.js" %}'>
         </script>
         <script>
-            function initKOModel(response){
-                var groupURL = "/lighterprints/api/view-model/" + participant_group_id;
-                $.ajax({
-                    type: "GET",
-                    url: groupURL,
-                    dataType: "json",
-                    cache: false,
-                    success: function(response){
-                    
-                    },
-                    error: function(form, response){
-                        alert(response.message);
-                    }
-                });
-            }
-            
             $(document).live('pageinit', function(event){
-                var viewModelData = $.parseJSON({{view_model_json}});
+                var viewModelData = $.parseJSON("{{view_model_json|escapejs}}");
                 globalViewModel = new LighterFootprintsModel(viewModelData);
                 ko.applyBindings(globalViewModel);
                 $.mobile.changePage($("#dashboardPage"));
