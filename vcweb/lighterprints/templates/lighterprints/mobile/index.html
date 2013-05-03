@@ -38,7 +38,7 @@
             }
             
             $(document).live('pageinit', function(event){
-                var viewModelData = $.parseJSON(view_model_json);
+                var viewModelData = $.parseJSON({{view_model_json}});
                 globalViewModel = new LighterFootprintsModel(viewModelData);
                 ko.applyBindings(globalViewModel);
                 $.mobile.changePage($("#dashboardPage"));
@@ -205,8 +205,7 @@
     </script>
     </head>
     <body>
-        
-        <!-- /pageloginPage--><!-- Start of #dashboardPage -->
+    	 <!-- /pageloginPage--><!-- Start of #dashboardPage -->
         <div data-role="page" id="dashboardPage" class="ui-responsive-panel">
             <!-- defaultpanel  -->
             <div data-role="panel" id="defaultpanel" data-theme="b">
