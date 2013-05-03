@@ -50,6 +50,7 @@
 				
 			$("#dashboardPage").on('pageshow', function(event){
         		console.debug('dashboardPage pageshow');
+				$('#challengesList').listview('refresh');
 				$('#teamActivityList').listview('refresh');
     		});
 
