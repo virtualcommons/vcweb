@@ -20,6 +20,63 @@
         <!--Local JS-->
         <script src='{% static "js/lighterprints/mobile/controller.js" %}'>
         </script>
+        <script>
+            function initKOModel(response){
+                var groupURL = "/lighterprints/api/view-model/" + participant_group_id;
+                $.ajax({
+                    type: "GET",
+                    url: groupURL,
+                    dataType: "json",
+                    cache: false,
+                    success: function(response){
+                    
+                    },
+                    error: function(form, response){
+                        alert(response.message);
+                    }
+                });
+            }
+            
+            $(document).live('pageinit', function(event){
+                var viewModelData = $.parseJSON(view_model_json);
+                globalViewModel = new LighterFootprintsModel(viewModelData);
+                ko.applyBindings(globalViewModel);
+                $.mobile.changePage($("#dashboardPage"));
+                $("#submitChatMessage").click(function(event){
+                    event.preventDefault();
+                    
+                    var formData = $('#chat-form').serialize();
+                    $.post('http://vcweb.asu.edu/lighterprints/api/message', formData, function(response){
+                        if (response.success) {
+                            console.debug("successful post - updated view model: ");
+                            ko.mapping.fromJS(response.viewModel, globalViewModel);
+                        }
+                        else {
+                            console.debug("unable to post message to server");
+                            console.debug(response);
+                        }
+                    });
+                    $('#chatText').val('');
+                });
+                $("#dashboardPage").bind('pageaftershow', function(event){
+                    $('#challengesList').listview('refresh');
+                    //$('#challengesNavbarList').listview('refresh');
+                });
+                $("#myTeamPage").bind('pagebeforeshow', function(event){
+                    $('#chatMessageList').listview('refresh');
+                });
+                
+                $("#popupPanel").on({
+                    popupbeforeposition: function(){
+                        var h = $(window).height();
+                        
+                        $("#popupPanel").css("height", h);
+                    }
+                });
+                
+            });
+            
+        </script>
         <!-- knockout templates -->
         <script type='text/html' id='likeCommentTemplate'>
             <div data-bind='if: $root.participantGroupId() != participant_group_id()'>
@@ -148,27 +205,7 @@
     </script>
     </head>
     <body>
-        <!-- Start of first page: #loginPage -->
-        <div data-role="page" id="loginPage">
-            <div data-role="header" data-theme="a" class="navbar">
-                <img width="30px" height="30px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
-            </div>
-            <div data-role="content">
-                <form id="loginForm" class="ui-body">
-                    <div data-role="fieldcontain">
-                        <label for="email">
-                            Email:
-                        </label>
-                        <input type="email" name="email" id="email" value="" placeholder="Email">
-                        <label for="password">
-                            Password:
-                        </label>
-                        <input type="password" name="password" id="password" value="" placeholder="Password">
-                    </div><a href="#" data-theme="c" data-role="button" id="submitLogin" type="submit" class="center-button">
-                    	<span class="icon-user"></span> Login</a>
-                </form>
-            </div>
-        </div>
+        
         <!-- /pageloginPage--><!-- Start of #dashboardPage -->
         <div data-role="page" id="dashboardPage" class="ui-responsive-panel">
             <!-- defaultpanel  -->
