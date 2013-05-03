@@ -143,36 +143,8 @@
     </script>
     <script type='text/html' id='challenges-template'>
             <li>
-                <div class='row challenge-row'>
-                    <div class='span2'>
-                        <img style='padding: 10px 0 0 20px;' data-bind='attr: {src: "https://vcweb.asu.edu/static/images/lighterprints/badges/" + name() + ".png" }'>
-                    </div>
-                    <div class='span4'>
-                        <h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
-                        <p>
-                            <span data-bind='css: status, text: summary'></span>
-                        </p>
-                        <form data-bind='attr: { id: "challengeForm" + pk() }' class='form-horizontal' method='post'>
-                            <input data-bind='value: pk' type='hidden' name='activity_id' /><input type='hidden' name='participant_group_id' value='{{participant_group_relationship.id}}' /><a href="#" data-role="button" data-inline="true" data-bind='css: status, click: $root.perform'><span data-bind='if: availableNow'>Perform</span><span data-bind='if: completed'>Completed <span class='icon-check'></span></span><span data-bind='if: expired'>Expired <span class='icon-warning-sign'></span></span><span data-bind='if: upcoming'>Not yet available <span class='icon-time'></span></span><span data-bind='if: locked'>Locked <span class='icon-lock'></span></span></a>
-                        </form>
-                    </div>
-                    <div style='margin-top: 10px; padding: 15px 0;' class='span2'>
-                        <table>
-                            <tr>
-                                <td class='lighterprints-scoreboard-xlarge'>
-                                    <span data-bind='text: points'></span>
-                                </td>
-                                <td>
-                                    <span class='lighterprints-green icon-leaf icon-2x'></span>
-                                </td>
-                            </tr>
-                        </table>
-                        <div style='margin-top: 5px; padding: 5px 0;' data-bind='css: status'>
-                            <span class='icon-time'></span>
-                            <strong><span data-bind='text: time_slots'></span></strong>
-                        </div>
-                    </div>
-                </div>
+                    <img style='padding: 10px 0 0 20px;' data-bind='attr: {src: "https://vcweb.asu.edu/static/images/lighterprints/badges/" + name() + ".png" }'>
+				     <h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
             </li>
     </script>
     <script type='text/html' id='no-group-activity-template'>
@@ -460,8 +432,6 @@
                         </ul>
                     </div>
                     <div class='tab-pane active' id='unlocked-challenges'>
-                        
-                        </div>
                     </div>
                 </div>
             </div>
@@ -511,8 +481,6 @@
                             <div style='padding: 10px;' class='alert-block'>
                                 <span class='text-gold icon-star'></span>Congratulations, your group has unlocked all of the challenges.
                             </div>
-                        </div>
-                        
                         </div>
                     </div>
                 </div>
