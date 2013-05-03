@@ -142,7 +142,6 @@
         </li>
     </script>
     <script type='text/html' id='challenges-template'>
-        <ul id="challengesList" data-role="listview" data-inset="true" data-theme="d" data-bind='foreach: challenges'>
             <li>
                 <div class='row challenge-row'>
                     <div class='span2'>
@@ -175,7 +174,6 @@
                     </div>
                 </div>
             </li>
-        </ul>
     </script>
     <script type='text/html' id='no-group-activity-template'>
         Your group has not had any activity yet.  You can <a href='#dashboard' data-bind='click:activateDashboardTab' data-toggle='tab'>perform challenges in your dashboard</a>
@@ -262,8 +260,8 @@
                         </ul>
                     </div>
                     <div class='tab-pane active' id='unlocked-challenges'>
-                        <div data-bind="template: { name: 'challenges-template', data: { challenges: unlockedChallenges() } }">
-                        </div>
+                        <ul id="challengesList" data-role="listview" data-inset="true" data-theme="d" data-bind='data-bind="template: { name: challenges-template, foreach: unlockedChallenges()}'>
+                        </ul>
                     </div>
                 </div>
                 <br>
