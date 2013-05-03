@@ -1,6 +1,3 @@
-var participant_group_id = '';
-var globalViewModel;
-
 function LighterFootprintsModel(modelJson){
     var self = this;
     var model = ko.mapping.fromJS(modelJson);
@@ -58,8 +55,6 @@ function LighterFootprintsModel(modelJson){
             }
             else {
                 console.debug("ERROR: " + data.message);
-                globalViewModel.errorMessage("Unable to perform activity: " + data.message);
-                $('#activityUnavailableModal').modal();
             }
         });
     };
