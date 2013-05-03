@@ -1,19 +1,20 @@
 from datetime import datetime, timedelta
+from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
 from vcweb.core import unicodecsv
 from vcweb.core.decorators import participant_required
-from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm)
+from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm, LoginForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.services import foursquare_venue_search
-from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, json_response
+from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, json_response, get_active_experiment, set_authentication_token
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_group_activity,
         can_view_other_groups, get_lighterprints_experiment_metadata, is_experiment_completed,
@@ -371,10 +372,24 @@ def get_view_model(request, participant_group_id=None):
     view_model_json = get_view_model_json(pgr, experiment=pgr.group.experiment)
     return JsonResponse(dumps({'success': True, 'view_model_json': view_model_json}))
 
+def mobile_login(request):
+    form = LoginForm(request.POST or None)
+    try:
+        if form.is_valid():
+            user = form.user_cache
+            logger.debug("user was authenticated as %s, attempting to login", user)
+            auth.login(request, user)
+            set_authentication_token(user, request.session.session_key)
+            return redirect('lighterprints:mobile_participate')
+    except Exception as e:
+        logger.debug("Invalid login: %s", e)
+    return render(request, 'lighterprints/mobile/login.html')
+
+
 @participant_required
 def mobile_participate(request, experiment_id=None):
     participant = request.user.participant
-    experiment = get_object_or_404(Experiment, pk=experiment_id)
+    experiment = get_active_experiment(participant, experiment_metadata=get_lighterprints_experiment_metadata())
     pgr = experiment.get_participant_group_relationship(participant)
     all_activities = Activity.objects.all()
     view_model_json = get_view_model_json(pgr, all_activities, experiment)

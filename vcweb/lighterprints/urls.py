@@ -3,7 +3,7 @@ from django.views.generic.base import TemplateView
 
 from vcweb.lighterprints.views import (post_chat_message, post_comment, perform_activity, participate,
         group_activity, like, get_notifications, update_notifications_since, group_score, CsvExportView, checkin,
-        activity_performed_counts, get_view_model, mobile_participate)
+        activity_performed_counts, get_view_model, mobile_participate, mobile_login)
 
 # handles all /lighterprints/* URL requests
 urlpatterns = patterns('vcweb.lighterprints.views',
@@ -21,5 +21,6 @@ urlpatterns = patterns('vcweb.lighterprints.views',
     url(r'^api/notifications/(?P<participant_group_id>\d+)', get_notifications),
     url(r'^api/checkin', checkin),
     url(r'^api/activity-performed-counts/(?P<participant_group_id>\d+)', activity_performed_counts),
-    url(r'^(?P<experiment_id>\d+)/mobile/?$', mobile_participate, name='mobile_participate'),
+    url(r'^mobile/login?$', mobile_login, name='mobile_login'),
+    url(r'^mobile/?$', mobile_participate, name='mobile_participate'),
 )

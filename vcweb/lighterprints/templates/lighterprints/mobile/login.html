@@ -1,0 +1,47 @@
+{% load static from staticfiles %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Lighter Footprints</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{% static 'css/lighterprints/mobile/themeroller.css' %}" />
+        <link rel="stylesheet" href="//ajax.aspnetcdn.com/ajax/jquery.mobile/1.3.0/jquery.mobile.structure-1.3.0.min.css" />
+        <link rel="stylesheet" href="{% static 'css/lighterprints/font-awesome/jqm-icon-pack-3.0.0-fa.css' %}"/>
+        <link rel="stylesheet" href="{% static 'css/lighterprints/icons.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/lighterprints/mobile/style.css' %}"/>
+        {% with jquery_version="1.8.3" %}
+        <script src='//ajax.googleapis.com/ajax/libs/jquery/{{jquery_version}}/jquery.min.js'></script>
+        {% endwith %}
+        <script src="//ajax.aspnetcdn.com/ajax/jquery.mobile/1.3.0/jquery.mobile-1.3.0.min.js">
+        </script>
+        <!-- KnockoutJS for MVVM-->
+        <script src='{% static "js/ko/knockout.min.js" %}'></script>
+        <script src='{% static "js/ko/knockout.mapping.min.js" %}'></script>
+        <!--Local JS-->
+        <script src='{% static "js/lighterprints/mobile/controller.js" %}'>
+        </script>
+    </head>
+    <body>
+        <!-- Start of first page: #loginPage -->
+        <div data-role="page" id="loginPage">
+            <div data-role="header" data-theme="a" class="navbar">
+                <img width="30px" height="30px" src="{% static 'images/lighterprints/logo.png' %}" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
+            </div>
+            <div data-role="content">
+                <form action='' method='POST' id="loginForm" class="ui-body">
+                    <div data-role="fieldcontain">
+                        <label for="email">
+                            Email:
+                        </label>
+                        <input type="email" name="email" id="email" value="" placeholder="Email">
+                        <label for="password">
+                            Password:
+                        </label>
+                        <input type="password" name="password" id="password" value="" placeholder="Password">
+                    </div><a href="#" data-theme="c" data-role="button" id="submitLogin" type="submit" class="center-button">
+                        <span class="icon-user"></span> Login</a>
+                </form>
+            </div>
+        </div>
+    </body>
+</html>
