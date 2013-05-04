@@ -142,10 +142,6 @@
         </li>
     </script>
     <script type='text/html' id='challenges-template'>
-            <li>
-                    <img style='padding: 10px 0 0 20px;' data-bind='attr: {src: "https://vcweb.asu.edu/static/images/lighterprints/badges/" + name() + ".png" }'>
-				     <h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
-            </li>
     </script>
     <script type='text/html' id='no-group-activity-template'>
         Your group has not had any activity yet.  You can <a href='#dashboard' data-bind='click:activateDashboardTab' data-toggle='tab'>perform challenges in your dashboard</a>
@@ -232,7 +228,10 @@
                         </ul>
                     </div>
                     <div class='tab-pane active' id='unlocked-challenges'>
-                        <ul id="challengesList" data-role="listview" data-inset="true" data-theme="d" data-bind='template: { name: challenges-template, foreach: activities}'>
+                        <ul id="challengesList" data-role="listview" data-inset="true" data-theme="d" data-bind='foreach: activities'>
+                            <li>
+                                <img style='padding: 10px 0 0 20px;' data-bind='attr: {src: "https://vcweb.asu.edu/static/images/lighterprints/badges/" + name() + ".png" }'><h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
+                            </li>
                         </ul>
                     </div>
                 </div>
