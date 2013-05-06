@@ -48,9 +48,10 @@
                     }
                 });
 				
-			$("#dashboardPage").on('pageshow', function(event){
+			$("#dashboardPage").on('pagebeforeshow', function(event){
         		console.debug('dashboardPage pageshow');
 				$('#challengesList').listview('refresh');
+				$('#teamList').listview('refresh');
 				$('#teamActivityList').listview('refresh');
     		});
 
@@ -142,9 +143,26 @@
         </li>
     </script>
     <script type='text/html' id='challenges-template'>
+    	        <li data-icon="false">
+            <a href="#" data-bind='css: status, click: $root.perform'>
+            	<span data-bind='if: availableNow'>Perform</span>
+				<span data-bind='if: completed'>Completed <span class='icon-check'></span></span>
+				<span data-bind='if: expired'>Expired <span class='icon-warning-sign'></span></span>
+				<span data-bind='if: upcoming'>Not yet available <span class='icon-time'></span></span>
+				<span data-bind='if: locked'>Locked <span class='icon-lock'></span></span>
+				<img style='padding: 10px 0 0 20px;' data-bind='attr: {src: "https://vcweb.asu.edu/static/images/lighterprints/badges/" + name() + ".png" }'><h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
+                <p>
+                    <span data-bind='css: status, text: summary'></span>
+                </p>
+                <h4><span data-bind='text: points'></span><span class='lighterprints-green icon-leaf icon-2x'></span>
+                    <br>
+                    <span data-bind='text: time_slots'></span>
+                </h4>
+            </a>
+        </li>
     </script>
     <script type='text/html' id='no-group-activity-template'>
-        Your group has not had any activity yet.  You can <a href='#dashboard' data-bind='click:activateDashboardTab' data-toggle='tab'>perform challenges in your dashboard</a>
+        Your group has not had any activity yet.  You can <a href='#dashboardPage'>perform challenges in your dashboard</a>
         or post messages in the <a href='#group' data-bind='click:activateGroupTab'>the group wall</a>
         .
     </script>
@@ -165,7 +183,7 @@
                 <a href="#defaultpanel" class="ui-btn-right" data-role="button" data-inline="true" data-iconpos="notext" data-theme="a" data-icon="align-justify"></a>
             </div>
             <div data-role="content">
-                <h2><span class="icon-gauge"></span> Team Dashboard</h2>
+                <h2><span class="icon-gauge"></span> Team Dashboard
                 <div class="ui-bar">
                 </div>
                 <div class="ui-grid-a" data-inset="true">
@@ -203,19 +221,17 @@
                             <table>
                                 <tr>
                                     <td>
-                                        <span data-bind="text: hoursLeft"></span>h
+                                        <span data-bind="text: hoursLeft"></span> h
                                     </td>
                                     <td>
-                                        <span data-bind="text: minutesLeft"></span>m
+                                        <span data-bind="text: minutesLeft"></span> m
                                     </td>
                                 </tr>
                             </table>
                         </div>
                     </div>
-                </div>
-                <br>
-                <br>
-                <h2><span class="icon-star"></span> Challenges</h2>
+                </div></h2>
+                <h2><span class="icon-star"></span> Challenges
                 <div class="ui-bar-d">
                     <div data-role="navbar">
                         <ul id="challengesNavbarList">
@@ -228,28 +244,21 @@
                         </ul>
                     </div>
                     <div class='tab-pane active' id='unlocked-challenges'>
-                        <ul id="challengesList" data-role="listview" data-inset="true" data-theme="d" data-bind='foreach: activities'>
-                            <li>
-                                <img style='padding: 10px 0 0 20px;' data-bind='attr: {src: "https://vcweb.asu.edu/static/images/lighterprints/badges/" + name() + ".png" }'><h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
-                            </li>
-                        </ul>
+                      	<ul id="challengesList" data-role="listview" data-inset="true" data-theme="d" data-bind="template: { name: 'challenges-template', foreach: unlockedChallenges() }">
+                       	</ul>
                     </div>
-                </div>
-                <br>
-                <br>
-                <h2><span class="icon-trophy"></span> Leaderboard</h2>
+                </div></h2>
+                <h2><span class="icon-trophy"></span> Leaderboard
                 <div class="ui-bar-d">
-                    <ul data-role="listview" data-bind="foreach: groupData" data-inset="true" data-theme="b">
+                    <ul id="teamList" data-role="listview" data-bind="foreach: groupData" data-inset="true" data-theme="b">
                         <li>
                             <strong>#<span data-bind="text:$index() + 1"></span></strong>
                             <span data-bind="text: groupName"></span>
                             <span class="ui-li-count" data-bind="text: totalPoints"></span>
                         </li>
                     </ul>
-                </div>
-                <br>
-                <br>
-                <h2><span class="icon-user"></span> Team Activity</h2>
+                </div></h2>
+                <h2><span class="icon-user"></span> Team Activity
                 <div class="ui-bar-d">
                     <div data-bind='ifnot: hasGroupActivity()'>
                         <div data-bind='template: { name: "no-group-activity-template" }'>
@@ -259,7 +268,7 @@
                         <ul id="teamActivityList" data-role="listview" data-inset="true" data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
                         </ul>
                     </div>
-                </div>
+                </div></h2>
             </div>
              <div data-role="footer" data-theme="c">
                 <div class="ui-bar-b" style="font-size:15px;text-align:center;">
@@ -278,228 +287,7 @@
             </div>
         </div>
         <!-- /page dashboardPage--><!-- Start of #dashboardLockedChallengePage -->
-        <div data-role="page" id="dashboardLockedChallengePage" class="ui-responsive-panel">
-            <div data-role="panel" id="defaultpanel" data-theme="b" data-position="left" data-display="overlay" data-dismissible="true" >
-                <a href="#" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-gauge"></span> Dashboard</h2></a>
-                <a href="#challengesPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-star"></span> Challenges</h2></a>
-                <a href="#myTeamPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-user"></span> My Team</h2></a>
-                <a href="#helpPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-question"></span> Help</h2></a>
-            </div>
-            <div data-role="header" data-theme="a" class="navbar" data-position="fixed" >
-                <img width="30px" height="30px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
-                <a href="#defaultpanel" class="ui-btn-right" data-role="button" data-inline="true" data-iconpos="notext" data-theme="a" data-icon="align-justify"></a>
-            </div>
-            <div data-role="content">
-                <h2><span class="icon-gauge"></span> Team Dashboard</h2>
-                <div class="ui-bar">
-                </div>
-                <div class="ui-grid-a" data-inset="true">
-                    <div class="ui-block-a">
-                        <div class="ui-bar ui-bar-d" style="height:70px">
-                            Today's Score
-                            <br>
-                            <span data-bind="text: averagePoints"></span>
-                        </div>
-                    </div>
-                    <div class="ui-block-b">
-                        <div class="ui-bar ui-bar-d" style="height:70px">
-                            Current Level
-                            <div data-bind='if: experimentCompleted'>
-                                <img alt='Experiment Completed' class='group-level' width='120' height='70' src='https://vcweb.asu.edu/static/images/lighterprints/experiment-completed.png'>
-                            </div>
-                            <div data-bind='ifnot: experimentCompleted'>
-                                <img alt='Group Level' class='group-level' width="104" height="65" data-bind="attr: { src: 'https://vcweb.asu.edu/static/images/lighterprints/rank' + groupLevel() + '.png' }">
-                            </div>
-                        </div>
-                    </div>
-                </div><!-- /grid-a -->
-                <div class="ui-grid-a">
-                    <div class="ui-block-a">
-                        <div class="ui-bar ui-bar-d" style="height:70px">
-                            Today's Progress
-                            <br>
-                            Your group progress: <span data-bind="text: averagePoints"></span>
-                            <span data-bind="text:pointsToNextLevel"></span>
-                        </div>
-                    </div>
-                    <div class="ui-block-b">
-                        <div class="ui-bar ui-bar-d" style="height:70px">
-                            Time Remaining
-                            <table>
-                                <tr>
-                                    <td>
-                                        <span data-bind="text: hoursLeft"></span>h
-                                    </td>
-                                    <td>
-                                        <span data-bind="text: minutesLeft"></span>m
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <br>
-                <br>
-                <h2><span class="icon-star"></span> Challenges</h2>
-                <div class="ui-bar-d">
-                    <div data-role="navbar">
-                        <ul>
-                            <li>
-                                <a href="#dashboardPage"><span class="icon-star"></span> Unlocked</a>
-                            </li>
-                            <li>
-                                <a href="#" class="ui-btn-active"><span class="icon-lock"></span> Locked</a>
-                            </li>
-                        </ul>
-                    </div>
-                    <!-- /navbar -->
-                    <div class='tab-pane' id='locked-challenges'>
-                        <div data-bind='if: lockedChallenges().length === 0'>
-                            <div style='padding: 10px;' class='alert-block'>
-                                <span class='text-gold icon-star'></span>Congratulations, your group has unlocked all of the challenges.
-                            </div>
-                        </div>
-                       
-                        </div>
-                    </div>
-                </div>
-				<br>
-                <br>
-                <h2><span class="icon-trophy"></span> Leaderboard</h2>
-                <div class="ui-bar-d">
-                    <ul data-role="listview" data-bind="foreach: groupData" data-inset="true" data-theme="b">
-                        <li>
-                            <strong>#<span data-bind="text:$index() + 1"></span></strong>
-                            <span data-bind="text: groupName"></span>
-                            <span class="ui-li-count" data-bind="text: totalPoints"></span>
-                        </li>
-                    </ul>
-                </div>
-                <br>
-                <br>
-                <h2><span class="icon-user"></span> Team Activity</h2>
-                <div class="ui-bar-d">
-                    <div data-bind='ifnot: hasGroupActivity()'>
-                        <div data-bind='template: { name: "no-group-activity-template" }'>
-                        </div>
-                    </div>
-                    <div class='table group-activity'>
-                        <ul data-role="listview" data-inset="true" data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div data-role="footer" data-theme="c">
-                <div class="ui-bar-b" style="font-size:15px;text-align:center;">
-                    <div data-role="controlgroup" data-type="horizontal" data-theme="b">
-                        <a href="#" data-theme="b"> Dashboard</a>
-                        <a href="#challengesPage"> Challenges</a>
-                        <a href="#myTeamPage"> My Team</a>
-                        <a href="#helpPage"> Help</a>
-                    </div>
-                    2013 Arizona Board Of Regents
-                </div>
-                <div class="footerbar">
-                    <img width="30px" height="30px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">
-                    lighter<strong>footprints</strong>
-                </div>
-            </div>
-        </div>
         <!-- /page dashboardLockedChallengePage--><!-- Start of first page: #challengesPage -->
-		<div data-role="page" id="challengesPage" class="ui-responsive-panel">
-            <div data-role="panel" id="defaultpanel" data-theme="b" data-position="left" data-display="overlay" data-dismissible="true" >
-                <a href="#dashboardPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-gauge"></span> Dashboard</h2></a>
-                <a href="#" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-star"></span> Challenges</h2></a>
-                <a href="#myTeamPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-user"></span> My Team</h2></a>
-                <a href="#helpPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-question"></span> Help</h2></a>
-            </div>
-            <div data-role="header" data-theme="a" class="navbar" data-position="fixed" >
-                <img width="30px" height="30px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
-                <a href="#defaultpanel" class="ui-btn-right" data-role="button" data-inline="true" data-iconpos="notext" data-theme="a" data-icon="align-justify"></a>
-            </div>
-            <div data-role="content">
-                <h2><span class="icon-star"></span> Challenges</h2>
-                <div class="ui-bar-d">
-                    <div data-role="navbar">
-                        <ul>
-                            <li>
-                                <a href="#" class="ui-btn-active"><span class="icon-star"></span> Unlocked</a>
-                            </li>
-                            <li>
-                                <a href="#lockedChallengePage"><span class="icon-lock"></span> Locked</a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class='tab-pane active' id='unlocked-challenges'>
-                    </div>
-                </div>
-            </div>
-            <div data-role="footer" data-theme="c">
-                <div class="ui-bar-b" style="font-size:15px;text-align:center;">
-                    <div data-role="controlgroup" data-type="horizontal" data-theme="b">
-                        <a href="#dashboardPage" data-theme="b"> Dashboard</a>
-                        <a href="#"> Challenges</a>
-                        <a href="#myTeamPage"> My Team</a>
-                        <a href="#helpPage"> Help</a>
-                    </div>
-                    2013 Arizona Board Of Regents
-                </div>
-                <div class="footerbar">
-                    <img width="30px" height="30px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">
-                    lighter<strong>footprints</strong>
-                </div>
-            </div>
-        </div>
-        <!-- /page challengesPage--><!-- Start of #lockedChallengePage -->
-        <div data-role="page" id="lockedChallengePage" class="ui-responsive-panel">
-            <div data-role="panel" id="defaultpanel" data-theme="b" data-position="left" data-display="overlay" data-dismissible="true" >
-                <a href="#dashboardPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-gauge"></span>Dashboard</h2></a>
-                <a href="#" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-star"></span>Challenges</h2></a>
-                <a href="#myTeamPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-user"></span>My Team</h2></a>
-                <a href="#helpPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-question"></span>Help</h2></a>
-            </div>
-            <div data-role="header" data-theme="a" class="navbar" data-position="fixed" >
-                <img width="30px" height="30px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
-                <a href="#defaultpanel" class="ui-btn-right" data-role="button" data-inline="true" data-iconpos="notext" data-theme="a" data-icon="align-justify"></a>
-            </div>
-            <div data-role="content">
-                <h2><span class="icon-star"></span> Challenges</h2>
-                <div class="ui-bar-d">
-                    <div data-role="navbar">
-                        <ul>
-                            <li>
-                                <a href="#challengesPage"><span class="icon-star"></span> Unlocked</a>
-                            </li>
-                            <li>
-                                <a href="#" class="ui-btn-active"><span class="icon-lock"></span> Locked</a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class='tab-pane' id='locked-challenges'>
-                        <div data-bind='if: lockedChallenges().length === 0'>
-                            <div style='padding: 10px;' class='alert-block'>
-                                <span class='text-gold icon-star'></span>Congratulations, your group has unlocked all of the challenges.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div data-role="footer" data-theme="c">
-                <div class="ui-bar-b" style="font-size:15px;text-align:center;">
-                    <div data-role="controlgroup" data-type="horizontal" data-theme="b">
-                        <a href="#dashboardPage" data-theme="b"> Dashboard</a>
-                        <a href="#"> Challenges</a>
-                        <a href="#myTeamPage"> My Team</a>
-                        <a href="#helpPage"> Help</a>
-                    </div>
-                    2013 Arizona Board Of Regents
-                </div>
-                <div class="footerbar">
-                    <img width="30px" height="30px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">
-                    lighter<strong>footprints</strong>
-                </div>
-            </div>
-        </div>
         <!-- /page lockedChallengePage--><!-- Start of page: #myTeamPage -->
         <div data-role="page" id="myTeamPage" class="ui-responsive-panel">
             <div data-role="panel" id="defaultpanel" data-theme="b" data-position="left" data-display="overlay" data-dismissible="true" >
