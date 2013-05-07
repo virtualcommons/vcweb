@@ -46,7 +46,7 @@ function LighterFootprintsModel(modelJson){
         }
         var id = challengeModel.pk();
         var formData = $('#challengeForm' + id).serialize();
-        $.post('http://vcweb.asu.edu/lighterprints/api/do-activity', formData, function(data){
+        $.post('/lighterprints/api/do-activity', formData, function(data){
             if (data.success) {
 				console.debug(data);
                 ko.mapping.fromJSON(data.viewModel, model);
