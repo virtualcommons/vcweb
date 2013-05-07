@@ -48,7 +48,6 @@ function LighterFootprintsModel(modelJson){
 		 var formData = {
 			participant_group_id: model.participantGroupId(), activity_id:id
 		};
-        var formData = $('#challengeForm' + id).serialize();
         $.post('/lighterprints/api/do-activity', formData, function(data){
             if (data.success) {
 				console.debug(data);
