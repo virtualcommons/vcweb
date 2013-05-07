@@ -102,3 +102,6 @@ a.perform-challenge,a.completed-challenge {
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.36);
   -webkit-font-smoothing: antialiased;
 }
+.text-gold {
+    color: #DFB03D;
+}
