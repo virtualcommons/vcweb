@@ -144,21 +144,26 @@
     </script>
     <script type='text/html' id='challenges-template'>
     	        <li data-icon="false">
-            <a href="#" data-bind='css: status, click: $root.perform'>
-            	<span data-bind='if: availableNow'>Perform</span>
-				<span data-bind='if: completed'>Completed <span class='icon-check'></span></span>
-				<span data-bind='if: expired'>Expired <span class='icon-warning-sign'></span></span>
-				<span data-bind='if: upcoming'>Not yet available <span class='icon-time'></span></span>
-				<span data-bind='if: locked'>Locked <span class='icon-lock'></span></span>
-				<img style='padding: 10px 0 0 20px;' data-bind='attr: {src: "https://vcweb.asu.edu/static/images/lighterprints/badges/" + name() + ".png" }'><h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
-                <p>
-                    <span data-bind='css: status, text: summary'></span>
-                </p>
-                <h4><span data-bind='text: points'></span><span class='lighterprints-green icon-leaf icon-2x'></span>
-                    <br>
-                    <span data-bind='text: time_slots'></span>
-                </h4>
-            </a>
+    	        	    <div class='span2'>
+        <img style='padding: 10px 0 0 20px;' data-bind='attr: {src: "/static/images/lighterprints/badges/" + name() + ".png" }'>
+    </div>
+    <div class='span4'>
+        <h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
+        <p>
+        <span data-bind='css: status, text: summary'></span>
+        </p>
+        <form data-bind='attr: { id: "challengeForm" + pk() }' class='form-horizontal' method='post'>
+            <input data-bind='value: pk' type='hidden' name='activity_id' />
+            <input type='hidden' name='participant_group_id' value='1009' />
+            <a data-bind='css: status, click: $root.perform' class='btn'>
+            <span data-bind='if: availableNow'>Perform</span>
+            <span data-bind='if: completed'>Completed <i class='icon-check'></i></span>
+            <span data-bind='if: expired'>Expired <i class='icon-warning-sign'></i></span>
+            <span data-bind='if: upcoming'>Not yet available <i class='icon-time'></i></span>
+            <span data-bind='if: locked'>Locked <i class='icon-lock'></i></span>
+            </a> 
+            
+        </form>
         </li>
     </script>
     <script type='text/html' id='no-group-activity-template'>
