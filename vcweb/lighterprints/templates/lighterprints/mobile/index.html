@@ -89,8 +89,6 @@
                             </small>
                         </div>
                     </div>
-                    <div data-bind='template: "likeCommentTemplate"'>
-                    </div>
                 </span>
             </li>
         </script>
@@ -154,8 +152,8 @@
         </p>
         <form data-bind='attr: { id: "challengeForm" + pk() }' class='form-horizontal' method='post'>
             <input data-bind='value: pk' type='hidden' name='activity_id' />
-            <input type='hidden' name='participant_group_id' value='1009' />
-            <a data-bind='css: status, click: $root.perform' class='btn'>
+            <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.id}}' />
+            <a data-bind='css: status, click: $root.perform' data-role="button">
             <span data-bind='if: availableNow'>Perform</span>
             <span data-bind='if: completed'>Completed <i class='icon-check'></i></span>
             <span data-bind='if: expired'>Expired <i class='icon-warning-sign'></i></span>
