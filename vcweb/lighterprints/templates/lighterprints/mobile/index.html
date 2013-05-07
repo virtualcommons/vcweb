@@ -30,7 +30,7 @@
                     event.preventDefault();
                     if ($('#chatText').val()) {
                         var formData = $('#chat-form').serialize();
-                        $.post('http://vcweb.asu.edu/lighterprints/api/message', formData, function(response){
+                        $.post('/lighterprints/api/message', formData, function(response){
                             if (response.success) {
                                 console.debug("successful post - updated view model: ");
                                 ko.mapping.fromJS(response.viewModel, globalViewModel);
@@ -163,7 +163,7 @@
     </script>
     <script type='text/html' id='no-group-activity-template'>
         Your group has not had any activity yet.  You can <a href='#dashboardPage'>perform challenges in your dashboard</a>
-        or post messages in the <a href='#group' data-bind='click:activateGroupTab'>the group wall</a>
+        or post messages in the <a href='#myTeamPage'>the group wall</a>
         .
     </script>
     </head>
@@ -231,12 +231,12 @@
                         </div>
                     </div>
                 </div></h2>
-                <h2><span class="icon-star"></span> Challenges
+                <h2><span class="icon-star "></span> Challenges
                 <div class="ui-bar-d">
                     <div data-role="navbar">
                         <ul id="challengesNavbarList">
                             <li>
-                                <a href="#" class="ui-btn-active"><span class="icon-star"></span> Unlocked</a>
+                                <a href="#" class="ui-btn-active"><span class="icon-star text-gold "></span> Unlocked</a>
                             </li>
                             <li>
                                 <a href="#dashboardLockedChallengePage"><span class="icon-lock"></span> Locked</a>
@@ -248,13 +248,14 @@
                        	</ul>
                     </div>
                 </div></h2>
-                <h2><span class="icon-trophy"></span> Leaderboard
+                <h2><span class="icon-trophy text-gold "></span> Leaderboard
                 <div class="ui-bar-d">
                     <ul id="teamList" data-role="listview" data-bind="foreach: groupData" data-inset="true" data-theme="b">
                         <li>
                             <strong>#<span data-bind="text:$index() + 1"></span></strong>
-                            <span data-bind="text: groupName"></span>
-                            <span class="ui-li-count" data-bind="text: totalPoints"></span>
+                            <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'>
+                            	<span data-bind="text: groupName"></span>
+							</span>
                         </li>
                     </ul>
                 </div></h2>
@@ -309,13 +310,19 @@
                     <div data-bind="if: hasChatMessages()">
                         <ul id="chatMessageList" data-role="listview" data-bind="foreach: chatMessages" data-inset="true" style="overflow-y: scroll;">
                             <li>
-                                <i class='icon-user icon-2x'></i>
-                                <span><strong>Participant <span data-bind="text: participant_number"></span></strong>
-                                    <br>
-                                    <span data-bind="text: value"></span>
-                                    <br>
-                                    <span data-bind="text: date_created"></span>ago
-                                </span>
+                                <div class="ui-grid-d">
+                    				<div class="ui-block-a">
+                       					<i class='icon-user icon-2x'></i>
+                    				</div>
+                    				<div class="ui-block-b">
+                    					<span>Participant <span data-bind="text: participant_number"></span>: <span data-bind="text: value"></span>
+                   					</div>
+									<div class="ui-block-c"></div>
+									<div class="ui-block-d"></div>
+									<div class="ui-block-e">
+										<span data-bind="text: date_created"></span><br> ago
+                   					</div>
+                				</div
                             </li>
                         </ul>
                     </div>
