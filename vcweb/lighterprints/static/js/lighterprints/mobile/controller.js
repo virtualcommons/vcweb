@@ -53,7 +53,7 @@ function LighterFootprintsModel(modelJson){
 				console.debug(data);
                 ko.mapping.fromJSON(data.viewModel, model);
 				model.lastPerformedActivity(challengeModel);
-				$.mobile.changePage("index.html",{reloadPage:'true'});
+				$.mobile.changePage("/lighterprints/mobile",{reloadPage:'true'});
 				 //$.mobile.changePage($("#modalPage"),{transition: 'pop', role: 'dialog'});
             }
             else {
