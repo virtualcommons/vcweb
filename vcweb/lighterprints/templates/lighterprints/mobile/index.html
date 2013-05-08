@@ -450,15 +450,14 @@
             </div>
         </div>
         <!-- /page helpPage--><!-- Start of page: #modalPage -->
-        <div data-role="page" id="modalPage" data-close-btn="right">
+        <div data-role="page" id="modalPage">
             <div data-role="header" data-theme="b">
                 <h1></h1>
             </div>
             <div data-role="content">
                 <div id='activityPerformedModalText' data-bind='with: lastPerformedActivity'>
-                    <div class='row-fluid pagination-centered'>
-                        <img alt='Lighterprints Activity Badge' data-bind='attr: {src: "https://vcweb.asu.edu/static/images/lighterprints/badges/" + name() + ".png" }'>
-                    </div><h3>You completed a challenge!</h3>
+                    <img alt='Lighterprints Activity Badge' data-bind='attr: {src: "https://vcweb.asu.edu/static/images/lighterprints/badges/" + name() + ".png" }'>
+                    <h3>You completed a challenge!</h3>
                     <p>
                         <strong><em data-bind='text: display_name'></em></strong>
                         for <span class='lighterprints-green' data-bind='text: points'></span>
@@ -466,7 +465,7 @@
                     </p>
                     <p data-bind='text: summary'>
                     </p>
-                    <a href="#" data-role="button" data-rel="back" data-theme="b">OK</a>
+                    <a href="index.html" reloadPage="true" data-role="button" data-theme="b">OK</a>
                 </div>
             </div>
         </div>
