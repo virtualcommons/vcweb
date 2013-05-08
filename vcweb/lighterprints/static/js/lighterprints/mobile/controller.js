@@ -53,6 +53,7 @@ function LighterFootprintsModel(modelJson){
 				console.debug(data);
                 ko.mapping.fromJSON(data.viewModel, model);
 				model.lastPerformedActivity(challengeModel);
+				console.debug('refreshing lists');
 				$('#challengesList').listview('refresh');
 				$('#teamList').listview('refresh');
 				$('#teamActivityList').listview('refresh');
