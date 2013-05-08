@@ -53,6 +53,7 @@ function LighterFootprintsModel(modelJson){
 				console.debug(data);
                 ko.mapping.fromJSON(data.viewModel, model);
 				model.lastPerformedActivity(challengeModel);
+				$('#challengesList').listview('refresh');
 				//$.mobile.changePage('/lighterprints/modal',{transition: 'pop', role: 'dialog'});
             }
             else {
