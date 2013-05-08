@@ -49,16 +49,11 @@
                     }
                 });
 				
-			$("#dashboardPage").on('pagebeforeshow', function(event){
-        		console.debug('dashboardPage pageshow');
+			$("#dashboardPage").on('pageinit', function(event){
+        		console.debug('dashboardPage pageinit');
 				$('#challengesList').listview('refresh');
 				$('#teamList').listview('refresh');
 				$('#teamActivityList').listview('refresh');
-    		});
-
-			$("#myTeamPage").on('pagebeforeshow', function(event){
-        		console.debug('dashboardPage pageshow');
-				$('#chatMessageList').listview('refresh');
     		});
 
             });
@@ -299,7 +294,7 @@
         <!-- /page lockedChallengePage--><!-- Start of page: #myTeamPage -->
         <div data-role="page" id="myTeamPage" class="ui-responsive-panel">
             <div data-role="panel" id="defaultpanel" data-theme="b" data-position="left" data-display="overlay" data-dismissible="true" >
-                <a href="#dashboardPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-gauge"></span> Dashboard</h2></a>
+                <a href="#dashboardPage" reloadPage="true" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-gauge"></span> Dashboard</h2></a>
                 <a href="#challengesPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-star"></span> Challenges</h2></a>
                 <a href="#" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-user"></span> My Team</h2></a>
                 <a href="#helpPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-question"></span> Help</h2></a>
@@ -317,19 +312,8 @@
                     <div data-bind="if: hasChatMessages()">
                         <ul id="chatMessageList" data-role="listview" data-bind="foreach: chatMessages" data-inset="true" style="overflow-y: scroll;">
                             <li>
-                                <div class="ui-grid-d">
-                    				<div class="ui-block-a">
-                       					<i class='icon-user icon-2x'></i>
-                    				</div>
-                    				<div class="ui-block-b">
-                    					<span>Participant <span data-bind="text: participant_number"></span>: <span data-bind="text: value"></span>
-                   					</div>
-									<div class="ui-block-c"></div>
-									<div class="ui-block-d"></div>
-									<div class="ui-block-e">
-										<span data-bind="text: date_created"></span><br> ago
-                   					</div>
-                				</div
+                                	<span>Participant <span data-bind="text: participant_number"></span>: <span data-bind="text: value"></span>
+                   					<span data-bind="text: date_created"></span><br> ago
                             </li>
                         </ul>
                     </div>
