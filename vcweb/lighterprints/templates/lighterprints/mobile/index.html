@@ -51,6 +51,9 @@
 				
 			$("#dashboardPage").on('pagebeforeshow', function(event){
         		console.debug('dashboardPage pageshow');
+				$('#challengesList').listview('refresh');
+				$('#teamList').listview('refresh');
+				$('#teamActivityList').listview('refresh');
     		});
 
 			$("#myTeamPage").on('pagebeforeshow', function(event){
