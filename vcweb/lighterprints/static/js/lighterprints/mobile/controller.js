@@ -54,7 +54,8 @@ function LighterFootprintsModel(modelJson){
                 ko.mapping.fromJSON(data.viewModel, model);
 				model.lastPerformedActivity(challengeModel);
 				$('#challengesList').listview('refresh');
-				//$.mobile.changePage('/lighterprints/modal',{transition: 'pop', role: 'dialog'});
+				$('#teamList').listview('refresh');
+				$('#teamActivityList').listview('refresh');
             }
             else {
                 console.debug("ERROR: " + data.message);
