@@ -1,0 +1,45 @@
+{% load static from staticfiles %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Lighter Footprints</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{% static 'css/lighterprints/mobile/themeroller.css' %}" />
+        <link rel="stylesheet" href="//ajax.aspnetcdn.com/ajax/jquery.mobile/1.3.0/jquery.mobile.structure-1.3.0.min.css" />
+        <link rel="stylesheet" href="{% static 'css/lighterprints/font-awesome/jqm-icon-pack-3.0.0-fa.css' %}"/>
+        <link rel="stylesheet" href="{% static 'css/lighterprints/icons.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/lighterprints/mobile/style.css' %}"/>
+        {% with jquery_version="1.8.3" %}
+        <script src='//ajax.googleapis.com/ajax/libs/jquery/{{jquery_version}}/jquery.min.js'></script>
+        {% endwith %}
+        <script src="//ajax.aspnetcdn.com/ajax/jquery.mobile/1.3.0/jquery.mobile-1.3.0.min.js">
+        </script>
+        <!-- KnockoutJS for MVVM-->
+        <script src='{% static "js/ko/knockout.min.js" %}'></script>
+        <script src='{% static "js/ko/knockout.mapping.min.js" %}'></script>
+        <!--Local JS-->
+        <script src='{% static "js/lighterprints/mobile/controller.js" %}'>
+        </script>
+		</head>
+    <body>
+    	<div data-role="page">
+            <div data-role="header" data-theme="b">
+                <h1></h1>
+            </div>
+            <div data-role="content">
+                <div id='activityPerformedModalText' data-bind='with: lastPerformedActivity'>
+                    <img alt='Lighterprints Activity Badge' data-bind='attr: {src: "https://vcweb.asu.edu/static/images/lighterprints/badges/" + name() + ".png" }'>
+                    <h3>You completed a challenge!</h3>
+                    <p>
+                        <strong><em data-bind='text: display_name'></em></strong>
+                        for <span class='lighterprints-green' data-bind='text: points'></span>
+                        <i class='icon-leaf lighterprints-green'></i>
+                    </p>
+                    <p data-bind='text: summary'>
+                    </p>
+                    <a href="/lighterprints/mobile" data-role="button" reloadPage="true" data-theme="b">OK</a>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
