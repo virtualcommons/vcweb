@@ -34,6 +34,7 @@
                             if (response.success) {
                                 console.debug("successful post - updated view model: ");
                                 ko.mapping.fromJS(response.viewModel, globalViewModel);
+								console.debug('refresh chatMessage List');
 								$('#chatMessageList').listview('refresh');
                             }
                             else {
@@ -50,9 +51,11 @@
 				
 			$("#dashboardPage").on('pagebeforeshow', function(event){
         		console.debug('dashboardPage pageshow');
-				$('#challengesList').listview('refresh');
-				$('#teamList').listview('refresh');
-				$('#teamActivityList').listview('refresh');
+    		});
+
+			$("#myTeamPage").on('pagebeforeshow', function(event){
+        		console.debug('dashboardPage pageshow');
+				$('#chatMessageList').listview('refresh');
     		});
 
             });
@@ -465,7 +468,7 @@
                     </p>
                     <p data-bind='text: summary'>
                     </p>
-                    <a href="index.html" data-role="button" data-rel="back" data-theme="b">OK</a>
+                    <a href="#" data-role="button" data-rel="back" data-theme="b">OK</a>
                 </div>
             </div>
         </div>
