@@ -63,6 +63,26 @@ function LighterFootprintsModel(modelJson){
             }
         });
     };
+	
+	model.send = function(){
+
+	                if ($('#chatText').val()) {
+                        var formData = {participant_group_id: model.participantGroupId(), message:$('#chatText').val()};
+                        $.post('/lighterprints/api/message', formData, function(response){
+                            if (response.success) {
+                                console.debug("successful post - updated view model: ");
+                                ko.mapping.fromJS(response.viewModel, model);
+				console.debug('refresh chatMessage List');
+				$('#chatMessageList').listview('refresh');
+                            }
+                            else {
+                                console.debug("unable to post message to server");
+                                console.debug(response);
+                            }
+                        });
+                        $('#chatText').val('');
+                    }
+	};	
 		
     return model;
 }
