@@ -28,32 +28,18 @@
                 
                 $("#submitChatMessage").click(function(event){
                     event.preventDefault();
-                    if ($('#chatText').val()) {
-                        var formData = $('#chat-form').serialize();
-                        $.post('/lighterprints/api/message', formData, function(response){
-                            if (response.success) {
-                                console.debug("successful post - updated view model: ");
-                                ko.mapping.fromJS(response.viewModel, globalViewModel);
-								console.debug('refresh chatMessage List');
-								$('#chatMessageList').listview('refresh');
-                            }
-                            else {
-                                console.debug("unable to post message to server");
-                                console.debug(response);
-                            }
-                        });
-                        $('#chatText').val('');
-                    }
-                    else {
-                        console.debug("No message found!");
-                    }
                 });
 				
-			$("#dashboardPage").on('pageinit', function(event){
-        		console.debug('dashboardPage pageinit');
+			$("#dashboardPage").on('pagebeforeshow', function(event){
+        		console.debug('dashboardPage pageshow');
 				$('#challengesList').listview('refresh');
 				$('#teamList').listview('refresh');
 				$('#teamActivityList').listview('refresh');
+    		});
+
+			$("#myTeamPage").on('pagebeforeshow', function(event){
+        		console.debug('chatMessageList pageshow');
+				$('#chatMessageList').listview('refresh');
     		});
 
             });
@@ -163,6 +149,14 @@
             </a>
         </li>
     </script>
+	<script type='text/html' id='leaderboard-template'>
+						<li>
+                            <strong>#<span data-bind="text:$index() + 1"></span></strong>
+                            <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'>
+                            	<span data-bind="text: groupName"></span>
+							</span>
+                        </li>
+	  </script>
     <script type='text/html' id='no-group-activity-template'>
         Your group has not had any activity yet.  You can <a href='#dashboardPage'>perform challenges in your dashboard</a>
         or post messages in the <a href='#myTeamPage'>the group wall</a>
@@ -252,13 +246,7 @@
                 </div></h2>
                 <h2><span class="icon-trophy text-gold "></span> Leaderboard
                 <div class="ui-bar-d">
-                    <ul id="teamList" data-role="listview" data-bind="foreach: groupData" data-inset="true" data-theme="b">
-                        <li>
-                            <strong>#<span data-bind="text:$index() + 1"></span></strong>
-                            <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'>
-                            	<span data-bind="text: groupName"></span>
-							</span>
-                        </li>
+                    <ul id="teamList" data-role="listview" data-bind="template: {name:'leaderboard-template', foreach: groupData}" data-inset="true" data-theme="b">
                     </ul>
                 </div></h2>
                 <h2><span class="icon-user"></span> Team Activity
@@ -320,7 +308,7 @@
                     <form id="chat-form">
                         <div data-role="fieldcontain" class="innerblock">
                             <input type="hidden" name="participant_group_id" value='{{participant_group_relationship.id}}'><input type="text" id="chatText" name="message" placeholder="Send a message to your group">
-                        </div><a href="#" data-role="button" id="submitChatMessage" type="submit">Send</a>
+                        </div><a href="#" data-role="button" data-bind='click: $root.send'>Send</a>
                     </form>
                 </div>
             </div>
