@@ -56,6 +56,7 @@ function LighterFootprintsModel(modelJson){
                 console.debug(data);
                 ko.mapping.fromJSON(data.viewModel, model);
                 model.lastPerformedActivity(challengeModel);
+				ko.applyBindings(globalViewModel);
                 $("#activityCompletedDialog").popup('open');
                 console.debug('refreshing lists');
                 $('#challengesList').listview('refresh');
@@ -79,6 +80,7 @@ function LighterFootprintsModel(modelJson){
                 if (response.success) {
                     console.debug("successful post - updated view model: ");
                     ko.mapping.fromJS(response.viewModel, model);
+					ko.applyBindings(globalViewModel);
                     console.debug('refresh chatMessage List');
                     $('#chatMessageList').listview('refresh');
                 }
