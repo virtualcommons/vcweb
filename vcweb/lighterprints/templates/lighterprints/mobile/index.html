@@ -21,27 +21,79 @@
         <script src='{% static "js/lighterprints/mobile/controller.js" %}'>
         </script>
         <script>
-            $(document).live('pageinit', function(event){
+            $(document).on('pageinit', function(event){
                 var viewModelData = $.parseJSON("{{view_model_json|escapejs}}");
-                var globalViewModel = new LighterFootprintsModel(viewModelData);
-                ko.applyBindings(globalViewModel);
-                
-                $("#submitChatMessage").click(function(event){
-                    event.preventDefault();
-                });
-				
-			$("#dashboardPage").on('pagebeforeshow', function(event){
-        		console.debug('dashboardPage pageshow');
-				$('#challengesList').listview('refresh');
-				$('#teamList').listview('refresh');
-				$('#teamActivityList').listview('refresh');
-    		});
+		var viewModel = new LighterFootprintsModel(viewModelData);
+		viewModel.perform = function(challengeModel){
+       			if (!challengeModel.availableNow()) {
+		            console.debug("tried to perform an activity that's not available right now");
+		            console.debug(challengeModel);
+		            return;
+		        }
+		        var id = challengeModel.pk();
+			var formData = {
+			participant_group_id: viewModel.participantGroupId(), activity_id:id
+			};
+        		$.post('/lighterprints/api/do-activity', formData, function(data){
+		        	if (data.success) {
+					console.debug(data);
+					//$('#dashboardPage').trigger('pagecreate');
+                			ko.mapping.fromJSON(data.viewModel, viewModel);
+					viewModel.lastPerformedActivity(challengeModel);
+					ko.applyBindings(viewModel);
+					//$.mobile.changePage("/lighterprints/mobile");
+					$("#popupDialog").popup('open');
+					console.debug('refreshing lists');
+					$('#challengesList').listview('refresh');
+					$('#teamList').listview('refresh');
+					$('#teamActivityList').listview('refresh');
+            			}
+				else {
+        	        		console.debug("ERROR: " + data.message);
+				}
+			})
+		};
 
-			$("#myTeamPage").on('pagebeforeshow', function(event){
-        		console.debug('chatMessageList pageshow');
+		viewModel.send = function(){
+	                if ($('#chatText').val()) {
+                        var formData = {participant_group_id: viewModel.participantGroupId(), message:$('#chatText').val()};
+                        $.post('/lighterprints/api/message', formData, function(response){
+                            if (response.success) {
+                                console.debug("successful post - updated view model: ");
+                                ko.mapping.fromJS(response.viewModel, viewModel);
+				ko.applyBindings(viewModel);	
+				console.debug('refresh chatMessage List');
 				$('#chatMessageList').listview('refresh');
+                            }
+                            else {
+                                console.debug("unable to post message to server");
+                                console.debug(response);
+                            }
+                        });
+                        $('#chatText').val('');
+                    }
+		};		
+                
+                ko.applyBindings(viewModel);
+                //ko.applyBindings(globalViewModel, document.getElementById("dashboardPage"));
+                //ko.applyBindings(globalViewModel, document.getElementById("myTeamPage"));
+		
+		//$("#myTeamPage").on("pagebeforeshow", function() {
+  		//	ko.applyBindings(globalViewModel);
+		//});
+		$("#dashboardPage").on('pageshow', function(event){
+       			console.debug('dashboardPage pageshow');
+			ko.applyBindings(viewModel);
+			$('#challengesList').listview('refresh');
+			$('#teamList').listview('refresh');
+			$('#teamActivityList').listview('refresh');
     		});
-
+		$("#myTeamPage").on('pageshow', function(event){
+			ko.applyBindings(viewModel);
+			$('#myTeamPage').trigger('pagecreate');
+       			console.debug('myTeamPage pageshow');
+			$('#chatMessageList').listview('refresh');
+    		});
             });
         </script>
         <!-- knockout templates -->
