@@ -23,49 +23,47 @@
         <script>
             $(document).on('pageinit', function(event){
                 var viewModelData = $.parseJSON("{{view_model_json|escapejs}}");
-                var viewModel = new LighterFootprintsModel(viewModelData);
-                viewModel.perform = function(challengeModel){
-                    if (!challengeModel.availableNow()) {
-                        console.debug("tried to perform an activity that's not available right now");
-                        console.debug(challengeModel);
-                        return;
-                    }
-                    var id = challengeModel.pk();
-                    var formData = {
-                        participant_group_id: viewModel.participantGroupId(),
-                        activity_id: id
-                    };
-                    $.post('/lighterprints/api/do-activity', formData, function(data){
-                        if (data.success) {
-                            console.debug(data);
-                            ko.mapping.fromJSON(data.viewModel, viewModel);
-                            viewModel.lastPerformedActivity(challengeModel);
-                            ko.applyBindings(viewModel);
-                            $("#popupDialog").popup('open');
-                            console.debug('refreshing lists');
-                            $('#challengesList').listview('refresh');
-                            $('#teamList').listview('refresh');
-                            $('#teamActivityList').listview('refresh');
-                        }
-                        else {
-                            console.debug("ERROR: " + data.message);
-                        }
-                    })
-                };
-                
-                viewModel.send = function(){
-                    if ($('#chatText').val()) {
-                        var formData = {
-                            participant_group_id: viewModel.participantGroupId(),
-                            message: $('#chatText').val()
-                        };
+		var viewModel = new LighterFootprintsModel(viewModelData);
+		viewModel.perform = function(challengeModel){
+       			if (!challengeModel.availableNow()) {
+		            console.debug("tried to perform an activity that's not available right now");
+		            console.debug(challengeModel);
+		            return;
+		        }
+		        var id = challengeModel.pk();
+			var formData = {
+			participant_group_id: viewModel.participantGroupId(), activity_id:id
+			};
+        		$.post('/lighterprints/api/do-activity', formData, function(data){
+		        	if (data.success) {
+					console.debug(data);
+					//$('#dashboardPage').trigger('pagecreate');
+                			ko.mapping.fromJSON(data.viewModel, viewModel);
+					viewModel.lastPerformedActivity(challengeModel);
+					ko.applyBindings(viewModel);
+					//$.mobile.changePage("/lighterprints/mobile");
+					$("#popupDialog").popup('open');
+					console.debug('refreshing lists');
+					$('#challengesList').listview('refresh');
+					$('#teamList').listview('refresh');
+					$('#teamActivityList').listview('refresh');
+            			}
+				else {
+        	        		console.debug("ERROR: " + data.message);
+				}
+			})
+		};
+
+		viewModel.send = function(){
+	                if ($('#chatText').val()) {
+                        var formData = {participant_group_id: viewModel.participantGroupId(), message:$('#chatText').val()};
                         $.post('/lighterprints/api/message', formData, function(response){
                             if (response.success) {
                                 console.debug("successful post - updated view model: ");
                                 ko.mapping.fromJS(response.viewModel, viewModel);
-                                ko.applyBindings(viewModel);
-                                console.debug('refresh chatMessage List');
-                                $('#chatMessageList').listview('refresh');
+				ko.applyBindings(viewModel);	
+				console.debug('refresh chatMessage List');
+				$('#chatMessageList').listview('refresh');
                             }
                             else {
                                 console.debug("unable to post message to server");
@@ -74,30 +72,23 @@
                         });
                         $('#chatText').val('');
                     }
-                };
+		};		              
                 ko.applyBindings(viewModel);
-                $("#dashboardPage").on('pageshow', function(event){
-                    console.debug('dashboardPage pageshow');
-                    $('#challengesList').listview('refresh');
-                    $('#teamList').listview('refresh');
-                    $('#teamActivityList').listview('refresh');
-                });
-                
-                $("#myTeamPage").on('pageshow', function(event){
-                    console.debug('myTeamPage pageshow');
-                    $('#chatMessageList').listview('refresh');
-                });
+		$("#dashboardPage").on('pageshow', function(event){
+       			console.debug('dashboardPage pageshow');
+			$('#challengesList').listview('refresh');
+			$('#teamList').listview('refresh');
+			$('#teamActivityList').listview('refresh');
+    		});
+
+		$("#myTeamPage").on('pageshow', function(event){
+       			console.debug('myTeamPage pageshow');
+			$('#chatMessageList').listview('refresh');
+    		});
             });
         </script>
         <!-- knockout templates -->
-        <script type='text/html' id='likeCommentTemplate'>
-            <div data-bind='if: $root.participantGroupId() != participant_group_id()'>
-                <span data-bind='ifnot: commented'><a class='comment comment-popover' href='javascript:void(0)' rel="popover" data-placement='left' data-title="Leave a comment" data-bind='popover: {  content: "#commentPopoverForm", id: pk()}'><span class='comment lighterprints-gray icon-comment'></span></a></span>
-                <span data-bind='if: commented'><span class='commented icon-comment'></span></span>
-                <span data-bind='ifnot: liked'><a href='#' data-bind='click: $root.like'><span class='like lighterprints-gray icon-heart'></span></a></span>
-                <span data-bind='if: liked'><span class='liked icon-heart'></span></span>
-            </div>
-        </script>
+
         <!-- group activity templates, keyed by parameter name -->
         <script type='text/html' id='comment'>
             <li data-bind='if: $root.participantGroupId() != participant_group_id()'>
@@ -120,8 +111,6 @@
                                 <span class='icon-quote-right'></span>
                             </small>
                         </div>
-                    </div>
-                    <div data-bind='template: "likeCommentTemplate"'>
                     </div>
                 </span>
             </li>
@@ -156,8 +145,6 @@
                     <span class='icon-quote-right'></span>
                 </small>
             </div>
-            <div data-bind="template: 'likeCommentTemplate'">
-            </div>
             </span>
         </li>
         </script>
@@ -169,23 +156,20 @@
                 <span data-bind='text: date_created'></span>
             </small>
             <span>earned <span class='lighterprints-green' data-bind='text:points'></span><span class='icon-leaf lighterprints-green'></span>for <span data-bind='text: $root.groupName'></span>by completing <em><span data-bind='text: display_name'></span></em>.</span>
-            <div data-bind="template: 'likeCommentTemplate'">
-            </div>
+
             </span>
         </li>
     </script>
     <script type='text/html' id='challenges-template'>
     	        <li data-icon="false">
-            	<a href="#" data-bind='css: status, click: $root.perform'>
-            	<span data-bind='if: availableNow'>Perform</span>
+			<a href="#" data-bind='css: status, click: $root.perform'>
+		            	<span data-bind='if: availableNow'>Perform</span>
 				<span data-bind='if: completed'>Completed <span class='icon-check'></span></span>
 				<span data-bind='if: expired'>Expired <span class='icon-warning-sign'></span></span>
 				<span data-bind='if: upcoming'>Not yet available <span class='icon-time'></span></span>
 				<span data-bind='if: locked'>Locked <span class='icon-lock'></span></span>
-				<img style='padding: 10px 0 0 20px;' data-bind='attr: {src: "https://vcweb.asu.edu/static/images/lighterprints/badges/" + name() + ".png" }'><h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
-                <p>
-                    <span data-bind='css: status, text: summary'></span>
-                </p>
+				<img style='padding: 10px 0 0 10px; float:left;' data-bind='attr: {src: "https://vcweb.asu.edu/static/images/lighterprints/badges/" + name() + ".png" }'><h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
+                		<p><span data-bind='css: status, text: summary'></span></p>
                 <h4><span data-bind='text: points'></span><span class='lighterprints-green icon-leaf icon-2x'></span>
                     <br>
                     <span data-bind='text: time_slots'></span>
@@ -193,6 +177,7 @@
             </a>
         </li>
     </script>
+
 	<script type='text/html' id='leaderboard-template'>
 						<li>
                             <strong>#<span data-bind="text:$index() + 1"></span></strong>
@@ -200,7 +185,13 @@
                             	<span data-bind="text: groupName"></span>
 							</span>
                         </li>
-	  </script>
+	</script>
+	<script type='text/html' id='myTeam-template'>
+			<li>
+                                	<span>Participant <span data-bind="text: participant_number"></span>: <span data-bind="text: value"></span>
+                   					<span data-bind="text: date_created"></span><br> ago
+                            </li>
+	</script>
     <script type='text/html' id='no-group-activity-template'>
         Your group has not had any activity yet.  You can <a href='#dashboardPage'>perform challenges in your dashboard</a>
         or post messages in the <a href='#myTeamPage'>the group wall</a>
@@ -211,11 +202,11 @@
     	<!-- Start of #dashboardPage -->
         <div data-role="page" id="dashboardPage" class="ui-responsive-panel">
             <!-- defaultpanel  -->
-            <div data-role="panel" id="defaultpanel" data-theme="b" data-position="left" data-display="overlay" data-dismissible="true" >
-                <a href="#" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-gauge"></span> Dashboard</h2></a>
-                <a href="#challengesPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-star"></span> Challenges</h2></a>
-                <a href="#myTeamPage" reloadPage="true" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-user"></span> My Team</h2></a>
-                <a href="#helpPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-question"></span> Help</h2></a>
+            <div data-role="panel" id="defaultpanel" data-position="left" data-display="overlay" data-dismissible="true" >
+                <a href="#" data-role="button" class="innerbutton"><h4><span class="icon-gauge"></span> Dashboard</h4></a>
+                <a href="#challengesPage" data-role="button" class="innerbutton"><h4><span class="icon-star"></span> Challenges</h4></a>
+                <a href="#myTeamPage" reloadPage="true" data-role="button" class="innerbutton"><h4><span class="icon-user"></span> My Team</h4></a>
+                <a href="#helpPage" data-role="button" class="innerbutton"><h4><span class="icon-question"></span> Help</h4></a>
             </div>
             <!-- /defaultpanel -->
             <div data-role="header" data-theme="a" class="navbar" data-position="fixed">
@@ -223,19 +214,18 @@
                 <a href="#defaultpanel" class="ui-btn-right" data-role="button" data-inline="true" data-iconpos="notext" data-theme="a" data-icon="align-justify"></a>
             </div>
             <div data-role="content" data-theme="d">
-                <h2><span class="icon-gauge"></span> Team Dashboard
-                <div class="ui-bar">
-                </div>
+		<div class="ui-bar-d">
+                <h4><span class="icon-gauge lighterprints-grey"> Team Dashboard</span>  </h4>
                 <div class="ui-grid-a" data-inset="true">
                     <div class="ui-block-a">
-                        <div class="ui-bar ui-bar-e" style="height:70px">
+                        <div class="ui-bar ui-bar-e" style="height:90px">
                             Today's Score
                             <br>
                             <span data-bind="text: averagePoints"></span>
                         </div>
                     </div>
                     <div class="ui-block-b">
-                        <div class="ui-bar ui-bar-e" style="height:70px">
+                        <div class="ui-bar ui-bar-e" style="height:90px">
                             Current Level
                             <div data-bind='if: experimentCompleted'>
                                 <img alt='Experiment Completed' class='group-level' width='120' height='70' src='https://vcweb.asu.edu/static/images/lighterprints/experiment-completed.png'>
@@ -248,53 +238,52 @@
                 </div><!-- /grid-a -->
                 <div class="ui-grid-a">
                     <div class="ui-block-a">
-                        <div class="ui-bar ui-bar-e" style="height:70px">
+                        <div class="ui-bar ui-bar-e" style="height:90px">
                             Today's Progress
                             <br>
-                            Your group progress: <span data-bind="text: averagePoints"></span>
+                            Your group progress: <span data-bind="text: averagePoints"></span> /
                             <span data-bind="text:pointsToNextLevel"></span>
                         </div>
                     </div>
                     <div class="ui-block-b">
-                        <div class="ui-bar ui-bar-e" style="height:70px">
+                        <div class="ui-bar ui-bar-e" style="height:90px">
                             Time Remaining
                             <table>
                                 <tr>
                                     <td>
-                                        <span data-bind="text: hoursLeft"></span> h
+                                        <span data-bind="text: hoursLeft"></span>h
                                     </td>
                                     <td>
-                                        <span data-bind="text: minutesLeft"></span> m
+                                        <span data-bind="text: minutesLeft"></span>m
                                     </td>
                                 </tr>
                             </table>
                         </div>
                     </div>
-                </div></h2>
-                <h2><span class="icon-star "></span> Challenges
-                <div class="ui-bar-d">
-                    <div data-role="navbar">
+                </div></div>
+
+		<div class="ui-bar-d">
+		<div data-role="navbar" data-theme="d">
+                <h4><span class="lighterprints-grey"> Challenges</span></h4>
                         <ul id="challengesNavbarList">
                             <li>
-                                <a href="#" class="ui-btn-active"><span class="icon-star text-gold "></span> Unlocked</a>
+                                <a href="#" class="ui-btn-active" ><h3><span class="icon-star text-gold "> Unlocked</span></h3></a>
                             </li>
                             <li>
-                                <a href="#dashboardLockedChallengePage"><span class="icon-lock"></span> Locked</a>
+                                <a href="#dashboardLockedChallengePage"><h3><span class="icon-lock lighterprints-grey"> Locked</span></h3></a>
                             </li>
                         </ul>
                     </div>
-                    <div class='tab-pane active' id='unlocked-challenges'>
-                      	<ul id="challengesList" data-role="listview" data-inset="true" data-theme="d" data-bind="template: { name: 'challenges-template', foreach: unlockedChallenges() }">
-                       	</ul>
-                    </div>
-                </div></h2>
-                <h2><span class="icon-trophy text-gold "></span> Leaderboard
-                <div class="ui-bar-d">
+                    <ul id="challengesList" data-role="listview" data-inset="true" data-theme="d" data-bind="template: { name: 'challenges-template', foreach: unlockedChallenges() }">
+			</ul>
+		</div>
+		<div class="ui-bar-d">
+                <h4><span class="icon-trophy text-gold "></span> Leaderboard</h4>
                     <ul id="teamList" data-role="listview" data-bind="template: {name:'leaderboard-template', foreach: groupData}" data-inset="true" data-theme="b">
                     </ul>
-                </div></h2>
-                <h2><span class="icon-user"></span> Team Activity
-                <div class="ui-bar-d">
+		</div>
+		<div class="ui-bar-d">
+                <h4><span class="icon-user lighterprints-blue"></span> Team Activity</h4>
                     <div data-bind='ifnot: hasGroupActivity()'>
                         <div data-bind='template: { name: "no-group-activity-template" }'>
                         </div>
@@ -303,7 +292,7 @@
                         <ul id="teamActivityList" data-role="listview" data-inset="true" data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
                         </ul>
                     </div>
-                </div></h2>
+                </div>
             </div>
              <div data-role="footer" data-theme="c">
                 <div class="ui-bar-b" style="font-size:15px;text-align:center;">
@@ -320,55 +309,51 @@
                     lighter<strong>footprints</strong>
                 </div>
             </div>
-			<div data-role="popup" id="activityCompletedDialog" data-overlay-theme="a" data-theme="c" class="ui-corner-all">
-				<div data-role="header" data-theme="a" class="ui-corner-top">
-					<h1>Performing Challenge...</h1>
-				</div>
-				<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
-					<div data-bind='with: lastPerformedActivity'>		            				
-			                <img alt='Lighterprints Activity Badge' data-bind='attr: {src: "/static/images/lighterprints/badges/" + name() + ".png" }'>
-				        	<h3>You completed a challenge!</h3>
-						<p><strong><em data-bind='text: display_name'></em></strong> for <span class='lighterprints-green' data-bind='text: points'></span><i class='icon-leaf lighterprints-green'></i>
-						</p>
-						<p data-bind='text: summary'></p>
-			        </div>
-					<a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Continue</a> 
-				</div>
+		<div data-role="popup" id="popupDialog" data-overlay-theme="a" data-theme="c" class="ui-corner-all">
+			<div data-role="header" data-theme="a" class="ui-corner-top">
+				<h1>Performing Challenge...</h1>
 			</div>
+			<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+				<div data-bind='with: lastPerformedActivity'>		            				
+			                <img alt='Lighterprints Activity Badge' data-bind='attr: {src: "/static/images/lighterprints/badges/" + name() + ".png" }'>
+				        <h3>You completed a challenge!</h3>
+					<p><strong><em data-bind='text: display_name'></em></strong> for <span class='lighterprints-green' data-bind='text: points'></span><i class='icon-leaf lighterprints-green'></i>
+					</p>
+					<p data-bind='text: summary'></p>
+			        </div>
+				<a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Continue</a> 
+			</div>
+		</div>
         </div>
-        <!-- /page dashboardPage--><!-- Start of #dashboardLockedChallengePage -->
+        <!-- /page dashboardPage-->
+><!-- Start of #dashboardLockedChallengePage -->
         <!-- /page dashboardLockedChallengePage--><!-- Start of first page: #challengesPage -->
         <!-- /page lockedChallengePage--><!-- Start of page: #myTeamPage -->
         <div data-role="page" id="myTeamPage" class="ui-responsive-panel">
             <div data-role="panel" id="defaultpanel" data-theme="b" data-position="left" data-display="overlay" data-dismissible="true" >
-                <a href="#dashboardPage" reloadPage="true" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-gauge"></span> Dashboard</h2></a>
-                <a href="#challengesPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-star"></span> Challenges</h2></a>
-                <a href="#" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-user"></span> My Team</h2></a>
-                <a href="#helpPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-question"></span> Help</h2></a>
+                <a href="#dashboardPage" data-theme="c" data-role="button" class="innerbutton"><h4><span class="icon-gauge"></span> Dashboard</h4></a>
+                <a href="#challengesPage" data-theme="c" data-role="button" class="innerbutton"><h4><span class="icon-star"></span> Challenges</h4></a>
+                <a href="#" data-theme="c" data-role="button" class="innerbutton"><h4><span class="icon-user"></span> My Team</h4></a>
+                <a href="#helpPage" data-theme="c" data-role="button" class="innerbutton"><h4><span class="icon-question"></span> Help</h4></a>
             </div>
             <div data-role="header" data-theme="a" class="navbar" data-position="fixed" >
                 <img width="30px" height="30px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
                 <a href="#defaultpanel" class="ui-btn-right" data-role="button" data-inline="true" data-iconpos="notext" data-theme="a" data-icon="align-justify"></a>
             </div>
             <div data-role="content" data-theme="d">
-                <h2><span class="icon-comment"></span> My Team</h2>
-                <div class="ui-bar-d">
+                <h4><span class="icon-comment"></span> My Team</h4>
+                <div class="ui-bar-d" data-role="fieldcontain">
+			<input type="hidden" name="participant_group_id" value='{{participant_group_relationship.id}}'>
+			<input type="text" id="chatText" name="message" placeholder="Send a message to your group">
+			<a href="#" data-inline="true" data-role="button" data-bind='click: $root.send'>Send</a>
+
                     <div data-bind="ifnot: hasChatMessages() " data-inset="true">
                         No chat messages have been posted yet.
                     </div>
                     <div data-bind="if: hasChatMessages()">
-                        <ul id="chatMessageList" data-role="listview" data-bind="foreach: chatMessages" data-inset="true" style="overflow-y: scroll;">
-                            <li>
-                                	<span>Participant <span data-bind="text: participant_number"></span>: <span data-bind="text: value"></span>
-                   					<span data-bind="text: date_created"></span><br> ago
-                            </li>
+                        <ul id="chatMessageList" data-role="listview" data-bind="template: {name:'myTeam-template', foreach: chatMessages}" data-inset="true" style="overflow-y: scroll;">               
                         </ul>
                     </div>
-                    <form id="chat-form">
-                        <div data-role="fieldcontain" class="innerblock">
-                            <input type="hidden" name="participant_group_id" value='{{participant_group_relationship.id}}'><input type="text" id="chatText" name="message" placeholder="Send a message to your group">
-                        </div><a href="#" data-role="button" data-bind='click: $root.send'>Send</a>
-                    </form>
                 </div>
             </div>
             <div data-role="footer" data-theme="c">
@@ -390,19 +375,19 @@
         <!-- /page myTeamPage--><!-- Start of page: #helpPage -->
 		 <div data-role="page" id="helpPage" class="ui-responsive-panel">
             <div data-role="panel" id="defaultpanel" data-theme="b" data-position="left" data-display="overlay" data-dismissible="true" >
-                <a href="#dashboardPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-gauge"></span> Dashboard</h2></a>
-                <a href="#challengesPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-star"></span> Challenges</h2></a>
-                <a href="#myTeamPage" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-user"></span> My Team</h2></a>
-                <a href="#" data-theme="c" data-role="button" class="innerbutton"><h2><span class="icon-question"></span> Help</h2></a>
+                <a href="#dashboardPage" data-theme="c" data-role="button" class="innerbutton"><h4><span class="icon-gauge"></span> Dashboard</h4></a>
+                <a href="#challengesPage" data-theme="c" data-role="button" class="innerbutton"><h4><span class="icon-star"></span> Challenges</h4></a>
+                <a href="#myTeamPage" data-theme="c" data-role="button" class="innerbutton"><h4><span class="icon-user"></span> My Team</h4></a>
+                <a href="#" data-theme="c" data-role="button" class="innerbutton"><h4><span class="icon-question"></span> Help</h4></a>
             </div>
             <div data-role="header" data-theme="a" class="navbar" data-position="fixed" >
                 <img width="30px" height="30px" src="https://vcweb.asu.edu/static/images/lighterprints/logo.png" alt="footprint logo">lighter<strong style="color:#b9ed2e;">footprints</strong>
                 <a href="#defaultpanel" class="ui-btn-right" data-role="button" data-inline="true" data-iconpos="notext" data-theme="a" data-icon="align-justify"></a>
             </div>
             <div data-role="content" data-theme="d">
-                <h2><span class="icon-question"></span> Help</h2>
                 <div class="ui-bar-d" data-inset="true">
-                    <h2>Instructions</h2>
+		    <h4><span class="icon-question lighterprints-grey"> Help</span></h4>
+                    <h4>Instructions</h4>
                     <p>
                         You have been randomly placed in a group of <strong>5 participants</strong>. 
                         In this experiment you can perform virtual actions that represent green alternatives to some common daily  
@@ -410,7 +395,7 @@
                         specific times.  You can learn more about them by clicking on the <a href="#challengesPage">Challenges tab</a>
                         and selecting an activity.
                     </p>
-                    <h2>Challenges, Green Points, and Levels</h2>
+                    <h4>Challenges, Green Points, and Levels</h4>
                     <p>
                         Each <strong class="text-gold">challenge</strong>
                         is worth a certain number of <strong class="lighterprints-green">green points <span class="icon-leaf"></span></strong>. 
@@ -428,28 +413,26 @@
                         In order to reach this target you and a majority of the members of your group must perform
                         high point challenges when they are available.
                     </p>
-                    <h2>How to participate</h2>
+                    <h4>How to participate</h4>
                     <p>
                         To participate, simply click on the <a href="#challengesPage">Challenges tab</a>, and select a challenge you"d like to perform. 
                         You can leave messages for the other members n your group via the <a href="#myTeamPage">My Group tab</a>
                         or use the <a href="#dashboardPage">Dashboard</a>
                         to view your group"s progress.
-                        <br>
-                        You can also <a href="#dashboardPage">restart the tutorial</a>.
                     </p>
                 </div>
                 <div class="ui-bar-d">
-                    <h3>Frequently Asked Questions</h3>
+                    <h4>Frequently Asked Questions</h4>
                     <ul data-role="listview" data-inset="true" data-theme="b">
                         <li>
-                            <h2>I performed an activity worth 15 points but only 3 points were added to Today"s Progress and Today"s Score.  Why?</h2>
+                            <h4>I performed an activity worth 15 points but only 3 points were added to Today"s Progress and Today"s Score.  Why?</h4>
                             <p>
                                 The numbers in Today"s Score Today"s Progress represent your group"s <b>average number of earned green points</b>.  If there are 5
                                 people in your group, performing a 15 point activity adds 3 points to the group average (15 / 5 = 3).
                             </p>
                         </li>
                         <li>
-                            <h2>Why do the challenges performed in the previous day not count for today?</h2>
+                            <h4>Why do the challenges performed in the previous day not count for today?</h4>
                             <p>
                                 In order to advance in level and unlock more challenges you must reach an average level of points in your
                                 group during one day, starting at 0.00AM.  Every day at midnight the server will check your group"s average number of
@@ -460,7 +443,7 @@
                             </p>
                         </li>
                         <li>
-                            <h2>I don"t have a car or anyone to carpool with, so how can I carpool?</h2>
+                            <h4>I don"t have a car or anyone to carpool with, so how can I carpool?</h4>
                             <p>
                                 You don"t have to actually perform the activity in the real world to click on "perform". These are just
                                 virtual challenges for the time being. In the future we plan to allow participants to gain points by
@@ -473,8 +456,8 @@
             <div data-role="footer" data-theme="c">
                 <div class="ui-bar-b" style="font-size:15px;text-align:center;">
                     <div data-role="controlgroup" data-type="horizontal" data-theme="b">
-                        <a href="#dashboardPage" data-theme="b"> Dashboard</a>
-                        <a href="#challengesPage"> Challenges</a>
+                        <a href="#dashboardPage"> Dashboard</a>
+                        <a href="#challengesPage" class="ui-btn-active"> Challenges</a>
                         <a href="#myTeamPage"> My Team</a>
                         <a href="#"> Help</a>
                     </div>
@@ -486,6 +469,5 @@
                 </div>
             </div>
         </div>
-        <!-- /page helpPage-->
     </body>
 </html>
