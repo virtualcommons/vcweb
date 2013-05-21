@@ -255,8 +255,8 @@ data-bind="text: averagePoints"></span>
 	</script>
 	<script type='text/html' id='myTeam-template'>
 			<li>
-                                	<span>Participant <span data-bind="text: participant_number"></span>: <span data-bind="text: value"></span>
-                   					<span class="ui-li-aside" data-bind="text: date_created"></span>
+                                	<span style="color:#5c5d5b;">Participant <span data-bind="text: participant_number"></span> </span><br><span data-bind="text: value"></span>
+                   					<span style="color:#5c5d5b;" class="ui-li-aside" data-bind="text: date_created"></span>
                             </li>
 	</script>
     <script type='text/html' id='no-group-activity-template'>
@@ -286,7 +286,7 @@ data-bind="text: averagePoints"></span>
                         <div class="ui-bar ui-bar-e" style="height:90px">
                             Today's Score
                             <br>
-                            <span style="font-size:25px;"><span data-bind="text: averagePoints"></span><span class='icon-leaf lighterprints-green'></span><h1>
+                            <span style="font-size:20px;"><span data-bind="text: averagePoints"></span> <span class='icon-leaf lighterprints-green'></span><h1>
                         </div>
                     </div>
                     <div class="ui-block-b">
@@ -306,15 +306,15 @@ data-bind="text: averagePoints"></span>
                         <div class="ui-bar ui-bar-e" style="height:90px">
                             Today's Progress
                             <br>
-                            <span style="font-size:25px;" data-bind="text: averagePoints"></span><big> &#47 </big>
-                            <span style="font-size:25px;" data-bind="text:pointsToNextLevel"></span>
+                            <span style="font-size:20px;" data-bind="text: averagePoints"></span><big> &#47 </big>
+                            <span style="font-size:20px;" data-bind="text:pointsToNextLevel"></span>
                         </div>
                     </div>
                     <div class="ui-block-b">
                         <div class="ui-bar ui-bar-e" style="height:90px">
                             Time Remaining<br>
-                            <span style="font-size:25px;" data-bind="text: hoursLeft"></span><big> &#58; </big>
-                             <span style="font-size:25px;" data-bind="text: minutesLeft"></span>
+                            <span style="font-size:20px;" data-bind="text: hoursLeft"></span><big> &#58; </big>
+                             <span style="font-size:20px;" data-bind="text: minutesLeft"></span>
                         </div>
                     </div>
                 </div></div>
@@ -378,11 +378,9 @@ data-bind="text: averagePoints"></span>
                     lighter<strong>footprints</strong>
                 </div>
             </div>
-		<div data-role="popup" id="popupDialog1" data-overlay-theme="a" data-theme="c" class="ui-corner-all">
-			<div data-role="header" data-theme="a" class="ui-corner-top">
-				<h1 style="white-space: normal;!">Performing Challenge...</h1>
-			</div>
-			<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+		<div data-role="popup" id="popupDialog1" data-overlay-theme="a" data-theme="c">
+			
+			<div data-role="content" data-theme="a" style="text-align: center;">
 				<div data-bind='with: lastPerformedActivity'>		            				
 			                <img alt='Lighterprints Activity Badge' data-bind='attr: {src: "/static/images/lighterprints/badges/" + name() + ".png" }'>
 				        <h3 style="white-space: normal;!">You completed a challenge!</h3>
@@ -390,7 +388,7 @@ data-bind="text: averagePoints"></span>
 					</p>
 					<p style="white-space: normal;!" data-bind='text: summary'></p>
 			        </div>
-				<a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Continue</a> 
+				<a href="#" data-role="button" data-inline="true" data-rel="back">DONE</a> 
 			</div>
 		</div>
         </div>
@@ -416,7 +414,7 @@ data-bind="text: averagePoints"></span>
                         <div class="ui-bar ui-bar-e" style="height:90px">
                             Today's Score
                             <br>
-                            <span style="font-size:25px;"><span data-bind="text: averagePoints"></span><span class='icon-leaf lighterprints-green'></span><h1>
+                            <span style="font-size:20px;"><span data-bind="text: averagePoints"></span> <span class='icon-leaf lighterprints-green'></span><h1>
                         </div>
                     </div>
                     <div class="ui-block-b">
@@ -436,15 +434,15 @@ data-bind="text: averagePoints"></span>
                         <div class="ui-bar ui-bar-e" style="height:90px">
                             Today's Progress
                             <br>
-                            <span style="font-size:25px;" data-bind="text: averagePoints"></span><big> &#47; </big>
-                            <span style="font-size:25px;" data-bind="text:pointsToNextLevel"></span>
+                            <span style="font-size:20px;" data-bind="text: averagePoints"></span><big> &#47; </big>
+                            <span style="font-size:20px;" data-bind="text:pointsToNextLevel"></span>
                         </div>
                     </div>
                     <div class="ui-block-b">
                         <div class="ui-bar ui-bar-e" style="height:90px">
                             Time Remaining<br>
-                            <span style="font-size:25px;" data-bind="text: hoursLeft"></span><big> &#58; </big>
-                             <span style="font-size:25px;" data-bind="text: minutesLeft"></span>
+                            <span style="font-size:20px;" data-bind="text: hoursLeft"></span><big> &#58; </big>
+                             <span style="font-size:20px;" data-bind="text: minutesLeft"></span>
                         </div>
                     </div>
                 </div></div>
@@ -581,19 +579,17 @@ data-bind="text: averagePoints"></span>
                     lighter<strong>footprints</strong>
                 </div>
             </div>
-		<div data-role="popup" id="popupDialog3" data-overlay-theme="a" data-theme="c" class="ui-corner-all">
-			<div data-role="header" data-theme="a" class="ui-corner-top">
-				<h1>Performing Challenge...</h1>
-			</div>
-			<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+	<div data-role="popup" id="popupDialog3" data-overlay-theme="a" data-theme="c" class="ui-corner-all">
+			
+			<div data-role="content" data-theme="a" style="text-align: center;">
 				<div data-bind='with: lastPerformedActivity'>		            				
 			                <img alt='Lighterprints Activity Badge' data-bind='attr: {src: "/static/images/lighterprints/badges/" + name() + ".png" }'>
-				        <h3>You completed a challenge!</h3>
-					<p><strong><em data-bind='text: display_name'></em></strong> for <span class='lighterprints-green' data-bind='text: points'></span><i class='icon-leaf lighterprints-green'></i>
+				        <h3 style="white-space: normal;!">You completed a challenge!</h3>
+					<p style="white-space: normal;!"><strong><em data-bind='text: display_name'></em></strong> for <span class='lighterprints-green' data-bind='text: points'></span><i class='icon-leaf lighterprints-green'></i>
 					</p>
-					<p data-bind='text: summary'></p>
+					<p style="white-space: normal;!" data-bind='text: summary'></p>
 			        </div>
-				<a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Continue</a> 
+				<a href="#" data-role="button" data-inline="true" data-rel="back">DONE</a> 
 			</div>
 		</div>
         </div>
@@ -685,17 +681,16 @@ data-bind="text: averagePoints"></span>
             </div>
             <div data-role="content" data-theme="d">
                 <h4><span class="icon-comment lighterprints-grey"> My Team</span></h4>
-		<div data-role="fieldcontain">
+		
 			<input type="hidden" name="participant_group_id" value='{{participant_group_relationship.id}}'>
 			<input type="text" id="chatText" name="message" placeholder="Send a message to your group">
 			<a href="#" data-theme="a" data-inline="true" data-role="button" data-bind='click: $root.send'>Send</a>
-		</div>                
-		<div class="ui-bar-c">
-			<div data-bind="ifnot: hasChatMessages() " data-inset="true" data-theme="d">
+		<div class="ui-body-b">
+			<div data-bind="ifnot: hasChatMessages() " data-inset="true">
                         No chat messages have been posted yet.
                     </div>
                     <div data-bind="if: hasChatMessages()">
-                        <ul id="chatMessageList" data-role="listview" data-bind="template: {name:'myTeam-template', foreach: chatMessages}" data-inset="true" style="overflow-y: scroll;height:600px;" data-theme="d">               
+                        <ul id="chatMessageList" data-role="listview" data-bind="template: {name:'myTeam-template', foreach: chatMessages}" data-inset="true" style="overflow-y: scroll;height:600px;">               
                         </ul>
                     </div>
                 </div>
@@ -730,17 +725,17 @@ data-bind="text: averagePoints"></span>
                 <a href="#defaultpanel6" class="ui-btn-right" data-role="button" data-inline="true" data-iconpos="notext" data-theme="a" data-icon="align-justify"></a>
             </div>
             <div data-role="content" data-theme="d">
-                <div class="ui-bar-d" data-inset="true">
+                <div class="ui-block-d" data-inset="true">
 		    <h4><span class="icon-question lighterprints-grey"> Help</span></h4>
                     <h4>Instructions</h4>
                     <p>
-                        You have been randomly placed in a group of <strong>5 participants</strong>. 
+                        You have been randomly placed in a group of <b>5 participants</b>. 
                         In this experiment you can perform virtual actions that represent green alternatives to some common daily  
                         activities.  Some of these activities are available all day, and others are only available at 
                         specific times.  You can learn more about them by clicking on the <a href="#challengesPage" style="text-decoration: none;">Challenges tab</a>
                         and selecting an activity.
                     </p>
-                    <h4>Challenges, Green Points, and Levels</h4>
+                    <b>Challenges, Green Points, and Levels</b>
                     <p>
                         Each <strong class="text-gold">challenge</strong>
                         is worth a certain number of <strong class="lighterprints-green">green points <span class="icon-leaf"></span></strong>. 
@@ -758,21 +753,21 @@ data-bind="text: averagePoints"></span>
                         In order to reach this target you and a majority of the members of your group must perform
                         high point challenges when they are available.
                     </p>
-                    <h4>How to participate</h4>
+                    <b>How to participate</b>
                     <p>
-                        To participate, simply click on the <a href="#challengesPage" style="text-decoration: none;">Challenges tab</a>, and select a challenge you"d like to perform. 
+                        To participate, simply click on the <a href="#challengesPage" style="text-decoration: none;">Challenges tab</a>, and select a challenge you'd like to perform. 
                         You can leave messages for the other members n your group via the <a href="#myTeamPage" style="text-decoration: none;">My Group tab</a>
                         or use the <a href="#dashboardPage" style="text-decoration: none;">Dashboard</a>
-                        to view your group"s progress.
+                        to view your group's progress.
                     </p>
-                </div>
-                <div class="ui-bar-d">
+                </div><br>
+                <div class="ui-body-d">
                     <h4>Frequently Asked Questions</h4>
                     <ul data-role="listview" data-inset="true" data-theme="b">
                         <li>
                             <h4 style="white-space: normal;!">I performed an activity worth 15 points but only 3 points were added to Today's Progress and Today's Score.  Why?</h4>
                             <p style="white-space: normal;!">
-                                The numbers in Today"s Score Today"s Progress represent your group"s <b>average number of earned green points</b>.  If there are 5
+                                The numbers in Today's Score Today's Progress represent your group's <b>average number of earned green points</b>.  If there are 5
                                 people in your group, performing a 15 point activity adds 3 points to the group average (15 / 5 = 3).
                             </p>
                         </li>
@@ -790,7 +785,7 @@ data-bind="text: averagePoints"></span>
                         <li>
                             <h4 style="white-space: normal;!">I don't have a car or anyone to carpool with, so how can I carpool?</h4>
                             <p style="white-space: normal;!">
-                                You don"t have to actually perform the activity in the real world to click on "perform". These are just
+                                You don't have to actually perform the activity in the real world to click on "perform". These are just
                                 virtual challenges for the time being. In the future we plan to allow participants to gain points by
                                 actually performing these challenges.
                             </p>
