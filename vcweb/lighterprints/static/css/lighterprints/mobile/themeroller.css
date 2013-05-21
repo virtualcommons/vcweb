@@ -993,8 +993,8 @@ a.ui-link-inherit {
 /* Button corner class
 -----------------------------------------------------------------------------------------------------------*/
 .ui-btn-corner-all {
-	-webkit-border-radius: 0em /*{global-radii-buttons}*/;
-	border-radius: 0em /*{global-radii-buttons}*/;
+	-webkit-border-radius: 0.5em /*{global-radii-buttons}*/;
+	border-radius: 0.5em /*{global-radii-buttons}*/;
 }
 /* radius clip workaround for cleaning up corner trapping */
 .ui-corner-all,
