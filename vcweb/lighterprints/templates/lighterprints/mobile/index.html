@@ -685,7 +685,7 @@ data-bind="text: averagePoints"></span>
 			<input type="hidden" name="participant_group_id" value='{{participant_group_relationship.id}}'>
 			<input type="text" id="chatText" name="message" placeholder="Send a message to your group">
 			<a href="#" data-theme="a" data-inline="true" data-role="button" data-bind='click: $root.send'>Send</a>
-		
+		<div class="ui-body-b">
 			<div data-bind="ifnot: hasChatMessages() " data-inset="true" data-theme="b">
                         No chat messages have been posted yet.
                     </div>
@@ -693,6 +693,7 @@ data-bind="text: averagePoints"></span>
                         <ul id="chatMessageList" data-role="listview" data-bind="template: {name:'myTeam-template', foreach: chatMessages}" data-inset="true" style="overflow-y: scroll;height:600px;">               
                         </ul>
                     </div>
+                </div>
             </div>
             <div data-role="footer" data-theme="c">
                 <div class="ui-bar-b" style="font-size:15px;text-align:center;">
