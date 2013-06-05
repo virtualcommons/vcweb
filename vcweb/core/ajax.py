@@ -6,7 +6,7 @@ from django.utils.html import escape
 
 from vcweb.core.decorators import experimenter_required, dajaxice_register
 from vcweb.core import dumps
-from vcweb.core.models import Experiment
+from vcweb.core.models import Experiment, RoundData, get_chat_message_parameter
 
 import logging
 logger = logging.getLogger(__name__)
@@ -105,6 +105,17 @@ def save_experimenter_notes(request, experiment_id, notes=None):
 @dajaxice_register
 def get_experiment_model(request, pk):
     return _get_experiment(request, pk).to_json()
+
+@experimenter_required
+@dajaxice_register
+def get_round_data(request, pk):
+    round_data = get_object_or_404(RoundData, pk=pk)
+    group_data_values = [gdv.to_dict(cacheable=True) for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()]
+    participant_data_values = [pdv.to_dict(include_email=True, cacheable=True) for pdv in round_data.participant_data_value_set.select_related('participant_group_relationship__participant__user', 'parameter').exclude(parameter=get_chat_message_parameter())]
+    return dumps({
+        'groupDataValues': group_data_values,
+        'participantDataValues': participant_data_values
+        })
 
 @experimenter_required
 @dajaxice_register

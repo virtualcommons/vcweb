@@ -157,7 +157,7 @@
                 data-bind='attr: { href: "#" + roundDataId() }'>
                 <span class='label label-success' data-bind='text: roundType'></span>Round <span data-bind='text: roundNumber'></span></a>
         </div>
-        <div data-bind='attr: { id: roundDataId }' class='accordion-body collapse'>
+        <div data-bind='click: $root.loadRoundData, attr: { id: roundDataId }' class='accordion-body collapse'>
             <div class='accordion-inner'>
                 <div data-bind='if: experimenterNotes'>
                     <h4>Experimenter Notes</h4>
@@ -253,7 +253,15 @@
             model.refresh = function() {
                 console.debug("refreshing page");
                 window.location.reload(true);
-            }
+            };
+            model.loadRoundData = function(localModel) {
+                Dajaxice.vcweb.core.get_round_data(function(data) {
+                    ko.mapping.fromJS(data, localModel);
+                    console.debug("local model is now: ");
+                    console.debug(localModel);
+                }, 
+                {pk: localModel.pk});
+            };
             model.update = function(localModel, evt) {
                 $('#progress-modal').modal('show');
                 Dajaxice.vcweb.core.get_experiment_model(function(data) {

@@ -974,30 +974,30 @@ class Experiment(models.Model):
         if self.is_timed_round and self.is_time_expired:
             self.end_round()
 
-# FIXME: figure out a better way to convert these to json that doesn't involve manual remapping of attribute names...
-# or be consistent so that things on the client side are named the same as the server side
     def all_round_data(self):
+        # FIXME: figure out a better way to convert these to json that doesn't involve manual remapping of attribute names...
+        # or be consistent so that things on the client side are named the same as the server side
         all_round_data = []
-        for round_data in self.round_data_set.reverse():
-            group_data_values = [gdv.to_dict() for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()]
-# FIXME: do this more efficiently
-            participant_data_values = [pdv.to_dict(include_email=True, cacheable=True) 
-                    for pdv 
-                    in round_data.participant_data_value_set.select_related('participant_group_relationship__participant__user', 'parameter').exclude(parameter=get_chat_message_parameter())]
+        for round_data in self.round_data_set.select_related('round_configuration').reverse():
+            # FIXME: grossly inefficient as number of rounds increases
+            #group_data_values = [gdv.to_dict(cacheable=True) for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()]
+            #participant_data_values = [pdv.to_dict(include_email=True, cacheable=True) 
+            #        for pdv 
+            #        in round_data.participant_data_value_set.select_related('participant_group_relationship__participant__user', 'parameter').exclude(parameter=get_chat_message_parameter())]
             rc = round_data.round_configuration
             all_round_data.append({
+                'pk': round_data.pk,
                 'roundDataId': "roundData_%s" % round_data.pk,
                 'experimenterNotes': round_data.experimenter_notes,
                 'roundType': rc.get_round_type_display(),
                 'roundNumber':rc.round_number,
-                'groupDataValues': group_data_values,
-                'participantDataValues': participant_data_values
                 })
         return all_round_data
 
     def to_dict(self, include_round_data=True, default_value_dict=None, attrs=None, *args, **kwargs):
         ec = self.experiment_configuration
-        experiment_dict = {
+        experiment_dict = dict(default_value_dict or {}, **kwargs)
+        experiment_dict.update({
                 'roundStatusLabel': self.status_label,
                 'roundSequenceLabel': self.sequence_label,
                 'timeRemaining': self.time_remaining,
@@ -1008,14 +1008,14 @@ class Experiment(models.Model):
                 'isArchived': self.is_archived,
                 'exchangeRate': float(ec.exchange_rate),
                 'readyParticipants': self.number_of_ready_participants,
-                }
+                })
         if include_round_data:
+            # FIXME: grossly inefficient, need to rethink this - maybe fetch round data asynchronously instead
             experiment_dict['allRoundData'] = self.all_round_data()
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
-            experiment_dict['messages'] = [str(log) for log in self.activity_log_set.order_by('-date_created')]
+            experiment_dict['messages'] = map(str, self.activity_log_set.order_by('-date_created'))
             experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes if self.is_round_in_progress else ''
-        if default_value_dict:
-            experiment_dict.update(default_value_dict, **kwargs)
+# FIXME: remove if unused/unneeded, intended to provide some way to include more experiment attributes at invocation time
         if attrs:
             experiment_dict.update([(attr, getattr(self, attr, None)) for attr in attrs])
         return experiment_dict
