@@ -132,7 +132,7 @@
             </div>
         </div>
         {% endblock footer %}
-        {% with jquery_version="1.9.1" %}
+        {% with jquery_version="1.10.1" %}
         <script src='//ajax.googleapis.com/ajax/libs/jquery/{{jquery_version}}/jquery.min.js'></script>
         {% endwith %}
         <script src='{{STATIC_URL}}bootstrap/js/bootstrap.min.js'></script>
@@ -140,9 +140,6 @@
         <script src='{{STATIC_URL}}js/ko/knockout.min.js'></script>
         <script src='{{STATIC_URL}}js/ko/knockout.mapping.min.js'></script>
         <script src='{{STATIC_URL}}js/common.js'></script>
-        {% comment %}
-        <script src='//cdnjs.cloudflare.com/ajax/libs/d3/3.0.1/d3.v3.min.js'></script>
-        {% endcomment %}
         {% dajaxice_js_import %}
         {% block javascript %}
         {% endblock %}

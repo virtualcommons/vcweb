@@ -979,22 +979,23 @@ class Experiment(models.Model):
         # or be consistent so that things on the client side are named the same as the server side
         all_round_data = []
         for round_data in self.round_data_set.select_related('round_configuration').reverse():
-            # FIXME: grossly inefficient as number of rounds increases
-            #group_data_values = [gdv.to_dict(cacheable=True) for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()]
-            #participant_data_values = [pdv.to_dict(include_email=True, cacheable=True) 
-            #        for pdv 
-            #        in round_data.participant_data_value_set.select_related('participant_group_relationship__participant__user', 'parameter').exclude(parameter=get_chat_message_parameter())]
+            # XXX: grossly inefficient as number of rounds increases, load them dynamically instead when the accordion is opened
+            # group_data_values = [gdv.to_dict(cacheable=True) for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()]
+            # participant_data_values = [pdv.to_dict(include_email=True, cacheable=True) for pdv in round_data.participant_data_value_set.select_related('participant_group_relationship__participant__user', 'parameter').exclude(parameter=get_chat_message_parameter())]
             rc = round_data.round_configuration
             all_round_data.append({
                 'pk': round_data.pk,
                 'roundDataId': "roundData_%s" % round_data.pk,
                 'experimenterNotes': round_data.experimenter_notes,
                 'roundType': rc.get_round_type_display(),
-                'roundNumber':rc.round_number,
+                'roundNumber': rc.round_number,
+                # empty stubs to be loaded in dynamically when loaded
+                'groupDataValues': [],
+                'participantDataValues': [],
                 })
         return all_round_data
 
-    def to_dict(self, include_round_data=True, default_value_dict=None, attrs=None, *args, **kwargs):
+    def to_dict(self, include_round_data=False, default_value_dict=None, attrs=None, *args, **kwargs):
         ec = self.experiment_configuration
         experiment_dict = dict(default_value_dict or {}, **kwargs)
         experiment_dict.update({
@@ -1010,11 +1011,12 @@ class Experiment(models.Model):
                 'readyParticipants': self.number_of_ready_participants,
                 })
         if include_round_data:
-            # FIXME: grossly inefficient, need to rethink this - maybe fetch round data asynchronously instead
+            # XXX: stubs for round data 
             experiment_dict['allRoundData'] = self.all_round_data()
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
             experiment_dict['messages'] = map(str, self.activity_log_set.order_by('-date_created'))
             experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes if self.is_round_in_progress else ''
+            experiment_dict['groups'] = [group.to_dict() for group in self.groups]
 # FIXME: remove if unused/unneeded, intended to provide some way to include more experiment attributes at invocation time
         if attrs:
             experiment_dict.update([(attr, getattr(self, attr, None)) for attr in attrs])
@@ -1023,7 +1025,7 @@ class Experiment(models.Model):
     def as_dict(self, *args, **kwargs):
         return self.to_dict(*args, **kwargs)
 
-    def to_json(self, include_round_data=True, *args, **kwargs):
+    def to_json(self, include_round_data=False, *args, **kwargs):
         return dumps(self.to_dict(include_round_data, *args, **kwargs))
 
     """ returns a fresh copy of this experiment with configuration / metadata intact """
@@ -1524,6 +1526,17 @@ class Group(models.Model, DataValueMixin):
     @property
     def current_round_activity_log(self):
         return self.activity_log_set.filter(round_configuration=self.current_round)
+
+    def to_dict(self):
+        participant_group_relationships = [ 
+                { 'pk': pgr.pk, 'participant_number': pgr.participant_number, 'email': pgr.participant.email }
+                for pgr in self.participant_group_relationship_set.all()
+                ]
+        return {
+                'name': self.name,
+                'pk': self.pk,
+                'participant_group_relationships': participant_group_relationships
+                }
 
     def get_related_group(self):
         ''' FIXME: currently only assumes single paired relationships '''

@@ -62,7 +62,7 @@
                 </div>
             </div>
         </div>
-        <div class='well' style='padding-top: 5px; padding-bottom: 5px; margin-bottom: 0px;'>
+        <div class='well experimenter-round-status'>
             <h5>ROUND STATUS</h5>
             <div><b class='text-info' data-bind='text:roundSequenceLabel'></b></div>
             <div><span data-bind='text:roundStatusLabel'></span></div>
@@ -76,25 +76,19 @@
                         Registered participants: <span id='participantCountId' data-bind='text:participantCount' class='badge badge-info'></span>
                     </a>
                 </div>
-                {% comment %} switch to KO for this, doesn't get updated properly when transitioning rounds {% endcomment %}
                 <div id='registeredParticipants' class='accordion-body collapse'>
-                    <div class='accordion-inner'>
-                        {% regroup registeredParticipants by group as group_list %}
-                        {% for group in group_list %}
+                    <div class='accordion-inner' data-bind='foreach: groups'>
                         <table class='table table-compact table-striped table-bordered'>
-                            <caption class='text-info'><b>{{ group.grouper }} (PK: {{group.grouper.pk}})</b></caption>
+                            <caption class='text-info'><b><span data-bind='text: name'></span> (PK: <span data-bind='text: pk'></span>)</b></caption>
                             <thead><tr><th>PGR PK</th><th>Participant</th><th>Email</th></tr></thead>
-                            <tbody>
-                                {% for item in group.list %}
+                            <tbody data-bind='foreach: participant_group_relationships'>
                                 <tr>
-                                    <td>{{ item.participant_group_relationship.pk }}</td>
-                                    <td>{{ item.participant_group_relationship.participant_number}}</td>
-                                    <td>{{ item.participant_group_relationship.participant.email }}</td>
+                                    <td data-bind='text: pk'>
+                                    <td data-bind='text: participant_number'>
+                                    <td data-bind='text: email'>
                                 </tr>
-                                {% endfor %}
                             </tbody>
                         </table>
-                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -154,10 +148,10 @@
     <div class='accordion-group'>
         <div class='accordion-heading'>
             <a class='accordion-toggle' data-toggle='collapse' data-parent='#round-data-accordion'
-                data-bind='attr: { href: "#" + roundDataId() }'>
+                data-bind='click: $root.loadRoundData, attr: { href: "#" + roundDataId() }'>
                 <span class='label label-success' data-bind='text: roundType'></span>Round <span data-bind='text: roundNumber'></span></a>
         </div>
-        <div data-bind='click: $root.loadRoundData, attr: { id: roundDataId }' class='accordion-body collapse'>
+        <div data-bind='attr: { id: roundDataId }' class='accordion-body collapse'>
             <div class='accordion-inner'>
                 <div data-bind='if: experimenterNotes'>
                     <h4>Experimenter Notes</h4>
@@ -255,6 +249,7 @@
                 window.location.reload(true);
             };
             model.loadRoundData = function(localModel) {
+                console.debug("loading round data");
                 Dajaxice.vcweb.core.get_round_data(function(data) {
                     ko.mapping.fromJS(data, localModel);
                     console.debug("local model is now: ");
