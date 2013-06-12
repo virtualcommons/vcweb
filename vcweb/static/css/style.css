@@ -85,6 +85,11 @@ li.pull-right {
     margin: 5px 0px 5px 0px;
     overflow: auto;
 }
+.experimenter-round-status {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-bottom: 0px;
+}
 .left-divider {
     padding-left: 20px;
     border-left: 1px solid #e1e6e9;
