@@ -249,13 +249,16 @@
                 window.location.reload(true);
             };
             model.loadRoundData = function(localModel) {
-                console.debug("loading round data");
+                console.debug("loading round data for round data with pk: " + localModel.pk());
+                console.debug(localModel);
                 Dajaxice.vcweb.core.get_round_data(function(data) {
+                    console.debug("incoming data");
+                    console.debug(data);
                     ko.mapping.fromJS(data, localModel);
                     console.debug("local model is now: ");
                     console.debug(localModel);
                 }, 
-                {pk: localModel.pk});
+                {pk: localModel.pk()});
             };
             model.update = function(localModel, evt) {
                 $('#progress-modal').modal('show');
