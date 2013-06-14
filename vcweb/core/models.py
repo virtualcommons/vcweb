@@ -1014,7 +1014,7 @@ class Experiment(models.Model):
             # XXX: stubs for round data 
             experiment_dict['allRoundData'] = self.all_round_data()
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
-            experiment_dict['messages'] = map(str, self.activity_log_set.order_by('-date_created'))
+            experiment_dict['messages'] = map(str, self.activity_log_set.order_by('-date_created')[:100])
             experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes if self.is_round_in_progress else ''
             experiment_dict['groups'] = [group.to_dict() for group in self.groups]
 # FIXME: remove if unused/unneeded, intended to provide some way to include more experiment attributes at invocation time
