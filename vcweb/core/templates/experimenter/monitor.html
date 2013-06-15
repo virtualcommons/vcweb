@@ -251,12 +251,13 @@
             model.loadRoundData = function(localModel) {
                 console.debug("loading round data for round data with pk: " + localModel.pk());
                 console.debug(localModel);
+                if (localModel.participantDataValues().length > 0 || localModel.groupDataValues() > 0) {
+                    console.debug("assuming round data has already been loaded");
+                    return;
+                }
                 Dajaxice.vcweb.core.get_round_data(function(data) {
-                    console.debug("incoming data");
-                    console.debug(data);
-                    ko.mapping.fromJS(data, localModel);
-                    console.debug("local model is now: ");
-                    console.debug(localModel);
+                    localModel.groupDataValues(data.groupDataValues);
+                    localModel.participantDataValues(data.participantDataValues);
                 }, 
                 {pk: localModel.pk()});
             };
