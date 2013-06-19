@@ -490,10 +490,10 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     <table class='table'>
         <tr class='row harvest-decision-resources' data-bind='foreach: harvestDecisionOptions'>
             <td data-bind='attr: { id: "harvest-decision-td-" + $data }'>
-                <form data-bind='attr: { id: "harvest-decision-multiselect-form" + $data }'>
+                <form data-bind='attr: { id: $root.harvestDecisionFormId($data) }'>
                     <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: $root.participantGroupId'/>
                     <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: $data'>
-                    <div class='harvest-decision-tree-div' data-bind='click: $root.selectDecision.bind($root, $data, "#harvest-decision-multiselect-form" + $data)'>
+                    <div class='harvest-decision-tree-div' data-bind='click: $root.selectDecision.bind($root, $data)'>
                         <div data-bind='css: { selected: $root.isSelectedHarvestDecision($data), "harvest-decision-tree": $data > 0, "zero-harvest-decision": $data === 0}'></div>
                         <span style='margin-left: 2px;' class='badge badge-info' data-bind='text: $data'></span>
                     </div>
@@ -521,6 +521,10 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             model.harvestDecisionOptions = ko.computed(function() {
                 return ko.utils.range(0, model.maxHarvestDecision());
             });
+            model.harvestDecisionFormId = function(numberOfTrees) {
+                numberOfTrees = numberOfTrees || model.harvestDecision();
+                return "harvest-decision-form" + numberOfTrees;
+            }
             model.calculateEarnings = function(quantity) {
                 return function() {
                     return formatCurrency(quantity * model.exchangeRate());
@@ -657,25 +661,25 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 return (model.submitted() || model.selectedHarvestDecision()) && model.harvestDecision() >= numberOfTrees;
             }
             model.submitDecision = function() {
-                console.debug("submitting decision");
-                model.submitted(true);
-                var formData = $('#vcweb-form').serialize();
-                console.debug("posting form data: " + formData);
-                $.post('submit-harvest-decision', formData, function(response) {
+                console.debug("submitting decision for form " + model.harvestDecisionFormId() + " with harvest decision:"  + model.harvestDecision());
+                $.post('submit-harvest-decision', 
+                {participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true }, 
+                function(response) {
                     console.debug(response);
                     // hide selection, disable chat, show waiting room
                     model.participantReady(response.message);
                     model.clearCurrentInterval();
+                    model.submitted(true);
                     model.secondsLeft(0);
                 });
 
             }
-            model.selectDecision = function(numberOfTrees, formId) {
+            model.selectDecision = function(numberOfTrees) {
                 if (model.submitted()) {
-                    console.debug("Already submitted a decision, aborting.");
+                    alert("You've already submitted a harvest decision this round.");
                     return false;
                 }
-                formId = formId || "#vcweb-form";
+                var formId = "#" + model.harvestDecisionFormId(numberOfTrees)
                 var form = $(formId);
                 console.debug("formId: " + formId + " -- number of trees: " + numberOfTrees);
                 model.selectedHarvestDecision(true);
