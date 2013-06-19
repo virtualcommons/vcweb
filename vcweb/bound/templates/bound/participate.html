@@ -404,9 +404,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
         <h3>Harvest</h3>
         <div data-bind='if: submitted'>
             <div class='alert alert-success'>
-                <i class='icon-leaf'></i> You have submitted a harvest decision for <span class='badge badge-info'
-                    data-bind='text: harvestDecision'></span> trees.  Please wait quietly while the rest of the participants submit
-                their decisions.
+                <i class='icon-leaf'></i> You have currently selected a harvest decision of <span class='badge badge-info' data-bind='text: harvestDecision'></span> trees.  Click the submit button to finalize your decision.
             </div>
         </div>
         <div data-bind='ifnot: alive'>
@@ -419,7 +417,8 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             <form id='vcweb-form' method='post' class='form-horizontal' >
                 {% csrf_token %}
                 <div id='harvestDecisionDiv' class='control-group'>
-                    <div data-bind='template: { name: "harvest-decision-click-template" }'></div>
+                    <div data-bind='template: { name: "harvest-decision-multiselect-template" }'></div>
+                    <button id='submitDecisionButton' data-bind='click: $root.submitDecision' type='submit' class='btn btn-primary'>Submit</button>
                 </div>
             </form>
         </div>
@@ -487,14 +486,14 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
     </div>
 </div>
 </script>
-<script type='text/html' id='harvest-decision-click-template'>
+<script type='text/html' id='harvest-decision-multiselect-template'>
     <table class='table'>
         <tr class='row harvest-decision-resources' data-bind='foreach: harvestDecisionOptions'>
             <td data-bind='attr: { id: "harvest-decision-td-" + $data }'>
-                <form data-bind='attr: { id: "harvest-decision-click-form" + $data }'>
+                <form data-bind='attr: { id: "harvest-decision-multiselect-form" + $data }'>
                     <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: $root.participantGroupId'/>
                     <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: $data'>
-                    <div class='harvest-decision-tree-div' data-bind='click: $root.submitDecision.bind($data, "#harvest-decision-click-form" + $data)'>
+                    <div class='harvest-decision-tree-div' data-bind='click: $root.selectDecision.bind($root, $data, "#harvest-decision-multiselect-form" + $data)'>
                         <div data-bind='css: { selected: $root.isSelectedHarvestDecision($data), "harvest-decision-tree": $data > 0, "zero-harvest-decision": $data === 0}'></div>
                         <span style='margin-left: 2px;' class='badge badge-info' data-bind='text: $data'></span>
                     </div>
@@ -508,10 +507,10 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
         <span class='add-on'><i class='icon-leaf'></i></span>
         <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
         <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: harvestDecision'>
+        <input id='harvestDecisionSubmitted' style='display: none;' type='checkbox' name='submitted' data-bind='value: submitted'/>
         <select id='harvestDecisionSelect' name='harvest_decision' required="required" form="vcweb-form" data-bind='options: harvestDecisionOptions, value: harvestDecision'>
         </select>
     </div>
-    <button id='submitDecisionButton' type='submit' class='btn btn-primary'>Submit</button>
 </script>
 <script src='{% static "js/bootstrap-tour.js" %}'></script>
 <script type="text/javascript">
@@ -520,11 +519,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
             model.harvestDecisionOptions = ko.computed(function() {
-                var lowerBound = 0;
-                if (model.submitted()) {
-                    lowerBound = 1;
-                }
-                return ko.utils.range(lowerBound, model.maxHarvestDecision());
+                return ko.utils.range(0, model.maxHarvestDecision());
             });
             model.calculateEarnings = function(quantity) {
                 return function() {
@@ -533,6 +528,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
             }
             model.secondsLeft = ko.observable(0);
             model.currentInterval = ko.observable();
+            model.selectedHarvestDecision = ko.observable(false);
             model.sessionOneEarnings = ko.computed(model.calculateEarnings(model.sessionOneStorage()));
             model.sessionTwoEarnings = ko.computed(model.calculateEarnings(model.sessionTwoStorage()));
             model.totalEarnings = ko.computed(model.calculateEarnings(model.storage()));
@@ -650,10 +646,8 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                         setInterval(function() {
                             model.tick();
                             if (! model.isTimerRunning()) {
-                                if (! model.submitted()) {
-                                    // don't auto-submit decisions if we have already submit one
-                                    model.submitDecision();
-                                }
+                                // FIXME: need to verify that this invocation will work properly
+                                model.submitDecision();
                                 model.clearCurrentInterval();
                             }
                         },
@@ -661,26 +655,36 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 }
             };
             model.isSelectedHarvestDecision = function(numberOfTrees) {
-                return model.submitted() && model.harvestDecision() >= numberOfTrees;
+                return (model.submitted() || model.selectedHarvestDecision()) && model.harvestDecision() >= numberOfTrees;
             }
-            model.submitDecision = function(formId, numberOfTrees) {
-                if (model.submitted()) {
-                    alert("Should we allow multiple submission?  Right now it is disabled.");
-                    return false;
-                }
-                formId = formId || "#vcweb-form";
-                numberOfTrees = numberOfTrees || 0;
-                console.debug("formId: " + formId + " -- number of trees: " + numberOfTrees);
-                var formData = $(formId).serialize();
+            model.submitDecision = function() {
+                console.debug("submitting decision");
                 model.submitted(true);
-                model.harvestDecision(numberOfTrees);
-                console.debug(formData);
+                var formData = $('#vcweb-form').serialize();
+                console.debug("posting form data: " + formData);
                 $.post('submit-harvest-decision', formData, function(response) {
-                    console.log(response);
-                    // model.update($.parseJSON(response.experimentModelJson));
+                    console.debug(response);
                     getWebSocket().send(createReadyEvent(response.message));
                     model.clearCurrentInterval();
                     model.secondsLeft(0);
+                    // FIXME: hide selection, disable chat, show the waiting
+                });
+
+            }
+            model.selectDecision = function(numberOfTrees, formId) {
+                if (model.submitted()) {
+                    console.debug("Already submitted a decision, aborting.");
+                    return false;
+                }
+                formId = formId || "#vcweb-form";
+                var form = $(formId);
+                console.debug("formId: " + formId + " -- number of trees: " + numberOfTrees);
+                model.selectedHarvestDecision(true);
+                model.harvestDecision(numberOfTrees);
+                var formData = form.serialize();
+                console.debug(formData);
+                $.post('submit-harvest-decision', formData, function(response) {
+                    console.debug(response);
                 });
                 return false;
             }

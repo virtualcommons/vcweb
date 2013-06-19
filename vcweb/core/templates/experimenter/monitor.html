@@ -191,7 +191,7 @@
     </div>
 </div>
 <div id='progress-modal' class='modal hide fade'>
-    <div class='model-header'>
+    <div class='modal-header'>
         <h3>Updating experiment data</h3>
     </div>
     <div class='modal-body'>
@@ -238,6 +238,9 @@
                 Dajaxice.vcweb.core.save_experimenter_notes(function(data) {
                     if (data.success) {
                         model.addMessage("Saved experimenter notes.");
+                    }
+                    else {
+                        model.addMessage("Unable to save experimenter notes: " + data);
                     }
                 },
                 { experiment_id: {{ experiment.pk }}, notes: notes });

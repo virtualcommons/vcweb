@@ -189,6 +189,7 @@ class LogMessageForm(forms.Form):
 class SingleIntegerDecisionForm(forms.Form):
     integer_decision = forms.IntegerField(required=True, min_value=0)
     participant_group_id = forms.IntegerField(required=True, widget=forms.widgets.HiddenInput)
+    submitted = forms.BooleanField(required=False, widget=forms.widgets.HiddenInput)
 
 class QuizForm(forms.Form):
     name_question = forms.CharField(max_length=64, label=_("What is your name?"))

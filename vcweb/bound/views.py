@@ -40,8 +40,10 @@ def submit_harvest_decision(request, experiment_id=None):
         participant_group_id = form.cleaned_data['participant_group_id']
         pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         harvest_decision = form.cleaned_data['integer_decision']
+        submitted = form.cleaned_data['submitted']
+        logger.debug("pgr %s harvested %s - final submission? %s", pgr, harvest_decision, submitted)
         round_data = experiment.current_round_data
-        set_harvest_decision(pgr, harvest_decision, round_data, submitted=True)
+        set_harvest_decision(pgr, harvest_decision, round_data, submitted=submitted)
         message = "%s harvested %s trees"
         experiment.log(message % (pgr.participant, harvest_decision))
         response_dict = {
