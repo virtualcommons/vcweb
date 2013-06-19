@@ -648,7 +648,6 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                             if (! model.isTimerRunning()) {
                                 // FIXME: need to verify that this invocation will work properly
                                 model.submitDecision();
-                                model.clearCurrentInterval();
                             }
                         },
                         1000));
@@ -664,10 +663,10 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 console.debug("posting form data: " + formData);
                 $.post('submit-harvest-decision', formData, function(response) {
                     console.debug(response);
-                    getWebSocket().send(createReadyEvent(response.message));
+                    // hide selection, disable chat, show waiting room
+                    model.participantReady(response.message);
                     model.clearCurrentInterval();
                     model.secondsLeft(0);
-                    // FIXME: hide selection, disable chat, show the waiting
                 });
 
             }
