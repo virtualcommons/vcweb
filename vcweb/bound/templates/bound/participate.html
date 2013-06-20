@@ -404,7 +404,12 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
         <h3>Harvest</h3>
         <div data-bind='if: submitted'>
             <div class='alert alert-success'>
-                <i class='icon-leaf'></i> You have currently selected a harvest decision of <span class='badge badge-info' data-bind='text: harvestDecision'></span> trees.  Click the submit button to finalize your decision.
+                <i class='icon-leaf'></i> You have already submitted a harvest decision of <span class='badge badge-info' data-bind='text: harvestDecision'></span> trees.
+            </div>
+        </div>
+        <div data-bind='if: selectedHarvestDecision'>
+            <div class='alert alert-success'>
+                <i class='icon-leaf'></i> You have currently selected a harvest decision of <span class='badge badge-info' data-bind='text: harvestDecision'></span> trees.  Click the Save button to finalize your decision.
             </div>
         </div>
         <div data-bind='ifnot: alive'>
@@ -418,7 +423,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 {% csrf_token %}
                 <div id='harvestDecisionDiv' class='control-group'>
                     <div data-bind='template: { name: "harvest-decision-multiselect-template" }'></div>
-                    <button id='submitDecisionButton' data-bind='click: $root.submitDecision' type='submit' class='btn btn-primary'>Submit</button>
+                    <button disabled id='submitDecisionButton' data-bind='click: $root.submitDecision, text: submitted() ? "Continue" : "Save"' type='submit' class='btn btn-primary'></button>
                 </div>
             </form>
         </div>
@@ -688,6 +693,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 console.debug(formData);
                 $.post('submit-harvest-decision', formData, function(response) {
                     console.debug(response);
+                    $('#submitDecisionButton').prop('disabled', false);
                 });
                 return false;
             }
@@ -737,7 +743,6 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 model.chatEnabled(! chatDisabled);
             }
             model.afterRenderTemplate = function(elements) {
-                console.debug("after render template: " + model.harvestDecision());
                 if (model.templateId() === "REGULAR") {
                     model.startRound()
                 }

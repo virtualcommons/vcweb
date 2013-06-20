@@ -10,8 +10,8 @@ from vcweb.bound.forms import SingleIntegerDecisionForm
 from vcweb.bound.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
         get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
         get_all_session_storages, get_last_harvest_decision, get_harvest_decision_dv, get_harvest_decision_parameter,
-        set_harvest_decision, can_observe_other_group, is_player_alive, get_average_harvest, get_average_storage,
-        get_total_harvest, get_number_alive)
+        set_harvest_decision, can_observe_other_group, get_average_harvest, get_average_storage,
+        get_total_harvest, get_number_alive, get_player_data)
 
 from urllib import urlencode
 import logging
@@ -73,16 +73,18 @@ experiment_model_defaults = {
         'maximumResourcesToDisplay': 20,
         'warningCountdownTime': 10,
         'harvestDecision': 0,
+        'storage': 0,
         'roundDuration': 60,
         'chatMessages': [],
         'canObserveOtherGroup': False,
+        'selectedHarvestDecision': False,
         'isInstructionsRound': False,
         'waitThirtySeconds': False,
         'totalHarvest': 0,
         'sessionOneStorage': 0,
         'sessionTwoStorage': 0,
         }
-# FIXME: need to distinguish between instructions / welcome rounds and practice/regular rounds
+# FIXME: bloated method with too many special cases, try to refactor
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
@@ -139,23 +141,15 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     # instructions rounds to practice rounds.
     own_group = participant_group_relationship.group
     own_resource_level = get_resource_level(own_group)
-    last_harvest_decision = get_last_harvest_decision(participant_group_relationship, round_data=previous_round_data)
-    # FIXME: redundancy with playerData and direct values
-    experiment_model_dict['playerData'] = [{
-        'id': pgr.pk,
-        'number': pgr.participant_number,
-        'lastHarvestDecision': get_last_harvest_decision(pgr, round_data=previous_round_data),
-        'alive': is_player_alive(pgr, current_round_data),
-        'storage': get_storage(pgr, current_round_data),
-        } for pgr in own_group.participant_group_relationship_set.all()]
-    experiment_model_dict['lastHarvestDecision'] = last_harvest_decision
-    experiment_model_dict['storage'] = get_storage(participant_group_relationship, current_round_data)
+    if current_round.is_playable_round:
+        player_data, own_data = get_player_data(own_group, previous_round_data, current_round_data, participant_group_relationship)
+        experiment_model_dict.update(own_data)
+        experiment_model_dict['playerData'] = player_data
+        experiment_model_dict['averageHarvest'] = get_average_harvest(own_group, previous_round_data)
+        experiment_model_dict['averageStorage'] = get_average_storage(own_group, current_round_data)
+        c = Counter(map(itemgetter('alive'), experiment_model_dict['playerData']))
+        experiment_model_dict['numberAlive'] = "%s out of %s" % (c[True], sum(c.values()))
     experiment_model_dict['resourceLevel'] = own_resource_level
-    experiment_model_dict['alive'] = is_player_alive(participant_group_relationship, current_round_data)
-    experiment_model_dict['averageHarvest'] = get_average_harvest(own_group, previous_round_data)
-    experiment_model_dict['averageStorage'] = get_average_storage(own_group, current_round_data)
-    c = Counter(map(itemgetter('alive'), experiment_model_dict['playerData']))
-    experiment_model_dict['numberAlive'] = "%s out of %s" % (c[True], sum(c.values()))
     # participant group data parameters are only needed if this round is a data round or the previous round was a data round
     if previous_round.is_playable_round or current_round.is_playable_round:
         harvest_decision = get_harvest_decision_dv(participant_group_relationship, current_round_data)

@@ -1,7 +1,7 @@
 from django.db.models import Sum
 from django.dispatch import receiver
 from vcweb.core import signals, simplecache
-from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, GroupRelationship,
+from vcweb.core.models import (DefaultValue, ExperimentMetadata, Parameter, ParticipantRoundDataValue, GroupRelationship,
         GroupCluster, GroupClusterDataValue, RoundData, RoundConfiguration)
 from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_harvest_decision_dv, get_regrowth_rate_parameter,
                                    get_group_harvest_parameter, get_reset_resource_level_parameter, get_resource_level as get_unshared_resource_level,
@@ -9,6 +9,7 @@ from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_d
                                    get_resource_level_parameter, get_resource_level_dv as get_unshared_resource_level_dv,
                                    set_group_harvest, set_regrowth, set_harvest_decision)
 
+from collections import defaultdict
 import logging
 
 logger = logging.getLogger(__name__)
@@ -196,6 +197,39 @@ def is_player_alive(participant_group_relationship, round_data, default=True):
 
 def get_number_alive(group, round_data):
     return ParticipantRoundDataValue.objects.for_group(group, parameter=get_player_status_parameter(), round_data=round_data, boolean_value=True).count()
+
+def get_player_data(group, previous_round_data, current_round_data, self_pgr):
+    prdvs = ParticipantRoundDataValue.objects.for_group(group=group,
+            round_data__in=[previous_round_data, current_round_data],
+            parameter__in=(get_player_status_parameter(), get_storage_parameter(), get_harvest_decision_parameter()),
+            )
+    player_dict = defaultdict(lambda: defaultdict(lambda: None))
+    for prdv in prdvs:
+        player_dict[prdv.participant_group_relationship][prdv.parameter] = prdv
+    player_data = []
+    for pgr, pgrdv_dict in player_dict.iteritems():
+        # FIXME: figure out a way to handle default values elegantly in this case since we aren't using the accessor
+        # methods
+        for int_parameter in (get_harvest_decision_parameter(), get_storage_parameter()):
+            if pgrdv_dict[int_parameter] is None:
+                pgrdv_dict[int_parameter] = DefaultValue(0)
+        if pgrdv_dict[get_player_status_parameter()] is None:
+            pgrdv_dict[get_player_status_parameter()] = DefaultValue(True)
+        player_data.append({
+            'id': pgr.pk,
+            'number': pgr.participant_number,
+            'lastHarvestDecision': pgrdv_dict[get_harvest_decision_parameter()].int_value,
+            'alive': pgrdv_dict[get_player_status_parameter()].boolean_value,
+            'storage': pgrdv_dict[get_storage_parameter()].int_value,
+            })
+    own_player = player_dict[self_pgr]
+    return (player_data, {
+        'lastHarvestDecision': own_player[get_harvest_decision_parameter()].int_value,
+        'alive': own_player[get_player_status_parameter()].boolean_value,
+        'storage': own_player[get_storage_parameter()].int_value,
+        })
+
+
 
 def set_player_status(participant_group_relationship, round_data, value):
     status_dv =  get_player_status_dv(participant_group_relationship, round_data)
