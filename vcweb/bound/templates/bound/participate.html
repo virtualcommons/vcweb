@@ -146,8 +146,8 @@
 <h3>Session <span data-bind='text: sessionId'></span> Instructions</h3>
 <p>
 In this session, there are two groups or villages.  Each group has a forest that the other group cannot harvest.  Both
-forests have the same growth capacity.  In addition, you may observe the other group, their storage amounts, and their
-forest status.  Similarly, they may observe your group in the same way.
+forests have the same growth capacity.  You may observe the other group, their storage amounts, and their forest status.
+Similarly, they may observe your group in the same way.
 </p>
 <h3>Key points</h3>
 <ul>
@@ -217,23 +217,25 @@ data-bind='css: { "badge-important": readyParticipants() < (participantCount() /
 <h4>Harvesting and Profit</h4>
 <p>
 In this experiment you will harvest trees <i class='icon-leaf text-success'></i> to make a
-profit and survive.  Each round you may choose to harvest between <strong>0</strong> and <strong data-bind='text: maxHarvestDecision'></strong> trees.  
-Each tree you harvest will be exchanged for one token, and extra tokens will be kept in your <strong>savings</strong>
-each round.
+profit and survive.  You may choose to harvest between <strong>0</strong> and <strong data-bind='text: maxHarvestDecision'></strong> trees during each round.  
+Each tree you harvest will earn you one savings point, and extra savings will carry over into the next round.
 </p>
 <h4>Cost of living</h4>
 <p>
 Each round you must pay living expenses of <span class='badge badge-important' data-bind='text: costOfLiving'></span>
-tokens.  If, at any point you do not have enough tokens to pay the living expenses, you will not be paid or be able to
-continue harvesting for the rest of the experimental session.  You will need to wait until the session is complete
-before joining again.
+savings points.  If at any point you do not have enough savings to pay the living expenses, you will not become
+"deceased" for the remainder of the session, preventing you from harvesting or receiving payment for that session.
+You will need to wait until the session is complete before joining again.
 </p>
 <h4>Cash payment</h4>
 <p>
-If you collect enough tokens to pay living expenses until the end of the session you will be paid in cash 
-<strong data-bind='text: formatCurrency(exchangeRate())'></strong> for each token you have.  It is possible that you
+If you have extra savings remaining at the end of play, you will be paid in cash
+<strong data-bind='text: formatCurrency(exchangeRate())'></strong> for each savings point.  It is possible that you
 could earn as much as <strong data-bind='text: formatCurrency(maxEarnings())'></strong> for the entire experiment.
 However, the final outcome depends on your choices and those of your group members.
+</p>
+<p>
+Instructional video placeholder.
 </p>
 <ul class='pager'>
 <li class='next'>
@@ -247,8 +249,8 @@ However, the final outcome depends on your choices and those of your group membe
 <h4>Forest Growth</h4>
 <p>
 Trees in the forest regrow much as real trees do.  The more trees there are, the faster empty places fill up with new
-trees.  It is possible to destroy the forest by overharvesting.  If the forest is destroyed there will be no more trees
-to harvest for the rest of the experiment.
+trees.  It is possible to destroy the forest by overharvesting.  If the forest is destroyed, no more trees will regrow
+and there will be no more trees to harvest for the rest of the experiment.
 </p>
 <h4>Carrying Capacity</h4>
 <p>
@@ -278,14 +280,15 @@ split between the 4 participants in your group, the forest has a capacity to pro
 <div id='instructions3'>
 <h4>Groups and Rounds</h4>
 <p>
-You have been randomly assigned to a group of size <strong data-bind='text:participantsPerGroup'></strong>.
+You have been assigned to a random group with <strong data-bind='text:participantsPerGroup'></strong> members.
 In this experiment you will be sharing a virtual forest with the <span data-bind='text: participantsPerGroup() - 1'></span> 
 other members in your group.  All participants in the experiment are in identical conditions and must harvest
-trees to pay the cost of living <span data-bind='text: costOfLiving'></span> and make a profit.
+trees to pay the cost of living (<span data-bind='text: costOfLiving'></span> savings points per round) to make a profit
+and accrue savings.  You will be able to text chat only with members of your own group.
 </p>
 <p>
 We will now begin with some <strong>practice rounds</strong>.  These rounds will <strong>not</strong> contribute to your
-earnings.  If you have any questions please raise your hand and someone will come to address your question.  Otherwise,
+savings.  If you have any questions please raise your hand and someone will come to address your question.  Otherwise,
 please click the button to continue.
 </p>
 <ul class='pager'>
@@ -306,7 +309,7 @@ There will be no payment for this practice session.
 <h3>Group and Individual Status</h3>
 <p>
 You will be able to observe the status of the members of your group each round.  Likewise, group members will see your
-status, and those of your group.
+status, and those of your group.  You will be able to text chat with your group members.
 </p>
 <h3>Harvest Choice</h3>
 <p>
@@ -314,12 +317,14 @@ Each round you will have a maximum of 1 minute to make a harvest decision.  THer
 decision:
 </p>
 <ol>
-<li>Select a harvest amount and click submit</li>
+<li>Select a harvest amount and click "Ok, I'm ready"</li>
 <li>Select a harvest amount and wait for the end of the session</li>
 </ol>
 <p>
 At the end of each round a countdown will alert you when there are 10 seconds remaining to make a harvest choice.  When
-the countdown reaches zero, any value you have selected will be auto-submitted.  The default harvest is zero.
+the countdown reaches zero, any value you have selected will be auto-submitted.  If you do not select a harvest value,
+the default value of 0 will automatically be selected.  You may change your harvest decision multiple times before
+clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </p>
 <ul class='pager'>
 <li class='previous'>
@@ -423,7 +428,7 @@ the countdown reaches zero, any value you have selected will be auto-submitted. 
                 {% csrf_token %}
                 <div id='harvestDecisionDiv' class='control-group'>
                     <div data-bind='template: { name: "harvest-decision-multiselect-template" }'></div>
-                    <button disabled id='submitDecisionButton' data-bind='click: $root.submitDecision, text: submitted() ? "Continue" : "Save"' type='submit' class='btn btn-primary'></button>
+                    <button disabled id='submitDecisionButton' data-bind='click: $root.submitDecision' type='submit' class='btn btn-primary'>Ok, I'm ready</button>
                 </div>
             </form>
         </div>
