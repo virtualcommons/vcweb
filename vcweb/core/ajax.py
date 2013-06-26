@@ -4,8 +4,9 @@ from django.template.loader_tags import BlockNode, ExtendsNode
 from django.template import loader, Context, RequestContext
 from django.utils.html import escape
 
-from vcweb.core.decorators import experimenter_required, dajaxice_register
 from vcweb.core import dumps
+from vcweb.core.decorators import experimenter_required, dajaxice_register
+from vcweb.core.http import JsonResponse
 from vcweb.core.models import Experiment, RoundData, get_chat_message_parameter
 
 import logging
@@ -91,14 +92,14 @@ def save_experimenter_notes(request, experiment_id, notes=None):
     experiment = _get_experiment(request, experiment_id)
     current_round_data = experiment.current_round_data
     current_experimenter_notes = current_round_data.experimenter_notes
-    if notes and notes != current_round_data.experimenter_notes:
+    if notes != current_round_data.experimenter_notes:
         if current_experimenter_notes:
-            experiment.log("Replacing existing experimenter notes: %s" % current_experimenter_notes)
+            experiment.log("Replacing existing experimenter notes %s with %s" % (current_experimenter_notes, notes))
         current_round_data.experimenter_notes = notes
         current_round_data.save()
-        return dumps({ 'success': True })
+        return JsonResponse(dumps({ 'success': True }))
     else:
-        return dumps({ 'success': False })
+        return JsonResponse(dumps({ 'success': False, 'message': "Experimenter notes were unchanged, no need to save '%s'" % notes}))
 
 
 @experimenter_required

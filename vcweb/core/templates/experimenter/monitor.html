@@ -234,14 +234,17 @@
                 }
             }
             model.saveExperimenterNotes = function(localModel, evt) {
+
                 var notes = $('#experimenterNotesText').val();
+                $('#submitExperimenterNotesButton').html("Submitting..");
                 Dajaxice.vcweb.core.save_experimenter_notes(function(data) {
                     if (data.success) {
-                        model.addMessage("Saved experimenter notes.");
+                        model.addMessage("Saved experimenter notes: " + notes);
                     }
                     else {
-                        model.addMessage("Unable to save experimenter notes: " + data);
+                        model.addMessage(data.message);
                     }
+                    setTimeout(function() { $('#submitExperimenterNotesButton').html("Save"); }, 1000);
                 },
                 { experiment_id: {{ experiment.pk }}, notes: notes });
             }
