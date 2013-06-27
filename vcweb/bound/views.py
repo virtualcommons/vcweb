@@ -102,9 +102,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['maxHarvestDecision'] = get_max_allowed_harvest_decision(participant_group_relationship, current_round_data, ec)
     experiment_model_dict['templateName'] = current_round.template_name
     experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
+    # FIXME: only show the tour on the first practice round.. this is a bit brittle, maybe simply tie it to round #2?
     experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
-    # FIXME: extend this to first 3 regular rounds of each session as well?
-    # experiment_model_dict['waitThirtySeconds'] = current_round.is_practice_round and current_round.sequence_number < 6
 # instructions round parameters
     if current_round.is_instructions_round:
         experiment_model_dict['isInstructionsRound'] = True
@@ -122,16 +121,17 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             experiment_model_dict['sessonTwoStorage'] = session_two_storage
 
     if current_round.is_survey_enabled:
-        # add last round data
+        logger.debug("survey was enabled")
         query_parameters = urlencode({
             'pid': participant_group_relationship.pk,
-            'eid': experiment.pk
+            'eid': experiment.pk,
+            'tid': experiment.experiment_configuration.treatment_id,
             })
         survey_url = current_round.survey_url
-        delimiter = '?'
-        if delimiter in survey_url:
-            delimiter = '&'
-        experiment_model_dict['surveyUrl'] = "{0}{1}{2}".format(current_round.survey_url, delimiter, query_parameters)
+        separator = '?'
+        if separator in survey_url:
+            separator = '&'
+        experiment_model_dict['surveyUrl'] = "{0}{1}{2}".format(current_round.survey_url, separator, query_parameters)
 
 
 # participant data

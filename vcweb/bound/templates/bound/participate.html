@@ -7,7 +7,6 @@
 {% block page %}
 <div class='row' id='page'>
     <div id='content' class='span8'>
-        <h3><span data-bind='text: roundSequenceLabel'></span></h3>
         <div data-bind='template: { name: templateId(), afterRender: afterRenderTemplate }'>
         </div>
         <div id='progress-modal' class='modal hide fade'>
@@ -74,12 +73,12 @@
 <script type='text/html' id='PRACTICE_ROUND_RESULTS'>
     <h3>Practice Round Results</h3>
     <p>
-    You harvested <span class='badge badge-success' data-bind='text: storage'></span> trees.
+    Your final savings were <span class='badge badge-success' data-bind='text: storage'></span> points.
     If this had been been a paid session, you would have earned <strong class='text-success' data-bind='text: totalEarnings'></strong>.
     </p>
     <p>
     We will now move on to the <strong>paid rounds.</strong>
-    Before you continue, please <a data-bind='attr: { href: surveyUrl }'>fill out a final questionnaire by clicking this link.</a>
+    Before you continue, please <a data-bind='attr: { href: surveyUrl }'>fill out a questionnaire by clicking this link.</a>
     </p>
     <ul class='pager'>
         <li class='next'>
@@ -407,14 +406,9 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 <div class='row' data-bind='ifnot: isResourceEmpty()'>
     <div class='span8'>
         <h3>Harvest</h3>
-        <div data-bind='if: submitted'>
+        <div data-bind='if: submitHarvestDecisionEnabled'>
             <div class='alert alert-success'>
-                <i class='icon-leaf'></i> You have already submitted a harvest decision of <span class='badge badge-info' data-bind='text: harvestDecision'></span> trees.
-            </div>
-        </div>
-        <div data-bind='if: selectedHarvestDecision'>
-            <div class='alert alert-success'>
-                <i class='icon-leaf'></i> You have currently selected a harvest decision of <span class='badge badge-info' data-bind='text: harvestDecision'></span> trees.  Click the Save button to finalize your decision.
+                <i class='icon-leaf'></i> You have currently <span data-bind='text: submitted ? "submitted" : "selected"'></span> a harvest decision of <span class='badge badge-info' data-bind='text: harvestDecision'></span> trees.  Click the 'Ok I'm ready' button to continue.
             </div>
         </div>
         <div data-bind='ifnot: alive'>
@@ -428,7 +422,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 {% csrf_token %}
                 <div id='harvestDecisionDiv' class='control-group'>
                     <div data-bind='template: { name: "harvest-decision-multiselect-template" }'></div>
-                    <button disabled id='submitDecisionButton' data-bind='click: $root.submitDecision' type='submit' class='btn btn-primary'>Ok, I'm ready</button>
+                    <button id='submitDecisionButton' data-bind='enable: submitHarvestDecisionEnabled, click: $root.submitDecision' type='submit' class='btn btn-primary'>Ok, I'm ready</button>
                 </div>
             </form>
         </div>
@@ -528,6 +522,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
+            model.tour = ko.observable();
             model.harvestDecisionOptions = ko.computed(function() {
                 return ko.utils.range(0, model.maxHarvestDecision());
             });
@@ -556,6 +551,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             });
             model.setupTour = function() {
                 var tour = new Tour();
+                model.tour(tour);
                 tour.addStep({ element: "#dashboard-last-harvest", title: "Last harvest", 
                     placement: "top",
                     content: "Your last round's harvest decision will be displayed here.  Since this is the first practice round this is currently 0."
@@ -571,10 +567,16 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 tour.addStep({ element: "#chatMessage", title: "Text Chat",
                         placement: "left",
                         content: "If chat is enabled, you can communicate with your group by typing messages into this box and hitting the enter key or clicking 'Send'."});
-                tour.addStep({ element: "#harvestDecisionSelect", title: "Harvest Decision",
-                        placement: "top",
-                        content: "Enter the number of trees you'd like to harvest here.  For the purposes of this practice round, please select 10 now and click the 'Submit' button."});
+                tour.addStep({ element: "#harvest-decision-td-10", title: "Harvest Decision",
+                        placement: "right",
+                        content: "Click on the number of trees you'd like to harvest here.  For the purposes of this practice round, please select 10 now and click the 'Ok, I'm ready' button."});
                 tour.start();
+            }
+            model.endTour = function() {
+                var tour = model.tour();
+                if (tour) {
+                    tour.end();
+                }
             }
             model.setCurrentInterval = function(intervalId) {
                 model.clearCurrentInterval();
@@ -667,10 +669,14 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                         1000));
                 }
             };
+            model.submitHarvestDecisionEnabled = ko.computed(function() {
+                return model.submitted() || model.selectedHarvestDecision();
+            });
             model.isSelectedHarvestDecision = function(numberOfTrees) {
-                return (model.submitted() || model.selectedHarvestDecision()) && model.harvestDecision() >= numberOfTrees;
+                return model.submitHarvestDecisionEnabled() && (model.harvestDecision() >= numberOfTrees);
             }
             model.submitDecision = function() {
+                model.endTour();
                 console.debug("submitting decision for form " + model.harvestDecisionFormId() + " with harvest decision:"  + model.harvestDecision());
                 $.post('submit-harvest-decision', 
                 {participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true }, 
@@ -692,13 +698,11 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 var formId = "#" + model.harvestDecisionFormId(numberOfTrees)
                 var form = $(formId);
                 console.debug("formId: " + formId + " -- number of trees: " + numberOfTrees);
-                model.selectedHarvestDecision(true);
-                model.harvestDecision(numberOfTrees);
                 var formData = form.serialize();
                 console.debug(formData);
                 $.post('submit-harvest-decision', formData, function(response) {
-                    console.debug(response);
-                    $('#submitDecisionButton').prop('disabled', false);
+                    model.selectedHarvestDecision(true);
+                    model.harvestDecision(numberOfTrees);
                 });
                 return false;
             }
