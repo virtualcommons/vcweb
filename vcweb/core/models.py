@@ -146,7 +146,7 @@ class ExperimentMetadata(models.Model):
     namespace = models.CharField(max_length=255, unique=True, validators=[RegexValidator(regex=namespace_regex)])
     # short name slug
     short_name = models.SlugField(max_length=32, unique=True, null=True, blank=True)
-    description = models.TextField(null=True, blank=True)
+    description = models.TextField(blank=True)
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
     about_url = models.URLField(null=True, blank=True)
@@ -166,7 +166,7 @@ class ExperimentMetadata(models.Model):
 
 class Institution(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    description = models.TextField(null=True, blank=True)
+    description = models.TextField(blank=True)
     url = models.URLField(null=True, blank=True)
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
@@ -182,7 +182,7 @@ class CommonsUser(models.Model):
     user = models.OneToOneField(User, related_name='%(class)s', verbose_name=u'Django User', unique=True)
     failed_password_attempts = models.PositiveIntegerField(default=0)
     institution = models.ForeignKey(Institution, null=True, blank=True)
-    authentication_token = models.CharField(max_length=64, null=True, blank=True)
+    authentication_token = models.CharField(max_length=64, blank=True)
 
     @property
     def full_name(self):
@@ -243,14 +243,14 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     creator = models.ForeignKey(Experimenter, related_name='experiment_configuration_set')
     name = models.CharField(max_length=255)
     max_number_of_participants = models.PositiveIntegerField(default=0)
-    invitation_subject = models.TextField(null=True, blank=True, help_text=_('subject header for email registrations'))
-    invitation_text = models.TextField(null=True, blank=True, help_text=_('text to send out via email invitations'))
+    invitation_subject = models.TextField(blank=True, help_text=_('subject header for email registrations'))
+    invitation_text = models.TextField(blank=True, help_text=_('text to send out via email invitations'))
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
     is_public = models.BooleanField(default=False)
     max_group_size = models.PositiveIntegerField(default=5)
     exchange_rate = models.DecimalField(null=True, blank=True, default=0.2, max_digits=6, decimal_places=2, help_text=_('The exchange rate of currency per in-game token, e.g., dollars per token'))
-    treatment_id = models.CharField(null=True, blank=True, max_length=32, help_text=_('An alphanumeric ID that should be unique to the set of ExperimentConfigurations for a given ExperimentMetadata'))
+    treatment_id = models.CharField(blank=True, max_length=32, help_text=_('An alphanumeric ID that should be unique to the set of ExperimentConfigurations for a given ExperimentMetadata'))
     is_experimenter_driven = models.BooleanField(default=True)
     """
     Experimenter driven experiments have checkpoints where the experimenter
@@ -345,8 +345,8 @@ class Experiment(models.Model):
     date_activated = models.DateTimeField(null=True, blank=True)
     # how long this experiment should run in a date format
     # 1w2d = 1 week 2 days = 9d
-    duration = models.CharField(max_length=32, null=True, blank=True)
-    tick_duration = models.CharField(max_length=32, null=True, blank=True)
+    duration = models.CharField(max_length=32, blank=True)
+    tick_duration = models.CharField(max_length=32, blank=True)
     """ how often the experiment_metadata server should tick. """
 
     current_round_start_time = models.DateTimeField(null=True, blank=True)
@@ -597,12 +597,13 @@ class Experiment(models.Model):
 
     def get_participant_group_relationship(self, participant=None, participant_pk=None):
         session_id = self.current_round.session_id
+        if not session_id:
+            session_id = None
         criteria = dict([
             ('group__experiment', self),
             ('participant__pk', participant_pk) if participant_pk else ('participant', participant),
+            ('group__session_id', session_id),
             ])
-        if session_id:
-            criteria['group__session_id'] = session_id
         return ParticipantGroupRelationship.objects.get(**criteria)
 
     def all_participants_have_submitted(self):
@@ -1084,9 +1085,9 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     How long should this round execute before advancing to the next?
     Interpreted as whole seconds.
     """
-    instructions = models.TextField(null=True, blank=True)
+    instructions = models.TextField(blank=True)
     """ instructions, if any, to display before the round begins """
-    debriefing = models.TextField(null=True, blank=True)
+    debriefing = models.TextField(blank=True)
     """ debriefing, if any, to display after the round ends """
     round_type = models.CharField(max_length=32,
                                   choices=RoundType,
@@ -1096,11 +1097,11 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     quiz_2.html in the forestry experiment app, this would be loaded from
     forestry/templates/forestry/quiz_2.html
     """
-    template_filename = models.CharField(max_length=64, null=True, blank=True,
+    template_filename = models.CharField(max_length=64, blank=True,
             help_text=_('''The filename of the template to use to render when executing this round.
                         This file should exist in your templates directory as your-experiment-namespace/template-name.html,
                         e.g., if set to foo.html, vcweb will look for templates/forestry/foo.html'''))
-    template_id = models.CharField(max_length=128, null=True, blank=True,
+    template_id = models.CharField(max_length=128, blank=True,
             help_text=_('A HTML template ID to use in a single page app, e.g., KO template'))
     survey_url = models.URLField(null=True, blank=True)
     """ external survey url """
@@ -1111,7 +1112,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     """ Should groups be randomized at the start of the round? """
     preserve_existing_groups = models.BooleanField(default=True, help_text=_("This option is only useful if randomize_groups is set to true.  If we are randomizing groups, should existing groups (if any) be preserved?"))
     """ Should existing groups (if any) be preserved? """
-    session_id = models.CharField(max_length=64, null=True, blank=True,
+    session_id = models.CharField(max_length=64, blank=True,
             help_text=_('''
             Session id to associate with this round data and the groups in this experiment, useful for longer
             multi-session experiments where group membership may change.  We don't want to destroy the old groups as
@@ -1301,16 +1302,16 @@ class Parameter(models.Model):
     '''
     scope = models.CharField(max_length=32, choices=Scope, default=Scope.ROUND)
     name = models.CharField(max_length=255, unique=True)
-    display_name = models.CharField(max_length=255, null=True, blank=True)
-    description = models.CharField(max_length=512, null=True, blank=True)
+    display_name = models.CharField(max_length=255, blank=True)
+    description = models.CharField(max_length=512, blank=True)
     type = models.CharField(max_length=32, choices=ParameterType)
-    class_name = models.CharField(max_length=64, null=True, blank=True, help_text='Model classname in the form of appname.modelname, e.g., "core.Experiment".  Only applicable for foreign key parameters.')
-    default_value_string = models.CharField(max_length=255, null=True, blank=True)
+    class_name = models.CharField(max_length=64, blank=True, help_text='Model classname in the form of appname.modelname, e.g., "core.Experiment".  Only applicable for foreign key parameters.')
+    default_value_string = models.CharField(max_length=255, blank=True)
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
     creator = models.ForeignKey(Experimenter)
     experiment_metadata = models.ForeignKey(ExperimentMetadata, null=True, blank=True)
-    enum_choices = models.TextField(null=True, blank=True)
+    enum_choices = models.TextField(blank=True)
     is_required = models.BooleanField(default=False)
 
     objects = ParameterPassThroughManager.for_queryset_class(ParameterQuerySet)()
@@ -1393,7 +1394,7 @@ class ParameterizedValue(models.Model):
     Supertype for GroupRoundDataValue and ParticipantRoundDataValue
     """
     parameter = models.ForeignKey(Parameter)
-    string_value = models.TextField(null=True, blank=True)
+    string_value = models.TextField(blank=True)
     int_value = models.IntegerField(null=True, blank=True)
     float_value = models.FloatField(null=True, blank=True)
     boolean_value = models.NullBooleanField(null=True, blank=True)
@@ -1480,7 +1481,7 @@ class Group(models.Model, DataValueMixin):
     """
     The experiment that contains this Group.
     """
-    session_id = models.CharField(max_length=64, null=True, blank=True)
+    session_id = models.CharField(max_length=64, blank=True)
 
     @property
     def name(self):
@@ -1644,8 +1645,8 @@ class GroupClusterQuerySet(models.query.QuerySet):
 
 class GroupCluster(models.Model, DataValueMixin):
     date_created = models.DateTimeField(default=datetime.now)
-    name = models.CharField(max_length=64, null=True, blank=True)
-    session_id = models.CharField(max_length=64, null=True, blank=True)
+    name = models.CharField(max_length=64, blank=True)
+    session_id = models.CharField(max_length=64, blank=True)
     experiment = models.ForeignKey(Experiment, related_name='group_cluster_set')
 
     objects = PassThroughManager.for_queryset_class(GroupClusterQuerySet)()
@@ -1685,7 +1686,7 @@ class RoundData(models.Model):
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_data_set')
     repeating_round_sequence_number = models.PositiveIntegerField(default=0, help_text=_('''Repeating round's sequence number used to disambiguate round data in repeating rounds.'''))
     elapsed_time = models.PositiveIntegerField(default=0)
-    experimenter_notes = models.TextField(null=True, blank=True)
+    experimenter_notes = models.TextField(blank=True)
 
     @property
     def session_id(self):
@@ -1763,9 +1764,9 @@ class ParticipantExperimentRelationship(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
     created_by = models.ForeignKey(User)
     last_completed_round_sequence_number = models.PositiveIntegerField(default=0)
-    current_location = models.CharField(max_length=64, null=True, blank=True)
+    current_location = models.CharField(max_length=64, blank=True)
 # arbitrary JSON-encoded data
-    additional_data = models.TextField(null=True, blank=True)
+    additional_data = models.TextField(blank=True)
 
     objects = PassThroughManager.for_queryset_class(ParticipantExperimentRelationshipQuerySet)()
 
@@ -2077,7 +2078,7 @@ class ExperimentSession(models.Model):
     capacity = models.PositiveIntegerField(default=20)
     creator = models.ForeignKey(User, related_name='experiment_session_set')
 # FIXME: this gets copied over from the ExperimentConfiguration?
-    invitation_text = models.TextField(null=True, blank=True)
+    invitation_text = models.TextField(blank=True)
 
 class Invitation(models.Model):
     participant = models.ForeignKey(Participant)
