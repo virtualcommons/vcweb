@@ -105,7 +105,7 @@ class Dashboard(ListView, TemplateResponseMixin):
             return experiment_dict
 
 
-def set_authentication_token(user, authentication_token=None):
+def set_authentication_token(user, authentication_token=''):
     commons_user = None
     if is_participant(user):
         commons_user = user.participant
