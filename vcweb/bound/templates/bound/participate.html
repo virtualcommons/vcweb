@@ -530,17 +530,18 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 numberOfTrees = numberOfTrees || model.harvestDecision();
                 return "harvest-decision-form" + numberOfTrees;
             }
-            model.calculateEarnings = function(quantity) {
-                return function() {
-                    return formatCurrency(quantity * model.exchangeRate());
-                }
-            }
             model.secondsLeft = ko.observable(0);
             model.currentInterval = ko.observable();
             model.selectedHarvestDecision = ko.observable(false);
-            model.sessionOneEarnings = ko.computed(model.calculateEarnings(model.sessionOneStorage()));
-            model.sessionTwoEarnings = ko.computed(model.calculateEarnings(model.sessionTwoStorage()));
-            model.totalEarnings = ko.computed(model.calculateEarnings(model.storage()));
+            model.sessionOneEarnings = ko.computed(function() {
+                return formatCurrency(model.sessionOneStorage() * model.exchangeRate());
+            });
+            model.sessionTwoEarnings = ko.computed(function() {
+                return formatCurrency(model.sessionTwoStorage() * model.exchangeRate())
+            });
+            model.totalEarnings = ko.computed(function() {
+                return formatCurrency(model.storage() * model.exchangeRate());
+            });
             model.templateId = ko.computed(function() {
                 switch ( model.templateName() ) {
                     case 'PRACTICE':

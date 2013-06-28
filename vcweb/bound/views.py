@@ -87,6 +87,10 @@ experiment_model_defaults = {
         'totalHarvest': 0,
         'sessionOneStorage': 0,
         'sessionTwoStorage': 0,
+        'lastHarvestDecision': 0,
+        'playerData': [],
+        'averageHarvest': 0,
+        'averageStorage': 0,
         'numberAlive': '4 out of 4',
         'surveyUrl': 'http://survey.qualtrics.com/SE/?SID=SV_0vzmIj5UsOgjoTX',
         }
