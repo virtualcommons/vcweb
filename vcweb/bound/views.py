@@ -153,7 +153,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['averageStorage'] = get_average_storage(own_group, current_round_data)
         c = Counter(map(itemgetter('alive'), experiment_model_dict['playerData']))
         experiment_model_dict['numberAlive'] = "%s out of %s" % (c[True], sum(c.values()))
-        logger.debug("playable round, number alive is: %s", experiment_model_dict['numberAlive'])
     experiment_model_dict['resourceLevel'] = own_resource_level
     # participant group data parameters are only needed if this round is a data round or the previous round was a data round
     if previous_round.is_playable_round or current_round.is_playable_round:
