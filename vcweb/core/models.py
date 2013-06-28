@@ -421,11 +421,7 @@ class Experiment(models.Model):
 
     @property
     def current_session_id(self):
-        session_id = self.current_round.session_id
-        if not session_id:
-            # force session_id to be None if empty (looks like this can happen via the admin interface)
-            session_id = None
-        return session_id
+        return self.current_round.session_id
 
     @property
     def groups(self):
@@ -597,8 +593,6 @@ class Experiment(models.Model):
 
     def get_participant_group_relationship(self, participant=None, participant_pk=None):
         session_id = self.current_round.session_id
-        if not session_id:
-            session_id = None
         criteria = dict([
             ('group__experiment', self),
             ('participant__pk', participant_pk) if participant_pk else ('participant', participant),
@@ -783,7 +777,7 @@ class Experiment(models.Model):
                     return pgr
         return current_group.add_participant(participant)
 
-    def allocate_groups(self, randomize=True, preserve_existing_groups=False, session_id=None):
+    def allocate_groups(self, randomize=True, preserve_existing_groups=False, session_id=''):
         logger.debug("allocating groups for %s with session_id %s (randomize? %s)" % (self, session_id, randomize))
         # clear out all existing groups
         # FIXME: record previous mappings in activity log.
@@ -797,10 +791,10 @@ class Experiment(models.Model):
             if preserve_existing_groups:
                 logger.debug("preserving existing groups")
                 # verify incoming session id is an actual value
-                if session_id is None:
+                if not session_id:
                     round_configuration = self.current_round
                     session_id = round_configuration.session_id
-                    if session_id is None:
+                    if not session_id:
                         logger.error("Trying to create a new set of groups but no session id has been set on %s.  Aborting.", round_configuration)
                         raise ValueError("Cannot allocate new groups and preserve existing groups without an appropriate session id set on this round configuration %s" % round_configuration)
             else:
@@ -821,11 +815,8 @@ class Experiment(models.Model):
         session_id = round_configuration.session_id
         if round_configuration.create_group_clusters:
             logger.debug("creating group clusters with session id %s", session_id)
-            gcs = self.group_cluster_set.filter()
-            gs = self.group_set.filter()
-            if session_id:
-                gcs = gcs.filter(session_id=session_id)
-                gs = gs.filter(session_id=session_id)
+            gcs = self.group_cluster_set.filter(session_id=session_id)
+            gs = self.group_set.filter(session_id=session_id)
             gcs.delete()
             group_cluster_size = round_configuration.group_cluster_size
             groups = list(gs)
@@ -1113,6 +1104,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     preserve_existing_groups = models.BooleanField(default=True, help_text=_("This option is only useful if randomize_groups is set to true.  If we are randomizing groups, should existing groups (if any) be preserved?"))
     """ Should existing groups (if any) be preserved? """
     session_id = models.CharField(max_length=64, blank=True,
+            default='',
             help_text=_('''
             Session id to associate with this round data and the groups in this experiment, useful for longer
             multi-session experiments where group membership may change.  We don't want to destroy the old groups as
@@ -1481,7 +1473,7 @@ class Group(models.Model, DataValueMixin):
     """
     The experiment that contains this Group.
     """
-    session_id = models.CharField(max_length=64, blank=True)
+    session_id = models.CharField(max_length=64, blank=True, default='')
 
     @property
     def name(self):
@@ -1646,7 +1638,7 @@ class GroupClusterQuerySet(models.query.QuerySet):
 class GroupCluster(models.Model, DataValueMixin):
     date_created = models.DateTimeField(default=datetime.now)
     name = models.CharField(max_length=64, blank=True)
-    session_id = models.CharField(max_length=64, blank=True)
+    session_id = models.CharField(max_length=64, blank=True, default='')
     experiment = models.ForeignKey(Experiment, related_name='group_cluster_set')
 
     objects = PassThroughManager.for_queryset_class(GroupClusterQuerySet)()

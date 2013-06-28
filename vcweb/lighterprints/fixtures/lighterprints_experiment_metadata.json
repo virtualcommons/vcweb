@@ -121,11 +121,11 @@
             "name": "activity_unlocked",
             "creator": 1,
             "class_name": "lighterprints.Activity",
-            "default_value_string": null,
+            "default_value_string": "",
             "last_modified": "2012-05-13T01:30:35.389",
             "date_created": "2012-05-13T01:30:35.388",
             "scope": "participant",
-            "enum_choices": null,
+            "enum_choices": "",
             "is_required": false,
             "type": "foreignkey",
             "description": "Signifies that the Activity referenced by this parameter has been unlocked for this participant"

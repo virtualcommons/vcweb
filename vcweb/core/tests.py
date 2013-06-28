@@ -86,7 +86,7 @@ class BaseVcwebTest(TestCase):
                 yield self.experiment
             e.advance_to_next_round()
 
-    def create_new_round_configuration(self, round_type='REGULAR', template_filename=None):
+    def create_new_round_configuration(self, round_type='REGULAR', template_filename=''):
         return RoundConfiguration.objects.create(experiment_configuration=self.experiment_configuration,
                 sequence_number=(self.experiment_configuration.last_round_sequence_number + 1),
                 round_type=round_type,
