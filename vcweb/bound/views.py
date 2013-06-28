@@ -83,6 +83,8 @@ experiment_model_defaults = {
         'totalHarvest': 0,
         'sessionOneStorage': 0,
         'sessionTwoStorage': 0,
+        'numberAlive': '4 out of 4',
+        'surveyUrl': 'http://survey.qualtrics.com/SE/?SID=SV_0vzmIj5UsOgjoTX',
         }
 # FIXME: bloated method with too many special cases, try to refactor
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
@@ -92,6 +94,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     previous_round = experiment.previous_round
     previous_round_data = experiment.get_round_data(round_configuration=previous_round)
     experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
+    logger.debug("returning view model json for round %s" % current_round)
 
 # round / experiment configuration data
     experiment_model_dict['timeRemaining'] = experiment.time_remaining
@@ -141,14 +144,16 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     # instructions rounds to practice rounds.
     own_group = participant_group_relationship.group
     own_resource_level = get_resource_level(own_group)
-    if current_round.is_playable_round:
+    if current_round.is_playable_round or current_round.is_debriefing_round:
         player_data, own_data = get_player_data(own_group, previous_round_data, current_round_data, participant_group_relationship)
+        logger.debug("player data: %s", player_data)
         experiment_model_dict.update(own_data)
         experiment_model_dict['playerData'] = player_data
         experiment_model_dict['averageHarvest'] = get_average_harvest(own_group, previous_round_data)
         experiment_model_dict['averageStorage'] = get_average_storage(own_group, current_round_data)
         c = Counter(map(itemgetter('alive'), experiment_model_dict['playerData']))
         experiment_model_dict['numberAlive'] = "%s out of %s" % (c[True], sum(c.values()))
+        logger.debug("playable round, number alive is: %s", experiment_model_dict['numberAlive'])
     experiment_model_dict['resourceLevel'] = own_resource_level
     # participant group data parameters are only needed if this round is a data round or the previous round was a data round
     if previous_round.is_playable_round or current_round.is_playable_round:
