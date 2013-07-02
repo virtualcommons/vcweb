@@ -161,6 +161,10 @@ class GeoCheckinForm(forms.Form):
     heading = forms.FloatField(required=False)
     speed = forms.FloatField(required=False)
 
+class BookmarkExperimentMetadataForm(forms.Form):
+    experiment_metadata_id = forms.IntegerField()
+    experimenter_id = forms.IntegerField()
+
 class ExperimentActionForm(forms.Form):
     action = forms.CharField(max_length=64)
     experiment_id = forms.IntegerField(widget=forms.HiddenInput)

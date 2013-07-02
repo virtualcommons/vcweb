@@ -2,12 +2,13 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader_tags import BlockNode, ExtendsNode
 from django.template import loader, Context, RequestContext
-from django.utils.html import escape
 
 from vcweb.core import dumps
 from vcweb.core.decorators import experimenter_required, dajaxice_register
+from vcweb.core.forms import BookmarkExperimentMetadataForm
 from vcweb.core.http import JsonResponse
-from vcweb.core.models import Experiment, RoundData, get_chat_message_parameter
+from vcweb.core.models import (Experiment, RoundData, ExperimentMetadata, BookmarkedExperimentMetadata,
+        get_chat_message_parameter, )
 
 import logging
 logger = logging.getLogger(__name__)
@@ -85,6 +86,25 @@ def _get_experiment(request, pk):
 def _render_experiment_monitor_block(block, experiment, request):
     return render_block_to_string('experimenter/monitor.html', block, { 'experiment': experiment },
             context_instance=RequestContext(request))
+
+@experimenter_required
+@dajaxice_register
+def bookmark_experiment_metadata(request):
+    form = BookmarkExperimentMetadataForm(request.POST or None)
+    try:
+        if form.is_valid():
+            experiment_metadata_id = form.cleaned_data.get('experiment_metadata_id')
+            experimenter_id = form.cleaned_data.get('experimenter_id')
+            experimenter = request.user.experimenter
+            if experimenter.pk == experimenter_id:
+                experiment_metadata = get_object_or_404(ExperimentMetadata, pk=experiment_metadata_id)
+                bem = BookmarkedExperimentMetadata.objects.get_or_create(experimenter=experimenter,
+                        experiment_metadata=experiment_metadata)
+                return JsonResponse(dumps({'success': True}))
+    except:
+        logger.debug("invalid bookmark experiment metadata request: %s", request)
+
+    return JsonResponse(dumps({'success': False}))
 
 @experimenter_required
 @dajaxice_register

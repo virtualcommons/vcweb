@@ -226,6 +226,15 @@ class Experimenter(CommonsUser):
     class Meta:
         ordering = ['user']
 
+class BookmarkedExperimentMetadata(models.Model):
+    experimenter = models.ForeignKey(Experimenter, related_name='bookmarked_experiment_metadata_set')
+    experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='bookmarked_experiment_metadata_set')
+    date_created = models.DateTimeField(default=datetime.now)
+
+    class Meta:
+        unique_together = (('experimenter', 'experiment_metadata'),)
+        ordering = ['experimenter', 'experiment_metadata']
+
 class ExperimenterRequest(models.Model):
     """
     a request for this user to be an experimenter, should notify admins

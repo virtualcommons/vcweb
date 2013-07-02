@@ -2,8 +2,42 @@
 {% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
 {% block page %}
 {{ block.super }}
-<h3>Experimenter Dashboard</h3>
+<h2>Experimenter Dashboard</h2>
 {% comment %} FIXME: UI refinement needed as the list of experiments grows {% endcomment %}
+<div id='dashboard'>
+    <ul class='nav nav-tabs'>
+        <li class='active'><a href='#start' data-toggle='tab'><i class='icon-beaker'></i> Start a new experiment</a></li>
+        <li><a href='#manage' data-toggle='tab'><i class='icon-wrench'></i> Manage running experiments</a></li>
+        <li><a href='#archived' data-toggle='tab'><i class='icon-archive'></i> Archived experiments</a></li>
+    </ul>
+    <div class='tab-content'>
+        <div class='tab-pane active' id='start'>
+            Experiment metadata objects go here
+            <div data-bind='foreach: experimentMetadataList'>
+                <h3 data-bind='text: title'></h3>
+                <div data-bind='foreach: experimentConfigurationList'>
+                    <div class='alert alert-message'>
+                        <h4><span data-bind='text: name'>configuration name</span> (Treatment <span data-bind='text: treatment_id'></span>) <span class='pull-right' data-bind='text: date_created'>date created</span></h4>
+                        description? number of rounds?  max group size? is experimenter driven?
+                        <br>
+                        <div class='btn-group'>
+                            <a class='btn' data-bind='click: createNewExperiment'><i class='icon-plus-sign'></i> new</a>
+                            <a class='btn' data-bind='click: modify'><i class='icon-edit'></i> edit</a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div class='tab-pane' id='manage'>
+            Manage experiments here
+        </div>
+        <div class='tab-pane' id='archived'>
+            Archived experiments go here
+        </div>
+    </div>
+</div>
+<hr>
 <div id="experiment-list">
     {% for e in experiments %}
     <div class='alert alert-message'>
