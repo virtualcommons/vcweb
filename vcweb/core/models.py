@@ -133,12 +133,13 @@ class ExperimentMetadataManager(models.Manager):
 
 class ExperimentMetadata(models.Model):
     """
-    An ExperimentMetadata record represents the *type* of a given implemented Experiment, e.g., **Forestry** or
-    **Irrigation**.  This shouldn't be confused with a **Forestry** or **Irrigation** Experiment instance, which
-    represents a concrete experiment run, with a specific configuration, experimenter, etc.  Each experiment app
-    should define and add a single ExperimentMetadata record for the experiment type that it represents.  You can
-    register an ExperimentMetadata object by creating a JSON/YAML/SQL representation of it in your app/fixtures
-    directory (e.g., irrigation/fixtures/irrigation.json) and then invoking ``python manage.py loaddata irrigation``.
+    An ExperimentMetadata record represents the *type* of a given implemented Experiment, e.g., **forestry**, **lighter
+    footprints**, **boundary effects**, or **irrigation**.  This shouldn't be confused with a specific instance of a
+    **forestry** or ** lighter footprints ** experiment, which represents a concrete experiment run, with a specific
+    configuration, experimenter, etc.  Each experiment metadata app should define and add a single ExperimentMetadata
+    record for the experiment type that it represents.  You can register an ExperimentMetadata object by creating a
+    JSON/YAML/SQL representation of it in your app/fixtures directory (e.g., irrigation/fixtures/irrigation.json) and
+    then invoking ``python manage.py loaddata irrigation``.
     """
     title = models.CharField(max_length=255)
     # the URL fragment that this experiment_metadata will occupy,
@@ -154,6 +155,18 @@ class ExperimentMetadata(models.Model):
     default_configuration = models.ForeignKey('ExperimentConfiguration', null=True, blank=True)
 
     objects = ExperimentMetadataManager()
+
+    def to_dict(self, include_configurations=False, **kwargs):
+        data = {
+                'title': self.title,
+                'namespace': self.namespace,
+                'date_created': self.date_created,
+                'description': self.description,
+                }
+        if include_configurations:
+            configurations = [ec.to_dict() for ec in ExperimentConfiguration.objects.filter(experiment_metadata=self)]
+            data['configurations'] = configurations
+        return data
 
     def natural_key(self):
         return [self.namespace]
@@ -289,6 +302,18 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     @property
     def namespace(self):
         return self.experiment_metadata.namespace
+
+
+    def to_dict(self, **kwargs):
+        return {
+                'name': self.name,
+                'treatment_id': self.treatment_id,
+                'date_created': self.date_created.strftime("%m-%d-%Y %H:%M"),
+                'creator': self.creator,
+                'max_group_size': self.max_group_size,
+                'is_experimenter_driven': self.is_experimenter_driven,
+                'number_of_rounds': self.final_sequence_number,
+                }
 
 
     def serialize(self, output_format='xml', **kwargs):

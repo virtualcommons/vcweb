@@ -15,14 +15,14 @@
             Experiment metadata objects go here
             <div data-bind='foreach: experimentMetadataList'>
                 <h3 data-bind='text: title'></h3>
-                <div data-bind='foreach: experimentConfigurationList'>
+                <div data-bind='foreach: configurations'>
                     <div class='alert alert-message'>
-                        <h4><span data-bind='text: name'>configuration name</span> (Treatment <span data-bind='text: treatment_id'></span>) <span class='pull-right' data-bind='text: date_created'>date created</span></h4>
-                        description? number of rounds?  max group size? is experimenter driven?
+                        <h4><span data-bind='text: name'>configuration name</span> (treatment id: <span data-bind='text: treatment_id() || "None"'></span>) <span class='pull-right' data-bind='text: date_created'></span></h4>
+                        <span data-bind='text: number_of_rounds'></span> rounds, groups of <span data-bind='text: max_group_size'></span>
                         <br>
                         <div class='btn-group'>
-                            <a class='btn' data-bind='click: createNewExperiment'><i class='icon-plus-sign'></i> new</a>
-                            <a class='btn' data-bind='click: modify'><i class='icon-edit'></i> edit</a>
+                            <a class='btn' data-bind='click: $root.createNewExperiment'><i class='icon-plus-sign'></i> new</a>
+                            <a class='btn' data-bind='click: $root.modify'><i class='icon-edit'></i> edit</a>
                         </div>
                     </div>
 
@@ -76,7 +76,21 @@
 {% block javascript %}
 {{ block.super }}
 <script type='text/javascript'>
+    var dashboardViewModelJson = $.parseJSON("{{ dashboardViewModelJson|escapejs }}");
     $(function() {
+        function DashboardViewModel(dashboardViewModelJson) {
+            var self = this;
+            var model = ko.mapping.fromJS(dashboardViewModelJson);
+            model.createNewExperiment = function() {
+                console.debug("create new experiment from configuration");
+            }
+            model.modify = function() {
+                console.debug("modify existing configuration");
+            }
+            return model;
+        }
+        var model = new DashboardViewModel(dashboardViewModelJson);
+        ko.applyBindings(model);
         $('a.confirm-experiment-action').on("click", function(evt) {
             evt.preventDefault();
             var self = $(this);

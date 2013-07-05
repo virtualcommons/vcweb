@@ -87,6 +87,27 @@ class Dashboard(ListView, TemplateResponseMixin):
         else:
             return [ 'participant/dashboard.html' ]
 
+    def get_experimenter_dashboard_view_model(self, experimenter):
+        experiment_metadata_list = []
+        for em in ExperimentMetadata.objects.all():
+            data = em.to_dict(include_configurations=True)
+            experiment_metadata_list.append(data)
+        logger.debug("experiment metadata list: %s", experiment_metadata_list)
+        data = {
+                'experimentMetadataList': experiment_metadata_list
+                }
+
+        return dumps(data)
+
+
+    def get_context_data(self, **kwargs):
+        context = super(Dashboard, self).get_context_data(**kwargs)
+        user = self.request.user
+        if is_experimenter(user):
+            experimenter = user.experimenter
+            context['dashboardViewModelJson'] = self.get_experimenter_dashboard_view_model(experimenter)
+        return context
+
     def get_queryset(self):
         user = self.request.user
         if is_experimenter(user):
