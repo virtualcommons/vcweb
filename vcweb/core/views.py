@@ -93,12 +93,15 @@ class Dashboard(ListView, TemplateResponseMixin):
             data = em.to_dict(include_configurations=True)
             experiment_metadata_list.append(data)
         logger.debug("experiment metadata list: %s", experiment_metadata_list)
+        running_experiments = [e.to_dict(attrs=('monitor_url', 'status_line')) for e in Experiment.objects.active(experimenter=experimenter)]
+        archived_experiments = [e.to_dict(attrs=('monitor_url', 'status_line')) for e in Experiment.objects.archived(experimenter=experimenter)]
         data = {
-                'experimentMetadataList': experiment_metadata_list
+                'experimentMetadataList': experiment_metadata_list,
+                'runningExperiments': running_experiments,
+                'archivedExperiments': archived_experiments,
                 }
 
         return dumps(data)
-
 
     def get_context_data(self, **kwargs):
         context = super(Dashboard, self).get_context_data(**kwargs)

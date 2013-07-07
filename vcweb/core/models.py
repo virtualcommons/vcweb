@@ -335,6 +335,8 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
 class ExperimentQuerySet(models.query.QuerySet):
     def public(self, **kwargs):
         return self.filter(experiment_configuration__is_public=True, **kwargs)
+    def archived(self, **kwargs):
+        return self.completed(**kwargs)
     def completed(self, **kwargs):
         return self.filter(status='COMPLETED', **kwargs)
     def active(self, **kwargs):
