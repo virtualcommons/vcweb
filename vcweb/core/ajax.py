@@ -1,10 +1,12 @@
+from dajaxice.decorators import dajaxice_register
+
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader_tags import BlockNode, ExtendsNode
 from django.template import loader, Context, RequestContext
 
 from vcweb.core import dumps
-from vcweb.core.decorators import experimenter_required, dajaxice_register
+from vcweb.core.decorators import experimenter_required
 from vcweb.core.forms import BookmarkExperimentMetadataForm
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (Experiment, RoundData, ExperimentMetadata, BookmarkedExperimentMetadata,
@@ -105,6 +107,12 @@ def bookmark_experiment_metadata(request):
         logger.debug("invalid bookmark experiment metadata request: %s", request)
 
     return JsonResponse(dumps({'success': False}))
+
+@dajaxice_register(method='POST')
+def create_experiment(request, experiment_configuration_id):
+    logger.debug("incoming create experiment request POST: %s with id %s", request.POST, experiment_configuration_id, )
+    return JsonResponse(dumps({'success': True}))
+
 
 @experimenter_required
 @dajaxice_register

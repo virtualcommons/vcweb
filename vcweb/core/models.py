@@ -306,6 +306,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
 
     def to_dict(self, **kwargs):
         return {
+                'pk': self.pk,
                 'name': self.name,
                 'treatment_id': self.treatment_id,
                 'date_created': self.date_created.strftime("%m-%d-%Y %H:%M"),
@@ -333,6 +334,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
 
 
 class ExperimentQuerySet(models.query.QuerySet):
+    ACTIVE_STATUSES = ('ACTIVE', 'ROUND_IN_PROGRESS')
     def public(self, **kwargs):
         return self.filter(experiment_configuration__is_public=True, **kwargs)
     def archived(self, **kwargs):
@@ -340,9 +342,9 @@ class ExperimentQuerySet(models.query.QuerySet):
     def completed(self, **kwargs):
         return self.filter(status='COMPLETED', **kwargs)
     def active(self, **kwargs):
-        return self.filter(status__in=('ACTIVE', 'ROUND_IN_PROGRESS'), **kwargs)
+        return self.filter(status__in=ExperimentQuerySet.ACTIVE_STATUSES, **kwargs)
     def for_participant(self, participant, **kwargs):
-        return participant.experiments.filter(status__in=('ACTIVE', 'ROUND_IN_PROGRESS'))
+        return participant.experiments.filter(status__in=ExperimentQuerySet.ACTIVE_STATUSES)
 
 class Experiment(models.Model):
     """
@@ -479,6 +481,7 @@ class Experiment(models.Model):
     def namespace(self):
         return self.experiment_metadata.namespace
 
+# FIXME: remove these after new model of dashboard experiment controller is done
 # The following URL helper properties are generic experiment management URLs
 # available to experimenters but not participants
     @property
