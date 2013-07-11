@@ -10,7 +10,7 @@ from vcweb.core.decorators import experimenter_required
 from vcweb.core.forms import BookmarkExperimentMetadataForm
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (Experiment, RoundData, ExperimentMetadata, BookmarkedExperimentMetadata,
-        get_chat_message_parameter, )
+        get_chat_message_parameter, ExperimentConfiguration)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -108,10 +108,20 @@ def bookmark_experiment_metadata(request):
 
     return JsonResponse(dumps({'success': False}))
 
+@experimenter_required
 @dajaxice_register(method='POST')
 def create_experiment(request, experiment_configuration_id):
     logger.debug("incoming create experiment request POST: %s with id %s", request.POST, experiment_configuration_id, )
-    return JsonResponse(dumps({'success': True}))
+    experiment_configuration = get_object_or_404(ExperimentConfiguration.objects.select_related('experiment_metadata'), pk=experiment_configuration_id)
+    experimenter = request.user.experimenter
+    authentication_code = 'test'
+    e = Experiment.objects.create(experimenter=experimenter,
+            authentication_code=authentication_code,
+            experiment_metadata=experiment_configuration.experiment_metadata,
+            experiment_configuration=experiment_configuration,
+            status=Experiment.Status.INACTIVE
+            )
+    return JsonResponse(dumps({'success': True, 'experiment': e.to_dict(attrs=('monitor_url', 'status_line',)) }))
 
 
 @experimenter_required

@@ -341,6 +341,8 @@ class ExperimentQuerySet(models.query.QuerySet):
         return self.completed(**kwargs)
     def completed(self, **kwargs):
         return self.filter(status='COMPLETED', **kwargs)
+    def inactive(self, **kwargs):
+        return self.filter(status='INACTIVE', **kwargs)
     def active(self, **kwargs):
         return self.filter(status__in=ExperimentQuerySet.ACTIVE_STATUSES, **kwargs)
     def for_participant(self, participant, **kwargs):

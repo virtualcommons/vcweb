@@ -7,7 +7,7 @@
 <div id='dashboard'>
     <ul class='nav nav-tabs'>
         <li class='active'><a href='#start' data-toggle='tab'><i class='icon-beaker'></i> Start a new experiment</a></li>
-        <li><a href='#manage' data-toggle='tab'><i class='icon-wrench'></i> Manage running experiments</a></li>
+        <li><a href='#running' data-toggle='tab'><i class='icon-wrench'></i> Running experiments</a></li>
         <li><a href='#archived' data-toggle='tab'><i class='icon-archive'></i> Archived experiments</a></li>
     </ul>
     <div class='tab-content'>
@@ -21,27 +21,48 @@
                         <br>
                         <div class='btn-group'>
                             <a class='btn' data-bind='click: $root.createNewExperiment.bind($data)'><i class='icon-plus-sign'></i> start new experiment</a>
-                            <a class='btn' data-bind='click: $root.modify'><i class='icon-edit'></i> edit configuration</a>
+                            <a class='btn' disabled data-bind='click: $root.modify'><i class='icon-edit'></i> edit configuration</a>
                         </div>
                     </div>
 
                 </div>
             </div>
+            <h3>Inactive experiments</h3>
+            <div data-bind='if: inactiveExperiments().length === 0'>
+                No inactive experiments.
+            </div>
+            <div data-bind='template: { name: "experiment-controller-template", foreach: inactiveExperiments }'></div>
+
         </div>
-        <div class='tab-pane' id='manage'>
-            <div data-bind='foreach: runningExperiments'>
-                <h4><span data-bind='text: status_line'></span> <span class='pull-right'><span data-bind='text: participantCount' class='badge badge-important'></span> participants</span></h4>
-                <div class='btn-group'>
-                    <a class='btn' data-bind='attr: { href: monitor_url }'><i class='icon-zoom-in'></i> monitor</a>
-                    <a class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
-                        data-bind='click: $root.cloneExperiment'><i class='icon-copy'></i> clone</a>
-                    <span data-bind='if: $root.canRegisterParticipants($data)'>
-                        <a class='btn' data-content='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'>
-                            <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> register participants</a>
-                        <a data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.' 
-                            class='btn' href='{{e.controller_url}}/register-test-participants'>
-                            <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> test participants</a>
-                    </span>
+        <div class='tab-pane' id='running'>
+            <div data-bind='if: runningExperiments().length === 0'>
+                No running experiments.
+            </div>
+            <div data-bind='template: { name: "experiment-controller-template", foreach: runningExperiments }'></div>
+        </div>
+        <div class='tab-pane' id='archived'>
+            <div data-bind='if: archivedExperiments().length == 0'>
+                No archived experiments.
+            </div>
+            <div data-bind='template: { name: "experiment-controller-template", foreach: archivedExperiments }'></div>
+        </div>
+    </div>
+</div>
+{% endblock page %}
+{% block javascript %}
+<script type='text/html' id='experiment-controller-template'>
+    <h4><span data-bind='text: status_line'></span> <span class='pull-right'><span data-bind='text: participantCount' class='badge badge-important'></span> participants</span></h4>
+    <div class='btn-group'>
+        <a class='btn' data-bind='attr: { href: monitor_url }'><i class='icon-zoom-in'></i> monitor</a>
+        <a class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
+            data-bind='click: $root.cloneExperiment'><i class='icon-copy'></i> clone</a>
+        <span data-bind='if: $root.canRegisterParticipants($data)'>
+            <a class='btn' data-content='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'>
+                <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> register participants</a>
+            <a data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.' 
+                class='btn' href='{{e.controller_url}}/register-test-participants'>
+                <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> test participants</a>
+        </span>
                     {% comment %}
                     FIXME: update to KO logic
                     {% if not e.is_archived %}
@@ -63,26 +84,8 @@
                     {% endif %}
                     {% endif %}
                     {% endcomment %}
-                </div>
-            </div>
-        </div>
-        <div class='tab-pane' id='archived'>
-            <div data-bind='if: archivedExperiments().length == 0'>
-                No archived experiments.
-            </div>
-            <div data-bind='foreach: archivedExperiments'>
-                <h4><span data-bind='text: status_line'></span> <span class='pull-right'><span data-bind='text: participantCount' class='badge badge-important'></span> participants</span></h4>
-                <div class='btn-group'>
-                    <a class='btn' data-bind='attr: { href: monitor_url }'><i class='icon-zoom-in'></i> monitor</a>
-                    <a class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
-                        data-bind='click: $root.cloneExperiment'><i class='icon-copy'></i> clone</a>
-                </div>
-            </div>
-        </div>
     </div>
-</div>
-{% endblock page %}
-{% block javascript %}
+</script>
 {{ block.super }}
 <script type='text/javascript'>
     var dashboardViewModelJson = $.parseJSON("{{ dashboardViewModelJson|escapejs }}");
@@ -97,16 +100,20 @@
                     if (data.success) {
                         console.debug("created new experiment: ");
                         console.debug(data);
+                        console.debug(data.experiment);
+                        inactiveExperimentModel = ko.mapping.fromJS(data.experiment);
+                        console.debug(inactiveExperimentModel);
+                        model.inactiveExperiments.push(inactiveExperimentModel);
                     }
                 },
                 { experiment_configuration_id: configurationModel.pk() });
 
             }
-            model.modify = function() {
-                console.debug("modify existing configuration");
-            }
             model.cloneExperiment = function() {
                 console.debug("cloning experiment");
+            }
+            model.modify = function() {
+                console.debug("modify existing configuration");
             }
             model.canRegisterParticipants = function(experimentModel) {
                 return ! experimentModel.isArchived() && experimentModel.participantCount() === 0;
