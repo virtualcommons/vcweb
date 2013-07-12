@@ -7,6 +7,7 @@
 <div id='dashboard'>
     <ul class='nav nav-tabs'>
         <li class='active'><a href='#start' data-toggle='tab'><i class='icon-beaker'></i> Start a new experiment</a></li>
+        <li><a href='#pending' data-toggle='tab'><i class='icon-wrench'></i> Pending experiments</a></li>
         <li><a href='#running' data-toggle='tab'><i class='icon-wrench'></i> Running experiments</a></li>
         <li><a href='#archived' data-toggle='tab'><i class='icon-archive'></i> Archived experiments</a></li>
     </ul>
@@ -24,16 +25,17 @@
                             <a class='btn' disabled data-bind='click: $root.modify'><i class='icon-edit'></i> edit configuration</a>
                         </div>
                     </div>
-
                 </div>
             </div>
-            <h3>Inactive experiments</h3>
-            <div data-bind='if: inactiveExperiments().length === 0'>
-                No inactive experiments.
-            </div>
-            <div data-bind='template: { name: "experiment-controller-template", foreach: inactiveExperiments }'></div>
-
         </div>
+        <div class='tab-pane' id='pending'>
+            <h3>Pending experiments</h3>
+            <div data-bind='if: pendingExperiments().length === 0'>
+                No pending experiments.
+            </div>
+            <div data-bind='template: { name: "experiment-controller-template", foreach: pendingExperiments }'></div>
+        </div>
+
         <div class='tab-pane' id='running'>
             <div data-bind='if: runningExperiments().length === 0'>
                 No running experiments.
@@ -101,9 +103,9 @@
                         console.debug("created new experiment: ");
                         console.debug(data);
                         console.debug(data.experiment);
-                        inactiveExperimentModel = ko.mapping.fromJS(data.experiment);
-                        console.debug(inactiveExperimentModel);
-                        model.inactiveExperiments.push(inactiveExperimentModel);
+                        pendingExperimentModel = ko.mapping.fromJS(data.experiment);
+                        console.debug(pendingExperimentModel);
+                        model.pendingExperiments.push(pendingExperimentModel);
                     }
                 },
                 { experiment_configuration_id: configurationModel.pk() });

@@ -164,7 +164,7 @@ class ExperimentMetadata(models.Model):
                 'description': self.description,
                 }
         if include_configurations:
-            configurations = [ec.to_dict() for ec in ExperimentConfiguration.objects.filter(experiment_metadata=self)]
+            configurations = [ec.to_dict() for ec in ExperimentConfiguration.objects.select_related('creator').filter(experiment_metadata=self)]
             data['configurations'] = configurations
         return data
 
@@ -347,16 +347,16 @@ class ExperimentQuerySet(models.query.QuerySet):
         return self.filter(status__in=ExperimentQuerySet.ACTIVE_STATUSES, **kwargs)
     def for_participant(self, participant, **kwargs):
         return participant.experiments.filter(status__in=ExperimentQuerySet.ACTIVE_STATUSES)
+    def for_experimenter(self, experimenter, **kwargs):
+        return self.select_related('experimenter').filter(experimenter=experimenter, **kwargs)
 
 class Experiment(models.Model):
     """
-    Experiment instances are a concrete parameterization of an ExperimentMetadata record, with associated
-    ExperimentConfiguration, Experimenter, etc.  In other words, they represent an actual experiment run.
-    """
+    An Experiment represents a concrete treatment run for a given ExperimentMetadata -- a combination of
+    ExperimentMetadata and ExperimentConfiguration for a given Experimenter """
     Status = Choices(
             ('INACTIVE', _('Not active')),
             ('ACTIVE', _('Active, no round in progress')),
-            ('PAUSED', _('Paused')),
             ('ROUND_IN_PROGRESS', _('Round in progress')),
             ('COMPLETED', _('Completed')))
     authentication_code = models.CharField(max_length=32, default="vcweb.auth.code")
@@ -377,7 +377,7 @@ class Experiment(models.Model):
 # status = StatusField()
     status = models.CharField(max_length=32, choices=Status, default=Status.INACTIVE)
     """
-    the status of an experiment can be either INACTIVE, ACTIVE, PAUSED, ROUND_IN_PROGRESS, or COMPLETED
+    the status of an experiment can be either INACTIVE, ACTIVE, ROUND_IN_PROGRESS, or COMPLETED
     """
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)

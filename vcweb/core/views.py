@@ -1,3 +1,4 @@
+from collections import defaultdict
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
@@ -92,12 +93,15 @@ class Dashboard(ListView, TemplateResponseMixin):
         for em in ExperimentMetadata.objects.all():
             data = em.to_dict(include_configurations=True)
             experiment_metadata_list.append(data)
-        inactive_experiments = [e.to_dict(attrs=('monitor_url', 'status_line')) for e in Experiment.objects.inactive(experimenter=experimenter)]
-        running_experiments = [e.to_dict(attrs=('monitor_url', 'status_line')) for e in Experiment.objects.active(experimenter=experimenter)]
-        archived_experiments = [e.to_dict(attrs=('monitor_url', 'status_line')) for e in Experiment.objects.archived(experimenter=experimenter)]
+        experiment_status_dict = defaultdict(list)
+        for e in Experiment.objects.for_experimenter(experimenter):
+            experiment_status_dict[e.status].append(e.to_dict(attrs=('monitor_url', 'status_line')))
+        pending_experiments = experiment_status_dict['INACTIVE']
+        running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+        archived_experiments = experiment_status_dict['ARCHIVED']
         data = {
                 'experimentMetadataList': experiment_metadata_list,
-                'inactiveExperiments': inactive_experiments,
+                'pendingExperiments': pending_experiments,
                 'runningExperiments': running_experiments,
                 'archivedExperiments': archived_experiments,
                 }
