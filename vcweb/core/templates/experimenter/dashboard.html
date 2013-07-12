@@ -6,13 +6,13 @@
 {% comment %} FIXME: UI refinement needed as the list of experiments grows {% endcomment %}
 <div id='dashboard'>
     <ul class='nav nav-tabs'>
-        <li class='active'><a href='#start' data-toggle='tab'><i class='icon-beaker'></i> Start a new experiment</a></li>
+        <li class='active'><a href='#running' data-toggle='tab'><i class='icon-wrench'></i> Running experiments</a></li>
         <li><a href='#pending' data-toggle='tab'><i class='icon-wrench'></i> Pending experiments</a></li>
-        <li><a href='#running' data-toggle='tab'><i class='icon-wrench'></i> Running experiments</a></li>
         <li><a href='#archived' data-toggle='tab'><i class='icon-archive'></i> Archived experiments</a></li>
+        <li><a href='#start' data-toggle='tab'><i class='icon-beaker'></i> Start a new experiment</a></li>
     </ul>
     <div class='tab-content'>
-        <div class='tab-pane active' id='start'>
+        <div class='tab-pane' id='start'>
             <div data-bind='foreach: experimentMetadataList'>
                 <h3><span data-bind='text: title'></span> Configurations</h3>
                 <div data-bind='foreach: configurations'>
@@ -36,9 +36,9 @@
             <div data-bind='template: { name: "experiment-controller-template", foreach: pendingExperiments }'></div>
         </div>
 
-        <div class='tab-pane' id='running'>
+        <div class='tab-pane active' id='running'>
             <div data-bind='if: runningExperiments().length === 0'>
-                No running experiments.
+                You currently don't have any active experiments - would you like to <a href='#start' data-bind='click: activateStartExperimentTab'>create a new one?</a>.
             </div>
             <div data-bind='template: { name: "experiment-controller-template", foreach: runningExperiments }'></div>
         </div>
@@ -53,17 +53,19 @@
 {% endblock page %}
 {% block javascript %}
 <script type='text/html' id='experiment-controller-template'>
+    <div class='alert alert-message'>
     <h4><span data-bind='text: status_line'></span> <span class='pull-right'><span data-bind='text: participantCount' class='badge badge-important'></span> participants</span></h4>
     <div class='btn-group'>
         <a class='btn' data-bind='attr: { href: monitor_url }'><i class='icon-zoom-in'></i> monitor</a>
         <a class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
             data-bind='click: $root.cloneExperiment'><i class='icon-copy'></i> clone</a>
         <span data-bind='if: $root.canRegisterParticipants($data)'>
-            <a class='btn' data-content='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'>
-                <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> register participants</a>
-            <a data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.' 
-                class='btn' href='{{e.controller_url}}/register-test-participants'>
-                <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> test participants</a>
+            <a class='btn' data-content='Register participants for this experiment with actual email addresses'
+                data-bind='attr: {href: $root.controllerUrl($data, "register-email-list")}'>
+                <i class='icon-group'></i> register participants</a>
+            <a class='btn' data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.'
+                data-bind='attr: {href: $root.controllerUrl($data, "register-test-participants")}'>
+                <i class='icon-group'></i> test participants</a>
         </span>
                     {% comment %}
                     FIXME: update to KO logic
@@ -87,6 +89,7 @@
                     {% endif %}
                     {% endcomment %}
     </div>
+</div>
 </script>
 {{ block.super }}
 <script type='text/javascript'>
@@ -95,16 +98,15 @@
         function DashboardViewModel(dashboardViewModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(dashboardViewModelJson);
+            model.activateStartExperimentTab = activateTabFunctor('#start');
+            model.activatePendingExperimentsTab = activateTabFunctor('#pending');
+            model.controllerUrl = function(experimentModel, urlAction) {
+                return experimentModel.controller_url() + "/" + urlAction;
+            }
             model.createNewExperiment = function(configurationModel) {
-                console.debug("create new experiment from configuration");
-                console.debug(configurationModel);
                 Dajaxice.vcweb.core.create_experiment(function(data) {
                     if (data.success) {
-                        console.debug("created new experiment: ");
-                        console.debug(data);
-                        console.debug(data.experiment);
                         pendingExperimentModel = ko.mapping.fromJS(data.experiment);
-                        console.debug(pendingExperimentModel);
                         model.pendingExperiments.push(pendingExperimentModel);
                     }
                 },
