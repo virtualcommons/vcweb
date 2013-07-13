@@ -491,24 +491,8 @@ class Experiment(models.Model):
         return "/%s/experimenter" % self.get_absolute_url()
 
     @property
-    def configure_url(self):
-        return "/%s/configure" % self.get_absolute_url()
-
-    @property
     def monitor_url(self):
         return "%s/monitor" % self.controller_url
-
-    @property
-    def complete_url(self):
-        return "%s/complete" % self.controller_url
-
-    @property
-    def deactivate_url(self):
-        return "%s/deactivate" % self.controller_url
-
-    @property
-    def clone_url(self):
-        return "%s/clone" % self.controller_url
 
     @property
     def controller_url(self):
@@ -1042,6 +1026,7 @@ class Experiment(models.Model):
                 'isArchived': self.is_archived,
                 'exchangeRate': float(ec.exchange_rate),
                 'readyParticipants': self.number_of_ready_participants,
+                'status': self.status,
                 })
         if include_round_data:
             # XXX: stubs for round data 

@@ -59,35 +59,19 @@
         <a class='btn' data-bind='attr: { href: monitor_url }'><i class='icon-zoom-in'></i> monitor</a>
         <a class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
             data-bind='click: $root.cloneExperiment'><i class='icon-copy'></i> clone</a>
-        <span data-bind='if: $root.canRegisterParticipants($data)'>
-            <a class='btn' data-content='Register participants for this experiment with actual email addresses'
-                data-bind='attr: {href: $root.controllerUrl($data, "register-email-list")}'>
-                <i class='icon-group'></i> register participants</a>
-            <a class='btn' data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.'
-                data-bind='attr: {href: $root.controllerUrl($data, "register-test-participants")}'>
-                <i class='icon-group'></i> test participants</a>
-        </span>
-                    {% comment %}
-                    FIXME: update to KO logic
-                    {% if not e.is_archived %}
-                    {% if e.participant_set.count == 0  %}
-                    <a class='btn' data-content='Register participants for this experiment with actual email addresses' href='{{e.controller_url}}/register-email-list'>
-                        <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> register participants</a>
-                    <a data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.' 
-                        class='btn' href='{{e.controller_url}}/register-test-participants'>
-                        <img src='{{STATIC_URL}}images/famfamfam/group_add.png' alt='register'/> test participants</a>
-                    {% else %}
-                    <a data-content='Remove all participants from the experiment, including any data they may have generated.' href='{{e.controller_url}}/clear-participants' class='btn confirm-experiment-action'>
-                        <i class='icon-trash'></i> clear all participants</a>
-                    {% endif %}
-                    {% if e.is_active %}
-                    <a data-action='complete' data-content='Mark this experiment as completed' href='{{e.complete_url}}' class='btn confirm-experiment-action'><i class='icon-save'></i> archive</a>
-                    <a data-action='deactivate' data-content='deactivate this experiment' href='{{e.deactivate_url}}' class='btn confirm-experiment-action'><i class='icon-off'></i> deactivate</a>
-                    {% else %}
-                    <a class='btn' data-content='Configure this experiment' href='{{e.configure_url}}'><i class='icon-wrench'></i> configure</a>
-                    {% endif %}
-                    {% endif %}
-                    {% endcomment %}
+        <a class='btn' data-content='Register participants for this experiment with actual email addresses'
+            data-bind='attr: {href: $root.controllerUrl($data, "register-email-list")}'>
+            <i class='icon-group'></i> register participants</a>
+        <a class='btn' data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.'
+            data-bind='attr: {href: $root.controllerUrl($data, "register-test-participants")}'>
+            <i class='icon-group'></i> test participants</a>
+        <a data-content='Remove all participants from the experiment, including any data they may have generated.'
+            data-bind='attr: {href: $root.controllerUrl($data, "clear-participants")}' class='btn confirm-experiment-action'>
+            <i class='icon-trash'></i> clear all participants</a>
+        <a data-action='complete' data-content='Archive and mark this experiment as completed'
+            data-bind='attr: {href: $root.controllerUrl($data, "archive")}' class='btn confirm-experiment-action'><i class='icon-save'></i> archive</a>
+        <a data-action='deactivate' data-content='Flag this experiment as inactive'
+            data-bind='attr: { href: $root.controllerUrl($data, "deactivate")}' class='btn confirm-experiment-action'><i class='icon-off'></i> deactivate</a>
     </div>
 </div>
 </script>
@@ -118,6 +102,10 @@
             }
             model.modify = function() {
                 console.debug("modify existing configuration");
+            }
+            model.canDelete = function(experimentModel) {
+                console.debug("experiment status: " + experimentModel.status());
+                return experimentModel.status() === 'INACTIVE' && experimentModel.participantCount() > 0;
             }
             model.canRegisterParticipants = function(experimentModel) {
                 return ! experimentModel.isArchived() && experimentModel.participantCount() === 0;
