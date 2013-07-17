@@ -14,7 +14,7 @@
     <div class='tab-content'>
         <div class='tab-pane' id='start'>
             <div data-bind='foreach: experimentMetadataList'>
-                <h3><span data-bind='text: title'></span> Configurations</h3>
+                <h3><span data-bind='text: title'></span></h3>
                 <div data-bind='foreach: configurations'>
                     <div class='alert alert-message'>
                         <h4><span data-bind='text: name'>configuration name</span> (treatment id: <span data-bind='text: treatment_id() || "None"'></span>) <span class='pull-right' data-bind='text: date_created'></span></h4>
@@ -57,21 +57,21 @@
     <h4><span data-bind='text: status_line'></span> <span class='pull-right'><span data-bind='text: participantCount' class='badge badge-important'></span> participants</span></h4>
     <div class='btn-group'>
         <a class='btn' data-bind='attr: { href: monitor_url }'><i class='icon-zoom-in'></i> monitor</a>
-        <a class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
-            data-bind='click: $root.cloneExperiment'><i class='icon-copy'></i> clone</a>
-        <a class='btn' data-content='Register participants for this experiment with actual email addresses'
-            data-bind='attr: {href: $root.controllerUrl($data, "register-email-list")}'>
-            <i class='icon-group'></i> register participants</a>
-        <a class='btn' data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.'
-            data-bind='attr: {href: $root.controllerUrl($data, "register-test-participants")}'>
-            <i class='icon-group'></i> test participants</a>
-        <a data-content='Remove all participants from the experiment, including any data they may have generated.'
-            data-bind='attr: {href: $root.controllerUrl($data, "clear-participants")}' class='btn confirm-experiment-action'>
-            <i class='icon-trash'></i> clear all participants</a>
-        <a data-action='complete' data-content='Archive and mark this experiment as completed'
-            data-bind='attr: {href: $root.controllerUrl($data, "archive")}' class='btn confirm-experiment-action'><i class='icon-save'></i> archive</a>
-        <a data-action='deactivate' data-content='Flag this experiment as inactive'
-            data-bind='attr: { href: $root.controllerUrl($data, "deactivate")}' class='btn confirm-experiment-action'><i class='icon-off'></i> deactivate</a>
+        <button class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
+            data-bind='click: $root.cloneExperiment'><i class='icon-copy'></i> clone</button>
+        <button class='btn' data-content='Register participants for this experiment with actual email addresses'
+            data-bind='enable: $root.canRegisterParticipants($data), click: $root.gotoExperimentUrl.bind($data, "register-email-list")'>
+            <i class='icon-group'></i> register participants</button>
+        <button class='btn' data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.'
+            data-bind='enable: $root.canRegisterParticipants($data), click: $root.gotoExperimentUrl.bind($data, "register-test-participants")'>
+            <i class='icon-group'></i> test participants</button>
+        <button data-content='Remove all participants from the experiment, including any data they may have generated.'
+            data-bind='enable: $root.canClearParticipants($data), attr: {href: $root.controllerUrl($data, "clear-participants")}' class='btn confirm-experiment-action'>
+            <i class='icon-trash'></i> clear all participants</button>
+        <button data-action='complete' data-content='Archive and mark this experiment as completed'
+            data-bind='attr: {href: $root.controllerUrl($data, "archive")}' class='btn confirm-experiment-action'><i class='icon-save'></i> archive</button>
+        <button data-action='deactivate' data-content='Flag this experiment as inactive'
+            data-bind='attr: { href: $root.controllerUrl($data, "deactivate")}' class='btn confirm-experiment-action'><i class='icon-off'></i> deactivate</button>
     </div>
 </div>
 </script>
@@ -84,6 +84,10 @@
             var model = ko.mapping.fromJS(dashboardViewModelJson);
             model.activateStartExperimentTab = activateTabFunctor('#start');
             model.activatePendingExperimentsTab = activateTabFunctor('#pending');
+            model.gotoExperimentUrl = function(urlAction, experimentModel) {
+                var url = model.controllerUrl(experimentModel, urlAction);
+                window.location = url;
+            }
             model.controllerUrl = function(experimentModel, urlAction) {
                 return experimentModel.controller_url() + "/" + urlAction;
             }
@@ -103,25 +107,25 @@
             model.modify = function() {
                 console.debug("modify existing configuration");
             }
-            model.canDelete = function(experimentModel) {
-                console.debug("experiment status: " + experimentModel.status());
+            model.canClearParticipants = function(experimentModel) {
                 return experimentModel.status() === 'INACTIVE' && experimentModel.participantCount() > 0;
             }
             model.canRegisterParticipants = function(experimentModel) {
-                return ! experimentModel.isArchived() && experimentModel.participantCount() === 0;
+                return ! experimentModel.isArchived() && (experimentModel.participantCount() === 0);
             }
 
             return model;
         }
         var model = new DashboardViewModel(dashboardViewModelJson);
         ko.applyBindings(model);
-        $('a.confirm-experiment-action').on("click", function(evt) {
+        // FIXME: rework this so that we make proper ajax posts on confirmation instead of get requests that modify
+        // experiment state.
+        $('a.confirm-experiment-action').click(function(evt) {
             evt.preventDefault();
             var self = $(this);
             var description = self.attr("data-content");
             var href = self.attr("href");
             if (self.hasClass('disabled')) {
-                console.debug("disabled action " + action + " - ignoring");
                 return false;
             }
             bootbox.confirm(description + "  Continue?", function(confirmed) {
