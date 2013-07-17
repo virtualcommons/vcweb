@@ -30,31 +30,35 @@
     margin: 0 0 0 -5px;
     width: 40px;
     height: 40px;
-    background: url('/static/images/bound/zero-trees-inactive.png');
+    background: url('/static/images/bound/zero-trees-inactive.png') no-repeat;
 }
 .zero-harvest-decision.selected {
-    background: url('/static/images/bound/zero-trees-active.png') !important;
+    background: url('/static/images/bound/zero-trees-active.png') no-repeat !important;
 }
 .zero-harvest-decision:hover {
-    background: url('/static/images/bound/zero-trees-hover.png');
+    background: url('/static/images/bound/zero-trees-hover.png') no-repeat;
 }
 .harvest-decision-tree {
     padding: 0 0 0 0;
     margin: 0 0 0 -5px;
     width: 40px;
     height: 40px;
-    background: url('/static/images/bound/tree-inactive.png');
+    background: url('/static/images/bound/tree-inactive.png') no-repeat;
 }
 .harvest-decision-tree.selected {
-    background: url('/static/images/bound/tree-active.png') !important;
+    background: url('/static/images/bound/tree-active.png') no-repeat !important;
 }
 .harvest-decision-tree:hover {
-    background: url('/static/images/bound/tree-hover.png');
+    background: url('/static/images/bound/tree-hover.png') no-repeat;
 }
 .harvest-decision-tree-div {
     cursor: pointer;
-    padding: 3px 3px 3px 8px;
-    margin: 5px 5px 5px 5px;
+    padding: 1px 1px 1px 8px;
+    margin: 1px 1px 1px 1px;
+}
+td.harvest-decision-tree-td {
+    padding: 0px;
+    margin: 0px;
 }
 col.current-player {
     background-color: #ffb914;

@@ -406,11 +406,14 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 <div class='row' data-bind='ifnot: isResourceEmpty()'>
     <div class='span8'>
         <h3>Harvest</h3>
+        {% comment %}
+        FIXME: disabled
         <div data-bind='if: submitHarvestDecisionEnabled'>
             <div class='alert alert-success'>
                 <i class='icon-leaf'></i> You have currently <span data-bind='text: submitted ? "submitted" : "selected"'></span> a harvest decision of <span class='badge badge-info' data-bind='text: harvestDecision'></span> trees.  Click the 'Ok I'm ready' button to continue.
             </div>
         </div>
+        {% endcomment %}
         <div data-bind='ifnot: alive'>
             <div class='alert alert-error'>
                 <b><i class='icon-ambulance'></i></b> You didn't harvest enough trees to meet the cost of living and are now
@@ -491,9 +494,9 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </div>
 </script>
 <script type='text/html' id='harvest-decision-multiselect-template'>
-    <table class='table'>
-        <tr class='row harvest-decision-resources' data-bind='foreach: harvestDecisionOptions'>
-            <td data-bind='attr: { id: "harvest-decision-td-" + $data }'>
+    <table>
+        <tr class='harvest-decision-resources' data-bind='foreach: harvestDecisionOptions'>
+            <td class='harvest-decision-tree-td' data-bind='attr: { id: "harvest-decision-td-" + $data }'>
                 <form data-bind='attr: { id: $root.harvestDecisionFormId($data) }'>
                     <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: $root.participantGroupId'/>
                     <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: $data'>
