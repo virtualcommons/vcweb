@@ -95,7 +95,8 @@
                 Dajaxice.vcweb.core.create_experiment(function(data) {
                     if (data.success) {
                         pendingExperimentModel = ko.mapping.fromJS(data.experiment);
-                        model.pendingExperiments.push(pendingExperimentModel);
+                        model.pendingExperiments.unshift(pendingExperimentModel);
+                        model.activatePendingExperimentsTab();
                     }
                 },
                 { experiment_configuration_id: configurationModel.pk() });

@@ -1027,6 +1027,7 @@ class Experiment(models.Model):
                 'exchangeRate': float(ec.exchange_rate),
                 'readyParticipants': self.number_of_ready_participants,
                 'status': self.status,
+                'pk': self.pk,
                 })
         if include_round_data:
             # XXX: stubs for round data 

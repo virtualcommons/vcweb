@@ -121,7 +121,7 @@ def create_experiment(request, experiment_configuration_id):
             experiment_configuration=experiment_configuration,
             status=Experiment.Status.INACTIVE
             )
-    return JsonResponse(dumps({'success': True, 'experiment': e.to_dict(attrs=('monitor_url', 'status_line',)) }))
+    return JsonResponse(dumps({'success': True, 'experiment': e.to_dict(attrs=('monitor_url', 'status_line','controller_url',)) }))
 
 
 @experimenter_required

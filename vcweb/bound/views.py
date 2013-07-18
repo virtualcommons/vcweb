@@ -92,6 +92,7 @@ experiment_model_defaults = {
         'averageHarvest': 0,
         'averageStorage': 0,
         'numberAlive': '4 out of 4',
+        'isSurveyEnabled': False,
         'surveyUrl': 'http://survey.qualtrics.com/SE/?SID=SV_0vzmIj5UsOgjoTX',
         }
 # FIXME: bloated method with too many special cases, try to refactor
@@ -132,7 +133,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             experiment_model_dict['sessonTwoStorage'] = session_two_storage
 
     if current_round.is_survey_enabled:
-        logger.debug("survey was enabled")
         query_parameters = urlencode({
             'pid': participant_group_relationship.pk,
             'eid': experiment.pk,
@@ -143,6 +143,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         if separator in survey_url:
             separator = '&'
         experiment_model_dict['surveyUrl'] = "{0}{1}{2}".format(current_round.survey_url, separator, query_parameters)
+        experiment_model_dict['isSurveyEnabled'] = True
+        logger.debug("survey was enabled, setting survey url to %s", experiment_model_dict['surveyUrl'])
 
 
 # participant data

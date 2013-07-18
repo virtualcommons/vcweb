@@ -73,16 +73,26 @@
 <script type='text/html' id='PRACTICE_ROUND_RESULTS'>
     <h3>Practice Round Results</h3>
     <p>
-    Your final savings were <span class='badge badge-success' data-bind='text: storage'></span> points.
+    Your final savings were <span class='badge badge-success' data-bind='text: storage'></span> tokens.
     If this had been been a paid session, you would have earned <strong class='text-success' data-bind='text: totalEarnings'></strong>.
     </p>
     <p>
     We will now move on to the <strong>paid rounds.</strong>
-    Before you continue, please <a target='_blank' data-bind='attr: { href: surveyUrl }'>fill out a questionnaire by clicking this link.</a>
+    Before you continue, please fill out the following questionnaire.
     </p>
+    <div class='qualtrics-survey'>
+        <iframe width="100%" height="800" data-bind='attr: { src: surveyUrl }'></iframe>
+    </div>
+    {% comment %}
+    need to disable this until the survey is completed
+    {% endcomment %}
+        <div class='alert alert-error'>
+        FIXME: this button should be initially disabled when we wire up proper activation from the qualtrics survey and then enabled after the 
+        qualtrics survey is completed
+        </div>
     <ul class='pager'>
         <li class='next'>
-        <a href='javascript: void()' data-bind='click: activateTemplate.bind($data, "PAID_EXPERIMENT_INSTRUCTIONS")'>Ok, continue</a>
+        <a href='javascript: void()' data-bind='click: activateTemplate.bind($data, "PAID_EXPERIMENT_INSTRUCTIONS", true)'>Ok, continue</a>
         </li>
     </ul>
 </script>
@@ -127,8 +137,14 @@
     Thank you for participating.  As you recall from the initial instructions, we will pay you for one of the two
     experimental sessions you just completed.  You will select, at random, which session you will be paid for by
     flipping a coin.  The experimenter will be with you shortly to assist you with this process.  While you wait, please
-    <a data-bind='attr: { href: surveyUrl }'>fill out a final questionnaire by clicking this link.</a>
+    fill out the following questionnaire.
     </p>
+
+    <div class='qualtrics-survey'>
+        <iframe width="100%" height="100%" data-bind='attr: { src: surveyUrl }'>
+            Your browser doesn't seem to support iframes, please <a data-bind='attr: { href: surveyUrl }'>follow this link to take the survey.</a>
+        </iframe>
+    </div>
     <h2>Payments</h2>
     <table class='table'>
         <thead>
@@ -222,7 +238,7 @@ Each tree you harvest will earn you one savings point, and extra savings will ca
 <h4>Cost of living</h4>
 <p>
 Each round you must pay living expenses of <span class='badge badge-important' data-bind='text: costOfLiving'></span>
-savings points.  If at any point you do not have enough savings to pay the living expenses, you will not become
+tokens.  If at any point you do not have enough savings to pay the living expenses, you will become
 "deceased" for the remainder of the session, preventing you from harvesting or receiving payment for that session.
 You will need to wait until the session is complete before joining again.
 </p>
@@ -282,7 +298,7 @@ split between the 4 participants in your group, the forest has a capacity to pro
 You have been assigned to a random group with <strong data-bind='text:participantsPerGroup'></strong> members.
 In this experiment you will be sharing a virtual forest with the <span data-bind='text: participantsPerGroup() - 1'></span> 
 other members in your group.  All participants in the experiment are in identical conditions and must harvest
-trees to pay the cost of living (<span data-bind='text: costOfLiving'></span> savings points per round) to make a profit
+trees to pay the cost of living (<span data-bind='text: costOfLiving'></span> tokens per round) to make a profit
 and accrue savings.  You will be able to text chat only with members of your own group.
 </p>
 <p>
@@ -387,7 +403,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             <tr>
                 <td>Earnings</td>
                 <!-- ko foreach: playerData -->
-                <td data-bind='text: storage, css: { "current-player": id() === $root.participantGroupId() }'></td>
+                <td data-bind='text: Math.max(0, storage()), css: { "current-player": id() === $root.participantGroupId() }'></td>
                 <!-- /ko -->
             </tr>
             <tr>
@@ -587,8 +603,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 model.currentInterval(intervalId);
             }
             model.clearCurrentInterval = function() {
-                console.debug("clearing current interval: " + model.currentInterval());
-                if (model.currentInterval()) {
+               if (model.currentInterval()) {
                     clearInterval(model.currentInterval());
                     model.currentInterval(undefined);
                 }
@@ -600,16 +615,18 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 return model.secondsLeft() > 0;
             });
             // activate instructions click bindings
-            model.activateTemplate = function(name) {
+            model.activateTemplate = function(name, toggleSidebar, experimentModel) {
                 model.templateName(name);
+                if (toggleSidebar) {
+                    $('#sidebar').show();
+                    $('#content').toggleClass('span8 span12');
+                }
             }
             model.readyParticipantsPercentage = ko.computed(function() {
                 return (model.readyParticipants() / model.participantCount()) * 100;
             });
             model.participantReady = function(message) {
                 $.post('/experiment/participant-ready', { participant_group_id: model.participantGroupId() }, function(response) {
-                    console.debug("successfully posted to server, notifying sockjs");
-                    console.debug(response);
                     model.readyParticipants(response.number_of_ready_participants);
                     getWebSocket().send(createReadyEvent(message));
                     model.activateTemplate("WAITING_ROOM");
@@ -648,7 +665,6 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             };
             model.blockResourceVisualizationImageHeight = function(resourceLevel) {
                 var rowsToDisplay = model.rowsToDisplay(resourceLevel);
-                console.debug("displaying " + rowsToDisplay + " rows.");
                 return (rowsToDisplay * model.resourceImageHeight()) + "px";
             };
             model.remainderResourceImageWidth = function(resourceLevel) {
@@ -659,7 +675,6 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 if (model.showTour()) {
                     model.setupTour();
                 }
-                console.debug("starting round");
                 if (isInt(model.timeRemaining()) && model.timeRemaining() > 0) {
                     model.secondsLeft(model.timeRemaining());
                     model.setCurrentInterval(
@@ -681,11 +696,8 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             }
             model.submitDecision = function() {
                 model.endTour();
-                console.debug("submitting decision for form " + model.harvestDecisionFormId() + " with harvest decision:"  + model.harvestDecision());
-                $.post('submit-harvest-decision', 
-                {participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true }, 
+                $.post('submit-harvest-decision', {participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true }, 
                 function(response) {
-                    console.debug(response);
                     // hide selection, disable chat, show waiting room
                     model.participantReady(response.message);
                     model.clearCurrentInterval();
@@ -701,9 +713,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 }
                 var formId = "#" + model.harvestDecisionFormId(numberOfTrees)
                 var form = $(formId);
-                console.debug("formId: " + formId + " -- number of trees: " + numberOfTrees);
                 var formData = form.serialize();
-                console.debug(formData);
                 $.post('submit-harvest-decision', formData, function(response) {
                     model.selectedHarvestDecision(true);
                     model.harvestDecision(numberOfTrees);
@@ -722,8 +732,6 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             }
             model.update = function() {
                 $.get('view-model', { participant_group_id: model.participantGroupId() }, function(data) {
-                    console.debug("retrieved view model successfully");
-                    console.debug(data);
                     ko.mapping.fromJS(data, model);
                     model.afterRenderTemplate();
                     $('#progress-modal').modal('hide');
@@ -748,7 +756,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             model.disableChatForm = function() {
                 model.setFormDisabled("#chat-form", true);
             }
-            model.setupChat = function() {
+            model.initializeChat = function() {
                 // FIXME: chat is disabled in practice rounds, when it's explicitly disabled, or if the participant is
                 // no longer alive
                 var chatDisabled = model.isPracticeRound() || ! model.chatEnabled() || ! model.alive();
@@ -759,7 +767,12 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 if (model.templateId() === "REGULAR") {
                     model.startRound()
                 }
-                model.setupChat();
+                // FIXME: should move to a model where we only enable chat in REGULAR rounds?
+                model.initializeChat();
+                if (model.isSurveyEnabled()) {
+                    $('#sidebar').hide();
+                    $('#content').toggleClass('span8 span12');
+                }
                 $('[data-content]').popover({placement: 'top', trigger: 'hover'});
             }
             return model;
@@ -769,12 +782,9 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             ko.applyBindings(experimentModel);
             var s = connect();
             s.onmessage = function(message) {
-                console.debug(message);
                 var data = $.parseJSON(message.data);
-                console.debug(data);
                 switch (data.event_type) {
                     case 'chat':
-                        console.debug("received chat message:" + message);
                         experimentModel.chatMessages.unshift(data);
                         break;
                     case 'update':
