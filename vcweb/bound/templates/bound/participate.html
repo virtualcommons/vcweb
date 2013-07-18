@@ -92,7 +92,7 @@
         </div>
     <ul class='pager'>
         <li class='next'>
-        <a href='javascript: void()' data-bind='click: activateTemplate.bind($data, "PAID_EXPERIMENT_INSTRUCTIONS", true)'>Ok, continue</a>
+        <a href='javascript: void()' data-bind='click: completePracticeRoundSurvey'>Ok, continue</a>
         </li>
     </ul>
 </script>
@@ -615,13 +615,15 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 return model.secondsLeft() > 0;
             });
             // activate instructions click bindings
-            model.activateTemplate = function(name, toggleSidebar, experimentModel) {
+            model.activateTemplate = function(name, experimentModel) {
                 model.templateName(name);
-                if (toggleSidebar) {
-                    $('#sidebar').show();
-                    $('#content').toggleClass('span8 span12');
-                }
             }
+            model.completePracticeRoundSurvey = function() {
+                console.debug("completing practice round survey");
+                $('#sidebar').show(); 
+                $('#content').toggleClass('span8 span12');
+                model.activateTemplate("PAID_EXPERIMENT_INSTRUCTIONS"); 
+            };
             model.readyParticipantsPercentage = ko.computed(function() {
                 return (model.readyParticipants() / model.participantCount()) * 100;
             });
@@ -769,7 +771,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 }
                 // FIXME: should move to a model where we only enable chat in REGULAR rounds?
                 model.initializeChat();
-                if (model.isSurveyEnabled()) {
+                if (model.isSurveyEnabled() && model.templateId() === "PRACTICE_ROUND_RESULTS") {
                     $('#sidebar').hide();
                     $('#content').toggleClass('span8 span12');
                 }
