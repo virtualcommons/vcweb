@@ -14,10 +14,16 @@ def get_resource_level(group, round_data=None, **kwargs):
     ''' returns the group resource level data value scalar '''
     return get_resource_level_dv(group, round_data=round_data, **kwargs).int_value
 
+def get_group_harvest_dv(group, round_data=None):
+    ''' returns the collective group harvest data value '''
+    return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data)
+
 def get_group_harvest(group, round_data=None):
     ''' returns the collective group harvest data value '''
     return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data).int_value
 
+def get_regrowth_dv(group, round_data=None):
+    return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0)
 # returns the number of resources regenerated for the given group in the given round
 def get_regrowth(group, round_data=None):
     return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0).int_value

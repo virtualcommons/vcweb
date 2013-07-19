@@ -224,9 +224,6 @@
             }
             model.tick = function() {
                 model.timeRemaining(model.timeRemaining() - 1);
-                if (model.timeRemaining() % 10 == 0) {
-                    model.checkAllParticipantsReady();
-                }
                 if (model.timeRemaining() < 0) {
                     model.addMessage("Round time has expired!");
                     model.clearCurrentInterval();
@@ -359,11 +356,9 @@
             // establish sockjs websocket connection
             var s = connect("/experimenter");
             s.onmessage = function(message) {
-                console.log("sockjs event: " + message);
                 experiment_event = $.parseJSON(message.data);
                 switch (experiment_event.event_type) {
                     case 'update':
-                        console.debug("FIXME: ignoring update requests, patch sockjs broadcast to not send certain messages");
                         break;
                     case 'chat':
                         experimentModel.chatMessages.unshift(experiment_event);

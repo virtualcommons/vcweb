@@ -156,7 +156,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     own_resource_level = get_resource_level(own_group)
     if current_round.is_playable_round or current_round.is_debriefing_round:
         player_data, own_data = get_player_data(own_group, previous_round_data, current_round_data, participant_group_relationship)
-        logger.debug("player data: %s", player_data)
         experiment_model_dict.update(own_data)
         experiment_model_dict['playerData'] = player_data
         experiment_model_dict['averageHarvest'] = get_average_harvest(own_group, previous_round_data)

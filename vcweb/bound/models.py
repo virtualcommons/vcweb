@@ -7,7 +7,7 @@ from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_d
                                    get_group_harvest_parameter, get_reset_resource_level_parameter, get_resource_level as get_unshared_resource_level,
                                    get_initial_resource_level as forestry_initial_resource_level, get_regrowth_parameter, set_resource_level,
                                    get_resource_level_parameter, get_resource_level_dv as get_unshared_resource_level_dv,
-                                   set_group_harvest, set_regrowth, set_harvest_decision)
+                                   set_group_harvest, get_group_harvest_dv, get_regrowth_dv, set_regrowth, set_harvest_decision)
 
 from collections import defaultdict
 import logging
@@ -329,6 +329,8 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
         max_resource_level = get_max_resource_level(round_data.round_configuration)
     current_resource_level_dv = get_resource_level_dv(group, round_data)
     current_resource_level = current_resource_level_dv.int_value
+    group_harvest_dv = get_group_harvest_dv(group, round_data)
+    regrowth_dv = get_regrowth_dv(group, round_data)
 # FIXME: would be nicer to extend Group behavior and have group.get_total_harvest() instead of
 # get_total_group_harvest(group, ...), see if we can enable this dynamically
     total_harvest = get_total_group_harvest(group, round_data)
@@ -339,17 +341,20 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
             total_harvest = adjusted_harvest
 
         group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level))
-        set_group_harvest(group, total_harvest, round_data)
+        group_harvest_dv.int_value = total_harvest
+        group_harvest_dv.save()
         current_resource_level = current_resource_level - total_harvest
         resource_regrowth = calculate_regrowth(current_resource_level, regrowth_rate, max_resource_level)
         group.log("Regrowth: adding %s to current resource level %s" % (resource_regrowth, current_resource_level))
-        set_regrowth(group, resource_regrowth, round_data)
+        regrowth_dv.int_value = resource_regrowth
+        regrowth_dv.save()
         # clamp resource
         current_resource_level_dv.int_value = min(current_resource_level + resource_regrowth, max_resource_level)
         current_resource_level_dv.save()
     else:
         group.log("current resource level is 0, no one can harvest")
-        set_group_harvest(group, 0, round_data)
+        group_harvest_dv.int_value = 0
+        group_harvest_dv.save()
         ParticipantRoundDataValue.objects.for_group(group, parameter=get_harvest_decision_parameter(),
                 round_data=round_data).update(is_active=False)
         for pgr in group.participant_group_relationship_set.all():
@@ -359,11 +364,12 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
                     int_value=0)
 
 
+    logger.debug("copying resource levels to next round")
     ''' XXX: transfer resource levels across chat and quiz rounds if they exist '''
     if experiment.has_next_round:
         ''' set group round data resource_level for each group + regrowth '''
         group.log("Transferring resource level %s to next round" % current_resource_level_dv.int_value)
-        group.copy_to_next_round(current_resource_level_dv)
+        group.copy_to_next_round(current_resource_level_dv, group_harvest_dv, regrowth_dv)
 
 
 # FIXME: reduce duplication between this and update_resource_level
@@ -374,6 +380,7 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
     max_resource_level = max_resource_level * group_cluster.size
     shared_resource_level_dv = get_shared_resource_level_dv(cluster=group_cluster, round_data=round_data)
     shared_resource_level = shared_resource_level_dv.int_value
+# FIXME: set up shared group harvest parameter as well
     shared_group_harvest = 0
     group_cluster_size = 0
     group_harvest_dict = {}

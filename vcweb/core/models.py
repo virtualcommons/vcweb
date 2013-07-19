@@ -98,6 +98,7 @@ class DataValueMixin(object):
         if not next_round_data:
             next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round)
         for existing_dv in data_values:
+            logger.debug("copying existing dv %s to next round %s", existing_dv, next_round_data)
             # Taking advantage of a trick from here:
             # http://stackoverflow.com/questions/12182657/copy-or-clone-an-object-instance-in-django-python
             existing_dv.pk = None
