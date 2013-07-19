@@ -57,7 +57,10 @@ class BaseVcwebTest(TestCase):
                 name='Test Experiment Configuration', creator=experimenter)
         logger.debug("creating new experiment configuration: %s", experiment_configuration)
         for index in xrange(1, 10):
-            experiment_configuration.round_configuration_set.create(sequence_number=index)
+            rc = experiment_configuration.round_configuration_set.create(sequence_number=index)
+            if index == 1:
+                rc.initialize_data_values = True
+                rc.save()
         logger.debug("created round configurations: %s", experiment_configuration.round_configuration_set.all())
         return Experiment.objects.create(experimenter=experimenter,
                 experiment_metadata=experiment_metadata, experiment_configuration=experiment_configuration)
