@@ -251,18 +251,20 @@ def round_started_handler(sender, experiment=None, **kwargs):
     round_data = experiment.get_round_data(round_configuration)
     logger.debug("setting up round %s", round_configuration)
     # initialize group and participant data values
-    if round_configuration.is_playable_round:
+    if round_configuration.initialize_data_values:
         experiment.initialize_data_values(
             group_cluster_parameters=(get_regrowth_parameter(), get_resource_level_parameter(),),
             group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter(),),
             participant_parameters=(get_storage_parameter(), get_player_status_parameter(),)
         )
+    if round_configuration.is_playable_round:
 # check for dead participants and set their ready and harvest decision flags
         deceased_participants = ParticipantRoundDataValue.objects.select_related('participant_group_relationship').filter(parameter=get_player_status_parameter(),
                 round_data=round_data, boolean_value=False)
         for prdv in deceased_participants:
             pgr = prdv.participant_group_relationship
             set_harvest_decision(pgr, 0, round_data, submitted=True)
+            pgr.set_participant_ready(round_data)
     '''
     during a practice or regular round, set up resource levels, participant harvest decision parameters, and group
     formation
@@ -451,7 +453,7 @@ def round_ended_handler(sender, experiment=None, **kwargs):
             for group_cluster in GroupCluster.objects.for_experiment(experiment, session_id=round_configuration.session_id):
                 update_shared_resource_level(experiment, group_cluster, round_data, regrowth_rate)
         else:
-            for group in experiment.group_set.filter(session_id=round_configuration.session_id):
+            for group in experiment.groups:
                 update_resource_level(experiment, group, round_data, regrowth_rate)
         update_participants(experiment, round_data, round_configuration)
 

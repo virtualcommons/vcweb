@@ -726,16 +726,19 @@ class Experiment(models.Model):
             users.append(user)
         self.register_participants(users=users, institution=institution, password=password)
 
-# FIXME: figure out how to declaratively do this so experiments can more easily notify "I have these data values to
-# initialize at the start of each round.
-# XXX: it can be dangerous to use empty lists as initial keyword args but we only iterate over them (e.g.,
-# http://effbot.org/zone/default-values.htm)
-# defaults map parameter model instances to their default initial value, e.g., { footprint-level-parameter: 1, resource-level-parameter: 100 }
     def initialize_data_values(self, group_parameters=[], participant_parameters=[], group_cluster_parameters=[], round_data=None, defaults={}):
-        logger.debug("initializing [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
+        """
+        FIXME: needs refactoring, replace get_or_create with creates and separate initialization of data values from copy_to_next_round semantics
+        Issues:
+            Make it simple for experimenters/experiments to signal "I have these data values to initialize at the start of each round"
+            Overly complex logic, possible danger to use empty lists as initial keyword args but we only iterate over them (e.g., http://effbot.org/zone/default-values.htm)
+            get_or_create logic can create degenerate data (duplicate group round data values for instance)
+        """
+        logger.debug("initializing data values for [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
         if round_data is None:
             round_data = self.current_round_data
         parameter_defaults = defaultdict(dict)
+        # defaults map parameter model instances to their default initial value, e.g., { footprint-level-parameter: 1, resource-level-parameter: 100 }
         for parameter in itertools.chain(participant_parameters, group_parameters, group_cluster_parameters):
             if parameter in defaults:
                 parameter_defaults[parameter] = { parameter.value_field_name: defaults[parameter] }
@@ -746,17 +749,17 @@ class Experiment(models.Model):
                 for parameter in group_cluster_parameters:
                     gcdv, created = GroupClusterDataValue.objects.get_or_create(round_data=round_data, parameter=parameter, group_cluster=group_cluster,
                             defaults=parameter_defaults[parameter])
-                    #logger.debug("%s (%s)", gcdv, created)
+                    logger.debug("gcdv: %s (%s)", gcdv, created)
         for group in self.groups:
             for parameter in group_parameters:
                 group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter, defaults=parameter_defaults[parameter])
-                #logger.debug("%s (%s)", group_data_value, created)
+                logger.debug("grdv: %s (%s)", group_data_value, created)
             if participant_parameters:
                 for pgr in group.participant_group_relationship_set.all():
                     for parameter in participant_parameters:
                         participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(round_data=round_data, participant_group_relationship=pgr, parameter=parameter,
                                 defaults=parameter_defaults[parameter])
-                #        logger.debug("%s (%s)", participant_data_value, created)
+                        logger.debug("prdv: %s (%s)", participant_data_value, created)
 
     def log(self, log_message):
         if log_message:
@@ -911,7 +914,7 @@ class Experiment(models.Model):
                 ParticipantRoundDataValue.objects.get_or_create(participant_group_relationship=pgr,
                         parameter=get_participant_ready_parameter(), round_data=round_data, defaults={'boolean_value': False})
         if not created:
-            logger.debug("already created round data: %s", round_data)
+            logger.debug("round data already created: %s", round_data)
         return round_data, created
 
     def start_round(self, sender=None):
@@ -1140,6 +1143,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
             Group/ParticipantGroupRelationship models.
             '''))
     repeat = models.PositiveIntegerField(default=0, help_text=_('If set to a positive integer n, this round will repeat itself n times with the same configuration and parameter values.'))
+    initialize_data_values = models.BooleanField(default=False, help_text=_("Re-initialize all group and participant parameters at the start of this round.  "))
 
     @property
     def custom_template_filename(self):

@@ -278,8 +278,9 @@ data-bind='text: initialResourceLevel() / 10'></span> trees each season.
 </p>
 <h4>Sustainable Harvesting</h4>
 <p>
-The highest amount of harvesting that the forest can permanently support is 24 trees per season.  If that number is
-split between the 4 participants in your group, the forest has a capacity to produce 6 trees per individual per round.
+The highest amount of harvesting that the forest can permanently support occurs when the growth rate is fastest. The
+highest sustainable amount that can be harvested, when the forest is at half its capacity, is 6 trees per individual or
+24 trees per group.
 </p>
 <ul class='pager'>
 <li class='previous'>
@@ -476,7 +477,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
     <tbody>
         <tr><td>forest</td><td data-bind='text:resourceLevel'></td></tr>
         <tr><td>average harvest</td><td data-bind='text:averageHarvest().toFixed(1)'></td></tr>
-        <tr><td>average earnings</td><td data-bind='text:averageStorage().toFixed(1)'></td></tr>
+        <tr><td>average earnings</td><td data-bind='text:Math.max(0, averageStorage().toFixed(1))'></td></tr>
         <tr><td>number alive</td><td data-bind='text:numberAlive'></td></tr>
     </tbody>
 </table>

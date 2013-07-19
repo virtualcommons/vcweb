@@ -217,7 +217,6 @@
                 model.currentInterval(intervalId);
             }
             model.clearCurrentInterval = function() {
-                console.debug("clearing current interval: " + model.currentInterval());
                 if (model.currentInterval()) {
                     clearInterval(model.currentInterval());
                     model.currentInterval(undefined);
