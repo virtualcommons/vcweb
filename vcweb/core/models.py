@@ -470,7 +470,7 @@ class Experiment(models.Model):
 
     @property
     def active_group_clusters(self):
-        return (group_cluster for group_cluster in self.group_cluster_set.filter(session_id=self.current_session_id))
+        return self.group_cluster_set.filter(session_id=self.current_session_id)
 
     @property
     def participant_group_relationships(self):
@@ -1458,6 +1458,17 @@ class ParameterizedValue(models.Model):
         converted_value = self.parameter.convert(obj)
         setattr(self, self.parameter.value_field_name, converted_value)
 
+    def update(self, val):
+        self.value = val
+        self.save()
+
+    def update_str(self, str_value):
+        self.string_value = str_value
+        self.save()
+
+    def update_int(self, integer_value):
+        self.int_value = integer_value
+        self.save()
 
     def to_dict(self, cacheable=False, **kwargs):
         p = self.parameter
