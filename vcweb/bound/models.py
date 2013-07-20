@@ -255,13 +255,12 @@ def round_started_handler(sender, experiment=None, **kwargs):
     round_configuration = experiment.current_round
     round_data = experiment.get_round_data(round_configuration)
     logger.debug("setting up round %s", round_configuration)
-    # initialize group and participant data values
-    if round_configuration.initialize_data_values:
-        experiment.initialize_data_values(
+    # initialize group and participant data values if necessary
+    experiment.initialize_data_values(
             group_cluster_parameters=(get_regrowth_parameter(), get_resource_level_parameter(),),
             group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter(),),
             participant_parameters=(get_storage_parameter(), get_player_status_parameter(),)
-        )
+            )
     if round_configuration.is_playable_round:
         # check for dead participants and set their ready and harvest decision flags
         deceased_participants = ParticipantRoundDataValue.objects.select_related('participant_group_relationship').filter(parameter=get_player_status_parameter(),

@@ -531,7 +531,6 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
         <span class='add-on'><i class='icon-leaf'></i></span>
         <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
         <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: harvestDecision'>
-        <input id='harvestDecisionSubmitted' style='display: none;' type='checkbox' name='submitted' data-bind='value: submitted'/>
         <select id='harvestDecisionSelect' name='harvest_decision' required="required" form="vcweb-form" data-bind='options: harvestDecisionOptions, value: harvestDecision'>
         </select>
     </div>
@@ -706,6 +705,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                     model.clearCurrentInterval();
                     model.submitted(true);
                     model.secondsLeft(0);
+                    model.disableChatForm();
                 });
 
             }
@@ -762,7 +762,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             model.initializeChat = function() {
                 // FIXME: chat is disabled in practice rounds, when it's explicitly disabled, or if the participant is
                 // no longer alive
-                var chatDisabled = model.isPracticeRound() || ! model.chatEnabled() || ! model.alive();
+                var chatDisabled = model.isPracticeRound() || ! model.chatEnabled() || ! model.alive() || model.submitted();
                 model.setFormDisabled("#chat-form", chatDisabled);
                 model.chatEnabled(! chatDisabled);
             }

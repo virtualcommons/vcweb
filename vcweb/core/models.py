@@ -292,8 +292,15 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
         self.max_group_size = 0
 
     @property
+    def total_number_of_rounds(self):
+        number_of_rounds = self.round_configuration_set.count()
+        repeating_rounds = self.round_configuration_set.filter(repeat__gt=0)
+        number_of_rounds = number_of_rounds - repeating_rounds.count() + sum(repeating_rounds.values_list('repeat', flat=True))
+        return number_of_rounds
+
+    @property
     def final_sequence_number(self):
-        # FIXME: or max round_configurations.sequence_number (as currently implemented could fail in the face of degenerate data)
+        # FIXME doesn't work with repeating rounds, also doesn't work well with degenerate data (e.g., manual sequence numbers > count)
         return self.round_configuration_set.count()
 
     @property
@@ -735,9 +742,17 @@ class Experiment(models.Model):
             Overly complex logic, possible danger to use empty lists as initial keyword args but we only iterate over them (e.g., http://effbot.org/zone/default-values.htm)
             get_or_create logic can create degenerate data (duplicate group round data values for instance)
         """
-        logger.debug("initializing data values for [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
         if round_data is None:
             round_data = self.current_round_data
+        round_configuration = round_data.round_configuration
+        if not round_configuration.initialize_data_values:
+            logger.debug("Aborting, round configuration isn't set to initialize data values")
+            return
+        elif round_configuration.is_repeating_round and self.repeating_round_sequence_number > 0:
+            logger.debug("repeating round # %d - aborting data value initialization", self.repeating_round_sequence_number)
+            return
+
+        logger.debug("initializing data values for [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
         parameter_defaults = defaultdict(dict)
         # defaults map parameter model instances to their default initial value, e.g., { footprint-level-parameter: 1, resource-level-parameter: 100 }
         for parameter in itertools.chain(participant_parameters, group_parameters, group_cluster_parameters):
@@ -1009,7 +1024,7 @@ class Experiment(models.Model):
                 'roundDataId': "roundData_%s" % round_data.pk,
                 'experimenterNotes': round_data.experimenter_notes,
                 'roundType': rc.get_round_type_display(),
-                'roundNumber': rc.round_number,
+                'roundNumber': round_data.round_number,
                 # empty stubs to be loaded in dynamically when loaded
                 'groupDataValues': [],
                 'participantDataValues': [],
@@ -1082,9 +1097,9 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     # FIXME: refactor this into a single data structure
     # maps round type name to (description, default_template_filename)
     ROUND_TYPES_DICT = dict(
-            WELCOME=('Initial welcome round', 'welcome.html'),
-            GENERAL_INSTRUCTIONS=('General instructions round (introduction)', 'general-instructions.html'),
-            REGULAR=('Regular experiment round', 'participate.html'),
+            WELCOME=(_('Initial welcome page / waiting room'), 'welcome.html'),
+            GENERAL_INSTRUCTIONS=(_('Introduction to the experiment / general instructions page'), 'general-instructions.html'),
+            REGULAR=('Regular / playable experiment round', 'participate.html'),
             CHAT=('Chat round', 'chat.html'),
             DEBRIEFING=('Debriefing round', 'debriefing.html'),
             INSTRUCTIONS=('Instructions round', 'instructions.html'),
@@ -1240,7 +1255,10 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
 
     @property
     def sequence_label(self):
-        return u"%d of %d" % (self.sequence_number, self.experiment_configuration.final_sequence_number)
+        if self.is_repeating_round:
+            return u"%d of %d [x %d]" % (self.sequence_number, self.experiment_configuration.final_sequence_number, self.repeat)
+        else:
+            return u"%d of %d" % (self.sequence_number, self.experiment_configuration.final_sequence_number)
 
     class Meta:
         ordering = [ 'experiment_configuration', 'sequence_number', 'date_created' ]
@@ -1723,6 +1741,13 @@ class RoundData(models.Model):
     elapsed_time = models.PositiveIntegerField(default=0)
     experimenter_notes = models.TextField(blank=True)
 
+    @property
+    def round_number(self):
+        round_number = self.round_configuration.round_number
+        if self.round_configuration.is_repeating_round:
+            return "%s.%s" % (round_number, self.repeating_round_sequence_number)
+        else:
+            return round_number
     @property
     def session_id(self):
         return self.round_configuration.session_id
