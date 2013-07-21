@@ -58,7 +58,6 @@ class ParameterValueMixin(object):
             elif name:
                 return parameter_value_set.get(parameter__name=name)
         except parameter_value_set.model.DoesNotExist as e:
-            logger.debug("%s: (lookup %s %s) returning default %s", e, parameter, name, default)
             return DefaultValue(default)
 
 class DataValueMixin(object):
@@ -96,7 +95,8 @@ class DataValueMixin(object):
             return
         next_round_data = kwargs.get('next_round_data', None)
         if not next_round_data:
-            next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round)
+            next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round,
+                    is_next_round_data=True)
         for existing_dv in data_values:
             logger.debug("copying existing dv %s to next round %s", existing_dv, next_round_data)
             # Taking advantage of a trick from here:
@@ -538,12 +538,17 @@ class Experiment(models.Model):
         return self.get_round_data(round_configuration=self.current_round)
 
 # FIXME: cache this as well to avoid a query per invocation
-    def get_round_data(self, round_configuration=None):
+    def get_round_data(self, round_configuration=None, previous_round=False, next_round=False):
         if round_configuration is None:
             round_configuration = self.current_round
         ps = dict(round_configuration=round_configuration)
         if round_configuration.is_repeating_round:
-            ps.update(repeating_round_sequence_number=self.current_repeated_round_sequence_number)
+            crsn = self.current_repeated_round_sequence_number
+            if previous_round:
+                crsn = crsn - 1
+            elif next_round:
+                crsn = crsn + 1
+            ps.update(repeating_round_sequence_number=crsn)
         return RoundData.objects.select_related('round_configuration').get(experiment=self, **ps)
 
     @property
@@ -748,8 +753,8 @@ class Experiment(models.Model):
         if not round_configuration.initialize_data_values:
             logger.debug("Aborting, round configuration isn't set to initialize data values")
             return
-        elif round_configuration.is_repeating_round and self.repeating_round_sequence_number > 0:
-            logger.debug("repeating round # %d - aborting data value initialization", self.repeating_round_sequence_number)
+        elif round_configuration.is_repeating_round and self.current_repeated_round_sequence_number > 0:
+            logger.debug("repeating round # %d - aborting data value initialization", self.current_repeated_round_sequence_number)
             return
 
         logger.debug("initializing data values for [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
@@ -915,13 +920,14 @@ class Experiment(models.Model):
             return
         return self.start_round()
 
-    def get_or_create_round_data(self, round_configuration=None):
+    def get_or_create_round_data(self, round_configuration=None, is_next_round_data=False):
         if round_configuration is None:
             round_configuration = self.current_round
         ps = dict(round_configuration=round_configuration)
         if round_configuration.is_repeating_round:
             # create round data with repeating sequence number
-            ps['repeating_round_sequence_number'] = self.current_repeated_round_sequence_number
+            rrsn = self.current_repeated_round_sequence_number
+            ps['repeating_round_sequence_number'] = rrsn + 1 if is_next_round_data else rrsn
         round_data, created = self.round_data_set.get_or_create(**ps)
         if self.experiment_configuration.is_experimenter_driven:
             # create participant ready data values for every round in experimenter driven experiments
@@ -1753,7 +1759,9 @@ class RoundData(models.Model):
         return self.round_configuration.session_id
 
     def __unicode__(self):
-        return u"Data for Round %s (%s)" % (self.round_configuration.sequence_number, self.round_configuration.get_round_type_display())
+        if self.round_configuration.is_repeating_round:
+            return u"Round data for %s (repeat #%d)" % (self.round_configuration, self.repeating_round_sequence_number)
+        return u"Data for round %s" % self.round_configuration
 
     class Meta:
         ordering = [ 'round_configuration' ]
