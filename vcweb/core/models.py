@@ -567,16 +567,19 @@ class Experiment(models.Model):
 
     @property
     def next_round(self):
-        current_round = self.current_round
         if not self.should_repeat and self.has_next_round:
             return self.get_round_configuration(self.current_round_sequence_number + 1)
         else:
-            return current_round
+            return self.current_round
 
     @property
     def previous_round(self):
         # FIXME: loop instead w/ mod?
-        return self.get_round_configuration(max(self.current_round_sequence_number - 1, 1))
+        current_round = self.current_round
+        if current_round.is_repeating_round and self.current_repeated_round_sequence_number > 0:
+            return current_round
+        else:
+            return self.get_round_configuration(max(self.current_round_sequence_number - 1, 1))
 
     @property
     def has_next_round(self):

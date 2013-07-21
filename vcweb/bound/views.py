@@ -101,7 +101,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     current_round = experiment.current_round
     current_round_data = experiment.current_round_data
     previous_round = experiment.previous_round
-# FIXME: need to adjust this to work with repeating rounds
     previous_round_data = experiment.get_round_data(round_configuration=previous_round, previous_round=True)
     experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
     logger.debug("returning view model json for round %s" % current_round)
