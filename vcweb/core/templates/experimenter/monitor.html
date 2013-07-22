@@ -230,7 +230,6 @@
                 }
             }
             model.saveExperimenterNotes = function(localModel, evt) {
-
                 var notes = $('#experimenterNotesText').val();
                 $('#submitExperimenterNotesButton').html("Submitting..");
                 Dajaxice.vcweb.core.save_experimenter_notes(function(data) {
@@ -280,12 +279,17 @@
             };
             model.advanceToNextRound = function() {
                 $('#progress-modal').modal('show');
-                Dajaxice.vcweb.core.experiment_controller(function(data) {
-                        ko.mapping.fromJS(data, model);
+                Dajaxice.vcweb.core.experiment_controller(function(response) {
+                    if (response.success) {
+                        ko.mapping.fromJS(response.experiment, model);
                         model.startTimer();
                         sendUpdateEvent();
                         $('#progress-modal').modal('hide');
-                    }, {pk: {{experiment.pk}}, 'action':"advance_to_next_round"});
+                    }
+                    else {
+                        console.debug("Unable to advance to next round: " + response.message);
+                    }
+                }, {pk: {{experiment.pk}}, 'action':"advance_to_next_round"});
             }
             model.confirmExperimentControllerAction = function(shouldUpdateParticipants, localModel, evt) {
                 element = evt.target;
@@ -295,13 +299,18 @@
                 }
                 confirmAction(element, function(confirmed, action) {
                     $('#progress-modal').modal('show');
-                    Dajaxice.vcweb.core.experiment_controller(function(data) {
-                        ko.mapping.fromJS(data, model);
-                        model.startTimer();
-                        if (shouldUpdateParticipants) {
-                            sendUpdateEvent();
+                    Dajaxice.vcweb.core.experiment_controller(function(response) {
+                        if (response.success) {
+                            ko.mapping.fromJS(response.experiment, model);
+                            model.startTimer();
+                            if (shouldUpdateParticipants) {
+                                sendUpdateEvent();
+                            }
+                            $('#progress-modal').modal('hide');
                         }
-                        $('#progress-modal').modal('hide');
+                        else {
+                            console.debug("Unable to perform experiment controller action: " + response.message);
+                        }
                     }, {pk: {{experiment.pk}}, 'action':action});
                 });
             }
@@ -311,14 +320,24 @@
             model.startOrStopExperimentActionText = ko.computed(function() {
                     return model.isRoundInProgress() ? "stop" : "start";
                     });
+            // FIXME: poor man's mutex, hacky and unconvinced that it'll provide true thread safety.  Revisit.
+            model.isCheckingParticipants = ko.observable(false);
             model.checkAllParticipantsReady = function() {
+                if (model.isCheckingParticipants()) {
+                    console.debug("already checking participants, aborting");
+                    return;
+                }
+                model.isCheckingParticipants(true);
                 console.debug("checking if all participants are ready");
                 $.get('/experiment/{{experiment.pk}}/check-ready-participants', function(response) {
                     if (response.all_participants_ready) {
-                        model.addMessage("All participants are ready, advancing to next round");
-                        model.advanceToNextRound();
+                        model.addMessage("All participants are ready, please advance to the next round");
+                        // FIXME: need to ensure that this can only get called once, otherwise we run the risk of
+                        // invoking advance to next round twice
+                        model.advanceToNextRound()
                     }
                 });
+                model.isCheckingParticipants(false);
             }
             model.updateParticipants = function(m, evt) {
                 confirmAction(evt.target, function(confirmed, action) {

@@ -2,9 +2,13 @@ from django.core.serializers import serialize
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Model
 from django.db.models.query import QuerySet
-from functools import partial
-import json
 from django.utils.functional import curry
+from functools import partial
+import fcntl
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 class VcwebJSONEncoder(DjangoJSONEncoder):
     def default(self, obj):
@@ -36,3 +40,17 @@ class simplecache(object):
 def enum(*sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
     return type('Enum', (), enums)
+
+class ModelLock(object):
+    def __init__(self, model):
+        self.filename = "/tmp/django-%s.%d.lock" % (model._meta.object_name, model.pk)
+        self.handle = open(self.filename, 'w')
+
+    def acquire(self):
+        return fcntl.flock(self.handle, fcntl.LOCK_EX)
+
+    def release(self):
+        return fcntl.flock(self.handle, fcntl.LOCK_UN)
+
+    def __del__(self):
+        self.handle.close()

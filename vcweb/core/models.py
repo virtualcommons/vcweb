@@ -1115,9 +1115,9 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     # FIXME: refactor this into a single data structure
     # maps round type name to (description, default_template_filename)
     ROUND_TYPES_DICT = dict(
-            WELCOME=(_('Initial welcome page / waiting room'), 'welcome.html'),
-            GENERAL_INSTRUCTIONS=(_('Introduction to the experiment / general instructions page'), 'general-instructions.html'),
-            REGULAR=('Regular / playable experiment round', 'participate.html'),
+            WELCOME=(_('Initial welcome page waiting room'), 'welcome.html'),
+            GENERAL_INSTRUCTIONS=(_('General instructions and introduction to the experiment'), 'general-instructions.html'),
+            REGULAR=('Regular experiment round', 'participate.html'),
             CHAT=('Chat round', 'chat.html'),
             DEBRIEFING=('Debriefing round', 'debriefing.html'),
             INSTRUCTIONS=('Instructions round', 'instructions.html'),

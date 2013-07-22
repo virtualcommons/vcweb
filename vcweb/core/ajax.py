@@ -170,13 +170,17 @@ def get_round_data(request, pk):
 def experiment_controller(request, pk, action=None):
     experimenter = request.user.experimenter
     experiment = _get_experiment(request, pk)
+    logger.debug("experimenter %s invoking %s on %s", experimenter, action, experiment)
     try:
         response_tuples = experiment.invoke(action, experimenter)
-        logger.debug("invoking action %s results: %s", action, str(response_tuples))
-        return experiment.to_json()
+        logger.debug("invoking action %s: %s", action, str(response_tuples))
+        return JsonResponse(dumps({
+            'success': True,
+            'experiment': experiment.to_dict()
+            }))
     except AttributeError as e:
         logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
-        return dumps({
+        return JsonResponse(dumps({
             'success': False,
             'message': 'Invalid experiment action %s' % action
-            })
+            }))
