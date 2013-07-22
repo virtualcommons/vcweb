@@ -98,7 +98,7 @@ class DataValueMixin(object):
             next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round,
                     is_next_round_data=True)
         for existing_dv in data_values:
-            logger.debug("copying existing dv %s to next round %s", existing_dv, next_round_data)
+            #logger.debug("copying existing dv %s to next round %s", existing_dv, next_round_data)
             # Taking advantage of a trick from here:
             # http://stackoverflow.com/questions/12182657/copy-or-clone-an-object-instance-in-django-python
             existing_dv.pk = None
@@ -451,9 +451,15 @@ class Experiment(models.Model):
     @property
     def status_label(self):
         return u"%s, %s" % (self.get_status_display(), self.current_round.get_round_type_display())
+
     @property
     def sequence_label(self):
-        return u"Round %s of %s" % (self.current_round_sequence_number, self.experiment_configuration.final_sequence_number)
+        cr = self.current_round
+        if cr.is_repeating_round:
+            return u"Round %s (repeating round %d of %d)" % (self.current_round_sequence_number,
+                    self.current_repeated_round_sequence_number + 1, cr.repeat)
+        else:
+            return u"Round %s" % cr.sequence_label
 
     @property
     def status_line(self):
@@ -545,7 +551,10 @@ class Experiment(models.Model):
         if round_configuration.is_repeating_round:
             crsn = self.current_repeated_round_sequence_number
             if previous_round:
-                crsn = crsn - 1
+                # XXX: convoluted logic, if we're looking for a previous repeating round and the current repeated
+                # round sequence number is 0 we need to clamp the repeated round sequence number to N - 1 where N is the
+                # number of repeats for that repeating round
+                crsn = round_configuration.repeat - 1 if crsn == 0 else crsn - 1
             elif next_round:
                 crsn = crsn + 1
             ps.update(repeating_round_sequence_number=crsn)
@@ -563,7 +572,7 @@ class Experiment(models.Model):
     @property
     def should_repeat(self):
         cr = self.current_round
-        return cr.is_repeating_round and self.current_repeated_round_sequence_number < cr.repeat
+        return cr.is_repeating_round and self.current_repeated_round_sequence_number + 1 < cr.repeat
 
     @property
     def next_round(self):

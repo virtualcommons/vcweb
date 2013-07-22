@@ -736,7 +736,6 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             model.update = function() {
                 $.get('view-model', { participant_group_id: model.participantGroupId() }, function(data) {
                     ko.mapping.fromJS(data, model);
-                    model.afterRenderTemplate();
                     $('#progress-modal').modal('hide');
                 });
             }
@@ -772,9 +771,14 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 }
                 // FIXME: should move to a model where we only enable chat in REGULAR rounds?
                 model.initializeChat();
-                if (model.isSurveyEnabled() && model.templateId() === "PRACTICE_ROUND_RESULTS") {
-                    $('#sidebar').hide();
-                    $('#content').toggleClass('span8 span12');
+                if (model.isSurveyEnabled()) {
+                    switch (model.templateId()) {
+                        case "PRACTICE_ROUND_RESULTS":
+                        case "FINAL_DEBRIEFING":
+                            $('#sidebar').hide();
+                            $('#content').toggleClass('span8 span12');
+                            break;
+                    }
                 }
                 $('[data-content]').popover({placement: 'top', trigger: 'hover'});
             }
