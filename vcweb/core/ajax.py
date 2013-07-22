@@ -110,6 +110,15 @@ def bookmark_experiment_metadata(request):
 
 @experimenter_required
 @dajaxice_register(method='POST')
+def clone_experiment(request, experiment_id):
+    logger.debug("cloning experiment %s", experiment_id)
+    experiment = get_object_or_404(Experiment, pk=experiment_id)
+    experimenter = request.user.experimenter
+    cloned_experiment = experiment.clone(experimenter=experimenter)
+    return JsonResponse(dumps({'success': True, 'experiment': cloned_experiment.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))}))
+
+@experimenter_required
+@dajaxice_register(method='POST')
 def create_experiment(request, experiment_configuration_id):
     logger.debug("incoming create experiment request POST: %s with id %s", request.POST, experiment_configuration_id, )
     experiment_configuration = get_object_or_404(ExperimentConfiguration.objects.select_related('experiment_metadata'), pk=experiment_configuration_id)

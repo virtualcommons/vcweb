@@ -91,19 +91,19 @@
             model.controllerUrl = function(experimentModel, urlAction) {
                 return experimentModel.controller_url() + "/" + urlAction;
             }
+            function pendingExperimentCallback(data) {
+                if (data.success) {
+                    pendingExperimentModel = ko.mapping.fromJS(data.experiment);
+                    model.pendingExperiments.unshift(pendingExperimentModel);
+                    model.activatePendingExperimentsTab();
+                }
+            }
             model.createNewExperiment = function(configurationModel) {
-                Dajaxice.vcweb.core.create_experiment(function(data) {
-                    if (data.success) {
-                        pendingExperimentModel = ko.mapping.fromJS(data.experiment);
-                        model.pendingExperiments.unshift(pendingExperimentModel);
-                        model.activatePendingExperimentsTab();
-                    }
-                },
-                { experiment_configuration_id: configurationModel.pk() });
+                Dajaxice.vcweb.core.create_experiment(pendingExperimentCallback, { experiment_configuration_id: configurationModel.pk() });
 
             }
-            model.cloneExperiment = function() {
-                console.debug("cloning experiment");
+            model.cloneExperiment = function(experimentModel) {
+                Dajaxice.vcweb.core.clone_experiment(pendingExperimentCallback, { experiment_id: experimentModel.pk() });
             }
             model.modify = function() {
                 console.debug("modify existing configuration");
