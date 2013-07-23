@@ -123,7 +123,7 @@ def get_average_harvest(group, round_data):
 def get_average_storage(group, round_data):
     return get_total_storage(group, round_data) / float(group.size)
 
-def get_resource_level_dv(group, round_data=None, round_configuration=None, cluster=None):
+def get_resource_level_dv(group, round_data=None, round_configuration=None, cluster=None, shared_resource_enabled=None):
     '''
     Returns either the GroupClusterDataValue (shared resource condition) or the GroupRoundDataValue (standard
     resource per group condition) for the given group
@@ -132,7 +132,9 @@ def get_resource_level_dv(group, round_data=None, round_configuration=None, clus
         round_data = group.current_round_data
     if round_configuration is None:
         round_configuration = round_data.round_configuration
-    if is_shared_resource_enabled(round_configuration):
+    if shared_resource_enabled is None:
+        shared_resource_enabled = is_shared_resource_enabled(round_configuration)
+    if shared_resource_enabled:
         return get_shared_resource_level_dv(group, round_data, cluster)
     else:
         return get_unshared_resource_level_dv(group, round_data)
@@ -267,26 +269,20 @@ def round_started_handler(sender, experiment=None, **kwargs):
             group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter(),),
             participant_parameters=(get_storage_parameter(), get_player_status_parameter(),)
             )
-    if round_configuration.is_playable_round:
-        # check for dead participants and set their ready and harvest decision flags
-        deceased_participants = ParticipantRoundDataValue.objects.select_related('participant_group_relationship').filter(parameter=get_player_status_parameter(),
-                round_data=round_data, boolean_value=False)
-        for prdv in deceased_participants:
-            pgr = prdv.participant_group_relationship
-            set_harvest_decision(pgr, 0, round_data, submitted=True)
-            pgr.set_participant_ready(round_data)
+    shared_resource_enabled = is_shared_resource_enabled(round_configuration)
     '''
     during a practice or regular round, set up resource levels, participant harvest decision parameters, and group
     formation
     '''
     if should_reset_resource_level(round_configuration, experiment):
         initial_resource_level = get_max_resource_level(round_configuration)
-        logger.debug("Resetting resource level for %s to %d", round_configuration, initial_resource_level)
+        logger.debug("Resetting resource level for all groups in %s to %d", round_configuration, initial_resource_level)
         for group in experiment.groups:
             ''' set resource level to initial default '''
-            existing_resource_level = get_resource_level_dv(group, round_data, round_configuration)
+            existing_resource_level = get_resource_level_dv(group, round_data, round_configuration,
+                    shared_resource_enabled=shared_resource_enabled)
             group.log(
-                "Setting resource level (%s) to initial value [%s]" % (existing_resource_level, initial_resource_level))
+                "Resetting resource level (%s) to initial value [%s]" % (existing_resource_level, initial_resource_level))
             existing_resource_level.update_int(initial_resource_level)
             # FIXME: verify that this is expected behavior - if the resource level is reset, reset all participant storages to 0
             ParticipantRoundDataValue.objects.for_group(group, parameter=get_storage_parameter(),
@@ -294,8 +290,33 @@ def round_started_handler(sender, experiment=None, **kwargs):
             # reset all player statuses to alive
             ParticipantRoundDataValue.objects.for_group(group, parameter=get_player_status_parameter(),
                     round_data=round_data).update(boolean_value=True)
+    elif round_configuration.is_playable_round:
+        # first check for a depleted resource
+        for group in experiment.groups:
+            existing_resource_level = get_resource_level_dv(group, round_data, round_configuration,
+                    shared_resource_enabled=shared_resource_enabled)
+            if existing_resource_level.int_value <= 0:
+                group.log("setting all participant ready flags because of depleted resource %s",
+                        existing_resource_level)
+                _zero_harvest_decisions(group.participant_group_relationship_set.all(), round_data)
+
+        # check for dead participants and set their ready and harvest decision flags
+        deceased_participants = ParticipantRoundDataValue.objects.select_related('participant_group_relationship').filter(parameter=get_player_status_parameter(),
+                round_data=round_data, boolean_value=False).values_list('participant_group_relationship', flatten=True)
+        _zero_harvest_decisions(deceased_participants, round_data)
+        '''
+        for prdv in deceased_participants:
+            pgr = prdv.participant_group_relationship
+            set_harvest_decision(pgr, 0, round_data, submitted=True)
+            pgr.set_participant_ready(round_data)
+            '''
 
 
+def _zero_harvest_decisions(participant_group_relationships, round_data):
+    # FIXME: possible performance issue, replace with direct update query
+    for pgr in participant_group_relationships:
+        set_harvest_decision(pgr, 0, round_data, submitted=True)
+        pgr.set_participant_ready(round_data)
 
 def adjust_harvest_decisions(current_resource_level, group, round_data, total_harvest, group_size=0):
     if group_size == 0:
@@ -336,7 +357,7 @@ def adjust_harvest_decisions(current_resource_level, group, round_data, total_ha
 def update_resource_level(experiment, group, round_data, regrowth_rate, max_resource_level=None):
     if max_resource_level is None:
         max_resource_level = get_max_resource_level(round_data.round_configuration)
-    current_resource_level_dv = get_resource_level_dv(group, round_data)
+    current_resource_level_dv = get_resource_level_dv(group, round_data, shared_resource_enabled=False)
     current_resource_level = current_resource_level_dv.int_value
     group_harvest_dv = get_group_harvest_dv(group, round_data)
     regrowth_dv = get_regrowth_dv(group, round_data)

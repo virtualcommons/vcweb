@@ -57,7 +57,7 @@
             <tr><th>Trees left in the forest</th><th>Trees harvested</th><th>Trees in storage</th><th>Earnings</th></tr>
         </thead>
         <tbody>
-            <tr><td data-bind='text: resourceLevel'></td><td data-bind='text: totalHarvest'></td><td data-bind='text: Math.max(0, storage())'></td><td class='text-success' data-bind='text: totalEarnings'></td></tr>
+            <tr><td data-bind='text: resourceLevel'></td><td data-bind='text: totalHarvest'></td><td data-bind='text: clampedStorage'></td><td class='text-success' data-bind='text: totalEarnings'></td></tr>
         </tbody>
     </table>
     <div class='alert alert-info'>
@@ -365,7 +365,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             <div class='alert bound-status-dashboard span1'>
                 <h4 id='dashboard-storage'>Total Earnings <i class='icon-info-sign' data-bind='attr: {"data-content": "You need at least " + costOfLiving() + " trees to survive each round."}'></i> </h4>
                 <p>
-                <strong data-bind='css: { "text-error": storage() < costOfLiving(), "text-success": storage() > costOfLiving()}'><span data-bind='text: storage'></span> <i class='icon-leaf'></i></strong>
+                <strong data-bind='css: { "text-error": storage() < costOfLiving(), "text-success": storage() > costOfLiving()}'><span data-bind='text: clampedStorage'></span> <i class='icon-leaf'></i></strong>
                 </p>
             </div>
             <div class='alert bound-status-dashboard span1'>
@@ -404,7 +404,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             <tr>
                 <td>Earnings</td>
                 <!-- ko foreach: playerData -->
-                <td data-bind='text: Math.max(0, storage()), css: { "current-player": id() === $root.participantGroupId() }'></td>
+                <td data-bind='text: clampedStorage, css: { "current-player": id() === $root.participantGroupId() }'></td>
                 <!-- /ko -->
             </tr>
             <tr>
@@ -542,6 +542,9 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
             model.tour = ko.observable();
+            model.clampedStorage = ko.computed(function() {
+                return Math.max(0, model.storage());
+            });
             model.harvestDecisionOptions = ko.computed(function() {
                 return ko.utils.range(0, model.maxHarvestDecision());
             });
@@ -559,7 +562,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 return formatCurrency(model.sessionTwoStorage() * model.exchangeRate())
             });
             model.totalEarnings = ko.computed(function() {
-                return formatCurrency(Math.max(0, model.storage() * model.exchangeRate()));
+                return formatCurrency(model.clampedStorage() * model.exchangeRate()));
             });
             model.templateId = ko.computed(function() {
                 switch ( model.templateName() ) {
