@@ -57,7 +57,7 @@
             <tr><th>Trees left in the forest</th><th>Trees harvested</th><th>Trees in storage</th><th>Earnings</th></tr>
         </thead>
         <tbody>
-            <tr><td data-bind='text: resourceLevel'></td><td data-bind='text: totalHarvest'></td><td data-bind='text:storage'></td><td class='text-success' data-bind='text: totalEarnings'></td></tr>
+            <tr><td data-bind='text: resourceLevel'></td><td data-bind='text: totalHarvest'></td><td data-bind='text: Math.max(0, storage())'></td><td class='text-success' data-bind='text: totalEarnings'></td></tr>
         </tbody>
     </table>
     <div class='alert alert-info'>
@@ -503,7 +503,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             <tbody>
                 <tr><td>forest</td><td data-bind='text:otherGroupResourceLevel'></td></tr>
                 <tr><td>average harvest</td><td data-bind='text:otherGroupAverageHarvest().toFixed(1)'></td></tr>
-                <tr><td>average earnings</td><td data-bind='text:otherGroupAverageStorage().toFixed(1)'></td></tr>
+                <tr><td>average earnings</td><td data-bind='text:Math.max(0, otherGroupAverageStorage().toFixed(1))'></td></tr>
                 <tr><td>number alive</td><td data-bind='text:otherGroupNumberAlive'></td></tr>
             </tbody>
         </table>
@@ -559,7 +559,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 return formatCurrency(model.sessionTwoStorage() * model.exchangeRate())
             });
             model.totalEarnings = ko.computed(function() {
-                return formatCurrency(model.storage() * model.exchangeRate());
+                return formatCurrency(Math.max(0, model.storage() * model.exchangeRate()));
             });
             model.templateId = ko.computed(function() {
                 switch ( model.templateName() ) {
@@ -677,7 +677,13 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 if (model.showTour()) {
                     model.setupTour();
                 }
+                if (!model.alive()) {
+                    model.secondsLeft(0);
+                    model.clearCurrentInterval();
+                    return;
+                }
                 if (isInt(model.timeRemaining()) && model.timeRemaining() > 0) {
+                    model.initializeChat();
                     model.secondsLeft(model.timeRemaining());
                     model.setCurrentInterval(
                         setInterval(function() {
@@ -769,8 +775,6 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 if (model.templateId() === "REGULAR") {
                     model.startRound()
                 }
-                // FIXME: should move to a model where we only enable chat in REGULAR rounds?
-                model.initializeChat();
                 if (model.isSurveyEnabled()) {
                     switch (model.templateId()) {
                         case "PRACTICE_ROUND_RESULTS":

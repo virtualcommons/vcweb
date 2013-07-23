@@ -1106,7 +1106,7 @@ class Experiment(models.Model):
             logger.warning("Tried to transfer participants to an experiment %s that already had participants %s", experiment, experiment.participant_set.all())
 
     def __unicode__(self):
-        return u"%s #%s | %s" % (self.experiment_metadata.title, self.pk, self.experimenter)
+        return u"%s #%s | %s" % (self.experiment_configuration, self.pk, self.experimenter)
 
     class Meta:
         ordering = ['date_created', 'status']
