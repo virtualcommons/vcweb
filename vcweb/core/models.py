@@ -1541,6 +1541,10 @@ class RoundParameterValue(ParameterizedValue):
         rc = self.round_configuration
         return u"{0}:{1} -> [{2}: {3}]".format(rc.experiment_configuration, rc.sequence_label, self.parameter, self.value)
 
+    class Meta:
+        ordering = [ 'round_configuration', 'parameter', 'date_created' ]
+
+
 class Group(models.Model, DataValueMixin):
     number = models.PositiveIntegerField()
     ''' internal numbering unique to the given experiment '''
