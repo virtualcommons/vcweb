@@ -1505,6 +1505,10 @@ class ParameterizedValue(models.Model):
         self.int_value = integer_value
         self.save()
 
+    def update_boolean(self, boolean_value):
+        self.boolean_value = boolean_value
+        self.save()
+
     def to_dict(self, cacheable=False, **kwargs):
         p = self.parameter
         data = {'pk' : self.pk,

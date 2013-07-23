@@ -302,8 +302,8 @@ def round_started_handler(sender, experiment=None, **kwargs):
 
         # check for dead participants and set their ready and harvest decision flags
         deceased_participants = ParticipantRoundDataValue.objects.select_related('participant_group_relationship').filter(parameter=get_player_status_parameter(),
-                round_data=round_data, boolean_value=False).values_list('participant_group_relationship', flatten=True)
-        _zero_harvest_decisions(deceased_participants, round_data)
+                round_data=round_data, boolean_value=False)
+        _zero_harvest_decisions([prdv.participant_group_relationship for prdv in deceased_participants], round_data)
         '''
         for prdv in deceased_participants:
             pgr = prdv.participant_group_relationship
@@ -448,9 +448,9 @@ def update_participants(experiment, round_data, round_configuration):
             updated_storage = storage_dv.int_value + harvest_decision - cost_of_living
             if updated_storage < 0:
                 # player has "died"
-                player_status_dv.boolean_value = False
-                player_status_dv.save()
-            storage_dv.update_int(updated_storage)
+                player_status_dv.update_boolean(False)
+# clamp storage to 0 to avoid negative earnings
+            storage_dv.update_int(max(0, updated_storage))
             logger.debug("updating participant %s (storage: %s, harvest: %s, status: %s)", pgr, storage_dv.int_value,
                     harvest_decision, player_status_dv.boolean_value)
         pgr.copy_to_next_round(player_status_dv, storage_dv, next_round_data=next_round_data)

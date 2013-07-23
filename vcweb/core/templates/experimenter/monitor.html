@@ -225,7 +225,7 @@
             model.tick = function() {
                 model.timeRemaining(model.timeRemaining() - 1);
                 if (model.timeRemaining() < 0) {
-                    model.addMessage("Round time has expired!");
+                    model.addMessage("Round time has expired, ready to move on to next round.");
                     model.clearCurrentInterval();
                 }
             }
@@ -320,7 +320,7 @@
             model.startOrStopExperimentActionText = ko.computed(function() {
                     return model.isRoundInProgress() ? "stop" : "start";
                     });
-            // FIXME: poor man's mutex, hacky and unconvinced that it'll provide true thread safety.  Revisit.
+            // FIXME: hacky and unconvinced that it'll provide true thread safety.  Revisit.
             model.isCheckingParticipants = ko.observable(false);
             model.checkAllParticipantsReady = function() {
                 if (model.isCheckingParticipants()) {
@@ -331,7 +331,7 @@
                 console.debug("checking if all participants are ready");
                 $.get('/experiment/{{experiment.pk}}/check-ready-participants', function(response) {
                     if (response.all_participants_ready) {
-                        model.addMessage("All participants are ready, please advance to the next round");
+                        model.addMessage("All participants are ready, advancing to the next round");
                         // FIXME: need to ensure that this can only get called once, otherwise we run the risk of
                         // invoking advance to next round twice
                         model.advanceToNextRound()

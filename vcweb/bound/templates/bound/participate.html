@@ -404,7 +404,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             <tr>
                 <td>Earnings</td>
                 <!-- ko foreach: playerData -->
-                <td data-bind='text: clampedStorage, css: { "current-player": id() === $root.participantGroupId() }'></td>
+                <td data-bind='text: Math.max(0, storage()), css: { "current-player": id() === $root.participantGroupId() }'></td>
                 <!-- /ko -->
             </tr>
             <tr>
