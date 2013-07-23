@@ -5,7 +5,7 @@ from vcweb.core.models import (DefaultValue, ExperimentMetadata, Parameter, Part
         GroupCluster, GroupClusterDataValue, RoundData, RoundConfiguration)
 from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_harvest_decision_dv, get_regrowth_rate_parameter,
                                    get_group_harvest_parameter, get_reset_resource_level_parameter, get_resource_level as get_unshared_resource_level,
-                                   get_initial_resource_level as forestry_initial_resource_level, get_regrowth_parameter, set_resource_level,
+                                   get_regrowth_parameter, set_resource_level, get_initial_resource_level_parameter,
                                    get_resource_level_parameter, get_resource_level_dv as get_unshared_resource_level_dv,
                                    set_group_harvest, get_group_harvest_dv, get_regrowth_dv, set_regrowth, set_harvest_decision)
 
@@ -85,13 +85,17 @@ def is_shared_resource_enabled(round_configuration):
                                                    default=False).boolean_value
 
 def get_max_resource_level(round_configuration):
-    ec = round_configuration.experiment_configuration
+    initial_resource_level = get_initial_resource_level(round_configuration)
+    if initial_resource_level is None:
+        ec = round_configuration.experiment_configuration
 # FIXME: number of rounds currently hard coded to be 20 for regular rounds, 10 for practice rounds
-    number_of_rounds = 20 if round_configuration.is_regular_round else 10
-    return INITIAL_RESOURCES_PER_PARTICIPANT_PER_ROUND * ec.max_group_size * number_of_rounds
+        number_of_rounds = 20 if round_configuration.is_regular_round else 10
+        return INITIAL_RESOURCES_PER_PARTICIPANT_PER_ROUND * ec.max_group_size * number_of_rounds
+    else:
+        return initial_resource_level
 
 def get_initial_resource_level(round_configuration, default=None):
-    return get_max_resource_level(round_configuration)
+    return round_configuration.get_parameter_value(parameter=get_initial_resource_level_parameter(), default=default).int_value
 
 def should_reset_resource_level(round_configuration, experiment):
     if round_configuration.is_repeating_round and experiment.current_repeated_round_sequence_number > 0:
@@ -395,7 +399,7 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
         if shared_group_harvest > shared_resource_level:
         # adjust each individual harvest for each group in this cluster
             group_harvest = adjust_harvest_decisions(shared_resource_level, group, round_data, group_harvest, group_size=group_cluster_size)
-        set_group_harvest(group, group_harvest, round_data)
+        #set_group_harvest(group, group_harvest, round_data)
         shared_resource_level = shared_resource_level - group_harvest
     # set regrowth after shared_resource_level has been modified by all groups in this cluster
     resource_regrowth = calculate_regrowth(shared_resource_level, regrowth_rate, max_resource_level)

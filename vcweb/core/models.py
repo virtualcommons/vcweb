@@ -95,8 +95,7 @@ class DataValueMixin(object):
             return
         next_round_data = kwargs.get('next_round_data', None)
         if not next_round_data:
-            next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round,
-                    is_next_round_data=True)
+            next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round, is_next_round_data=True)
         for existing_dv in data_values:
             #logger.debug("copying existing dv %s to next round %s", existing_dv, next_round_data)
             # Taking advantage of a trick from here:
