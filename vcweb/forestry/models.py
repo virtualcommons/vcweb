@@ -122,16 +122,11 @@ def round_setup(sender, experiment=None, **kwargs):
     round_configuration = experiment.current_round
     logger.debug("setting up forestry round %s", round_configuration)
     if round_configuration.is_playable_round:
-        # participant parameter
-        harvest_decision_parameter = get_harvest_decision_parameter()
-        # group parameters
-        regrowth_parameter = get_regrowth_parameter()
-        group_harvest_parameter = get_group_harvest_parameter()
-        resource_level_parameter = get_resource_level_parameter()
+        # FIXME: push this step into the realm of experiment configuration
         # initialize group and participant data values
         experiment.initialize_data_values(
-                group_parameters=(regrowth_parameter, group_harvest_parameter, resource_level_parameter),
-                participant_parameters=[harvest_decision_parameter]
+                group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
+                participant_parameters=[get_harvest_decision_parameter()]
                 )
         '''
         during a practice or regular round, set up resource levels and participant
@@ -153,32 +148,36 @@ def round_ended(sender, experiment=None, **kwargs):
     calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth.
     also responsible for transferring those parameters to the next round as needed.
     '''
-    current_round_configuration = experiment.current_round
+    round_data = experiment.current_round_data
+    current_round_configuration = round_data.round_configuration
     logger.debug("current round: %s", current_round_configuration)
     max_resource_level = MAX_RESOURCE_LEVEL
-    for group in experiment.group_set.all():
+    for group in experiment.groups:
         # FIXME: simplify logic
         logger.debug("group %s has resource level", group)
         if has_resource_level(group):
-            current_resource_level_dv = get_resource_level_dv(group)
+            current_resource_level_dv = get_resource_level_dv(group, round_data)
             current_resource_level = current_resource_level_dv.int_value
+            group_harvest_dv = get_group_harvest_dv(group, round_data)
+            regrowth_dv = get_regrowth_dv(group, round_data)
             if current_round_configuration.is_playable_round:
                 # FIXME: update this to use django queryset aggregation ala boundaries experiment
                 total_harvest = sum( [ hd.value for hd in get_harvest_decisions(group).all() ])
                 logger.debug("total harvest for playable round: %d", total_harvest)
                 if current_resource_level > 0 and total_harvest > 0:
                     group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level))
-                    set_group_harvest(group, total_harvest)
+                    group_harvest_dv.update_int(total_harvest)
                     current_resource_level = max(current_resource_level - total_harvest, 0)
                     # implements regrowth function inline
                     # FIXME: parameterize regrowth rate.
                     regrowth = current_resource_level / 10
                     group.log("Regrowth: adding %s to current resource level %s" % (regrowth, current_resource_level))
-                    set_regrowth(group, regrowth)
-                    current_resource_level_dv.int_value = min(current_resource_level + regrowth, max_resource_level)
-                    current_resource_level_dv.save()
+                    regrowth_dv.update_int(regrowth)
+                    current_resource_level_dv.update_int(min(current_resource_level + regrowth, max_resource_level))
             ''' transfer resource levels across chat and quiz rounds if they exist '''
             if experiment.has_next_round:
                 ''' set group round data resource_level for each group + regrowth '''
                 group.log("Transferring resource level %s to next round" % current_resource_level_dv.int_value)
-                group.copy_to_next_round(current_resource_level_dv)
+# FIXME: technically group harvest and regrowth data values should be re-initialized each round.  Maybe push initialize
+# data values flag into round parameter values
+                group.copy_to_next_round(current_resource_level_dv, group_harvest_dv, regrowth_dv)

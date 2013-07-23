@@ -84,10 +84,11 @@
         "date_created": "2010-09-07 15:13:03",
         "duration": 0,
         "experiment_configuration": 1,
-        "instructions": "The following quiz is designed to ensure you understand the dynamics of this experiment.",
+        "instructions": "First practice round.",
         "last_modified": "2010-09-07 15:13:03",
         "round_type": "PRACTICE",
-        "sequence_number": 2
+        "sequence_number": 2,
+        "initialize_data_values": true
     },
     "model": "core.roundconfiguration",
     "pk": 2
@@ -140,7 +141,8 @@
         "last_modified": "2010-09-07 15:13:03",
         "round_type": "REGULAR",
         "display_number": 1,
-        "sequence_number": 6
+        "sequence_number": 6,
+        "initialize_data_values": true
     },
     "model": "core.roundconfiguration",
     "pk": 6
