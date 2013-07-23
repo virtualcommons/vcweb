@@ -562,7 +562,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 return formatCurrency(model.sessionTwoStorage() * model.exchangeRate())
             });
             model.totalEarnings = ko.computed(function() {
-                return formatCurrency(model.clampedStorage() * model.exchangeRate()));
+                return formatCurrency(model.clampedStorage() * model.exchangeRate());
             });
             model.templateId = ko.computed(function() {
                 switch ( model.templateName() ) {
