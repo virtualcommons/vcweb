@@ -432,12 +432,16 @@ class Experiment(models.Model):
     @property
     def time_remaining(self):
         if self.is_timed_round:
-            tr = self.current_round.duration - self.current_round_elapsed_time.seconds
-            if tr <= 0:
-                return u"Expired (%s seconds ago)" % abs(tr)
-            return tr
+            return max(0, self.current_round.duration - self.current_round_elapsed_time.seconds)
+        return -1
+
+    @property
+    def time_remaining_label(self):
+        tr = self.time_remaining
+        if tr < 0:
+            return "Untimed round, advance manually or via automated checkpointing"
         else:
-            return "Untimed round (advance manually or via automated checkpointing)"
+            return tr
 
     @property
     def is_timed_round(self):

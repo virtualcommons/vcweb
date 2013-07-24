@@ -104,7 +104,6 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     previous_round = experiment.previous_round
     previous_round_data = experiment.get_round_data(round_configuration=previous_round, previous_round=True)
     experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
-    logger.debug("returning view model json for round %s" % current_round)
 
 # round / experiment configuration data
     experiment_model_dict['timeRemaining'] = experiment.time_remaining

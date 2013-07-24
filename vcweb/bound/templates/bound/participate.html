@@ -7,7 +7,7 @@
 {% block page %}
 <div class='row' id='page'>
     <div id='content' class='span8'>
-        <div data-bind='template: { name: templateId(), afterRender: afterRenderTemplate }'>
+        <div data-bind='template: { name: templateId(), afterRender: afterRenderTemplate}'>
         </div>
         <div id='progress-modal' class='modal hide fade'>
             <div class='model-header'>
@@ -569,6 +569,9 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 }
             });
             model.setupTour = function() {
+                if (! model.showTour()) {
+                    return;
+                }
                 var tour = new Tour();
                 model.tour(tour);
                 tour.addStep({ element: "#dashboard-last-harvest", title: "Last harvest", 
@@ -589,7 +592,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 tour.addStep({ element: "#harvest-decision-td-10", title: "Harvest Decision",
                         placement: "right",
                         content: "Click on the number of trees you'd like to harvest here.  For the purposes of this practice round, please select 10 now and click the 'Ok, I'm ready' button."});
-                tour.start();
+                tour.start(true);
             }
             model.endTour = function() {
                 var tour = model.tour();
@@ -676,16 +679,19 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 return (remainder * model.resourceImageWidth()) + "px";
             };
             model.startRound = function() {
-                if (model.showTour()) {
-                    model.setupTour();
+                model.initializeChat();
+                if (model.templateId() != "REGULAR") {
+                    return;
                 }
-                if (!model.alive()) {
+                model.setupTour();
+                if (! model.alive()) {
                     model.secondsLeft(0);
                     model.clearCurrentInterval();
                     return;
                 }
-                if (isInt(model.timeRemaining()) && model.timeRemaining() > 0) {
-                    model.initializeChat();
+                console.debug("starting round, checking time remaining: " + model.timeRemaining());
+                if (model.timeRemaining() > 0) {
+                    console.debug("setting seconds left to: " + model.timeRemaining());
                     model.secondsLeft(model.timeRemaining());
                     model.setCurrentInterval(
                         setInterval(function() {
@@ -745,6 +751,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 $.get('view-model', { participant_group_id: model.participantGroupId() }, function(data) {
                     ko.mapping.fromJS(data, model);
                     $('#progress-modal').modal('hide');
+                    model.startRound();
                 });
             }
             model.setFormDisabled = function(formId, disabled) {
@@ -774,9 +781,6 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 model.chatEnabled(! chatDisabled);
             }
             model.afterRenderTemplate = function(elements) {
-                if (model.templateId() === "REGULAR") {
-                    model.startRound()
-                }
                 if (model.isSurveyEnabled()) {
                     model.setCurrentInterval(
                         setInterval(function() {
@@ -825,6 +829,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                         break;
                 }
             };
+            experimentModel.startRound();
             return experimentModel;
         }
         model = initialize($.parseJSON("{{ experimentModelJson|escapejs }}"));
