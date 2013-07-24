@@ -264,13 +264,6 @@ class ParticipantMixin(object):
     def dispatch(self, *args, **kwargs):
         return super(ParticipantMixin, self).dispatch(*args, **kwargs)
 
-@login_required
-def instructions(request, namespace=None):
-    if namespace is not None:
-        return render(request, '%s/instructions.html' % namespace)
-    else:
-        return redirect('home')
-
 """
 experimenter views
 FIXME: add has_perms authorization to ensure that only experimenters can access
@@ -398,7 +391,6 @@ class CloneExperimentView(ExperimenterSingleExperimentView):
         return redirect('core:monitor_experiment', pk=self.experiment.pk)
 
 class ClearParticipantsExperimentView(ExperimenterSingleExperimentView):
-
     def process(self):
         e = self.experiment
         logger.debug("clearing all participants for experiment %s", e)
@@ -409,15 +401,6 @@ class ClearParticipantsExperimentView(ExperimenterSingleExperimentView):
 
     def render_to_response(self, context):
         return redirect('core:dashboard')
-
-# FIXME: replace method with class-based view later (if beneficial)
-class AddExperimentView(ExperimenterMixin, TemplateView):
-    pass
-
-@experimenter_required
-def add_experiment(request):
-    return render('experimenter/add-experiment.html',
-            { 'experiment_list': ExperimentMetadata.objects.all() })
 
 class DataExportMixin(ExperimenterSingleExperimentMixin):
     file_extension = '.csv'
@@ -600,6 +583,21 @@ def api_logger(request, participant_group_id=None):
         logger.error("Failed to validate log message form %s (%s)", request, form)
     return json_response(request, dumps({'success': success}))
 
+@participant_required
+def completed_survey(request):
+    participant = request.user.participant
+    experiment = get_active_experiment(participant)
+    pgr = experiment.get_participant_group_relationship(participant)
+    pgr.survey_completed = True
+    pgr.save()
+
+@participant_required
+def check_survey_completed(request, pk=None):
+    participant = request.user.participant
+    experiment = get_object_or_404(Experiment, pk=pk)
+    return JsonResponse(dumps({
+        'survey_completed': experiment.get_participant_group_relationship(participant).survey_completed,
+        }))
 
 @participant_required
 def participant_ready(request):
@@ -621,7 +619,7 @@ def _ready_participants_dict(experiment):
     return { 'success': True, 'number_of_ready_participants': number_of_ready_participants, 'all_participants_ready': all_participants_ready }
 
 @login_required
-def get_number_of_ready_participants(request, pk=None):
+def check_ready_participants(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     return JsonResponse(dumps(_ready_participants_dict(experiment)))
 

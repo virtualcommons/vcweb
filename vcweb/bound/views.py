@@ -93,6 +93,7 @@ experiment_model_defaults = {
         'averageStorage': 0,
         'numberAlive': '4 out of 4',
         'isSurveyEnabled': False,
+        'surveyCompleted': False,
         'surveyUrl': 'http://survey.qualtrics.com/SE/?SID=SV_0vzmIj5UsOgjoTX',
         }
 # FIXME: bloated method with too many special cases, try to refactor
@@ -144,6 +145,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             separator = '&'
         experiment_model_dict['surveyUrl'] = "{0}{1}{2}".format(current_round.survey_url, separator, query_parameters)
         experiment_model_dict['isSurveyEnabled'] = True
+        experiment_model_dict['surveyCompleted'] = participant_group_relationship.survey_completed
         logger.debug("survey was enabled, setting survey url to %s", experiment_model_dict['surveyUrl'])
 
 

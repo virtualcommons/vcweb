@@ -86,13 +86,9 @@
     {% comment %}
     need to disable this until the survey is completed
     {% endcomment %}
-        <div class='alert alert-error'>
-        FIXME: this button should be initially disabled when we wire up proper activation from the qualtrics survey and then enabled after the 
-        qualtrics survey is completed
-        </div>
-    <ul class='pager'>
-        <li class='next'>
-        <a href='javascript: void()' data-bind='click: completePracticeRoundSurvey'>Ok, continue</a>
+    <ul class='pager' data-bind='visible: surveyCompleted()'>
+        <li class='next' data-bind='css: { disabled: ! surveyCompleted() }'>
+        <a href='javascript: void()' data-bind='click: practiceRoundSurveyCompleted'>Ok, continue</a>
         </li>
     </ul>
 </script>
@@ -621,9 +617,12 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             model.activateTemplate = function(name, experimentModel) {
                 model.templateName(name);
             }
-            model.completePracticeRoundSurvey = function() {
-                console.debug("completing practice round survey");
-                $('#sidebar').show(); 
+            model.practiceRoundSurveyCompleted = function() {
+                if (! model.surveyCompleted()) {
+                    return;
+                }
+                model.clearCurrentInterval();
+                $('#sidebar').show();
                 $('#content').toggleClass('span8 span12');
                 model.activateTemplate("PAID_EXPERIMENT_INSTRUCTIONS"); 
             };
@@ -779,6 +778,17 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                     model.startRound()
                 }
                 if (model.isSurveyEnabled()) {
+                    model.setCurrentInterval(
+                        setInterval(function() {
+                            $.get('/participate/{{experiment.pk}}/check-survey-completed', function(response) {
+                                model.surveyCompleted(response.survey_completed);
+                                if (model.surveyCompleted()) {
+                                    model.clearCurrentInterval();
+                                    model.practiceRoundSurveyCompleted();
+                                }
+                            });
+                        },
+                        6000));
                     switch (model.templateId()) {
                         case "PRACTICE_ROUND_RESULTS":
                         case "FINAL_DEBRIEFING":

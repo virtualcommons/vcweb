@@ -984,6 +984,8 @@ class Experiment(models.Model):
     def end_round(self, sender=None):
         self.status = Experiment.Status.ACTIVE
         self.save()
+        # reset all survey completed flags on participant group relationships within this experiment
+        self._reset_survey_completed_flags()
         self.log('Ending round with elapsed time %s' % self.current_round_elapsed_time)
         sender = intern(self.experiment_metadata.namespace.encode('utf8')) if sender is None else sender
         #sender = self.namespace.encode('utf-8')
@@ -1103,6 +1105,9 @@ class Experiment(models.Model):
                         experiment=experiment, created_by=self.experimenter.user)
         else:
             logger.warning("Tried to transfer participants to an experiment %s that already had participants %s", experiment, experiment.participant_set.all())
+
+    def _reset_survey_completed_flags(self):
+        ParticipantGroupRelationship.objects.for_experiment(self).update(survey_completed=False)
 
     def __unicode__(self):
         return u"%s #%s | %s" % (self.experiment_configuration, self.pk, self.experimenter)
@@ -1907,6 +1912,7 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
     active = models.BooleanField(default=True)
     first_visit = models.BooleanField(default=True)
     notifications_since = models.DateTimeField(default=datetime.now, null=True, blank=True)
+    survey_completed = models.BooleanField(default=False)
 
     objects = PassThroughManager.for_queryset_class(ParticipantGroupRelationshipQuerySet)()
 
