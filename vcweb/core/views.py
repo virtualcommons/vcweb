@@ -585,9 +585,13 @@ def api_logger(request, participant_group_id=None):
 
 @participant_required
 def completed_survey(request):
-    participant = request.user.participant
-    experiment = get_active_experiment(participant)
-    pgr = experiment.get_participant_group_relationship(participant)
+    pgr_id = request.GET.get('pid', None)
+    if pgr_id is None:
+        participant = request.user.participant
+        experiment = get_active_experiment(participant)
+        pgr = experiment.get_participant_group_relationship(participant)
+    else:
+        pgr = get_object_or_404(ParticipantGroupRelationship, pk=pgr_id)
     pgr.survey_completed = True
     pgr.save()
 
