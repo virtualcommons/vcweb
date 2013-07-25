@@ -769,7 +769,7 @@ class Experiment(models.Model):
             logger.debug("Aborting, round configuration isn't set to initialize data values")
             return
         elif round_configuration.is_repeating_round and self.current_repeated_round_sequence_number > 0:
-            logger.debug("repeating round # %d - aborting data value initialization", self.current_repeated_round_sequence_number)
+            logger.debug("ignoring initialize data values for repeating round # %d", self.current_repeated_round_sequence_number)
             return
 
         logger.debug("initializing data values for [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)

@@ -173,6 +173,23 @@ Similarly, they may observe your group in the same way.
     </li>
 </ul>
 </script>
+<script type='text/html' id='TREATMENT_B_INSTRUCTIONS'>
+    <h3>Session <span data-bind='text: sessionId'></span> Instructions</h3>
+    <p>
+    In this session, there are two groups or villages.  Each group has a forest that the <b>other group cannot harvest</b>.  
+    Both forests have the same growth capacity per person.
+    </p>
+    <h3>Key points</h3>
+    <ul>
+        <li>Two new groups formed at random</li>
+        <li>Each group has an exclusive forest of the same size</li>
+    </ul>
+    <ul class='pager'>
+        <li class='next'>
+        <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantGroupId() + " finished treatment B instructions")'>Ok, I am ready to start</a>
+        </li>
+    </ul>
+</script>
 <script type='text/html' id='TREATMENT_D_INSTRUCTIONS'>
 <h3>Session <span data-bind='text: sessionId'></span> Instructions</h3>
 <p>
