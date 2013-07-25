@@ -296,8 +296,7 @@ def round_started_handler(sender, experiment=None, **kwargs):
             existing_resource_level = get_resource_level_dv(group, round_data, round_configuration,
                     shared_resource_enabled=shared_resource_enabled)
             if existing_resource_level.int_value <= 0:
-                group.log("setting all participant ready flags because of depleted resource %s",
-                        existing_resource_level)
+                group.log("setting all participant ready flags because of depleted resource %s" % existing_resource_level)
                 _zero_harvest_decisions(group.participant_group_relationship_set.all(), round_data)
 
         # check for dead participants and set their ready and harvest decision flags
