@@ -797,9 +797,10 @@ class Experiment(models.Model):
                                 defaults=parameter_defaults[parameter])
                         logger.debug("prdv: %s (%s)", participant_data_value, created)
 
-    def log(self, log_message):
+    def log(self, log_message, *args, **kwargs):
         if log_message:
-            logger.debug("%s: %s", self, log_message)
+            log_message = "%s: %s" % (self, log_message)
+            logger.debug(log_message, *args)
             self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message)
 
     def configuration_file_name(self, file_ext='.xml'):
