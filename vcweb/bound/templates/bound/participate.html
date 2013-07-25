@@ -625,8 +625,8 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                     return;
                 }
                 model.clearCurrentInterval();
+                $('#content').removeClass('span12').addClass('span8');
                 $('#sidebar').show();
-                $('#content').toggleClass('span8 span12');
                 model.activateTemplate("PAID_EXPERIMENT_INSTRUCTIONS"); 
             };
             model.readyParticipantsPercentage = ko.computed(function() {
@@ -797,7 +797,9 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                         case "PRACTICE_ROUND_RESULTS":
                         case "FINAL_DEBRIEFING":
                             $('#sidebar').hide();
-                            $('#content').toggleClass('span8 span12');
+                            $('#content').removeClass('span8').addClass('span12');
+                            break;
+                        default:
                             break;
                     }
                 }
