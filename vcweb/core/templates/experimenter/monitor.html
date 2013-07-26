@@ -334,10 +334,10 @@
                 console.debug("checking if all participants are ready");
                 $.get('/experiment/{{experiment.pk}}/check-ready-participants', function(response) {
                     if (response.all_participants_ready) {
-                        model.addMessage("All participants are ready, advancing to the next round");
+                        model.addMessage("All participants are ready, ready to advance to the next round");
                         // FIXME: need to ensure that this can only get called once, otherwise we run the risk of
-                        // invoking advance to next round twice
-                        model.advanceToNextRound()
+                        // invoking advance to next round twice.  See https://bitbucket.org/virtualcommons/vcweb/issue/113/
+                        // model.advanceToNextRound()
                     }
                 });
                 model.isCheckingParticipants(false);
