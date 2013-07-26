@@ -450,8 +450,6 @@ def update_participants(experiment, round_data, round_configuration):
                 player_status_dv.update_boolean(False)
 # clamp storage to 0 to avoid negative earnings
             storage_dv.update_int(max(0, updated_storage))
-            logger.debug("updating participant %s (storage: %s, harvest: %s, status: %s)", pgr, storage_dv.int_value,
-                    harvest_decision, player_status_dv.boolean_value)
         pgr.copy_to_next_round(player_status_dv, storage_dv, next_round_data=next_round_data)
 
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
