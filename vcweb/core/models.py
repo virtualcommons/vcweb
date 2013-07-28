@@ -1126,12 +1126,12 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     ROUND_TYPES_DICT = dict(
             WELCOME=(_('Initial welcome page waiting room'), 'welcome.html'),
             GENERAL_INSTRUCTIONS=(_('General instructions and introduction to the experiment'), 'general-instructions.html'),
-            REGULAR=('Regular experiment round', 'participate.html'),
-            CHAT=('Chat round', 'chat.html'),
-            DEBRIEFING=('Debriefing round', 'debriefing.html'),
-            INSTRUCTIONS=('Instructions round', 'instructions.html'),
-            PRACTICE=('Practice round', 'practice.html'),
-            QUIZ=('Quiz round', 'quiz.html'))
+            REGULAR=(_('Regular experiment round'), 'participate.html'),
+            CHAT=(_('Chat round'), 'chat.html'),
+            DEBRIEFING=(_('Debriefing round'), 'debriefing.html'),
+            INSTRUCTIONS=(_('Instructions round'), 'instructions.html'),
+            PRACTICE=(_('Practice round'), 'practice.html'),
+            QUIZ=(_('Quiz round'), 'quiz.html'))
     ROUND_TYPES = (CHAT, DEBRIEFING, GENERAL_INSTRUCTIONS, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR, WELCOME) = sorted(ROUND_TYPES_DICT.keys())
 
     RoundType = Choices(*[(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES])

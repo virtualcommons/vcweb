@@ -385,6 +385,6 @@ class RoundConfigurationTest(BaseVcwebTest):
             logger.debug("inspecting round type: %s with data %s", round_type, data)
             rc = self.create_new_round_configuration(round_type=round_type)
             e.current_round_sequence_number = rc.sequence_number
-            self.assertEqual(e.current_round_template, "%s/%s" % (e.namespace, data[1]), 'should have returned template for ' + data[0])
+            self.assertEqual(e.current_round_template, "%s/%s" % (e.namespace, data[1]), 'should have returned template for %s' % data[0])
 
 
