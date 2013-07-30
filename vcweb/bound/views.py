@@ -115,7 +115,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['templateName'] = current_round.template_name
     experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
     # FIXME: only show the tour on the first practice round.. this is a bit brittle, maybe simply tie it to round #2?
-    experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
+    # experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
 # instructions round parameters
     if current_round.is_instructions_round:
         experiment_model_dict['isInstructionsRound'] = True
