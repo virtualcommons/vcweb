@@ -12,6 +12,7 @@ import tornadoredis
 
 sys.path.append( path.abspath(path.join(path.dirname(path.abspath(__file__)), '..')) )
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
+from vcweb import settings
 from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ParticipantExperimentRelationship, Participant, Experimenter, ChatMessage)
 
 # redefine logger
@@ -401,7 +402,8 @@ def main(argv=None):
     app = web.Application(urls)
     logger.info("starting sockjs server on port %s", port)
     app.listen(port)
-    app.sentry_client = AsyncSentryClient('http://d266113006054187b70e3af60d9561f3:4f0f8608122b4749a38f8a3a11d0b662@vcweb.asu.edu:9000/1')
+    if hasattr(settings, 'SENTRY_DSN'):
+        app.sentry_client = AsyncSentryClient(settings.SENTRY_DSN)
     ioloop.IOLoop.instance().start()
 
 if __name__ == '__main__':

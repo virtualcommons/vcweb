@@ -73,7 +73,7 @@
 <script type='text/html' id='PRACTICE_ROUND_RESULTS'>
     <h3>Practice Round Results</h3>
     <p>
-    Your final savings were <span class='badge badge-success' data-bind='text: storage'></span> tokens.
+    Your earned a total of <span class='badge badge-success' data-bind='text: storage'></span> tokens.
     If this had been been a paid session, you would have earned <strong class='text-success' data-bind='text: totalEarnings'></strong>.
     </p>
     <p>
@@ -264,21 +264,21 @@ data-bind='css: { "badge-important": readyParticipants() < (participantCount() /
 <div id='instructions1'>
 <h4>Harvesting and Profit</h4>
 <p>
-In this experiment you will harvest trees <i class='icon-leaf text-success'></i> to make a
+In this experiment you will harvest trees to make a
 profit and survive.  You may choose to harvest between <strong>0</strong> and <strong data-bind='text: maxHarvestDecision'></strong> trees during each round.  
-Each tree you harvest will earn you one savings point, and extra savings will carry over into the next round.
+Each tree you harvest will earn you one token, and extra tokens will carry over into the next round.
 </p>
 <h4>Cost of living</h4>
 <p>
 Each round you must pay living expenses of <span class='badge badge-important' data-bind='text: costOfLiving'></span>
-tokens.  If at any point you do not have enough savings to pay the living expenses, you will become
+tokens.  If at any point you do not have enough tokens to pay the living expenses, you will become
 "deceased" for the remainder of the session, preventing you from harvesting or receiving payment for that session.
 You will need to wait until the session is complete before joining again.
 </p>
 <h4>Cash payment</h4>
 <p>
-If you have extra savings remaining at the end of play, you will be paid in cash
-<strong data-bind='text: formatCurrency(exchangeRate())'></strong> for each savings point.  It is possible that you
+If you have extra tokens remaining at the end of play, you will be paid in cash
+<strong data-bind='text: formatCurrency(exchangeRate())'></strong> for each token.  It is possible that you
 could earn as much as <strong data-bind='text: formatCurrency(maxEarnings())'></strong> for the entire experiment.
 However, the final outcome depends on your choices and those of your group members.
 </p>
@@ -298,14 +298,14 @@ Instructional video placeholder.
 <p>
 Trees in the forest regrow much as real trees do.  The more trees there are, the faster empty places fill up with new
 trees.  It is possible to destroy the forest by overharvesting.  If the forest is destroyed, no more trees will regrow
-and there will be no more trees to harvest for the rest of the experiment.
+and there will be no more trees to harvest for the rest of the session.
 </p>
 <h4>Carrying Capacity</h4>
 <p>
-Initially there are <span class='badge badge-success' data-bind='text: initialResourceLevel'></span> trees in the
+Initially there are <span class='badge badge-success'>240</span> trees in the
 forest.  The forest grows new trees after every harvesting round, but the rate of growth depends on how large the forest
 is.  The forest cannot grow at all with zero trees, or at its full size of <span data-bind='text:initialResourceLevel'></span> trees.  
-Instead, it grows fastest at one half of full size; <span data-bind='text: initialResourceLevel() / 2'></span> trees.
+Instead, it grows fastest at one half of full size; <span class='badge badge-success'>120</span> trees.
 At a size of <span data-bind='text: initialResourceLevel() / 2'></span> trees, the forest will produce <span
 data-bind='text: initialResourceLevel() / 10'></span> trees each season.
 </p>
@@ -333,11 +333,11 @@ You have been assigned to a random group with <strong data-bind='text:participan
 In this experiment you will be sharing a virtual forest with the <span data-bind='text: participantsPerGroup() - 1'></span> 
 other members in your group.  All participants in the experiment are in identical conditions and must harvest
 trees to pay the cost of living (<span data-bind='text: costOfLiving'></span> tokens per round) to make a profit
-and accrue savings.  You will be able to text chat only with members of your own group.
+and accrue tokens.  You will be able to text chat only with members of your own group.
 </p>
 <p>
 We will now begin with some <strong>practice rounds</strong>.  These rounds will <strong>not</strong> contribute to your
-savings.  If you have any questions please raise your hand and someone will come to address your question.  Otherwise,
+tokens.  If you have any questions please raise your hand and someone will come to address your question.  Otherwise,
 please click the button to continue.
 </p>
 <ul class='pager'>
@@ -392,20 +392,20 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             <div class='alert bound-status-dashboard span1'>
                 <h4 id="dashboard-last-harvest">Last Harvest <i class='icon-info-sign' data-content="The number of trees you harvested last round."></i> </h4>
                 <p>
-                <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span> <i class='icon-leaf'></i></strong>
+                <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span></strong>
                 </p>
             </div>
             <div class='alert bound-status-dashboard span1'>
-                <h4 id='dashboard-storage'>Total Earnings <i class='icon-info-sign' data-bind='attr: {"data-content": "You need at least " + costOfLiving() + " trees to survive each round."}'></i> </h4>
+                <h4 id='dashboard-storage'>Savings <i class='icon-info-sign' data-bind='attr: {"data-content": "You need at least " + costOfLiving() + " trees to survive each round."}'></i> </h4>
                 <p>
-                <strong data-bind='css: { "text-error": storage() < costOfLiving(), "text-success": storage() > costOfLiving()}'><span data-bind='text: clampedStorage'></span> <i class='icon-leaf'></i></strong>
+                <strong><span data-bind='text: clampedStorage'></span> </strong>
                 </p>
             </div>
             <div class='alert bound-status-dashboard span1'>
                 <h4 id='dashboard-time'><i class='icon-time'></i> Time</h4>
                 <p>
                 <strong data-bind='css: { "text-error": secondsLeft() < warningCountdownTime(), "text-info": secondsLeft() > warningCountdownTime()}'>
-                    <span data-bind='text: secondsLeft'></span> s
+                    <span data-bind='text: secondsLeft'></span>
                 </strong>
                 </p>
             </div>
@@ -561,7 +561,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </script>
 <script type='text/html' id='harvest-decision-select-template'>
     <div class='input-prepend'>
-        <span class='add-on'><i class='icon-leaf'></i></span>
+        <span class='add-on'></span>
         <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
         <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: harvestDecision'>
         <select id='harvestDecisionSelect' name='harvest_decision' required="required" form="vcweb-form" data-bind='options: harvestDecisionOptions, value: harvestDecision'>
@@ -675,6 +675,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                     getWebSocket().send(createReadyEvent(message));
                     model.activateTemplate("WAITING_ROOM");
                 });
+                $(window).scrollTop();
             }
             model.numberOfTreesPerRow = ko.observable(10);
             model.isResourceEmpty = ko.computed(function() {
@@ -757,6 +758,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                     model.submitted(true);
                     model.secondsLeft(0);
                     model.disableChatForm();
+                    $(window).scrollTop();
                 });
 
             }
