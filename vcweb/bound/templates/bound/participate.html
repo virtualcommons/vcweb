@@ -455,7 +455,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </div>
 <div class='row' data-bind='ifnot: isResourceEmpty()'>
     <div class='span8'>
-        <h3>Harvest</h3>
+        <h3 class='compact'>Harvest</h3>
         {% comment %}
         XXX: disabled
         <div data-bind='if: submitHarvestDecisionEnabled'>
@@ -490,7 +490,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </div>
 
 <div data-bind='css: { span4: canObserveOtherGroup }'>
-<h4>My Group</h4>
+<h3 class='compact'>My Group</h3>
 <div class='alert alert-message'><strong class='badge badge-success' data-bind='text:resourceLevel'></strong> trees</div>
 <div data-bind="visible: isResourceEmpty">
     <div class='well'>
@@ -505,7 +505,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 <div data-bind='style: { width: remainderResourceImageWidth(resourceLevel), height: resourceImageHeight() + "px", background: resourceImageBackgroundUrl }'></div>
 </div>
 <br>
-<table class='table table-bordered table-condensed table-striped'>
+<table class='group-status table table-bordered table-condensed table-striped'>
     <tbody>
         <tr><td>forest</td><td data-bind='text:resourceLevel'></td></tr>
         <tr><td>average harvest</td><td data-bind='text:averageHarvest().toFixed(1)'></td></tr>

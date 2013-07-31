@@ -72,5 +72,11 @@ col.current-player {
     color: #145bff !important;
 }
 .group-status {
+    margin-bottom: 10px;
+}
+h3.compact {
+    line-height: 10px;
+
 }
 
+.
