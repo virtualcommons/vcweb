@@ -60,6 +60,10 @@ td.harvest-decision-tree-td {
     padding: 0px;
     margin: 0px;
 }
+.submit-decision-button {
+    margin-top: -25px;
+    margin-left: 10px;
+}
 col.current-player {
     background-color: #ffb914;
 }
@@ -69,3 +73,4 @@ col.current-player {
 }
 .group-status {
 }
+

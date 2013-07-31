@@ -457,7 +457,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
     <div class='span8'>
         <h3>Harvest</h3>
         {% comment %}
-        FIXME: disabled
+        XXX: disabled
         <div data-bind='if: submitHarvestDecisionEnabled'>
             <div class='alert alert-success'>
                 <i class='icon-leaf'></i> You have currently <span data-bind='text: submitted ? "submitted" : "selected"'></span> a harvest decision of <span class='badge badge-info' data-bind='text: harvestDecision'></span> trees.  Click the 'Ok I'm ready' button to continue.
@@ -475,7 +475,6 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 {% csrf_token %}
                 <div id='harvestDecisionDiv' class='control-group'>
                     <div data-bind='template: { name: "harvest-decision-multiselect-template" }'></div>
-                    <button id='submitDecisionButton' data-bind='enable: submitHarvestDecisionEnabled, click: $root.submitDecision' type='submit' class='btn btn-primary'>Ok, I'm ready</button>
                 </div>
             </form>
         </div>
@@ -545,7 +544,8 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </script>
 <script type='text/html' id='harvest-decision-multiselect-template'>
     <table>
-        <tr class='harvest-decision-resources' data-bind='foreach: harvestDecisionOptions'>
+        <tr class='harvest-decision-resources'>
+            <!-- ko foreach: harvestDecisionOptions -->
             <td class='harvest-decision-tree-td' data-bind='attr: { id: "harvest-decision-td-" + $data }'>
                 <form data-bind='attr: { id: $root.harvestDecisionFormId($data) }'>
                     <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: $root.participantGroupId'/>
@@ -555,6 +555,10 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                         <span style='margin-left: 2px;' class='badge badge-info' data-bind='text: $data'></span>
                     </div>
                 </form>
+            </td>
+            <!-- /ko -->
+            <td>
+                <button id='submitDecisionButton' data-bind='enable: submitHarvestDecisionEnabled, click: $root.submitDecision' type='submit' class='btn btn-primary submit-decision-button'>Ok, I'm ready</button>
             </td>
         </tr>
     </table>

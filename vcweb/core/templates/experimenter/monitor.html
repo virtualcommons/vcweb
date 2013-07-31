@@ -25,13 +25,15 @@
             </div>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
+                    {% comment %}
                     <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
-                        data-action='restart_round' data-content='Restart the round.  This will reset timers and perform any additional round started setup logic.'>
+                        data-action='restart_round' data-content='Restart the round.  This will reset timers and perform any additional round started setup logic.' data-original-title='Warning'>
                         <i class='icon-repeat'></i> restart round</a>
+                    {% endcomment %}
                     <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
-                        data-action='restart' data-content='Restart the entire experiment.  This will reset all data and start the experiment over at round 1.'>
+                        data-action='restart' data-content='Restart the entire experiment.  This will reset all data and start the experiment over at round 1.' data-original-title='Warning'>
                         <i class='icon-circle-arrow-up'></i> restart experiment</a>
-                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment.'><i class='icon-off'></i> deactivate</a>
+                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment and disables participant logins.'><i class='icon-off'></i> deactivate</a>
                 </div>
             </div>
         </div>
