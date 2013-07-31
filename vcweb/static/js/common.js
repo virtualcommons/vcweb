@@ -4,6 +4,10 @@ console.log = console.log || function(){};
 console.warn = console.warn || function(){};
 console.error = console.error || function(){};
 console.info = console.info || function(){};
+function scrollToTop() {
+    // $("html, body").animate({ scrollTop: 0 }, "fast");
+    window.scrollTo(0, 0);
+}
 function scrollToBottom(element) {
     element.scrollTop = element.scrollHeight;
 }

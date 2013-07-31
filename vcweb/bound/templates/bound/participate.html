@@ -679,7 +679,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                     getWebSocket().send(createReadyEvent(message));
                     model.activateTemplate("WAITING_ROOM");
                 });
-                $(window).scrollTop();
+                scrollToTop();
             }
             model.numberOfTreesPerRow = ko.observable(10);
             model.isResourceEmpty = ko.computed(function() {
@@ -762,7 +762,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                     model.submitted(true);
                     model.secondsLeft(0);
                     model.disableChatForm();
-                    $(window).scrollTop();
+                    scrollToTop();
                 });
 
             }
