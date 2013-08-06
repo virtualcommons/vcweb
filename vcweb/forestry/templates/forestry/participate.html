@@ -1,8 +1,42 @@
 {% extends "participant/base.html" %}
-{% block title %}
-{{ experiment.status_line }}
-{% endblock %}
-{% block content %}
+{% load static %}
+{% block head %}
+{{ block.super }}
+<link rel='stylesheet' href='{% static "css/forestry/style.css" %}'/>
+{% endblock head %}
+{% block page %}
+<div class='row' id='page'>
+    <div id='content' class='span8'>
+        <div data-bind='template: { name: templateId() }'>
+        </div>
+    </div>
+    <div id='sidebar' class='span4 filler sidebar'>
+        <div data-bind='ifnot: isInstructionsRound'>
+            <h3>Chat</h3>
+            <div data-bind='ifnot: chatEnabled'>
+                <div class='alert alert-error'>
+                    <i class='icon-warning-sign'></i> Chat is currently disabled.
+                </div>
+            </div>
+            <form id="chat-form" class='form-inline' data-bind='submit: submitChatMessage' >
+                <div class='input-prepend input-block-level'>
+                    <span class='add-on'><i class='text-info icon-comment'></i></span>
+                    <input id='chatMessage' type="text" placeholder="Chat with your group">
+                </div>
+            </form>
+            <div class='chat-sidebar'>
+                <div id='chat-div'>
+                    <div class='chat-messages' data-bind='foreach: chatMessages'>
+                        <i class='icon-user muted'></i> <strong data-bind='text: participant_number'></strong>
+                        <small><i class='icon-double-angle-right'></i></small> <span data-bind='text: value'></span>
+                        <br>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <h3>Forestry round number {{ experiment.current_round.round_number }}</h3>
 {% if max_harvest_decision > 0 %}
 <div style="background: url('{{STATIC_URL}}images/forestry/{{tree.name}}.png'); width:{{max_width}}px; height: {{max_height}}px;">
