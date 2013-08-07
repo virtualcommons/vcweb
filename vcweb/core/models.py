@@ -274,6 +274,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     exchange_rate = models.DecimalField(null=True, blank=True, default=0.2, max_digits=6, decimal_places=2, help_text=_('The exchange rate of currency per in-game token, e.g., dollars per token'))
     treatment_id = models.CharField(blank=True, max_length=32, help_text=_('An alphanumeric ID that should be unique to the set of ExperimentConfigurations for a given ExperimentMetadata'))
     is_experimenter_driven = models.BooleanField(default=True)
+    has_daily_rounds = models.BooleanField(default=False, help_text=_("This experiment configuration has rounds that start and end each day starting at midnight."))
     """
     Experimenter driven experiments have checkpoints where the experimenter
     needs to explicitly signal the system to move to the next round or stage.
@@ -393,6 +394,7 @@ class Experiment(models.Model):
     # how long this experiment should run in a date format
     # 1w2d = 1 week 2 days = 9d
     duration = models.CharField(max_length=32, blank=True)
+    start_date = models.DateField(null=True, blank=True, help_text=_("Used in conjunction with an ExperimentConfiguration with has_daily_rounds set, signifies that the experiment should activate automatically at a certain time."))
     tick_duration = models.CharField(max_length=32, blank=True)
     """ how often the experiment_metadata server should tick. """
 
@@ -933,7 +935,7 @@ class Experiment(models.Model):
             self.current_repeated_round_sequence_number = 0
         else:
             logger.warning("trying to advance past the last round - no-op")
-            return
+            return None
         return self.start_round()
 
     def get_or_create_round_data(self, round_configuration=None, is_next_round_data=False):
@@ -1017,7 +1019,7 @@ class Experiment(models.Model):
         self.start_round()
 
     def restart_round(self):
-        self.stop_round()
+        self.end_round()
         self.start_round()
 
     def complete(self):
@@ -1138,6 +1140,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     PLAYABLE_ROUND_CONFIGURATIONS = (RoundType.PRACTICE, RoundType.REGULAR)
 
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configuration_set')
+    
     sequence_number = models.PositiveIntegerField(help_text='Used internally to determine the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5')
     display_number = models.PositiveIntegerField(default=0,
                                                help_text='The round number to be displayed with this round.  If set to zero, defaults to the internally used sequence_number.')
@@ -1168,8 +1171,8 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     template_id = models.CharField(max_length=128, blank=True,
             help_text=_('A HTML template ID to use in a single page app, e.g., KO template'))
     survey_url = models.URLField(null=True, blank=True)
-    """ external survey url """
-    chat_enabled = models.BooleanField(default=False, help_text=_("Is chat enabled in this round?"))
+    """ external survey url for qualtrics integration """
+    chat_enabled = models.BooleanField(default=False, help_text=_("Chat enabled"))
     create_group_clusters = models.BooleanField(default=False, help_text=_("Create relationships (clusters) of groups that can share group cluster data values"))
     group_cluster_size = models.PositiveIntegerField(null=True, blank=True, default=2, help_text=_("How many groups should form a cluster?"))
     randomize_groups = models.BooleanField(default=False, help_text=_("Shuffle participants into new groups when the round begins?"))
@@ -2229,6 +2232,23 @@ def is_participant(user):
     returns true if user.participant exists and is a Participant instance.
     """
     return hasattr(user, 'participant') and isinstance(user.participant, Participant)
+
+@receiver(signals.midnight_tick)
+def update_daily_experiments(sender, time=None, start=None, **kwargs):
+    """
+    signal handler for activating daily experiments
+    """
+    # first handle inactive daily experiments that need to be activated
+    inactive_daily_experiments = Experiment.objects.inactive(experiment_configuration__has_daily_rounds=True)
+    today = datetime.today().date()
+    for e in inactive_daily_experiments:
+        if e.experiment_start_date == today:
+            logger.debug("activating experiment %s with start date of %s", e, e.experiment_start_date)
+            e.activate()
+    active_daily_experiments = Experiment.objects.active(experiment_configuration__has_daily_rounds=True)
+    for e in active_daily_experiments:
+        # FIXME: check for none result and end the experiment?
+        e.advance_to_next_round()
 
 # signal handlers for socialauth
 @receiver(social_auth.signals.socialauth_registered, sender=None)
