@@ -163,8 +163,7 @@ class ConnectionManager(object):
             logger.warning("caught key error %s while trying to remove participant connection %s", connection, k)
 
     '''
-    Generator function that yields (participant_group_relationship_id, connection) tuples
-    for the given group
+    Generator function that yields active (participant_group_relationship_id, connection) tuples for the given group
     '''
     def connections(self, group):
         experiment = group.experiment
@@ -181,7 +180,7 @@ class ConnectionManager(object):
     def all_participants(self, experimenter, experiment):
         experimenter_key = (experimenter.pk, experiment.pk)
         if experimenter_key in self.experimenter_to_connection:
-            for group in experiment.group_set.all():
+            for group in experiment.groups:
                 for participant_group_relationship_id, connection in self.connections(group):
                     yield (participant_group_relationship_id, connection)
         else:
