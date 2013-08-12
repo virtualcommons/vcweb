@@ -728,7 +728,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 if (model.templateId() != "REGULAR") {
                     return;
                 }
-                // model.setupTour();
+                model.setupTour();
                 if (! model.alive()) {
                     model.secondsLeft(0);
                     model.clearCurrentInterval();
@@ -822,7 +822,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             model.initializeChat = function() {
                 // FIXME: chat is disabled in practice rounds, when it's explicitly disabled, or if the participant is
                 // no longer alive
-                var chatDisabled = model.isPracticeRound() || ! model.chatEnabled() || ! model.alive() || model.submitted();
+                var chatDisabled = ! model.chatEnabled() || ! model.alive();
                 model.setFormDisabled("#chat-form", chatDisabled);
                 model.chatEnabled(! chatDisabled);
             }

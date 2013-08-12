@@ -1,17 +1,16 @@
 from collections import Counter
 from operator import itemgetter
 from django.http import Http404
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, get_object_or_404
 from vcweb.core import dumps
 from vcweb.core.decorators import participant_required
 from vcweb.core.http import JsonResponse
-from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage, GroupRelationship)
+from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage)
 from vcweb.bound.forms import SingleIntegerDecisionForm
 from vcweb.bound.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
-        get_cost_of_living, get_resource_level, get_initial_resource_level, get_total_storage, get_storage,
-        get_all_session_storages, get_harvest_decision_dv, get_harvest_decision_parameter,
-        set_harvest_decision, can_observe_other_group, get_average_harvest, get_average_storage,
-        get_total_harvest, get_number_alive, get_player_data)
+        get_cost_of_living, get_resource_level, get_initial_resource_level, get_all_session_storages, 
+        get_harvest_decision_dv, set_harvest_decision, can_observe_other_group, get_average_harvest,
+        get_average_storage, get_total_harvest, get_number_alive, get_player_data)
 
 from urllib import urlencode
 import logging
@@ -114,8 +113,9 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['maxHarvestDecision'] = get_max_allowed_harvest_decision(participant_group_relationship, current_round_data, ec)
     experiment_model_dict['templateName'] = current_round.template_name
     experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
-    # FIXME: only show the tour on the first practice round.. this is a bit brittle, maybe simply tie it to round #2?
-    # experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
+    # FIXME: only show the tour on the first practice round, this is a bit brittle.  better setup might be to have a
+    # dedicated boolean flag on RoundConfiguration?
+    experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
 # instructions round parameters
     if current_round.is_instructions_round:
         experiment_model_dict['isInstructionsRound'] = True
