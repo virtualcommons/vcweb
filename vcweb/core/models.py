@@ -1781,9 +1781,10 @@ class RoundData(models.Model):
 
     @property
     def round_number(self):
-        round_number = self.round_configuration.round_number
-        if self.round_configuration.is_repeating_round:
-            return "%s.%s" % (round_number, self.repeating_round_sequence_number)
+        rc = self.round_configuration
+        round_number = rc.round_number
+        if rc.is_repeating_round:
+            return "%s.%s" % (round_number, self.repeating_round_sequence_number + 1)
         else:
             return round_number
     @property
@@ -1792,8 +1793,8 @@ class RoundData(models.Model):
 
     def __unicode__(self):
         if self.round_configuration.is_repeating_round:
-            return u"Round data for %s (repeat #%d)" % (self.round_configuration, self.repeating_round_sequence_number)
-        return u"Data for round %s" % self.round_configuration
+            return u"Repeating round data %s.%s" % (self.round_configuration.sequence_number, self.repeating_round_sequence_number)
+        return u"Round data %s" % self.round_configuration.sequence_label
 
     class Meta:
         ordering = [ 'round_configuration' ]

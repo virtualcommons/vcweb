@@ -464,29 +464,30 @@ def download_data(request, pk=None, file_type='csv'):
     response = HttpResponse(content_type=content_type)
     response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
     writer = UnicodeWriter(response)
-    writer.writerow(['Group', 'Members'])
-    for group in experiment.group_set.all():
-        writer.writerow(itertools.chain.from_iterable([["%s (PK: %s)" % (group, group.pk)], group.participant_set.all()]))
-# write out round parameter value tuples
-    writer.writerow(['Round', 'Participant ID', 'Participant Number', 'Group', 'Data Parameter', 'Data Parameter Value', 'Created On', 'Last Modified'])
-    for round_data in experiment.round_data_set.all():
-        round_configuration = round_data.round_configuration
-        # write out participant data values
+# emit participant data (pk, email) in each group
+    writer.writerow(['Group ID', 'Group Number', 'Session ID', 'Participant ID', 'Participant Email'])
+    for group in experiment.group_set.order_by('pk').all():
+        for pgr in group.participant_group_relationship_set.select_related('participant__user').all():
+            writer.writerow([group.pk, group.number, group.session_id, pgr.pk, pgr.participant.email])
+# emit participant and group round data value tuples
+    writer.writerow(['Round', 'Participant ID', 'Participant Number', 'Group ID', 'Data Parameter', 'Data Parameter Value', 'Created On', 'Last Modified'])
+    for round_data in experiment.round_data_set.select_related('round_configuration').all():
+        # emit all participant data values
         for data_value in round_data.participant_data_value_set.select_related('participant_group_relationship__group').all():
             pgr = data_value.participant_group_relationship
-            writer.writerow([round_configuration, pgr.pk, pgr.participant_number, pgr.group, data_value.parameter.label,
+            writer.writerow([round_data.round_number, pgr.pk, pgr.participant_number, pgr.group.pk, data_value.parameter.label,
                 data_value.value, data_value.date_created, data_value.last_modified])
-            # write out all chat messages as a side bar
+        # write out all chat messages
         chat_messages = ChatMessage.objects.filter(round_data=round_data)
         if chat_messages.count() > 0:
             for chat_message in chat_messages.order_by('participant_group_relationship__group', 'date_created'):
                 pgr = chat_message.participant_group_relationship
-                writer.writerow([round_configuration, pgr.pk, pgr.participant_number, pgr.group, "Chat Message", chat_message.string_value,
+                writer.writerow([round_data.round_number, pgr.pk, pgr.participant_number, pgr.group.pk, "Chat Message", chat_message.string_value,
                     chat_message.date_created, chat_message.last_modified])
         # write out group round data
         logger.debug("writing out group round data")
         for data_value in round_data.group_data_value_set.select_related('group').all():
-            writer.writerow([round_configuration, '', '', data_value.group, data_value.parameter.label,
+            writer.writerow([round_data.round_number, '', '', data_value.group.pk, data_value.parameter.label,
                 data_value.value, data_value.date_created, data_value.last_modified])
 
     return response
