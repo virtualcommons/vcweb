@@ -98,7 +98,7 @@ class Dashboard(ListView, TemplateResponseMixin):
             experiment_status_dict[e.status].append(e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
         pending_experiments = experiment_status_dict['INACTIVE']
         running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
-        archived_experiments = experiment_status_dict['ARCHIVED']
+        archived_experiments = experiment_status_dict['COMPLETED']
         data = {
                 'experimentMetadataList': experiment_metadata_list,
                 'pendingExperiments': pending_experiments,

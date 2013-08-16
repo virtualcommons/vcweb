@@ -199,7 +199,7 @@ class Activity(MPTTModel):
         return cv
 
     def __unicode__(self):
-        return u'%s' % self.label
+        return u'%s: %s' % (self.label, self.points)
 
     class Meta:
         ordering = ['level', 'name']
