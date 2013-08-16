@@ -459,28 +459,36 @@ def download_data(request, pk=None, file_type='csv'):
     if experiment.experimenter != request.user.experimenter:
         logger.warning("unauthorized access to %s from %s", experiment, request.user.experimenter)
         raise PermissionDenied("You don't have access to this experiment")
-    response = HttpResponse(content_type=mimetypes.types_map['.%s' % file_type])
+    content_type = mimetypes.types_map['.%s' % file_type]
+    logger.debug("Downloading data as %s", content_type)
+    response = HttpResponse(content_type=content_type)
     response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
     writer = UnicodeWriter(response)
     writer.writerow(['Group', 'Members'])
     for group in experiment.group_set.all():
-        writer.writerow(itertools.chain.from_iterable([[group], group.participant_set.all()]))
+        writer.writerow(itertools.chain.from_iterable([["%s (PK: %s)" % (group, group.pk)], group.participant_set.all()]))
+# write out round parameter value tuples
+    writer.writerow(['Round', 'Participant ID', 'Participant Number', 'Group', 'Data Parameter', 'Data Parameter Value', 'Created On', 'Last Modified'])
     for round_data in experiment.round_data_set.all():
         round_configuration = round_data.round_configuration
-        # write out group-wide and participant data values
-        writer.writerow(['Owner', 'Round', 'Data Parameter', 'Data Parameter Value', 'Created On', 'Last Modified'])
-        for data_value in itertools.chain(round_data.group_data_value_set.all(), round_data.participant_data_value_set.all()):
-            writer.writerow([data_value.owner, round_configuration, data_value.parameter.label,
+        # write out participant data values
+        for data_value in round_data.participant_data_value_set.select_related('participant_group_relationship__group').all():
+            pgr = data_value.participant_group_relationship
+            writer.writerow([round_configuration, pgr.pk, pgr.participant_number, pgr.group, data_value.parameter.label,
                 data_value.value, data_value.date_created, data_value.last_modified])
             # write out all chat messages as a side bar
         chat_messages = ChatMessage.objects.filter(round_data=round_data)
         if chat_messages.count() > 0:
-            # sort by group first, then time
-            writer.writerow(['Chat Messages'])
-            writer.writerow(['Group', 'Participant', 'Message', 'Time', 'Round'])
             for chat_message in chat_messages.order_by('participant_group_relationship__group', 'date_created'):
-                writer.writerow([chat_message.group, chat_message.participant, chat_message.message,
-                    chat_message.date_created, round_configuration])
+                pgr = chat_message.participant_group_relationship
+                writer.writerow([round_configuration, pgr.pk, pgr.participant_number, pgr.group, "Chat Message", chat_message.string_value,
+                    chat_message.date_created, chat_message.last_modified])
+        # write out group round data
+        logger.debug("writing out group round data")
+        for data_value in round_data.group_data_value_set.select_related('group').all():
+            writer.writerow([round_configuration, '', '', data_value.group, data_value.parameter.label,
+                data_value.value, data_value.date_created, data_value.last_modified])
+
     return response
 
 @experimenter_required
