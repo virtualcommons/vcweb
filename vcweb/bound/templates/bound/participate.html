@@ -484,16 +484,8 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
     </div>
 </div>
 </script>
-<script type='text/html' id='resource-visualization-template'>
-<div data-bind='if: isPracticeRound'>
-    <div class='alert alert-error alert-block'>
-        <h4>PRACTICE ROUND</h4>
-        This is a practice round.  The decisions you make in this round will <b>NOT</b> contribute to your earnings.
-    </div>
-</div>
 
-<div data-bind='css: { span4: canObserveOtherGroup }'>
-<h3 class='compact'>My Group</h3>
+<script type='text/html' id='tree-template'>
 <div class='alert alert-message'><strong class='badge badge-success' data-bind='text:resourceLevel'></strong> trees</div>
 <div data-bind="visible: isResourceEmpty">
     <div class='well'>
@@ -503,9 +495,9 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
     <div class='alert alert-error'><i class='icon-warning-sign'></i> There are no more trees to harvest. Please wait until the next round begins.</div>
 </div>
 <div data-bind='ifnot: isResourceEmpty'>
-<div data-bind='style: { width: blockResourceVisualizationImageWidth(resourceLevel), height: blockResourceVisualizationImageHeight(resourceLevel), background: resourceImageBackgroundUrl }'></div>
+<div data-bind='style: { width: $root.blockResourceVisualizationImageWidth(resourceLevel), height: $root.blockResourceVisualizationImageHeight(resourceLevel), background: $root.resourceImageBackgroundUrl }'></div>
 {% comment %} FIXME: crummy use of "px" concatenation, use something like inPixels(..) instead? {% endcomment %}
-<div data-bind='style: { width: remainderResourceImageWidth(resourceLevel), height: resourceImageHeight() + "px", background: resourceImageBackgroundUrl }'></div>
+<div data-bind='style: { width: $root.remainderResourceImageWidth(resourceLevel), height: $root.resourceImageHeight() + "px", background: $root.resourceImageBackgroundUrl }'></div>
 </div>
 <br>
 <table class='group-status table table-bordered table-condensed table-striped'>
@@ -517,31 +509,22 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
     </tbody>
 </table>
 </div>
+</script>
+<script type='text/html' id='resource-visualization-template'>
+<div data-bind='if: isPracticeRound'>
+    <div class='alert alert-error alert-block'>
+        <h4>PRACTICE ROUND</h4>
+        This is a practice round.  The decisions you make in this round will <b>NOT</b> contribute to your earnings.
+    </div>
+</div>
 
+<div data-bind='css: { span4: canObserveOtherGroup }'>
+<h3 class='compact'>My Group</h3>
+<div data-bind='template: { name: "tree-template", data: myGroup }'></div>
 <div data-bind='if: canObserveOtherGroup'>
     <div class='span4'>
         <h4>Other Group</h4>
-        <div class='alert alert-message'><strong class='badge badge-success' data-bind='text:otherGroupResourceLevel'></strong> trees</div>
-        <div data-bind="visible: isResourceEmpty">
-            <div class='well'>
-                <center><img alt='deforested' src="{% static 'images/forestry/deforestation.jpg' %}" class="img-polaroid" width="425" height="282"></center>
-            </div>
-            <div class='alert alert-error'><i class='icon-warning-sign'></i> There are no more trees to harvest.</div>
-        </div>
-        <div data-bind='ifnot: isResourceEmpty'>
-            <div data-bind='style: { width: blockResourceVisualizationImageWidth(otherGroupResourceLevel), height: blockResourceVisualizationImageHeight(otherGroupResourceLevel), background: resourceImageBackgroundUrl }'></div>
-            {% comment %} FIXME: crummy use of "px" concatenation, use something like inPixels(..) instead? {% endcomment %}
-            <div data-bind='style: { width: remainderResourceImageWidth(otherGroupResourceLevel), height: resourceImageHeight() + "px", background: resourceImageBackgroundUrl }'></div>
-        </div>
-        <br>
-        <table class='table table-bordered table-condensed table-striped'>
-            <tbody>
-                <tr><td>forest</td><td data-bind='text:otherGroupResourceLevel'></td></tr>
-                <tr><td>average harvest</td><td data-bind='text:otherGroupAverageHarvest().toFixed(1)'></td></tr>
-                <tr><td>average earnings</td><td data-bind='text:Math.max(0, otherGroupAverageStorage().toFixed(1))'></td></tr>
-                <tr><td>number alive</td><td data-bind='text:otherGroupNumberAlive'></td></tr>
-            </tbody>
-        </table>
+        <div data-bind='template: {name: "tree-template", data: otherGroup }'></div>
     </div>
 </div>
 </script>
@@ -696,8 +679,8 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                     return 77;
                 }
             });
-            model.resourceImageWidth = ko.observable(10);
-            model.resourceImageHeight = ko.observable(20);
+            model.resourceImageWidth = ko.observable(11);
+            model.resourceImageHeight = ko.observable(21);
             model.rowsToDisplay = function(resourceLevel) {
                 return Math.floor(resourceLevel() / model.resourcesPerRow());
             };

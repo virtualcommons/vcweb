@@ -76,10 +76,8 @@ experiment_model_defaults = {
         'roundDuration': 60,
         'chatMessages': [],
         'canObserveOtherGroup': False,
-        'otherGroupResourceLevel': 0,
-        'otherGroupAverageHarvest': 0,
-        'otherGroupAverageStorage': 0,
-        'otherGroupNumberAlive': '4 out of 4',
+        'myGroup': {},
+        'otherGroup': {},
         'selectedHarvestDecision': False,
         'isInstructionsRound': False,
         'waitThirtySeconds': False,
@@ -163,7 +161,15 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['averageStorage'] = get_average_storage(own_group, current_round_data)
         c = Counter(map(itemgetter('alive'), experiment_model_dict['playerData']))
         experiment_model_dict['numberAlive'] = "%s out of %s" % (c[True], sum(c.values()))
+        experiment_model_dict['myGroup'] = {
+                'resourceLevel': own_resource_level,
+                'averageHarvest': experiment_model_dict['averageHarvest'],
+                'averageStorage': experiment_model_dict['averageStorage'],
+                'numberAlive': experiment_model_dict['numberAlive']
+                }
+
     experiment_model_dict['resourceLevel'] = own_resource_level
+
     # participant group data parameters are only needed if this round is a data round or the previous round was a data round
     if previous_round.is_playable_round or current_round.is_playable_round:
         harvest_decision = get_harvest_decision_dv(participant_group_relationship, current_round_data)
@@ -177,10 +183,12 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         if can_observe_other_group(current_round):
             experiment_model_dict['canObserveOtherGroup'] = True
             other_group = own_group.get_related_group()
-            experiment_model_dict['otherGroupResourceLevel'] = get_resource_level(other_group, current_round_data)
-            experiment_model_dict['otherGroupAverageHarvest'] = get_average_harvest(other_group, previous_round_data)
-            experiment_model_dict['otherGroupAverageStorage'] = get_average_storage(other_group, current_round_data)
             number_alive = get_number_alive(other_group, current_round_data)
-            experiment_model_dict['otherGroupNumberAlive'] = "%s out of %s" % (number_alive, other_group.size)
+            experiment_model_dict['otherGroup'] = {
+                    'resourceLevel': get_resource_level(other_group, current_round_data),
+                    'averageHarvest': get_average_harvest(other_group, previous_round_data),
+                    'averageStorage': get_average_storage(other_group, current_round_data),
+                    'numberAlive': "%s out of %s" % (number_alive, other_group.size),
+                    }
 
     return dumps(experiment_model_dict)
