@@ -165,7 +165,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
                 'resourceLevel': own_resource_level,
                 'averageHarvest': experiment_model_dict['averageHarvest'],
                 'averageStorage': experiment_model_dict['averageStorage'],
-                'numberAlive': experiment_model_dict['numberAlive']
+                'numberAlive': experiment_model_dict['numberAlive'],
+                'isResourceEmpty': own_resource_level == 0,
                 }
 
     experiment_model_dict['resourceLevel'] = own_resource_level
@@ -184,11 +185,13 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             experiment_model_dict['canObserveOtherGroup'] = True
             other_group = own_group.get_related_group()
             number_alive = get_number_alive(other_group, current_round_data)
+            resource_level = get_resource_level(other_group, current_round_data)
             experiment_model_dict['otherGroup'] = {
-                    'resourceLevel': get_resource_level(other_group, current_round_data),
+                    'resourceLevel': resource_level,
                     'averageHarvest': get_average_harvest(other_group, previous_round_data),
                     'averageStorage': get_average_storage(other_group, current_round_data),
                     'numberAlive': "%s out of %s" % (number_alive, other_group.size),
+                    'isResourceEmpty': resource_level == 0,
                     }
 
     return dumps(experiment_model_dict)

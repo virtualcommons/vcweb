@@ -456,7 +456,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 <div class='row'>
     <div data-bind='css: { span8: ! canObserveOtherGroup() }, template: { name: "resource-visualization-template" }'></div>
 </div>
-<div class='row' data-bind='ifnot: isResourceEmpty()'>
+<div class='row' data-bind='ifnot: isResourceEmpty'>
     <div class='span8'>
         <h3 class='compact'>Harvest</h3>
         {% comment %}

@@ -1012,8 +1012,9 @@ class Experiment(models.Model):
         return self
 
     def restart(self):
-        self.log("Restarting experiment entirely from the first round.")
+        self.log("Restarting experiment entirely from the first round and clearing out all existing data.")
         self.deactivate()
+        self.round_data_set.all().delete()
         self.current_round_sequence_number = 1
         self.activate()
         self.start_round()
