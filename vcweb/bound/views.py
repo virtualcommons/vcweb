@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 from operator import itemgetter
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404
@@ -76,8 +76,8 @@ experiment_model_defaults = {
         'roundDuration': 60,
         'chatMessages': [],
         'canObserveOtherGroup': False,
-        'myGroup': {},
-        'otherGroup': {},
+        'myGroup': defaultdict(int),
+        'otherGroup': defaultdict(int),
         'selectedHarvestDecision': False,
         'isInstructionsRound': False,
         'waitThirtySeconds': False,

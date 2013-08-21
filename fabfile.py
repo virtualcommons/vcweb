@@ -141,9 +141,6 @@ def tornadio(ip="127.0.0.1", port=None):
 def server(ip="127.0.0.1", port=8000):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
 
-def push():
-    local('hg push ssh://hg@bitbucket.org/virtualcommons/vcweb')
-
 def dev():
     env.project_path = env.deploy_path + env.project_name
     env.hosts =['sod51.asu.edu']
@@ -185,7 +182,6 @@ def sudo_chain(*commands, **kwargs):
 def deploy():
     from vcweb import settings as vcweb_settings
     """ deploys to an already setup environment """
-    push()
     if confirm("Deploy to %(hosts)s ?" % env):
         with cd(env.project_path):
             sudo_chain(
