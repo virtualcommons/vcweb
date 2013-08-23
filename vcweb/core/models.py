@@ -1798,7 +1798,7 @@ class RoundData(models.Model):
         return u"Round data %s" % self.round_configuration.sequence_label
 
     class Meta:
-        ordering = [ 'round_configuration' ]
+        ordering = [ 'round_configuration', 'repeating_round_sequence_number' ]
         unique_together = (('round_configuration', 'repeating_round_sequence_number', 'experiment'),)
 
 class GroupClusterDataValue(ParameterizedValue):
