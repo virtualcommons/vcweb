@@ -3,11 +3,11 @@ from django.dispatch import receiver
 from vcweb.core import signals, simplecache
 from vcweb.core.models import (DefaultValue, ExperimentMetadata, Parameter, ParticipantRoundDataValue, GroupRelationship,
         GroupCluster, GroupClusterDataValue, RoundData, RoundConfiguration)
-from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_harvest_decision_dv, get_regrowth_rate_parameter,
-                                   get_group_harvest_parameter, get_reset_resource_level_parameter, get_resource_level as get_unshared_resource_level,
-                                   get_regrowth_parameter, set_resource_level, get_initial_resource_level_parameter,
+from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_harvest_decision_dv,
+                                   get_group_harvest_parameter, get_reset_resource_level_parameter,
+                                   get_regrowth_parameter, get_initial_resource_level_parameter,
                                    get_resource_level_parameter, get_resource_level_dv as get_unshared_resource_level_dv,
-                                   set_group_harvest, get_group_harvest_dv, get_regrowth_dv, set_regrowth, set_harvest_decision)
+                                   get_group_harvest_dv, get_regrowth_dv, set_harvest_decision)
 
 from collections import defaultdict
 import logging

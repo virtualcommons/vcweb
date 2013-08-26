@@ -453,20 +453,14 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
         </table>
     </div>
 </div>
+{% comment %} resource visualization section {% endcomment %}
 <div class='row'>
     <div data-bind='css: { span8: ! canObserveOtherGroup() }, template: { name: "resource-visualization-template" }'></div>
 </div>
+{% comment %} resource harvest decision section {% endcomment %}
 <div class='row' data-bind='ifnot: isResourceEmpty'>
     <div class='span8'>
         <h3 class='compact'>Harvest</h3>
-        {% comment %}
-        XXX: disabled
-        <div data-bind='if: submitHarvestDecisionEnabled'>
-            <div class='alert alert-success'>
-                <i class='icon-leaf'></i> You have currently <span data-bind='text: submitted ? "submitted" : "selected"'></span> a harvest decision of <span class='badge badge-info' data-bind='text: harvestDecision'></span> trees.  Click the 'Ok I'm ready' button to continue.
-            </div>
-        </div>
-        {% endcomment %}
         <div data-bind='ifnot: alive'>
             <div class='alert alert-error'>
                 <b><i class='icon-ambulance'></i></b> You didn't harvest enough trees to meet the cost of living and are now
@@ -486,17 +480,20 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </script>
 
 <script type='text/html' id='tree-template'>
-<div data-bind="visible: isResourceEmpty">
+<div data-bind="visible: $data.isResourceEmpty">
     <div class='well'>
-    <center><img src="{% static 'images/bound/depleted-trees.jpg' %}" class="img-polaroid" width="425"
-    height="282"></center>
+    <center><img alt='depleted trees' src="{% static 'images/bound/depleted-trees.jpg' %}" class="img-polaroid" width="425" height="282"></center>
     </div>
     <div class='alert alert-error'><i class='icon-warning-sign'></i> There are no more trees to harvest. Please wait until the next round begins.</div>
 </div>
 <div data-bind='ifnot: isResourceEmpty'>
-<div data-bind='style: { width: $root.blockResourceVisualizationImageWidth(resourceLevel), height: $root.blockResourceVisualizationImageHeight(resourceLevel), background: $root.resourceImageBackgroundUrl }'></div>
+{% comment %} resource level visualization pre-regrowth {% endcomment %}
+<div data-bind='style: { width: $root.blockResourceVisualizationImageWidth(originalResourceLevel), height: $root.blockResourceVisualizationImageHeight(originalResourceLevel), background: $root.resourceImageBackgroundUrl }'></div>
 {% comment %} FIXME: crummy use of "px" concatenation, use something like inPixels(..) instead? {% endcomment %}
-<div data-bind='style: { width: $root.remainderResourceImageWidth(resourceLevel), height: $root.resourceImageHeight() + "px", background: $root.resourceImageBackgroundUrl }'></div>
+<div data-bind='style: { width: $root.remainderResourceImageWidth(originalResourceLevel), height: $root.resourceImageHeightPx, background: $root.resourceImageBackgroundUrl }'></div>
+{% comment %} regrowth resource visualization {% endcomment %}
+<div data-bind='style: { width: $root.regrowthResourceImageWidth(regrowth), height: $root.resourceImageHeightPx, background: $root.regrowthResourceImageBackgroundUrl }'></div>
+
 </div>
 <br>
 <table class='group-status table table-bordered table-condensed table-striped'>
@@ -521,11 +518,9 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 <h3 class='compact'>My Group</h3>
 <div data-bind='template: { name: "tree-template", data: myGroup }'></div>
 </div>
-<div data-bind='if: canObserveOtherGroup'>
-    <div class='span4'>
-        <h3 class='compact'>Other Group</h3>
-        <div data-bind='template: {name: "tree-template", data: otherGroup }'></div>
-    </div>
+<div data-bind='if: canObserveOtherGroup, css: { span4: canObserveOtherGroup }'>
+    <h3 class='compact'>Other Group</h3>
+    <div data-bind='template: {name: "tree-template", data: otherGroup }'></div>
 </div>
 </script>
 <script type='text/html' id='harvest-decision-multiselect-template'>
@@ -681,6 +676,9 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             });
             model.resourceImageWidth = ko.observable(10);
             model.resourceImageHeight = ko.observable(20);
+            model.resourceImageHeightPx = ko.computed(function() {
+                return model.resourceImageHeight() + "px";
+            });
             model.rowsToDisplay = function(resourceLevel) {
                 return Math.floor(resourceLevel() / model.resourcesPerRow());
             };
@@ -694,7 +692,11 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 return 0;
             });
             model.inactiveResourceImageUrl = ko.observable("{{STATIC_URL}}images/bound/tree-inactive.png");
-            model.resourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/bound/tree-resource.png')");
+            model.resourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/bound/tree-resource-old-growth.png')");
+            model.regrowthResourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/bound/tree-resource-new-growth.png')");
+            model.regrowthResourceImageWidth = function(regrowth) {
+                return (model.regrowth() * model.resourceImageWidth()) + "px";
+            }
             model.blockResourceVisualizationImageWidth = function(resourceLevel) {
                 return (model.resourcesPerRow() * model.resourceImageWidth()) + "px";
             };
@@ -866,6 +868,5 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
         }
         model = initialize($.parseJSON("{{ experimentModelJson|escapejs }}"));
     });
-    var model;
 </script>
 {% endblock %}

@@ -8,9 +8,9 @@ from vcweb.core.http import JsonResponse
 from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage)
 from vcweb.bound.forms import SingleIntegerDecisionForm
 from vcweb.bound.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
-        get_cost_of_living, get_resource_level, get_initial_resource_level, get_all_session_storages, 
+        get_cost_of_living, get_resource_level, get_initial_resource_level, get_all_session_storages,
         get_harvest_decision_dv, set_harvest_decision, can_observe_other_group, get_average_harvest,
-        get_average_storage, get_total_harvest, get_number_alive, get_player_data)
+        get_average_storage, get_total_harvest, get_number_alive, get_player_data, get_regrowth_dv)
 
 from urllib import urlencode
 import logging
@@ -76,8 +76,24 @@ experiment_model_defaults = {
         'roundDuration': 60,
         'chatMessages': [],
         'canObserveOtherGroup': False,
-        'myGroup': defaultdict(int),
-        'otherGroup': defaultdict(int),
+        'myGroup': {
+            'resourceLevel': 0,
+            'regrowth': 0,
+            'originalResourceLevel': 0,
+            'averageHarvest': 0,
+            'averageStorage': 0,
+            'numberAlive': 0,
+            'isResourceEmpty': 0,
+            },
+        'otherGroup': {
+            'resourceLevel': 0,
+            'regrowth': 0,
+            'originalResourceLevel': 0,
+            'averageHarvest': 0,
+            'averageStorage': 0,
+            'numberAlive': 0,
+            'isResourceEmpty': 0,
+            },
         'selectedHarvestDecision': False,
         'isInstructionsRound': False,
         'waitThirtySeconds': False,
@@ -91,6 +107,7 @@ experiment_model_defaults = {
         'numberAlive': '4 out of 4',
         'isSurveyEnabled': False,
         'surveyCompleted': False,
+        'regrowth': 0,
         'surveyUrl': 'http://survey.qualtrics.com/SE/?SID=SV_0vzmIj5UsOgjoTX',
         }
 # FIXME: bloated method with too many special cases, try to refactor
@@ -159,10 +176,14 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['playerData'] = player_data
         experiment_model_dict['averageHarvest'] = get_average_harvest(own_group, previous_round_data)
         experiment_model_dict['averageStorage'] = get_average_storage(own_group, current_round_data)
+        experiment_model_dict['regrowth'] = regrowth = get_regrowth_dv(own_group, current_round_data).int_value
         c = Counter(map(itemgetter('alive'), experiment_model_dict['playerData']))
         experiment_model_dict['numberAlive'] = "%s out of %s" % (c[True], sum(c.values()))
+# FIXME: refactor duplication between myGroup and otherGroup data loading
         experiment_model_dict['myGroup'] = {
                 'resourceLevel': own_resource_level,
+                'regrowth': regrowth,
+                'originalResourceLevel': own_resource_level - regrowth,
                 'averageHarvest': experiment_model_dict['averageHarvest'],
                 'averageStorage': experiment_model_dict['averageStorage'],
                 'numberAlive': experiment_model_dict['numberAlive'],
@@ -186,8 +207,11 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             other_group = own_group.get_related_group()
             number_alive = get_number_alive(other_group, current_round_data)
             resource_level = get_resource_level(other_group, current_round_data)
+            regrowth = get_regrowth_dv(other_group, current_round_data).int_value
             experiment_model_dict['otherGroup'] = {
+                    'regrowth': regrowth,
                     'resourceLevel': resource_level,
+                    'originalResourceLevel': resource_level - regrowth,
                     'averageHarvest': get_average_harvest(other_group, previous_round_data),
                     'averageStorage': get_average_storage(other_group, current_round_data),
                     'numberAlive': "%s out of %s" % (number_alive, other_group.size),

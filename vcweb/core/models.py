@@ -279,6 +279,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     Experimenter driven experiments have checkpoints where the experimenter
     needs to explicitly signal the system to move to the next round or stage.
     """
+    cached_final_sequence_number = 0
 
     @property
     def is_open(self):
@@ -300,8 +301,11 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
 
     @property
     def final_sequence_number(self):
-        # FIXME doesn't work with repeating rounds, also doesn't work well with degenerate data (e.g., manual sequence numbers > count)
-        return self.round_configuration_set.count()
+        # FIXME brittle with degenerate round configurations, (e.g., if round configuration sequence numbers are out of sync and > count)
+        cfsn = self.cached_final_sequence_number
+        if cfsn == 0:
+            self.cached_final_sequence_number = cfsn = self.round_configuration_set.count()
+        return cfsn
 
     @property
     def last_round_sequence_number(self):
@@ -461,7 +465,8 @@ class Experiment(models.Model):
     def sequence_label(self):
         cr = self.current_round
         if cr.is_repeating_round:
-            return u"Round %s (repeating round %d of %d)" % (self.current_round_sequence_number,
+            return u"Round %s/%s (repeating round %d of %d)" % (self.current_round_sequence_number,
+                    self.experiment_configuration.final_sequence_number,
                     self.current_repeated_round_sequence_number + 1, cr.repeat)
         else:
             return u"Round %s" % cr.sequence_label
