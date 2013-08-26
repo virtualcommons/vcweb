@@ -649,7 +649,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 model.clearCurrentInterval();
                 $('#content').removeClass('span12').addClass('span8');
                 $('#sidebar').show();
-                model.activateTemplate("PAID_EXPERIMENT_INSTRUCTIONS"); 
+                model.activateTemplate("PAID_EXPERIMENT_INSTRUCTIONS");
             };
             model.readyParticipantsPercentage = ko.computed(function() {
                 return (model.readyParticipants() / model.participantCount()) * 100;

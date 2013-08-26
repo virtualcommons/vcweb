@@ -143,7 +143,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     if current_round.is_debriefing_round:
         experiment_model_dict['totalHarvest'] = get_total_harvest(participant_group_relationship, current_round.session_id)
         if experiment.is_last_round:
-            (session_one_storage, session_two_storage) = get_all_session_storages(experiment, participant_group_relationship)
+            (session_one_storage, session_two_storage) = get_all_session_storages(experiment, participant_group_relationship.participant)
             experiment_model_dict['sessionOneStorage'] = session_one_storage
             experiment_model_dict['sessonTwoStorage'] = session_two_storage
 
@@ -176,7 +176,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['playerData'] = player_data
         experiment_model_dict['averageHarvest'] = get_average_harvest(own_group, previous_round_data)
         experiment_model_dict['averageStorage'] = get_average_storage(own_group, current_round_data)
-        experiment_model_dict['regrowth'] = regrowth = get_regrowth_dv(own_group, current_round_data).int_value
+        regrowth = experiment_model_dict['regrowth'] = get_regrowth_dv(own_group, current_round_data).value
         c = Counter(map(itemgetter('alive'), experiment_model_dict['playerData']))
         experiment_model_dict['numberAlive'] = "%s out of %s" % (c[True], sum(c.values()))
 # FIXME: refactor duplication between myGroup and otherGroup data loading

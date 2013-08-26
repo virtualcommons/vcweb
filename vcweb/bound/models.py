@@ -167,15 +167,17 @@ def get_storage(participant_group_relationship, round_data=None, default=0):
     dv = get_storage_dv(participant_group_relationship, round_data, default)
     return max(default if dv.int_value is None else dv.int_value, 0)
 
-def get_all_session_storages(experiment, participant_group_relationship):
+def get_all_session_storages(experiment, participant):
+    '''
+    XXX: we query by participant because the participant group relationships will be different if we've re-randomized
+    their groups.
+    '''
     debriefing_session_round_data = RoundData.objects.filter(experiment=experiment,
-            round_configuration__round_type=RoundConfiguration.RoundType.DEBRIEFING,
-            round_configuration__session_id__isnull=False)
+            round_configuration__round_type=RoundConfiguration.RoundType.DEBRIEFING).exclude(round_configuration__session_id=u'')
     return ParticipantRoundDataValue.objects.filter(
-            participant_group_relationship=participant_group_relationship,
+            participant_group_relationship__participant=participant,
             parameter=get_storage_parameter(),
             round_data__in=debriefing_session_round_data).order_by('date_created')
-
 
 def _zero_if_none(value):
     return 0 if value is None else value
