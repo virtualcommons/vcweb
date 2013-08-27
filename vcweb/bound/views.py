@@ -144,8 +144,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['totalHarvest'] = get_total_harvest(participant_group_relationship, current_round.session_id)
         if experiment.is_last_round:
             (session_one_storage, session_two_storage) = get_all_session_storages(experiment, participant_group_relationship.participant)
-            experiment_model_dict['sessionOneStorage'] = session_one_storage
-            experiment_model_dict['sessonTwoStorage'] = session_two_storage
+            experiment_model_dict['sessionOneStorage'] = session_one_storage.int_value
+            experiment_model_dict['sessionTwoStorage'] = session_two_storage.int_value
 
     if current_round.is_survey_enabled:
         query_parameters = urlencode({
