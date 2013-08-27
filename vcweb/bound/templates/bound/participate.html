@@ -312,8 +312,11 @@ The highest amount of harvesting that the forest can permanently support occurs 
 highest sustainable amount that can be harvested, when the forest is at half its capacity, is 6 trees per individual or
 24 trees per group.
 </p>
-<div class='flex-video widescreen' id='bound-video-tutorial'>
-<iframe width='640' height='480' src='//www.youtube.com/embed/eQ-N61ISpBc?rel=0&origin=https://vcweb.asu.edu' frameborder='0'></iframe>
+<div class='flex-video widescreen'>
+<div id='bound-video-tutorial' width='640' height='480'></div>
+{% comment %}
+<iframe id='bound-video-tutorial' src='//www.youtube.com/embed/eQ-N61ISpBc?rel=0&enablejsapi=1&origin=https://vcweb.asu.edu' frameborder='0' allowfullscreen></iframe>
+{% endcomment %}
 </div>
 <ul class='pager'>
 <li class='previous'>
@@ -552,6 +555,28 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </script>
 <script src='{% static "js/bootstrap-tour.js" %}'></script>
 <script type="text/javascript">
+// 3. This function creates an <iframe> (and YouTube player)
+//    after the API code downloads.
+var youtubePlayer;
+function onYouTubeIframeAPIReady() {
+    youtubePlayer = new YT.Player('bound-video-tutorial', {
+        videoId: 'eQ-N61ISpBc',
+        width: 640,
+        height: 480,
+        playerVars: {
+            rel: 0,
+            enablejsapi: 1,
+            origin: 'https://vcweb.asu.edu',
+            modestbranding: 1,
+            showinfo: 0
+        },
+        events: {
+            'onReady': function(event) {
+                console.debug("youtube video tutorial ready");
+            }
+        }
+    });
+}
     $(function() {
         function ExperimentModel(experimentModelJson) {
             var self = this;
@@ -637,6 +662,13 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             });
             // activate instructions click bindings
             model.activateTemplate = function(name, experimentModel) {
+                if (name === "GENERAL_INSTRUCTIONS2") {
+                    // XXX: set up youtube video iframe api asynchronously. Kinda ugly hacky.
+                    var tag = document.createElement('script');
+                    tag.src = "//www.youtube.com/iframe_api";
+                    var firstScriptTag = document.getElementsByTagName('script')[0];
+                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                }
                 model.templateName(name);
             }
             model.practiceRoundSurveyCompleted = function() {
