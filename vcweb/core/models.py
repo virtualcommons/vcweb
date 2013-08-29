@@ -1141,12 +1141,10 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
             PRACTICE=(_('Practice round'), 'practice.html'),
             QUIZ=(_('Quiz round'), 'quiz.html'))
     ROUND_TYPES = (CHAT, DEBRIEFING, GENERAL_INSTRUCTIONS, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR, WELCOME) = sorted(ROUND_TYPES_DICT.keys())
-
     RoundType = Choices(*[(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES])
     PLAYABLE_ROUND_CONFIGURATIONS = (RoundType.PRACTICE, RoundType.REGULAR)
 
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configuration_set')
-    
     sequence_number = models.PositiveIntegerField(help_text='Used internally to determine the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5')
     display_number = models.PositiveIntegerField(default=0,
                                                help_text='The round number to be displayed with this round.  If set to zero, defaults to the internally used sequence_number.')
