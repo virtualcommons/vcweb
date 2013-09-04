@@ -26,12 +26,12 @@ logger = logging.getLogger(__name__)
 EXPERIMENT_METADATA_NAME = intern('lighterprints')
 
 @receiver(signals.midnight_tick)
-def update_active_experiments(sender, time=None, start=None, send_emails=True, **kwargs):
+def update_active_level_based_experiments(sender, time=None, start=None, send_emails=True, **kwargs):
 # since this happens at midnight we need to look at the previous day
     if start is None:
         start = date.today() - timedelta(1);
-    active_experiments = get_active_experiments()
-    logger.debug("updating active experiments [%s] for %s", active_experiments, start)
+    active_experiments = get_active_experiments(has_scheduled_activities=False)
+    logger.debug("updating active level based experiments [%s] for %s", active_experiments, start)
     messages = []
     for experiment in active_experiments:
         # calculate total carbon savings and decide if they move on to the next level
@@ -287,6 +287,9 @@ def can_view_other_groups(round_configuration=None, **kwargs):
     return (treatment_type is None) or ('COMPARE_OTHER_GROUP' in treatment_type.string_value)
 
 def get_active_experiments():
+    '''
+    partition these into two tuples - level based and schedule based?
+    '''
     return Experiment.objects.active(experiment_metadata=get_lighterprints_experiment_metadata())
 
 def get_activity_status_dict(participant_group_relationship, activities, group_level=1):

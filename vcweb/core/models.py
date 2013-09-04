@@ -339,7 +339,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
             return serializers.serialize(output_format, all_objects, **kwargs)
 
     def __unicode__(self):
-        return self.name
+        return u"%s (%s)" % (self.name, self.experiment_metadata)
 
     class Meta:
         ordering = ['experiment_metadata', 'creator', 'date_created']
@@ -1176,7 +1176,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
             help_text=_('A HTML template ID to use in a single page app, e.g., KO template'))
     survey_url = models.URLField(null=True, blank=True)
     """ external survey url for qualtrics integration """
-    chat_enabled = models.BooleanField(default=False, help_text=_("Chat enabled"))
+    chat_enabled = models.BooleanField(default=False, help_text=_("Enable in-round communication"))
     create_group_clusters = models.BooleanField(default=False, help_text=_("Create relationships (clusters) of groups that can share group cluster data values"))
     group_cluster_size = models.PositiveIntegerField(null=True, blank=True, default=2, help_text=_("How many groups should form a cluster?"))
     randomize_groups = models.BooleanField(default=False, help_text=_("Shuffle participants into new groups when the round begins?"))
