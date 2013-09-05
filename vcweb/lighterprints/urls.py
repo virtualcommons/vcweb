@@ -1,13 +1,11 @@
 from django.conf.urls.defaults import url, patterns
-from django.views.generic.base import TemplateView
 
 from vcweb.lighterprints.views import (post_chat_message, post_comment, perform_activity, participate,
-        group_activity, like, get_notifications, update_notifications_since, group_score, CsvExportView, checkin,
-        activity_performed_counts, get_view_model, mobile_participate, mobile_login)
+        group_activity, like, group_score, CsvExportView, checkin,
+        get_view_model, mobile_participate, mobile_login)
 
 # handles all /lighterprints/* URL requests
 urlpatterns = patterns('vcweb.lighterprints.views',
-    url(r'^about$', TemplateView.as_view(template_name='lighterprints/about.html'), name='about'),
     url(r'^(?P<pk>\d+)/data$', CsvExportView.as_view(), name='export-data'),
     url(r'^(?P<experiment_id>\d+)/participate/?$', participate, name='participate'),
     url(r'^api/view-model/(?P<participant_group_id>\d+)?', get_view_model),
@@ -17,10 +15,8 @@ urlpatterns = patterns('vcweb.lighterprints.views',
     url(r'^api/comment', post_comment),
     url(r'^api/like', like),
     url(r'^api/group-score/(?P<participant_group_id>\d+)', group_score),
-    url(r'^api/notifications/clear', update_notifications_since),
-    url(r'^api/notifications/(?P<participant_group_id>\d+)', get_notifications),
     url(r'^api/checkin', checkin),
-    url(r'^api/activity-performed-counts/(?P<participant_group_id>\d+)', activity_performed_counts),
+    # FIXME: hacky, replace mobile login with core api login instead
     url(r'^mobile/login?$', mobile_login, name='mobile_login'),
     url(r'^mobile/?$', mobile_participate, name='mobile_participate'),
 )

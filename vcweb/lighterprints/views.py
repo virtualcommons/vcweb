@@ -10,7 +10,7 @@ from django.views.generic.list import BaseListView, MultipleObjectTemplateRespon
 
 from vcweb.core import unicodecsv
 from vcweb.core.decorators import participant_required
-from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, ParticipantGroupIdForm, GeoCheckinForm, LoginForm)
+from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.services import foursquare_venue_search
@@ -19,7 +19,7 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_group_activity,
         can_view_other_groups, get_lighterprints_experiment_metadata, is_experiment_completed,
         get_activity_performed_parameter, get_points_to_next_level, get_group_scores, get_group_score, get_footprint_level,
-        get_foursquare_category_ids, get_activity_performed_counts, get_time_remaining)
+        get_foursquare_category_ids, get_time_remaining)
 
 from collections import defaultdict
 from operator import itemgetter
@@ -100,47 +100,6 @@ def get_notifications(request, participant_group_id):
         logger.warning("authenticated user %s tried to retrieve notifications for %s", request.user,
                 participant_group_relationship)
         return JsonResponse(dumps({'success':False, 'message': 'Invalid authz request'}))
-
-@login_required
-def update_notifications_since(request):
-    form = ParticipantGroupIdForm(request.POST or None)
-    if form.is_valid():
-        participant_group_id = form.cleaned_data['participant_group_id']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-        if request.user.participant == participant_group_relationship.participant:
-            participant_group_relationship.notifications_since = datetime.now()
-            participant_group_relationship.save()
-            return JsonResponse(dumps({'success':True}))
-        else:
-            logger.warning("authenticated user %s tried to update notifications since for %s", request.user, participant_group_relationship)
-    return JsonResponse(dumps({'success':False, 'message': 'Invalid request'}))
-'''
-[(4, u'adjust-thermostat'),
- (2, u'eat-local-lunch'),
-  (1, u'enable-sleep-on-computer'),
-   (5, u'recycle-materials'),
-    (3, u'share-your-ride'),
-     (10, u'bike-or-walk'),
-      (7, u'computer-off-night'),
-       (9, u'no-beef'),
-        (8, u'recycle-paper'),
-         (14, u'air-dry-clothes'),
-          (15, u'cold-water-wash'),
-           (13, u'eat-green-lunch'),
-            (11, u'lights-off'),
-             (12, u'vegan-for-a-day')]
-             '''
-@login_required
-def activity_performed_counts(request, participant_group_id):
-    _activity_ids = (8, 3, 1, 9, 4, 15, 2, 5, 10, 7, 12, 11, 14, 13)
-    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-    if request.user.participant == participant_group_relationship.participant:
-        activity_performed_counts = get_activity_performed_counts(participant_group_relationship)
-        activity_counts_dict = defaultdict(int, [(d['int_value'], d['count']) for d in activity_performed_counts])
-        activity_counts = [activity_counts_dict[activity_id] for activity_id in _activity_ids]
-        logger.debug("activity counts: %s", activity_counts)
-        return JsonResponse(dumps({'success': True, 'activity_counts': activity_counts}))
-    return JsonResponse(dumps({'success':False, 'message': 'Invalid request'}))
 
 @login_required
 def group_score(request, participant_group_id):
