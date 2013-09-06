@@ -360,12 +360,19 @@ There will be no payment for this practice session.
 </p>
 <h3>Group and Individual Status</h3>
 <p>
-You will be able to observe the status of the members of your group each round.  Likewise, group members will see your
+You will be able to observe the status of the members of your group each round. Likewise, group members will see your
 status, and those of your group.  You will be able to text chat with your group members.
 </p>
-<h3>Harvest Choice</h3>
+<h3>Time</h3>
 <p>
-Each round you will have a maximum of 1 minute to make a harvest decision.  There are two ways to submit a harvest
+In each actual experiment round you will have a maximum of 60 seconds to make a harvest decision. In order to help you acquaint
+yourself with the experimental environment, the you will have 3 minutes to make a harvest decision in the first practice
+round, 2 minutes to make a harvest in the next two practice rounds, and then one minute as usual in the subsequent
+practice rounds.
+</p>
+<h3>Harvest Decision</h3>
+<p>
+There are two ways to submit a harvest
 decision:
 </p>
 <ol>
@@ -555,8 +562,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </script>
 <script src='{% static "js/bootstrap-tour.js" %}'></script>
 <script type="text/javascript">
-// 3. This function creates an <iframe> (and YouTube player)
-//    after the API code downloads.
+// set up youtube player for video intro tutorial
 var youtubePlayer;
 function onYouTubeIframeAPIReady() {
     youtubePlayer = new YT.Player('bound-video-tutorial', {
@@ -636,6 +642,7 @@ function onYouTubeIframeAPIReady() {
                 tour.addStep({ element: "#harvest-decision-td-10", title: "Harvest Decision",
                         placement: "right",
                         content: "Click on the number of trees you'd like to harvest here.  For the purposes of this practice round, please select 10 now and click the 'Ok, I'm ready' button."});
+                tour.goto(0);
                 tour.start(true);
             }
             model.endTour = function() {
