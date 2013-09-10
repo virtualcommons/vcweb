@@ -3,6 +3,7 @@ from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
+from django.forms.models import inlineformset_factory
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.context import RequestContext
@@ -248,12 +249,39 @@ class RegistrationView(FormView, AnonymousMixin):
 class AccountView(FormView):
     pass
 
+@login_required
+def update_account_profile(request):
+    form = ParticipantAccountForm(request.POST or None)
+    logger.debug("form is: %s", form)
+    logger.debug("Can Be Invited: %s", form.cleaned_data.get('can_receive_invitations'))
+    if form.is_valid():
+        pk = form.cleaned_data.get('pk')
+
+
+        p = Participant.objects.get(pk = pk)
+        for attr in ('major', 'classStatus', 'gender', 'can_receive_invitations'):
+            setattr(p, attr, form.cleaned_data.get(attr))
+
+        for attr in ('first_name', 'last_name', 'email', 'institution'):
+            setattr(p.user, attr, form.cleaned_data.get(attr))
+
+        p.save()
+
+        logger.debug("P: %s, P.User: %s", p, p.user)
+
+        return JsonResponse(dumps({
+            'success': True,
+            'message': 'Successful dump.'
+        }))
+    logger.debug("Form had errors %s", form)
+    return JsonResponse(dumps({'success': False}))
+
 
 @login_required
 def account_profile(request):
     user = request.user
     if is_participant(user):
-        form = ParticipantAccountForm()
+        form = ParticipantAccountForm(instance=user.participant)
     else:
         form = ExperimenterAccountForm(instance=user.experimenter)
     return render(request, 'account/profile.html', { 'form': form })

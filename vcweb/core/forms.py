@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from vcweb.core.models import (Experimenter, Institution)
+from vcweb.core.models import (Experimenter, Institution, Participant)
 
 from django.core.validators import email_re
 
@@ -18,13 +18,16 @@ logger = logging.getLogger(__name__)
 REQUIRED_EMAIL_ATTRIBUTES = { 'class' : 'required email' }
 REQUIRED_ATTRIBUTES = { 'class' : 'required' }
 
-class BaseRegistrationForm(forms.Form):
+class BaseRegistrationMixin(object):
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     confirm_password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     institution = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES), help_text=_('The primary institution, if any, you are affiliated with.'))
+
+
+class BaseRegistrationForm(BaseRegistrationMixin, forms.Form):
     def clean_email(self):
         email = self.cleaned_data['email'].lower()
         try:
@@ -62,8 +65,45 @@ class LoginForm(forms.Form):
                 raise forms.ValidationError(_("This user has been deactivated. Please contact us if this is in error."))
         return self.cleaned_data
 
-class ParticipantAccountForm(BaseRegistrationForm):
-    pass
+
+class ParticipantAccountForm(forms.ModelForm):
+
+    pk = forms.IntegerField(widget=widgets.HiddenInput())
+    first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
+    institution = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES), help_text=_('The primary institution, if any, you are affiliated with.'))
+
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance')
+        if instance is not None:
+            logger.debug("IF CONDITION")
+            super(forms.ModelForm, self).__init__(*args, **kwargs)
+            for attr in ("pk", "first_name", 'last_name', 'email', 'institution'):
+                self.fields[attr].initial = getattr(instance, attr)
+        else:
+            logger.debug("ELSE")
+            super(forms.ModelForm, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Participant
+        fields = ['major', 'classStatus', 'gender', 'can_receive_invitations']
+
+    def clean(self):
+        data = super(forms.ModelForm, self).clean()
+        m = data.get('email')
+        canBeInvited = data.get('can_receive_invitations')
+        major = data.get('major')
+        gender = data.get('gender')
+        classStatus = data.get('classStatus')
+        if not m:
+            raise forms.ValidationError("You have forgotten your Email address")
+
+        if canBeInvited:
+            if not major or not gender or not classStatus:
+                raise forms.ValidationError("You need to enter your major, gender and class status if you wan't to receive Invitations")
+
+        return data
 
 class ExperimenterAccountForm(forms.ModelForm):
     class Meta:

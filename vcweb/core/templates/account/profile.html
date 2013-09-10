@@ -2,18 +2,30 @@
 
 {% block head %}
 {{ block.super }}
-<script type='text/javascript'>
-    $(document).ready(function() {
-        $("#profileForm :input:visible:enabled:first").focus();
-        $('#profileForm').validate();
-    });
-</script>
+
 {% endblock head %}
 
 {% block title %}Your Account{% endblock %}
 
 {% block form %}
 <h3>{{ request.user.get_full_name }}</h3>
+
 {% include "includes/bootstrap-form.html" %}
+<button type='button' id="submitprofile">Save</button>
 {% endblock %}
 
+{% block javascript %}
+    {{  block.super }}
+<script type='text/javascript'>
+    $(document).ready(function() {
+        $("#profileForm :input:visible:enabled:first").focus();
+        $('#profileForm').validate();
+    });
+
+    $("#submitprofile").click( function () {
+        var formData = $('#vcweb-form').serialize();
+        console.debug("submitting form data: " + formData);
+        $.post('/accounts/profile/update', formData);
+    });
+</script>
+{%  endblock javascript %}
