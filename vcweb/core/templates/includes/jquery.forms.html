@@ -1,1 +1,4 @@
-<script type='text/javascript' src='{{STATIC_URL}}js/jquery.validate.min.js'></script>
+{% with jquery_validate_version="1.11.1" %}
+<script type='text/javascript' src='//ajax.aspnetcdn.com/ajax/jquery.validate/{{jquery_validate_version}}/jquery.validate.min.js'></script>
+{% endwith %}
+
