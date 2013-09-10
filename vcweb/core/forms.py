@@ -72,13 +72,12 @@ class ParticipantAccountForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
         if instance is not None:
-            logger.debug("IF CONDITION")
-            super(forms.ModelForm, self).__init__(*args, **kwargs)
+            super(ParticipantAccountForm, self).__init__(*args, **kwargs)
+            self.fields.keyOrder = ['pk', 'first_name', 'last_name', 'email', 'institution', 'can_receive_invitations', 'major', 'classStatus', 'gender']
             for attr in ("pk", "first_name", 'last_name', 'email', 'institution'):
                 self.fields[attr].initial = getattr(instance, attr)
         else:
-            logger.debug("ELSE")
-            super(forms.ModelForm, self).__init__(*args, **kwargs)
+            super(ParticipantAccountForm, self).__init__(*args, **kwargs)
 
     class Meta:
         model = Participant

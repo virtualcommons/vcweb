@@ -11,21 +11,52 @@
 <h3>{{ request.user.get_full_name }}</h3>
 
 {% include "includes/bootstrap-form.html" %}
-<button type='button' id="submitprofile">Save</button>
+<div class='controls'>
+    <button type='submit' id='submitForm' class='btn btn-primary'>Save</button>
+</div>
+
 {% endblock %}
 
 {% block javascript %}
     {{  block.super }}
-<script type='text/javascript'>
-    $(document).ready(function() {
-        $("#profileForm :input:visible:enabled:first").focus();
-        $('#profileForm').validate();
-    });
+        <script type='text/javascript'>
+        $(document).ready(function() {
+            $("#vcweb-form :input:visible:enabled:first").focus();
 
-    $("#submitprofile").click( function () {
-        var formData = $('#vcweb-form').serialize();
-        console.debug("submitting form data: " + formData);
-        $.post('/accounts/profile/update', formData);
-    });
-</script>
-{%  endblock javascript %}
+            $('#vcweb-form').validate({
+                rules: {
+                    major: {
+                        required: "#id_can_receive_invitations:checked"
+                    },
+                    classStatus: {
+                        required: "#id_can_receive_invitations:checked"
+                    },
+                    gender: {
+                        required: "#id_can_receive_invitations:checked"
+                    }
+
+                },
+                messages: {
+                    major: "We need your major if you want to receive invitations",
+                    classStatus: "we need your class status if you want to receive invitations",
+                    gender: "we need your gender if you want to receive invitations"
+
+                },
+                submitHandler: function(form) {
+                     var formData = $('#vcweb-form').serialize();
+                     console.debug("submitting form data: " + formData);
+                     //$.post('/accounts/profile/update', formData);
+
+                    $.ajax({
+                        type: "POST",
+                        url: "/accounts/profile/update",
+                        data: formData,
+                        success: function() {
+                             $("#vcweb-form").append('<div class="alert"><a class="close" data-dismiss="alert">×</a><strong>The data has been saved</strong></div>');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+    {%  endblock javascript %}

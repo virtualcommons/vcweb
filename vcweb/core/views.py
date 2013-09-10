@@ -266,6 +266,7 @@ def update_account_profile(request):
             setattr(p.user, attr, form.cleaned_data.get(attr))
 
         p.save()
+        p.user.save()
 
         logger.debug("P: %s, P.User: %s", p, p.user)
 
