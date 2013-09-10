@@ -1624,7 +1624,7 @@ class Group(models.Model, DataValueMixin):
         return self.activity_log_set.filter(round_configuration=self.current_round)
 
     def to_dict(self):
-        participant_group_relationships = [ 
+        participant_group_relationships = [
                 { 'pk': pgr.pk, 'participant_number': pgr.participant_number, 'email': pgr.participant.email }
                 for pgr in self.participant_group_relationship_set.all()
                 ]

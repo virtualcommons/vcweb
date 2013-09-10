@@ -62,7 +62,7 @@ class UpdateLevelTest(BaseTest):
                 activity_performed = ParticipantRoundDataValue.objects.create(participant_group_relationship=participant_group_relationship, round_data=current_round_data, parameter=get_activity_performed_parameter())
                 activity_performed.value = activity.id
                 activity_performed.save()
-        update_active_experiments(self, start=date.today())
+        update_active_experiments(self, start_date=date.today())
         for group in e.group_set.all():
             logger.debug("all levels should be 2 now")
             self.assertEqual(get_footprint_level(group), 2)

@@ -7,8 +7,6 @@ from django.dispatch import receiver
 from django.template import Context
 from django.template.loader import select_template
 from django.utils.timesince import timesince
-from django.utils.translation import ugettext_lazy as _
-from functools import partial
 from model_utils.managers import PassThroughManager
 from vcweb.core import signals, simplecache, enum
 from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, RoundParameterValue, ParticipantGroupRelationship, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
@@ -16,23 +14,54 @@ from vcweb.core.services import fetch_foursquare_categories
 from collections import defaultdict
 from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
-from lxml import etree
+import re
 
 import logging
-import re
-import string
 logger = logging.getLogger(__name__)
 
 EXPERIMENT_METADATA_NAME = intern('lighterprints')
 
+
+class GroupScores(object):
+
+    def __init__(self, experiment, round_data, participant_group_relationship=None, start_date=None, end_date=None):
+        activity_points_cache = get_activity_points_cache()
+        # establish date range
+        self.total_participant_points = 0
+        if start_date is None:
+            start_date = date.today()
+        if end_date is None:
+            end_date = start_date + timedelta(1)
+        self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
+        activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=round_data, parameter=get_activity_performed_parameter(), date_created__range=(start_date, end_date))
+        for activity_performed_dv in activities_performed_qs:
+            activity_points = activity_points_cache[activity_performed_dv.int_value]
+            self.scores_dict[activity_performed_dv.participant_group_relationship.group]['total_points'] += activity_points
+            if participant_group_relationship and activity_performed_dv.participant_group_relationship == participant_group_relationship:
+                self.total_participant_points += activity_points
+        for group in experiment.groups:
+            group_data_dict = self.scores_dict[group]
+            group_size = group.size
+            total_group_points = group_data_dict['total_group_points']
+            average = total_group_points / group_size
+            group_data_dict['average_points'] = average
+
+    def get_sorted_group_scores(self):
+        return sorted(self.scores_dict.items(),
+                      key=lambda x: x[1]['average_points'],
+                      reverse=True)
+
+    def get_group_rankings(self):
+        return [g[0] for g in self.get_sorted_group_scores()]
+
 @receiver(signals.midnight_tick)
-def update_active_level_based_experiments(sender, time=None, start=None, send_emails=True, **kwargs):
+def update_active_experiments(sender, time=None, start_date=None, send_emails=True, **kwargs):
 # since this happens at midnight we need to look at the previous day
-    if start is None:
-        start = date.today() - timedelta(1);
-    active_experiments = get_active_experiments(has_scheduled_activities=False)
-    logger.debug("updating active level based experiments [%s] for %s", active_experiments, start)
-    messages = []
+    if start_date is None:
+        start_date = date.today() - timedelta(1);
+    active_experiments = get_active_experiments()
+    logger.debug("updating active level based experiments [%s] for %s", active_experiments, start_date)
+    all_messages = []
     for experiment in active_experiments:
         # calculate total carbon savings and decide if they move on to the next level
         round_data = experiment.current_round_data
@@ -40,42 +69,60 @@ def update_active_level_based_experiments(sender, time=None, start=None, send_em
         groups = list(experiment.groups)
         number_of_groups = len(groups)
         group_rankings = []
-        group_rank = 0
+        has_scheduled_activities = experiment.experiment_configuration.has_daily_rounds
+# group_scores_dict = { group: {average_group_points, total_group_points}}
+        group_score_data = GroupScores(experiment, round_data, start_date=start_date)
+        #(group_scores_dict, total_participant_points) = get_group_scores(experiment, round_data, start=start_date)
         if show_rankings:
-            (group_scores_dict, total_participant_points) = get_group_scores(experiment, round_data, start=start)
-            sorted_group_scores = sorted(group_scores_dict.items(), key=lambda x: x[1]['average_group_points'], reverse=True)
-            group_rankings = [ g[0] for g in sorted_group_scores ]
-            logger.debug("sorted group scores %s - group rankings: %s", sorted_group_scores, group_rankings)
+            group_rankings = group_score_data.get_group_rankings()
+            logger.debug("group rankings: %s", group_rankings)
         for group in groups:
-            experiment_completed_dv = get_experiment_completed_dv(group, round_data=round_data)
-            already_completed = experiment_completed_dv.boolean_value
-            if already_completed:
-                # skip this group if it's already completed the experiment.
-                continue
-            promoted = False
-            completed = False
-            footprint_level_grdv = get_footprint_level_dv(group, round_data=round_data)
-            current_level = footprint_level_grdv.value
-            if should_advance_level(group, footprint_level_grdv.int_value, start, round_data=round_data):
-                # group was promoted
-                promoted = True
-                next_level = min(current_level + 1, 3)
-                footprint_level_grdv.int_value = next_level
-                footprint_level_grdv.save()
-                if current_level == 3:
-                    completed = True
-            if show_rankings:
-                group_rank = group_rankings.index(group) + 1
-            group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed, round_data=round_data, 
-                    group_rank=group_rank, show_rankings=show_rankings, number_of_groups=number_of_groups)
-            messages.extend(group_summary_emails)
-            if completed:
-# store the completed flag
-                experiment_completed_dv.boolean_value = True
-                experiment_completed_dv.save()
-    logger.debug("about to send nightly summary emails (%s): %s", send_emails, messages)
+            if has_scheduled_activities:
+                logger.debug("Calculating thresholds for scheduled activity experiment")
+            else:
+                messages = process_level_based_experiment(group, round_data, show_rankings, group_rankings, number_of_groups)
+            all_messages.extend(messages)
+    logger.debug("about to send nightly summary emails (%s): %s", send_emails, all_messages)
     if send_emails:
-        mail.get_connection().send_messages(messages)
+        mail.get_connection().send_messages(all_messages)
+
+
+def process_scheduled_activity_experiment(group, round_data, start, show_rankings, group_rankings, number_of_groups):
+    pass
+
+
+# FIXME: replace these methods with a class that handles the data processing?
+def process_level_based_experiment(group, round_data, start, show_rankings, group_rankings, number_of_groups):
+    experiment_completed_dv = get_experiment_completed_dv(group, round_data=round_data)
+    already_completed = experiment_completed_dv.boolean_value
+    if already_completed:
+        # skip this group if it's already completed the experiment.
+        return []
+    promoted = False
+    completed = False
+    footprint_level_grdv = get_footprint_level_dv(group, round_data=round_data)
+    current_level = footprint_level_grdv.value
+# FIXME: this group score calculation will be redundant with that of the show_ranking condition.  Should just
+# pre-compute it once and pass it in
+    if should_advance_level(group, footprint_level_grdv.int_value, start, round_data=round_data):
+        # group was promoted
+        promoted = True
+        next_level = min(current_level + 1, 3)
+        footprint_level_grdv.int_value = next_level
+        footprint_level_grdv.save()
+        if current_level == 3:
+            completed = True
+    group_rank = 0
+    if show_rankings:
+        group_rank = group_rankings.index(group) + 1
+    group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed, round_data=round_data,
+                                                       group_rank=group_rank, show_rankings=show_rankings, number_of_groups=number_of_groups)
+    if completed:
+    # store the completed flag for the group
+        experiment_completed_dv.boolean_value = True
+        experiment_completed_dv.save()
+    return group_summary_emails
+
 
 @receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
 def round_started_handler(sender, experiment=None, **kwargs):
@@ -96,6 +143,7 @@ def round_started_handler(sender, experiment=None, **kwargs):
 
 ActivityStatus = enum('AVAILABLE', 'COMPLETED', 'UNAVAILABLE')
 
+
 class ActivityQuerySet(models.query.QuerySet):
     """
     for the moment, categorizing Activities as tiered or leveled.  Leveled activities are used in experiments, where
@@ -114,6 +162,7 @@ class ActivityQuerySet(models.query.QuerySet):
             return 0
         q = self.filter(pk__in=pks,**kwargs).aggregate(total=Sum(field_name))
         return q['total']
+
 
 class ActivityManager(TreeManager, PassThroughManager):
     def upcoming(self, level=1):
@@ -137,6 +186,7 @@ class ActivityManager(TreeManager, PassThroughManager):
 
     def get_by_natural_key(self, name):
         return self.get(name=name)
+
 
 class Activity(MPTTModel):
     name = models.CharField(max_length=32, unique=True)
@@ -203,6 +253,7 @@ class Activity(MPTTModel):
 
     class Meta:
         ordering = ['level', 'name']
+
 
 class ActivityAvailability(models.Model):
     activity = models.ForeignKey(Activity, related_name='availability_set')
@@ -444,8 +495,10 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
 # default behavior is for the activity to be unavailable
     return ActivityStatus.UNAVAILABLE
 
+
 def is_activity_available(activity, participant_group_relationship, **kwargs):
     return check_activity_availability(activity, participant_group_relationship, **kwargs) == ActivityStatus.AVAILABLE
+
 
 def do_activity(activity, participant_group_relationship):
     round_data = participant_group_relationship.current_round_data
@@ -459,8 +512,10 @@ def do_activity(activity, participant_group_relationship):
                 submitted=True
                 )
 
+
 def get_performed_activity_ids(participant_group_relationship):
     return participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter()).values_list('id', flat=True)
+
 
 def get_activity_points_cache():
     cv = 'activity_points_cache'
@@ -471,8 +526,10 @@ def get_activity_points_cache():
         cache.set(cv, activity_points_cache, 86400)
     return activity_points_cache
 
+
 def average_points_per_person(group, start=None, end=None, round_data=None):
     return get_group_score(group, start=start, end=end, round_data=round_data)[0]
+
 
 # returns a tuple of (dict of group -> {average_group_points, total_group_points}, total_participant_points)
 def get_group_scores(experiment, round_data, participant_group_relationship=None, start=None, end=None):
@@ -483,10 +540,10 @@ def get_group_scores(experiment, round_data, participant_group_relationship=None
         start = date.today()
     if end is None:
         end = start + timedelta(1)
-    if round_data is None:
-        round_data = group.current_round_data
     group_scores = defaultdict(lambda: defaultdict(lambda: 0))
-    activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=round_data, parameter=get_activity_performed_parameter(), date_created__range=(start, end))
+    activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=round_data,
+                                                                          parameter=get_activity_performed_parameter(),
+                                                                          date_created__range=(start, end))
     for activity_performed_dv in activities_performed_qs:
         activity_points = activity_points_cache[activity_performed_dv.int_value]
         group_scores[activity_performed_dv.participant_group_relationship.group]['total_group_points'] += activity_points
@@ -498,7 +555,7 @@ def get_group_scores(experiment, round_data, participant_group_relationship=None
         total_group_points = group_data_dict['total_group_points']
         average = total_group_points / group_size
         group_data_dict['average_group_points'] = average
-    return (group_scores, total_participant_points)
+    return group_scores, total_participant_points
 
 
 # FIXME: reduce code duplication here and get_group_scores
@@ -525,10 +582,11 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
     group_size = group.size
     average = total_group_points / group_size
     logger.debug("total carbon savings: %s divided by %s members = %s per person", total_group_points, group_size, average)
-    return (average, total_group_points, total_participant_points)
+    return average, total_group_points, total_participant_points
+
 
 def get_points_to_next_level(current_level):
-    ''' returns the number of average points needed to advance to the next level '''
+    """ returns the number of average points needed to advance to the next level """
     if current_level == 1:
         return 50
     elif current_level == 2:
@@ -536,21 +594,22 @@ def get_points_to_next_level(current_level):
     elif current_level == 3:
         return 225
 
-def should_advance_level(group, level, start=None, end=None, round_data=None, max_level=4):
+
+def should_advance_level(group, level, start=None, end=None, round_data=None, max_level=3):
     logger.debug("checking if group %s at level %s should advance in level on %s", group, level, start)
-    if level < max_level:
+    if level <= max_level:
         return average_points_per_person(group, start=start, end=end, round_data=round_data) >= get_points_to_next_level(level)
     return False
+
 
 def get_activity_performed_counts(participant_group_relationship, activity_performed_parameter=None):
     if activity_performed_parameter is None:
         activity_performed_parameter = get_activity_performed_parameter()
     return participant_group_relationship.data_value_set.filter(parameter=activity_performed_parameter).values('int_value').order_by().annotate(count=models.Count('int_value'))
 
+
 def get_time_remaining():
-    '''
-    returns the hours and minutes till midnight
-    '''
+    """ returns the hours and minutes till midnight """
     now = datetime.now()
     midnight = datetime.combine(date.today() + timedelta(1), time())
     time_remaining = midnight - now
@@ -559,7 +618,8 @@ def get_time_remaining():
     hours_left = total_minutes_left / 60
 # pad minutes to have a leading 0 for single digits
     minutes = str(total_minutes_left % 60).zfill(2)
-    return (hours_left, minutes)
+    return hours_left, minutes
+
 
 def get_group_activity(participant_group_relationship, limit=None):
     group = participant_group_relationship.group
@@ -607,7 +667,8 @@ def get_group_activity(participant_group_relationship, limit=None):
         data['parameter_name'] = parameter_name
         data['date_created'] = abbreviated_timesince(prdv.date_created)
         all_activity.append(data)
-    return (all_activity, chat_messages)
+    return all_activity, chat_messages
+
 
 def abbreviated_timesince(date):
     s = timesince(date)
@@ -617,6 +678,7 @@ def abbreviated_timesince(date):
     s = re.sub(r'\sweeks?', 'w', s)
     s = re.sub(r'\smonths?', 'mo', s)
     return s.replace(',', '')
+
 
 def create_group_summary_emails(group, level, promoted=False, completed=False, round_data=None, **kwargs):
     logger.debug("creating group summary email for group %s", group)
@@ -645,8 +707,6 @@ def create_group_summary_emails(group, level, promoted=False, completed=False, r
         html_content = html_template.render(c)
         subject = 'Lighter Footprints Summary for %s' % yesterday
         to_address = [ experimenter_email, pgr.participant.email ]
-# FIXME: remove in production
-#    to_address.extend(['marco.janssen@asu.edu', 'shelby.manney@asu.edu', 'allen.lee@asu.edu', 'rsinha@asu.edu'])
         msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
         msg.attach_alternative(html_content, 'text/html')
         messages.append(msg)
