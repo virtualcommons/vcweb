@@ -18,16 +18,13 @@ logger = logging.getLogger(__name__)
 REQUIRED_EMAIL_ATTRIBUTES = { 'class' : 'required email' }
 REQUIRED_ATTRIBUTES = { 'class' : 'required' }
 
-class BaseRegistrationMixin(object):
+class BaseRegistrationForm(forms.Form):
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     confirm_password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     institution = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES), help_text=_('The primary institution, if any, you are affiliated with.'))
-
-
-class BaseRegistrationForm(BaseRegistrationMixin, forms.Form):
     def clean_email(self):
         email = self.cleaned_data['email'].lower()
         try:
@@ -67,13 +64,11 @@ class LoginForm(forms.Form):
 
 
 class ParticipantAccountForm(forms.ModelForm):
-
     pk = forms.IntegerField(widget=widgets.HiddenInput())
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
     institution = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES), help_text=_('The primary institution, if any, you are affiliated with.'))
-
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
         if instance is not None:
