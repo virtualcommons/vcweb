@@ -9,7 +9,7 @@ from django.template.loader import select_template
 from django.utils.timesince import timesince
 from model_utils.managers import PassThroughManager
 from vcweb.core import signals, simplecache, enum
-from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, RoundParameterValue, ParticipantGroupRelationship, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
+from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, RoundParameterValue, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
 from vcweb.core.services import fetch_foursquare_categories
 from collections import defaultdict
 from datetime import datetime, date, time, timedelta
@@ -21,25 +21,36 @@ logger = logging.getLogger(__name__)
 
 EXPERIMENT_METADATA_NAME = intern('lighterprints')
 
+def get_activity_points_cache():
+    cv = 'activity_points_cache'
+    activity_points_cache = cache.get(cv)
+    if activity_points_cache is None:
+        activity_points_cache = dict([(a.pk, a.points) for a in Activity.objects.all()])
+        #cache.set(cv, activity_points_cache, timedelta(days=1).total_seconds())
+        cache.set(cv, activity_points_cache, 86400)
+    return activity_points_cache
+
 
 class GroupScores(object):
 
-    def __init__(self, experiment, round_data, participant_group_relationship=None, start_date=None, end_date=None):
-        activity_points_cache = get_activity_points_cache()
-        # establish date range
-        self.total_participant_points = 0
-        if start_date is None:
-            start_date = date.today()
-        if end_date is None:
-            end_date = start_date + timedelta(1)
+    def __init__(self, experiment, round_data, groups, participant_group_relationship=None, start_date=None, end_date=None):
+        self.number_of_groups = len(groups)
+        # { group : {average_points, total_points} }
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
+        self.total_participant_points = 0
+        # establish date range
+        self.start_date = date.today() if start_date is None else start_date
+        self.end_date = start_date + timedelta(1) if end_date is None else end_date
+        self.show_rankings = can_view_other_groups(round_data.round_configuration)
+
+        activity_points_cache = get_activity_points_cache()
         activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=round_data, parameter=get_activity_performed_parameter(), date_created__range=(start_date, end_date))
         for activity_performed_dv in activities_performed_qs:
             activity_points = activity_points_cache[activity_performed_dv.int_value]
             self.scores_dict[activity_performed_dv.participant_group_relationship.group]['total_points'] += activity_points
             if participant_group_relationship and activity_performed_dv.participant_group_relationship == participant_group_relationship:
                 self.total_participant_points += activity_points
-        for group in experiment.groups:
+        for group in groups:
             group_data_dict = self.scores_dict[group]
             group_size = group.size
             total_group_points = group_data_dict['total_group_points']
@@ -50,6 +61,13 @@ class GroupScores(object):
         return sorted(self.scores_dict.items(),
                       key=lambda x: x[1]['average_points'],
                       reverse=True)
+
+    def should_advance_level(self, group, level, max_level=3):
+        logger.debug("checking if group %s at level %s should advance in level on %s (%s)", group, level, self.start_date, self.scores_dict[group])
+        if level <= max_level:
+            return self.scores_dict[group]['average_points'] >= get_points_to_next_level(level)
+        return False
+
 
     def get_group_rankings(self):
         return [g[0] for g in self.get_sorted_group_scores()]
@@ -65,34 +83,28 @@ def update_active_experiments(sender, time=None, start_date=None, send_emails=Tr
     for experiment in active_experiments:
         # calculate total carbon savings and decide if they move on to the next level
         round_data = experiment.current_round_data
-        show_rankings = can_view_other_groups(round_data.round_configuration)
         groups = list(experiment.groups)
-        number_of_groups = len(groups)
-        group_rankings = []
         has_scheduled_activities = experiment.experiment_configuration.has_daily_rounds
 # group_scores_dict = { group: {average_group_points, total_group_points}}
-        group_score_data = GroupScores(experiment, round_data, start_date=start_date)
+        group_scores = GroupScores(experiment, round_data, groups, start_date=start_date)
         #(group_scores_dict, total_participant_points) = get_group_scores(experiment, round_data, start=start_date)
-        if show_rankings:
-            group_rankings = group_score_data.get_group_rankings()
-            logger.debug("group rankings: %s", group_rankings)
         for group in groups:
             if has_scheduled_activities:
                 logger.debug("Calculating thresholds for scheduled activity experiment")
             else:
-                messages = process_level_based_experiment(group, round_data, show_rankings, group_rankings, number_of_groups)
+                messages = process_level_based_experiment(group, round_data, group_scores)
             all_messages.extend(messages)
     logger.debug("about to send nightly summary emails (%s): %s", send_emails, all_messages)
     if send_emails:
         mail.get_connection().send_messages(all_messages)
 
 
-def process_scheduled_activity_experiment(group, round_data, start, show_rankings, group_rankings, number_of_groups):
+def process_scheduled_activity_experiment(group, round_data, group_scores):
     pass
 
 
 # FIXME: replace these methods with a class that handles the data processing?
-def process_level_based_experiment(group, round_data, start, show_rankings, group_rankings, number_of_groups):
+def process_level_based_experiment(group, round_data, group_scores):
     experiment_completed_dv = get_experiment_completed_dv(group, round_data=round_data)
     already_completed = experiment_completed_dv.boolean_value
     if already_completed:
@@ -101,10 +113,10 @@ def process_level_based_experiment(group, round_data, start, show_rankings, grou
     promoted = False
     completed = False
     footprint_level_grdv = get_footprint_level_dv(group, round_data=round_data)
-    current_level = footprint_level_grdv.value
+    current_level = footprint_level_grdv.int_value
 # FIXME: this group score calculation will be redundant with that of the show_ranking condition.  Should just
 # pre-compute it once and pass it in
-    if should_advance_level(group, footprint_level_grdv.int_value, start, round_data=round_data):
+    if group_scores.should_advance_level(group, footprint_level_grdv.int_value):
         # group was promoted
         promoted = True
         next_level = min(current_level + 1, 3)
@@ -113,10 +125,12 @@ def process_level_based_experiment(group, round_data, start, show_rankings, grou
         if current_level == 3:
             completed = True
     group_rank = 0
-    if show_rankings:
-        group_rank = group_rankings.index(group) + 1
+    if group_scores.show_rankings:
+        group_rank = group_scores.get_group_rankings().index(group) + 1
+# FIXME: consider replacing individual data pieces with group_scores object in group summary email creation as well, is
+# trickier since we're referencing the kwargs in group summary email template
     group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed, round_data=round_data,
-                                                       group_rank=group_rank, show_rankings=show_rankings, number_of_groups=number_of_groups)
+                                                       group_rank=group_rank, show_rankings=group_scores.show_rankings, number_of_groups=group_scores.number_of_groups)
     if completed:
     # store the completed flag for the group
         experiment_completed_dv.boolean_value = True
@@ -515,16 +529,6 @@ def do_activity(activity, participant_group_relationship):
 
 def get_performed_activity_ids(participant_group_relationship):
     return participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter()).values_list('id', flat=True)
-
-
-def get_activity_points_cache():
-    cv = 'activity_points_cache'
-    activity_points_cache = cache.get(cv)
-    if activity_points_cache is None:
-        activity_points_cache = dict([(a.pk, a.points) for a in Activity.objects.all()])
-        #cache.set(cv, activity_points_cache, timedelta(days=1).total_seconds())
-        cache.set(cv, activity_points_cache, 86400)
-    return activity_points_cache
 
 
 def average_points_per_person(group, start=None, end=None, round_data=None):
