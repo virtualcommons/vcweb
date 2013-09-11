@@ -74,6 +74,7 @@ class ParticipantAccountForm(forms.ModelForm):
         if instance is not None:
             super(ParticipantAccountForm, self).__init__(*args, **kwargs)
             self.fields.keyOrder = ['pk', 'first_name', 'last_name', 'email', 'institution', 'can_receive_invitations', 'major', 'classStatus', 'gender']
+            self.fields['classStatus'].label = 'Class Status'
             for attr in ("pk", "first_name", 'last_name', 'email', 'institution'):
                 self.fields[attr].initial = getattr(instance, attr)
         else:
@@ -82,20 +83,28 @@ class ParticipantAccountForm(forms.ModelForm):
     class Meta:
         model = Participant
         fields = ['major', 'classStatus', 'gender', 'can_receive_invitations']
+        widgets = {
+            'major': forms.TextInput(attrs={'class': 'hide'}),
+        }
+
 
     def clean(self):
         data = super(forms.ModelForm, self).clean()
         m = data.get('email')
-        canBeInvited = data.get('can_receive_invitations')
+        if not email_re.match(m):
+                raise ValidationError(_(u'%s is not a valid email address.' % data))
+        # raise forms.ValidationError(_("This email address is already in our system."))
+
+        can_be_invited = data.get('can_receive_invitations')
         major = data.get('major')
         gender = data.get('gender')
-        classStatus = data.get('classStatus')
+        class_status = data.get('classStatus')
         if not m:
-            raise forms.ValidationError("You have forgotten your Email address")
+            raise forms.ValidationError(_("You have forgotten your Email address"))
 
-        if canBeInvited:
-            if not major or not gender or not classStatus:
-                raise forms.ValidationError("You need to enter your major, gender and class status if you wan't to receive Invitations")
+        if can_be_invited:
+            if not major or not gender or not class_status:
+                raise forms.ValidationError(_("You need to enter your major, gender and class status if you wan't to receive Invitations"))
 
         return data
 

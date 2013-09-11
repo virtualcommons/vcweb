@@ -9,6 +9,7 @@
 
 {% block form %}
 <h3>{{ request.user.get_full_name }}</h3>
+<div id="error-messages"></div>
 
 {% include "includes/bootstrap-form.html" %}
 <div class='controls'>
@@ -33,30 +34,61 @@
                     },
                     gender: {
                         required: "#id_can_receive_invitations:checked"
+                    },
+                    email: {
+                        required: true,
+                        email: true,
+                        remote: {
+                            url: "/accounts/check-email",
+                            type: "get",
+                            data: {
+                                email: function() {
+                                    return $( "#id_email" ).val();
+                                }
+                            }
+                        }
                     }
-
                 },
                 messages: {
                     major: "We need your major if you want to receive invitations",
                     classStatus: "we need your class status if you want to receive invitations",
-                    gender: "we need your gender if you want to receive invitations"
-
+                    gender: "we need your gender if you want to receive invitations",
+                    email: {
+                        remote: 'Email already exists'
+                    }
                 },
                 submitHandler: function(form) {
-                     var formData = $('#vcweb-form').serialize();
-                     console.debug("submitting form data: " + formData);
-                     //$.post('/accounts/profile/update', formData);
+                    var formData = $('#vcweb-form').serialize();
 
                     $.ajax({
                         type: "POST",
                         url: "/accounts/profile/update",
                         data: formData,
-                        success: function() {
-                             $("#vcweb-form").append('<div class="alert"><a class="close" data-dismiss="alert">×</a><strong>The data has been saved</strong></div>');
+                        success: function(data) {
+                            if(data.success) {
+                                $("#error-messages").html('<div class="alert alert-success"><strong>Well done! </strong>Your profile has been updated successfully.</strong></div>');
+                            } else {
+                                $("#error-messages").html('<div class="alert alert-danger"><strong>'+data.message+'</strong></div>');
+                            }
                         }
                     });
                 }
             });
+
+{#            $("#id_email").blur(function(){#}
+{#                $.get('/accounts/check-email', {email: $(this).val()})#}
+{#                        .done(function(response){#}
+{#                         if(response.success != undefined) {#}
+{##}
+{#                             if(response.success) {#}
+{#                                    $("#error-messages").html('<div class="alert alert-success"><strong>'+response.message+'</strong></div>');#}
+{#                                } else {#}
+{#                                    $("#error-messages").html('<div class="alert alert-danger"><strong>'+response.message+'</strong></div>');#}
+{#                                }#}
+{#                         }#}
+{#                     });#}
+{#                 });#}
+
         });
     </script>
     {%  endblock javascript %}
