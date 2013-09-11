@@ -83,9 +83,9 @@ class ParticipantAccountForm(forms.ModelForm):
     class Meta:
         model = Participant
         fields = ['major', 'classStatus', 'gender', 'can_receive_invitations']
-        widgets = {
-            'major': forms.TextInput(attrs={'class': 'hide'}),
-        }
+        # widgets = {
+        #     'major': forms.TextInput(attrs={'class': 'hide'}),
+        # }
 
 
     def clean(self):
