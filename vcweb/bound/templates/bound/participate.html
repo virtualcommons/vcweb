@@ -31,7 +31,7 @@
             </div>
             <form id="chat-form" class='form-inline' data-bind='submit: submitChatMessage' >
                 <div class='input-prepend input-block-level'>
-                    <span class='add-on'><i class='text-info icon-comment'></i></span>
+                    <span class='add-on'><i id='chat-icon' class='text-info icon-comment'></i></span>
                     <input id='chatMessage' type="text" placeholder="Chat with your group">
                 </div>
             </form>
@@ -625,19 +625,19 @@ function onYouTubeIframeAPIReady() {
                 }
                 model.tour(new Tour());
                 model.tour().addSteps([{ 
-                    element: "#dashboard-last-harvest", title: "Last harvest",  placement: "top",
+                    element: "#dashboard-last-harvest", title: "Last harvest",  placement: "right",
                     content: "Your last round's harvest decision will be displayed here.  Since this is the first practice round this is currently 0."
                 },
                 { 
-                    element: "#dashboard-storage", title: "Savings", placement: "top",
+                    element: "#dashboard-storage", title: "Savings", placement: "right",
                     content: "Your total savings will be displayed here.  You must have at least " + model.costOfLiving() + " in savings to survive each round."
                 },
                 { 
-                    element: "#dashboard-time", title: "Time Left", placement: "top",
+                    element: "#dashboard-time", title: "Time Left", placement: "right",
                     content: "The time remaining in this round will be displayed here.  It will turn red when " +model.warningCountdownTime() + " seconds are left."
                 },
                 { 
-                    element: "#chatMessage", title: "Text Chat", placement: "top",
+                    element: "#chatMessage", title: "Text Chat", placement: "left",
                     content: "When chat is enabled, you can communicate with your group by typing messages into this box and hitting the enter key."
                 },
                 { 
