@@ -15,7 +15,7 @@
 {% endblock %}
 {% block javascript %}
 {{ block.super }}
-<script type='text/javascript' src='{{STATIC_URL}}js/jquery.validate.min.js'></script>
+{% include "includes/jquery.validate.html" %}
 {% block websockets %}
 {% include "includes/participant.events.html" %}
 {% include "includes/sockjs.html" %}

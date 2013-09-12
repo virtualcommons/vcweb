@@ -2,7 +2,8 @@
 {% load static %}
 {% block head %}
 {{ block.super }}
-<link rel='stylesheet' href='{% static "css/bound/style.css" %}'/>
+<link rel='stylesheet' href='{% static "css/bootstrap-tour.min.css" %}'>
+<link rel='stylesheet' href='{% static "css/bound/style.css" %}'>
 {% endblock %}
 {% block page %}
 <div class='row' id='page'>
@@ -622,28 +623,28 @@ function onYouTubeIframeAPIReady() {
                 if (! model.showTour()) {
                     return;
                 }
-                var tour = new Tour();
-                model.tour(tour);
-                tour.addStep({ element: "#dashboard-last-harvest", title: "Last harvest", 
-                    placement: "top",
+                model.tour(new Tour());
+                model.tour().addSteps([{ 
+                    element: "#dashboard-last-harvest", title: "Last harvest",  placement: "top",
                     content: "Your last round's harvest decision will be displayed here.  Since this is the first practice round this is currently 0."
-                    });
-                tour.addStep({ element: "#dashboard-storage", title: "Storage",
-                        placement: "top",
-                        content: "Your total storage will be displayed here.  You must have at least " +
-                        model.costOfLiving() + " trees stored to survive each round."});
-                tour.addStep({ element: "#dashboard-time", title: "Time Left",
-                        placement: "top",
-                        content: "The time remaining in this round will be displayed here.  It will turn red when " +
-                        model.warningCountdownTime() + " seconds are left."});
-                tour.addStep({ element: "#chatMessage", title: "Text Chat",
-                        placement: "left",
-                        content: "If chat is enabled, you can communicate with your group by typing messages into this box and hitting the enter key or clicking 'Send'."});
-                tour.addStep({ element: "#harvest-decision-td-10", title: "Harvest Decision",
-                        placement: "right",
-                        content: "Click on the number of trees you'd like to harvest here.  For the purposes of this practice round, please select 10 now and click the 'Ok, I'm ready' button."});
-                tour.goto(0);
-                tour.start(true);
+                },
+                { 
+                    element: "#dashboard-storage", title: "Storage", placement: "top",
+                    content: "Your total storage will be displayed here.  You must have at least " + model.costOfLiving() + " trees stored to survive each round."
+                },
+                { 
+                    element: "#dashboard-time", title: "Time Left", placement: "top",
+                    content: "The time remaining in this round will be displayed here.  It will turn red when " +model.warningCountdownTime() + " seconds are left."
+                },
+                { 
+                    element: "#chatMessage", title: "Text Chat", placement: "left",
+                    content: "If chat is enabled, you can communicate with your group by typing messages into this box and hitting the enter key or clicking 'Send'."
+                },
+                { 
+                    element: "#harvest-decision-td-10", title: "Harvest Decision", placement: "right",
+                    content: "Click on the number of trees you'd like to harvest here.  For the purposes of this practice round, please select 10 now and click the 'Ok, I'm ready' button."
+                }]);
+                model.tour().restart();
             }
             model.endTour = function() {
                 var tour = model.tour();
@@ -749,7 +750,6 @@ function onYouTubeIframeAPIReady() {
                 if (model.templateId() != "REGULAR") {
                     return;
                 }
-                model.setupTour();
                 if (! model.alive()) {
                     model.secondsLeft(0);
                     model.clearCurrentInterval();
@@ -848,6 +848,7 @@ function onYouTubeIframeAPIReady() {
                 model.chatEnabled(! chatDisabled);
             }
             model.afterRenderTemplate = function(elements) {
+                model.setupTour();
                 if (model.isSurveyEnabled()) {
                     switch (model.templateId()) {
                         case "PRACTICE_ROUND_RESULTS":
