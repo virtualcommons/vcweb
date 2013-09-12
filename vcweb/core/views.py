@@ -270,7 +270,7 @@ def update_account_profile(request):
                     'message': 'The user with this email already exist'
                 }))
 
-        for attr in ('major', 'classStatus', 'gender', 'can_receive_invitations'):
+        for attr in ('major', 'class_status', 'gender', 'can_receive_invitations'):
             setattr(p, attr, form.cleaned_data.get(attr))
 
         for attr in ('first_name', 'last_name', 'email', 'institution'):

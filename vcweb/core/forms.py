@@ -73,8 +73,8 @@ class ParticipantAccountForm(forms.ModelForm):
         instance = kwargs.get('instance')
         if instance is not None:
             super(ParticipantAccountForm, self).__init__(*args, **kwargs)
-            self.fields.keyOrder = ['pk', 'first_name', 'last_name', 'email', 'institution', 'can_receive_invitations', 'major', 'classStatus', 'gender']
-            self.fields['classStatus'].label = 'Class Status'
+            self.fields.keyOrder = ['pk', 'first_name', 'last_name', 'email', 'institution', 'can_receive_invitations', 'major', 'class_status', 'gender']
+            self.fields['class_status'].label = 'Class Status'
             for attr in ("pk", "first_name", 'last_name', 'email', 'institution'):
                 self.fields[attr].initial = getattr(instance, attr)
         else:
@@ -82,7 +82,7 @@ class ParticipantAccountForm(forms.ModelForm):
 
     class Meta:
         model = Participant
-        fields = ['major', 'classStatus', 'gender', 'can_receive_invitations']
+        fields = ['major', 'class_status', 'gender', 'can_receive_invitations']
         # widgets = {
         #     'major': forms.TextInput(attrs={'class': 'hide'}),
         # }
@@ -98,7 +98,7 @@ class ParticipantAccountForm(forms.ModelForm):
         can_be_invited = data.get('can_receive_invitations')
         major = data.get('major')
         gender = data.get('gender')
-        class_status = data.get('classStatus')
+        class_status = data.get('class_status')
         if not m:
             raise forms.ValidationError(_("You have forgotten your Email address"))
 

@@ -13,8 +13,8 @@ class Migration(SchemaMigration):
                       self.gf('django.db.models.fields.CharField')(default='', max_length=64, blank=True),
                       keep_default=False)
 
-        # Adding field 'Participant.classStatus'
-        db.add_column(u'core_participant', 'classStatus',
+        # Adding field 'Participant.class_status'
+        db.add_column(u'core_participant', 'class_status',
                       self.gf('django.db.models.fields.CharField')(default='', max_length=32, blank=True),
                       keep_default=False)
 
@@ -23,8 +23,8 @@ class Migration(SchemaMigration):
         # Deleting field 'Participant.major'
         db.delete_column(u'core_participant', 'major')
 
-        # Deleting field 'Participant.classStatus'
-        db.delete_column(u'core_participant', 'classStatus')
+        # Deleting field 'Participant.class_status'
+        db.delete_column(u'core_participant', 'class_status')
 
 
     models = {
@@ -292,7 +292,7 @@ class Migration(SchemaMigration):
             'authentication_token': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
             'birthdate': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'can_receive_invitations': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'classStatus': ('django.db.models.fields.CharField', [], {'max_length': '32', 'blank': 'True'}),
+            'class_status': ('django.db.models.fields.CharField', [], {'max_length': '32', 'blank': 'True'}),
             'experiments': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'participant_set'", 'symmetrical': 'False', 'through': u"orm['core.ParticipantExperimentRelationship']", 'to': u"orm['core.Experiment']"}),
             'failed_password_attempts': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'gender': ('django.db.models.fields.CharField', [], {'max_length': '1', 'blank': 'True'}),

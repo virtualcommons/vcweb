@@ -1850,7 +1850,7 @@ class Participant(CommonsUser):
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
     birthdate = models.DateField(null=True, blank=True)
     major = models.CharField(max_length=64, blank=True)
-    classStatus = models.CharField(max_length=32, choices=CLASS_CHOICES, blank=True)
+    class_status = models.CharField(max_length=32, choices=CLASS_CHOICES, blank=True)
     address = models.ForeignKey(Address, null=True, blank=True)
 
     class Meta:
