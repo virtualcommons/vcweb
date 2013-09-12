@@ -44,7 +44,7 @@ class GroupScores(object):
         self.show_rankings = can_view_other_groups(round_data.round_configuration)
 
         activity_points_cache = get_activity_points_cache()
-        activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=round_data, parameter=get_activity_performed_parameter(), date_created__range=(start_date, end_date))
+        activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=round_data, parameter=get_activity_performed_parameter(), date_created__range=(self.start_date, self.end_date))
         for activity_performed_dv in activities_performed_qs:
             activity_points = activity_points_cache[activity_performed_dv.int_value]
             self.scores_dict[activity_performed_dv.participant_group_relationship.group]['total_points'] += activity_points
@@ -53,8 +53,8 @@ class GroupScores(object):
         for group in groups:
             group_data_dict = self.scores_dict[group]
             group_size = group.size
-            total_group_points = group_data_dict['total_group_points']
-            average = total_group_points / group_size
+            total_points = group_data_dict['total_points']
+            average = total_points / group_size
             group_data_dict['average_points'] = average
 
     def get_sorted_group_scores(self):
@@ -72,6 +72,9 @@ class GroupScores(object):
     def get_group_rankings(self):
         return [g[0] for g in self.get_sorted_group_scores()]
 
+    def __str__(self):
+        return str(self.scores_dict)
+
 @receiver(signals.midnight_tick)
 def update_active_experiments(sender, time=None, start_date=None, send_emails=True, **kwargs):
 # since this happens at midnight we need to look at the previous day
@@ -87,6 +90,7 @@ def update_active_experiments(sender, time=None, start_date=None, send_emails=Tr
         has_scheduled_activities = experiment.experiment_configuration.has_daily_rounds
 # group_scores_dict = { group: {average_group_points, total_group_points}}
         group_scores = GroupScores(experiment, round_data, groups, start_date=start_date)
+        logger.debug("group scores: %s", group_scores)
         #(group_scores_dict, total_participant_points) = get_group_scores(experiment, round_data, start=start_date)
         for group in groups:
             if has_scheduled_activities:

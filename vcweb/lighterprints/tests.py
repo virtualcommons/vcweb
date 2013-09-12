@@ -57,18 +57,19 @@ class UpdateLevelTest(BaseTest):
         e.activate()
         current_round_data = e.get_round_data()
 # initialize participant carbon savings
-        for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
-            for activity in Activity.objects.filter(level=1):
+        activity_points_cache = get_activity_points_cache()
+        level_one_activities = Activity.objects.filter(level=1)
+        for participant_group_relationship in e.participant_group_relationships:
+            for activity in level_one_activities:
                 activity_performed = ParticipantRoundDataValue.objects.create(participant_group_relationship=participant_group_relationship, round_data=current_round_data, parameter=get_activity_performed_parameter())
-                activity_performed.value = activity.id
+                activity_performed.int_value = activity.pk
                 activity_performed.save()
         update_active_experiments(self, start_date=date.today())
-        for group in e.group_set.all():
+        for group in e.groups:
             logger.debug("all levels should be 2 now")
             self.assertEqual(get_footprint_level(group), 2)
             self.assertEqual(average_points_per_person(group), 177)
-            for pgr in group.participant_group_relationship_set.all():
-                logger.debug("available activities: %s", get_available_activities(pgr))
+
 
 class GroupActivityTest(BaseTest):
     def test_group_activity(self):
