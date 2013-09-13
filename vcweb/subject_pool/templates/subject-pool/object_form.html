@@ -1,0 +1,14 @@
+{% extends 'subject-pool/base.html' %}
+
+{% block title %}{{object_name}} Form{% endblock %}
+
+
+<h3>{% if object %}Updating {{object}}{% else %}Add a new {{object_name}}{% endif %}</h3>
+{% block form %}
+    <div id="error-messages"></div>
+
+{% include "includes/bootstrap-form.html" %}
+<div class='controls'>
+    <button type='submit' id='submitForm' class='btn btn-primary'>Save</button>
+</div>
+{% endblock %}

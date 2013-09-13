@@ -104,6 +104,7 @@ INSTALLED_APPS = (
         'vcweb.lighterprints',
         'vcweb.bound',
         'vcweb.broker',
+        'vcweb.subject_pool',
 #        'vcweb.sanitation',
         'dajaxice',
         'raven.contrib.django',

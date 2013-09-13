@@ -1,0 +1,12 @@
+{% extends 'subject-pool/base.html' %}
+
+{% block title %}{{object}}{% endblock %}
+
+{% block content %}
+<table>
+<tr><th>Session name:</th><td>{{object.name}}</td></tr>
+<tr><th>Start date:</th><td>{{object.start_date}}</td></tr>
+<tr><th>End date:</th><td>{{object.end_date}}</td></tr>
+</table>
+<a href="{{object.get_update_url}}">Update</a> | <a href="{{object.get_delete_url}}">Delete</a>
+{% endblock %}
