@@ -85,7 +85,7 @@ class GroupActivityTest(BaseTest):
         e = self.experiment
         e.activate()
         self.perform_activities()
-        for group in e.group_set.all():
+        for group in e.groups:
             messages = create_group_summary_emails(group, 2)
             self.assertEquals(len(messages), group.size)
 

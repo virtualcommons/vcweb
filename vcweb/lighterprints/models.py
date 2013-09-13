@@ -33,14 +33,16 @@ def get_activity_points_cache():
 
 class GroupScores(object):
 
-    def __init__(self, experiment, round_data, groups, participant_group_relationship=None, start_date=None, end_date=None):
+    def __init__(self, experiment, round_data, groups=None, participant_group_relationship=None, start_date=None, end_date=None):
+        if groups is None:
+            groups = list(experiment.groups)
         self.number_of_groups = len(groups)
         # { group : {average_points, total_points} }
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
         self.total_participant_points = 0
         # establish date range
         self.start_date = date.today() if start_date is None else start_date
-        self.end_date = start_date + timedelta(1) if end_date is None else end_date
+        self.end_date = self.start_date + timedelta(1) if end_date is None else end_date
         self.show_rankings = can_view_other_groups(round_data.round_configuration)
 
         activity_points_cache = get_activity_points_cache()
@@ -57,6 +59,12 @@ class GroupScores(object):
             average = total_points / group_size
             group_data_dict['average_points'] = average
 
+    def average_points(self, group):
+        return self.scores_dict[group]['average_points']
+    
+    def total_points(self, group):
+        return self.scores_dict[group]['total_points']
+
     def get_sorted_group_scores(self):
         return sorted(self.scores_dict.items(),
                       key=lambda x: x[1]['average_points'],
@@ -68,9 +76,14 @@ class GroupScores(object):
             return self.scores_dict[group]['average_points'] >= get_points_to_next_level(level)
         return False
 
+    def get_group_rank(self, group):
+        return self.get_group_rankings().index(group) + 1
 
     def get_group_rankings(self):
-        return [g[0] for g in self.get_sorted_group_scores()]
+        if getattr(self, 'group_rankings', None) is None:
+            self.group_rankings = [g[0] for g in self.get_sorted_group_scores()]
+        return self.group_rankings
+
 
     def __str__(self):
         return str(self.scores_dict)
@@ -88,7 +101,7 @@ def update_active_experiments(sender, time=None, start_date=None, send_emails=Tr
         round_data = experiment.current_round_data
         groups = list(experiment.groups)
         has_scheduled_activities = experiment.experiment_configuration.has_daily_rounds
-# group_scores_dict = { group: {average_group_points, total_group_points}}
+# group_scores_dict = { group: {average_points, total_points}}
         group_scores = GroupScores(experiment, round_data, groups, start_date=start_date)
         logger.debug("group scores: %s", group_scores)
         #(group_scores_dict, total_participant_points) = get_group_scores(experiment, round_data, start=start_date)
@@ -128,13 +141,9 @@ def process_level_based_experiment(group, round_data, group_scores):
         footprint_level_grdv.save()
         if current_level == 3:
             completed = True
-    group_rank = 0
-    if group_scores.show_rankings:
-        group_rank = group_scores.get_group_rankings().index(group) + 1
 # FIXME: consider replacing individual data pieces with group_scores object in group summary email creation as well, is
 # trickier since we're referencing the kwargs in group summary email template
-    group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed, round_data=round_data,
-                                                       group_rank=group_rank, show_rankings=group_scores.show_rankings, number_of_groups=group_scores.number_of_groups)
+    group_summary_emails = create_group_summary_emails(group, footprint_level_grdv.value, promoted=promoted, completed=completed, round_data=round_data, group_scores=group_scores)
     if completed:
     # store the completed flag for the group
         experiment_completed_dv.boolean_value = True
@@ -417,7 +426,7 @@ def get_all_activities_tuple(participant_group_relationship, activities=None, gr
     if activities is None:
         activities = Activity.objects.all()
     activity_dict_list = []
-    level_activity_list = []
+    level_activity_list = defaultdict(list)
     activity_statuses = get_activity_status_dict(participant_group_relationship, activities, group_level)
     #available_activities = get_available_activities(participant_group_relationship)
     #available_activity_ids = [activity.pk for activity in available_activities]
@@ -438,9 +447,6 @@ def get_all_activities_tuple(participant_group_relationship, activities=None, gr
         except Exception as e:
             logger.debug("failed to get authenticated activity list: %s", e)
         activity_dict_list.append(activity_dict)
-        # XXX: assumes activity list is ordered by level
-        if level > len(level_activity_list):
-            level_activity_list.append([])
         level_activity_list[level-1].append(activity_dict)
     activity_dict_list.sort(key=_activity_status_sort_key)
     return (activity_dict_list, level_activity_list)
@@ -485,7 +491,6 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
     '''
     level = get_footprint_level(participant_group_relationship.group, **kwargs)
     if activity.level > level:
-        logger.debug("activity %s had larger level (%s) than group level (%s)", activity, activity.level, level)
         return ActivityStatus.UNAVAILABLE
     elif activity.available_all_day:
         # check if they've done it already today, check if the combine is necessary
@@ -539,7 +544,7 @@ def average_points_per_person(group, start=None, end=None, round_data=None):
     return get_group_score(group, start=start, end=end, round_data=round_data)[0]
 
 
-# returns a tuple of (dict of group -> {average_group_points, total_group_points}, total_participant_points)
+# returns a tuple of (dict of group -> {average_points, total_points}, total_participant_points)
 def get_group_scores(experiment, round_data, participant_group_relationship=None, start=None, end=None):
     activity_points_cache = get_activity_points_cache()
     # establish date range
@@ -554,15 +559,16 @@ def get_group_scores(experiment, round_data, participant_group_relationship=None
                                                                           date_created__range=(start, end))
     for activity_performed_dv in activities_performed_qs:
         activity_points = activity_points_cache[activity_performed_dv.int_value]
-        group_scores[activity_performed_dv.participant_group_relationship.group]['total_group_points'] += activity_points
-        if participant_group_relationship and activity_performed_dv.participant_group_relationship == participant_group_relationship:
+        pgr = activity_performed_dv.participant_group_relationship
+        group_scores[pgr.group]['total_points'] += activity_points
+        if participant_group_relationship and pgr == participant_group_relationship:
             total_participant_points += activity_points
     for group in experiment.groups:
         group_data_dict = group_scores[group]
         group_size = group.size
-        total_group_points = group_data_dict['total_group_points']
-        average = total_group_points / group_size
-        group_data_dict['average_group_points'] = average
+        total_points = group_data_dict['total_points']
+        average = total_points / group_size
+        group_data_dict['average_points'] = average
     return group_scores, total_participant_points
 
 
@@ -572,7 +578,7 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
     # cache activity points
     activity_points_cache = get_activity_points_cache()
     # establish date range
-    total_group_points = 0
+    total_points = 0
     total_participant_points = 0
     if start is None:
         start = date.today()
@@ -584,13 +590,13 @@ def get_group_score(group, start=None, end=None, participant_group_relationship=
 
     for activity_performed_dv in activities_performed_qs:
         activity_points = activity_points_cache[activity_performed_dv.int_value]
-        total_group_points += activity_points
+        total_points += activity_points
         if activity_performed_dv.participant_group_relationship == participant_group_relationship:
             total_participant_points += activity_points
     group_size = group.size
-    average = total_group_points / group_size
-    logger.debug("total carbon savings: %s divided by %s members = %s per person", total_group_points, group_size, average)
-    return average, total_group_points, total_participant_points
+    average = total_points / group_size
+    logger.debug("total carbon savings: %s divided by %s members = %s per person", total_points, group_size, average)
+    return average, total_points, total_participant_points
 
 
 def get_points_to_next_level(current_level):
@@ -688,26 +694,35 @@ def abbreviated_timesince(date):
     return s.replace(',', '')
 
 
-def create_group_summary_emails(group, level, promoted=False, completed=False, round_data=None, **kwargs):
+def create_group_summary_emails(group, level, promoted=False, completed=False, round_data=None, group_scores=None, **kwargs):
     logger.debug("creating group summary email for group %s", group)
 # FIXME: need some logic to select an email template based on the treatment type, or push into the template itself
+    yesterday = date.today() - timedelta(1)
+    if round_data is None:
+        round_data = group.current_round_data
+    if group_scores is None:
+        group_scores = GroupScores(group.experiment, round_data, group.experiment.groups, start_date=yesterday)
     plaintext_template = select_template(['lighterprints/email/group-summary-email.txt'])
     html_template = select_template(['lighterprints/email/group-summary-email.html'])
     experiment = group.experiment
     experimenter_email = experiment.experimenter.email
-    yesterday = date.today() - timedelta(1)
     number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group, date_created__gte=yesterday).count()
     messages = []
+    average_points = group_scores.average_points(group)
+    points_to_next_level = get_points_to_next_level(level)
     for pgr in group.participant_group_relationship_set.all():
         c = Context(dict({
             'experiment': experiment,
+            'number_of_groups': group_scores.number_of_groups,
             'group_name': group.name,
+            'group_level': level,
+            'group_rank': group_scores.get_group_rank(group),
             'summary_date': yesterday,
             'completed': completed,
+            'show_rankings': group_scores.show_rankings,
             'promoted': promoted,
-            'group_level': level,
-            'points_to_next_level': get_points_to_next_level(level),
-            'average_group_points': average_points_per_person(group, start=yesterday),
+            'points_to_next_level': points_to_next_level,
+            'average_points': average_points,
             'number_of_chat_messages': number_of_chat_messages,
             'individual_points': get_individual_points(pgr),
             }, **kwargs))
