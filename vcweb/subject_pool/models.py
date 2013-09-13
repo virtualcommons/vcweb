@@ -31,7 +31,7 @@ class Session(models.Model):
     def get_delete_url(self):
         return ('session_delete', [self.slug])
 
-    def
+    
 
 
     # def get_experiment_metadata(self):
