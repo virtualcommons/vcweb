@@ -6,7 +6,6 @@ from django.views.generic.base import TemplateView
 
 from vcweb import settings
 from django.contrib.auth.forms import PasswordResetForm
-from vcweb.core.forms import VcwebPasswordResetForm
 
 from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 # set up dajaxice URLs

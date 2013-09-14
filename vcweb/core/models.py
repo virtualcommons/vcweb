@@ -15,7 +15,7 @@ from django.template import Context
 from django.template.loader import select_template
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
-from model_utils.managers import InheritanceManager, PassThroughManager
+from model_utils.managers import PassThroughManager
 from string import Template
 from social_auth.backends.facebook import FacebookBackend
 import social_auth.signals
@@ -36,11 +36,10 @@ logger = logging.getLogger(__name__)
 Contains all data models used in the core as well as a number of helper functions.
 FIXME: getting a bit monolithically unwieldy.  Consider splitting into models subdirectory
 """
-
 class DefaultValue(object):
-    '''
+    """
     Simple object wrapper that returns the wrapped value on any attribute reference
-    '''
+    """
     def __init__(self, value):
         self.value = value
     def __getattr__(self, name):
@@ -114,11 +113,38 @@ class DataValueMixin(object):
         dv.save()
 
 
+
 class AutoDateTimeField(models.DateTimeField):
     def pre_save(self, model_instance, add):
         return datetime.now()
+
+
+class NullCharField(models.CharField):
+    description = "CharField that stores nulls in the db but returns ''"
+    __metaclass__ = models.SubfieldBase
+
+    def __init__(self, *args, **kwargs):
+        kwargs['null'] = True
+        kwargs['blank'] = True
+        super(NullCharField, self).__init__(*args, **kwargs)
+
+    def to_python(self, value):
+        if isinstance(value, models.CharField):
+            return value
+        elif value is None:
+            return u''
+        else:
+            return super(NullCharField, self).to_python(value)
+
+    def get_prep_value(self, value):
+        if value == '':
+            return None
+        else:
+            return super(NullCharField, self).get_prep_value(value)
+
 from south.modelsinspector import add_introspection_rules
 add_introspection_rules([], ["^vcweb\.core\.models\.AutoDateTimeField"])
+add_introspection_rules([], ["^vcweb\.core\.models\.NullCharField"])
 
 @receiver(signals.minute_tick, sender=None)
 def minute_tick_handler(sender, time=None, **kwargs):
@@ -1852,6 +1878,7 @@ class Participant(CommonsUser):
     major = models.CharField(max_length=64, blank=True)
     class_status = models.CharField(max_length=32, choices=CLASS_CHOICES, blank=True)
     address = models.ForeignKey(Address, null=True, blank=True)
+    institution_username = NullCharField(max_length=64, unique=True, help_text=_('Unique institution-specific username, e.g., ASURITE, IU Network ID'))
 
     class Meta:
         ordering = ['user']
