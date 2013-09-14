@@ -17,9 +17,9 @@ from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, json_response, get_active_experiment, set_authentication_token
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_group_activity,
-        can_view_other_groups, get_lighterprints_experiment_metadata, is_experiment_completed,
+        can_view_other_groups, get_lighterprints_experiment_metadata, is_completed,
         get_activity_performed_parameter, get_points_to_next_level, get_group_score, get_footprint_level,
-        get_foursquare_category_ids, get_time_remaining, GroupScores)
+        get_foursquare_category_ids, get_time_remaining, GroupScores, get_group_threshold)
 
 from collections import defaultdict
 from operator import itemgetter
@@ -272,26 +272,11 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     group_scores = GroupScores(experiment, round_data, participant_group_relationship=participant_group_relationship)
     total_participant_points = group_scores.total_participant_points
 
-    for group, group_data_dict in group_scores.scores_dict.items():
-        average_points = group_data_dict['average_points']
-        total_points = group_data_dict['total_points']
-        group_level = get_footprint_level(group, round_data=round_data)
-        points_to_next_level = get_points_to_next_level(group_level)
-        if group == own_group:
-            # FIXME: hacky
-            own_group_level = group_level
-            own_average_points = average_points
-            own_points_to_next_level = points_to_next_level
-        group_data.append({
-            'groupName': group.name,
-            'groupLevel': group_level,
-            'groupSize': group.size,
-            'averagePoints': average_points,
-            'totalPoints': total_points,
-            'pointsToNextLevel': points_to_next_level
-            })
+    for group in group_scores.groups:
+        group_data.append(group_scores.to_dict(group))
+
+    own_group_level = group_scores.get_group_level(own_group)
     group_data.sort(key=itemgetter('averagePoints'), reverse=True)
-    logger.debug("own group level: %s", own_group_level)
 # FIXME: way too arcane, replace with a data container helper class
     (activity_dict_list, level_activity_list) = get_all_activities_tuple(participant_group_relationship, activities, group_level=own_group_level)
     (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
@@ -303,15 +288,16 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         participant_group_relationship.save()
     return dumps({
         'participantGroupId': participant_group_relationship.pk,
-        'experimentCompleted': is_experiment_completed(own_group, round_data=round_data),
+        'completed': is_completed(own_group, round_data=round_data),
         'compareOtherGroup': compare_other_group,
         'groupData': group_data,
         'hoursLeft': hours_left,
         'minutesLeft': minutes_left,
         'firstVisit': first_visit,
+        # FIXME: extract this from groupData instead..
         'groupLevel': own_group_level,
-        'averagePoints': own_average_points,
-        'pointsToNextLevel': own_points_to_next_level,
+        'averagePoints': group_scores.average_points(own_group),
+        'pointsToNextLevel': group_scores.get_points_goal(own_group),
         'groupActivity': team_activity,
         'groupName': own_group.name,
         'activities': activity_dict_list,

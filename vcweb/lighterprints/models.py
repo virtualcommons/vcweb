@@ -34,9 +34,10 @@ def get_activity_points_cache():
 class GroupScores(object):
 
     def __init__(self, experiment, round_data, groups=None, participant_group_relationship=None, start_date=None, end_date=None):
-        if groups is None:
-            groups = list(experiment.groups)
-        self.number_of_groups = len(groups)
+        self.groups = list(experiment.groups) if groups is None else groups
+        self.has_scheduled_activities = experiment.experiment_configuration.has_daily_rounds
+        self.round_data = round_data
+        self.number_of_groups = len(self.groups)
         # { group : {average_points, total_points} }
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
         self.total_participant_points = 0
@@ -65,6 +66,16 @@ class GroupScores(object):
     def total_points(self, group):
         return self.scores_dict[group]['total_points']
 
+    def get_group_level(self, group):
+        return get_footprint_level(group, self.round_data)
+
+    def get_points_goal(self, group):
+        if self.has_scheduled_activities:
+            return get_group_threshold(self.round_configuration)
+        else:
+            return get_points_to_next_level(self.get_group_level(group))
+
+
     def get_sorted_group_scores(self):
         return sorted(self.scores_dict.items(),
                       key=lambda x: x[1]['average_points'],
@@ -83,6 +94,17 @@ class GroupScores(object):
         if getattr(self, 'group_rankings', None) is None:
             self.group_rankings = [g[0] for g in self.get_sorted_group_scores()]
         return self.group_rankings
+
+    def to_dict(self, group):
+        # FIXME: cache?
+        return {
+                'groupName': group.name,
+                'groupLevel': self.get_group_level(group),
+                'groupSize': group.size,
+                'averagePoints': self.average_points(group),
+                'totalPoints': self.total_points(group),
+                'pointsToNextLevel': self.get_points_goal(group),
+                }
 
 
     def __str__(self):
@@ -336,6 +358,9 @@ def get_experiment_completed_parameter():
 def get_treatment_type_parameter():
     return Parameter.objects.get(name='treatment_type')
 
+def get_group_threshold(round_configuration, default=160):
+    return round_configuration.get_parameter_value(name='threshold', default=default)
+
 def get_footprint_level_dv(group, round_data=None):
     if round_data is None:
         round_data = group.current_round_data
@@ -345,12 +370,9 @@ def get_footprint_level(group, **kwargs):
     return get_footprint_level_dv(group, **kwargs).int_value
 
 def get_experiment_completed_dv(group, round_data=None):
-    if round_data is None:
-        round_data = group.current_round_data
-    return GroupRoundDataValue.objects.get(group=group, round_data=round_data,
-            parameter=get_experiment_completed_parameter())
+    return group.get_data_value(parameter=get_experiment_completed_parameter(), round_data=round_data)
 
-def is_experiment_completed(group, **kwargs):
+def is_completed(group, **kwargs):
     return get_experiment_completed_dv(group, **kwargs).boolean_value
 
 def get_treatment_type(round_configuration=None, **kwargs):
@@ -694,7 +716,7 @@ def abbreviated_timesince(date):
     return s.replace(',', '')
 
 
-def create_group_summary_emails(group, level, promoted=False, completed=False, round_data=None, group_scores=None, **kwargs):
+def create_group_summary_emails(group, level, round_data=None, group_scores=None, **kwargs):
     logger.debug("creating group summary email for group %s", group)
 # FIXME: need some logic to select an email template based on the treatment type, or push into the template itself
     yesterday = date.today() - timedelta(1)
@@ -718,9 +740,9 @@ def create_group_summary_emails(group, level, promoted=False, completed=False, r
             'group_level': level,
             'group_rank': group_scores.get_group_rank(group),
             'summary_date': yesterday,
-            'completed': completed,
+#            'completed': completed,
+#            'promoted': promoted,
             'show_rankings': group_scores.show_rankings,
-            'promoted': promoted,
             'points_to_next_level': points_to_next_level,
             'average_points': average_points,
             'number_of_chat_messages': number_of_chat_messages,

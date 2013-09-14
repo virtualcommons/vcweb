@@ -21,12 +21,14 @@
     <div class='tab-content'>
         <div class='tab-pane active' id='dashboard'>
             <h1 class='header'><i class='icon-dashboard'></i> Group Dashboard</h1>
-            <div style='display:none;' data-bind='visible: experimentCompleted'>
+            <div style='display:none;' data-bind='visible: completed'>
                 <div class='alert alert-block alert-white'>
-                    <i class='text-gold icon-trophy'></i> Congratulations! Your group has completed level 3 and finished the experiment.
+                    <i class='text-gold icon-trophy'></i> 
+                    <span data-bind='ifnot: hasScheduledActivities'>Congratulations! Your group has completed level 3 and finished the experiment.</span>
+                    <span data-bind='if: hasScheduledActivities'>Congratulations! Your group has successfully met your carbon footprint goal for today.</span>
                 </div>
             </div>
-            <div style='display: none;' data-bind='visible: ! experimentCompleted()'>
+            <div style='display: none;' data-bind='visible: ! completed()'>
             <div class='alert alert-block alert-white welcome-message'>
                 <button type="button" class="close" data-dismiss="alert"><i class='icon-remove-sign'></i></button>
                 <h2 class='welcome-header lighterprints-dark-gray'>Welcome to Lighter Footprints, <i class='lighterprints-blue'><span data-bind='text: groupName'></span>!</i></h2>
@@ -65,10 +67,10 @@
                 <div class='span2 left-divider'>
                     <h5 id='current-level' ><span class='lighterprints-scoreboard-uppercase'>Current Level</span></h5>
                     <div class='dashboard-content'>
-                        <div data-bind='if: experimentCompleted'>
+                        <div data-bind='if: completed'>
                             <img alt='Experiment Completed' class='group-level' width='120' height='70' src='{% static "images/lighterprints/experiment-completed.png"%}'>
                         </div>
-                        <div data-bind='ifnot: experimentCompleted'>
+                        <div data-bind='ifnot: completed'>
                             <img alt='Group Level' class='group-level' width="104" height="65" data-bind="attr: { src: '{% static "images/lighterprints/rank"%}' + groupLevel() + '.png' }">
                         </div>
                     </div>
