@@ -8,28 +8,43 @@ from django.views.generic.list import ListView, TemplateResponseMixin
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic.detail import DetailView
 from django.core.urlresolvers import reverse
+from vcweb.core import dumps
+from vcweb.core.http import JsonResponse
 
 import logging
 
 logger = logging.getLogger(__name__)
-# @experimenter_required
-# def index(request):
-#     return render_to_response('subject-pool/experimenter-index.html', locals(), context_instance=RequestContext(request))
-
-def index(request):
-    return HttpResponse("Hello world!")
 
 @experimenter_required
 def sessionListView(request):
     user = request.user
-    data = ExperimentSession.objects.filter(creator = user)
-    logger.debug(data)
-    metadata = ExperimentMetadata.objects.all()
-    session = {
-      1: ["bound","20/8/2013","20/9/2013", "30/9/2013", "50" ],
-      2: ["broker","19/8/2013","21/9/2013", "26/9/2013", "30" ],
-      3: ["forestry","25/8/2013","25/9/2013", "30/9/2013", "50" ],
-      4: ["lighterprints","20/8/2013","20/9/2013", "30/9/2013", "50" ]
+    data = ExperimentSession.objects.filter(creator=user)
+    experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.all()]
+    session_list = [{"pk": session.pk, "experiment": session.experiment_metadata, "startDate": session.scheduled_date, "endDate": session.scheduled_end_date} for session in data]
+    session_data = {"sessions": session_list, "experiments": experiment_metadata_list}
+    logger.debug(session_data)
+    return render(request,"subject-pool/experimenter-index.html",{"view_model_json": dumps(session_data)})
 
-    }
-    return render(request,"subject-pool/experimenter-index.html",{"sessions": session, "experiment_metadata" : metadata})
+
+def update_session(request):
+    user = request.user
+    session = request.POST
+    logger.debug(session)
+    if session["pk"] == -1:
+        es = ExperimentSession()
+    else:
+        es = ExperimentSession.objects.get(pk=session.pk)
+
+    es.scheduled_date = session.startDate
+    es.scheduled_end_date = session.endDate
+    es.capacity = session.capacity
+    es.creator = user
+    es.date_created = datetime.datetime().now()
+    es.experiment_metadata = ExperimentMetadata.objects.get(title=session.experiment.title)
+
+    es.save()
+
+    return JsonResponse(dumps({
+            'success': True,
+            'session': es
+        }))

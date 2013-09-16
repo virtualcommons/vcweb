@@ -9,8 +9,8 @@ from vcweb.subject_pool import views
 # )
 
 urlpatterns = patterns('vcweb.subject_pool.views',
-    url(r'^$', views.index, name='index'),
     url(r'^session$', 'sessionListView', name='session'),
+    url(r'^session/update$', 'update_session', name='update_session'),
 )
 
 # urlpatterns = patterns('vcweb.subject_pool.views',

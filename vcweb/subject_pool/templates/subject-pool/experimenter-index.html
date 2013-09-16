@@ -21,24 +21,28 @@
     <tbody data-bind='foreach: sessions'>
         <tr>
             <td>
-                <select data-bind='options: sampleProductCategories, optionsText: "name", optionsCaption: "Select...", value: category'> </select>
-            </td>
-            <td data-bind="with: category">
-                <input type="text" id="date-start">
-            </td>
-            <td data-bind="with: category">
-                <input type="text" id="date-end">
-            </td>
-            <td class='quantity'>
-                <input type="text">
+                <select data-bind="options: $root.availableExperiment, value: experiment, optionsText:'title' "> </select>
             </td>
             <td>
-                <a href='#' data-bind='click: $parent.removeLine'>Remove</a>
+                <input type="text" class="date-start" data-bind="datepicker : startDate" />
+            </td>
+            <td >
+                <input type="text" class="date-end" data-bind="datepicker : endDate" />
+            </td>
+            <td class='quantity'>
+                <input type="text" data-bind ="value : capacity" />
+            </td>
+            <td>
+                <button data-bind="click: $root.saveSession">Save</button>
+            </td>
+            <td>
+                <a href='#' data-bind="click: $root.removeSession">Remove</a>
             </td>
         </tr>
     </tbody>
 </table>
-<button data-bind='click: addLine'>Add Session</button>
+
+<button data-bind='click: addSession'>Add Session</button>
 
 {% endblock content %}
 
@@ -46,48 +50,73 @@
 {{ block.super }}
 <script src='{{STATIC_URL}}js/bootstrap-datepicker.min.js'></script>
 <link rel="stylesheet" href='{{ STATIC_URL }}css/datepicker.css'>
-<script type= "text/javascript">
-    var sessionList = $.parseJSON("{{ sessions|escapejs }}");
-    var t = $.parseJSON("{{ experiment_metadata |escapejs }}");
-    console.log(t);
+
+    <script type= "text/javascript">
+    var sessionList = $.parseJSON("{{ view_model_json |escapejs }}");
+
+    console.log(sessionList.experiments);
+
     $(function(){
-        function sessionViewModel(sessionList){
+        function Session(sessionData) {
+            this.pk = sessionData.pk;
+            this.experiment = ko.observable(sessionData.experiment);
+            this.startDate = ko.observable(sessionData.startDate);
+            this.endDate = ko.observable(sessionData.endDate);
+            this.capacity = ko.observable(sessionData.capacity);
+        }
+
+        function sessionListViewModel(sessionList) {
             var self = this;
-            var model = ko.mapping.fromJS(sessionList);
-            return model;
+            self.sessions = ko.observableArray(sessionList.sessions);
+
+            self.newSession = ko.observable();
+
+            self.availableExperiment = sessionList.experiments;
+
+            self.addSession = function() {
+                self.sessions.push(new Session({ pk: -1, experiment: sessionList.experiments[2], startDate: new Date() , endDate: new Date(), capacity:0}));
+            };
+
+            self.removeSession = function(session) {
+                self.sessions.remove(session);
+            }
+
+            self.saveSession = function(session) {
+              console.log(ko.toJSON(session));
+                $.ajax("/subject-pool/session/update", {
+                    data:{ session: session },
+                    type: "post",
+                    success: function(result) { alert(result) }
+                });
+            };
         }
-    var model = new sessionViewModel(sessionList);
-        //ko.applyBindings(model);
 
+        ko.bindingHandlers.datepicker = {
+            init: function(element, valueAccessor, allBindingsAccessor) {
+              //initialize datepicker with some optional options
+              var options = allBindingsAccessor().datepickerOptions || {};
+              $(element).datepicker(options);
 
+              //when a user changes the date, update the view model
+              ko.utils.registerEventHandler(element, "changeDate", function(event) {
+                     var value = valueAccessor();
+                     if (ko.isObservable(value)) {
+                         value(event.date);
+                     }
+              });
+            },
+            update: function(element, valueAccessor)   {
+                var widget = $(element).data("datepicker");
 
-    });
+                 //when the view model is updated, update the widget
+                if (widget) {
+                    widget.date = ko.utils.unwrapObservable(valueAccessor());
+                    widget.setValue();
+                }
+            }
+        };
 
-var startDate = new Date(2012,1,20);
-var endDate = new Date(2012,1,25);
-$('#date-start')
-    .datepicker()
-    .on('changeDate', function(ev){
-        if (ev.date.valueOf() > endDate.valueOf()){
-            $('#alert').show().find('strong').text('The start date must be before the end date.');
-        } else {
-            $('#alert').hide();
-            startDate = new Date(ev.date);
-            $('#date-start-display').text($('#date-start').data('date'));
-        }
-        $('#date-start').datepicker('hide');
-    });
-$('#date-end')
-    .datepicker()
-    .on('changeDate', function(ev){
-        if (ev.date.valueOf() < startDate.valueOf()){
-            $('#alert').show().find('strong').text('The end date must be after the start date.');
-        } else {
-            $('#alert').hide();
-            endDate = new Date(ev.date);
-            $('#date-end-display').text($('#date-end').data('date'));
-        }
-        $('#date-end').datepicker('hide');
+        ko.applyBindings(new sessionListViewModel(sessionList));
     });
 </script>
 {% endblock %}
