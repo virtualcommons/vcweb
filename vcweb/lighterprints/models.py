@@ -53,7 +53,7 @@ class GroupScores(object):
             self.scores_dict[activity_performed_dv.participant_group_relationship.group]['total_points'] += activity_points
             if participant_group_relationship and activity_performed_dv.participant_group_relationship == participant_group_relationship:
                 self.total_participant_points += activity_points
-        for group in groups:
+        for group in self.groups:
             group_data_dict = self.scores_dict[group]
             group_size = group.size
             total_points = group_data_dict['total_points']
@@ -366,8 +366,8 @@ def get_footprint_level_dv(group, round_data=None):
         round_data = group.current_round_data
     return GroupRoundDataValue.objects.get(group=group, round_data=round_data, parameter=get_footprint_level_parameter())
 
-def get_footprint_level(group, **kwargs):
-    return get_footprint_level_dv(group, **kwargs).int_value
+def get_footprint_level(group, round_data=None, **kwargs):
+    return get_footprint_level_dv(group, round_data=round_data, **kwargs).int_value
 
 def get_experiment_completed_dv(group, round_data=None):
     return group.get_data_value(parameter=get_experiment_completed_parameter(), round_data=round_data)
@@ -481,7 +481,7 @@ def get_available_activities(participant_group_relationship=None, ignore_time=Fa
         logger.debug("requesting available activities for pgr %s (%d)", participant_group_relationship, participant_group_relationship.pk)
         # FIXME: push this logic into the manager / queryset?
         experiment = participant_group_relationship.group.experiment
-        group_level = get_footprint_level(participant_group_relationship.group, round_data=experiment.current_round_data)
+        group_level = get_footprint_level(participant_group_relationship.group, experiment.current_round_data)
         if ignore_time:
             # don't worry about the time, just return all activities at this participant's group level
             return Activity.objects.at_level(group_level)

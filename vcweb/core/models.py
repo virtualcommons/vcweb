@@ -160,12 +160,12 @@ class ExperimentMetadataManager(models.Manager):
 class ExperimentMetadata(models.Model):
     """
     An ExperimentMetadata record represents the *type* of a given implemented Experiment, e.g., **forestry**, **lighter
-    footprints**, **boundary effects**, or **irrigation**.  This shouldn't be confused with a specific instance of a
-    **forestry** or ** lighter footprints ** experiment, which represents a concrete experiment run, with a specific
-    configuration, experimenter, etc.  Each experiment metadata app should define and add a single ExperimentMetadata
-    record for the experiment type that it represents.  You can register an ExperimentMetadata object by creating a
-    JSON/YAML/SQL representation of it in your app/fixtures directory (e.g., irrigation/fixtures/irrigation.json) and
-    then invoking ``python manage.py loaddata irrigation``.
+    footprints**, **boundary effects**, or **irrigation**.  This is distinct from a specific instance of a **forestry**
+    or ** lighter footprints ** experiment, which represents a concrete experiment run, with a specific configuration,
+    experimenter, etc.  Each experiment metadata app should define and add a single ExperimentMetadata record for the
+    experiment type that it represents.  You can register an ExperimentMetadata object by creating a JSON/YAML/SQL
+    representation of it in your app/fixtures directory (e.g., irrigation/fixtures/irrigation.json) and then invoking
+    ``python manage.py loaddata irrigation``.
     """
     title = models.CharField(max_length=255)
     # the URL fragment that this experiment_metadata will occupy,
