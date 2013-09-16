@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
+
+{% block content %}
+    <div class='info'>
+    Welcome back, {{ request.user.first_name}}.
+</div>
+<h3>Manage your sessions</h3>
+
+<table width='100%'>
+    <thead>
+        <tr>
+            <th width='25%'>Experiment</th>
+            <th width='25%'>Start Date</th>
+            <th width='25%'>End Date</th>
+            <th class='quantity' width='10%'>Capacity</th>
+            <th width='10%'> </th>
+        </tr>
+    </thead>
+    <tbody data-bind='foreach: sessions'>
+        <tr>
+            <td>
+                <select data-bind='options: sampleProductCategories, optionsText: "name", optionsCaption: "Select...", value: category'> </select>
+            </td>
+            <td data-bind="with: category">
+                <input type="text" id="date-start">
+            </td>
+            <td data-bind="with: category">
+                <input type="text" id="date-end">
+            </td>
+            <td class='quantity'>
+                <input type="text">
+            </td>
+            <td>
+                <a href='#' data-bind='click: $parent.removeLine'>Remove</a>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<button data-bind='click: addLine'>Add Session</button>
+
+{% endblock content %}
+
+{% block javascript %}
+{{ block.super }}
+<script src='{{STATIC_URL}}js/bootstrap-datepicker.min.js'></script>
+<link rel="stylesheet" href='{{ STATIC_URL }}css/datepicker.css'>
+<script type= "text/javascript">
+    var sessionList = $.parseJSON("{{ sessions|escapejs }}");
+    var t = $.parseJSON("{{ experiment_metadata |escapejs }}");
+    console.log(t);
+    $(function(){
+        function sessionViewModel(sessionList){
+            var self = this;
+            var model = ko.mapping.fromJS(sessionList);
+            return model;
+        }
+    var model = new sessionViewModel(sessionList);
+        //ko.applyBindings(model);
+
+
+
+    });
+
+var startDate = new Date(2012,1,20);
+var endDate = new Date(2012,1,25);
+$('#date-start')
+    .datepicker()
+    .on('changeDate', function(ev){
+        if (ev.date.valueOf() > endDate.valueOf()){
+            $('#alert').show().find('strong').text('The start date must be before the end date.');
+        } else {
+            $('#alert').hide();
+            startDate = new Date(ev.date);
+            $('#date-start-display').text($('#date-start').data('date'));
+        }
+        $('#date-start').datepicker('hide');
+    });
+$('#date-end')
+    .datepicker()
+    .on('changeDate', function(ev){
+        if (ev.date.valueOf() < startDate.valueOf()){
+            $('#alert').show().find('strong').text('The end date must be after the start date.');
+        } else {
+            $('#alert').hide();
+            endDate = new Date(ev.date);
+            $('#date-end-display').text($('#date-end').data('date'));
+        }
+        $('#date-end').datepicker('hide');
+    });
+</script>
+{% endblock %}
