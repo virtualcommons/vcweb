@@ -30,6 +30,39 @@ def get_activity_points_cache():
         cache.set(cv, activity_points_cache, 86400)
     return activity_points_cache
 
+class ActivityListModel(object):
+    def __init__(self, participant_group_relationship, activities=None, round_configuration=None, group_level=1):
+        if activities is None:
+            activities = Activity.objects.all()
+        self.round_configuration = participant_group_relationship.group.current_round if round_configuration is None else round_configuration
+        activity_dict_list = []
+        level_activity_list = defaultdict(list)
+        #available_activities = get_available_activities(participant_group_relationship)
+        #available_activity_ids = [activity.pk for activity in available_activities]
+        self.has_scheduled_activities = self.round_configuration.experiment_configuration.has_daily_rounds
+        if self.has_scheduled_activities:
+            // FIXME: implement me
+            pass
+        else:
+            activity_statuses = get_activity_status_dict(participant_group_relationship, activities, group_level)
+            activity_availability_cache = get_activity_availability_cache()
+            for activity in activities:
+                activity_dict = activity.to_dict()
+                level = activity.level
+                try:
+                    activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
+                    activity_dict['locked'] = (group_level < level)
+                    activity_status = activity_statuses[activity.pk]
+                    activity_dict['availableNow'] = "perform-challenge" in activity_status
+                    activity_dict['completed'] = 'completed-challenge' in activity_status
+                    activity_dict['expired'] = 'expired-challenge' in activity_status
+                    activity_dict['upcoming'] = 'upcoming-challenge' in activity_status
+                    activity_dict['status'] = activity_status
+                except Exception as e:
+                    logger.debug("failed to get authenticated activity list: %s", e)
+                activity_dict_list.append(activity_dict)
+                level_activity_list[level-1].append(activity_dict)
+            activity_dict_list.sort(key=_activity_status_sort_key)
 
 class GroupScores(object):
 
@@ -44,7 +77,8 @@ class GroupScores(object):
         # establish date range
         self.start_date = date.today() if start_date is None else start_date
         self.end_date = self.start_date + timedelta(1) if end_date is None else end_date
-        self.show_rankings = can_view_other_groups(round_data.round_configuration)
+        self.round_configuration = round_data.round_configuration
+        self.show_rankings = can_view_other_groups(self.round_configuration)
 
         activity_points_cache = get_activity_points_cache()
         activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=round_data, parameter=get_activity_performed_parameter(), date_created__range=(self.start_date, self.end_date))
@@ -62,7 +96,7 @@ class GroupScores(object):
 
     def average_points(self, group):
         return self.scores_dict[group]['average_points']
-    
+
     def total_points(self, group):
         return self.scores_dict[group]['total_points']
 
@@ -359,7 +393,7 @@ def get_treatment_type_parameter():
     return Parameter.objects.get(name='treatment_type')
 
 def get_group_threshold(round_configuration, default=160):
-    return round_configuration.get_parameter_value(name='threshold', default=default)
+    return round_configuration.get_parameter_value(name='threshold', default=default).int_value
 
 def get_footprint_level_dv(group, round_data=None):
     if round_data is None:
@@ -441,6 +475,9 @@ def get_activity_availability_cache():
             aac[aa.activity.pk].append(aa)
         cache.set('activity_availability_cache', aac)
     return aac
+
+def get_view_model_activities(participant_group_relationship, activities=None, group_level=1):
+    pass
 
 # returns a tuple of a (list of activity objects converted to dicts and an activity_by_level list of lists (level -> list of activity
 # objects converted to dicts).

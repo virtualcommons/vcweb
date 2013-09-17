@@ -112,8 +112,11 @@ ko.bindingHandlers.popover = {
         $(element).click(function() {
             $(this).popover('toggle');
             var thePopover = document.getElementById(attribute.id+"-popover");
+            // FIXME: only apply bindings if we haven't done so once on this popover, otherwise clicking repeatedly on
+            // the popover causes KO errors to be thrown
             childBindingContext = bindingContext.createChildContext(viewModel);
             ko.applyBindingsToDescendants(childBindingContext, thePopover);
         });
+        return { controlsDescendantBindings: true };
     },
 };

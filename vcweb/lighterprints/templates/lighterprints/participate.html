@@ -39,16 +39,19 @@
                 </p>
                 <p>
                     <i class='lighterprints-green icon-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by
-                    completing challenges.  Rank up by <b>increasing your group's average score, shown in the
-                        Today's Progress Chart.</b>
+                    completing challenges.
+                    <span data-bind='if: hasScheduledActivities'>Your group will be eligible for prizes each day that
+                        your <b>group's average score shown in the Today's Progress Chart reaches <span data-bind='text: pointsToNextLevel'></span>.</b></span>
+                    <span data-bind='ifnot: hasScheduledActivities'>Rank up by <b>increasing your group's average score, shown in the
+                            Today's Progress Chart.</b></span>
                 </p>
                 <p>
                     <i class='icon-star text-gold'></i> Some challenges are unlocked all day, and others are only
-                    unlocked at specific times.  Discover new challenges by ranking up!
+                    unlocked at specific times. <span data-bind='ifnot: hasScheduledActivities'>Discover new challenges by ranking up!</span>
                 </p>
                 <p>
-                    <strong>Your point totals reset at midnight each night.</strong>  If your group's average score
-                    isn't high enough to rank up, you must start over.
+                    <strong>Your point totals reset at midnight each night.</strong> <span data-bind='ifnot:
+                        hasScheduledActivities'>If your group's average score isn't high enough to rank up, you must start over.</span>
                 </p>
             </div>
             </div>
@@ -319,19 +322,9 @@
 <script src="//fast.fonts.com/jsapi/e86344be-530a-495b-be28-7a22a9cda219.js"></script>
 <script src='{% static "js/lighterprints/model.js" %}'></script>
 <script src='{% static "js/Chart.min.js" %}'></script>
-<script src='{% static "js/bootstrap-tour.js" %}'></script>
+{% include "includes/bootstrap-tour.html" %}
 <script>
 $(function() {
-    // XXX: set up bootstrap nav-tabs to be semi-refresh friendly, remove in production
-    /*
-    var url = document.location.toString();
-    if (url.match('#')) {
-        $('.nav-tabs a[href=#'+url.split('#')[1]+']').tab('show');
-    }
-    $('.nav-tabs a').on('shown', function(evt) {
-        window.location.hash = evt.target.hash;
-    });
-    */
     // set up KO binding, using one master view model
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
@@ -394,7 +387,7 @@ $(function() {
         var progressChart = new Chart(todaysProgressContext).Doughnut(viewModel.todaysProgressChartData());
     };
     viewModel.todaysProgressChartData = ko.computed(function() {
-        var avgPoints = viewModel.averagePoints();
+        var avgPoints = Math.max(1, viewModel.averagePoints());
         var pointsToNextLevel = viewModel.pointsToNextLevel();
         var data = [ { value: avgPoints, color: "#95CB29" } ]
         var pointsNeeded = Math.max(0, pointsToNextLevel - avgPoints);

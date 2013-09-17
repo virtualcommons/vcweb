@@ -2,7 +2,6 @@
 {% load static %}
 {% block head %}
 {{ block.super }}
-<link rel='stylesheet' href='{% static "css/bootstrap-tour.min.css" %}'>
 <link rel='stylesheet' href='{% static "css/bound/style.css" %}'>
 {% endblock %}
 {% block page %}
@@ -561,7 +560,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
         </select>
     </div>
 </script>
-<script src='{% static "js/bootstrap-tour.js" %}'></script>
+{% include "includes/bootstrap-tour.html" %}
 <script type="text/javascript">
 // set up youtube player for video intro tutorial
 var youtubePlayer;

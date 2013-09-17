@@ -19,9 +19,8 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_group_activity,
         can_view_other_groups, get_lighterprints_experiment_metadata, is_completed,
         get_activity_performed_parameter, get_points_to_next_level, get_group_score, get_footprint_level,
-        get_foursquare_category_ids, get_time_remaining, GroupScores, get_group_threshold)
+        get_foursquare_category_ids, get_time_remaining, GroupScores)
 
-from collections import defaultdict
 from operator import itemgetter
 import itertools
 import logging
@@ -298,6 +297,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         'groupLevel': own_group_level,
         'averagePoints': group_scores.average_points(own_group),
         'pointsToNextLevel': group_scores.get_points_goal(own_group),
+        'hasScheduledActivities': group_scores.has_scheduled_activities,
         'groupActivity': team_activity,
         'groupName': own_group.name,
         'activities': activity_dict_list,
