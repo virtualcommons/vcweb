@@ -14,6 +14,7 @@ from vcweb.core.services import fetch_foursquare_categories
 from collections import defaultdict
 from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
+from operator import itemgetter
 import re
 
 import logging
@@ -30,39 +31,55 @@ def get_activity_points_cache():
         cache.set(cv, activity_points_cache, 86400)
     return activity_points_cache
 
-class ActivityListModel(object):
+
+class ActivityStatusList(object):
+
     def __init__(self, participant_group_relationship, activities=None, round_configuration=None, group_level=1):
         if activities is None:
-            activities = Activity.objects.all()
+            activities = list(Activity.objects.all())
         self.round_configuration = participant_group_relationship.group.current_round if round_configuration is None else round_configuration
-        activity_dict_list = []
-        level_activity_list = defaultdict(list)
-        #available_activities = get_available_activities(participant_group_relationship)
-        #available_activity_ids = [activity.pk for activity in available_activities]
         self.has_scheduled_activities = self.round_configuration.experiment_configuration.has_daily_rounds
-        if self.has_scheduled_activities:
-            // FIXME: implement me
-            pass
-        else:
-            activity_statuses = get_activity_status_dict(participant_group_relationship, activities, group_level)
-            activity_availability_cache = get_activity_availability_cache()
-            for activity in activities:
-                activity_dict = activity.to_dict()
-                level = activity.level
-                try:
-                    activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
-                    activity_dict['locked'] = (group_level < level)
-                    activity_status = activity_statuses[activity.pk]
-                    activity_dict['availableNow'] = "perform-challenge" in activity_status
-                    activity_dict['completed'] = 'completed-challenge' in activity_status
-                    activity_dict['expired'] = 'expired-challenge' in activity_status
-                    activity_dict['upcoming'] = 'upcoming-challenge' in activity_status
-                    activity_dict['status'] = activity_status
-                except Exception as e:
-                    logger.debug("failed to get authenticated activity list: %s", e)
-                activity_dict_list.append(activity_dict)
-                level_activity_list[level-1].append(activity_dict)
-            activity_dict_list.sort(key=_activity_status_sort_key)
+        activity_availability_cache = get_activity_availability_cache()
+# find all unlocked activities for the given participant
+        self.all_unlocked_activities = Activity.objects.unlocked(self.round_configuration, scheduled=self.has_scheduled_activities, level=group_level)
+        all_unlocked_activity_ids = self.all_unlocked_activities.values_list('pk', flat=True)
+# FIXME: create activity status models for all activities, categorizing them as available, completed, expired, upcoming, or locked
+        self.today = datetime.combine(date.today(), time())
+        self.current_time = datetime.now().time()
+        # first grab all the activities that have already been completed today
+        completed_activity_dvs = participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(),
+                int_value__in=all_unlocked_activity_ids,
+                date_created__gte=self.today)
+        self.completed_activity_ids = completed_activity_dvs.values_list('int_value', flat=True)
+        # next, find all the activity availabilities for the unlocked activities and partition them into currently
+        # available, upcoming, or expired
+        activity_availabilities = ActivityAvailability.objects.select_related('activity').filter(activity__pk__in=all_unlocked_activity_ids)
+        self.currently_available_activity_ids = activity_availabilities.filter(start_time__lte=self.current_time, end_time__gte=self.current_time).values_list('activity', flat=True)
+        self.upcoming_activity_ids = activity_availabilities.filter(start_time__gte=self.current_time).values_list('activity', flat=True)
+#        expired_activity_ids = filter(lambda pk: pk not in currently_available_activity_ids + upcoming_activity_ids, all_unlocked_activity_ids)
+        self.activity_dict_list = []
+        for activity in activities:
+            activity_dict = activity.to_dict()
+            activity_status = 'locked'
+            if activity in self.all_unlocked_activities:
+                # check for 1. has activity already been completed 2. activity time slot eligibility
+                if activity.pk in self.completed_activity_ids:
+                    activity_status = 'completed'
+                elif activity.pk in self.currently_available_activity_ids:
+                    activity_status = 'available'
+                elif activity.pk in self.upcoming_activity_ids:
+                    activity_status = 'upcoming'
+                else:
+                    activity_status = 'expired'
+            activity_dict['status'] = activity_status
+            activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
+            self.activity_dict_list.append(activity_dict)
+
+    def expired_activities(self):
+        return filter(lambda d: d['status'] == 'expired', self.activity_dict_list)
+
+    def upcoming_activities(self):
+        return filter(lambda d: d['status'] == 'upcoming', self.activity_dict_list)
 
 class GroupScores(object):
 
@@ -233,6 +250,25 @@ class ActivityQuerySet(models.query.QuerySet):
     groups advance in level and each level comprises a set of activities.  Tiered activities are used in the open
     lighterprints experiment, where mastering one activity can lead to another set of activities
     """
+    def unlocked(self, round_configuration=None, level=1, scheduled=False):
+        """
+        returns a QuerySet with all unlocked Activities without checking for whether or not they are available, have
+        already been performed, etc.
+        """
+        if scheduled:
+            return self.scheduled(round_configuration)
+        else:
+            return self.filter(level__lte=level)
+
+    def scheduled(self, round_configuration=None):
+        if round_configuration is None:
+            logger.warn("No round configuration specified, cannot report scheduled activities.")
+            return []
+        available_activity_ids = RoundParameterValue.objects.filter(round_configuration=round_configuration,
+                parameter=get_available_activity_parameter()).values_list('int_value', flat=True)
+        return self.filter(pk__in=available_activity_ids)
+
+
     def at_level(self, level=1, include_lower_levels=True, **kwargs):
         if include_lower_levels:
             return self.filter(level__lte=level)
@@ -248,9 +284,19 @@ class ActivityQuerySet(models.query.QuerySet):
 
 
 class ActivityManager(TreeManager, PassThroughManager):
-    def upcoming(self, level=1):
+    def scheduled(self, round_configuration, **kwargs):
+        available_activity_ids = RoundParameterValue.objects.filter(round_configuration=round_configuration,
+                parameter=get_available_activity_parameter()).values_list('int_value', flat=True)
+        return Activity.objects.filter(pk__in=available_activity_ids)
+        #return ActivityAvailability.objects.select_related('activity').filter(activity__id__in=(available_activity_ids), **kwargs).values_list('activity', flat=True)
+
+    def upcoming(self, level=1, scheduled=False, round_configuration=None):
         current_time = datetime.now().time()
-        return self._filter_by_availability(level, start_time__gte=current_time)
+        if scheduled:
+# find all activities scheduled for today
+            return self.scheduled(round_configuration, start_time__gte=current_time)
+        else:
+            return self._filter_by_availability(level, start_time__gte=current_time)
 
     def _filter_by_availability(self, level=1, **kwargs):
         return ActivityAvailability.objects.select_related('activity').filter(models.Q(activity__level__lte=level, **kwargs)).values_list('activity', flat=True)
@@ -365,6 +411,10 @@ class ActivityAvailability(models.Model):
 '''
 API / model utility methods
 '''
+@simplecache
+def get_available_activity_parameter():
+    return Parameter.objects.for_round(name='available_activity')
+
 @simplecache
 def get_foursquare_category_ids(parent_category_name='Travel', subcategory_names=['Light Rail', 'Bike', 'Bus Station', 'Train Station']):
     categories = fetch_foursquare_categories()
