@@ -190,6 +190,7 @@ class ExperimentMetadata(models.Model):
 
     def to_dict(self, include_configurations=False, **kwargs):
         data = {
+                'pk': self.pk,
                 'title': self.title,
                 'namespace': self.namespace,
                 'date_created': self.date_created,
