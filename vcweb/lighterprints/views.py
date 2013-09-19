@@ -2,131 +2,28 @@ from datetime import datetime, timedelta
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.http import Http404
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import BaseDetailView
-from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 
-from vcweb.core import unicodecsv
 from vcweb.core.decorators import participant_required
 from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.services import foursquare_venue_search
-from vcweb.core.views import JSONResponseMixin, DataExportMixin, dumps, json_response, get_active_experiment, set_authentication_token
+from vcweb.core.views import dumps, json_response, get_active_experiment, set_authentication_token
 from vcweb.lighterprints.forms import ActivityForm
-from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_group_activity,
-        can_view_other_groups, get_lighterprints_experiment_metadata, is_completed,
-        get_activity_performed_parameter, get_points_to_next_level, get_group_score, get_footprint_level,
-        get_foursquare_category_ids, get_time_remaining, GroupScores, ActivityStatusList)
+from vcweb.lighterprints.models import (
+        Activity, GroupScores, ActivityStatusList, do_activity, get_group_activity, can_view_other_groups,
+        get_lighterprints_experiment_metadata, is_completed, get_activity_performed_parameter, get_points_to_next_level,
+        get_group_score, get_footprint_level, get_foursquare_category_ids, get_time_remaining
+        )
 
 from operator import itemgetter
 import itertools
 import logging
 #import tempfile
 logger = logging.getLogger(__name__)
-
-# FIXME: these are now mostly defunct, remove when not needed
-class ActivityListView(JSONResponseMixin, MultipleObjectTemplateResponseMixin, BaseListView):
-    model = Activity
-    def get_context_data(self, **kwargs):
-        context = super(ActivityListView, self).get_context_data(**kwargs)
-        user = self.request.user
-        if user.is_authenticated():
-            # authenticated request, figure out if this activity is available
-            participant_group_id = self.request.GET.get('participant_group_id')
-            if not participant_group_id:
-                raise Http404
-            participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'), pk=participant_group_id)
-            # XXX: we can only return a context dictionary or raise an exception
-            # at this location
-            if participant_group_relationship.participant != user.participant:
-                logger.warning("authenticated user %s tried to retrieve activity listing for %s", user, participant_group_relationship)
-                context['success'] = False
-                context['flattened_activities'] = []
-                return context
-            all_activities = context['activity_list']
-            (flattened_activities, level_activity_list) = get_all_activities_tuple(participant_group_relationship, all_activities)
-            context['activity_by_level'] = level_activity_list
-            context['flattened_activities'] = flattened_activities
-            return context
-        raise PermissionDenied("You must be authenticated to view all activities.")
-
-    def render_to_response(self, context, **response_kwargs):
-        output_format = self.kwargs['format']
-        if output_format and output_format.endswith('json'):
-            return JSONResponseMixin.render_to_response(self, context, context_key='flattened_activities')
-        else:
-            return MultipleObjectTemplateResponseMixin.render_to_response(self, context)
-
-# FIXME: use persistent_messages instead where the user has to explicitly clear /
-# dismiss the messages.  additional fields would be target_id
-def get_notification_json(participant_group_relationship):
-# FIXME: push into ParticipantGroupRelationship
-    notification_date = participant_group_relationship.notifications_since
-    if notification_date is None:
-        notification_date = participant_group_relationship.date_created
-    logger.debug("Finding notifications for participant %s since %s", participant_group_relationship, notification_date)
-    json_array = []
-# selects only comments and likes whose targeted action belongs to the participant_group_relationship in
-# question and that have been posted since the last user's login
-    user_actions = itertools.chain(*[cls.objects.filter(target_data_value__participant_group_relationship=participant_group_relationship,
-        last_modified__gte=notification_date).exclude(participant_group_relationship=participant_group_relationship) for cls in (Comment, Like)])
-    # bah, need to use django-model-utils InheritanceManager to properly downcast and get access to the appropriate
-    # subtype to_dict() method
-    for user_action in user_actions:
-        user_action_dict = user_action.to_dict()
-        target_data_value = user_action.target_data_value
-        target_value = target_data_value.value
-        if target_data_value.parameter == get_activity_performed_parameter():
-            target_value = target_data_value.value.display_name
-        user_action_dict['target_pk'] = target_data_value.pk
-        user_action_dict['target_value'] = target_value
-        user_action_dict['target_type'] = target_data_value.parameter.name
-        user_action_dict['summary_type'] = user_action.parameter.name
-        json_array.append(user_action_dict)
-    logger.debug("returning notifications %s for participant %s", json_array, participant_group_relationship)
-    return dumps({'success': True, 'notifications': json_array})
-
-@login_required
-def get_notifications(request, participant_group_id):
-    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
-    if request.user.participant == participant_group_relationship.participant:
-        notifications = get_notification_json(participant_group_relationship)
-        return json_response(request, notifications)
-    else:
-        logger.warning("authenticated user %s tried to retrieve notifications for %s", request.user,
-                participant_group_relationship)
-        return JsonResponse(dumps({'success':False, 'message': 'Invalid authz request'}))
-
-@login_required
-def group_score(request, participant_group_id):
-    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group'), pk=participant_group_id)
-    if request.user.participant == participant_group_relationship.participant:
-        group = participant_group_relationship.group
-        (average_points, total_points, total_participant_points) = get_group_score(group, participant_group_relationship=participant_group_relationship)
-        level = get_footprint_level(group)
-        groups = []
-        groups.append({
-            'level': level,
-            'average_points_per_person': average_points,
-            'total_points': total_points,
-            'total_participant_points': total_participant_points,
-            'points_to_next_level': get_points_to_next_level(level)
-            })
-        return JsonResponse(dumps({'success':True, 'scores': groups }))
-    return JsonResponse(dumps({'success':False, 'message': 'Invalid request'}))
-
-@login_required
-def group_activity(request, participant_group_id):
-    participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group__experiment'), pk=participant_group_id)
-    if request.user.participant == participant_group_relationship.participant:
-        content = get_view_model_json(participant_group_relationship)
-        return json_response(request, content)
-    else:
-        logger.warning("authenticated user %s tried to retrieve group activity for %s", request.user, participant_group_relationship)
-        return JsonResponse(dumps({'success': False, 'message': 'Invalid authz request'}))
 
 @csrf_exempt
 @participant_required
@@ -223,38 +120,6 @@ def post_comment(request):
         logger.debug("invalid form: %s from request: %s", form, request)
         return JsonResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
 
-class CsvExportView(DataExportMixin, BaseDetailView):
-    def export_data(self, response, experiment):
-        logger.debug("exporting data for %s", experiment)
-        writer = unicodecsv.UnicodeWriter(response)
-        experiment_start_time = experiment.current_round_start_time
-        today = datetime.today()
-        start = today.date()
-        end = today
-        writer.writerow(['Interval Start', 'Interval End', 'Group', 'Total Points', 'Average Points', '# Members'])
-        while start > experiment_start_time.date():
-            for group in experiment.group_set.all():
-                (average, total, total_participant_points) = get_group_score(group, start=start, end=end)
-                writer.writerow([start, end, group, total, average, group.size])
-            end = start
-            start = start - timedelta(1)
-        writer.writerow(['Interval Start', 'Interval End', 'Participant', 'Activity', 'Points', 'Date created'])
-        start = today.date()
-        end = today
-        while start > experiment_start_time.date():
-            prdvs = ParticipantRoundDataValue.objects.filter(round_data__experiment=experiment, date_created__range=(start, end))
-            for prdv in prdvs.filter(parameter=get_activity_performed_parameter()).order_by('-date_created'):
-                writer.writerow([start, end, prdv.participant_group_relationship, prdv.value, prdv.value.points, prdv.date_created])
-            end = start
-            start = start - timedelta(1)
-        # write out participant summary
-        writer.writerow(['Participant', 'Total Points'])
-        for participant_group_relationship in experiment.participant_group_relationships:
-            performed_activities = participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter())
-            total_points = 0
-            for performed_activity in performed_activities:
-                total_points += performed_activity.value.points
-            writer.writerow([participant_group_relationship, total_points])
 
 def get_view_model_json(participant_group_relationship, activities=None, experiment=None, round_configuration=None, round_data=None, **kwargs):
     if activities is None:
@@ -318,6 +183,7 @@ def get_view_model(request, participant_group_id=None):
     view_model_json = get_view_model_json(pgr, experiment=pgr.group.experiment)
     return JsonResponse(dumps({'success': True, 'view_model_json': view_model_json}))
 
+#FIXME: push this into core api/login if possible
 def mobile_login(request):
     form = LoginForm(request.POST or None)
     try:
