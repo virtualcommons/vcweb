@@ -133,10 +133,7 @@
                 <i class='icon-time'></i> Some challenges are available all day, and others are only available at <strong>certain hours</strong>.
                 </p>
             </div>
-            <div data-bind='foreach: activitiesByLevel'>
-                <h3 class='underline'>Level <span data-bind='text: $index() + 1'></span></h3>
-                <div style='margin-top: -10px;' class='challenges' data-bind='template: { name: "challenges-template", data: { challenges: $data } }'></div>
-            </div>
+            <div class='challenges' data-bind='template: { name: "challenges-template", data: { challenges: activities } }'></div>
         </div>
         <div class='tab-pane' id='help'>
             <h1 class='header'><i class='icon-question-sign'></i> Instructions</h1>
@@ -171,7 +168,6 @@
             <br>
             You can also <a href='#dashboard' data-bind='click: restartTour'>restart the tutorial</a>.
             </p>
-            
             <h3 id='faq' class='underline'>Frequently Asked Questions</h3>
             <div class='well alert-white'>
                 <h4>I performed an activity worth 15 points but only 3 points were added to Today's Progress and Today's Score.  Why?</h4>
@@ -555,17 +551,17 @@ $(function() {
     <div class='span4'>
         <h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
         <p>
-        <span data-bind='css: status, text: summary'></span>
+        <span class='challenge' data-bind='css: status, text: summary'></span>
         </p>
         <form data-bind='attr: { id: "challengeForm" + pk() }' class='form-horizontal' method='post'>
             <input data-bind='value: pk' type='hidden' name='activity_id' />
             <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
-            <a data-bind='css: status, click: $root.perform' class='btn'>
-            <span data-bind='if: availableNow'>Perform</span>
-            <span data-bind='if: completed'>Completed <i class='icon-check'></i></span>
-            <span data-bind='if: expired'>Expired <i class='icon-warning-sign'></i></span>
-            <span data-bind='if: upcoming'>Not yet available <i class='icon-time'></i></span>
-            <span data-bind='if: locked'>Locked <i class='icon-lock'></i></span>
+            <a data-bind='css: status, click: $root.perform' class='btn challenge'>
+            <span data-bind='if: $root.isAvailable($data)'>Perform</span>
+            <span data-bind='if: $root.isCompleted($data)'>Completed <i class='icon-check'></i></span>
+            <span data-bind='if: $root.isExpired($data)'>Expired <i class='icon-warning-sign'></i></span>
+            <span data-bind='if: $root.isUpcoming($data)'>Not yet available <i class='icon-time'></i></span>
+            <span data-bind='if: $root.isLocked($data)'>Locked <i class='icon-lock'></i></span>
             </a> 
             {% comment %} FIXME: enable once we have more info again
             <small><a href='#'>Learn more</a></small>

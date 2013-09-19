@@ -14,7 +14,6 @@ from vcweb.core.services import fetch_foursquare_categories
 from collections import defaultdict
 from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
-from operator import itemgetter
 import re
 
 import logging
@@ -35,8 +34,7 @@ def get_activity_points_cache():
 class ActivityStatusList(object):
 
     def __init__(self, participant_group_relationship, activities=None, round_configuration=None, group_level=1):
-        if activities is None:
-            activities = list(Activity.objects.all())
+        self.activities = list(Activity.objects.all()) if activities is None else activities
         self.round_configuration = participant_group_relationship.group.current_round if round_configuration is None else round_configuration
         self.has_scheduled_activities = self.round_configuration.experiment_configuration.has_daily_rounds
         activity_availability_cache = get_activity_availability_cache()
@@ -58,7 +56,7 @@ class ActivityStatusList(object):
         self.upcoming_activity_ids = activity_availabilities.filter(start_time__gte=self.current_time).values_list('activity', flat=True)
 #        expired_activity_ids = filter(lambda pk: pk not in currently_available_activity_ids + upcoming_activity_ids, all_unlocked_activity_ids)
         self.activity_dict_list = []
-        for activity in activities:
+        for activity in self.activities:
             activity_dict = activity.to_dict()
             activity_status = 'locked'
             if activity in self.all_unlocked_activities:
@@ -74,6 +72,7 @@ class ActivityStatusList(object):
             activity_dict['status'] = activity_status
             activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
             self.activity_dict_list.append(activity_dict)
+        self.activity_dict_list.sort(key=_activity_status_sort_key)
 
     def expired_activities(self):
         return filter(lambda d: d['status'] == 'expired', self.activity_dict_list)
@@ -506,7 +505,7 @@ def get_activity_status_dict(participant_group_relationship, activities, group_l
 
 def _activity_status_sort_key(activity_dict):
     s = activity_dict['status']
-    if 'perform' in s:
+    if 'available' in s:
         return 1
     elif 'upcoming' in s:
         return 2

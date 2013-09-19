@@ -1,6 +1,24 @@
 function LighterFootprintsModel(modelJson) {
     var self = this;
     var model = ko.mapping.fromJS(modelJson);
+    function hasStatus(activity, status) {
+        return activity.status() === status;
+    }
+    model.isCompleted = function(activity) {
+        return hasStatus(activity, 'completed');
+    }
+    model.isExpired = function(activity) {
+        return hasStatus(activity, 'expired');
+    }
+    model.isUpcoming = function(activity) {
+        return hasStatus(activity, 'upcoming');
+    }
+    model.isAvailable = function(activity) {
+        return hasStatus(activity, 'available');
+    }
+    model.isLocked = function(activity) {
+        return hasStatus(activity, 'locked');
+    }
     model.minuteTick = function() {
         var hoursLeft = model.hoursLeft();
         var minutesLeft = model.minutesLeft() - 1;
@@ -78,13 +96,13 @@ function LighterFootprintsModel(modelJson) {
     };
 
     model.lockedChallenges = ko.computed(function() {
-            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.locked() });
+            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.status() === 'locked' });
         });
     model.unlockedChallenges = ko.computed(function() {
-            return ko.utils.arrayFilter(model.activities(), function(activity) { return ! activity.locked() });
+            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.status()  !== 'locked' });
         });
     model.availableActivities = ko.computed(function() {
-            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.availableNow() });
+            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.status() === 'available' });
         });
     model.hasAvailableActivities = ko.computed(function() {
             return model.availableActivities().length > 0;

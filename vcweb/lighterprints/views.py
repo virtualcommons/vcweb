@@ -19,7 +19,7 @@ from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (Activity, get_all_activities_tuple, do_activity, get_group_activity,
         can_view_other_groups, get_lighterprints_experiment_metadata, is_completed,
         get_activity_performed_parameter, get_points_to_next_level, get_group_score, get_footprint_level,
-        get_foursquare_category_ids, get_time_remaining, GroupScores)
+        get_foursquare_category_ids, get_time_remaining, GroupScores, ActivityStatusList)
 
 from operator import itemgetter
 import itertools
@@ -276,8 +276,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
 
     own_group_level = group_scores.get_group_level(own_group)
     group_data.sort(key=itemgetter('averagePoints'), reverse=True)
-# FIXME: way too arcane, replace with a data container helper class
-    (activity_dict_list, level_activity_list) = get_all_activities_tuple(participant_group_relationship, activities, group_level=own_group_level)
+    activity_status_list = ActivityStatusList(participant_group_relationship, activities, round_configuration, group_level=own_group_level)
     (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
     #(chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
     (hours_left, minutes_left) = get_time_remaining()
@@ -300,9 +299,8 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         'hasScheduledActivities': group_scores.has_scheduled_activities,
         'groupActivity': team_activity,
         'groupName': own_group.name,
-        'activities': activity_dict_list,
+        'activities': activity_status_list.activity_dict_list,
         'totalParticipantPoints': total_participant_points,
-        'activitiesByLevel': level_activity_list
         })
 
 @participant_required
