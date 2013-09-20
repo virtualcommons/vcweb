@@ -14,6 +14,7 @@ from vcweb.core.services import fetch_foursquare_categories
 from collections import defaultdict
 from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
+from operator import itemgetter
 import re
 
 import logging
@@ -117,7 +118,10 @@ class GroupScores(object):
         return self.scores_dict[group]['total_points']
 
     def get_group_level(self, group):
-        return get_footprint_level(group, self.round_data)
+        if self.has_scheduled_activities:
+            return 0
+        else:
+            return get_footprint_level(group, self.round_data)
 
     def get_points_goal(self, group):
         if self.has_scheduled_activities:
@@ -145,6 +149,14 @@ class GroupScores(object):
             self.group_rankings = [g[0] for g in self.get_sorted_group_scores()]
         return self.group_rankings
 
+    def get_group_data_list(self):
+        # FIXME: cache group_data?
+        group_data = []
+        for group in self.groups:
+            group_data.append(self.to_dict(group))
+        group_data.sort(key=itemgetter('averagePoints'), reverse=True)
+        return group_data
+
     def to_dict(self, group):
         # FIXME: cache?
         return {
@@ -169,18 +181,16 @@ def update_active_experiments(sender, time=None, start_date=None, send_emails=Tr
     logger.debug("updating active level based experiments [%s] for %s", active_experiments, start_date)
     all_messages = []
     for experiment in active_experiments:
-        # calculate total carbon savings and decide if they move on to the next level
         round_data = experiment.current_round_data
         groups = list(experiment.groups)
         has_scheduled_activities = experiment.experiment_configuration.has_daily_rounds
-# group_scores_dict = { group: {average_points, total_points}}
         group_scores = GroupScores(experiment, round_data, groups, start_date=start_date)
-        logger.debug("group scores: %s", group_scores)
-        #(group_scores_dict, total_participant_points) = get_group_scores(experiment, round_data, start=start_date)
         for group in groups:
             if has_scheduled_activities:
+                # FIXME: still needs to be implemented
                 logger.debug("Calculating thresholds for scheduled activity experiment")
             else:
+                # calculate total carbon savings and determine if the group should advance to the next level
                 messages = process_level_based_experiment(group, round_data, group_scores)
             all_messages.extend(messages)
     logger.debug("about to send nightly summary emails (%s): %s", send_emails, all_messages)
@@ -750,10 +760,8 @@ def get_group_activity(participant_group_relationship, limit=None):
 # FIXME: consider using InheritanceManager or manually selecting likes, comments, chatmessages, activities performed to
 # avoid n+1 selects when doing a to_dict
     data_values = ParticipantRoundDataValue.objects.for_group(group)
-    own_likes = Like.objects.select_related('target_data_value').filter(participant_group_relationship=participant_group_relationship)
-    like_target_ids = [l.target_data_value.pk for l in own_likes]
-    own_comments = Comment.objects.select_related('target_data_value').filter(participant_group_relationship=participant_group_relationship)
-    comment_target_ids = [c.target_data_value.pk for c in own_comments]
+    like_target_ids = Like.objects.filter(participant_group_relationship=participant_group_relationship).values_list('target_data_value', flat=True)
+    comment_target_ids = Comment.objects.filter(participant_group_relationship=participant_group_relationship).values_list('target_data_value', flat=True)
     if limit is not None:
         data_values = data_values[:limit]
     for prdv in data_values:
@@ -854,3 +862,5 @@ def get_individual_points(participant_group_relationship, end_date=None):
     return Activity.objects.total(pks=pks)
     # this generates a query per participant round data value, very inefficient
     #return sum(prdv.value.points for prdv in prdvs)
+
+

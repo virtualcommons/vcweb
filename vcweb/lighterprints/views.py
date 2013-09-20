@@ -1,26 +1,22 @@
-from datetime import datetime, timedelta
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic.detail import BaseDetailView
 
 from vcweb.core.decorators import participant_required
 from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.services import foursquare_venue_search
-from vcweb.core.views import dumps, json_response, get_active_experiment, set_authentication_token
+from vcweb.core.views import dumps, get_active_experiment, set_authentication_token
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (
         Activity, GroupScores, ActivityStatusList, do_activity, get_group_activity, can_view_other_groups,
-        get_lighterprints_experiment_metadata, is_completed, get_activity_performed_parameter, get_points_to_next_level,
-        get_group_score, get_footprint_level, get_foursquare_category_ids, get_time_remaining
+        get_lighterprints_experiment_metadata, is_completed, get_foursquare_category_ids, get_time_remaining
         )
 
 from operator import itemgetter
-import itertools
 import logging
 #import tempfile
 logger = logging.getLogger(__name__)
@@ -132,15 +128,10 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     if round_data is None:
         round_data = experiment.current_round_data
     compare_other_group = can_view_other_groups(round_configuration=round_configuration)
-    group_data = []
     group_scores = GroupScores(experiment, round_data, participant_group_relationship=participant_group_relationship)
     total_participant_points = group_scores.total_participant_points
-
-    for group in group_scores.groups:
-        group_data.append(group_scores.to_dict(group))
-
+    group_data = group_scores.get_group_data_list()
     own_group_level = group_scores.get_group_level(own_group)
-    group_data.sort(key=itemgetter('averagePoints'), reverse=True)
     activity_status_list = ActivityStatusList(participant_group_relationship, activities, round_configuration, group_level=own_group_level)
     (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
     #(chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
