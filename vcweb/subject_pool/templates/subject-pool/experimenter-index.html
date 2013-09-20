@@ -2,51 +2,59 @@
 
 {% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
 
-{% block content %}
-<div class='info'>
-    Welcome back, {{ request.user.first_name}}.
-</div>
-<h3>Manage your sessions</h3>
+{% block page %}
+    <div class='row' id='page'>
+        <div id='content' class='span12'>
+            <div class='info'>
+                Welcome back, {{ request.user.first_name}}.
+            </div>
+        <h3>Manage your sessions</h3>
 
-<div class="table">
-    <div class="row">
-        <span class="span2">Experiment</span>
-        <span class="span1">Start Date</span>
-        <span class="span1">End Date</span>
-        <span class="span1">Capacity</span>
-        <span class="span1">Save/Edit</span>
-        <span style="padding-left: 14px;">Remove</span>
+        <div class="table">
+            <div class="row">
+                <span class="span3">Experiment</span>
+                <span class="span3">Start Date</span>
+                <span class="span3">End Date</span>
+                <span class="span1">Capacity</span>
+                <span class="span1">Save/Edit</span>
+                <span style="padding-left: 14px;">Remove</span>
+            </div>
+            <div class="row" data-bind='foreach: sessions'>
+                <form data-bind="submit: onSave ">
+                    <span class="hide">
+                        <input type="hidden" name="pk" data-bind="value: pk" />
+                    </span>
+                    <div class="span3">
+                        <select class="span3" name="experiment_meta_data" data-bind="options: $root.experiments, value: experiment, optionsText:'title', optionsValue:'pk', attr: selectDisable"> </select>
+                    </div>
+                    <div class="span3 input-append date">
+                        <input name="start_date" type="text" class="date-start input-large" data-bind="datetimepicker : startDate, value: startDate, attr: selectDisable" />
+                        <span class="add-on">
+                            <i class="icon-calendar"></i>
+                        </span>
+                    </div>
+                    <div class="span3 input-append date">
+                        <input name="end_date" type="text" class="date-end input-large" data-bind="datetimepicker : endDate, value: endDate, attr: selectDisable" />
+                        <span class="add-on">
+                            <i class="icon-calendar"></i>
+                        </span>
+                    </div>
+                    <div class="span1">
+                        <input class="span1" name="capacity" type="text" data-bind ="value : capacity, attr: selectDisable" />
+                    </div>
+                    <div class="span1">
+                        <input type="submit" class="btn btn-success" data-bind="value : submitText" />
+                    </div>
+                    <div>
+                        <a href='#' class="btn btn-link" data-bind="click: $root.removeSession">Remove</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <button data-bind='click: addSession' class="btn btn-primary">Add Session</button>
     </div>
-    <div class="row" data-bind='foreach: sessions'>
-        <form data-bind="submit: $root.onSubmit">
-            <span class="hide">
-                <input type="hidden" name="pk" data-bind="value: pk" />
-            </span>
-            <span class="span2">
-                <select class="span2" name="experiment_meta_data" data-bind="options: $root.availableExperiment, value: experiment.pk, optionsText:'title', optionsValue:'pk' "> </select>
-            </span>
-            <span class="span1">
-                <input name="start_date" type="text" class="date-start input-mini" data-bind="datetimepicker : startDate, value: startDate" data-date-format="yyyy-MM-dd HH:mm:ss" />
-            </span>
-            <span class="span1">
-                <input name="end_date" type="text" class="date-end input-mini" data-bind="datetimepicker : endDate, value: endDate" data-date-format="yyyy-MM-dd HH:mm:ss"/>
-            </span>
-            <span class="span1">
-                <input class="span1" name="capacity" type="text" data-bind ="value : capacity" />
-            </span>
-            <span class="span1">
-                <button type="submit" class="btn btn-success">Save</button>
-            </span>
-            <span>
-                <a href='#' class="btn btn-link" data-bind="click: $root.removeSession">Remove</a>
-            </span>
-        </form>
-    </div>
 </div>
-<button data-bind='click: addSession' class="btn btn-primary">Add Session</button>
-
-
-{% endblock content %}
+{% endblock page %}
 
 {% block javascript %}
 {{ block.super }}
@@ -59,38 +67,77 @@
     console.log(sessionList);
 
     $(function(){
-        function Session(sessionData) {
-            this.pk = sessionData.pk;
-            this.experiment = ko.observable(sessionData.experiment.pk);
-            this.startDate = ko.observable(sessionData.startDate);
-            this.endDate = ko.observable(sessionData.endDate);
-            this.capacity = ko.observable(sessionData.capacity);
-        }
-
-        //$("datetimepicker").val(session.startDate);
-
-        function sessionListViewModel(sessionList) {
+        function SessionModel(sessionData) {
             var self = this;
+            self.pk = ko.observable(sessionData.pk);
+            self.experiment = ko.observable(sessionData.experiment.pk);
+            self.startDate = ko.observable(sessionData.startDate);
+            self.endDate = ko.observable(sessionData.endDate);
+            self.capacity = ko.observable(sessionData.capacity);
 
-            self.sessions = ko.observableArray(sessionList.sessions);
+            self.hide = ko.observable('hide' in sessionData? sessionData.hide : true);
 
-            self.availableExperiment = sessionList.experiments;
+            self.selectDisable = ko.computed(function () {
+                console.log(self.hide());
+                return self.hide() ? {'disabled': true} : {'disabled': false};  // return true or false depending on your context
+            }, self);
 
-            self.addSession = function() {
-                self.sessions.push(new Session({ pk: -1, experiment: sessionList.experiments[2], startDate: "" , endDate: "", capacity:0}));
-            };
+            self.submitText = ko.computed( function() {
+                return self.pk() === -1 ? 'Save' : 'Edit';
+            });
 
-            self.removeSession = function(session) {
-                self.sessions.remove(session);
-            };
-            self.onSubmit = function(formElement) {
-                console.log($(formElement).serialize());
+            self.onSave = function(formElement) {
+                var formData;
+                if(formElement.elements["pk"].value == -1){
+                    formData = $(formElement).serialize()  + '&request_type=create';
+                } else {
+                    formData = $(formElement).serialize()  + '&request_type=update';
+                }
+                console.log(formData);
                 $.ajax("/subject-pool/session/update", {
-                    data: $(formElement).serialize(),
+                    data: formData,
                     type: "post",
-                    success: function(result) { alert(result) }
+                    success: function(result) {
+                        self.pk(result.session.pk);
+                        self.hide(true);
+                    }
                 });
             };
+        }
+
+        function SessionListViewModel(sessionList) {
+            var self = this;
+
+            var mapping = {
+                'sessions': {
+                    create: function(options) {
+                        return new SessionModel(options.data);
+                    }
+                }
+            }
+
+            var model = ko.mapping.fromJS(sessionList, mapping);
+
+            model.addSession = function() {
+                model.sessions.push(new SessionModel({ pk: -1, experiment: "", startDate: "" , endDate: "", capacity:0, hide: false}));
+            };
+
+            model.removeSession = function(session, event) {
+               var formData = $(event.target).parents("form").serialize();
+                console.log(formData);
+                if(session.pk != -1){
+                    $.ajax("/subject-pool/session/update", {
+                        type : "post",
+                        data : formData + '&request_type=delete',
+                        success: function(result) {
+                            if(result.success == true){
+                                model.sessions.remove(session);
+                            }
+                        }
+                    });
+                }
+            };
+            return model;
         }
 
         ko.bindingHandlers.datetimepicker = {
@@ -99,17 +146,10 @@
               var options = allBindingsAccessor().datetimepickerOptions || {
                   language: 'en',
                   pick12HourFormat: true,
-                  pickSeconds: false
+                  pickSeconds: false,
+                  format:'yyyy-MM-dd HH:mm'
               };
               $(element).datetimepicker(options);
-
-              //when a user changes the date, update the view model
-              ko.utils.registerEventHandler(element, "changeDate", function(event) {
-                     var value = valueAccessor();
-                     if (ko.isObservable(value)) {
-                         value(event.date);
-                     }
-              });
             },
             update: function(element, valueAccessor)   {
                 var widget = $(element).data("datetimepicker");
@@ -118,12 +158,29 @@
                 if (widget) {
                     widget.date = ko.utils.unwrapObservable(valueAccessor());
 
+                    if (widget.date) {
                         widget.setValue();
+                    }
                 }
             }
         };
 
-        ko.applyBindings(new sessionListViewModel(sessionList));
+        ko.bindingHandlers.updateBtnText = {
+            init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+
+            },
+            update: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+                console.log(ko.unwrap(valueAccessor()));
+                if(ko.unwrap(valueAccessor()) == -1) {
+                    $(element).val("Save");
+                } else {
+                    $(element).val("Edit");
+                }
+            }
+        };
+
+
+        ko.applyBindings(new SessionListViewModel(sessionList));
     });
 </script>
 {% endblock %}

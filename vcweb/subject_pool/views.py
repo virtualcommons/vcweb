@@ -32,23 +32,31 @@ def sessionListView(request):
 def update_session(request):
     user = request.user
     form = SessionForm(request.POST or None)
+    logger.debug("Outside form isValid function")
     if form.is_valid():
+        logger.debug("I'm inside")
         pk = form.cleaned_data.get('pk')
+        request_type = form.cleaned_data.get('request_type')
+        logger.debug(request_type)
+        if request_type != 'delete':
+            if request_type == 'create':
+                es = ExperimentSession()
+            elif request_type == 'update':
+                es = ExperimentSession.objects.get(pk=pk)
 
-        if pk == -1:
-            es = ExperimentSession()
+            es.scheduled_date = datetime.datetime.strptime(form.cleaned_data.get('start_date'), "%Y-%m-%d %H:%M")
+            es.scheduled_end_date = datetime.datetime.strptime(form.cleaned_data.get('end_date'), "%Y-%m-%d %H:%M")
+            es.capacity = form.cleaned_data.get('capacity')
+            es.creator = user
+            es.date_created = datetime.datetime.now()
+            exp = form.cleaned_data.get("experiment_meta_data")
+            es.experiment_metadata = ExperimentMetadata.objects.get(pk = exp)
+
+            es.save()
         else:
+            logger.debug("I'm here")
             es = ExperimentSession.objects.get(pk=pk)
-
-        es.scheduled_date = datetime.datetime.strptime(form.cleaned_data.get('start_date'), "%Y-%m-%d %H:%M:%S")
-        es.scheduled_end_date = datetime.datetime.strptime(form.cleaned_data.get('end_date'), "%Y-%m-%d %H:%M:%S")
-        es.capacity = form.cleaned_data.get('capacity')
-        es.creator = user
-        es.date_created = datetime.datetime.now()
-        exp = form.cleaned_data.get("experiment_meta_data")
-        es.experiment_metadata = ExperimentMetadata.objects.get(pk = exp)
-
-        es.save()
+            es.delete()
 
         return JsonResponse(dumps({
             'success': True,
