@@ -3,99 +3,105 @@
 {% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
 
 {% block content %}
-    <div class='info'>
+<div class='info'>
     Welcome back, {{ request.user.first_name}}.
 </div>
 <h3>Manage your sessions</h3>
 
-<table width='100%'>
-    <thead>
-        <tr>
-            <th width='25%'>Experiment</th>
-            <th width='25%'>Start Date</th>
-            <th width='25%'>End Date</th>
-            <th class='quantity' width='10%'>Capacity</th>
-            <th width='10%'> </th>
-        </tr>
-    </thead>
-    <tbody data-bind='foreach: sessions'>
-        <tr>
-            <td>
-                <select data-bind="options: $root.availableExperiment, value: experiment, optionsText:'title' "> </select>
-            </td>
-            <td>
-                <input type="text" class="date-start" data-bind="datepicker : startDate" />
-            </td>
-            <td >
-                <input type="text" class="date-end" data-bind="datepicker : endDate" />
-            </td>
-            <td class='quantity'>
-                <input type="text" data-bind ="value : capacity" />
-            </td>
-            <td>
-                <button data-bind="click: $root.saveSession">Save</button>
-            </td>
-            <td>
-                <a href='#' data-bind="click: $root.removeSession">Remove</a>
-            </td>
-        </tr>
-    </tbody>
-</table>
+<div class="table">
+    <div class="row">
+        <span class="span2">Experiment</span>
+        <span class="span1">Start Date</span>
+        <span class="span1">End Date</span>
+        <span class="span1">Capacity</span>
+        <span class="span1">Save/Edit</span>
+        <span style="padding-left: 14px;">Remove</span>
+    </div>
+    <div class="row" data-bind='foreach: sessions'>
+        <form data-bind="submit: $root.onSubmit">
+            <span class="hide">
+                <input type="hidden" name="pk" data-bind="value: pk" />
+            </span>
+            <span class="span2">
+                <select class="span2" name="experiment_meta_data" data-bind="options: $root.availableExperiment, value: experiment.pk, optionsText:'title', optionsValue:'pk' "> </select>
+            </span>
+            <span class="span1">
+                <input name="start_date" type="text" class="date-start input-mini" data-bind="datetimepicker : startDate, value: startDate" data-date-format="yyyy-MM-dd HH:mm:ss" />
+            </span>
+            <span class="span1">
+                <input name="end_date" type="text" class="date-end input-mini" data-bind="datetimepicker : endDate, value: endDate" data-date-format="yyyy-MM-dd HH:mm:ss"/>
+            </span>
+            <span class="span1">
+                <input class="span1" name="capacity" type="text" data-bind ="value : capacity" />
+            </span>
+            <span class="span1">
+                <button type="submit" class="btn btn-success">Save</button>
+            </span>
+            <span>
+                <a href='#' class="btn btn-link" data-bind="click: $root.removeSession">Remove</a>
+            </span>
+        </form>
+    </div>
+</div>
+<button data-bind='click: addSession' class="btn btn-primary">Add Session</button>
 
-<button data-bind='click: addSession'>Add Session</button>
 
 {% endblock content %}
 
 {% block javascript %}
 {{ block.super }}
-<script src='{{STATIC_URL}}js/bootstrap-datepicker.min.js'></script>
-<link rel="stylesheet" href='{{ STATIC_URL }}css/datepicker.css'>
+    <script src='{{STATIC_URL}}js/bootstrap-datetimepicker.min.js'></script>
+    <link rel="stylesheet" href='{{ STATIC_URL }}css/bootstrap-datetimepicker.min.css'>
 
     <script type= "text/javascript">
     var sessionList = $.parseJSON("{{ view_model_json |escapejs }}");
 
-    console.log(sessionList.experiments);
+    console.log(sessionList);
 
     $(function(){
         function Session(sessionData) {
             this.pk = sessionData.pk;
-            this.experiment = ko.observable(sessionData.experiment);
+            this.experiment = ko.observable(sessionData.experiment.pk);
             this.startDate = ko.observable(sessionData.startDate);
             this.endDate = ko.observable(sessionData.endDate);
             this.capacity = ko.observable(sessionData.capacity);
         }
 
+        //$("datetimepicker").val(session.startDate);
+
         function sessionListViewModel(sessionList) {
             var self = this;
-            self.sessions = ko.observableArray(sessionList.sessions);
 
-            self.newSession = ko.observable();
+            self.sessions = ko.observableArray(sessionList.sessions);
 
             self.availableExperiment = sessionList.experiments;
 
             self.addSession = function() {
-                self.sessions.push(new Session({ pk: -1, experiment: sessionList.experiments[2], startDate: new Date() , endDate: new Date(), capacity:0}));
+                self.sessions.push(new Session({ pk: -1, experiment: sessionList.experiments[2], startDate: "" , endDate: "", capacity:0}));
             };
 
             self.removeSession = function(session) {
                 self.sessions.remove(session);
-            }
-
-            self.saveSession = function(session) {
-              console.log(ko.toJSON(session));
+            };
+            self.onSubmit = function(formElement) {
+                console.log($(formElement).serialize());
                 $.ajax("/subject-pool/session/update", {
-                    data:{ session: session },
+                    data: $(formElement).serialize(),
                     type: "post",
                     success: function(result) { alert(result) }
                 });
             };
         }
 
-        ko.bindingHandlers.datepicker = {
+        ko.bindingHandlers.datetimepicker = {
             init: function(element, valueAccessor, allBindingsAccessor) {
-              //initialize datepicker with some optional options
-              var options = allBindingsAccessor().datepickerOptions || {};
-              $(element).datepicker(options);
+              //initialize datetimepicker with some optional options
+              var options = allBindingsAccessor().datetimepickerOptions || {
+                  language: 'en',
+                  pick12HourFormat: true,
+                  pickSeconds: false
+              };
+              $(element).datetimepicker(options);
 
               //when a user changes the date, update the view model
               ko.utils.registerEventHandler(element, "changeDate", function(event) {
@@ -106,12 +112,13 @@
               });
             },
             update: function(element, valueAccessor)   {
-                var widget = $(element).data("datepicker");
+                var widget = $(element).data("datetimepicker");
 
                  //when the view model is updated, update the widget
                 if (widget) {
                     widget.date = ko.utils.unwrapObservable(valueAccessor());
-                    widget.setValue();
+
+                        widget.setValue();
                 }
             }
         };
