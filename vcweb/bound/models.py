@@ -389,7 +389,6 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
             ParticipantRoundDataValue.objects.create(participant_group_relationship=pgr,
                     round_data=round_data, parameter=get_harvest_decision_parameter(),
                     int_value=0)
-    logger.debug("copying resource levels to next round")
     ''' XXX: transfer resource levels across chat and quiz rounds if they exist '''
     if experiment.has_next_round:
         ''' set group round data resource_level for each group + regrowth '''
@@ -438,8 +437,7 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
 def update_participants(experiment, round_data, round_configuration):
     logger.debug("updating participants")
     cost_of_living = get_cost_of_living(round_configuration)
-    next_round_data, created = experiment.get_or_create_round_data(round_configuration=experiment.next_round,
-            is_next_round_data=True)
+    next_round_data, created = experiment.get_or_create_round_data(round_configuration=experiment.next_round)
     for pgr in experiment.participant_group_relationships:
         player_status_dv = get_player_status_dv(pgr, round_data)
         storage_dv = get_storage_dv(pgr, round_data)

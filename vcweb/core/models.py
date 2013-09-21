@@ -100,7 +100,9 @@ class DataValueMixin(object):
             return
         next_round_data = kwargs.get('next_round_data', None)
         if not next_round_data:
-            next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round, is_next_round_data=True)
+            # if we haven't been explicitly given a round data object to copy to, check if our current round is the same as the next
+            # round
+            next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round)
         for existing_dv in data_values:
             #logger.debug("copying existing dv %s to next round %s", existing_dv, next_round_data)
             # Taking advantage of a trick from here:
@@ -976,15 +978,20 @@ class Experiment(models.Model):
             return None
         return self.start_round()
 
-    def get_or_create_round_data(self, round_configuration=None, is_next_round_data=False):
+    def get_or_create_round_data(self, round_configuration=None):
+        current_round = self.current_round
         if round_configuration is None:
-            round_configuration = self.current_round
+            round_configuration = current_round
         ps = dict(round_configuration=round_configuration)
         if round_configuration.is_repeating_round:
-            # create round data with repeating sequence number
-            rrsn = self.current_repeated_round_sequence_number
-            ps['repeating_round_sequence_number'] = rrsn + 1 if is_next_round_data else rrsn
+            same_repeating_round = self.current_round == round_configuration
+            # create round data with a repeating sequence number - if the incoming round configuration is the SAME as
+            # the current round, we know we need to increment the current repeated round sequence number.  Otherwise,
+            # reset it to 0 because we're moving into a repeating round setup and we might have transitioned from
+            # an existing repeating round
+            ps['repeating_round_sequence_number'] = self.current_repeated_round_sequence_number + 1 if same_repeating_round else 0
         round_data, created = self.round_data_set.get_or_create(**ps)
+        logger.debug("generated round data %s with criteria %s", round_data, ps)
         if self.experiment_configuration.is_experimenter_driven:
             # create participant ready data values for every round in experimenter driven experiments
             logger.debug("creating participant ready participant round data values for experimenter driven experiment")
