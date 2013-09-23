@@ -102,7 +102,8 @@ class DataValueMixin(object):
         if not next_round_data:
             # if we haven't been explicitly given a round data object to copy to, check if our current round is the same as the next
             # round
-            next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round)
+            next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round,
+                                                                  increment_repeated_round_sequence_number=True)
         for existing_dv in data_values:
             #logger.debug("copying existing dv %s to next round %s", existing_dv, next_round_data)
             # Taking advantage of a trick from here:
@@ -594,21 +595,22 @@ class Experiment(models.Model):
             round_configuration = self.current_round
         ps = dict(round_configuration=round_configuration)
         if round_configuration.is_repeating_round:
-            crsn = self.current_repeated_round_sequence_number
+            current = self.current_repeated_round_sequence_number
             if previous_round:
-                # XXX: convoluted logic, if we're looking for a previous repeating round and the current repeated
+                # XXX:  if we're looking for a previous repeating round and the current repeated
                 # round sequence number is 0 we need to clamp the repeated round sequence number to N - 1 where N is the
                 # number of repeats for that repeating round
-                crsn = round_configuration.repeat - 1 if crsn == 0 else crsn - 1
+                current = round_configuration.repeat - 1 if current == 0 else current - 1
             elif next_round:
-                crsn = crsn + 1
-            ps.update(repeating_round_sequence_number=crsn)
+                current += 1
+            ps.update(repeating_round_sequence_number=current)
         return RoundData.objects.select_related('round_configuration').get(experiment=self, **ps)
 
     @property
     def playable_round_data(self):
-        return self.round_data_set.select_related('experiment', 'round_configuration').filter(round_configuration__round_type__in=RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS,
-                round_configuration__sequence_number__lte=self.current_round_sequence_number)
+        return self.round_data_set.select_related('experiment', 'round_configuration').filter(
+            round_configuration__round_type__in=RoundConfiguration.PLAYABLE_ROUND_CONFIGURATIONS,
+            round_configuration__sequence_number__lte=self.current_round_sequence_number)
 
     @property
     def all_chat_messages(self):
@@ -814,7 +816,7 @@ class Experiment(models.Model):
             logger.debug("ignoring initialize data values for repeating round # %d", self.current_repeated_round_sequence_number)
             return
 
-        logger.debug("initializing data values for [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", participant_parameters, group_parameters, group_cluster_parameters)
+        logger.debug("initializing data values on round data %s:\n[participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", round_data, participant_parameters, group_parameters, group_cluster_parameters)
         parameter_defaults = defaultdict(dict)
         # defaults map parameter model instances to their default initial value, e.g., { footprint-level-parameter: 1, resource-level-parameter: 100 }
         for parameter in itertools.chain(participant_parameters, group_parameters, group_cluster_parameters):
@@ -978,18 +980,23 @@ class Experiment(models.Model):
             return None
         return self.start_round()
 
-    def get_or_create_round_data(self, round_configuration=None):
+    def get_or_create_round_data(self, round_configuration=None, increment_repeated_round_sequence_number=False):
         current_round = self.current_round
         if round_configuration is None:
             round_configuration = current_round
         ps = dict(round_configuration=round_configuration)
         if round_configuration.is_repeating_round:
             same_repeating_round = self.current_round == round_configuration
+            rrsn = 0
             # create round data with a repeating sequence number - if the incoming round configuration is the SAME as
             # the current round, we know we need to increment the current repeated round sequence number.  Otherwise,
             # reset it to 0 because we're moving into a repeating round setup and we might have transitioned from
             # an existing repeating round
-            ps['repeating_round_sequence_number'] = self.current_repeated_round_sequence_number + 1 if same_repeating_round else 0
+            if same_repeating_round:
+                rrsn = self.current_repeated_round_sequence_number
+                if increment_repeated_round_sequence_number:
+                    rrsn += 1
+            ps['repeating_round_sequence_number'] = rrsn
         round_data, created = self.round_data_set.get_or_create(**ps)
         logger.debug("generated round data %s with criteria %s", round_data, ps)
         if self.experiment_configuration.is_experimenter_driven:
@@ -1061,6 +1068,7 @@ class Experiment(models.Model):
         self.deactivate()
         self.round_data_set.all().delete()
         self.current_round_sequence_number = 1
+        self.current_repeated_round_sequence_number = 0
         self.activate()
         self.start_round()
 

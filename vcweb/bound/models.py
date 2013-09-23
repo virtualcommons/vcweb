@@ -1,8 +1,10 @@
 from django.db.models import Sum
 from django.dispatch import receiver
 from vcweb.core import signals, simplecache
-from vcweb.core.models import (DefaultValue, ExperimentMetadata, Parameter, ParticipantRoundDataValue, GroupRelationship,
-        GroupCluster, GroupClusterDataValue, RoundData, RoundConfiguration)
+from vcweb.core.models import (
+        DefaultValue, ExperimentMetadata, Parameter, ParticipantRoundDataValue, GroupRelationship, RoundData,
+        RoundConfiguration
+        )
 from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_harvest_decision_dv,
                                    get_group_harvest_parameter, get_reset_resource_level_parameter,
                                    get_regrowth_parameter, get_initial_resource_level_parameter,
@@ -437,7 +439,8 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
 def update_participants(experiment, round_data, round_configuration):
     logger.debug("updating participants")
     cost_of_living = get_cost_of_living(round_configuration)
-    next_round_data, created = experiment.get_or_create_round_data(round_configuration=experiment.next_round)
+    next_round_data, created = experiment.get_or_create_round_data(round_configuration=experiment.next_round,
+                                                                   increment_repeated_round_sequence_number=True)
     for pgr in experiment.participant_group_relationships:
         player_status_dv = get_player_status_dv(pgr, round_data)
         storage_dv = get_storage_dv(pgr, round_data)

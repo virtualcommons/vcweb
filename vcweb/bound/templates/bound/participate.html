@@ -656,8 +656,9 @@ function onYouTubeIframeAPIReady() {
                 model.currentInterval(intervalId);
             }
             model.clearCurrentInterval = function() {
-               if (model.currentInterval()) {
-                    clearInterval(model.currentInterval());
+                var currentIntervalId = model.currentInterval();
+                if (currentIntervalId) {
+                    clearInterval(currentIntervalId);
                     model.currentInterval(undefined);
                 }
             }

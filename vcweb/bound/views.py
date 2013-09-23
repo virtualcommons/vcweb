@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict
+from collections import Counter
 from operator import itemgetter
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404
@@ -207,7 +207,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             other_group = own_group.get_related_group()
             number_alive = get_number_alive(other_group, current_round_data)
             resource_level = get_resource_level(other_group, current_round_data)
-            regrowth = get_regrowth_dv(other_group, current_round_data).int_value
+            regrowth = get_regrowth_dv(other_group, current_round_data).value
             experiment_model_dict['otherGroup'] = {
                     'regrowth': regrowth,
                     'resourceLevel': resource_level,
