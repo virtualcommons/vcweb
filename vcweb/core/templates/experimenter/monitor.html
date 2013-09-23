@@ -303,6 +303,10 @@
                     return false;
                 }
                 confirmAction(element, function(confirmed, action) {
+                    if ($.inArray(action, allowedActions) === -1) {
+                        console.debug("invalid action: " + action);
+                        return false;
+                    }
                     $('#progress-modal').modal('show');
                     Dajaxice.vcweb.core.experiment_controller(function(response) {
                         if (response.success) {
