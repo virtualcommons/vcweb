@@ -11,12 +11,12 @@ REQUIRED_ATTRIBUTES = {'class': 'required'}
 
 
 class SessionForm(forms.Form):
-    pk = forms.IntegerField(widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    experiment_meta_data = forms.IntegerField(widgets.TextInput())
-    start_date = forms.CharField(widget=widgets.TextInput())
-    end_date = forms.CharField(widget=widgets.TextInput())
-    capacity = forms.IntegerField(widget=widgets.TextInput())
-    request_type = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    pk = forms.IntegerField(widgets.TextInput())
+    experiment_meta_data = forms.IntegerField(widgets.TextInput(), required=False)
+    start_date = forms.CharField(widget=widgets.TextInput(), required=False)
+    end_date = forms.CharField(widget=widgets.TextInput(), required=False)
+    capacity = forms.IntegerField(widget=widgets.TextInput(), required=False)
+    request_type = forms.CharField(widget=widgets.TextInput())
 
     def clean(self):
         data = super(forms.Form, self).clean()
@@ -33,5 +33,5 @@ class SessionForm(forms.Form):
             logger.debug(data)
             if request_type != 'delete':
                 if not experiment_meta_data or not start_date or not end_date:
-                    raise forms.ValidationError(_("Pleas Fill in all the Fields"))
+                    raise forms.ValidationError(_("Please Fill in all the Fields"))
         return data

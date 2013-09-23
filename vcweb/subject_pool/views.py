@@ -44,8 +44,8 @@ def update_session(request):
             elif request_type == 'update':
                 es = ExperimentSession.objects.get(pk=pk)
 
-            es.scheduled_date = datetime.datetime.strptime(form.cleaned_data.get('start_date'), "%Y-%m-%d %H:%M")
-            es.scheduled_end_date = datetime.datetime.strptime(form.cleaned_data.get('end_date'), "%Y-%m-%d %H:%M")
+            es.scheduled_date = datetime.datetime.strptime(form.cleaned_data.get('start_date'), "%Y-%m-%d %H:%M:%S")
+            es.scheduled_end_date = datetime.datetime.strptime(form.cleaned_data.get('end_date'), "%Y-%m-%d %H:%M:%S")
             es.capacity = form.cleaned_data.get('capacity')
             es.creator = user
             es.date_created = datetime.datetime.now()
