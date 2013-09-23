@@ -25,22 +25,22 @@
                         <input type="hidden" name="pk" data-bind="value: pk" />
                     </span>
                     <div class="span3">
-                        <select class="span3" name="experiment_meta_data" data-bind="options: $root.experiments, value: experiment, optionsText:'title', optionsValue:'pk', attr: selectDisable, optionsCaption: 'select...'"></select>
+                        <select class="span3" name="experiment_meta_data" data-bind="options: $root.experiments, value: experiment, optionsText:'title', optionsValue:'pk', disable: hide, optionsCaption: 'select...'"></select>
                     </div>
                     <div class="span3 input-append date">
-                        <input name="start_date" type="text" class="date-start input-large" data-bind="datetimepicker : startDate, value: startDate , attr: selectDisable" />
+                        <input name="start_date" type="text" class="date-start input-large" data-bind="datepicker : startDate, value: startDate , disable: hide" />
                         <span class="add-on">
                             <i class="icon-calendar"></i>
                         </span>
                     </div>
                     <div class="span3 input-append date">
-                        <input name="end_date" type="text" class="date-end input-large" data-bind="datetimepicker : endDate, value: endDate, attr: selectDisable" />
+                        <input name="end_date" type="text" class="date-end input-large" data-bind="datepicker : endDate, value: endDate, disable: hide" />
                         <span class="add-on">
                             <i class="icon-calendar"></i>
                         </span>
                     </div>
                     <div class="span1">
-                        <input class="span1" name="capacity" type="number" min="2" data-bind ="value : capacity, attr: selectDisable" />
+                        <input class="span1" name="capacity" type="number" min="2" data-bind ="value : capacity, disable: hide" />
                     </div>
                     <div class="span1" data-bind = "visible: isEditable()" >
                         <input type="submit" class="btn btn-success" value="save" />
@@ -61,8 +61,8 @@
 
 {% block javascript %}
 {{ block.super }}
-    <script src='{{STATIC_URL}}js/bootstrap-datetimepicker.min.js'></script>
-    <link rel="stylesheet" href='{{ STATIC_URL }}css/bootstrap-datetimepicker.min.css'>
+    <script src='{{STATIC_URL}}js/bootstrap-datepicker.min.js'></script>
+    <link rel="stylesheet" href='{{ STATIC_URL }}css/datepicker.css'>
 
     <script type= "text/javascript">
     var sessionList = $.parseJSON("{{ view_model_json |escapejs }}");
@@ -126,7 +126,7 @@
             var model = ko.mapping.fromJS(sessionList, mapping);
 
             model.addSession = function() {
-                model.sessions.push(new SessionModel({ pk: -1, experiment: "", startDate: "" , endDate: "", capacity:10, hide: false}));
+                model.sessions.push(new SessionModel({ pk: -1, experiment: "", startDate: new Date() , endDate: new Date(), capacity:10, hide: false}));
             };
 
             model.removeSession = function(session, event) {
@@ -149,28 +149,29 @@
             return model;
         }
 
-        ko.bindingHandlers.datetimepicker = {
-            init: function(element, valueAccessor, allBindingsAccessor) {
-              //initialize datetimepicker with some optional options
-              var options = allBindingsAccessor().datetimepickerOptions || {
-                  language: 'en',
-                  pickSeconds: false,
-                  format:'yyyy-MM-dd hh:mm:ss'
-              };
-              $(element).datetimepicker(options);
-            },
-            update: function(element, valueAccessor)   {
-                var widget = $(element).data("datetimepicker");
-                //when the view model is updated, update the widget
-                if (widget) {
-                    widget.date = ko.utils.unwrapObservable(valueAccessor());
+       ko.bindingHandlers.datepicker = {
+        init: function(element, valueAccessor, allBindingsAccessor) {
+          //initialize datepicker with some optional options
+          var options = allBindingsAccessor().datepickerOptions || {};
+          $(element).datepicker(options);
 
-                    if (widget.date) {
-                        widget.setValue();
-                    }
-                }
+          //when a user changes the date, update the view model
+          ko.utils.registerEventHandler(element, "changeDate", function(event) {
+                 var value = valueAccessor();
+                 if (ko.isObservable(value)) {
+                     value(event.date);
+                 }
+          });
+        },
+        update: function(element, valueAccessor)   {
+            var widget = $(element).data("datepicker");
+             //when the view model is updated, update the widget
+            if (widget) {
+                widget.date = ko.utils.unwrapObservable(valueAccessor());
+                widget.setValue();
             }
-        };
+        }
+    };
 
         ko.applyBindings(new SessionListViewModel(sessionList));
     });
