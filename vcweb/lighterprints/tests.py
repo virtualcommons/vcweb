@@ -85,9 +85,11 @@ class GroupActivityTest(BaseTest):
         e = self.experiment
         e.activate()
         self.perform_activities()
+        group_scores = GroupScores(e, e.current_round_data)
         for group in e.groups:
-            messages = create_group_summary_emails(group, 2)
+            messages = group_scores.create_group_summary_emails(group, 2)
             self.assertEquals(len(messages), group.size)
+
 
 class ActivityTest(BaseTest):
 
