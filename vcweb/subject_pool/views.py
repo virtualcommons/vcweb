@@ -23,7 +23,7 @@ def sessionListView(request):
     user = request.user
     data = ExperimentSession.objects.filter(creator=user)
     experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.all()]
-    session_list = [{"pk": session.pk, "experiment": session.experiment_metadata, "startDate": str(session.scheduled_date), "endDate": str(session.scheduled_end_date), "capacity": session.capacity} for session in data]
+    session_list = [{"pk": session.pk, "experiment": session.experiment_metadata, "startDate": session.scheduled_date, "endDate": session.scheduled_end_date, "capacity": session.capacity} for session in data]
     session_data = {"sessions": session_list, "experiments": experiment_metadata_list}
     #logger.debug(session_data)
     return render(request,"subject-pool/experimenter-index.html",{"view_model_json": dumps(session_data)})

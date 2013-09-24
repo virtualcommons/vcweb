@@ -8,13 +8,18 @@ logger = logging.getLogger(__name__)
 
 
 REQUIRED_ATTRIBUTES = {'class': 'required'}
-
+HOUR_CHOICES = (('0', '0'),('1', '1'),('2','2'),('3','3'),('4','4'),('5','5'),('6','6'),('7','7'),('8','8'),('9','9'),('10','10'),('11','11'),('12','12'),('13','13'),('14','14'),('15','15'),('16','16'),('17','17'),('18','18'),('19','19'),('20','20'),('21','21'),('22','22'),('23','23'))
+MIN_CHOICES = (('0','0'),('15','15'),('30','30'),('45','45'))
 
 class SessionForm(forms.Form):
     pk = forms.IntegerField(widgets.TextInput())
     experiment_meta_data = forms.IntegerField(widgets.TextInput(), required=False)
     start_date = forms.CharField(widget=widgets.TextInput(), required=False)
+    start_hour = forms.ChoiceField(choices=HOUR_CHOICES)
+    start_min = forms.ChoiceField(choices=MIN_CHOICES)
     end_date = forms.CharField(widget=widgets.TextInput(), required=False)
+    end_hour = forms.ChoiceField(choices=HOUR_CHOICES)
+    end_min = forms.ChoiceField(choices=MIN_CHOICES)
     capacity = forms.IntegerField(widget=widgets.TextInput(), required=False)
     request_type = forms.CharField(widget=widgets.TextInput())
 

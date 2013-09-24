@@ -13,8 +13,8 @@
         <div class="table">
             <div class="row">
                 <span class="span3">Experiment</span>
-                <span class="span3">Start Date</span>
-                <span class="span3">End Date</span>
+                <span class="span2">Start Date</span>
+                <span class="span2">End Date</span>
                 <span class="span1">Capacity</span>
                 <span class="span1">Save/Edit</span>
                 <span style="padding-left: 14px;">Remove</span>
@@ -27,17 +27,29 @@
                     <div class="span3">
                         <select class="span3" name="experiment_meta_data" data-bind="options: $root.experiments, value: experiment, optionsText:'title', optionsValue:'pk', disable: hide, optionsCaption: 'select...'"></select>
                     </div>
-                    <div class="span3 input-append date">
-                        <input name="start_date" type="text" class="date-start input-large" data-bind="datepicker : startDate, value: startDate , disable: hide" />
+                    <div class="span2 input-append date">
+                        <input name="start_date" type="text" class="date-start input-small" data-bind="datepicker : startDate, value: startDate , disable: hide" />
                         <span class="add-on">
                             <i class="icon-calendar"></i>
                         </span>
                     </div>
-                    <div class="span3 input-append date">
-                        <input name="end_date" type="text" class="date-end input-large" data-bind="datepicker : endDate, value: endDate, disable: hide" />
+                    <div class="span1">
+                        <select class="span1" name="start_hour" data-bind ="value : capacity, disable: hide" />
+                    </div>
+                     <div class="span1">
+                        <select class="span1" name="start_min" data-bind ="value : capacity, disable: hide" />
+                    </div>
+                    <div class="span2 input-append date">
+                        <input name="end_date" type="text" class="date-end input-small" data-bind="datepicker : endDate, value: endDate, disable: hide" />
                         <span class="add-on">
                             <i class="icon-calendar"></i>
                         </span>
+                    </div>
+                    <div class="span1">
+                        <select class="span1" name="end_hour" data-bind ="value : capacity, disable: hide" />
+                    </div>
+                     <div class="span1">
+                        <select class="span1" name="end_min" data-bind ="value : capacity, disable: hide" />
                     </div>
                     <div class="span1">
                         <input class="span1" name="capacity" type="number" min="2" data-bind ="value : capacity, disable: hide" />
@@ -75,7 +87,11 @@
             self.pk = ko.observable(sessionData.pk);
             self.experiment = ko.observable(sessionData.experiment.pk);
             self.startDate = ko.observable(sessionData.startDate);
+            self.startHour = ko.observable(sessionData.startHour);
+            self.startMin = ko.observable(sessionData.startMin);
             self.endDate = ko.observable(sessionData.endDate);
+            self.endHour = ko.observable(sessionData.endHour);
+            self.endMin = ko.observable(sessionData.endMin);
             self.capacity = ko.observable(sessionData.capacity);
 
             self.hide = ko.observable('hide' in sessionData? sessionData.hide : true);
@@ -87,10 +103,10 @@
 
             self.isEditable = ko.observable('hide' in sessionData? !sessionData.hide : false);
 
-            self.makeEditable = function() {
+            self.makeEditable = function () {
                 self.isEditable(true);
                 self.hide(false);
-            }
+            };
 
             self.onSave = function(formElement) {
                 var formData;
@@ -117,16 +133,16 @@
 
             var mapping = {
                 'sessions': {
-                    create: function(options) {
+                    create: function (options) {
                         return new SessionModel(options.data);
                     }
                 }
-            }
+            };
 
             var model = ko.mapping.fromJS(sessionList, mapping);
 
             model.addSession = function() {
-                model.sessions.push(new SessionModel({ pk: -1, experiment: "", startDate: new Date() , endDate: new Date(), capacity:10, hide: false}));
+                model.sessions.push(new SessionModel({ pk: -1, experiment: "", startDate: "" , endDate: "", capacity:10, hide: false}));
             };
 
             model.removeSession = function(session, event) {
