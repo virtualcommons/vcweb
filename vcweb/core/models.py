@@ -956,10 +956,10 @@ class Experiment(models.Model):
         self.current_round_sequence_number = max(self.current_round_sequence_number - 1, 1)
         self.save()
 
-    ACCEPTABLE_ACTIONS = ('advance_to_next_round', 'end_round', 'start_round', 'move_to_previous_round', 'activate',
+    ALLOWED_ACTIONS = ('advance_to_next_round', 'end_round', 'start_round', 'move_to_previous_round', 'activate',
             'deactivate', 'complete', 'restart_round', 'restart', 'clone')
     def invoke(self, action_name, experimenter=None):
-        if action_name in Experiment.ACCEPTABLE_ACTIONS:
+        if action_name in Experiment.ALLOWED_ACTIONS:
             logger.debug("experimenter %s invoking action %s", experimenter, action_name)
             action = getattr(self, action_name)
             return action()

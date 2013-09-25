@@ -11,7 +11,6 @@
             <h4>ROUND MANAGEMENT</h4>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
-                    <a class='btn btn-success' data-bind="click: confirmExperimentControllerAction.bind($data, true)" data-action='move_to_previous_round' data-content='Go back to the previous round.'><i class='icon-step-backward'></i> back</a>
                     <a class='btn btn-success' data-bind="visible: isRoundInProgress, click: confirmExperimentControllerAction.bind($data, true)" data-action='end_round' data-content='Ends the round.'><i class='icon-stop'></i> end round</a>
                     <a class='btn btn-success' data-bind="visible: ! isRoundInProgress(), click: confirmExperimentControllerAction.bind($data, true)" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
                     <a class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, true)' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='icon-step-forward'></i> next round</a>
@@ -20,18 +19,13 @@
             <div class='btn-toolbar'>
                 <div class='btn-group'>
                     <a class='btn btn-primary' data-bind='click: updateParticipants' data-content='Updates all connected participants.' ><i class='icon-exchange'></i> update participants</a>
-                    <a class='btn btn-primary' data-bind='click: refresh' data-content='Updates this page.' ><i class='icon-refresh'></i> refresh this page</a>
+                    <a class='btn btn-primary' data-bind='click: refresh' data-content='Updates this page.' ><i class='icon-refresh'></i> refresh</a>
                 </div>
             </div>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
-                    {% comment %}
                     <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
-                        data-action='restart_round' data-content='Restart the round.  This will reset timers and perform any additional round started setup logic.' data-original-title='Warning'>
-                        <i class='icon-repeat'></i> restart round</a>
-                    {% endcomment %}
-                    <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
-                        data-action='restart' data-content='Restart the entire experiment.  This will reset all data and start the experiment over at round 1.' data-original-title='Warning'>
+                        data-action='restart' data-content='Restart the experiment from the beginning, clearing all group and participant data and returning to the first round.' data-original-title='Reset Experiment'>
                         <i class='icon-circle-arrow-up'></i> restart experiment</a>
                     <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment and disables participant logins.'><i class='icon-off'></i> deactivate</a>
                 </div>
@@ -213,6 +207,7 @@
 <script type='text/javascript'>
     var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
     $(function() {
+        var ALLOWED_ACTIONS = ["activate", "advance_to_next_round", "restart", "deactivate"]
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
@@ -303,7 +298,7 @@
                     return false;
                 }
                 confirmAction(element, function(confirmed, action) {
-                    if ($.inArray(action, allowedActions) === -1) {
+                    if ($.inArray(action, ALLOWED_ACTIONS) === -1) {
                         console.debug("invalid action: " + action);
                         return false;
                     }
