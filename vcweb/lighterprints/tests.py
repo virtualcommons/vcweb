@@ -3,11 +3,9 @@ from vcweb.core.models import ParticipantGroupRelationship
 from vcweb.lighterprints.views import *
 from vcweb.lighterprints.models import *
 
-from lxml import etree
 
 import logging
 import json
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +85,7 @@ class GroupActivityTest(BaseTest):
         self.perform_activities()
         group_scores = GroupScores(e, e.current_round_data)
         for group in e.groups:
-            messages = group_scores.create_group_summary_emails(group, 2)
+            messages = group_scores.create_level_based_group_summary_emails(group, level=2)
             self.assertEquals(len(messages), group.size)
 
 

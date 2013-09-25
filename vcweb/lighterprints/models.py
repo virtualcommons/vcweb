@@ -167,51 +167,85 @@ class GroupScores(object):
             'pointsToNextLevel': self.get_points_goal(group),
         }
 
-    def generate_email_messages(self, group):
+    def create_email_messages(self, group):
         if self.has_scheduled_activities:
-            # FIXME: still needs to be implemented
-            logger.debug("Calculating thresholds for scheduled activity experiment")
-            return self.generate_scheduled_email_messages(group)
+            return self.create_scheduled_activity_experiment_emails(group)
         else:
             # calculate total carbon savings and determine if the group should advance to the next level
-            return self.generate_level_based_email_messages(group)
+            return self.create_level_experiment_emails(group)
 
-    def generate_level_based_email_messages(self, group):
+# FIXME: remove code duplication / redundancy between this and create_level_experiment_email_messages
+    def create_scheduled_activity_experiment_emails(self, group):
+        round_data = self.round_data
+        logger.debug("Calculating thresholds for scheduled activity experiment")
+        threshold = get_group_threshold(self.round_configuration)
+        average_group_points = self.average_points(group)
+        goal_reached = average_group_points >= threshold
+        # they reached their goal, set their completion flag for this round
+        get_experiment_completed_dv(group, round_data=round_data).update_boolean(goal_reached)
+        logger.debug("creating group summary email for group %s", group)
+        # FIXME: figure out where to put logic to select an email template based on the treatment type, either here or in the template itself
+        yesterday = date.today() - timedelta(1)
+        plaintext_template = select_template(['lighterprints/email/scheduled-activities/group-summary-email.txt'])
+        html_template = select_template(['lighterprints/email/scheduled-activities/group-summary-email.html'])
+        experiment = group.experiment
+        experimenter_email = experiment.experimenter.email
+        number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group,
+                                                             date_created__gte=yesterday).count()
+        messages = []
+        for pgr in group.participant_group_relationship_set.all():
+            c = Context({
+                'experiment': experiment,
+                'number_of_groups': self.number_of_groups,
+                'group_name': group.name,
+                'group_rank': self.get_group_rank(group),
+                'summary_date': yesterday,
+                'show_rankings': self.show_rankings,
+                'threshold': threshold,
+                'average_points': average_group_points,
+                'number_of_chat_messages': number_of_chat_messages,
+                'individual_points': get_individual_points(pgr),
+                })
+            plaintext_content = plaintext_template.render(c)
+            html_content = html_template.render(c)
+            subject = 'Lighter Footprints Summary for %s' % yesterday
+            to_address = [ experimenter_email, pgr.participant.email ]
+            msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
+            msg.attach_alternative(html_content, 'text/html')
+            messages.append(msg)
+        return messages
+
+    def check_and_advance_level(self, group):
+        footprint_level_grdv = get_footprint_level_dv(group, round_data=self.round_data)
+        current_level = footprint_level_grdv.int_value
+        promoted = False
+        completed = False
+        if self.should_advance_level(group, footprint_level_grdv.int_value):
+            # group was promoted
+            promoted = True
+            next_level = min(current_level + 1, 3)
+            footprint_level_grdv.update_int(next_level)
+            if current_level == 3:
+                completed = True
+        return {'promoted': promoted, 'completed': completed, 'level': footprint_level_grdv.int_value}
+
+    def create_level_experiment_emails(self, group):
         round_data = self.round_data
         experiment_completed_dv = get_experiment_completed_dv(group, round_data=round_data)
         already_completed = experiment_completed_dv.boolean_value
         if already_completed:
             # skip this group if it's already completed the experiment.
             return []
-        promoted = False
-        completed = False
-        footprint_level_grdv = get_footprint_level_dv(group, round_data=round_data)
-        current_level = footprint_level_grdv.int_value
-        # FIXME: this group score calculation will be redundant with that of the show_ranking condition.  Should just
-        # pre-compute it once and pass it in
-        if self.should_advance_level(group, footprint_level_grdv.int_value):
-            # group was promoted
-            promoted = True
-            next_level = min(current_level + 1, 3)
-            footprint_level_grdv.int_value = next_level
-            footprint_level_grdv.save()
-            if current_level == 3:
-                completed = True
-
-        # FIXME: encapsulate group summary email creation into GroupScores as well.
-        group_summary_emails = self.create_group_summary_emails(group,
-                                                                footprint_level_grdv.value,
-                                                                promoted=promoted,
-                                                                completed=completed,
-                                                                round_data=round_data,
-                                                                )
-        if completed:
-        # store the completed flag for the group
-            experiment_completed_dv.boolean_value = True
-            experiment_completed_dv.save()
+        level_status_dict = self.check_and_advance_level(group)
+        group_summary_emails = self.create_level_based_group_summary_emails(group, round_data=round_data, **level_status_dict)
+        # XXX: push into check_and_advance_level? would then have to thread experiment completed dv into method params
+        # as well
+        if level_status_dict['completed']:
+            # store the completed flag for the group
+            experiment_completed_dv.update_boolean(True)
         return group_summary_emails
 
-    def create_group_summary_emails(self, group, level, **kwargs):
+    def create_level_based_group_summary_emails(self, group, level=1, **kwargs):
         logger.debug("creating group summary email for group %s", group)
         # FIXME: figure out where to put logic to select an email template based on the treatment type, either here or in the template itself
         yesterday = date.today() - timedelta(1)
@@ -231,8 +265,6 @@ class GroupScores(object):
                               'group_level': level,
                               'group_rank': self.get_group_rank(group),
                               'summary_date': yesterday,
-                              #            'completed': completed,
-                              #            'promoted': promoted,
                               'show_rankings': self.show_rankings,
                               'points_to_next_level': points_to_next_level,
                               'average_points': average_points,
@@ -264,7 +296,7 @@ def update_active_experiments(sender, time=None, start_date=None, send_emails=Tr
         groups = list(experiment.groups)
         group_scores = GroupScores(experiment, round_data, groups, start_date=start_date)
         for group in groups:
-            messages = group_scores.generate_email_messages(group)
+            messages = group_scores.create_email_messages(group)
             all_messages.extend(messages)
     logger.debug("about to send nightly summary emails (%s): %s", send_emails, all_messages)
     if send_emails:
