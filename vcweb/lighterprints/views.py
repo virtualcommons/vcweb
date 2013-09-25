@@ -16,7 +16,6 @@ from vcweb.lighterprints.models import (
         get_lighterprints_experiment_metadata, is_completed, get_foursquare_category_ids, get_time_remaining
         )
 
-from operator import itemgetter
 import logging
 #import tempfile
 logger = logging.getLogger(__name__)
@@ -25,6 +24,7 @@ logger = logging.getLogger(__name__)
 @participant_required
 def perform_activity(request):
     form = ActivityForm(request.POST or None)
+    message = "Unable to perform activity"
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
         participant_group_id = form.cleaned_data['participant_group_id']
@@ -44,9 +44,12 @@ def perform_activity(request):
                     'success': True,
                     'viewModel':get_view_model_json(participant_group_relationship)
                     }))
+            else:
+                message = "Activity was not available at this time"
         else:
+            message = "You're not authorized to perform this activity as this person %s" % participant_group_relationship
             logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id, participant_group_relationship)
-    return JsonResponse(dumps({'success': False, 'response': "Could not perform activity"}))
+    return JsonResponse(dumps({'success': False, 'response': message}))
 
 @csrf_exempt
 @login_required

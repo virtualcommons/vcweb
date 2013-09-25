@@ -4,6 +4,16 @@ function LighterFootprintsModel(modelJson) {
     function hasStatus(activity, status) {
         return activity.status() === status;
     }
+    model.activityStatusCss = function(activity) {
+        var statusCss = activity.status();
+        if (activity.status() !== 'available') {
+            statusCss += " disabled";
+        }
+        return statusCss;
+    }
+    model.isActivityDisabled = function(activity) {
+        return activity.status() !== 'available';
+    }
     model.isCompleted = function(activity) {
         return hasStatus(activity, 'completed');
     }

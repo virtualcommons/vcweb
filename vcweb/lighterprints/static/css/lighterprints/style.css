@@ -46,13 +46,13 @@ h4.challenge-name {
 .expired.challenge {
     color: red;
 }
-a.upcoming.challenge, a.expired.challenge, a.available.challenge, a.completed.challenge {
+button.upcoming.challenge, button.expired.challenge, button.available.challenge, button.completed.challenge {
     text-transform: uppercase;
     color: #FFF !important;
     -webkit-font-smoothing: antialiased;
     background-repeat: repeat-x;
 }
-a.upcoming.challenge {
+button.upcoming.challenge {
     background-color: hsl(0, 0%, 54%) !important;
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#f4f4f4", endColorstr="#898989");
     background-image: -khtml-gradient(linear, left top, left bottom, from(#f4f4f4), to(#898989));
@@ -65,7 +65,7 @@ a.upcoming.challenge {
     border-color: #898989 #898989 hsl(0, 0%, 43.5%);
     text-shadow: 0 1px 1px rgba(255, 255, 255, 0.69);
 }
-a.expired.challenge {
+button.expired.challenge {
     background-color: hsl(0, 100%, 79%) !important;
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#ffbcbc", endColorstr="#ff9393");
     background-image: -khtml-gradient(linear, left top, left bottom, from(#ffbcbc), to(#ff9393));
@@ -78,7 +78,7 @@ a.expired.challenge {
     border-color: #ff9393 #ff9393 hsl(0, 100%, 77%);
     text-shadow: 0 1px 1px rgba(255, 255, 255, 0.13);
 }
-a.available.challenge,a.completed.challenge {
+button.available.challenge,button.completed.challenge {
     background-color: hsl(96, 81%, 42%) !important;
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#66dd17", endColorstr="#59c114");
     background-image: -khtml-gradient(linear, left top, left bottom, from(#66dd17), to(#59c114));

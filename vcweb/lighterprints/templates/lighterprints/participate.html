@@ -23,7 +23,7 @@
             <h1 class='header'><i class='icon-dashboard'></i> Group Dashboard</h1>
             <div style='display:none;' data-bind='visible: completed'>
                 <div class='alert alert-block alert-white'>
-                    <i class='text-gold icon-trophy'></i> 
+                    <i class='text-gold icon-trophy'></i>
                     <span data-bind='ifnot: hasScheduledActivities'>Congratulations! Your group has completed level 3 and finished the experiment.</span>
                     <span data-bind='if: hasScheduledActivities'>Congratulations! Your group has successfully met your carbon footprint goal for today.</span>
                 </div>
@@ -68,8 +68,16 @@
                     </table>
                 </div>
                 <div class='span2 left-divider'>
-                    <h5 id='current-level' ><span class='lighterprints-scoreboard-uppercase'>Current Level</span></h5>
-                    <div class='dashboard-content'>
+                    <h5 id='current-level'><span data-bind='text: currentLevelText' class='lighterprints-scoreboard-uppercase'></span></h5>
+                    <div class='dashboard-content' data-bind='if: hasScheduledActivities'>
+                        <div data-bind='if: completed'>
+                            <img alt='Group Goal Met' class='group-level' width='120' height='70' src='{% static "images/lighterprints/group-goal-completed.png"%}'>
+                        </div>
+                        <div data-bind='ifnot: completed'>
+                            <img alt='Group Goal' class='group-level' width="120" height="70" src='{% static "images/lighterprints/group-goal-inactive.png"%}'>
+                        </div>
+                    </div>
+                    <div class='dashboard-content' data-bind='ifnot: hasScheduledActivities'>
                         <div data-bind='if: completed'>
                             <img alt='Experiment Completed' class='group-level' width='120' height='70' src='{% static "images/lighterprints/experiment-completed.png"%}'>
                         </div>
@@ -326,6 +334,14 @@ $(function() {
     var viewModel = new LighterFootprintsModel(viewModelData);
     // custom view model methods, some of these may be lifted into the model itself
     viewModel.tutorialTour = new Tour({ name: "lfpTutorial", labels: { end: "End tutorial", next: 'Next »', prev: '« Back' }});
+    viewModel.currentLevelText = ko.computed(function() {
+        if (viewModel.hasScheduledActivities()) {
+            return viewModel.completed() ? "Group Goal Met" : "Group Goal";
+        }
+        else {
+            return "Current Level";
+        }
+    });
     viewModel.setup = function() {
         viewModel.initializeChart();
         viewModel.setupTour();
@@ -346,12 +362,15 @@ $(function() {
             placement: "top",
             content: "This is your group's average score for the day.  Complete high-value challenges to help your group advance to the next level."
         });
-        tour.addStep({
-            element: "#current-level",
-            title: "Current Level",
-            placement: "top",
-            content: "This is your group's current level.  Each level unlocks 5 new challenges.  You are currently level " + viewModel.groupLevel() + "."
-        });
+        // FIXME: crappy special case logic to deal with scheduled activities vs level based activities
+        if (! viewModel.hasScheduledActivities()) {
+            tour.addStep({
+                element: "#current-level",
+                title: "Current Level",
+                placement: "top",
+                content: "This is your group's current level.  Each level unlocks 5 new challenges.  You are currently level " + viewModel.groupLevel() + "."
+            });
+        }
         tour.addStep({
             element: "#todays-progress",
             placement: "top",
@@ -420,19 +439,22 @@ $(function() {
         viewModel.showActivityPerformedModal();
         var id = challengeModel.pk();
         var formData = $('#challengeForm' + id).serialize();
+        console.debug("form data: " + formData);
         $.post('/lighterprints/api/do-activity', formData, function(data) {
-                if (data.success) {
-                    ko.mapping.fromJSON(data.viewModel, viewModel);
-                    viewModel.lastPerformedActivity(challengeModel);
-                    viewModel.hideActivityPerformedModal();
-                    viewModel.initializeChart();
-                }
-                else {
-                    console.debug("ERROR: " + data.message);
-                    viewModel.errorMessage("Unable to perform activity: " + data.message);
-                    $('#activityUnavailableModal').modal();
-                }
-            });
+            console.debug(data);
+            if (data.success) {
+                ko.mapping.fromJSON(data.viewModel, viewModel);
+                viewModel.lastPerformedActivity(challengeModel);
+                viewModel.hideActivityPerformedModal();
+                viewModel.initializeChart();
+            }
+            else {
+                console.debug("ERROR: " + data.response);
+                $('#activityPerformedModal').modal('hide');
+                viewModel.errorMessage(data.response);
+                $('#activityUnavailableModal').modal();
+            }
+        });
     };
     ko.applyBindings(viewModel);
     viewModel.setup();
@@ -556,13 +578,13 @@ $(function() {
         <form data-bind='attr: { id: "challengeForm" + pk() }' class='form-horizontal' method='post'>
             <input data-bind='value: pk' type='hidden' name='activity_id' />
             <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
-            <a data-bind='css: status, click: $root.perform' class='btn challenge'>
+            <button data-bind='disable: $root.isActivityDisabled($data), css: $root.activityStatusCss($data), click: $root.perform' class='btn challenge'>
             <span data-bind='if: $root.isAvailable($data)'>Perform</span>
             <span data-bind='if: $root.isCompleted($data)'>Completed <i class='icon-check'></i></span>
             <span data-bind='if: $root.isExpired($data)'>Expired <i class='icon-warning-sign'></i></span>
             <span data-bind='if: $root.isUpcoming($data)'>Not yet available <i class='icon-time'></i></span>
             <span data-bind='if: $root.isLocked($data)'>Locked <i class='icon-lock'></i></span>
-            </a> 
+            </button>
             {% comment %} FIXME: enable once we have more info again
             <small><a href='#'>Learn more</a></small>
             {% endcomment %}

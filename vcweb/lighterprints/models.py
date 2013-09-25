@@ -33,12 +33,15 @@ def get_activity_points_cache():
     return activity_points_cache
 
 
+def is_scheduled_activity_experiment(experiment_configuration):
+    return experiment_configuration.has_daily_rounds
+
 class ActivityStatusList(object):
 
     def __init__(self, participant_group_relationship, activities=None, round_configuration=None, group_level=1):
         self.activities = list(Activity.objects.all()) if activities is None else activities
         self.round_configuration = participant_group_relationship.group.current_round if round_configuration is None else round_configuration
-        self.has_scheduled_activities = self.round_configuration.experiment_configuration.has_daily_rounds
+        self.has_scheduled_activities = is_scheduled_activity_experiment(self.round_configuration.experiment_configuration)
         activity_availability_cache = get_activity_availability_cache()
 # find all unlocked activities for the given participant
         self.all_unlocked_activities = Activity.objects.unlocked(self.round_configuration, scheduled=self.has_scheduled_activities, level=group_level)
@@ -70,6 +73,7 @@ class ActivityStatusList(object):
                 else:
                     activity_status = 'expired'
             activity_dict['status'] = activity_status
+            activity_dict['availableNow'] = activity_status == 'available'
             activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
             self.activity_dict_list.append(activity_dict)
         self.activity_dict_list.sort(key=_activity_status_sort_key)
@@ -86,7 +90,7 @@ class GroupScores(object):
     def __init__(self, experiment, round_data=None, groups=None, participant_group_relationship=None, start_date=None, end_date=None):
         self.round_data = experiment.current_round_data if round_data is None else round_data
         self.groups = list(experiment.groups) if groups is None else groups
-        self.has_scheduled_activities = experiment.experiment_configuration.has_daily_rounds
+        self.has_scheduled_activities = is_scheduled_activity_experiment(experiment.experiment_configuration)
         self.number_of_groups = len(self.groups)
         # { group : {average_points, total_points} }
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
@@ -371,6 +375,34 @@ class ActivityManager(TreeManager, PassThroughManager):
         return Activity.objects.filter(pk__in=available_activity_ids)
         #return ActivityAvailability.objects.select_related('activity').filter(activity__id__in=(available_activity_ids), **kwargs).values_list('activity', flat=True)
 
+    def already_performed(self, activity, participant_group_relationship, round_data):
+        today = datetime.combine(date.today(), time())
+        already_performed = participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(),
+                int_value=activity.id,
+                round_data=round_data,
+                date_created__gte=today)
+        return already_performed.count() > 0
+
+    def is_available_now(self, activity):
+        current_time = datetime.now().time()
+        if activity.available_all_day:
+            return True
+        availabilities = activity.availability_set.filter(start_time__lte=current_time, end_time__gte=current_time)
+        return availabilities.count() > 0
+
+    def is_activity_available(self, activity, participant_group_relationship, round_data):
+        round_configuration = round_data.round_configuration
+        if is_scheduled_activity_experiment(round_configuration.experiment_configuration):
+            # first query for scheduled set
+            unlocked_activities = self.scheduled(round_configuration)
+            if activity in unlocked_activities:
+                # next check if it is currently available 
+                currently_available = self.is_available_now(activity)
+                if currently_available:
+                    # finally, if it is currently available, make sure they haven't already performed it
+                    return not self.already_performed(activity, participant_group_relationship, round_data)
+        return False
+
     def upcoming(self, level=1, scheduled=False, round_configuration=None):
         current_time = datetime.now().time()
         if scheduled:
@@ -382,7 +414,7 @@ class ActivityManager(TreeManager, PassThroughManager):
     def _filter_by_availability(self, level=1, **kwargs):
         return ActivityAvailability.objects.select_related('activity').filter(models.Q(activity__level__lte=level, **kwargs)).values_list('activity', flat=True)
 
-    def currently_available(self, level=1, current_time=None, fetch_models=False, **kwargs):
+    def currently_available(self, level=1, current_time=None, fetch_models=False, scheduled_activities=False, **kwargs):
         ''' returns a list of available activity pks '''
         if current_time is None:
             current_time = datetime.now().time()
@@ -447,6 +479,9 @@ class Activity(MPTTModel):
                 cv = ','.join([availability.time_slot for availability in self.availability_set.all()])
             cache.set(ck, cv)
         return cv
+
+    def is_available_for(self, participant_group_relationship, round_data):
+        return Activity.objects.is_activity_available(self, participant_group_relationship, round_data)
 
     def to_dict(self, attrs=('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'icon_url', 'icon_name', 'personal_benefits', 'points', 'time_slots')):
         ck = 'activity.%s' % self.pk
@@ -709,13 +744,14 @@ def check_activity_availability(activity, participant_group_relationship, **kwar
     return ActivityStatus.UNAVAILABLE
 
 
-def is_activity_available(activity, participant_group_relationship, **kwargs):
-    return check_activity_availability(activity, participant_group_relationship, **kwargs) == ActivityStatus.AVAILABLE
+def is_activity_available(activity, participant_group_relationship, round_data=None, **kwargs):
+    return activity.is_available_for(participant_group_relationship, round_data, **kwargs)
+#    return check_activity_availability(activity, participant_group_relationship, round_data=round_data, **kwargs) == ActivityStatus.AVAILABLE
 
 
 def do_activity(activity, participant_group_relationship):
     round_data = participant_group_relationship.current_round_data
-    if is_activity_available(activity, participant_group_relationship, round_data=round_data):
+    if activity.is_available_for(participant_group_relationship, round_data):
         logger.debug("activity %s was available", activity)
         return ParticipantRoundDataValue.objects.create(parameter=get_activity_performed_parameter(),
                 participant_group_relationship=participant_group_relationship,
