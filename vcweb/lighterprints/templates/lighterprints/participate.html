@@ -89,7 +89,7 @@
                 <div class='span2 left-divider'>
                     <h5 id='todays-progress'><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span>
                         <i id='progress-info' style='padding: 0px 0px 0px 0px; margin: -1px 0px 0px -1px;' data-trigger='hover'
-                            data-placement='top' data-content='This chart shows your average group score (green) in relation to the average group score needed to advance to the next level (gray).'
+                            data-placement='top' data-content='This chart shows your current group score (green) in relation to your group score goal (gray).'
                             class='icon-info-sign'></i>
                     </h5>
                     <div data-bind='popover: { content: "#todaysProgressChartPopoverContent", id: "todays-progress-chart-popover"}' class='chart'>
@@ -132,7 +132,12 @@
             <div class='alert alert-block alert-white'>
                 <button type="button" class="close" data-dismiss="alert"><i class='icon-remove-sign'></i></button>
                 <h2>Complete challenges to earn green points.</h2>
-                <p>
+                <p data-bind='if: hasScheduledActivities'>
+                Different challenges are available at different times and days. In order to maximize your chances at
+                winning a prize, your group must earn enough points so that the <strong>average number of points</strong> per participant is greater than
+                <span data-bind='text:pointsToNextLevel' class='badge badge-lighterprints-green'></span>.
+                </p>
+                <p data-bind='ifnot: hasScheduledActivities'>
                 Challenges are divided up into 3 levels.  In order to unlock the next level's challenges your group must earn
                 enough points so that the <strong>average number of points</strong> per participant is greater than
                 <span data-bind='text:pointsToNextLevel' class='badge badge-lighterprints-green'></span>.
