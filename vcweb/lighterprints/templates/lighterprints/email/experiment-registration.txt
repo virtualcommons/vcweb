@@ -1,28 +1,20 @@
 Hello,
 
-Thanks in advance for participating in this experiment. You have been randomly allocated to a group of 5 along
-with four other participants who have also signed up for this experiment.  You have a chance to earn $100 by performing
+Thank you for signing up to participate in this experiment. You have been randomly allocated to a group of 5 along with
+four other participants who have also signed up for this experiment.  You will have a chance to win prizes by performing
 actions within the experiment to reduce your virtual carbon footprint.
 
-To access the experiment visit https://vcweb.asu.edu{{experiment.participant_url}} and login with the following credentials:
+To access the experiment please visit https://vcweb.asu.edu{{experiment.participant_url}} and login with the following credentials:
 
     Email:          {{ participant.email }}
     Password:       {{ password }} 
 
-You can reset your password by visiting
+You can reset your password at any time by entering your email at
 
     https://vcweb.asu.edu/accounts/password/reset?email={{ participant.email }}
 
 
-The experiment will run from Monday, April 8th until midnight on Friday, April 12th.  There are three levels to
-this experiment, and your group must reach specific average carbon footprint savings in order to advance to the next
-level.  This will be explained in more detail when you visit the website.
-
-The probability of earning $100 is based on the performance of your group:
-
-    * If your group completes level 3 by midnight on Wednesday, April 10th, your group has a 20% chance to earn $100
-    * If your group completes level 3 by midnight on Thursday, April 11th, your group has a 14% chance to earn $100
-    * If your group completes level 3 by midnight on Friday, April 12th, your group has a 8% chance to earn $100
-    * If your group completes level 2 by midnight on Friday, April 12th, your group has a 4% chance to earn $100
-    * If your group completes level 1 by midnight on Friday, April 12th, your group has a 2% chance to earn $100
-    * If your group does not complete level 1 by midnight on Friday, April 12th, your group will still have a 1% chance to earn $100
+The experiment will begin on {{experiment.start_date}} and run for {{experiment.number_of_rounds}} days, ending on
+{{experiment.end_date}} at midnight. The probability of earning a prize is based on the performance of your group. If your group
+score reaches the goal before midnight your chances of earning a prize will be higher. Each day at midnight your group's
+score will reset to 0.

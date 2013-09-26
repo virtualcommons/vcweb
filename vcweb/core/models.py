@@ -434,7 +434,8 @@ class Experiment(models.Model):
     # how long this experiment should run in a date format
     # 1w2d = 1 week 2 days = 9d
     duration = models.CharField(max_length=32, blank=True)
-    start_date = models.DateField(null=True, blank=True, help_text=_("Used in conjunction with an ExperimentConfiguration with has_daily_rounds set, signifies that the experiment should activate automatically at a certain time."))
+    start_date = models.DateField(null=True, blank=True, help_text=_("Used in conjunction ExperimentConfiguration.has_daily_rounds set to true and signifies that the experiment should activate automatically at the specified time."))
+    #end_date = models.DateField(null=True, blank=True, help_text=_("Used in conjuction with ExperimentConfiguration.has_daily_rounds set to true and signifies that the experiment should end at the specified time."))
     tick_duration = models.CharField(max_length=32, blank=True)
     """ how often the experiment_metadata server should tick. """
 
@@ -471,6 +472,13 @@ class Experiment(models.Model):
             return datetime.now() - self.current_round_start_time
         return timedelta(0)
 
+    @property
+    def end_date(self):
+        if self.experiment_configuration.has_daily_rounds:
+            return self.start_date + timedelta(self.number_of_rounds)
+        logger.warn("Asking for end_date for non daily rounds experiment %s, returning start date %s instead", self,
+                self.start_date)
+        return self.start_date
     @property
     def time_remaining(self):
         if self.is_timed_round:
@@ -576,6 +584,10 @@ class Experiment(models.Model):
     @property
     def current_round_template(self):
         return self.current_round.template_path
+
+    @property
+    def number_of_rounds(self):
+        return self.experiment_configuration.total_number_of_rounds
 
     @property
     def current_round(self):
@@ -1077,6 +1089,8 @@ class Experiment(models.Model):
         self.start_round()
 
     def complete(self):
+        if self.is_round_in_progress:
+            self.end_round()
         self.log("Marking as COMPLETED")
         self.status = Experiment.Status.COMPLETED
         self.save()
@@ -2295,17 +2309,22 @@ def update_daily_experiments(sender, time=None, start=None, **kwargs):
     """
     signal handler for activating daily experiments
     """
-    # first handle inactive daily experiments that need to be activated
-    inactive_daily_experiments = Experiment.objects.inactive(experiment_configuration__has_daily_rounds=True)
     today = datetime.today().date()
-    for e in inactive_daily_experiments:
-        if e.experiment_start_date == today:
-            logger.debug("activating experiment %s with start date of %s", e, e.experiment_start_date)
-            e.activate()
+    # first advance all active daily round experiments to the next round or complete them if they've hit completion
     active_daily_experiments = Experiment.objects.active(experiment_configuration__has_daily_rounds=True)
     for e in active_daily_experiments:
         # FIXME: check for none result and end the experiment?
-        e.advance_to_next_round()
+        if e.has_next_round:
+            e.advance_to_next_round()
+        else:
+            e.complete()
+    # next activate inactive daily experiments that need to be activated, this MUST happen after advancing the inactive
+    # experiments, otherwise we'll advance the just-activated experiments.
+    inactive_daily_experiments = Experiment.objects.inactive(experiment_configuration__has_daily_rounds=True)
+    for e in inactive_daily_experiments:
+        if e.start_date == today:
+            logger.debug("activating experiment %s with start date of %s", e, e.start_date)
+            e.activate()
 
 # signal handlers for socialauth
 @receiver(social_auth.signals.socialauth_registered, sender=None)
