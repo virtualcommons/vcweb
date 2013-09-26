@@ -392,15 +392,18 @@ class ActivityManager(TreeManager, PassThroughManager):
 
     def is_activity_available(self, activity, participant_group_relationship, round_data):
         round_configuration = round_data.round_configuration
+        unlocked_activities = []
         if is_scheduled_activity_experiment(round_configuration.experiment_configuration):
             # first query for scheduled set
             unlocked_activities = self.scheduled(round_configuration)
-            if activity in unlocked_activities:
-                # next check if it is currently available 
-                currently_available = self.is_available_now(activity)
-                if currently_available:
-                    # finally, if it is currently available, make sure they haven't already performed it
-                    return not self.already_performed(activity, participant_group_relationship, round_data)
+        else:
+            unlocked_activities = Activity.objects.unlocked(level=get_footprint_level(participant_group_relationship.group, round_data))
+        if activity in unlocked_activities:
+            # next check if it is currently available
+            currently_available = self.is_available_now(activity)
+            if currently_available:
+                # finally, if it is currently available, make sure they haven't already performed it
+                return not self.already_performed(activity, participant_group_relationship, round_data)
         return False
 
     def upcoming(self, level=1, scheduled=False, round_configuration=None):

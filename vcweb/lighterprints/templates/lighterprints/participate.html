@@ -46,12 +46,12 @@
                             Today's Progress Chart.</b></span>
                 </p>
                 <p>
-                    <i class='icon-star text-gold'></i> Some challenges are unlocked all day, and others are only
-                    unlocked at specific times. <span data-bind='ifnot: hasScheduledActivities'>Discover new challenges by ranking up!</span>
+                    <i class='icon-star text-gold'></i> Some challenges are unlocked all day, and others are only unlocked at specific times.
+                    <span data-bind='ifnot: hasScheduledActivities'>Discover new challenges by ranking up!</span>
                 </p>
                 <p>
-                    <strong>Your point totals reset at midnight each night.</strong> <span data-bind='ifnot:
-                        hasScheduledActivities'>If your group's average score isn't high enough to rank up, you must start over.</span>
+                    <strong>Your point totals reset at midnight each night.</strong> 
+                    <span data-bind='ifnot: hasScheduledActivities'>If your group's average score isn't high enough to rank up, you must start over.</span>
                 </p>
             </div>
             </div>
@@ -59,7 +59,7 @@
                 <div class='span2'>
                     <h5 id='todays-score'><span class='lighterprints-scoreboard-uppercase'>Today's Score</span>
                         <i id='score-info' style='margin:8px 0 0 0;' data-trigger='hover' data-placement='top' 
-                            data-content="This is your group's average score for the day.  Complete high-value challenges to rank your group up." class='pull-right icon-info-sign'></i></h5>
+                            data-content="This is your group's average score for the day." class='pull-right icon-info-sign'></i></h5>
                     <table>
                         <tr>
                             <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: averagePoints'></span></td>
@@ -356,42 +356,40 @@ $(function() {
     }
     viewModel.setupTour = function() {
         var tour = viewModel.tutorialTour;
-        tour.addStep({
+        tour.addSteps([
+        {
             element: "#todays-score",
             title: "Today's Score",
             placement: "top",
             content: "This is your group's average score for the day.  Complete high-value challenges to help your group advance to the next level."
-        });
-        // FIXME: crappy special case logic to deal with scheduled activities vs level based activities
-        if (! viewModel.hasScheduledActivities()) {
-            tour.addStep({
-                element: "#current-level",
-                title: "Current Level",
-                placement: "top",
-                content: "This is your group's current level.  Each level unlocks 5 new challenges.  You are currently level " + viewModel.groupLevel() + "."
-            });
-        }
-        tour.addStep({
+        },
+        {
+            element: "#current-level",
+            // FIXME: crappy special case logic to deal with scheduled activities vs level based activities
+            title: viewModel.hasScheduledActivities() ? "Group Goal" : "Current Level",
+            placement: "top",
+            content: viewModel.hasScheduledActivities() ? "This icon will light up when your group score exceeds the carbon footprint goal." : "This is your group's current level.  Each level unlocks 5 new challenges.  You are currently level " + viewModel.groupLevel() + "."
+        },
+        {
             element: "#todays-progress",
             placement: "top",
             title: "Today's Progress",
             content: "This chart displays your average group score in green and the average group score needed to advance to the next level in gray.  To advance to level 2 your group average score needs to reach 50."
-        });
-        tour.addStep({
-            element: "#time-remaining",
-            placement: "top",
-            title: "Time Remaining",
-            content: "The time remaining before your group progress resets at midnight.  If your group doesn't earn enough points to advance to the next level by midnight, your point totals reset for the next day and you stay at the same level."
-        });
-        tour.addStep({
+        },
+        {
             element: "#unlocked-challenge-tab",
             title: "Perform Challenges",
             content: "You can perform challenges by clicking on the green Perform button.  The points each challenge is worth is listed on the right."
-        });
+        },
+        {
+            element: "#time-remaining",
+            placement: "top",
+            title: "Time Remaining",
+            content: "The time remaining before your group progress resets at midnight."
+        }]);
         if (viewModel.firstVisit()) {
             tour.start(true);
         }
-        tour.start();
     }
     viewModel.restartTour = function() {
         viewModel.activateDashboardTab();

@@ -13,6 +13,7 @@ class BaseTest(BaseVcwebTest):
     fixtures = [ 'lighterprints_experiment_metadata', 'activities' ]
 
     def perform_activities(self, activities=None):
+        rd = self.experiment.current_round_data
         activities = Activity.objects.at_level(1)
         performed_activities = set()
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=self.experiment):
@@ -20,7 +21,8 @@ class BaseTest(BaseVcwebTest):
             self.client.login(username=participant.email, password='test')
             for activity in activities:
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
-                expected_success = is_activity_available(activity, participant_group_relationship)
+                expected_success = is_activity_available(activity, participant_group_relationship, rd)
+                logger.debug("expected success: %s", expected_success)
                 if expected_success:
                     performed_activities.add(activity)
                 response = self.client.post('/lighterprints/api/do-activity', {
@@ -97,13 +99,14 @@ class ActivityTest(BaseTest):
         e.activate()
 # gets all activities with no params
         activities = get_available_activities()
+        rd = e.current_round_data
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
             logger.debug("all available activities: %s", activities)
             participant = participant_group_relationship.participant
             self.client.login(username=participant.email, password='test')
             for activity in activities:
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
-                expected_success = is_activity_available(activity, participant_group_relationship)
+                expected_success = is_activity_available(activity, participant_group_relationship, rd)
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
@@ -139,6 +142,7 @@ class GroupScoreTest(ActivityTest):
         e = self.experiment
         e.activate()
         performed_activities = self.perform_activities()
+        logger.debug("performed activities: %s", performed_activities)
         for pgr in e.participant_group_relationships:
             self.assertEqual(get_individual_points(pgr), 0)
             self.assertTrue(get_individual_points(pgr, end_date=date.today() + timedelta(1)) > 0)
