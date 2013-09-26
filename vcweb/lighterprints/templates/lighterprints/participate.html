@@ -371,7 +371,7 @@ $(function() {
             element: "#todays-score",
             title: "Today's Score",
             placement: "top",
-            content: "This is your group's average score for the day.  Complete high-value challenges to help your group advance to the next level."
+            content: "This is your group score for the day. The group score is the average number of points each member of your group has earned, starting at midnight each day."
         },
         {
             element: "#current-level",
@@ -387,15 +387,15 @@ $(function() {
             content: "This chart shows your current group score (green) in relation to your group score goal (gray). Maximize your chances at earning a prize by helping your group meet the group score goal each day."
         },
         {
-            element: "#unlocked-challenge-tab",
-            title: "Perform Challenges",
-            content: "You can perform challenges by clicking on the green Perform button.  The points each challenge is worth is listed on the right."
-        },
-        {
             element: "#time-remaining",
             placement: "top",
             title: "Time Remaining",
             content: "The time remaining before your group progress resets at midnight."
+        },
+        {
+            element: "#unlocked-challenge-tab",
+            title: "Perform Challenges",
+            content: "You can perform challenges by clicking on the green Perform button.  The points each challenge is worth is listed on the right."
         }]);
         if (viewModel.firstVisit()) {
             tour.start(true);
