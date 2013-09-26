@@ -156,7 +156,7 @@
             activities.  Some of these activities are available all day, and others are only available at
             specific times.  You can learn more about them by clicking on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a> and selecting an activity.
             </p>
-            <h4>Challenges, Green Points, and Levels</h4>
+            <h4>Challenges, Green Points, and Prizes</h4>
             <p>
             Each <strong class='text-gold'>challenge</strong> is worth a certain number of 
             <strong class='lighterprints-green'>green points <i class='icon-leaf'></i></strong>.
@@ -165,7 +165,12 @@
             In order to perform this challenge you must login to the application between 12pm and 2pm, 
             select the challenge from the list below, and click the &quot;Perform&quot; button.
             </p>
-            <p>
+            <p data-bind='if: hasScheduledActivities'>
+            To maximize your chances of earning a prize, your group must earn an average score of <strong class='lighterprints-green'><span data-bind='text: pointsToNextLevel'></span>
+            <i class='icon-leaf'></i></strong>. In order to reach this target you and a majority of the members of your group must perform high point challenges when they are available.
+        <b>Different challenges will be available on different days, so check back each day to see which challenges are available!</b>
+            </p>
+            <p data-bind='ifnot: hasScheduledActivities'>
             Your group is currently <strong class='text-gold'>Level <span data-bind='text:groupLevel'></span></strong> and has an average score of 
             <strong class='lighterprints-green'><span data-bind='text:averagePoints'></span> <i class='icon-leaf'></i></strong>.  In order to
             advance in level and unlock more challenges the <em>average number of points contributed by each member of your group</em> must be equal to or greater than 
