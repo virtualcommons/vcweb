@@ -260,7 +260,7 @@ def update_account_profile(request):
         email = form.cleaned_data.get('email')
         p = Participant.objects.get(pk=pk)
 
-        logger.debug(p.user.email)
+        # logger.debug(p.user.email)
         if p.user.email != email:
             users = User.objects.filter(email=email)
             logger.debug(users.count())
@@ -285,7 +285,7 @@ def update_account_profile(request):
             'success': True,
             'message': 'Successful dump.'
         }))
-    logger.debug("Form had errors %s", form)
+    # logger.debug("Form had errors %s", form)
     return JsonResponse(dumps({'success': False, 'message': 'You need to provide your major, class status and gender if you want to receive invitaions'}))
 
 
@@ -309,7 +309,7 @@ def account_profile(request):
     user = request.user
     if is_participant(user):
         form = ParticipantAccountForm(instance=user.participant)
-        logger.debug(form)
+        # logger.debug(form)
     else:
         form = ExperimenterAccountForm(instance=user.experimenter)
     return render(request, 'account/profile.html', { 'form': form })
