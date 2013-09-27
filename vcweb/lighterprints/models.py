@@ -190,8 +190,8 @@ class GroupScores(object):
         logger.debug("creating group summary email for group %s", group)
         # FIXME: figure out where to put logic to select an email template based on the treatment type, either here or in the template itself
         yesterday = date.today() - timedelta(1)
-        plaintext_template = select_template(['lighterprints/email/scheduled-activities/group-summary-email.txt'])
-        html_template = select_template(['lighterprints/email/scheduled-activities/group-summary-email.html'])
+        plaintext_template = select_template(['lighterprints/email/scheduled-activity/group-summary-email.txt'])
+        html_template = select_template(['lighterprints/email/scheduled-activity/group-summary-email.html'])
         experiment = group.experiment
         experimenter_email = experiment.experimenter.email
         number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group,

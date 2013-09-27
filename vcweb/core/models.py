@@ -999,11 +999,12 @@ class Experiment(models.Model):
         ps = dict(round_configuration=round_configuration)
         if round_configuration.is_repeating_round:
             same_repeating_round = self.current_round == round_configuration
+            # initialize repeating round sequence number as 0
             rrsn = 0
-            # create round data with a repeating sequence number - if the incoming round configuration is the SAME as
-            # the current round, we know we need to increment the current repeated round sequence number.  Otherwise,
-            # reset it to 0 because we're moving into a repeating round setup and we might have transitioned from
-            # an existing repeating round
+            # if the incoming round configuration is the same as the current round set to the
+            # current_repeated_round_sequence_number. we only explicitly increment the repeated round sequence number
+            # when invoked at the end of a round and copying data parameters from the current round to the next. I.e.,
+            # copy_to_next_round invokes get_or_create_round_data(..., increment_repeated_round_sequence_number=True)
             if same_repeating_round:
                 rrsn = self.current_repeated_round_sequence_number
                 if increment_repeated_round_sequence_number:
