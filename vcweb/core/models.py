@@ -1079,9 +1079,6 @@ class Experiment(models.Model):
     def restart(self):
         self.log("Restarting experiment entirely from the first round and clearing out all existing data.")
         self.deactivate()
-        self.round_data_set.all().delete()
-        self.current_round_sequence_number = 1
-        self.current_repeated_round_sequence_number = 0
         self.activate()
         self.start_round()
 
@@ -1097,9 +1094,18 @@ class Experiment(models.Model):
         self.save()
 
     def deactivate(self):
-        self.log("Deactivating experiment and flagging as inactive.")
+        self.log("Deactivating experiment, deleting all data and flagging as inactive.")
         self.status = Experiment.Status.INACTIVE
+        self.round_data_set.all().delete()
+        self.current_round_sequence_number = 1
+        self.current_repeated_round_sequence_number = 0
         self.save()
+
+    def clear_participants(self):
+        logger.debug("clearing all participants for experiment %s", self)
+        ParticipantExperimentRelationship.objects.filter(experiment=self).delete()
+        ParticipantGroupRelationship.objects.filter(group__experiment=self).delete()
+        self.deactivate()
 
     def check_elapsed_time(self):
         if self.is_timed_round and self.is_time_expired:

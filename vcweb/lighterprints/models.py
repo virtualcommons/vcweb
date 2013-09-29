@@ -98,11 +98,11 @@ class GroupScores(object):
         # establish date range
         self.start_date = date.today() if start_date is None else start_date
         self.end_date = self.start_date + timedelta(1) if end_date is None else end_date
-        self.round_configuration = round_data.round_configuration
+        self.round_configuration = self.round_data.round_configuration
         self.show_rankings = can_view_other_groups(self.round_configuration)
 
         activity_points_cache = get_activity_points_cache()
-        activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=round_data, parameter=get_activity_performed_parameter(), date_created__range=(self.start_date, self.end_date))
+        activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=self.round_data, parameter=get_activity_performed_parameter(), date_created__range=(self.start_date, self.end_date))
         for activity_performed_dv in activities_performed_qs:
             activity_points = activity_points_cache[activity_performed_dv.int_value]
             self.scores_dict[activity_performed_dv.participant_group_relationship.group]['total_points'] += activity_points
@@ -114,6 +114,7 @@ class GroupScores(object):
             total_points = group_data_dict['total_points']
             average = total_points / group_size
             group_data_dict['average_points'] = average
+            logger.debug("group data dictionary: %s", group_data_dict)
 
     def average_points(self, group):
         return self.scores_dict[group]['average_points']
@@ -141,7 +142,7 @@ class GroupScores(object):
     def should_advance_level(self, group, level, max_level=3):
         logger.debug("checking if group %s at level %s should advance in level on %s (%s)", group, level, self.start_date, self.scores_dict[group])
         if level <= max_level:
-            return self.scores_dict[group]['average_points'] >= get_points_to_next_level(level)
+            return self.average_points(group) >= get_points_to_next_level(level)
         return False
 
     def get_group_rank(self, group):
@@ -184,6 +185,7 @@ class GroupScores(object):
         logger.debug("Calculating thresholds for scheduled activity experiment")
         threshold = get_group_threshold(self.round_configuration)
         average_group_points = self.average_points(group)
+        logger.debug("average group points: %s", average_group_points)
         goal_reached = average_group_points >= threshold
         # they reached their goal, set their completion flag for this round
         get_experiment_completed_dv(group, round_data=round_data).update_boolean(goal_reached)
@@ -260,7 +262,7 @@ class GroupScores(object):
         number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group,
                                                              date_created__gte=yesterday).count()
         messages = []
-        average_points = self.average_points(group)
+        average_group_points = self.average_points(group)
         points_to_next_level = get_points_to_next_level(level)
         for pgr in group.participant_group_relationship_set.all():
             c = Context(dict({'experiment': experiment,
@@ -271,7 +273,7 @@ class GroupScores(object):
                               'summary_date': yesterday,
                               'show_rankings': self.show_rankings,
                               'points_to_next_level': points_to_next_level,
-                              'average_points': average_points,
+                              'average_points': average_group_points,
                               'number_of_chat_messages': number_of_chat_messages,
                               'individual_points': get_individual_points(pgr),
                               }, **kwargs))
