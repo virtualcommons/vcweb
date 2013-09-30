@@ -2311,7 +2311,7 @@ def is_participant(user):
     """
     return hasattr(user, 'participant') and isinstance(user.participant, Participant)
 
-@receiver(signals.midnight_tick)
+@receiver(signals.system_daily_tick)
 def update_daily_experiments(sender, time=None, start=None, **kwargs):
     """
     signal handler for activating daily experiments

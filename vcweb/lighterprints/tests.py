@@ -51,24 +51,30 @@ class ActivityViewTest(BaseTest):
             response = self.client.get('/lighterprints/activity/list', {'format':'json', 'participant_group_id': pgr.id})
             self.assertEqual(response.status_code, 403)
 
+
 class UpdateLevelTest(BaseTest):
     def test_daily_points(self):
         e = self.experiment
         e.activate()
-        current_round_data = e.get_round_data()
+        current_round_data = e.current_round_data
 # initialize participant carbon savings
-        activity_points_cache = get_activity_points_cache()
         level_one_activities = Activity.objects.filter(level=1)
-        for participant_group_relationship in e.participant_group_relationships:
+        for pgr in e.participant_group_relationships:
             for activity in level_one_activities:
-                activity_performed = ParticipantRoundDataValue.objects.create(participant_group_relationship=participant_group_relationship, round_data=current_round_data, parameter=get_activity_performed_parameter())
+                activity_performed = ParticipantRoundDataValue.objects.create(
+                    participant_group_relationship=pgr,
+                    round_data=current_round_data,
+                    parameter=get_activity_performed_parameter()
+                )
                 activity_performed.int_value = activity.pk
                 activity_performed.save()
         update_active_experiments(self, start_date=date.today())
-        for group in e.groups:
+        gs = e.groups
+        group_scores = GroupScores(e, current_round_data, gs)
+        for group in gs:
             logger.debug("all levels should be 2 now")
             self.assertEqual(get_footprint_level(group), 2)
-            self.assertEqual(average_points_per_person(group), 177)
+            self.assertEqual(group_scores.average_points(group), 177)
 
 
 class GroupActivityTest(BaseTest):
@@ -137,6 +143,7 @@ class ActivityTest(BaseTest):
                 self.assertTrue(json_object)
                 self.assertIsNotNone(json_object['viewModel']);
 
+
 class GroupScoreTest(ActivityTest):
     def test_individual_points(self):
         e = self.experiment
@@ -151,8 +158,11 @@ class GroupScoreTest(ActivityTest):
         e = self.experiment
         e.activate()
         performed_activities = self.perform_activities()
+        gs = e.groups
+        group_scores = GroupScores(e, groups=gs)
+        # expected average points per person is the straight sum of all activities in the performed activities because
+        # every participant in the group has performed them
         expected_avg_points_per_person = sum([activity.points for activity in performed_activities])
-        for group in e.group_set.all():
-            (average_points_per_person, total_points, total_participant_points) = get_group_score(group)
-            self.assertEqual(average_points_per_person, expected_avg_points_per_person)
-            self.assertEqual(total_points, expected_avg_points_per_person * group.size)
+        for group in gs:
+            self.assertEqual(group_scores.average_points(group), expected_avg_points_per_person)
+            self.assertEqual(group_scores.total_points(group), expected_avg_points_per_person * group.size)

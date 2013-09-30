@@ -7,7 +7,9 @@ round_started = Signal(providing_args=["experiment", 'time', 'round_configuratio
 round_ended = Signal(providing_args=['experiment', 'time', 'round_configuration'])
 minute_tick = Signal(providing_args=['time'])
 hour_tick = Signal(providing_args=['time'])
-midnight_tick = Signal(providing_args=['time'])
+pre_system_daily_tick = Signal(providing_args=['time'])
+system_daily_tick = Signal(providing_args=['time'])
+post_system_daily_tick = Signal(providing_args=['time'])
 
 post_login = Signal(providing_args=['user'])
 post_logout = Signal(providing_args=['user'])

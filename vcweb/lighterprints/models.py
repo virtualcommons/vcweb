@@ -103,6 +103,7 @@ class GroupScores(object):
 
         activity_points_cache = get_activity_points_cache()
         activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=self.round_data, parameter=get_activity_performed_parameter(), date_created__range=(self.start_date, self.end_date))
+        logger.debug("activities performed qs: %s", activities_performed_qs)
         for activity_performed_dv in activities_performed_qs:
             activity_points = activity_points_cache[activity_performed_dv.int_value]
             self.scores_dict[activity_performed_dv.participant_group_relationship.group]['total_points'] += activity_points
@@ -214,6 +215,8 @@ class GroupScores(object):
                 })
             plaintext_content = plaintext_template.render(c)
             html_content = html_template.render(c)
+            logger.debug("plaintext content: %s", plaintext_content)
+            logger.debug("html content: %s", html_content)
             subject = 'Lighter Footprints Summary for %s' % yesterday
             to_address = [ experimenter_email, pgr.participant.email ]
             msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
@@ -289,7 +292,7 @@ class GroupScores(object):
     def __str__(self):
         return str(self.scores_dict)
 
-@receiver(signals.midnight_tick)
+@receiver(signals.pre_system_daily_tick)
 def update_active_experiments(sender, time=None, start_date=None, send_emails=True, **kwargs):
 # since this happens at midnight we need to look at the previous day
     if start_date is None:
@@ -771,38 +774,6 @@ def get_performed_activity_ids(participant_group_relationship):
     return participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter()).values_list('id', flat=True)
 
 
-def average_points_per_person(group, start=None, end=None, round_data=None):
-    return get_group_score(group, start=start, end=end, round_data=round_data)[0]
-
-
-# returns a tuple of (dict of group -> {average_points, total_points}, total_participant_points)
-def get_group_scores(experiment, round_data, participant_group_relationship=None, start=None, end=None):
-    activity_points_cache = get_activity_points_cache()
-    # establish date range
-    total_participant_points = 0
-    if start is None:
-        start = date.today()
-    if end is None:
-        end = start + timedelta(1)
-    group_scores = defaultdict(lambda: defaultdict(lambda: 0))
-    activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=round_data,
-                                                                          parameter=get_activity_performed_parameter(),
-                                                                          date_created__range=(start, end))
-    for activity_performed_dv in activities_performed_qs:
-        activity_points = activity_points_cache[activity_performed_dv.int_value]
-        pgr = activity_performed_dv.participant_group_relationship
-        group_scores[pgr.group]['total_points'] += activity_points
-        if participant_group_relationship and pgr == participant_group_relationship:
-            total_participant_points += activity_points
-    for group in experiment.groups:
-        group_data_dict = group_scores[group]
-        group_size = group.size
-        total_points = group_data_dict['total_points']
-        average = total_points / group_size
-        group_data_dict['average_points'] = average
-    return group_scores, total_participant_points
-
-
 # FIXME: reduce code duplication here and get_group_scores
 # returns a tuple of the average points per person and the total points for the given group
 def get_group_score(group, start=None, end=None, participant_group_relationship=None, round_data=None, **kwargs):
@@ -838,13 +809,6 @@ def get_points_to_next_level(current_level):
         return 125
     elif current_level == 3:
         return 225
-
-
-def should_advance_level(group, level, start=None, end=None, round_data=None, max_level=3):
-    logger.debug("checking if group %s at level %s should advance in level on %s", group, level, start)
-    if level <= max_level:
-        return average_points_per_person(group, start=start, end=end, round_data=round_data) >= get_points_to_next_level(level)
-    return False
 
 
 def get_activity_performed_counts(participant_group_relationship, activity_performed_parameter=None):
