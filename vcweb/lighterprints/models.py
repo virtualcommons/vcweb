@@ -200,9 +200,11 @@ class GroupScores(object):
         number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group,
                                                              date_created__gte=yesterday).count()
         messages = []
+        experiment_completed = not experiment.has_next_round
         for pgr in group.participant_group_relationship_set.all():
             c = Context({
                 'experiment': experiment,
+                'experiment_completed': experiment_completed,
                 'number_of_groups': self.number_of_groups,
                 'group_name': group.name,
                 'group_rank': self.get_group_rank(group),
@@ -215,8 +217,6 @@ class GroupScores(object):
                 })
             plaintext_content = plaintext_template.render(c)
             html_content = html_template.render(c)
-            logger.debug("plaintext content: %s", plaintext_content)
-            logger.debug("html content: %s", html_content)
             subject = 'Lighter Footprints Summary for %s' % yesterday
             to_address = [ experimenter_email, pgr.participant.email ]
             msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)

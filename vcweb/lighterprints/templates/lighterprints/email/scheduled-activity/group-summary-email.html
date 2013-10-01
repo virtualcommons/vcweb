@@ -1,6 +1,10 @@
 <h3>Lighter Footprints Summary for {{ summary_date }}</h3>
 <p>
-You are a member of {{ group_name }}.  To participate in this experiment, visit <a href='https://vcweb.asu.edu{{experiment.participant_url}}'>https://vcweb.asu.edu{{experiment.participant_url}}</a>.
+{% if experiment_completed %}
+The experiment is now over. Thank you for participating.
+{% else %}
+You are a member of {{ group_name }}. To participate in this experiment, visit <a href='https://vcweb.asu.edu{{experiment.participant_url}}'>https://vcweb.asu.edu{{experiment.participant_url}}</a>.
+{% endif %}
 </p>
 <ul>
     <li>You earned {{ individual_points }} points while the average in your group was {{ average_points }} point(s).</li>
@@ -12,9 +16,11 @@ You are a member of {{ group_name }}.  To participate in this experiment, visit 
 <hr>
 <p>
 {% if completed %}
-Congratulations! Your group met the goal of {{ threshold }} average points per person.  
+Congratulations! Your group met the goal of {{ threshold }} average points per person.
 {% endif %}
 </p>
+{% if not experiment_completed %}
 <p>
 Remember, your group's point totals reset each day at midnight so your group must still earn {{ threshold }} average points per person to increase your chances of winning a prize today.
 </p>
+{% endif %}
