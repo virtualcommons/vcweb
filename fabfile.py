@@ -191,6 +191,7 @@ def deploy():
                     user=env.deploy_user, pty=True)
             env.static_root = vcweb_settings.STATIC_ROOT
             _virtualenv(run,'%(python)s manage.py collectstatic' % env)
+            _virtualenv(run,'%(python)s manage.py installtasks' % env)
             sudo_chain(
                     'chmod -R ug+rw .',
                     'find %(static_root)s -type d -exec chmod a+x {} \;' % env,
