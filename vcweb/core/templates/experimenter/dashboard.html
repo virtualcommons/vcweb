@@ -69,9 +69,9 @@
             data-bind='enable: $root.canClearParticipants($data), attr: {href: $root.controllerUrl($data, "clear-participants")}' class='btn confirm-experiment-action'>
             <i class='icon-trash'></i> clear all participants</button>
         <button data-action='complete' data-content='Archive and mark this experiment as completed'
-            data-bind='attr: {href: $root.controllerUrl($data, "archive")}' class='btn confirm-experiment-action'><i class='icon-save'></i> archive</button>
+            data-bind='disable: isArchived, attr: {href: $root.controllerUrl($data, "archive")}' class='btn confirm-experiment-action'><i class='icon-save'></i> archive</button>
         <button data-action='deactivate' data-content='Flag this experiment as inactive'
-            data-bind='attr: { href: $root.controllerUrl($data, "deactivate")}' class='btn confirm-experiment-action'><i class='icon-off'></i> deactivate</button>
+            data-bind='disable: isArchived, attr: { href: $root.controllerUrl($data, "deactivate")}' class='btn confirm-experiment-action'><i class='icon-off'></i> deactivate</button>
     </div>
 </div>
 </script>
