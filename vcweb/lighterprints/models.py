@@ -585,13 +585,14 @@ def is_completed(group, **kwargs):
 
 
 def get_treatment_type(round_configuration=None, **kwargs):
-    return round_configuration.get_parameter_value(parameter=get_treatment_type_parameter())
+    # XXX: if there is no treatment type we default to the compare other group condition
+    return round_configuration.get_parameter_value(parameter=get_treatment_type_parameter(),
+            default='COMPARE_OTHER_GROUP')
 
 
 def can_view_other_groups(round_configuration=None, **kwargs):
     treatment_type = get_treatment_type(round_configuration=round_configuration)
-# XXX: if there is no treatment type we default to the compare other group condition
-    return (treatment_type is None) or ('COMPARE_OTHER_GROUP' in treatment_type.string_value)
+    return 'COMPARE_OTHER_GROUP' in treatment_type.string_value
 
 def get_active_experiments():
     """

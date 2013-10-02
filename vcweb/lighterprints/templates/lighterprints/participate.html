@@ -406,9 +406,6 @@ $(function() {
         viewModel.activateDashboardTab();
         viewModel.tutorialTour.restart();
     }
-    viewModel.initializeChart = ko.computed(function() {
-        viewModel.progressChart().Doughnut(viewModel.todaysProgressChartData());
-    });
     viewModel.todaysProgressChartData = ko.computed(function() {
         var avgPoints = Math.max(1, viewModel.averagePoints());
         var pointsToNextLevel = viewModel.pointsToNextLevel();
@@ -419,6 +416,9 @@ $(function() {
         }
         return data;
     });
+    viewModel.initializeChart = function() {
+        viewModel.progressChart().Doughnut(viewModel.todaysProgressChartData());
+    };
     viewModel.activateChallengesTab = activateTabFunctor('#challenges', '#lfp-navtabs', viewModel.endTour);
     viewModel.activateDashboardTab = activateTabFunctor('#dashboard', '#lfp-navtabs', viewModel.endTour);
     viewModel.activateHelpTab = activateTabFunctor('#help', '#lfp-navtabs', viewModel.endTour);
