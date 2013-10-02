@@ -180,8 +180,8 @@ class GroupScores(object):
             # calculate total carbon savings and determine if the group should advance to the next level
             return self.create_level_experiment_emails(group)
 
-# FIXME: remove code duplication / redundancy between this and create_level_experiment_email_messages
     def create_scheduled_activity_experiment_emails(self, group):
+        # FIXME: remove code duplication / redundancy between this and create_level_experiment_email_messages
         round_data = self.round_data
         logger.debug("Calculating thresholds for scheduled activity experiment")
         threshold = get_group_threshold(self.round_configuration)
@@ -191,7 +191,6 @@ class GroupScores(object):
         # they reached their goal, set their completion flag for this round
         get_experiment_completed_dv(group, round_data=round_data).update_boolean(goal_reached)
         logger.debug("creating group summary email for group %s", group)
-        # FIXME: figure out where to put logic to select an email template based on the treatment type, either here or in the template itself
         yesterday = date.today() - timedelta(1)
         plaintext_template = select_template(['lighterprints/email/scheduled-activity/group-summary-email.txt'])
         html_template = select_template(['lighterprints/email/scheduled-activity/group-summary-email.html'])
@@ -255,8 +254,7 @@ class GroupScores(object):
         return group_summary_emails
 
     def create_level_based_group_summary_emails(self, group, level=1, **kwargs):
-        logger.debug("creating group summary email for group %s", group)
-        # FIXME: figure out where to put logic to select an email template based on the treatment type, either here or in the template itself
+        logger.debug("creating level based group summary email for group %s", group)
         yesterday = date.today() - timedelta(1)
         plaintext_template = select_template(['lighterprints/email/group-summary-email.txt'])
         html_template = select_template(['lighterprints/email/group-summary-email.html'])
@@ -292,6 +290,7 @@ class GroupScores(object):
     def __str__(self):
         return str(self.scores_dict)
 
+
 @receiver(signals.pre_system_daily_tick)
 def update_active_experiments(sender, time=None, start_date=None, send_emails=True, **kwargs):
 # since this happens at midnight we need to look at the previous day
@@ -312,8 +311,6 @@ def update_active_experiments(sender, time=None, start_date=None, send_emails=Tr
         mail.get_connection().send_messages(all_messages)
 
 
-
-
 @receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
 def round_started_handler(sender, experiment=None, **kwargs):
     logger.debug("starting lighter footprints %s", experiment)
@@ -322,16 +319,12 @@ def round_started_handler(sender, experiment=None, **kwargs):
     footprint_level_parameter = get_footprint_level_parameter()
     experiment_completed_parameter = get_experiment_completed_parameter()
     experiment.initialize_data_values(
-            group_parameters=( footprint_level_parameter, experiment_completed_parameter, ),
-            round_data=round_data,
-            defaults={
-                footprint_level_parameter: 1,
-                experiment_completed_parameter: False
-                }
-            )
-
-
-ActivityStatus = enum('AVAILABLE', 'COMPLETED', 'UNAVAILABLE')
+        group_parameters=(footprint_level_parameter, experiment_completed_parameter,),
+        round_data=round_data,
+        defaults={
+            footprint_level_parameter: 1,
+            experiment_completed_parameter: False
+        })
 
 
 class ActivityQuerySet(models.query.QuerySet):
@@ -358,7 +351,6 @@ class ActivityQuerySet(models.query.QuerySet):
                 parameter=get_available_activity_parameter()).values_list('int_value', flat=True)
         return self.filter(pk__in=available_activity_ids)
 
-
     def at_level(self, level=1, include_lower_levels=True, **kwargs):
         if include_lower_levels:
             return self.filter(level__lte=level)
@@ -374,6 +366,7 @@ class ActivityQuerySet(models.query.QuerySet):
 
 
 class ActivityManager(TreeManager, PassThroughManager):
+
     def scheduled(self, round_configuration, **kwargs):
         available_activity_ids = RoundParameterValue.objects.filter(round_configuration=round_configuration,
                 parameter=get_available_activity_parameter()).values_list('int_value', flat=True)
@@ -508,6 +501,10 @@ class Activity(MPTTModel):
         ordering = ['level', 'name']
 
 
+def _to_hour(dt):
+    return dt.strftime('%I%p').lstrip('0').lower()
+
+
 class ActivityAvailability(models.Model):
     activity = models.ForeignKey(Activity, related_name='availability_set')
     start_time = models.TimeField(null=True, blank=True)
@@ -516,12 +513,9 @@ class ActivityAvailability(models.Model):
     def __unicode__(self):
         return u'%s (%s - %s)' % (self.activity, self.start_time, self.end_time)
 
-    def _to_hour(self, dt):
-        return dt.strftime('%I%p').lstrip('0').lower()
-
     @property
     def time_slot(self):
-        return u'%s-%s' % (self._to_hour(self.start_time), self._to_hour(self.end_time))
+        return u'%s-%s' % (_to_hour(self.start_time), _to_hour(self.end_time))
 
     def to_dict(self, attrs=('start_time', 'end_time')):
         d = {}
@@ -532,9 +526,7 @@ class ActivityAvailability(models.Model):
     class Meta:
         ordering = ['activity', 'start_time']
 
-'''
-API / model utility methods
-'''
+
 @simplecache
 def get_available_activity_parameter():
     return Parameter.objects.for_round(name='available_activity')
@@ -546,42 +538,53 @@ def get_foursquare_category_ids(parent_category_name='Travel', subcategory_names
         if parent_category_name in parent_category['name']:
             return [subcategory['id'] for subcategory in parent_category['categories'] if subcategory['shortName'] in subcategory_names]
 
+
 @simplecache
 def get_lighterprints_experiment_metadata():
-    return ExperimentMetadata.objects.get(namespace='lighterprints')
+    return ExperimentMetadata.objects.get(namespace=EXPERIMENT_METADATA_NAME)
+
 
 @simplecache
 def get_activity_performed_parameter():
     return Parameter.objects.for_participant(name='activity_performed')
 
+
 @simplecache
 def get_footprint_level_parameter():
     return Parameter.objects.for_group(name='footprint_level')
+
 
 @simplecache
 def get_experiment_completed_parameter():
     return Parameter.objects.for_group(name='experiment_completed')
 
+
 @simplecache
 def get_treatment_type_parameter():
     return Parameter.objects.get(name='treatment_type')
 
+
 def get_group_threshold(round_configuration, default=160):
     return round_configuration.get_parameter_value(name='threshold', default=default).int_value
+
 
 def get_footprint_level_dv(group, round_data=None):
     if round_data is None:
         round_data = group.current_round_data
     return GroupRoundDataValue.objects.get(group=group, round_data=round_data, parameter=get_footprint_level_parameter())
 
+
 def get_footprint_level(group, round_data=None, **kwargs):
     return get_footprint_level_dv(group, round_data=round_data, **kwargs).int_value
+
 
 def get_experiment_completed_dv(group, round_data=None):
     return group.get_data_value(parameter=get_experiment_completed_parameter(), round_data=round_data)
 
+
 def is_completed(group, **kwargs):
     return get_experiment_completed_dv(group, **kwargs).boolean_value
+
 
 def get_treatment_type(round_configuration=None, **kwargs):
     try:
@@ -589,44 +592,18 @@ def get_treatment_type(round_configuration=None, **kwargs):
     except RoundParameterValue.DoesNotExist:
         return None
 
+
 def can_view_other_groups(round_configuration=None, **kwargs):
     treatment_type = get_treatment_type(round_configuration=round_configuration)
 # XXX: if there is no treatment type we default to the compare other group condition
     return (treatment_type is None) or ('COMPARE_OTHER_GROUP' in treatment_type.string_value)
 
 def get_active_experiments():
-    '''
+    """
     partition these into two tuples - level based and schedule based?
-    '''
+    """
     return Experiment.objects.active(experiment_metadata=get_lighterprints_experiment_metadata())
 
-def get_activity_status_dict(participant_group_relationship, activities, group_level=1):
-    today = datetime.combine(date.today(), time())
-    available_activity_ids = Activity.objects.currently_available(participant_group_relationship=participant_group_relationship, level=group_level)
-# filter out all activities that have already been performed today (activities may only be performed once a day)
-    performed_activity_data_values = participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(),
-            int_value__in=available_activity_ids,
-            date_created__gte=today)
-    upcoming_activity_ids = Activity.objects.upcoming(level=group_level)
-    # XXX: data value's int_value stores the fk directly, using .value does a fk lookup to restore the full entity
-    # which we don't need
-    performed_activity_ids = performed_activity_data_values.values_list('int_value', flat=True)
-    available_activity_ids = filter(lambda pk: pk not in performed_activity_ids, available_activity_ids)
-    status_dict = {}
-    for activity in activities:
-        if activity.pk in performed_activity_ids:
-            status = 'completed-challenge disabled'
-        elif activity.pk in available_activity_ids:
-            status = 'perform-challenge'
-        elif activity.pk in upcoming_activity_ids:
-            status = 'upcoming-challenge disabled'
-        elif activity.level > group_level:
-            status = 'locked-challenge disabled'
-        else:
-            status = 'expired-challenge disabled'
-        status_dict[activity.pk] = status
-
-    return status_dict
 
 def _activity_status_sort_key(activity_dict):
     s = activity_dict['status']
@@ -641,6 +618,7 @@ def _activity_status_sort_key(activity_dict):
     else:
         return 5
 
+
 def get_activity_availability_cache():
     aac = cache.get('activity_availability_cache')
     if aac is None:
@@ -650,124 +628,16 @@ def get_activity_availability_cache():
         cache.set('activity_availability_cache', aac)
     return aac
 
-def get_view_model_activities(participant_group_relationship, activities=None, group_level=1):
-    pass
-
-# returns a tuple of a (list of activity objects converted to dicts and an activity_by_level list of lists (level -> list of activity
-# objects converted to dicts).
-def get_all_activities_tuple(participant_group_relationship, activities=None, group_level=1):
-    if activities is None:
-        activities = Activity.objects.all()
-    activity_dict_list = []
-    level_activity_list = defaultdict(list)
-    activity_statuses = get_activity_status_dict(participant_group_relationship, activities, group_level)
-    #available_activities = get_available_activities(participant_group_relationship)
-    #available_activity_ids = [activity.pk for activity in available_activities]
-    activity_availability_cache = get_activity_availability_cache()
-
-    for activity in activities:
-        activity_dict = activity.to_dict()
-        level = activity.level
-        try:
-            activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
-            activity_dict['locked'] = (group_level < level)
-            activity_status = activity_statuses[activity.pk]
-            activity_dict['availableNow'] = "perform-challenge" in activity_status
-            activity_dict['completed'] = 'completed-challenge' in activity_status
-            activity_dict['expired'] = 'expired-challenge' in activity_status
-            activity_dict['upcoming'] = 'upcoming-challenge' in activity_status
-            activity_dict['status'] = activity_status
-        except Exception as e:
-            logger.debug("failed to get authenticated activity list: %s", e)
-        activity_dict_list.append(activity_dict)
-        level_activity_list[level-1].append(activity_dict)
-    activity_dict_list.sort(key=_activity_status_sort_key)
-    return (activity_dict_list, level_activity_list)
-
-def get_available_activities(participant_group_relationship=None, ignore_time=False):
-    if participant_group_relationship is None:
-        logger.warn("asking for available activities with no participant, returning all activities")
-        return Activity.objects.all()
-    else:
-        logger.debug("requesting available activities for pgr %s (%d)", participant_group_relationship, participant_group_relationship.pk)
-        # FIXME: push this logic into the manager / queryset?
-        experiment = participant_group_relationship.group.experiment
-        group_level = get_footprint_level(participant_group_relationship.group, experiment.current_round_data)
-        if ignore_time:
-            # don't worry about the time, just return all activities at this participant's group level
-            return Activity.objects.at_level(group_level)
-
-        today = datetime.combine(date.today(), time())
-        available_activity_ids = Activity.objects.currently_available(participant_group_relationship=participant_group_relationship, level=group_level)
-# filter out all activities that have already been performed today (activities may only be performed once a day)
-        performed_activity_data_values = participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(),
-                int_value__in=available_activity_ids,
-                date_created__gte=today)
-        # XXX: data value's int_value stores the fk directly, using .value does a fk lookup to restore the full entity
-        # which we don't need
-        performed_activity_ids = performed_activity_data_values.values_list('int_value', flat=True)
-        return filter(lambda pk: pk not in performed_activity_ids, available_activity_ids)
-
-def check_already_performed_today(activity, participant_group_relationship):
-    today = datetime.combine(date.today(), time())
-    already_performed = participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(),
-            int_value=activity.id,
-            date_created__gt=today)
-    return ActivityStatus.AVAILABLE if already_performed.count() == 0 else ActivityStatus.COMPLETED
-
-
-def check_activity_availability(activity, participant_group_relationship, **kwargs):
-    '''
-    FIXME: see if we can simplify or split up
-    how often can a participant participate in an activity? whenever it falls within the ActivityAvailability schedule
-    and if the participant hasn't already performed this activity during a one-day cycle (which begins at midnight)
-    '''
-    level = get_footprint_level(participant_group_relationship.group, **kwargs)
-    if activity.level > level:
-        return ActivityStatus.UNAVAILABLE
-    elif activity.available_all_day:
-        # check if they've done it already today, check if the combine is necessary
-        activity_status = check_already_performed_today(activity, participant_group_relationship)
-        logger.debug("activity is available all day, was it already performed? %s", activity_status)
-        return activity_status
-    else:
-        now = datetime.now()
-        current_time = now.time()
-        # FIXME: check if this participant has already participated in this activity within this particular interval (for all
-        # day, today, for time slots, during this particular time slot). There should only be one availability
-        try:
-            logger.debug("checking availability set %s", activity.availability_set.all())
-            availabilities = activity.availability_set.filter(start_time__lte=current_time, end_time__gte=current_time)
-            if availabilities.count() > 0:
-                earliest_start_time = datetime.combine(date.today(), availabilities[0].start_time)
-                logger.debug("earliest start time: %s", earliest_start_time)
-                already_performed = ParticipantRoundDataValue.objects.filter(parameter=get_activity_performed_parameter(),
-                        participant_group_relationship=participant_group_relationship,
-                        int_value=activity.pk,
-                        date_created__range=(earliest_start_time, now))
-                return ActivityStatus.AVAILABLE if already_performed.count() == 0 else ActivityStatus.COMPLETED
-        except Exception as e:
-            logger.debug("exception while checking if this activity had already been performed by this participant: %s", e)
-# default behavior is for the activity to be unavailable
-    return ActivityStatus.UNAVAILABLE
-
-
-def is_activity_available(activity, participant_group_relationship, round_data=None, **kwargs):
-    return activity.is_available_for(participant_group_relationship, round_data, **kwargs)
-#    return check_activity_availability(activity, participant_group_relationship, round_data=round_data, **kwargs) == ActivityStatus.AVAILABLE
-
 
 def do_activity(activity, participant_group_relationship):
     round_data = participant_group_relationship.current_round_data
     if activity.is_available_for(participant_group_relationship, round_data):
-        logger.debug("activity %s was available", activity)
+        logger.debug("performing available activity %s", activity)
         return ParticipantRoundDataValue.objects.create(parameter=get_activity_performed_parameter(),
-                participant_group_relationship=participant_group_relationship,
-                round_data=round_data,
-                # FIXME: use activity unique name instead?
-                value=activity.pk,
-                submitted=True
-                )
+                                                        participant_group_relationship=participant_group_relationship,
+                                                        round_data=round_data,
+                                                        int_value=activity.pk,
+                                                        submitted=True)
 
 
 def get_performed_activity_ids(participant_group_relationship):
@@ -809,12 +679,6 @@ def get_points_to_next_level(current_level):
         return 125
     elif current_level == 3:
         return 225
-
-
-def get_activity_performed_counts(participant_group_relationship, activity_performed_parameter=None):
-    if activity_performed_parameter is None:
-        activity_performed_parameter = get_activity_performed_parameter()
-    return participant_group_relationship.data_value_set.filter(parameter=activity_performed_parameter).values('int_value').order_by().annotate(count=models.Count('int_value'))
 
 
 def get_time_remaining():
@@ -877,8 +741,8 @@ def get_group_activity(participant_group_relationship, limit=None):
     return all_activity, chat_messages
 
 
-def abbreviated_timesince(date):
-    s = timesince(date)
+def abbreviated_timesince(dt):
+    s = timesince(dt)
     s = re.sub(r'\sdays?', 'd', s)
     s = re.sub(r'\sminutes?', 'm', s)
     s = re.sub(r'\shours?', 'h', s)
@@ -891,12 +755,11 @@ def get_individual_points(participant_group_relationship, end_date=None):
     if end_date is None:
         end_date = date.today()
     start_date = end_date - timedelta(1)
-    prdvs = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship,
-            date_created__range=(start_date, end_date), parameter=get_activity_performed_parameter())
-    pks = prdvs.values_list('int_value', flat=True)
+    pks = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship,
+                                                   date_created__range=(start_date, end_date),
+                                                   parameter=get_activity_performed_parameter()).values_list('int_value', flat=True)
     # XXX: assumes that an Activity can only be performed once per round (day)
     return Activity.objects.total(pks=pks)
-    # this generates a query per participant round data value, very inefficient
-    #return sum(prdv.value.points for prdv in prdvs)
+
 
 

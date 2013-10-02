@@ -21,7 +21,7 @@ class BaseTest(BaseVcwebTest):
             self.client.login(username=participant.email, password='test')
             for activity in activities:
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
-                expected_success = is_activity_available(activity, participant_group_relationship, rd)
+                expected_success = activity.is_available_for(participant_group_relationship, rd)
                 logger.debug("expected success: %s", expected_success)
                 if expected_success:
                     performed_activities.add(activity)
@@ -104,19 +104,19 @@ class ActivityTest(BaseTest):
         e = self.experiment
         e.activate()
 # gets all activities with no params
-        activities = get_available_activities()
+        activities = Activity.objects.all()
         rd = e.current_round_data
-        for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=e):
+        for participant_group_relationship in e.participant_group_relationships:
             logger.debug("all available activities: %s", activities)
             participant = participant_group_relationship.participant
             self.client.login(username=participant.email, password='test')
             for activity in activities:
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
-                expected_success = is_activity_available(activity, participant_group_relationship, rd)
+                expected_success = activity.is_available_for(participant_group_relationship, rd)
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
-                    })
+                })
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
                 self.assertEqual(expected_success, json_object['success'])
