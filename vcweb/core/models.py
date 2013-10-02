@@ -199,9 +199,10 @@ class ExperimentMetadata(models.Model):
                 'date_created': self.date_created,
                 'description': self.description,
                 }
-        if include_configurations and configurations is None:
-            configurations = ExperimentConfiguration.objects.select_related('creator').filter(experiment_metadata=self)
-        data['configurations'] = [ec.to_dict() for ec in configurations]
+        if include_configurations:
+            if configurations is None:
+                configurations = ExperimentConfiguration.objects.select_related('creator').filter(experiment_metadata=self)
+            data['configurations'] = [ec.to_dict() for ec in configurations]
         return data
 
     def natural_key(self):
