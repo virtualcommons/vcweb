@@ -51,6 +51,7 @@ class DefaultValue(object):
     def __unicode__(self):
         return u'%s' % self.value
 
+
 class ParameterValueMixin(object):
     def get_parameter_value(self, parameter=None, name=None, default=None):
         if parameter is None and name is None:

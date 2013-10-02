@@ -103,7 +103,7 @@ class GroupScores(object):
 
         activity_points_cache = get_activity_points_cache()
         activities_performed_qs = ParticipantRoundDataValue.objects.for_round(round_data=self.round_data, parameter=get_activity_performed_parameter(), date_created__range=(self.start_date, self.end_date))
-        logger.debug("activities performed qs: %s", activities_performed_qs)
+        #logger.debug("activities performed qs: %s", activities_performed_qs)
         for activity_performed_dv in activities_performed_qs:
             activity_points = activity_points_cache[activity_performed_dv.int_value]
             self.scores_dict[activity_performed_dv.participant_group_relationship.group]['total_points'] += activity_points
@@ -115,7 +115,7 @@ class GroupScores(object):
             total_points = group_data_dict['total_points']
             average = total_points / group_size
             group_data_dict['average_points'] = average
-            logger.debug("group data dictionary: %s", group_data_dict)
+            #logger.debug("group data dictionary: %s", group_data_dict)
 
     def average_points(self, group):
         return self.scores_dict[group]['average_points']
@@ -186,11 +186,10 @@ class GroupScores(object):
         logger.debug("Calculating thresholds for scheduled activity experiment")
         threshold = get_group_threshold(self.round_configuration)
         average_group_points = self.average_points(group)
-        logger.debug("average group points: %s", average_group_points)
+        logger.debug("threshold: %s vs average group points: %s", average_group_points)
         goal_reached = average_group_points >= threshold
         # they reached their goal, set their completion flag for this round
         get_experiment_completed_dv(group, round_data=round_data).update_boolean(goal_reached)
-        logger.debug("creating group summary email for group %s", group)
         yesterday = date.today() - timedelta(1)
         plaintext_template = select_template(['lighterprints/email/scheduled-activity/group-summary-email.txt'])
         html_template = select_template(['lighterprints/email/scheduled-activity/group-summary-email.html'])
@@ -306,8 +305,8 @@ def update_active_experiments(sender, time=None, start_date=None, send_emails=Tr
         for group in groups:
             messages = group_scores.create_email_messages(group)
             all_messages.extend(messages)
-    logger.debug("about to send nightly summary emails (%s): %s", send_emails, all_messages)
     if send_emails:
+        logger.debug("sending messages %s", all_messages)
         mail.get_connection().send_messages(all_messages)
 
 
@@ -358,7 +357,6 @@ class ActivityQuerySet(models.query.QuerySet):
             return self.filter(level=level)
 
     def total(self, pks=None, field_name='points', **kwargs):
-        logger.debug("getting total for pks %s", pks)
         if not pks:
             return 0
         q = self.filter(pk__in=pks,**kwargs).aggregate(total=Sum(field_name))
@@ -587,10 +585,7 @@ def is_completed(group, **kwargs):
 
 
 def get_treatment_type(round_configuration=None, **kwargs):
-    try:
-        return RoundParameterValue.objects.get(round_configuration=round_configuration, parameter=get_treatment_type_parameter())
-    except RoundParameterValue.DoesNotExist:
-        return None
+    return round_configuration.get_parameter_value(parameter=get_treatment_type_parameter())
 
 
 def can_view_other_groups(round_configuration=None, **kwargs):
@@ -642,33 +637,6 @@ def do_activity(activity, participant_group_relationship):
 
 def get_performed_activity_ids(participant_group_relationship):
     return participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter()).values_list('id', flat=True)
-
-
-# FIXME: reduce code duplication here and get_group_scores
-# returns a tuple of the average points per person and the total points for the given group
-def get_group_score(group, start=None, end=None, participant_group_relationship=None, round_data=None, **kwargs):
-    # cache activity points
-    activity_points_cache = get_activity_points_cache()
-    # establish date range
-    total_points = 0
-    total_participant_points = 0
-    if start is None:
-        start = date.today()
-    if end is None:
-        end = start + timedelta(1)
-    if round_data is None:
-        round_data = group.current_round_data
-    activities_performed_qs = ParticipantRoundDataValue.objects.for_group(group, parameter=get_activity_performed_parameter(), round_data=round_data, date_created__range=(start, end))
-
-    for activity_performed_dv in activities_performed_qs:
-        activity_points = activity_points_cache[activity_performed_dv.int_value]
-        total_points += activity_points
-        if activity_performed_dv.participant_group_relationship == participant_group_relationship:
-            total_participant_points += activity_points
-    group_size = group.size
-    average = total_points / group_size
-    logger.debug("total carbon savings: %s divided by %s members = %s per person", total_points, group_size, average)
-    return average, total_points, total_participant_points
 
 
 def get_points_to_next_level(current_level):

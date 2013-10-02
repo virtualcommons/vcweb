@@ -344,6 +344,7 @@ $(function() {
     var viewModel = new LighterFootprintsModel(viewModelData);
     // custom view model methods, some of these may be lifted into the model itself
     viewModel.tutorialTour = new Tour({ name: "lfpTutorial", labels: { end: "End tutorial", next: 'Next »', prev: '« Back' }});
+    viewModel.progressChart = ko.observable(new Chart(document.getElementById("todaysProgressChart").getContext("2d")));
     viewModel.currentLevelText = ko.computed(function() {
         if (viewModel.hasScheduledActivities()) {
             return viewModel.completed() ? "Group Goal Met" : "Group Goal";
@@ -405,10 +406,9 @@ $(function() {
         viewModel.activateDashboardTab();
         viewModel.tutorialTour.restart();
     }
-    viewModel.initializeChart = function() {
-        var todaysProgressContext = document.getElementById("todaysProgressChart").getContext("2d");
-        var progressChart = new Chart(todaysProgressContext).Doughnut(viewModel.todaysProgressChartData());
-    };
+    viewModel.initializeChart = ko.computed(function() {
+        viewModel.progressChart().Doughnut(viewModel.todaysProgressChartData());
+    });
     viewModel.todaysProgressChartData = ko.computed(function() {
         var avgPoints = Math.max(1, viewModel.averagePoints());
         var pointsToNextLevel = viewModel.pointsToNextLevel();
