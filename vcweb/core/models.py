@@ -191,7 +191,7 @@ class ExperimentMetadata(models.Model):
 
     objects = ExperimentMetadataManager()
 
-    def to_dict(self, include_configurations=False, **kwargs):
+    def to_dict(self, include_configurations=False, configurations=None, **kwargs):
         data = {
                 'pk': self.pk,
                 'title': self.title,
@@ -199,9 +199,9 @@ class ExperimentMetadata(models.Model):
                 'date_created': self.date_created,
                 'description': self.description,
                 }
-        if include_configurations:
-            configurations = [ec.to_dict() for ec in ExperimentConfiguration.objects.select_related('creator').filter(experiment_metadata=self)]
-            data['configurations'] = configurations
+        if include_configurations and configurations is None:
+            configurations = ExperimentConfiguration.objects.select_related('creator').filter(experiment_metadata=self)
+        data['configurations'] = [ec.to_dict() for ec in configurations]
         return data
 
     def natural_key(self):
@@ -396,7 +396,7 @@ class ExperimentQuerySet(models.query.QuerySet):
     def for_participant(self, participant, **kwargs):
         return participant.experiments.filter(status__in=ExperimentQuerySet.ACTIVE_STATUSES)
     def for_experimenter(self, experimenter, **kwargs):
-        return self.select_related('experimenter').filter(experimenter=experimenter, **kwargs)
+        return self.select_related('experimenter', 'experiment_metadata', 'experiment_configuration').filter(experimenter=experimenter, **kwargs)
 
 class Experiment(models.Model):
     """
@@ -513,7 +513,7 @@ class Experiment(models.Model):
                     self.experiment_configuration.final_sequence_number,
                     self.current_repeated_round_sequence_number + 1, cr.repeat)
         else:
-            return u"Round %s" % cr.sequence_label
+            return u"Round %d of %d" % (cr.sequence_number, self.experiment_configuration.final_sequence_number)
 
     @property
     def status_line(self):
@@ -1133,7 +1133,6 @@ class Experiment(models.Model):
         return all_round_data
 
     def to_dict(self, include_round_data=False, default_value_dict=None, attrs=None, *args, **kwargs):
-        ec = self.experiment_configuration
         experiment_dict = dict(default_value_dict or {}, **kwargs)
         experiment_dict.update({
                 'roundStatusLabel': self.status_label,
@@ -1144,13 +1143,13 @@ class Experiment(models.Model):
                 'isRoundInProgress': self.is_round_in_progress,
                 'isActive': self.is_active,
                 'isArchived': self.is_archived,
-                'exchangeRate': float(ec.exchange_rate),
+                'exchangeRate': float(self.experiment_configuration.exchange_rate),
                 'readyParticipants': self.number_of_ready_participants,
                 'status': self.status,
                 'pk': self.pk,
                 })
         if include_round_data:
-            # XXX: stubs for round data 
+            # XXX: stubs for round data
             experiment_dict['allRoundData'] = self.all_round_data()
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
             experiment_dict['messages'] = map(str, self.activity_log_set.order_by('-date_created')[:100])

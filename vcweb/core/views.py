@@ -19,9 +19,9 @@ from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountFor
         ParticipantGroupIdForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
         RegisterExcelParticipantsForm, LogMessageForm)
 from vcweb.core.http import JsonResponse
-from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
-        ExperimenterRequest, Experiment, ExperimentMetadata, Institution, is_participant, is_experimenter,
-        get_participant_ready_parameter, ParticipantRoundDataValue,)
+from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
+        ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
+        Institution, is_participant, is_experimenter,)
 from vcweb.core.unicodecsv import UnicodeWriter
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
@@ -91,12 +91,16 @@ class Dashboard(ListView, TemplateResponseMixin):
             return [ 'participant/dashboard.html' ]
 
     def get_experimenter_dashboard_view_model(self, experimenter):
-        experiment_metadata_list = []
-        for em in ExperimentMetadata.objects.all():
-            data = em.to_dict(include_configurations=True)
-            experiment_metadata_list.append(data)
+        _configuration_cache = {}
+        experiment_metadata_dict = defaultdict(list)
+        for ec in ExperimentConfiguration.objects.select_related('experiment_metadata', 'creator'):
+            experiment_metadata_dict[ec.experiment_metadata].append(ec)
+            _configuration_cache[ec.pk] = ec
+        experiment_metadata_list = [em.to_dict(configurations=ecs) for em, ecs in experiment_metadata_dict.iteritems()]
+
         experiment_status_dict = defaultdict(list)
         for e in Experiment.objects.for_experimenter(experimenter).order_by('-pk'):
+            e.experiment_configuration = _configuration_cache[e.experiment_configuration.pk]
             experiment_status_dict[e.status].append(e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
         pending_experiments = experiment_status_dict['INACTIVE']
         running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
