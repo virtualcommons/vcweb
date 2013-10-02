@@ -1,12 +1,19 @@
 <div class="cal-month-day <%= cls %>">
 	<span class="pull-right" data-cal-date="<%=  data_day %>"  data-cal-view="day" data-toggle="tooltip" title="<%= tooltip %>"><%= day %></span>
-	<% if (events.length > 0) {%>
+	<% if (events.length > 0) { %>
 		<div class="events-list">
 			<% _.each(events, function(event){ %>
-			<a href="<% if (event.url.length > 0) {%><%= event.url %><% } else { %>#<% } %>" data-event-id="<%= event.id %>" data-event-class="<%= event['class'] %>"
-			   class="pull-left event event<%= event.id %>" data-toggle="tooltip"
-			   title="<%= event.title %>" data-event-start="<%= event.start %>" data-event-end="<%= event.end %>" style= "background-color : <%= event['class'] %>"></a>
-			<% }); %>
+            <% var  startDate = new Date(parseInt(event.start)), endDate = new Date(parseInt(event.end)); %>
+                <% if(endDate - startDate > 85500000) { %>
+                    <a href="<% if (event.url.length > 0) {%><%= event.url %><% } else { %>#<% } %>" data-event-id="<%= event.id %>" data-event-class="<%= event['class'] %>"
+                       class="pull-left event <%= event['class'] %> event<%= event.id %>" data-toggle="tooltip"
+                       title="<%= event.title + ", Start Date: "+ startDate + ", End Date: "+ endDate + ", Capacity: "+ event.capacity %>" data-event-start="<%= event.start %>" data-event-end="<%= event.end %>"></a>
+                <% } else { %>
+                    <a href="<% if (event.url.length > 0) {%><%= event.url %><% } else { %>#<% } %>" data-event-id="<%= event.id %>" data-event-class="<%= event['class'] %>"
+                       class="pull-left event <%= event['class'] %> event<%= event.id %>" data-toggle="tooltip"
+                       title="<%= event.title + ", Start Time: "+ startDate.toTimeString() + ", End Time: "+ endDate.toTimeString() + ", Capacity: "+ event.capacity  %>" data-event-start="<%= event.start %>" data-event-end="<%= event.end %>"></a>
+                <% } %>
+            <% }); %>
 		</div>
 	<% } %>
 </div>

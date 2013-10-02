@@ -12,7 +12,7 @@ from django.core.urlresolvers import reverse
 from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
 
-from forms import SessionForm
+from forms import SessionForm, SessionDetailForm
 
 import logging
 
@@ -81,25 +81,24 @@ def get_session_events(request):
     logger.debug(timestamp_to_datetime(from_date))
     logger.debug(timestamp_to_datetime(to_date))
 
-    if from_date:
-        queryset = queryset.filter(
-            scheduled_date__gte=timestamp_to_datetime(from_date)
-        )
+
     if to_date:
         queryset = queryset.filter(
-            scheduled_end_date__lte=timestamp_to_datetime(to_date)
+            scheduled_end_date__gte=timestamp_to_datetime(from_date)
         )
     logger.debug(queryset)
 
     objects_body = []
-
     for event in queryset:
+        index = event.pk % 20
         field = {
             "id": event.pk,
             "title": event.experiment_metadata.title,
             "url": "#",
+            "class" : "event-color-" + str(index),
             "start": datetime_to_timestamp(event.scheduled_date),
-            "end": datetime_to_timestamp(event.scheduled_end_date)
+            "end": datetime_to_timestamp(event.scheduled_end_date),
+            "capacity": event.capacity
         }
         objects_body.append(field)
 
@@ -135,3 +134,24 @@ def datetime_to_timestamp(date):
         return '{0}'.format(json_timestamp)
     else:
         return ""
+
+
+def get_session_event_detail(request, pk):
+    es = ExperimentSession.objects.get(pk=pk)
+
+    form = SessionDetailForm()
+
+    form.pk = es.pk
+    form.capacity = es.capacity
+    form.end_date = es.scheduled_end_date.date()
+    form.end_hour = es.scheduled_end_date.hour
+    form.end_min = es.scheduled_end_date.minute
+    form.start_date = es.scheduled_date.date()
+    form.start_hour = es.scheduled_date.hour
+    form.start_min = es.scheduled_date.minute
+    form.capacity = es.capacity
+    form.experiment_meta_data = es.experiment_metadata
+
+    logger.debug(form)
+
+    return render(request, 'subject-pool/session_detail.html', { 'form': form })
