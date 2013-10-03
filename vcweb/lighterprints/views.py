@@ -13,7 +13,7 @@ from vcweb.core.views import dumps, get_active_experiment, set_authentication_to
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (
         Activity, GroupScores, ActivityStatusList, do_activity, get_group_activity, can_view_other_groups,
-        get_lighterprints_experiment_metadata, is_completed, get_foursquare_category_ids, get_time_remaining
+        get_lighterprints_experiment_metadata, get_foursquare_category_ids, get_time_remaining
         )
 
 import logging
@@ -145,7 +145,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         participant_group_relationship.save()
     return dumps({
         'participantGroupId': participant_group_relationship.pk,
-        'completed': is_completed(own_group, round_data=round_data),
+        'completed': group_scores.is_completed(own_group),
         'compareOtherGroup': compare_other_group,
         'groupData': group_data,
         'hoursLeft': hours_left,

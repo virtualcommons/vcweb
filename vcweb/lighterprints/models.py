@@ -135,6 +135,13 @@ class GroupScores(object):
         else:
             return get_points_to_next_level(self.get_group_level(group))
 
+    def is_completed(self, group):
+        if self.has_scheduled_activities:
+            return self.average_points(group) >= self.get_points_goal(group)
+        else:
+            return get_experiment_completed_dv(group, round_data=self.round_data).boolean_value
+
+
     def get_sorted_group_scores(self):
         return sorted(self.scores_dict.items(),
                       key=lambda x: x[1]['average_points'],
@@ -578,10 +585,6 @@ def get_footprint_level(group, round_data=None, **kwargs):
 
 def get_experiment_completed_dv(group, round_data=None):
     return group.get_data_value(parameter=get_experiment_completed_parameter(), round_data=round_data)
-
-
-def is_completed(group, **kwargs):
-    return get_experiment_completed_dv(group, **kwargs).boolean_value
 
 
 def get_treatment_type(round_configuration=None, **kwargs):
