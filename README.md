@@ -3,10 +3,8 @@ collective action researchers.
 
 Key features:
 
-    - flexible data model with granular configuration for real-time controlled experiments (e.g., 1 hour experiments in
-      a computer lab) or extended experiments spanning several days or weeks
-    - real-time chat / server push via sockjs / tornado
-
+- flexible data model with granular configuration for real-time controlled experiments (e.g., 1 hour experiments in a computer lab) or extended experiments spanning several days or weeks
+- real-time chat and server push via [sockjs-tornado](https://github.com/mrjoes/sockjs-tornado)
 
 
 How to contribute

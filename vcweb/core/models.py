@@ -192,7 +192,7 @@ class ExperimentMetadata(models.Model):
 
     objects = ExperimentMetadataManager()
 
-    def to_dict(self, include_configurations=False, configurations=None, **kwargs):
+    def to_dict(self, include_configurations=False, configurations=None, experimenter=None, **kwargs):
         data = {
                 'pk': self.pk,
                 'title': self.title,
@@ -204,6 +204,7 @@ class ExperimentMetadata(models.Model):
             if configurations is None:
                 configurations = ExperimentConfiguration.objects.select_related('creator').filter(experiment_metadata=self)
             data['configurations'] = [ec.to_dict() for ec in configurations]
+            data['bookmarked'] = BookmarkedExperimentMetadata.objects.filter(experiment_metadata=self, experimenter=experimenter).exists()
         return data
 
     def natural_key(self):
@@ -368,7 +369,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
 
 
     def serialize(self, output_format='xml', **kwargs):
-        if self.round_configuration_set.count() > 0:
+        if self.round_configuration_set.exists():
             all_objects = []
             for rc in self.round_configuration_set.all():
                 all_objects.append(rc)
@@ -715,8 +716,9 @@ class Experiment(models.Model):
         return ParticipantRoundDataValue.objects.filter(submitted=False, round_data=self.current_round_data).count() == 0
 
     def register_participants(self, users=None, emails=None, institution=None, password=None):
-        if self.participant_set.count() > 0:
-            logger.warning("This experiment %s already has %d participants - aborting", self, self.participant_set.count())
+        number_of_participants = self.participant_set.count()
+        if number_of_participants > 0:
+            logger.warning("This experiment %s already has %d participants - aborting", self, number_of_participants)
             return
         if users is None:
             users = []
@@ -796,8 +798,9 @@ class Experiment(models.Model):
 
     ''' FIXME: get rid of hardcoded defaults for the slovakia pretest '''
     def setup_test_participants(self, count=20, institution=None, email_suffix='mailinator.com', username_suffix='asu', password='test'):
-        if self.participant_set.count() > 0:
-            logger.warning("This experiment %s already has %d participants - aborting", self, self.participant_set.count())
+        number_of_participants = self.participant_set.count()
+        if number_of_participants > 0:
+            logger.warning("This experiment %s already has %d participants - aborting", self, number_of_participants)
             return
         users = []
         for i in xrange(1, count+1):
@@ -892,7 +895,7 @@ class Experiment(models.Model):
                 # create a new group
                 current_group = self.group_set.create(number=number_of_groups, max_size=max_group_size, session_id=session_id)
 
-        if pgrs.count() > 0:
+        if pgrs.exists():
             # ensure that any existing group that this participant is in has a different session id from this group
             for pgr in pgrs:
                 if pgr.group.session_id == current_group.session_id:
@@ -910,7 +913,7 @@ class Experiment(models.Model):
             random.shuffle(participants)
 
         gs = self.group_set
-        if gs.count() > 0:
+        if gs.exists():
             if preserve_existing_groups:
                 logger.debug("preserving existing groups")
                 # verify incoming session id is an actual value
@@ -1182,7 +1185,7 @@ class Experiment(models.Model):
                           )
 
     def transfer_participants(self, experiment):
-        if experiment.participant_set.count() == 0:
+        if not experiment.participant_set.exists():
             for participant in self.participant_set.all():
                 ParticipantExperimentRelationship.objects.create(participant=participant,
                         experiment=experiment, created_by=self.experimenter.user)
@@ -1729,7 +1732,7 @@ class Group(models.Model, DataValueMixin):
     def has_data_parameter(self, **kwargs):
         criteria = self._data_parameter_criteria(**kwargs)
         try:
-            return self.data_value_set.filter(**criteria).count() > 0
+            return self.data_value_set.filter(**criteria).exists()
         except:
             return False
 

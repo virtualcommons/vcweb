@@ -17,11 +17,11 @@ from vcweb.core import dumps
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
         ParticipantGroupIdForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
-        RegisterExcelParticipantsForm, LogMessageForm)
+        RegisterExcelParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
         ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
-        Institution, is_participant, is_experimenter,)
+        Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata)
 from vcweb.core.unicodecsv import UnicodeWriter
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
@@ -33,6 +33,8 @@ mimetypes.init()
 import logging
 logger = logging.getLogger(__name__)
 
+SUCCESS_JSON = dumps({ 'success': True })
+FAILURE_JSON = dumps({ 'success': False })
 
 def json_response(request, content, **http_response_kwargs):
     "Construct an `HttpResponse` object."
@@ -96,7 +98,7 @@ class Dashboard(ListView, TemplateResponseMixin):
         for ec in ExperimentConfiguration.objects.select_related('experiment_metadata', 'creator'):
             experiment_metadata_dict[ec.experiment_metadata].append(ec)
             _configuration_cache[ec.pk] = ec
-        experiment_metadata_list = [em.to_dict(include_configurations=True, configurations=ecs) for em, ecs in experiment_metadata_dict.iteritems()]
+        experiment_metadata_list = [em.to_dict(include_configurations=True, configurations=ecs, experimenter=experimenter) for em, ecs in experiment_metadata_dict.iteritems()]
 
         experiment_status_dict = defaultdict(list)
         for e in Experiment.objects.for_experimenter(experimenter).order_by('-pk'):
@@ -169,7 +171,7 @@ def api_logout(request):
     user = request.user
     set_authentication_token(user)
     auth.logout(request)
-    return JsonResponse(dumps({'success': True}))
+    return JsonResponse(SUCCESS_JSON)
 
 # FIXME: assumes participant login
 def participant_api_login(request):
@@ -271,7 +273,7 @@ def update_account_profile(request):
             if users.count() > 0 :
                 return JsonResponse(dumps({
                     'success': False,
-                    'message': 'The user with this email already exist'
+                    'message': 'This email is already registered with our system, please try another.'
                 }))
 
         for attr in ('major', 'class_status', 'gender', 'can_receive_invitations'):
@@ -287,7 +289,7 @@ def update_account_profile(request):
 
         return JsonResponse(dumps({
             'success': True,
-            'message': 'Successful dump.'
+            'message': 'Updated profile successfully.'
         }))
     # logger.debug("Form had errors %s", form)
     return JsonResponse(dumps({'success': False, 'message': 'You need to provide your major, class status and gender if you want to receive invitaions'}))
@@ -299,13 +301,11 @@ def check_user_email(request):
     current_user = request.user
     success = False
     if current_user.email != email:
-            users = User.objects.filter(email=email)
-            success = users.count() == 0
+        users = User.objects.filter(email=email)
+        success = users.count() == 0
     else:
         success = True
-
     return JsonResponse(dumps(success))
-
 
 
 @login_required
@@ -376,6 +376,25 @@ class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, Templa
         self.process()
         context = self.get_context_data(object=self.object)
         return self.render_to_response(context)
+
+
+@experimenter_required
+def toggle_bookmark_experiment_metadata(request):
+    form = BookmarkExperimentMetadataForm(request.POST or None)
+    if form.is_valid():
+        experimenter = form.cleaned_data.get('experimenter')
+        experiment_metadata = form.cleaned_data.get('experiment_metadata')
+        if request.user.experimenter == experimenter:
+            bem, created = BookmarkedExperimentMetadata.objects.get_or_create(experiment_metadata=experiment_metadata, experimenter=experimenter)
+            if not created:
+                # toggle deletion, remove this bookmark
+                logger.debug("Deleting existing bookmark: %s", bem)
+                bem.delete()
+            return JsonResponse(SUCCESS_JSON)
+        else:
+            logger.warn("Invalid toggle bookmark experiment metadata request: %s", request)
+    return JsonResponse(FAILURE_JSON)
+
 
 @experimenter_required
 def monitor(request, pk=None):

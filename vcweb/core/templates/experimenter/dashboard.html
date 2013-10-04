@@ -13,8 +13,12 @@
     </ul>
     <div class='tab-content'>
         <div class='tab-pane' id='start'>
-            <div data-bind='foreach: experimentMetadataList'>
-                <h3><span data-bind='text: title'></span></h3>
+            <div data-bind='foreach: sortedExperimentMetadataList'>
+                <div class='well'>
+                <h3><span data-bind='text: title'></span>
+                    <i style='cursor: pointer;' data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data), css: { "icon-star-empty": ! bookmarked(), "icon-star text-gold": bookmarked}'></i>
+                </h3>
+            </div>
                 <div data-bind='foreach: configurations'>
                     <div class='alert alert-message'>
                         <h4><span data-bind='text: name'>configuration name</span> (treatment id: <span data-bind='text: treatment_id() || "None"'></span>) <span class='pull-right' data-bind='text: date_created'></span></h4>
@@ -84,6 +88,35 @@
             var model = ko.mapping.fromJS(dashboardViewModelJson);
             model.activateStartExperimentTab = activateTabFunctor('#start');
             model.activatePendingExperimentsTab = activateTabFunctor('#pending');
+            model.sortedExperimentMetadataList = ko.computed(function() {
+                return model.experimentMetadataList.sort(function(a, b) {
+                    if (a.bookmarked() && b.bookmarked()) {
+                        return a.title() > b.title();
+                    }
+                    else if (a.bookmarked()) {
+                        return -1;
+                    }
+                    else if (b.bookmarked()) {
+                        return 1;
+                    }
+                    else {
+                        return a.title() > b.title();
+                    }
+                });
+            });
+            model.toggleExperimentMetadataBookmark = function(experimentMetadataModel) {
+                console.debug("toggling bookmark for experiment metadata");
+                $.post("/experimenter/bookmark-experiment-metadata", {
+                    experimenter_id: {{ request.user.experimenter.pk }},
+                    experiment_metadata_id: experimentMetadataModel.pk()
+                },
+                function(response) {
+                    if (response.success) {
+                        var bookmarked = experimentMetadataModel.bookmarked();
+                        experimentMetadataModel.bookmarked(! bookmarked);
+                    }
+                });
+            }
             model.gotoExperimentUrl = function(urlAction, experimentModel) {
                 var url = model.controllerUrl(experimentModel, urlAction);
                 window.location = url;

@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from vcweb.core.models import (Experimenter, Institution, Participant)
+from vcweb.core.models import (Experimenter, Institution, Participant, ExperimentMetadata)
 
 from django.core.validators import email_re
 
@@ -52,7 +52,7 @@ class LoginForm(forms.Form):
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
 
     def clean(self):
-        email = self.cleaned_data.get('email').lower()
+        email = self.cleaned_data['email'].lower()
         password = self.cleaned_data.get('password')
         if email and password:
             self.user_cache = authenticate(username=email, password=password)
@@ -207,6 +207,23 @@ class GeoCheckinForm(forms.Form):
 class BookmarkExperimentMetadataForm(forms.Form):
     experiment_metadata_id = forms.IntegerField()
     experimenter_id = forms.IntegerField()
+
+    def clean_experiment_metadata_id(self):
+        experiment_metadata_id = self.cleaned_data['experiment_metadata_id']
+        try:
+            self.cleaned_data['experiment_metadata'] = ExperimentMetadata.objects.get(pk=experiment_metadata_id)
+        except ExperimentMetadata.DoesNotExist:
+            raise ValidationError("Invalid experiment metadata id: %s" % experiment_metadata_id)
+        return experiment_metadata_id
+
+    def clean_experimenter_id(self):
+        experimenter_id = self.cleaned_data['experimenter_id']
+        try:
+            self.cleaned_data['experimenter'] = Experimenter.objects.get(pk=experimenter_id)
+        except Experimenter.DoesNotExist:
+            raise ValidationError("Invalid experimenter id %s" % experimenter_id)
+        return experimenter_id
+
 
 class ExperimentActionForm(forms.Form):
     action = forms.CharField(max_length=64)
