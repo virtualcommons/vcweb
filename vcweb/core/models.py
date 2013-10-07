@@ -199,23 +199,21 @@ class ExperimentMetadata(models.Model):
 
     objects = ExperimentMetadataManager()
 
-    def to_dict(self, include_configurations=False, configurations=None, experimenter=None, include_bookmarks=False, **kwargs):
+    def to_dict(self, include_configurations=False, configurations=None, experimenter=None, **kwargs):
         data = {
                 'pk': self.pk,
                 'title': self.title,
                 'namespace': self.namespace,
                 'date_created': self.date_created,
                 'description': self.description,
+                'bookmarked': getattr(self, 'bookmarked', False),
                 }
         if include_configurations:
             if configurations is None:
                 configurations = ExperimentConfiguration.objects.select_related('creator').filter(experiment_metadata=self)
             data['configurations'] = [ec.to_dict() for ec in configurations]
-        if include_bookmarks:
-            if experimenter is None:
-                data['bookmarked'] = getattr(self, 'bookmarked', False)
-            else:
-                data['bookmarked'] = BookmarkedExperimentMetadata.objects.filter(experiment_metadata=self, experimenter=experimenter).exists()
+        if experimenter is not None:
+            data['bookmarked'] = BookmarkedExperimentMetadata.objects.filter(experiment_metadata=self, experimenter=experimenter).exists()
         return data
 
     def natural_key(self):

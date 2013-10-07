@@ -98,7 +98,12 @@ class Dashboard(ListView, TemplateResponseMixin):
         for ec in ExperimentConfiguration.objects.select_related('experiment_metadata', 'creator'):
             experiment_metadata_dict[ec.experiment_metadata].append(ec)
             _configuration_cache[ec.pk] = ec
-        experiment_metadata_list = [em.to_dict(include_configurations=True, configurations=ecs, experimenter=experimenter) for em, ecs in experiment_metadata_dict.iteritems()]
+        experiment_metadata_list = []
+        bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).values_list('experiment_metadata', flat=True)
+        for em, ecs in experiment_metadata_dict.iteritems():
+            d = em.to_dict(include_configurations=True, configurations=ecs)
+            d['bookmarked'] = em.pk in bem_pks
+            experiment_metadata_list.append(d)
 
         experiment_status_dict = defaultdict(list)
         for e in Experiment.objects.for_experimenter(experimenter).order_by('-pk'):
