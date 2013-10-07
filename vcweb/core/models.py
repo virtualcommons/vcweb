@@ -164,6 +164,13 @@ def minute_tick_handler(sender, time=None, **kwargs):
     logger.debug("handling minute tick signal at %s with kwargs %s", time, kwargs)
 
 class ExperimentMetadataManager(models.Manager):
+
+    def bookmarked(self, experimenter=None, **kwargs):
+        bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).values_list('experiment_metadata', flat=True)
+        for em in self.all():
+            em.bookmarked = em.pk in bem_pks
+            yield em
+
     def get_by_natural_key(self, key):
         return self.get(namespace=key)
 
@@ -192,7 +199,7 @@ class ExperimentMetadata(models.Model):
 
     objects = ExperimentMetadataManager()
 
-    def to_dict(self, include_configurations=False, configurations=None, experimenter=None, **kwargs):
+    def to_dict(self, include_configurations=False, configurations=None, experimenter=None, include_bookmarks=False, **kwargs):
         data = {
                 'pk': self.pk,
                 'title': self.title,
@@ -204,8 +211,11 @@ class ExperimentMetadata(models.Model):
             if configurations is None:
                 configurations = ExperimentConfiguration.objects.select_related('creator').filter(experiment_metadata=self)
             data['configurations'] = [ec.to_dict() for ec in configurations]
-        if experimenter is not None:
-            data['bookmarked'] = BookmarkedExperimentMetadata.objects.filter(experiment_metadata=self, experimenter=experimenter).exists()
+        if include_bookmarks:
+            if experimenter is None:
+                data['bookmarked'] = getattr(self, 'bookmarked', False)
+            else:
+                data['bookmarked'] = BookmarkedExperimentMetadata.objects.filter(experiment_metadata=self, experimenter=experimenter).exists()
         return data
 
     def natural_key(self):
