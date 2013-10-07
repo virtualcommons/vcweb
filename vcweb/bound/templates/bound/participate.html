@@ -679,6 +679,14 @@ function onYouTubeIframeAPIReady() {
                 }
                 model.templateName(name);
             }
+            model.checkSurveyCompleted = function(response) {
+                var surveyCompleted = response.survey_completed;
+                model.surveyCompleted(surveyCompleted);
+                if (surveyCompleted) {
+                    model.clearCurrentInterval();
+                    model.practiceRoundSurveyCompleted();
+                }
+            }
             model.practiceRoundSurveyCompleted = function() {
                 if (! model.surveyCompleted()) {
                     return;
@@ -842,11 +850,19 @@ function onYouTubeIframeAPIReady() {
                 model.setFormDisabled("#chat-form", true);
             }
             model.initializeChat = function() {
-                // FIXME: chat is disabled in practice rounds, when it's explicitly disabled, or if the participant is
-                // no longer alive
-                var chatDisabled = ! model.chatEnabled() || ! model.alive();
-                model.setFormDisabled("#chat-form", chatDisabled);
-                model.chatEnabled(! chatDisabled);
+                var chatEnabled = model.chatEnabled() && model.alive();
+                // FIXME: get rid of form disabling?
+                model.setFormDisabled("#chat-form", ! chatEnabled);
+                model.chatEnabled(chatEnabled);
+                if (chatEnabled) {
+                    console.debug("chat was enabled, showing sidebar explicitly");
+                    $('#sidebar').show();
+                    $('#content').removeClass('span12').addClass('span8');
+                }
+                else {
+                    $('#sidebar').hide();
+                    $('#content').removeClass('span8').addClass('span12');
+                }
             }
             model.afterRenderTemplate = function(elements) {
                 if (model.isSurveyEnabled()) {
@@ -855,13 +871,7 @@ function onYouTubeIframeAPIReady() {
                             // FIXME: only set this interval check if we're in the practice round results section.
                             model.setCurrentInterval(
                                     setInterval(function() {
-                                        $.get('/participate/{{experiment.pk}}/check-survey-completed', function(response) {
-                                            model.surveyCompleted(response.survey_completed);
-                                            if (model.surveyCompleted()) {
-                                            model.clearCurrentInterval();
-                                            model.practiceRoundSurveyCompleted();
-                                            }
-                                        });
+                                        $.get('/participate/{{experiment.pk}}/check-survey-completed', model.checkSurveyCompleted);
                                     }, 6000)
                                 );
                         case "FINAL_DEBRIEFING":
