@@ -204,6 +204,7 @@ class ExperimentMetadata(models.Model):
             if configurations is None:
                 configurations = ExperimentConfiguration.objects.select_related('creator').filter(experiment_metadata=self)
             data['configurations'] = [ec.to_dict() for ec in configurations]
+        if experimenter is not None:
             data['bookmarked'] = BookmarkedExperimentMetadata.objects.filter(experiment_metadata=self, experimenter=experimenter).exists()
         return data
 

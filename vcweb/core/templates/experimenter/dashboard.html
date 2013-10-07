@@ -14,11 +14,9 @@
     <div class='tab-content'>
         <div class='tab-pane' id='start'>
             <div data-bind='foreach: sortedExperimentMetadataList'>
-                <div class='well'>
                 <h3><span data-bind='text: title'></span>
                     <i style='cursor: pointer;' data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data), css: { "icon-star-empty": ! bookmarked(), "icon-star text-gold": bookmarked}'></i>
                 </h3>
-            </div>
                 <div data-bind='foreach: configurations'>
                     <div class='alert alert-message'>
                         <h4><span data-bind='text: name'>configuration name</span> (treatment id: <span data-bind='text: treatment_id() || "None"'></span>) <span class='pull-right' data-bind='text: date_created'></span></h4>
