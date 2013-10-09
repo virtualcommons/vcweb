@@ -36,6 +36,7 @@ def get_activity_points_cache():
 def is_scheduled_activity_experiment(experiment_configuration):
     return experiment_configuration.has_daily_rounds
 
+
 class ActivityStatusList(object):
 
     def __init__(self, participant_group_relationship, activities=None, round_configuration=None, group_level=1):
@@ -94,6 +95,7 @@ class GroupScores(object):
         self.number_of_groups = len(self.groups)
         # { group : {average_points, total_points} }
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
+        self.group_rankings = None
         self.total_participant_points = 0
         # establish date range
         self.start_date = date.today() if start_date is None else start_date
@@ -141,28 +143,33 @@ class GroupScores(object):
         else:
             return get_experiment_completed_dv(group, round_data=self.round_data).boolean_value
 
-
     def get_sorted_group_scores(self):
         return sorted(self.scores_dict.items(),
                       key=lambda x: x[1]['average_points'],
                       reverse=True)
 
     def should_advance_level(self, group, level, max_level=3):
-        logger.debug("checking if group %s at level %s should advance in level on %s (%s)", group, level, self.start_date, self.scores_dict[group])
+        logger.debug("checking if group %s at level %s should advance in level on %s (%s)",
+                     group, level, self.start_date, self.scores_dict[group])
         if level <= max_level:
             return self.average_points(group) >= get_points_to_next_level(level)
         return False
 
     def get_group_rank(self, group):
-        return self.get_group_rankings().index(group) + 1
+        return self.get_group_ranking_list().index(group) + 1
 
-    def get_group_rankings(self):
-        if getattr(self, 'group_rankings', None) is None:
+    def get_group_ranking_list(self):
+        """
+        Returns a sorted list of groups, ordered by their rank where the first item in the list is in first place,
+        the second item in the list is in second place, and so on.
+        """
+        # cached because we invoke this often via get_group_rank
+        if self.group_rankings is None:
             self.group_rankings = [g[0] for g in self.get_sorted_group_scores()]
         return self.group_rankings
 
     def get_group_data_list(self):
-        # FIXME: cache group_data?
+        # FIXME: cache group_data if multiple invocations occur
         group_data = []
         for group in self.groups:
             group_data.append(self.to_dict(group))
@@ -170,7 +177,6 @@ class GroupScores(object):
         return group_data
 
     def to_dict(self, group):
-        # FIXME: cache?
         return {
             'groupName': group.name,
             'groupLevel': self.get_group_level(group),
@@ -335,9 +341,8 @@ def round_started_handler(sender, experiment=None, **kwargs):
 
 class ActivityQuerySet(models.query.QuerySet):
     """
-    for the moment, categorizing Activities as tiered or leveled.  Leveled activities are used in experiments, where
-    groups advance in level and each level comprises a set of activities.  Tiered activities are used in the open
-    lighterprints experiment, where mastering one activity can lead to another set of activities
+    Provides query set methods for finding all unlocked activities, scheduled activities
+
     """
     def unlocked(self, round_configuration=None, level=1, scheduled=False):
         """
@@ -353,8 +358,7 @@ class ActivityQuerySet(models.query.QuerySet):
         if round_configuration is None:
             logger.warn("No round configuration specified, cannot report scheduled activities.")
             return []
-        available_activity_ids = RoundParameterValue.objects.filter(round_configuration=round_configuration,
-                parameter=get_available_activity_parameter()).values_list('int_value', flat=True)
+        available_activity_ids = round_configuration.round_parameter_value_set.filter(parameter=get_available_activity_parameter()).values_list('int_value', flat=True)
         return self.filter(pk__in=available_activity_ids)
 
     def at_level(self, level=1, include_lower_levels=True, **kwargs):

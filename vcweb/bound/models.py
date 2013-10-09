@@ -145,6 +145,7 @@ def get_resource_level_dv(group, round_data=None, round_configuration=None, clus
 def get_shared_resource_level(group, round_data=None, cluster=None):
     return get_shared_resource_level_dv(group, round_data, cluster).int_value
 
+
 def get_shared_resource_level_dv(group=None, round_data=None, cluster=None):
     if round_data is None:
         round_data = group.current_round_data
@@ -153,13 +154,12 @@ def get_shared_resource_level_dv(group=None, round_data=None, cluster=None):
         cluster = group_relationship.cluster
     return cluster.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data)
 
+
 def get_shared_regrowth_dv(cluster=None, round_data=None):
     if round_data is None:
         round_data = cluster.experiment.current_round_data
     return cluster.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data)
 
-
-''' participant data value accessors '''
 
 def get_storage_dv(participant_group_relationship, round_data=None, default=None):
     return participant_group_relationship.get_data_value(parameter=get_storage_parameter(), round_data=round_data, default=default)
@@ -169,20 +169,25 @@ def get_storage(participant_group_relationship, round_data=None, default=0):
     dv = get_storage_dv(participant_group_relationship, round_data, default)
     return max(default if dv.int_value is None else dv.int_value, 0)
 
-def get_all_session_storages(experiment, participant):
-    '''
-    XXX: we query by participant because the participant group relationships will be different if we've re-randomized
-    their groups.
-    '''
-    debriefing_session_round_data = RoundData.objects.filter(experiment=experiment,
-            round_configuration__round_type=RoundConfiguration.RoundType.DEBRIEFING).exclude(round_configuration__session_id=u'')
+
+def get_final_session_storage_queryset(experiment, participant):
+    """
+    Returns a QuerySet of the final storage ParticipantRoundDataValues for a given participant, e.g., storage
+    parameter data values in debriefing rounds
+
+    The query must be done by participant as participant group relationships change when we re-randomize
+    groups.
+    """
+    debriefing_session_round_data = experiment.round_data_set.filter(round_configuration__round_type=RoundConfiguration.RoundType.DEBRIEFING).exclude(round_configuration__session_id=u'')
     return ParticipantRoundDataValue.objects.filter(
-            participant_group_relationship__participant=participant,
-            parameter=get_storage_parameter(),
-            round_data__in=debriefing_session_round_data).order_by('date_created')
+        participant_group_relationship__participant=participant,
+        parameter=get_storage_parameter(),
+        round_data__in=debriefing_session_round_data).order_by('date_created')
+
 
 def _zero_if_none(value):
     return 0 if value is None else value
+
 
 def get_total_group_harvest(group, round_data):
     q = ParticipantRoundDataValue.objects.for_group(group=group, parameter=get_harvest_decision_parameter(), round_data=round_data).aggregate(total_harvest=Sum('int_value'))
@@ -190,35 +195,52 @@ def get_total_group_harvest(group, round_data):
 
 
 def get_total_harvest(participant_group_relationship, session_id):
-    q = ParticipantRoundDataValue.objects.for_participant(participant_group_relationship, parameter=get_harvest_decision_parameter(),
-            participant_group_relationship__group__session_id=session_id).aggregate(total_harvest=Sum('int_value'))
+    q = ParticipantRoundDataValue.objects.for_participant(participant_group_relationship,
+                                                          parameter=get_harvest_decision_parameter(),
+                                                          participant_group_relationship__group__session_id=session_id).aggregate(total_harvest=Sum('int_value'))
     return _zero_if_none(q['total_harvest'])
 
-# returns the sum of all stored resources for each member in the group
+
 def get_total_storage(group, round_data):
-    q = ParticipantRoundDataValue.objects.for_group(group=group, parameter=get_storage_parameter(), round_data=round_data).aggregate(total_storage=Sum('int_value'))
+    """ returns the sum of all group member's storage for the given round """
+    q = ParticipantRoundDataValue.objects.for_group(group=group,
+                                                    parameter=get_storage_parameter(),
+                                                    round_data=round_data).aggregate(total_storage=Sum('int_value'))
     return _zero_if_none(q['total_storage'])
+
 
 def set_storage(participant_group_relationship, round_data, value):
     storage_dv = get_storage_dv(participant_group_relationship, round_data)
     storage_dv.update_int(value)
     return storage_dv
 
+
 def get_player_status_dv(participant_group_relationship, round_data, default=True):
     return participant_group_relationship.get_data_value(parameter=get_player_status_parameter(),
-            round_data=round_data, default=default)
+                                                         round_data=round_data, default=default)
+
 
 def is_player_alive(participant_group_relationship, round_data, default=True):
     return get_player_status_dv(participant_group_relationship, round_data, default).boolean_value
 
+
 def get_number_alive(group, round_data):
-    return ParticipantRoundDataValue.objects.for_group(group, parameter=get_player_status_parameter(), round_data=round_data, boolean_value=True).count()
+    return ParticipantRoundDataValue.objects.for_group(group,
+                                                       parameter=get_player_status_parameter(),
+                                                       round_data=round_data,
+                                                       boolean_value=True).count()
+
 
 def get_player_data(group, previous_round_data, current_round_data, self_pgr):
+    """ Returns a tuple ([list of player data dictionaries], { dictionary of this player's data })
+
+     FIXME: refactor this into its own class as opposed to an arcane data structure
+    """
     prdvs = ParticipantRoundDataValue.objects.for_group(group=group,
-            round_data__in=[previous_round_data, current_round_data],
-            parameter__in=(get_player_status_parameter(), get_storage_parameter(), get_harvest_decision_parameter()),
-            )
+                                                        round_data__in=[previous_round_data, current_round_data],
+                                                        parameter__in=(get_player_status_parameter(),
+                                                                       get_storage_parameter(),
+                                                                       get_harvest_decision_parameter()))
     # nested dict mapping participant group relationship -> dict(parameter -> participant round data value)
     player_dict = defaultdict(lambda: defaultdict(lambda: None))
     player_status_parameter = get_player_status_parameter()
@@ -238,26 +260,15 @@ def get_player_data(group, previous_round_data, current_round_data, self_pgr):
             'number': pgr.participant_number,
             'lastHarvestDecision': pgrdv_dict[get_harvest_decision_parameter()].int_value,
             'alive': pgrdv_dict[get_player_status_parameter()].boolean_value,
-            'storage': pgrdv_dict[get_storage_parameter()].int_value,
-            })
+            'storage': pgrdv_dict[get_storage_parameter()].int_value
+        })
     own_player = player_dict[self_pgr]
     return (player_data, {
         'lastHarvestDecision': own_player[get_harvest_decision_parameter()].int_value,
         'alive': own_player[get_player_status_parameter()].boolean_value,
-        'storage': own_player[get_storage_parameter()].int_value,
-        })
+        'storage': own_player[get_storage_parameter()].int_value
+    })
 
-
-
-def set_player_status(participant_group_relationship, round_data, value):
-    status_dv =  get_player_status_dv(participant_group_relationship, round_data)
-    status_dv.boolean_value = value
-    status_dv.save()
-    return status_dv
-
-def get_last_harvest_decision(participant_group_relationship, round_data=None):
-    return participant_group_relationship.get_data_value(parameter=get_harvest_decision_parameter(),
-                                                         round_data=round_data, default=0).int_value
 
 @receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
 def round_started_handler(sender, experiment=None, **kwargs):
@@ -267,59 +278,59 @@ def round_started_handler(sender, experiment=None, **kwargs):
     round_configuration = experiment.current_round
     round_data = experiment.get_round_data(round_configuration)
     logger.debug("setting up round %s", round_configuration)
-    # initialize group and participant data values if necessary
+    # initialize group, group cluster, and participant data values
     experiment.initialize_data_values(
-            group_cluster_parameters=(get_regrowth_parameter(), get_resource_level_parameter(),),
-            group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter(),),
-            participant_parameters=(get_storage_parameter(), get_player_status_parameter(),)
-            )
+        group_cluster_parameters=(get_regrowth_parameter(), get_resource_level_parameter()),
+        group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
+        participant_parameters=(get_storage_parameter(), get_player_status_parameter())
+    )
     shared_resource_enabled = is_shared_resource_enabled(round_configuration)
-    '''
-    during a practice or regular round, set up resource levels, participant harvest decision parameters, and group
-    formation
-    '''
     if should_reset_resource_level(round_configuration, experiment):
         initial_resource_level = get_max_resource_level(round_configuration)
         logger.debug("Resetting resource level for all groups in %s to %d", round_configuration, initial_resource_level)
         for group in experiment.groups:
-            ''' set resource level to initial default '''
+            # set resource level to initial default
             existing_resource_level = get_resource_level_dv(group, round_data, round_configuration,
-                    shared_resource_enabled=shared_resource_enabled)
-            group.log(
-                "Resetting resource level (%s) to initial value [%s]" % (existing_resource_level, initial_resource_level))
+                                                            shared_resource_enabled=shared_resource_enabled)
+            group.log("Resetting resource level (%s) to initial value [%s]" %
+                      (existing_resource_level, initial_resource_level))
             existing_resource_level.update_int(initial_resource_level)
-            # FIXME: verify that this is expected behavior - if the resource level is reset, reset all participant storages to 0
+            # zero out all participant storages when the resource level is reset
             ParticipantRoundDataValue.objects.for_group(group, parameter=get_storage_parameter(),
-                    round_data=round_data).update(int_value=0)
-            # reset all player statuses to alive
+                                                        round_data=round_data).update(int_value=0)
+            # set all player statuses to alive when the resource level is reset
             ParticipantRoundDataValue.objects.for_group(group, parameter=get_player_status_parameter(),
-                    round_data=round_data).update(boolean_value=True)
+                                                        round_data=round_data).update(boolean_value=True)
     elif round_configuration.is_playable_round:
         # first check for a depleted resource
         for group in experiment.groups:
             existing_resource_level = get_resource_level_dv(group, round_data, round_configuration,
-                    shared_resource_enabled=shared_resource_enabled)
+                                                            shared_resource_enabled=shared_resource_enabled)
             if existing_resource_level.int_value <= 0:
-                group.log("setting all participant ready flags because of depleted resource %s" % existing_resource_level)
-                _zero_harvest_decisions(group.participant_group_relationship_set.all(), round_data)
+                group.log("depleted resource %s, zeroing out all harvest decisions" % existing_resource_level)
+                _zero_harvest_decisions(group.participant_group_relationship_set.values_list('pk', flat=True), round_data)
 
-        # check for dead participants and set their ready and harvest decision flags
-        deceased_participants = ParticipantRoundDataValue.objects.select_related('participant_group_relationship').filter(parameter=get_player_status_parameter(),
-                round_data=round_data, boolean_value=False)
-        _zero_harvest_decisions([prdv.participant_group_relationship for prdv in deceased_participants], round_data)
-        '''
-        for prdv in deceased_participants:
-            pgr = prdv.participant_group_relationship
-            set_harvest_decision(pgr, 0, round_data, submitted=True)
-            pgr.set_participant_ready(round_data)
-            '''
+        # next, check for dead participants and set their ready and harvest decision flags
+        deceased_participants = ParticipantRoundDataValue.objects.filter(
+            parameter=get_player_status_parameter(),
+            round_data=round_data,
+            boolean_value=False).values_list('participant_group_relationship', flat=True)
+        _zero_harvest_decisions(deceased_participants, round_data)
 
 
-def _zero_harvest_decisions(participant_group_relationships, round_data):
-    # FIXME: possible performance issue, replace with direct update query
-    for pgr in participant_group_relationships:
+def _zero_harvest_decisions(participant_group_relationship_ids, round_data):
+    # FIXME: possible performance issue, generates two queries per participant
+    parameters = (get_harvest_decision_parameter(), get_participant_ready_parameter())
+    data_values = ParticipantRoundDataValue.objects.filter(round_data=round_data,
+                                                           participant_group_relationship__pk__in=participant_group_relationship_ids,
+                                                           parameter__in=parameters)
+    for dv in data_values:
+        if dv.parameter == get_harvest_decision_parameter():
+            dv.update_int(0, submitted=True)
+
         set_harvest_decision(pgr, 0, round_data, submitted=True)
         pgr.set_participant_ready(round_data)
+
 
 def adjust_harvest_decisions(current_resource_level, group, round_data, total_harvest, group_size=0):
     if group_size == 0:

@@ -379,12 +379,5 @@ class RoundConfigurationTest(BaseVcwebTest):
             self.assertEqual(rp.value, sample_values_for_type[type])
 
 
-    def test_get_templates(self):
-        e = self.experiment
-        for round_type, data in RoundConfiguration.ROUND_TYPES_DICT.items():
-            logger.debug("inspecting round type: %s with data %s", round_type, data)
-            rc = self.create_new_round_configuration(round_type=round_type)
-            e.current_round_sequence_number = rc.sequence_number
-            self.assertEqual(e.current_round_template, "%s/%s" % (e.namespace, data[1]), 'should have returned template for %s' % data[0])
 
 

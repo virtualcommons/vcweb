@@ -55,18 +55,6 @@ class ForestryRoundSignalTest(BaseTest):
         e = self.test_round_setup()
         self.verify_round_ended(e, lambda experiment: round_ended(None, experiment))
 
-class ForestryViewsTest(BaseTest):
-
-    def test_get_template(self):
-        e = self.experiment
-        rc = self.create_new_round_configuration(round_type=RoundConfiguration.RoundType.QUIZ, template_filename='quiz_23.html')
-        e.current_round_sequence_number = rc.sequence_number
-        self.assertEqual(e.current_round_template, 'forestry/quiz_23.html', 'should return specified quiz_template')
-
-        rc = self.create_new_round_configuration(round_type=RoundConfiguration.RoundType.QUIZ)
-        e.current_round_sequence_number = rc.sequence_number
-        self.assertEqual(e.current_round_template, 'forestry/quiz.html', 'should return default quiz.html')
-
 class TransferParametersTest(BaseTest):
     def test_transfer_parameters(self):
         def calculate_expected_resource_level(resource_level, harvested):

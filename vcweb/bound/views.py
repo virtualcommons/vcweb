@@ -8,7 +8,7 @@ from vcweb.core.http import JsonResponse
 from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage)
 from vcweb.bound.forms import SingleIntegerDecisionForm
 from vcweb.bound.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
-        get_cost_of_living, get_resource_level, get_initial_resource_level, get_all_session_storages,
+        get_cost_of_living, get_resource_level, get_initial_resource_level, get_final_session_storage_queryset,
         get_harvest_decision_dv, set_harvest_decision, can_observe_other_group, get_average_harvest,
         get_average_storage, get_total_harvest, get_number_alive, get_player_data, get_regrowth_dv)
 
@@ -143,7 +143,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     if current_round.is_debriefing_round:
         experiment_model_dict['totalHarvest'] = get_total_harvest(participant_group_relationship, current_round.session_id)
         if experiment.is_last_round:
-            (session_one_storage, session_two_storage) = get_all_session_storages(experiment, participant_group_relationship.participant)
+            (session_one_storage, session_two_storage) = get_final_session_storage_queryset(experiment, participant_group_relationship.participant)
             experiment_model_dict['sessionOneStorage'] = session_one_storage.int_value
             experiment_model_dict['sessionTwoStorage'] = session_two_storage.int_value
 
