@@ -40,6 +40,7 @@ urlpatterns = patterns('',
     # core catches everything else
     url(r'', include('vcweb.core.urls', namespace='core', app_name='core')),
 
+
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),

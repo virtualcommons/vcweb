@@ -7,6 +7,12 @@ Replace this with more appropriate tests for your application.
 
 from django.test import TestCase
 
+from vcweb.core.models import Invitation, Participant, User, ExperimentSession, ParticipantSignup
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class SimpleTest(TestCase):
     def test_basic_addition(self):

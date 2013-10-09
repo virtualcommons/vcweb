@@ -1,71 +1,146 @@
 {% extends "base.html" %}
 {% block page %}
     <div class='row' id='page' xmlns="http://www.w3.org/1999/html">
-        <div id='content' class='span12'>
-            <div class='info'>Welcome back, {{ request.user.first_name}}.</div>
-            <div class="page-header">
-                <h2>Manage your sessions</h2>
-            </div>
-            <div class="row">
-                <span class="span2">Experiment</span>
-                <span class="span2">Start Date</span>
-                <span class="span2">Start Time</span>
-                <span class="span2">End Date</span>
-                <span class="span2">End Time</span>
-                <span class="span1">Capacity</span>
-            </div>
-            <div data-bind='foreach: sessions'>
+        <div class='info'>Welcome back, {{ request.user.first_name}}.</div>
+        <div class="page-header">
+            <h2>Manage your sessions</h2>
+        </div>
+        <ul class='nav nav-tabs'>
+            <li class='active'><a href='#active' data-toggle='tab'><i class='icon-wrench'></i> Active sessions</a></li>
+            <li><a href='#past' data-toggle='tab'><i class='icon-archive'></i> Past sessions</a></li>
+        </ul>
+        <div class='tab-content'>
+            <div class='tab-pane active' id="active">
+                <button data-bind='click: addSession' class="btn btn-primary">Add Session</button>
+                <button data-bind='click: invite' class="btn btn-primary">Invite</button>
                 <div class="row">
-                    <form data-bind="submit: onSave">
+                    <span class="span2">Experiment</span>
+                    <span class="span2">Start Date</span>
+                    <span class="span2">Start Time</span>
+                    <span class="span2">End Date</span>
+                    <span class="span2">End Time</span>
+                    <span class="span1">Capacity</span>
+                </div>
+                <div data-bind='foreach: runningSessions'>
+                    <div class="row">
+                        <form data-bind="submit: onSave">
+                            <span class="hide">
+                                <input type="hidden" name="pk" data-bind="value: pk" />
+                            </span>
+                            <span class="span2">
+                                <select class="span2" name="experiment_metadata_pk" data-bind="value: experiment_metadata_pk, enable: editable">
+                                    <optgroup label="Bookmarked" data-bind= "attr : {label : experiment_metadata_pk()}">
+                                        <!-- ko  foreach: $root.experiment_metadata_list -->
+                                            <!-- ko if: bookmarked -->
+                                                <option data-bind="text: title, value: pk"></option>
+                                            <!-- /ko -->
+                                        <!-- /ko -->
+                                    </optgroup>
+                                    <optgroup label="Other">
+                                        <!-- ko  foreach: $root.experiment_metadata_list -->
+                                            <!-- ko ifnot: bookmarked -->
+                                                <option data-bind="text: title, value: pk"></option>
+                                            <!-- /ko -->
+                                        <!-- /ko -->
+                                    </optgroup>
+                                </select>
+                            </span>
+                            <span class="span2 input-append date">
+                                <input name="start_date" type="text" class="date-start input-small" data-bind="datepicker : startDate, value: startDate , enable: editable" />
+                                <span class="add-on">
+                                    <i class="icon-calendar"></i>
+                                </span>
+                            </span>
+                            <span class="span2">
+                                <select  class="input-mini" name="start_hour" data-bind ="foreach: new Array(24),value : startHour, enable: editable">
+                                    <option data-bind='value: $index(), text: $index()'></option>
+                                </select>
+                                <select class="input-mini" name="start_min" data-bind ="foreach: new Array(4),value : startMin, enable: editable">
+                                    <option data-bind='value: $index() * 15, text: $index() * 15'></option>
+                                </select>
+                            </span>
+                            <span class="span2 input-append date">
+                                <input name="end_date" type="text" class="date-end input-small" data-bind="datepicker : endDate, value: endDate, enable: editable" />
+                                <span class="add-on">
+                                    <i class="icon-calendar"></i>
+                                </span>
+                            </span>
+                            <span class="span2">
+                                <select class="input-mini" name="end_hour" data-bind ="foreach: new Array(24), value : endHour, enable: editable">
+                                    <option data-bind='value: $index(), text: $index()'></option>
+                                </select>
+                                <select class="input-mini" name="end_min" data-bind ="foreach: new Array(4), value : endMin, enable: editable">
+                                    <option data-bind='value: $index() * 15, text: $index()*15'></option>
+                                </select>
+                            </span>
+                            <span class="span1">
+                                <input class="span1" name="capacity" type="number" min="2" data-bind ="value : capacity, enable: editable" />
+                            </span>
+                            <span class="span1" data-bind = "visible: editable" >
+                                <input type="submit" class="btn btn-success" value="save" />
+                                <a href='#' class="btn btn-link" style="margin-left: -14px;" data-bind="click: $root.removeSession">Remove</a>
+                            </span>
+                            <span class="span1" data-bind= "visible: !editable()" >
+                                <input type="button" class="btn btn-success" data-bind="click: makeEditable" value="edit" />
+                                <a href='#' class="btn btn-link" style="margin-left: -14px;" data-bind="click: $root.removeSession">Remove</a>
+                             </span>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class='tab-pane' id="past">
+                <div class="row">
+                    <span class="span2">Experiment</span>
+                    <span class="span2">Start Date</span>
+                    <span class="span2">Start Time</span>
+                    <span class="span2">End Date</span>
+                    <span class="span2">End Time</span>
+                    <span class="span1">Capacity</span>
+                </div>
+                <div data-bind='foreach: archivedSessions'>
+                    <div class="row">
+                        <form>
                         <span class="hide">
                             <input type="hidden" name="pk" data-bind="value: pk" />
                         </span>
                         <span class="span2">
-                            <select class="span2" name="experiment_meta_data" data-bind="options: $root.experiments, value: experiment, optionsText:'title', optionsValue:'pk', disable: hide, optionsCaption: 'select...'"></select>
+                            <select class="span2" name="experiment_metadata_pk" data-bind="options: $root.experiment_metadata_list, value: experiment_metadata_pk, optionsText:'title', optionsValue:'pk', disable: 'true', optionsCaption: 'select...'"></select>
                         </span>
                         <span class="span2 input-append date">
-                            <input name="start_date" type="text" class="date-start input-small" data-bind="datepicker : startDate, value: startDate , disable: hide" />
+                            <input name="start_date" type="text" class="date-start input-small" data-bind="datepicker : startDate, value: startDate , disable: 'true'" />
                             <span class="add-on">
                                 <i class="icon-calendar"></i>
                             </span>
                         </span>
                         <span class="span2">
-                            <select  class="input-mini" name="start_hour" data-bind ="foreach: new Array(24),value : startHour, disable: hide">
+                            <select  class="input-mini" name="start_hour" data-bind ="foreach: new Array(24),value : startHour, disable: 'true'">
                                 <option data-bind='value: $index(), text: $index()'></option>
                             </select>
-                            <select class="input-mini" name="start_min" data-bind ="foreach: new Array(4),value : startMin, disable: hide">
+                            <select class="input-mini" name="start_min" data-bind ="foreach: new Array(4),value : startMin, disable: 'true'">
                                 <option data-bind='value: $index() * 15, text: $index() * 15'></option>
                             </select>
                         </span>
                         <span class="span2 input-append date">
-                            <input name="end_date" type="text" class="date-end input-small" data-bind="datepicker : endDate, value: endDate, disable: hide" />
+                            <input name="end_date" type="text" class="date-end input-small" data-bind="datepicker : endDate, value: endDate, disable: 'true'" />
                             <span class="add-on">
                                 <i class="icon-calendar"></i>
                             </span>
                         </span>
                         <span class="span2">
-                            <select class="input-mini" name="end_hour" data-bind ="foreach: new Array(24), value : endHour, disable: hide">
+                            <select class="input-mini" name="end_hour" data-bind ="foreach: new Array(24), value : endHour, disable: 'true'">
                                 <option data-bind='value: $index(), text: $index()'></option>
                             </select>
-                            <select class="input-mini" name="end_min" data-bind ="foreach: new Array(4), value : endMin, disable: hide">
+                            <select class="input-mini" name="end_min" data-bind ="foreach: new Array(4), value : endMin, disable: 'true'">
                                 <option data-bind='value: $index() * 15, text: $index()*15'></option>
                             </select>
                         </span>
                         <span class="span1">
-                            <input class="span1" name="capacity" type="number" min="2" data-bind ="value : capacity, disable: hide" />
+                            <input class="span1" name="capacity" type="number" min="2" data-bind ="value : capacity, disable: 'true'" />
                         </span>
-                        <span class="span1" data-bind = "visible: isEditable()" >
-                            <input type="submit" class="btn btn-success" value="save" />
-                            <a href='#' class="btn btn-link" style="margin-left: -14px;" data-bind="click: $root.removeSession">Remove</a>
-                        </span>
-                         <span class="span1" data-bind= "visible: !isEditable()" >
-                            <input type="button" class="btn btn-success" data-bind="click: makeEditable" value="edit" />
-                            <a href='#' class="btn btn-link" style="margin-left: -14px;" data-bind="click: $root.removeSession">Remove</a>
-                         </span>
                     </form>
+                    </div>
                 </div>
             </div>
-            <button data-bind='click: addSession' class="btn btn-primary">Add Session</button>
         </div>
     </div>
     <div class="row">
@@ -99,31 +174,26 @@
 
 
     <script type="text/javascript">
-        var sessionList = $.parseJSON("{{ view_model_json |escapejs }}");
+        var sessions_experiment_metadatas_object = $.parseJSON("{{ view_model_json |escapejs }}");
+
         $(function(){
-            function SessionModel(sessionData) {
+            function SessionModel(sessionData, options) {
                 var self = this;
                 self.pk = ko.observable(sessionData.pk);
-                self.experiment = ko.observable(sessionData.experiment.pk);
-                self.startDate = ko.observable(sessionData.startDate === "" ? new Date() : new Date(sessionData.startDate));
+                self.experiment_metadata_pk = ko.observable(sessionData.experiment_metadata.pk);
+                self.startDate = ko.observable(options.newSession ? new Date(new Date().getTime() + 24 * 60 * 60 * 1000) : new Date(sessionData.startDate));
                 self.startHour = ko.observable(sessionData.startHour);
                 self.startMin = ko.observable(sessionData.startMin);
-                self.endDate = ko.observable(sessionData.startDate === "" ? new Date() : new Date(sessionData.endDate));
+                self.endDate = ko.observable(options.newSession ? new Date(new Date().getTime() + 24 * 60 * 60 * 1000) : new Date(sessionData.endDate));
                 self.endHour = ko.observable(sessionData.endHour);
                 self.endMin = ko.observable(sessionData.endMin);
                 self.capacity = ko.observable(sessionData.capacity);
+                self.editable = ko.observable(options.newSession);
 
-                self.hide = ko.observable('hide' in sessionData? sessionData.hide : true);
-
-                self.selectDisable = ko.computed(function () {
-                    return self.hide() ? {'disabled': true} : {'disabled': false};  // return true or false depending on your context
-                }, self);
-
-                self.isEditable = ko.observable('hide' in sessionData? !sessionData.hide : false);
+                console.log(self.experiment_metadata_pk());
 
                 self.makeEditable = function () {
-                    self.isEditable(true);
-                    self.hide(false);
+                    self.editable(true);
                 };
 
                 self.onSave = function(formElement) {
@@ -138,27 +208,48 @@
                         type: "POST",
                         success: function(result) {
                             self.pk(result.session.pk);
-                            self.hide(true);
-                            self.isEditable(false);
-                            location.reload();
+                            self.editable(false);
+{#                            location.reload();#}
                         }
                     });
                 };
+                console.log(self.experiment_metadata_pk());
             }
 
-            function SessionListViewModel(sessionList) {
-                var self = this,
-                    mapping = {
-                        'sessions': {
-                            create: function (options) {
-                                return new SessionModel(options.data);
-                            }
+            function SessionListViewModel(sessions_experiment_metadatas_object) {
+                var session_mapping = {
+                    'session_list': {
+                        create: function (options) {
+                            return new SessionModel(options.data, { newSession: false });
                         }
-                    },
-                    model = ko.mapping.fromJS(sessionList, mapping);
+                    }
+                };
+                var model = ko.mapping.fromJS(sessions_experiment_metadatas_object, session_mapping);
+
+                model.invite = function() {
+                    console.log($('#active').find('input[type=checkbox]:checked').map( function(){ return this.value}).get());
+                }
+
+                model.runningSessions = ko.computed(function() {
+                    var yesterdayTimestamp = new Date().getTime() - (24 * 60 * 60 * 1000);
+
+                    return ko.utils.arrayFilter(model.session_list(), function(session) {
+                        var sessionEndTimestamp = new Date(session.endDate()).getTime() + session.endHour() * 60 * 60 * 1000 + session.endMin() * 60 * 1000;
+                        return (session.pk() == -1 || (sessionEndTimestamp >= yesterdayTimestamp));
+                    });
+                });
+
+                model.archivedSessions = ko.computed(function() {
+                    var yesterdayTimestamp = new Date().getTime() - (24 * 60 * 60 * 1000);
+
+                    return ko.utils.arrayFilter(model.session_list(), function(session) {
+                        var sessionEndTimestamp = new Date(session.endDate()).getTime() + session.endHour() * 60 * 60 * 1000 + session.endMin() * 60 * 1000;
+                        return (session.pk() != -1 && (sessionEndTimestamp < yesterdayTimestamp));
+                    });
+                });
 
                 model.addSession = function() {
-                    model.sessions.push(new SessionModel({ pk: -1, experiment: "", startDate: "", endDate: "", capacity:10, hide: false}));
+                    model.sessions.push(new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: "", endDate: "", capacity:10}, { newSession: true}));
                 };
 
                 model.removeSession = function(session, event) {
@@ -171,7 +262,7 @@
                             success: function(result) {
                                 if(result.success == true){
                                     model.sessions.remove(session);
-                                    location.reload();
+{#                                    location.reload();#}
                                 }
                             }
                         });
@@ -210,7 +301,7 @@
                 }
             };
 
-            ko.applyBindings(new SessionListViewModel(sessionList));
+            ko.applyBindings(new SessionListViewModel(sessions_experiment_metadatas_object));
 
             var calendar =  $('#calendar').calendar({
                 events_url:'session/events',
