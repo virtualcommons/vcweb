@@ -4,15 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.core.validators import email_re
-from django.forms.models import inlineformset_factory
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
-from django.template.context import RequestContext
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, FormView, TemplateView
 from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.detail import SingleObjectMixin, DetailView
-from django.views.generic.edit import UpdateView
 from vcweb.core import dumps
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
@@ -171,15 +168,24 @@ def get_active_experiment(participant, experiment_metadata=None, **kwargs):
         return pers[0].experiment
     return None
 
-# FIXME: merge these with LogoutView / LoginView
+def autocomplete_account(request, term):
+    candidates = []
+    if term in ('major', 'institution'):
+        candidates = ["Implement", "Me"]
+        return JsonResponse(dumps({'success': True, 'candidates': candidates}))
+    else:
+        logger.debug("can't autocomplete unsupported term %s", term)
+        return JsonResponse(dumps({'success': False, 'message': "Unsupported autocomplete term %s" % term}))
+
+
 def api_logout(request):
     user = request.user
     set_authentication_token(user)
     auth.logout(request)
     return JsonResponse(SUCCESS_JSON)
 
-# FIXME: assumes participant login
 def participant_api_login(request):
+    # FIXME: assumes participant login
     form = LoginForm(request.POST or None)
     try:
         if form.is_valid():

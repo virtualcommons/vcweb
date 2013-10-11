@@ -4,7 +4,7 @@ from vcweb import settings
 from vcweb.core.views import (Dashboard, LoginView, LogoutView, RegistrationView, monitor,
         RegisterEmailListView, RegisterTestParticipantsView, completed_survey, toggle_bookmark_experiment_metadata,
         check_survey_completed, Participate, download_data, export_configuration, api_logger, participant_api_login,
-        api_logout, participant_ready, check_ready_participants)
+        api_logout, participant_ready, check_ready_participants, autocomplete_account)
 import logging
 import urllib
 
@@ -36,6 +36,8 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^experiment/(?P<pk>\d+)/download/(?P<file_type>[\w]+)$', download_data, name='download_data'),
     url(r'^experiment/(?P<pk>\d+)/export/configuration(?P<file_extension>.[\w]+)$', export_configuration, name='export_configuration'),
     url(r'^experimenter/bookmark-experiment-metadata$', toggle_bookmark_experiment_metadata, name='bookmark_experiment_metadata'),
+# core api endpoints
+    url(r'^api/autocomplete/account/(?P<term>\d+)$', autocomplete_account, name='autocomplete_account'),
 # experiment controller actions are the most general, needs to be matched at the very end
     # deliberately match any prefix to api/2525/log
     url(r'api/log/(?P<participant_group_id>\d+)$', api_logger, name='api-logger'),
