@@ -220,6 +220,7 @@ class ExperimentMetadata(models.Model):
 
 class Institution(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    acronym = models.CharField(max_length=16, blank=True)
     description = models.TextField(blank=True)
     url = models.URLField(null=True, blank=True)
     date_created = models.DateTimeField(default=datetime.now)
