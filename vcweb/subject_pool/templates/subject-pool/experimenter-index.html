@@ -27,21 +27,13 @@
                             <span class="hide">
                                 <input type="hidden" name="pk" data-bind="value: pk" />
                             </span>
+                            <span class="span1">
+                                <input type="checkbox" data-bind="value: pk">
+                            </span>
                             <span class="span2">
-                                <select class="span2" name="experiment_metadata_pk" data-bind="value: experiment_metadata_pk, enable: editable">
-                                    <optgroup label="Bookmarked" data-bind= "attr : {label : experiment_metadata_pk()}">
-                                        <!-- ko  foreach: $root.experiment_metadata_list -->
-                                            <!-- ko if: bookmarked -->
-                                                <option data-bind="text: title, value: pk"></option>
-                                            <!-- /ko -->
-                                        <!-- /ko -->
-                                    </optgroup>
-                                    <optgroup label="Other">
-                                        <!-- ko  foreach: $root.experiment_metadata_list -->
-                                            <!-- ko ifnot: bookmarked -->
-                                                <option data-bind="text: title, value: pk"></option>
-                                            <!-- /ko -->
-                                        <!-- /ko -->
+                                <select class="span2" name="experiment_metadata_pk" data-bind="foreach: $root.experiment_metadata_group, value: selected_experiment_metadata_pk, enable: editable">
+                                    <optgroup data-bind="attr: {label: label}, foreach: experiment_metadata_list">
+                                        <option data-bind="text: title, value:pk"></option>
                                     </optgroup>
                                 </select>
                             </span>
@@ -104,7 +96,7 @@
                             <input type="hidden" name="pk" data-bind="value: pk" />
                         </span>
                         <span class="span2">
-                            <select class="span2" name="experiment_metadata_pk" data-bind="options: $root.experiment_metadata_list, value: experiment_metadata_pk, optionsText:'title', optionsValue:'pk', disable: 'true', optionsCaption: 'select...'"></select>
+                            <select class="span2" name="experiment_metadata_pk" data-bind="options: $root.experiment_metadata_list, value: selected_experiment_metadata_pk, optionsText:'title', optionsValue:'pk', disable: 'true', optionsCaption: 'select...'"></select>
                         </span>
                         <span class="span2 input-append date">
                             <input name="start_date" type="text" class="date-start input-small" data-bind="datepicker : startDate, value: startDate , disable: 'true'" />
@@ -180,7 +172,7 @@
             function SessionModel(sessionData, options) {
                 var self = this;
                 self.pk = ko.observable(sessionData.pk);
-                self.experiment_metadata_pk = ko.observable(sessionData.experiment_metadata.pk);
+                self.selected_experiment_metadata_pk = ko.observable(sessionData.experiment_metadata.pk);
                 self.startDate = ko.observable(options.newSession ? new Date(new Date().getTime() + 24 * 60 * 60 * 1000) : new Date(sessionData.startDate));
                 self.startHour = ko.observable(sessionData.startHour);
                 self.startMin = ko.observable(sessionData.startMin);
@@ -190,7 +182,7 @@
                 self.capacity = ko.observable(sessionData.capacity);
                 self.editable = ko.observable(options.newSession);
 
-                console.log(self.experiment_metadata_pk());
+                console.log(self.selected_experiment_metadata_pk());
 
                 self.makeEditable = function () {
                     self.editable(true);
@@ -213,7 +205,7 @@
                         }
                     });
                 };
-                console.log(self.experiment_metadata_pk());
+                console.log(self.selected_experiment_metadata_pk());
             }
 
             function SessionListViewModel(sessions_experiment_metadatas_object) {
@@ -247,6 +239,15 @@
                         return (session.pk() != -1 && (sessionEndTimestamp < yesterdayTimestamp));
                     });
                 });
+
+                function bookmarked_experiment_metadata_list(bool) {
+                    return ko.utils.arrayFilter(sessions_experiment_metadatas_object.experiment_metadata_list, function(experiment_metadata) {
+                        return (experiment_metadata.bookmarked == bool);
+                    });
+                }
+
+                model.experiment_metadata_group =[{ label: "bookmarked", experiment_metadata_list: bookmarked_experiment_metadata_list(true)},
+                             { label: "Other", experiment_metadata_list: bookmarked_experiment_metadata_list(false)}];
 
                 model.addSession = function() {
                     model.sessions.push(new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: "", endDate: "", capacity:10}, { newSession: true}));
