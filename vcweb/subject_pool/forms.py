@@ -1,5 +1,6 @@
 from django import forms
 from django.forms import widgets, ValidationError
+from vcweb.core.models import ExperimentSession
 from django.utils.translation import ugettext_lazy as _
 
 import logging
@@ -12,10 +13,9 @@ HOUR_CHOICES = (('0', '0'),('1', '1'),('2','2'),('3','3'),('4','4'),('5','5'),('
 MIN_CHOICES = (('0','0'),('15','15'),('30','30'),('45','45'))
 
 
-
 class SessionForm(forms.Form):
     pk = forms.IntegerField(widgets.TextInput())
-    experiment_meta_data = forms.IntegerField(widgets.TextInput(), required=False)
+    experiment_metadata_pk = forms.IntegerField(widgets.TextInput(), required=False)
     start_date = forms.CharField(widget=widgets.TextInput(), required=False)
     start_hour = forms.ChoiceField(choices=HOUR_CHOICES, required=False)
     start_min = forms.ChoiceField(choices=MIN_CHOICES, required=False)
@@ -28,7 +28,7 @@ class SessionForm(forms.Form):
     def clean(self):
         data = super(forms.Form, self).clean()
         pk = data.get('pk')
-        experiment_meta_data = data.get('experiment_meta_data')
+        experiment_metadata_pk = data.get('experiment_metadata_pk')
         start_date = data.get('start_date')
         start_hour = data.get('start_hour')
         start_min = data.get('start_min')
@@ -43,18 +43,16 @@ class SessionForm(forms.Form):
         else:
             logger.debug(data)
             if request_type != 'delete':
-                if not experiment_meta_data or not start_date or not end_date:
+                if not experiment_metadata_pk or not start_date or not end_date:
                     raise forms.ValidationError(_("Please Fill in all the Fields"))
         return data
 
 
-class SessionDetailForm(forms.Form):
-    pk = forms.IntegerField(widgets.TextInput())
-    experiment_meta_data = forms.CharField(widgets.TextInput(), required=False)
-    start_date = forms.CharField(widget=widgets.TextInput(), required=False)
-    start_hour = forms.ChoiceField(choices=HOUR_CHOICES, required=False)
-    start_min = forms.ChoiceField(choices=MIN_CHOICES, required=False)
-    end_date = forms.CharField(widget=widgets.TextInput(), required=False)
-    end_hour = forms.ChoiceField(choices=HOUR_CHOICES, required=False)
-    end_min = forms.ChoiceField(choices=MIN_CHOICES, required=False)
-    capacity = forms.IntegerField(widget=widgets.TextInput(), required=False)
+class SessionDetailForm(forms.ModelForm):
+    class Meta:
+        model = ExperimentSession
+        fields = ('experiment_metadata', 'date_created', 'scheduled_date', 'scheduled_end_date', 'capacity')
+        labels = {
+            'experiment_metadata': 'Experiment',
+            'scheduled_date' : 'Start Date'
+        }
