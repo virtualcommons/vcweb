@@ -277,15 +277,14 @@ def update_account_profile(request):
         email = form.cleaned_data.get('email')
         institution = form.cleaned_data.get('institution')
 
-        ins = Institution.objects.filter(name=institution)
-        if not ins:
-            new_institution = Institution(name=institution)
-            new_institution.save()
-            ins = [new_institution]
-            logger.debug(new_institution)
-
-        logger.debug(ins)
         p = Participant.objects.get(pk=pk)
+
+        if institution:
+            ins, created = Institution.objects.get_or_create(name=institution)
+            p.institution = ins
+        else:
+            p.institution = None
+            logger.debug('Institution is empty')
 
         if p.user.email != email:
             users = User.objects.filter(email=email)
@@ -301,8 +300,6 @@ def update_account_profile(request):
         for attr in ('first_name', 'last_name', 'email'):
             setattr(p.user, attr, form.cleaned_data.get(attr))
 
-        setattr(p, 'institution', ins[0])
-
         p.save()
         p.user.save()
         # logger.debug("P: %s, P.User: %s", p, p.user)
@@ -312,7 +309,7 @@ def update_account_profile(request):
             'message': 'Updated profile successfully.'
         }))
     # logger.debug("Form had errors %s", form)
-    return JsonResponse(dumps({'success': False, 'message': 'You need to provide your major, class status and gender if you want to receive invitaions'}))
+    return JsonResponse(dumps({'success': False, 'message': 'You need to provide your major, class status and gender if you want to receive invitations'}))
 
 
 @login_required

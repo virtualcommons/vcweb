@@ -27,7 +27,7 @@
                             <span class="hide">
                                 <input type="hidden" name="pk" data-bind="value: pk" />
                             </span>
-                            <span class="span1">
+                            <span>
                                 <input type="checkbox" data-bind="value: pk">
                             </span>
                             <span class="span2">
@@ -182,8 +182,6 @@
                 self.capacity = ko.observable(sessionData.capacity);
                 self.editable = ko.observable(options.newSession);
 
-                console.log(self.selected_experiment_metadata_pk());
-
                 self.makeEditable = function () {
                     self.editable(true);
                 };
@@ -205,7 +203,6 @@
                         }
                     });
                 };
-                console.log(self.selected_experiment_metadata_pk());
             }
 
             function SessionListViewModel(sessions_experiment_metadatas_object) {
@@ -250,7 +247,7 @@
                              { label: "Other", experiment_metadata_list: bookmarked_experiment_metadata_list(false)}];
 
                 model.addSession = function() {
-                    model.sessions.push(new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: "", endDate: "", capacity:10}, { newSession: true}));
+                    model.session_list.push(new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: "", endDate: "", capacity:10}, { newSession: true}));
                 };
 
                 model.removeSession = function(session, event) {
@@ -262,13 +259,13 @@
                             data : formData + '&request_type=delete',
                             success: function(result) {
                                 if(result.success == true){
-                                    model.sessions.remove(session);
+                                    model.session_list.remove(session);
 {#                                    location.reload();#}
                                 }
                             }
                         });
                     } else {
-                        model.sessions.remove(session);
+                        model.session_list.remove(session);
                     }
                 };
 

@@ -68,7 +68,7 @@ class ParticipantAccountForm(forms.ModelForm):
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
-    institution = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES), help_text=_('The primary institution, if any, you are affiliated with.'))
+    institution = forms.CharField(required=False, help_text=_('The primary institution, if any, you are affiliated with.'))
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
         if instance is not None:
@@ -78,8 +78,9 @@ class ParticipantAccountForm(forms.ModelForm):
             for attr in ("pk", "first_name", 'last_name', 'email'):
                 self.fields[attr].initial = getattr(instance, attr)
 
-            institution = getattr(instance, 'institution')
-            self.fields['institution'].initial = getattr(institution,'name')
+            institution = instance.institution
+            if institution:
+                self.fields['institution'].initial = institution.name
         else:
             super(ParticipantAccountForm, self).__init__(*args, **kwargs)
 
