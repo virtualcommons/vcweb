@@ -275,12 +275,20 @@ def update_account_profile(request):
     if form.is_valid():
         pk = form.cleaned_data.get('pk')
         email = form.cleaned_data.get('email')
+        institution = form.cleaned_data.get('institution')
+
+        ins = Institution.objects.filter(name=institution)
+        if not ins:
+            new_institution = Institution(name=institution)
+            new_institution.save()
+            ins = [new_institution]
+            logger.debug(new_institution)
+
+        logger.debug(ins)
         p = Participant.objects.get(pk=pk)
 
-        # logger.debug(p.user.email)
         if p.user.email != email:
             users = User.objects.filter(email=email)
-            logger.debug(users.count())
             if users.count() > 0 :
                 return JsonResponse(dumps({
                     'success': False,
@@ -290,12 +298,13 @@ def update_account_profile(request):
         for attr in ('major', 'class_status', 'gender', 'can_receive_invitations'):
             setattr(p, attr, form.cleaned_data.get(attr))
 
-        for attr in ('first_name', 'last_name', 'email', 'institution'):
+        for attr in ('first_name', 'last_name', 'email'):
             setattr(p.user, attr, form.cleaned_data.get(attr))
+
+        setattr(p, 'institution', ins[0])
 
         p.save()
         p.user.save()
-
         # logger.debug("P: %s, P.User: %s", p, p.user)
 
         return JsonResponse(dumps({

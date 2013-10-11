@@ -1,8 +1,14 @@
-from django.shortcuts import render
-from vcweb.core.models import is_experimenter, Experiment, ExperimentSession, ExperimentMetadata, BookmarkedExperimentMetadata
+from django.views.generic import View
+from django.shortcuts import render, redirect, RequestContext
+from vcweb.core.models import is_experimenter, Experiment, ExperimentSession, ExperimentMetadata, Institution
+from django.http import HttpResponse
 from vcweb.core.decorators import experimenter_required
 from datetime import datetime, time
 from time import mktime
+from django.views.generic import ListView, FormView, TemplateView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.detail import DetailView
+from django.core.urlresolvers import reverse
 from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
 
@@ -15,13 +21,13 @@ logger = logging.getLogger(__name__)
 
 @experimenter_required
 def sessionListView(request):
-    experimenter = request.user.experimenter
-    data = ExperimentSession.objects.filter(creator=request.user)
-    experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.bookmarked(experimenter)]
-    logger.debug(experiment_metadata_list)
-    session_list = [{"pk": session.pk, "experiment_metadata": session.experiment_metadata, "startDate": session.scheduled_date.date(), "startHour": session.scheduled_date.time().hour, "startMin": session.scheduled_date.time().minute, "endDate": session.scheduled_end_date.date(),"endHour": session.scheduled_end_date.time().hour, "endMin": session.scheduled_end_date.time().minute, "capacity": session.capacity} for session in data]
-    session_data = {"session_list": session_list, "experiment_metadata_list": experiment_metadata_list}
-    return render(request, "subject-pool/experimenter-index.html", {"view_model_json": dumps(session_data)})
+    user = request.user
+    data = ExperimentSession.objects.filter(creator=user)
+    experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.all()]
+    session_list = [{"pk": session.pk, "experiment": session.experiment_metadata, "startDate": session.scheduled_date.date(), "startHour": session.scheduled_date.time().hour, "startMin": session.scheduled_date.time().minute, "endDate": session.scheduled_end_date.date(),"endHour": session.scheduled_end_date.time().hour, "endMin": session.scheduled_end_date.time().minute, "capacity": session.capacity} for session in data]
+    session_data = {"sessions": session_list, "experiments": experiment_metadata_list}
+    #logger.debug(session_data)
+    return render(request,"subject-pool/experimenter-index.html",{"view_model_json": dumps(session_data)})
 
 @experimenter_required
 def update_session(request):
@@ -45,8 +51,8 @@ def update_session(request):
             es.capacity = form.cleaned_data.get('capacity')
             es.creator = user
             es.date_created = datetime.now()
-            exp_pk = form.cleaned_data.get("experiment_metadata_pk")
-            es.experiment_metadata = ExperimentMetadata.objects.get(pk=exp_pk)
+            exp = form.cleaned_data.get("experiment_meta_data")
+            es.experiment_metadata = ExperimentMetadata.objects.get(pk = exp)
 
             es.save()
         else:
@@ -88,7 +94,7 @@ def get_session_events(request):
         field = {
             "id": event.pk,
             "title": event.experiment_metadata.title,
-            "url": "session/detail/event/" + str(event.pk),
+            "url": "#",
             "class" : "event-color-" + str(index),
             "start": datetime_to_timestamp(event.scheduled_date),
             "end": datetime_to_timestamp(event.scheduled_end_date),
@@ -132,7 +138,24 @@ def datetime_to_timestamp(date):
 
 def get_session_event_detail(request, pk):
     es = ExperimentSession.objects.get(pk=pk)
-    form = SessionDetailForm(instance=es)
+
+    experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.all()]
+    logger.debug(experiment_metadata_list)
+
+
+    data_dict = {'pk': es.pk, 'experiment_meta_data': es.experiment_metadata, 'capacity': es.capacity, 'choicefield': 3}
+    form = SessionDetailForm(data_dict)
+
+    form.pk = es.pk
+    form.end_date = es.scheduled_end_date.date()
+    form.end_hour = es.scheduled_end_date.hour
+    form.end_min = es.scheduled_end_date.minute
+    form.start_date = es.scheduled_date.date()
+    form.start_hour = es.scheduled_date.hour
+    form.start_min = es.scheduled_date.minute
+    form.capacity = es.capacity
+    form.experiment_meta_data = es.experiment_metadata
+
+    #logger.debug(form)
 
     return render(request, 'subject-pool/session_detail.html', { 'form': form })
-

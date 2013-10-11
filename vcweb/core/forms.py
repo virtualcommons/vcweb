@@ -75,8 +75,11 @@ class ParticipantAccountForm(forms.ModelForm):
             super(ParticipantAccountForm, self).__init__(*args, **kwargs)
             self.fields.keyOrder = ['pk', 'first_name', 'last_name', 'email', 'institution', 'can_receive_invitations', 'major', 'class_status', 'gender']
             self.fields['class_status'].label = 'Class Status'
-            for attr in ("pk", "first_name", 'last_name', 'email', 'institution'):
+            for attr in ("pk", "first_name", 'last_name', 'email'):
                 self.fields[attr].initial = getattr(instance, attr)
+
+            institution = getattr(instance, 'institution')
+            self.fields['institution'].initial = getattr(institution,'name')
         else:
             super(ParticipantAccountForm, self).__init__(*args, **kwargs)
 
