@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block page %}
+
     <div class='row' id='page' xmlns="http://www.w3.org/1999/html">
         <div class='info'>Welcome back, {{ request.user.first_name}}.</div>
         <div class="page-header">
@@ -21,64 +22,7 @@
                     <span class="span2">End Time</span>
                     <span class="span1">Capacity</span>
                 </div>
-                <div data-bind='foreach: runningSessions'>
-                    <div class="row">
-                        <form data-bind="submit: onSave">
-                            <span class="hide">
-                                <input type="hidden" name="pk" data-bind="value: pk" />
-                            </span>
-                            <span>
-                                <input type="checkbox" data-bind="value: pk">
-                            </span>
-                            <span class="span2">
-                                <select class="span2" name="experiment_metadata_pk" data-bind="foreach: $root.experiment_metadata_group, value: selected_experiment_metadata_pk, enable: editable">
-                                    <optgroup data-bind="attr: {label: label}, foreach: experiment_metadata_list">
-                                        <option data-bind="text: title, value:pk"></option>
-                                    </optgroup>
-                                </select>
-                            </span>
-                            <span class="span2 input-append date">
-                                <input name="start_date" type="text" class="date-start input-small" data-bind="datepicker : startDate, value: startDate , enable: editable" />
-                                <span class="add-on">
-                                    <i class="icon-calendar"></i>
-                                </span>
-                            </span>
-                            <span class="span2">
-                                <select  class="input-mini" name="start_hour" data-bind ="foreach: new Array(24),value : startHour, enable: editable">
-                                    <option data-bind='value: $index(), text: $index()'></option>
-                                </select>
-                                <select class="input-mini" name="start_min" data-bind ="foreach: new Array(4),value : startMin, enable: editable">
-                                    <option data-bind='value: $index() * 15, text: $index() * 15'></option>
-                                </select>
-                            </span>
-                            <span class="span2 input-append date">
-                                <input name="end_date" type="text" class="date-end input-small" data-bind="datepicker : endDate, value: endDate, enable: editable" />
-                                <span class="add-on">
-                                    <i class="icon-calendar"></i>
-                                </span>
-                            </span>
-                            <span class="span2">
-                                <select class="input-mini" name="end_hour" data-bind ="foreach: new Array(24), value : endHour, enable: editable">
-                                    <option data-bind='value: $index(), text: $index()'></option>
-                                </select>
-                                <select class="input-mini" name="end_min" data-bind ="foreach: new Array(4), value : endMin, enable: editable">
-                                    <option data-bind='value: $index() * 15, text: $index()*15'></option>
-                                </select>
-                            </span>
-                            <span class="span1">
-                                <input class="span1" name="capacity" type="number" min="2" data-bind ="value : capacity, enable: editable" />
-                            </span>
-                            <span class="span1" data-bind = "visible: editable" >
-                                <input type="submit" class="btn btn-success" value="save" />
-                                <a href='#' class="btn btn-link" style="margin-left: -14px;" data-bind="click: $root.removeSession">Remove</a>
-                            </span>
-                            <span class="span1" data-bind= "visible: !editable()" >
-                                <input type="button" class="btn btn-success" data-bind="click: makeEditable" value="edit" />
-                                <a href='#' class="btn btn-link" style="margin-left: -14px;" data-bind="click: $root.removeSession">Remove</a>
-                             </span>
-                        </form>
-                    </div>
-                </div>
+                <div data-bind='template: { name: "session-controller-template", foreach: activeSessions }'></div>
             </div>
             <div class='tab-pane' id="past">
                 <div class="row">
@@ -89,69 +33,27 @@
                     <span class="span2">End Time</span>
                     <span class="span1">Capacity</span>
                 </div>
-                <div data-bind='foreach: archivedSessions'>
-                    <div class="row">
-                        <form>
-                        <span class="hide">
-                            <input type="hidden" name="pk" data-bind="value: pk" />
-                        </span>
-                        <span class="span2">
-                            <select class="span2" name="experiment_metadata_pk" data-bind="options: $root.experiment_metadata_list, value: selected_experiment_metadata_pk, optionsText:'title', optionsValue:'pk', disable: 'true', optionsCaption: 'select...'"></select>
-                        </span>
-                        <span class="span2 input-append date">
-                            <input name="start_date" type="text" class="date-start input-small" data-bind="datepicker : startDate, value: startDate , disable: 'true'" />
-                            <span class="add-on">
-                                <i class="icon-calendar"></i>
-                            </span>
-                        </span>
-                        <span class="span2">
-                            <select  class="input-mini" name="start_hour" data-bind ="foreach: new Array(24),value : startHour, disable: 'true'">
-                                <option data-bind='value: $index(), text: $index()'></option>
-                            </select>
-                            <select class="input-mini" name="start_min" data-bind ="foreach: new Array(4),value : startMin, disable: 'true'">
-                                <option data-bind='value: $index() * 15, text: $index() * 15'></option>
-                            </select>
-                        </span>
-                        <span class="span2 input-append date">
-                            <input name="end_date" type="text" class="date-end input-small" data-bind="datepicker : endDate, value: endDate, disable: 'true'" />
-                            <span class="add-on">
-                                <i class="icon-calendar"></i>
-                            </span>
-                        </span>
-                        <span class="span2">
-                            <select class="input-mini" name="end_hour" data-bind ="foreach: new Array(24), value : endHour, disable: 'true'">
-                                <option data-bind='value: $index(), text: $index()'></option>
-                            </select>
-                            <select class="input-mini" name="end_min" data-bind ="foreach: new Array(4), value : endMin, disable: 'true'">
-                                <option data-bind='value: $index() * 15, text: $index()*15'></option>
-                            </select>
-                        </span>
-                        <span class="span1">
-                            <input class="span1" name="capacity" type="number" min="2" data-bind ="value : capacity, disable: 'true'" />
-                        </span>
-                    </form>
-                    </div>
+                <div data-bind='template: { name: "session-controller-template", foreach: pastSessions }'></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="pull-right form-inline">
+                <div class="btn-group">
+                    <button class="btn btn-primary" data-calendar-nav="prev">&lt;&lt; Prev</button>
+                    <button class="btn" data-calendar-nav="today">Today</button>
+                    <button class="btn btn-primary" data-calendar-nav="next">Next &gt;&gt;</button>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-warning" data-calendar-view="year">Year</button>
+                    <button class="btn btn-warning" data-calendar-view="month">Month</button>
+                    <button class="btn btn-warning" data-calendar-view="week">Week</button>
+                    <button class="btn btn-warning" data-calendar-view="day">Day</button>
                 </div>
             </div>
         </div>
+        <div class="page-header"><h3></h3></div>
+        <div id="calendar"></div>
     </div>
-    <div class="row">
-        <div class="pull-right form-inline">
-            <div class="btn-group">
-                <button class="btn btn-primary" data-calendar-nav="prev">&lt;&lt; Prev</button>
-                <button class="btn" data-calendar-nav="today">Today</button>
-                <button class="btn btn-primary" data-calendar-nav="next">Next &gt;&gt;</button>
-            </div>
-            <div class="btn-group">
-                <button class="btn btn-warning" data-calendar-view="year">Year</button>
-                <button class="btn btn-warning" data-calendar-view="month">Month</button>
-                <button class="btn btn-warning" data-calendar-view="week">Week</button>
-                <button class="btn btn-warning" data-calendar-view="day">Day</button>
-            </div>
-        </div>
-    </div>
-    <div class="page-header"><h3></h3></div>
-    <div id="calendar"></div>
 {% endblock page %}
 
 {% block javascript %}
@@ -163,6 +65,70 @@
 
     <script type="text/javascript" src="{{STATIC_URL}}js/calendar.js"></script>
     <link rel="stylesheet" href="{{ STATIC_URL }}css/calendar.css">
+
+
+
+    <script type='text/html' id='session-controller-template'>
+        <div class="row">
+            <form data-bind="submit: onSave">
+                <span class="hide">
+                    <input type="hidden" name="pk" data-bind="value: pk" />
+                </span>
+                <span class="span2">
+                    <select class="span2" name="experiment_metadata_pk" data-bind="foreach: $root.experiment_metadata_group, value: selected_experiment_metadata_pk, enable: editable">
+                        <optgroup data-bind="attr: {label: label}, foreach: experiment_metadata_list">
+                            <option data-bind="text: title, value:pk"></option>
+                        </optgroup>
+                    </select>
+                </span>
+                <span class="span2 input-append date">
+                    <input name="start_date" type="text" class="date-start input-small" data-bind="datepicker : startDate, value: startDate , enable: editable" />
+                    <span class="add-on">
+                        <i class="icon-calendar"></i>
+                    </span>
+                </span>
+                <span class="span2">
+                    <select  class="input-mini" name="start_hour" data-bind ="foreach: new Array(24),value : startHour, enable: editable">
+                        <option data-bind='value: $index(), text: $index()'></option>
+                    </select>
+                    <select class="input-mini" name="start_min" data-bind ="foreach: new Array(4),value : startMin, enable: editable">
+                        <option data-bind='value: $index() * 15, text: $index() * 15'></option>
+                    </select>
+                </span>
+                <span class="span2 input-append date">
+                    <input name="end_date" type="text" class="date-end input-small" data-bind="datepicker : endDate, value: endDate, enable: editable" />
+                    <span class="add-on">
+                        <i class="icon-calendar"></i>
+                    </span>
+                </span>
+                <span class="span2">
+                    <select class="input-mini" name="end_hour" data-bind ="foreach: new Array(24), value : endHour, enable: editable">
+                        <option data-bind='value: $index(), text: $index()'></option>
+                    </select>
+                    <select class="input-mini" name="end_min" data-bind ="foreach: new Array(4), value : endMin, enable: editable">
+                        <option data-bind='value: $index() * 15, text: $index()*15'></option>
+                    </select>
+                </span>
+                <span class="span1">
+                    <input class="span1" name="capacity" type="number" min="2" data-bind ="value : capacity, enable: editable" />
+                </span>
+               <!-- ko if: active -->
+                <span class="span1" data-bind = "visible: editable" >
+                    <input type="submit" class="btn btn-success" value="save" />
+                    <a href='#' class="btn btn-link" style="margin-left: -14px;" data-bind="click: $root.removeSession">Remove</a>
+                </span>
+                <span class="span1" data-bind= "visible: !editable()" >
+                    <input type="button" class="btn btn-success" data-bind="click: makeEditable" value="edit" />
+                    <a href='#' class="btn btn-link" style="margin-left: -14px;" data-bind="click: $root.removeSession">Remove</a>
+                 </span>
+                <span>
+                    <input type="checkbox" data-bind="value: pk">
+                </span>
+                <!-- /ko -->
+            </form>
+        </div>
+    </script>
+
 
 
     <script type="text/javascript">
@@ -181,6 +147,11 @@
                 self.endMin = ko.observable(sessionData.endMin);
                 self.capacity = ko.observable(sessionData.capacity);
                 self.editable = ko.observable(options.newSession);
+                self.active = ko.computed( function() {
+                    var yesterdayTimestamp = new Date().getTime() - (24 * 60 * 60 * 1000);
+                    var sessionEndTimestamp = new Date(self.endDate()).getTime() + self.endHour() * 60 * 60 * 1000 + self.endMin() * 60 * 1000;
+                        return (self.pk() == -1 || (sessionEndTimestamp >= yesterdayTimestamp));
+                });
 
                 self.makeEditable = function () {
                     self.editable(true);
@@ -219,23 +190,19 @@
                     console.log($('#active').find('input[type=checkbox]:checked').map( function(){ return this.value}).get());
                 }
 
-                model.runningSessions = ko.computed(function() {
-                    var yesterdayTimestamp = new Date().getTime() - (24 * 60 * 60 * 1000);
-
+                model.activeSessions = ko.computed(function() {
                     return ko.utils.arrayFilter(model.session_list(), function(session) {
-                        var sessionEndTimestamp = new Date(session.endDate()).getTime() + session.endHour() * 60 * 60 * 1000 + session.endMin() * 60 * 1000;
-                        return (session.pk() == -1 || (sessionEndTimestamp >= yesterdayTimestamp));
+                        return session.active();
                     });
                 });
 
-                model.archivedSessions = ko.computed(function() {
-                    var yesterdayTimestamp = new Date().getTime() - (24 * 60 * 60 * 1000);
+                model.pastSessions = ko.computed(function() {
 
                     return ko.utils.arrayFilter(model.session_list(), function(session) {
-                        var sessionEndTimestamp = new Date(session.endDate()).getTime() + session.endHour() * 60 * 60 * 1000 + session.endMin() * 60 * 1000;
-                        return (session.pk() != -1 && (sessionEndTimestamp < yesterdayTimestamp));
+                        return !session.active();
                     });
                 });
+
 
                 function bookmarked_experiment_metadata_list(bool) {
                     return ko.utils.arrayFilter(sessions_experiment_metadatas_object.experiment_metadata_list, function(experiment_metadata) {
@@ -298,7 +265,6 @@
                     }
                 }
             };
-
             ko.applyBindings(new SessionListViewModel(sessions_experiment_metadatas_object));
 
             var calendar =  $('#calendar').calendar({
