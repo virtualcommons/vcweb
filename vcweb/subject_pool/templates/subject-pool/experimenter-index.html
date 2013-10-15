@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block page %}
-
-    <div class='row' id='page' xmlns="http://www.w3.org/1999/html">
+    <div class='row' id='page'>
         <div class='info'>Welcome back, {{ request.user.first_name}}.</div>
+        <div id="error-messages"></div>
         <div class="page-header">
             <h2>Manage your sessions</h2>
         </div>
@@ -12,8 +12,6 @@
         </ul>
         <div class='tab-content'>
             <div class='tab-pane active' id="active">
-                <button data-bind='click: addSession' class="btn btn-primary">Add Session</button>
-                <button data-bind='click: invite' class="btn btn-primary">Invite</button>
                 <div class="row">
                     <span class="span2">Experiment</span>
                     <span class="span2">Start Date</span>
@@ -23,6 +21,9 @@
                     <span class="span1">Capacity</span>
                 </div>
                 <div data-bind='template: { name: "session-controller-template", foreach: activeSessions }'></div>
+
+                <button data-bind="click: addSession" class="btn btn-primary">Add Session</button>
+                <button data-bind="click: function() { $('#invite-form').slideDown('slow'); }, enable: ifSelectedSessions" class="btn btn-primary">Invite</button>
             </div>
             <div class='tab-pane' id="past">
                 <div class="row">
@@ -36,7 +37,37 @@
                 <div data-bind='template: { name: "session-controller-template", foreach: pastSessions }'></div>
             </div>
         </div>
-        <div class="row">
+        <div id="invite-form">
+            <form class="form-horizontal" data-bind="submit: onInvite">
+                <div class="control-group">
+                    <label class="control-label" for="noOfPeople">No. of People to Invite</label>
+                    <div class="controls">
+                        <input type="number" class="input-mini" value="50" id="noOfPeople" name="no_of_people">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="invitationSubject">Email Subject Line</label>
+                    <div class="controls">
+                        <input type="text" id="invitationSubject" name="invitation_subject">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="invitationText">Email Content</label>
+                    <div class="controls">
+                        <textarea rows="3" id="invitationText" name="invitation_text"></textarea>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <button type="submit" class="btn">Invite them all!!</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <div class="page-header">
+            <h3 style="display: inline"></h3>
             <div class="pull-right form-inline">
                 <div class="btn-group">
                     <button class="btn btn-primary" data-calendar-nav="prev">&lt;&lt; Prev</button>
@@ -51,9 +82,8 @@
                 </div>
             </div>
         </div>
-        <div class="page-header"><h3></h3></div>
-        <div id="calendar"></div>
     </div>
+    <div id="calendar"></div>
 {% endblock page %}
 
 {% block javascript %}
@@ -61,12 +91,10 @@
     <script src='{{STATIC_URL}}js/bootstrap-datepicker.min.js'></script>
     <link rel="stylesheet" href='{{ STATIC_URL }}css/datepicker.css' />
 
-    <script type= "text/javascript" src="{{STATIC_URL}}js/underscore-min.js"></script>
+    <script type= "text/javascript" src="{{ STATIC_URL }}js/underscore-min.js"></script>
 
-    <script type="text/javascript" src="{{STATIC_URL}}js/calendar.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/calendar.js"></script>
     <link rel="stylesheet" href="{{ STATIC_URL }}css/calendar.css">
-
-
 
     <script type='text/html' id='session-controller-template'>
         <div class="row">
@@ -89,10 +117,20 @@
                 </span>
                 <span class="span2">
                     <select  class="input-mini" name="start_hour" data-bind ="foreach: new Array(24),value : startHour, enable: editable">
-                        <option data-bind='value: $index(), text: $index()'></option>
+                        <!-- ko if: $index() < 10 -->
+                            <option data-bind="value: $index(), text: '0'+$index() "></option>
+                        <!-- /ko -->
+                        <!-- ko if: $index() >= 10 -->
+                            <option data-bind="value: $index(), text: $index() "></option>
+                        <!-- /ko -->
                     </select>
                     <select class="input-mini" name="start_min" data-bind ="foreach: new Array(4),value : startMin, enable: editable">
-                        <option data-bind='value: $index() * 15, text: $index() * 15'></option>
+                        <!-- ko if: $index() < 1 -->
+                            <option data-bind="value: 0, text: '00' "></option>
+                        <!-- /ko -->
+                        <!-- ko if: $index() >=1 -->
+                            <option data-bind="value: $index() * 15, text: $index() * 15"></option>
+                        <!-- /ko -->
                     </select>
                 </span>
                 <span class="span2 input-append date">
@@ -102,39 +140,78 @@
                     </span>
                 </span>
                 <span class="span2">
-                    <select class="input-mini" name="end_hour" data-bind ="foreach: new Array(24), value : endHour, enable: editable">
-                        <option data-bind='value: $index(), text: $index()'></option>
+                    <select  class="input-mini" name="end_hour" data-bind ="foreach: new Array(24),value : endHour, enable: editable">
+                        <!-- ko if: $index() < 10 -->
+                            <option data-bind="value: $index(), text: '0'+$index() "></option>
+                        <!-- /ko -->
+                        <!-- ko if: $index() >= 10 -->
+                            <option data-bind="value: $index(), text: $index() "></option>
+                        <!-- /ko -->
                     </select>
-                    <select class="input-mini" name="end_min" data-bind ="foreach: new Array(4), value : endMin, enable: editable">
-                        <option data-bind='value: $index() * 15, text: $index()*15'></option>
+                    <select class="input-mini" name="end_min" data-bind ="foreach: new Array(4),value : endMin, enable: editable">
+                        <!-- ko if: $index() < 1 -->
+                            <option data-bind="value: 0, text: '00' "></option>
+                        <!-- /ko -->
+                        <!-- ko if: $index() >=1 -->
+                            <option data-bind="value: $index() * 15, text: $index() * 15"></option>
+                        <!-- /ko -->
                     </select>
                 </span>
                 <span class="span1">
                     <input class="span1" name="capacity" type="number" min="2" data-bind ="value : capacity, enable: editable" />
                 </span>
-               <!-- ko if: active -->
-                <span class="span1" data-bind = "visible: editable" >
-                    <input type="submit" class="btn btn-success" value="save" />
-                    <a href='#' class="btn btn-link" style="margin-left: -14px;" data-bind="click: $root.removeSession">Remove</a>
-                </span>
-                <span class="span1" data-bind= "visible: !editable()" >
-                    <input type="button" class="btn btn-success" data-bind="click: makeEditable" value="edit" />
-                    <a href='#' class="btn btn-link" style="margin-left: -14px;" data-bind="click: $root.removeSession">Remove</a>
-                 </span>
-                <span>
-                    <input type="checkbox" data-bind="value: pk">
-                </span>
-                <!-- /ko -->
+                <!-- ko if: active -->
+                    <span class="span1" data-bind = "visible: editable" >
+                        <input type="submit" class="btn btn-success" value="save" />
+                        <a href='#' class="btn btn-link" style="margin-left: -14px;" data-bind="click: $root.removeSession">Remove</a>
+                    </span>
+                    <span class="span1" data-bind= "visible: !editable()" >
+                        <input type="button" class="btn btn-success" data-bind="click: makeEditable" value="edit" />
+                        <a href='#' class="btn btn-link" style="margin-left: -14px;" data-bind="click: $root.removeSession">Remove</a>
+                    </span>
+                    <span data-bind= "visible: !editable()">
+                        <input type="checkbox" data-bind="value: pk, click: $root.addInvite">
+                    </span>
+                 <!-- /ko -->
             </form>
         </div>
     </script>
 
-
-
     <script type="text/javascript">
-        var sessions_experiment_metadatas_object = $.parseJSON("{{ view_model_json |escapejs }}");
+        var sessions_experiment_metadatas_object = $.parseJSON("{{ view_model_json | escapejs }}");
 
         $(function(){
+
+            $('#invite-form').hide();
+
+            function makeCalendar() {
+               return $('#calendar').calendar({
+                    events_url:'session/events',
+                    tmpl_path: '/static/tmpls/',
+                    onAfterViewLoad: function(view) {
+                        $('.page-header h3').text(this.getTitle());
+                        $('.btn-group button').removeClass('active');
+                        $('button[data-calendar-view="' + view + '"]').addClass('active');
+                    }
+                });
+            }
+
+            var calendar = makeCalendar();
+
+            $('.btn-group button[data-calendar-nav]').each(function() {
+                var $this = $(this);
+                $this.click(function() {
+                    calendar.navigate($this.data('calendar-nav'));
+                });
+            });
+
+            $('.btn-group button[data-calendar-view]').each(function() {
+                var $this = $(this);
+                $this.click(function() {
+                    calendar.view($this.data('calendar-view'));
+                });
+            });
+
             function SessionModel(sessionData, options) {
                 var self = this;
                 self.pk = ko.observable(sessionData.pk);
@@ -150,7 +227,7 @@
                 self.active = ko.computed( function() {
                     var yesterdayTimestamp = new Date().getTime() - (24 * 60 * 60 * 1000);
                     var sessionEndTimestamp = new Date(self.endDate()).getTime() + self.endHour() * 60 * 60 * 1000 + self.endMin() * 60 * 1000;
-                        return (self.pk() == -1 || (sessionEndTimestamp >= yesterdayTimestamp));
+                    return (self.pk() == -1 || (sessionEndTimestamp >= yesterdayTimestamp));
                 });
 
                 self.makeEditable = function () {
@@ -170,7 +247,7 @@
                         success: function(result) {
                             self.pk(result.session.pk);
                             self.editable(false);
-{#                            location.reload();#}
+                            calendar = makeCalendar();
                         }
                     });
                 };
@@ -186,9 +263,34 @@
                 };
                 var model = ko.mapping.fromJS(sessions_experiment_metadatas_object, session_mapping);
 
-                model.invite = function() {
-                    console.log($('#active').find('input[type=checkbox]:checked').map( function(){ return this.value}).get());
+                model.inviteCount = ko.observable(0);
+                model.invite_experiment_metadata_pk_list = -1;
+
+                model.addInvite = function(data, event) {
+
+                    if( data.selected_experiment_metadata_pk() == model.invite_experiment_metadata_pk_list || model.invite_experiment_metadata_pk_list == -1 ) {
+                        var oldCount = model.inviteCount();
+                        if($(event.target).prop('checked')){
+                            model.invite_experiment_metadata_pk_list = data.selected_experiment_metadata_pk();
+                            model.inviteCount(oldCount + 1);
+                        } else {
+                            model.invite_experiment_metadata_pk_list = -1;
+                            model.inviteCount(oldCount - 1);
+                            if(oldCount == 1) {
+                                $('#invite-form').slideUp("slow");
+                                $('#invite-form form')[0].reset();
+                            }
+                        }
+                        return true;
+                    } else {
+                        alert("You can not invite participants for a list of experiment sessions spanning to more than one experiment metadata");
+                        return false;
+                    }
                 }
+
+                model.ifSelectedSessions = ko.computed(function() {
+                    return model.inviteCount() ? true : false;
+                });
 
                 model.activeSessions = ko.computed(function() {
                     return ko.utils.arrayFilter(model.session_list(), function(session) {
@@ -197,12 +299,10 @@
                 });
 
                 model.pastSessions = ko.computed(function() {
-
                     return ko.utils.arrayFilter(model.session_list(), function(session) {
                         return !session.active();
                     });
                 });
-
 
                 function bookmarked_experiment_metadata_list(bool) {
                     return ko.utils.arrayFilter(sessions_experiment_metadatas_object.experiment_metadata_list, function(experiment_metadata) {
@@ -210,11 +310,15 @@
                     });
                 }
 
-                model.experiment_metadata_group =[{ label: "bookmarked", experiment_metadata_list: bookmarked_experiment_metadata_list(true)},
-                             { label: "Other", experiment_metadata_list: bookmarked_experiment_metadata_list(false)}];
+                model.experiment_metadata_group = [
+                    { label: "bookmarked", experiment_metadata_list: bookmarked_experiment_metadata_list(true)},
+                    { label: "Other", experiment_metadata_list: bookmarked_experiment_metadata_list(false)}
+                ];
 
                 model.addSession = function() {
-                    model.session_list.push(new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: "", endDate: "", capacity:10}, { newSession: true}));
+                    model.session_list.push(
+                        new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: "", endDate: "", capacity:10}, { newSession: true})
+                    );
                 };
 
                 model.removeSession = function(session, event) {
@@ -227,7 +331,7 @@
                             success: function(result) {
                                 if(result.success == true){
                                     model.session_list.remove(session);
-{#                                    location.reload();#}
+                                    calendar = makeCalendar();
                                 }
                             }
                         });
@@ -236,6 +340,27 @@
                     }
                 };
 
+                model.onInvite = function(formElement) {
+                    var session_pk_list = $('#active').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
+                    if(session_pk_list.length) {
+                        var formData = $(formElement).serialize()  + '&session_pk_list='+ session_pk_list;
+                        $.ajax("/subject-pool/session/invite", {
+                            type : "POST",
+                            data : formData,
+                            success: function(result) {
+                                if(result.success == true){
+                                    $('#invite-form').slideUp("slow");
+                                    $('#active').find('input[type=checkbox]:checked').removeProp('checked');
+                                    model.inviteCount(0);
+                                    $("#error-messages").html('<div class="alert alert-success"><strong>Well done! </strong>'+ result.message + '</strong></div>');
+                                    $('#invite-form form')[0].reset();
+                                } else {
+                                    $("#error-messages").html('<div class="alert alert-danger"><strong>' + result.message + '</strong></div>');
+                                }
+                            }
+                        });
+                    }
+                }
                 return model;
             }
 
@@ -265,31 +390,8 @@
                     }
                 }
             };
+
             ko.applyBindings(new SessionListViewModel(sessions_experiment_metadatas_object));
-
-            var calendar =  $('#calendar').calendar({
-                events_url:'session/events',
-                tmpl_path: '/static/tmpls/',
-                onAfterViewLoad: function(view) {
-                    $('.page-header h3').text(this.getTitle());
-                    $('.btn-group button').removeClass('active');
-                    $('button[data-calendar-view="' + view + '"]').addClass('active');
-                }
-            });
-
-            $('.btn-group button[data-calendar-nav]').each(function() {
-                var $this = $(this);
-                $this.click(function() {
-                    calendar.navigate($this.data('calendar-nav'));
-                });
-            });
-
-            $('.btn-group button[data-calendar-view]').each(function() {
-                var $this = $(this);
-                $this.click(function() {
-                    calendar.view($this.data('calendar-view'));
-                });
-            });
         });
     </script>
 {% endblock %}

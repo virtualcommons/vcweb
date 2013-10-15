@@ -56,3 +56,10 @@ class SessionDetailForm(forms.ModelForm):
             'experiment_metadata': 'Experiment',
             'scheduled_date' : 'Start Date'
         }
+
+
+class SessionInviteForm(forms.Form):
+    no_of_people = forms.IntegerField(widgets.TextInput())
+    invitation_subject = forms.CharField(widgets.TextInput())
+    invitation_text = forms.CharField(widgets.Textarea())
+    session_pk_list = forms.CharField()

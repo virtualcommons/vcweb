@@ -1,13 +1,14 @@
 from django.shortcuts import render
-from vcweb.core.models import is_experimenter, Experiment, ExperimentSession, ExperimentMetadata, BookmarkedExperimentMetadata
+from vcweb.core.models import ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation, Institution
 from vcweb.core.decorators import experimenter_required
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from time import mktime
 from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
 
-from forms import SessionForm, SessionDetailForm
+from forms import SessionForm, SessionDetailForm, SessionInviteForm
 
+import random
 import logging
 
 logger = logging.getLogger(__name__)
@@ -136,3 +137,62 @@ def get_session_event_detail(request, pk):
 
     return render(request, 'subject-pool/session_detail.html', { 'form': form })
 
+def send_invitations(request):
+    user = request.user
+    form = SessionInviteForm(request.POST or None)
+    message = "Please provide all details in the invitation form"
+    if form.is_valid():
+        session_pk_list = form.cleaned_data.get('session_pk_list').split(",")
+        no_of_invitations = form.cleaned_data.get('no_of_people')
+
+        days_threshold = 7
+        institution = "ASU"
+
+        experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
+        experiment_metadata_pk = experiment_sessions[0].experiment_metadata.pk
+
+        potential_participants = get_potential_participants(institution, days_threshold, experiment_metadata_pk)
+        potential_participants_count = len(potential_participants)
+
+        if potential_participants_count == 0:
+            logger.debug("You Have already sent out invitations to all potential participants")
+            message = "You Have already sent out invitations to all potential participants"
+        elif potential_participants_count < no_of_invitations:
+            random.sample(get_potential_participants(institution, days_threshold, experiment_metadata_pk), potential_participants_count)
+            logger.debug("Invitations were sent to only %s participants", potential_participants_count)
+            message = "Invitations were sent to only " + str(potential_participants_count) + " participants"
+        else:
+            random.sample(get_potential_participants(institution, days_threshold, experiment_metadata_pk), no_of_invitations)
+            logger.debug("Invitations were sent to %s participants", no_of_invitations)
+            message = "Invitations were sent to " + str(no_of_invitations) + " participants"
+
+        return JsonResponse(dumps({
+            'success': True,
+            'message': message
+        }))
+    else:
+        logger.debug("Form is not valid")
+        return JsonResponse(dumps({
+            'success': False,
+            'message': message
+        }))
+
+
+def get_potential_participants(institution, days_threshold, experiment_metadata_pk):
+    affiliated_institution = Institution.objects.get(name=institution)
+    unlikely_participants = get_unlikely_participants(days_threshold, experiment_metadata_pk)
+    potential_participants = Participant.objects.filter(can_receive_invitations=True, institution=affiliated_institution).exclude(pk__in=unlikely_participants)
+
+    return potential_participants
+
+
+def get_unlikely_participants(days_threshold, experiment_metadata_pk):
+    last_week_date = datetime.now() - timedelta(days=days_threshold)
+    invited_and_signup_in_threshold_days = Invitation.objects.exclude(date_created__lt=last_week_date)
+    # filtered_list is the list of participants who signed up for given experiment metadata is threshold days
+    filtered_list = [inv.participant.pk for inv in invited_and_signup_in_threshold_days if inv.experiment_session.experiment_metadata.pk == experiment_metadata_pk]
+
+    signup_participants = ParticipantSignup.objects.filter(attendance=0)
+    filtered_list1 = [p.participant.pk for p in signup_participants if p.invitation.experiment_session.experiment_metadata_pk == experiment_metadata_pk]
+
+    return list(set(filtered_list) | set(filtered_list1))
