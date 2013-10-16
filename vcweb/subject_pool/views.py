@@ -5,6 +5,7 @@ from datetime import datetime, time, timedelta
 from time import mktime
 from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
+from django.core.mail import send_mass_mail
 
 from forms import SessionForm, SessionDetailForm, SessionInviteForm
 
@@ -20,8 +21,24 @@ def sessionListView(request):
     data = ExperimentSession.objects.filter(creator=request.user)
     experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.bookmarked(experimenter)]
     logger.debug(experiment_metadata_list)
-    session_list = [{"pk": session.pk, "experiment_metadata": session.experiment_metadata, "startDate": session.scheduled_date.date(), "startHour": session.scheduled_date.time().hour, "startMin": session.scheduled_date.time().minute, "endDate": session.scheduled_end_date.date(),"endHour": session.scheduled_end_date.time().hour, "endMin": session.scheduled_end_date.time().minute, "capacity": session.capacity} for session in data]
-    session_data = {"session_list": session_list, "experiment_metadata_list": experiment_metadata_list}
+    session_list = [{
+        "pk": session.pk,
+        "experiment_metadata": session.experiment_metadata,
+        "startDate": session.scheduled_date.date(),
+        "startHour": session.scheduled_date.time().hour,
+        "startMin": session.scheduled_date.time().minute,
+        "endDate": session.scheduled_end_date.date(),
+        "endHour": session.scheduled_end_date.time().hour,
+        "endMin": session.scheduled_end_date.time().minute,
+        "capacity": session.capacity,
+        "invite_count": Invitation.objects.filter(experiment_session=session).count()
+    }for session in data]
+
+    session_data = {
+        "session_list": session_list,
+        "experiment_metadata_list": experiment_metadata_list
+    }
+
     return render(request, "subject-pool/experimenter-index.html", {"view_model_json": dumps(session_data)})
 
 @experimenter_required
@@ -60,28 +77,21 @@ def update_session(request):
         }))
 
     return JsonResponse(dumps({
-            'success': False
-        }))
+        'success': False
+    }))
 
 
 def get_session_events(request):
+
     from_date = request.GET.get('from', False)
     to_date = request.GET.get('to', False)\
 
-    logger.debug("from date %s", from_date)
-    logger.debug("to date %s", to_date)
-
     queryset = ExperimentSession.objects.filter()
-
-    logger.debug(timestamp_to_datetime(from_date))
-    logger.debug(timestamp_to_datetime(to_date))
-
 
     if to_date:
         queryset = queryset.filter(
             scheduled_end_date__gte=timestamp_to_datetime(from_date)
         )
-    logger.debug(queryset)
 
     objects_body = []
     for event in queryset:
@@ -97,9 +107,10 @@ def get_session_events(request):
         }
         objects_body.append(field)
 
-    objects_head = {"success": True}
-    objects_head["result"] = objects_body
+    objects_head = {"success": True, "result": objects_body}
+
     return JsonResponse(dumps(objects_head))
+
 
 def timestamp_to_datetime(timestamp):
     """
@@ -134,37 +145,71 @@ def datetime_to_timestamp(date):
 def get_session_event_detail(request, pk):
     es = ExperimentSession.objects.get(pk=pk)
     form = SessionDetailForm(instance=es)
+    invitations_sent = Invitation.objects.filter(experiment_session=es)
+    participants = [{
+        'pk': ps.participant.pk,
+        'first_name': ps.participant.first_name,
+        'last_name': ps.participant.last_name
+    }for ps in ParticipantSignup.objects.filter(invitation__in=invitations_sent)]
 
-    return render(request, 'subject-pool/session_detail.html', { 'form': form })
+    return render(request, 'subject-pool/session_detail.html', {'form': form})
+
 
 def send_invitations(request):
     user = request.user
     form = SessionInviteForm(request.POST or None)
     message = "Please provide all details in the invitation form"
     if form.is_valid():
+        invitation_subject = form.cleaned_data.get('invitation_subject')
+        invitation_text = form.cleaned_data.get('invitation_text')
+        from_email = user.email
+
         session_pk_list = form.cleaned_data.get('session_pk_list').split(",")
         no_of_invitations = form.cleaned_data.get('no_of_people')
 
-        days_threshold = 7
-        institution = "ASU"
+        # days_threshold = 7
+        # institution = "ASU"
 
         experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
+
+        # get the experiment metadata pk of any session as all sessions belong to one experiment metadata
         experiment_metadata_pk = experiment_sessions[0].experiment_metadata.pk
 
-        potential_participants = get_potential_participants(institution, days_threshold, experiment_metadata_pk)
+        logger.debug(experiment_metadata_pk)
+
+        potential_participants = get_potential_participants(experiment_metadata_pk)
         potential_participants_count = len(potential_participants)
+
+        final_participants = None
 
         if potential_participants_count == 0:
             logger.debug("You Have already sent out invitations to all potential participants")
             message = "You Have already sent out invitations to all potential participants"
-        elif potential_participants_count < no_of_invitations:
-            random.sample(get_potential_participants(institution, days_threshold, experiment_metadata_pk), potential_participants_count)
-            logger.debug("Invitations were sent to only %s participants", potential_participants_count)
-            message = "Invitations were sent to only " + str(potential_participants_count) + " participants"
         else:
-            random.sample(get_potential_participants(institution, days_threshold, experiment_metadata_pk), no_of_invitations)
-            logger.debug("Invitations were sent to %s participants", no_of_invitations)
-            message = "Invitations were sent to " + str(no_of_invitations) + " participants"
+            if potential_participants_count < no_of_invitations:
+                final_participants = random.sample(potential_participants, potential_participants_count)
+                logger.debug("Invitations were sent to only %s participants", potential_participants_count)
+                message = "Your invitations were sent to only " + str(potential_participants_count) + " participants"
+            else:
+                final_participants = random.sample(potential_participants, no_of_invitations)
+                logger.debug("Invitations were sent to %s participants", no_of_invitations)
+                message = "Your invitations were sent to " + str(no_of_invitations) + " participants"
+
+            today = datetime.now()
+            invitations = []
+            recipient_list = []
+            for participant in final_participants:
+                recipient_list.append(participant.email)
+                for es in experiment_sessions:
+                    invitations.append(Invitation(participant=participant, experiment_session=es, date_created=today, sender=user))
+
+            logger.debug(len(recipient_list))
+
+            datatuple = (invitation_subject, invitation_text, from_email, recipient_list)
+
+            send_mass_mail((datatuple, ), fail_silently=False)
+
+            Invitation.objects.bulk_create(invitations)
 
         return JsonResponse(dumps({
             'success': True,
@@ -178,7 +223,7 @@ def send_invitations(request):
         }))
 
 
-def get_potential_participants(institution, days_threshold, experiment_metadata_pk):
+def get_potential_participants(experiment_metadata_pk, institution="Arizona S U", days_threshold=7):
     affiliated_institution = Institution.objects.get(name=institution)
     unlikely_participants = get_unlikely_participants(days_threshold, experiment_metadata_pk)
     potential_participants = Participant.objects.filter(can_receive_invitations=True, institution=affiliated_institution).exclude(pk__in=unlikely_participants)
@@ -189,7 +234,7 @@ def get_potential_participants(institution, days_threshold, experiment_metadata_
 def get_unlikely_participants(days_threshold, experiment_metadata_pk):
     last_week_date = datetime.now() - timedelta(days=days_threshold)
     invited_and_signup_in_threshold_days = Invitation.objects.exclude(date_created__lt=last_week_date)
-    # filtered_list is the list of participants who signed up for given experiment metadata is threshold days
+    # filtered_list is the list of participants who signed up for given experiment metadata in threshold days
     filtered_list = [inv.participant.pk for inv in invited_and_signup_in_threshold_days if inv.experiment_session.experiment_metadata.pk == experiment_metadata_pk]
 
     signup_participants = ParticipantSignup.objects.filter(attendance=0)

@@ -88,7 +88,7 @@
 
 {% block javascript %}
 {{ block.super }}
-    <script src='{{STATIC_URL}}js/bootstrap-datepicker.min.js'></script>
+    <script src='{{ STATIC_URL }}js/bootstrap-datepicker.min.js'></script>
     <link rel="stylesheet" href='{{ STATIC_URL }}css/datepicker.css' />
 
     <script type= "text/javascript" src="{{ STATIC_URL }}js/underscore-min.js"></script>
@@ -173,6 +173,7 @@
                         <input type="checkbox" data-bind="value: pk, click: $root.addInvite">
                     </span>
                  <!-- /ko -->
+                <span class="span1" data-bind="text: inviteCount"></span>
             </form>
         </div>
     </script>
@@ -223,6 +224,7 @@
                 self.endHour = ko.observable(sessionData.endHour);
                 self.endMin = ko.observable(sessionData.endMin);
                 self.capacity = ko.observable(sessionData.capacity);
+                self.inviteCount = ko.observable(sessionData.invite_count);
                 self.editable = ko.observable(options.newSession);
                 self.active = ko.computed( function() {
                     var yesterdayTimestamp = new Date().getTime() - (24 * 60 * 60 * 1000);
@@ -317,7 +319,7 @@
 
                 model.addSession = function() {
                     model.session_list.push(
-                        new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: "", endDate: "", capacity:10}, { newSession: true})
+                        new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: "", endDate: "", capacity:10, inviteCount: 0}, { newSession: true})
                     );
                 };
 
