@@ -10,6 +10,9 @@ from django.contrib.auth.forms import PasswordResetForm
 from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 # set up dajaxice URLs
 dajaxice_autodiscover()
+import autocomplete_light
+# import every app/autocomplete_light_registry.py
+autocomplete_light.autodiscover()
 # set up admin URLs
 admin.autodiscover()
 
@@ -39,6 +42,7 @@ urlpatterns = patterns('',
     url(r'', include('social_auth.urls')),
     # core catches everything else
     url(r'', include('vcweb.core.urls', namespace='core', app_name='core')),
+    url(r'^autocomplete/', include('autocomplete_light.urls')),
 
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'

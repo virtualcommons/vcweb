@@ -1,4 +1,7 @@
 from django import forms
+import autocomplete_light
+import autocomplete_light_registry
+from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete, MajorAutocomplete
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
@@ -24,7 +27,7 @@ class BaseRegistrationForm(forms.Form):
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     confirm_password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
-    institution = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES), help_text=_('The primary institution, if any, you are affiliated with.'))
+    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete),required=True, help_text=_('The primary institution, if any, you are affiliated with.'))
     def clean_email(self):
         email = self.cleaned_data['email'].lower()
         try:
@@ -68,7 +71,7 @@ class ParticipantAccountForm(forms.ModelForm):
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
-    institution = forms.CharField(required=False, help_text=_('The primary institution, if any, you are affiliated with.'))
+    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False, help_text=_('The primary institution, if any, you are affiliated with.'))
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
         if instance is not None:
@@ -87,9 +90,9 @@ class ParticipantAccountForm(forms.ModelForm):
     class Meta:
         model = Participant
         fields = ['major', 'class_status', 'gender', 'can_receive_invitations']
-        # widgets = {
-        #     'major': forms.TextInput(attrs={'class': 'hide'}),
-        # }
+        widgets = {
+            'major': autocomplete_light.TextWidget(MajorAutocomplete),
+        }
 
 
     def clean(self):

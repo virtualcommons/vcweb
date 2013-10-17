@@ -113,6 +113,7 @@ INSTALLED_APPS = (
         'django_extensions',
         'mptt',
         'bootstrap_toolkit',
+        'autocomplete_light',
         )
 
 SOUTH_TESTS_MIGRATE = False
