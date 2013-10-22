@@ -17,8 +17,6 @@ from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
 from model_utils.managers import PassThroughManager
 from string import Template
-from social_auth.backends.facebook import FacebookBackend
-import social_auth.signals
 
 from vcweb.core import signals, simplecache, dumps
 
@@ -42,6 +40,7 @@ class DefaultValue(object):
     """
     def __init__(self, value):
         self.value = value
+
     def __getattr__(self, name):
         return self.value
 
@@ -212,7 +211,7 @@ class ExperimentMetadata(models.Model):
         return [self.namespace]
 
     def __unicode__(self):
-        return u"%s (%s)" % (self.title, self.namespace)
+        return u"%s /%s" % (self.title, self.namespace)
 
     class Meta:
         ordering = ['namespace', 'date_created']
@@ -225,9 +224,10 @@ class Institution(models.Model):
     url = models.URLField(null=True, blank=True)
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
+    cas_server_url = models.URLField(null=True, blank=True)
 
     def __unicode__(self):
-        return u"%s (%s)" % (self.name, self.url)
+        return u"%s %s" % (self.name, self.url)
 
 
 class CommonsUser(models.Model):
@@ -313,7 +313,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     creator = models.ForeignKey(Experimenter, related_name='experiment_configuration_set')
     name = models.CharField(max_length=255)
     max_number_of_participants = models.PositiveIntegerField(default=0)
-    invitation_subject = models.TextField(blank=True, help_text=_('subject header for email registrations'))
+    registration_email_subject = models.TextField(blank=True, help_text=_('subject header for email registrations'))
     invitation_text = models.TextField(blank=True, help_text=_('text to send out via email invitations'))
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
@@ -385,7 +385,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
             return serializers.serialize(output_format, all_objects, **kwargs)
 
     def __unicode__(self):
-        return u"%s (%s)" % (self.name, self.experiment_metadata)
+        return u"%s %s" % (self.name, self.experiment_metadata)
 
     class Meta:
         ordering = ['experiment_metadata', 'creator', 'date_created']
@@ -457,12 +457,9 @@ class Experiment(models.Model):
         blank=True,
         help_text=_("Use with ExperimentConfiguration.has_daily_rounds set to true to signifythat the experiment should activate automatically on the specified date."))
     #end_date = models.DateField(null=True, blank=True, help_text=_("Used in conjuction with ExperimentConfiguration.has_daily_rounds set to true and signifies that the experiment should end at the specified time."))
-    tick_duration = models.CharField(max_length=32, blank=True)
-    """ how often the experiment_metadata server should tick. """
-
     current_round_start_time = models.DateTimeField(null=True, blank=True)
-    """ elapsed time in seconds for the current round. """
-    amqp_exchange_name = models.CharField(max_length=64, default="vcweb.default.exchange")
+    registration_email_subject = models.CharField(max_length=128, blank=True, help_text=_("email subject header on registration emails sent to a participant"))
+    registration_email_text = models.TextField(blank=True)
 
     cached_round_sequence_number = None
     ''' used to cache the round configuration '''
@@ -732,6 +729,14 @@ class Experiment(models.Model):
     def all_participants_have_submitted(self):
         return ParticipantRoundDataValue.objects.filter(submitted=False, round_data=self.current_round_data).count() == 0
 
+    def get_registration_email_subject(self):
+        subject = self.registration_email_subject
+        if subject is None:
+            subject = self.experiment_configuration.registration_email_subject
+            if subject is None:
+                subject = 'VCWEB experiment registration for %s' % self.display_name
+        return subject
+
     def register_participants(self, users=None, emails=None, institution=None, password=None):
         number_of_participants = self.participant_set.count()
         if number_of_participants > 0:
@@ -792,7 +797,6 @@ class Experiment(models.Model):
                                               'email/experiment-registration.txt'])
         html_template = select_template(['%s/email/experiment-registration.html' % self.namespace,
                                          'email/experiment-registration.html'])
-        experiment = participant_experiment_relationship.experiment
         participant = participant_experiment_relationship.participant
         user = participant.user
         if not password.strip():
@@ -803,14 +807,12 @@ class Experiment(models.Model):
         c = Context({
             'participant_experiment_relationship': participant_experiment_relationship,
             'participant': participant,
-            'experiment': experiment,
+            'experiment': self,
             'password': password,
             })
         plaintext_content = plaintext_template.render(c)
         html_content = html_template.render(c)
-        subject = self.experiment_configuration.invitation_subject
-        if subject is None:
-            subject = 'VCWEB: experiment registration for %s' % self.display_name
+        subject = self.get_registration_email_subject()
         experimenter_email = self.experimenter.email
         to_address = [participant_experiment_relationship.participant.email]
         bcc_address = [experimenter_email]
@@ -1352,7 +1354,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
             return u"%d of %d" % (self.sequence_number, self.experiment_configuration.final_sequence_number)
 
     def __unicode__(self):
-        return u"%s %s (%s %s)" % (self.get_round_type_display(), self.sequence_label, self.experiment_configuration,
+        return u"%s %s %s %s" % (self.get_round_type_display(), self.sequence_label, self.experiment_configuration,
                                    self.session_id)
 
     class Meta:
@@ -1933,6 +1935,7 @@ class ParticipantExperimentRelationship(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
     created_by = models.ForeignKey(User)
     last_completed_round_sequence_number = models.PositiveIntegerField(default=0)
+# FIXME: deprecate & remove
     current_location = models.CharField(max_length=64, blank=True)
     # arbitrary JSON-encoded data
     additional_data = models.TextField(blank=True)
@@ -2255,13 +2258,18 @@ class ExperimentActivityLog(ActivityLog):
 
 
 class ExperimentSession(models.Model):
+    """
+    Represents an actual experiment session that needs to take place at a certain place and time
+    """
     experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='experiment_session_set')
     date_created = models.DateTimeField(default=datetime.now)
     scheduled_date = models.DateTimeField()
     scheduled_end_date = models.DateTimeField(null=True, blank=True)
     capacity = models.PositiveIntegerField(default=20)
     creator = models.ForeignKey(User, related_name='experiment_session_set')
-# FIXME: this gets copied over from the ExperimentConfiguration?
+# wire up with autocomplete
+    location = models.CharField(max_length=128, blank=True, help_text=_('Location where this experiment session will be held.'))
+# FIXME: consider placing this somewhere more re-usable, or allow use of ExperimentConfiguration.invitation_text as a fallback
     invitation_text = models.TextField(blank=True)
 
 
