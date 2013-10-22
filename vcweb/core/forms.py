@@ -1,20 +1,18 @@
 from django import forms
-import autocomplete_light
-import autocomplete_light_registry
-from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete, MajorAutocomplete
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
+from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete
 from vcweb.core.models import (Experimenter, Institution, Participant, ExperimentMetadata)
 
 from django.core.validators import email_re
 
-import re
-
+import autocomplete_light
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -90,9 +88,11 @@ class ParticipantAccountForm(forms.ModelForm):
     class Meta:
         model = Participant
         fields = ['major', 'class_status', 'gender', 'can_receive_invitations']
+        """
         widgets = {
-            'major': autocomplete_light.TextWidget(MajorAutocomplete),
+            'major': autocomplete_light.TextWidget('MajorAutocomplete'),
         }
+        """
 
 
     def clean(self):

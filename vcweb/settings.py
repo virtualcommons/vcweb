@@ -99,6 +99,7 @@ INSTALLED_APPS = (
         'django.contrib.admin',
         'django.contrib.messages',
         'django.contrib.staticfiles',
+        'autocomplete_light',
         'vcweb.core',
         'vcweb.forestry',
         'vcweb.lighterprints',
@@ -113,7 +114,6 @@ INSTALLED_APPS = (
         'django_extensions',
         'mptt',
         'bootstrap_toolkit',
-        'autocomplete_light',
         )
 
 SOUTH_TESTS_MIGRATE = False

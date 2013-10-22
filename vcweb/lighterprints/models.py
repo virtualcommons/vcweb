@@ -10,7 +10,6 @@ from django.utils.timesince import timesince
 from model_utils.managers import PassThroughManager
 from vcweb.core import signals, simplecache, enum
 from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, RoundParameterValue, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
-from vcweb.core.services import fetch_foursquare_categories
 from collections import defaultdict
 from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager

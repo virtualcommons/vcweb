@@ -1,3 +1,6 @@
+import autocomplete_light
+# import every app/autocomplete_light_registry.py
+autocomplete_light.autodiscover()
 from django.conf.urls.defaults import patterns, url, include
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -10,9 +13,6 @@ from django.contrib.auth.forms import PasswordResetForm
 from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 # set up dajaxice URLs
 dajaxice_autodiscover()
-import autocomplete_light
-# import every app/autocomplete_light_registry.py
-autocomplete_light.autodiscover()
 # set up admin URLs
 admin.autodiscover()
 

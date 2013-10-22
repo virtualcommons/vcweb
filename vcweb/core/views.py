@@ -168,15 +168,6 @@ def get_active_experiment(participant, experiment_metadata=None, **kwargs):
         return pers[0].experiment
     return None
 
-def autocomplete_account(request, term):
-    candidates = []
-    if term in ('major', 'institution'):
-        candidates = ["Implement", "Me"]
-        return JsonResponse(dumps({'success': True, 'candidates': candidates}))
-    else:
-        logger.debug("can't autocomplete unsupported term %s", term)
-        return JsonResponse(dumps({'success': False, 'message': "Unsupported autocomplete term %s" % term}))
-
 
 def api_logout(request):
     user = request.user
