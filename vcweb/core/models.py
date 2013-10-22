@@ -363,6 +363,34 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     def namespace(self):
         return self.experiment_metadata.namespace
 
+    def clone(self, creator=None):
+        """
+        Returns a deep clone of this experiment configuration including all associated ExperimentParameterValues,
+        RoundParameterValues, and RoundConfigurations
+        """
+        if creator is None:
+            creator = self.creator
+        ec = ExperimentConfiguration.objects.get(pk=self.pk)
+        ec.pk = None
+        ec.creator = creator
+        ec.save()
+        for epv in self.parameter_value_set.all():
+            epv_clone = ExperimentParameterValue.objects.get(pk=epv.pk)
+            epv_clone.pk = None
+            epv_clone.experiment_configuration=ec
+            epv.save()
+        for rc in self.round_configuration_set.all():
+            rc_clone = RoundConfiguration.objects.get(pk=rc.pk)
+            rc_clone.pk = None
+            rc_clone.experiment_configuration = ec
+            rc_clone.save()
+            for rpv in RoundParameterValue.objects.filter(round_configuration=rc):
+                rpv.pk = None
+                rpv.round_configuration = rc_clone
+                rpv.save()
+        return ec
+
+
     def to_dict(self, **kwargs):
         return {
             'pk': self.pk,
