@@ -1,8 +1,9 @@
 Hello,
 
-Thank you for signing up to participate in this experiment. You have been randomly allocated to a group of 5 along with
-four other participants who have also signed up for this experiment.  You will have a chance to win prizes by performing
-actions within the experiment to reduce your virtual carbon footprint.
+Thanks in advance for participating in this experiment. You have been randomly allocated to a group of 5 along with four
+other students enrolled in <b>ASB 328 Rules, Games and Society</b>. You will earn one credit point for participating in
+this experiment plus up to 5 extra credit points by performing actions within the experiment to reduce your virtual
+carbon footprint.
 
 To access the experiment please visit https://vcweb.asu.edu{{experiment.participant_url}} and login with the following credentials:
 
@@ -15,6 +16,6 @@ You can reset your password at any time by entering your email at
 
 
 The experiment will begin on {{experiment.start_date}} and run for {{experiment.number_of_rounds}} days, ending on
-{{experiment.end_date}} at midnight. The probability of earning a prize is based on the performance of your group. If your group
-score reaches the goal before midnight your chances of earning a prize will be higher. Each day at midnight your group's
-score will reset to 0.
+{{experiment.end_date}}. If your group's average points per person reaches 160 points of carbon footprint savings,
+everyone in the group will earn 1 extra credit point. Every day your group reaches 160 points will result in 1 extra
+credit point being awarded to each member of your group, so you can earn 5 extra credit points total. 

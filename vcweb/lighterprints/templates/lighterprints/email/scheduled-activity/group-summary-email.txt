@@ -15,11 +15,5 @@ You are a member of {{ group_name }}. To participate in this experiment, visit <
 {% endif %}
 
 {% if completed %}
-Congratulations! Your group met the goal of {{ threshold }} average points per person.
+Congratulations! Your group reached the target of {{ threshold }} average points per person.
 {% endif %}
-
-{% if not experiment_completed %}
-Remember, your point totals reset each day so tomorrow your group must still earn {{ threshold }} average points per person to increase your chances of winning a prize.
-{% endif %}
-
-
