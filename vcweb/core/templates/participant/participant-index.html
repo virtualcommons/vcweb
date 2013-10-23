@@ -1,0 +1,66 @@
+{% extends "participant/base.html" %}
+{% block title %}
+Participant Dashboard
+{% endblock %}
+{% block logo %}
+<h1>Dashboard</h1>
+{% endblock %}
+
+{% block page %}
+    <h3>Selected Experiment Session</h3>
+    <div class="well">
+        <fieldset class="radiogroup">
+            <legend>Select pizza crust <span class="required">(required)</span></legend>
+            <ul class="radio">
+                <li><input type="radio" name="crust" id="crust1" value="deep" /><label for="crust1">Deep dish</label></li>
+                <li><input type="radio" name="crust" id="crust2" value="thick" /><label for="crust2">Thick</label></li>
+                <li><input type="radio" name="crust" id="crust3" value="hand" /><label for="crust3">Hand thrown</label></li>
+                <li><input type="radio" name="crust" id="crust4" value="thin" /><label for="crust4">Thin</label></li>
+            </ul>
+        </fieldset>
+    </div>
+    <h3>Other available Experiment Sessions</h3>
+    <div class="well">
+        <fieldset class="radiogroup">
+            <legend>Select pizza crust <span class="required">(required)</span></legend>
+            <ul class="radio">
+                <li><input type="radio" name="crust" id="crust1" value="deep" /><label for="crust1">Deep dish</label></li>
+                <li><input type="radio" name="crust" id="crust2" value="thick" /><label for="crust2">Thick</label></li>
+                <li><input type="radio" name="crust" id="crust3" value="hand" /><label for="crust3">Hand thrown</label></li>
+                <li><input type="radio" name="crust" id="crust4" value="thin" /><label for="crust4">Thin</label></li>
+            </ul>
+        </fieldset>
+    </div>
+{% endblock page %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript">
+    var invitation_session_info = $.parseJSON("{{ view_model_json | escapejs }}");
+        console.log(invitation_session_info);
+
+        function SessionListViewModel(sessions_experiment_metadatas_object) {
+            var session_mapping = {
+                'session_list': {
+                    create: function (options) {
+                        return new SessionModel(options.data, { newSession: false });
+                    }
+                }
+            };
+            var model = ko.mapping.fromJS(sessions_experiment_metadatas_object, session_mapping);
+
+            model.activeSessions = ko.computed(function() {
+                return ko.utils.arrayFilter(model.session_list(), function(session) {
+                    return session.active();
+                });
+            });
+
+            model.pastSessions = ko.computed(function() {
+                return ko.utils.arrayFilter(model.session_list(), function(session) {
+                    return !session.active();
+                });
+            });
+
+            return model;
+        }
+    </script>
+{% endblock %}

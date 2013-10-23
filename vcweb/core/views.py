@@ -13,25 +13,29 @@ from django.views.generic.detail import SingleObjectMixin, DetailView
 from vcweb.core import dumps
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
-        ParticipantGroupIdForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
-        RegisterExcelParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm)
+                              ParticipantGroupIdForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
+                              RegisterExcelParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
-        ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
-        Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata)
+                               ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
+                               Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation, ParticipantSignup)
 from vcweb.core.unicodecsv import UnicodeWriter
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
 import tempfile
+from datetime import datetime, timedelta
 
 import mimetypes
+
 mimetypes.init()
 
 import logging
+
 logger = logging.getLogger(__name__)
 
-SUCCESS_JSON = dumps({ 'success': True })
-FAILURE_JSON = dumps({ 'success': False })
+SUCCESS_JSON = dumps({'success': True})
+FAILURE_JSON = dumps({'success': False})
+
 
 def json_response(request, content, **http_response_kwargs):
     "Construct an `HttpResponse` object."
@@ -41,6 +45,7 @@ def json_response(request, content, **http_response_kwargs):
         content = '%s(%s)' % (callback, content)
         content_type = 'application/javascript'
     return HttpResponse(content, content_type=content_type, **http_response_kwargs)
+
 
 class JSONResponseMixin(object):
     def render_to_response(self, context, **kwargs):
@@ -56,13 +61,16 @@ class JSONResponseMixin(object):
         into a JSON object and returns it.  If context_key is None, converts the
         entire context dict.
         """
-        return dumps( context if context_key is None else context[context_key] )
+        return dumps(context if context_key is None else context[context_key])
+
 
 class AnonymousMixin(object):
     """ provides the anonymous_required decorator """
+
     @method_decorator(anonymous_required)
     def dispatch(self, *args, **kwargs):
         return super(AnonymousMixin, self).dispatch(*args, **kwargs)
+
 
 class Participate(TemplateView):
     @method_decorator(participant_required)
@@ -74,20 +82,22 @@ class Participate(TemplateView):
         else:
             return redirect(experiment.participant_url)
 
+
 class Dashboard(ListView, TemplateResponseMixin):
     """
     general dashboard for participants or experimenters that displays a list of
     experiments to either participate in or configure/manage/monitor, respectively
     """
     context_object_name = 'experiments'
+
     def get_template_names(self):
         user = self.request.user
-# FIXME: need to replace participant dashboard with a landing page that displays only the active experiment they can
-# participate in.
+        # FIXME: need to replace participant dashboard with a landing page that displays only the active experiment they can
+        # participate in.
         if is_experimenter(user):
-            return [ 'experimenter/dashboard.html' ]
+            return ['experimenter/dashboard.html']
         else:
-            return [ 'participant/dashboard.html' ]
+            return ['participant/dashboard.html']
 
     def get_experimenter_dashboard_view_model(self, experimenter):
         _configuration_cache = {}
@@ -96,7 +106,8 @@ class Dashboard(ListView, TemplateResponseMixin):
             experiment_metadata_dict[ec.experiment_metadata].append(ec)
             _configuration_cache[ec.pk] = ec
         experiment_metadata_list = []
-        bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).values_list('experiment_metadata', flat=True)
+        bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).values_list(
+            'experiment_metadata', flat=True)
         for em, ecs in experiment_metadata_dict.iteritems():
             d = em.to_dict(include_configurations=True, configurations=ecs)
             d['bookmarked'] = em.pk in bem_pks
@@ -110,11 +121,11 @@ class Dashboard(ListView, TemplateResponseMixin):
         running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
         archived_experiments = experiment_status_dict['COMPLETED']
         data = {
-                'experimentMetadataList': experiment_metadata_list,
-                'pendingExperiments': pending_experiments,
-                'runningExperiments': running_experiments,
-                'archivedExperiments': archived_experiments,
-                }
+            'experimentMetadataList': experiment_metadata_list,
+            'pendingExperiments': pending_experiments,
+            'runningExperiments': running_experiments,
+            'archivedExperiments': archived_experiments,
+        }
 
         return dumps(data)
 
@@ -129,16 +140,19 @@ class Dashboard(ListView, TemplateResponseMixin):
     def get_queryset(self):
         user = self.request.user
         if is_experimenter(user):
-            return Experiment.objects.select_related('experimenter', 'experiment_metadata', 'experiment_configuration').filter(experimenter__pk=self.request.user.experimenter.pk)
+            return Experiment.objects.select_related('experimenter', 'experiment_metadata',
+                                                     'experiment_configuration').filter(
+                experimenter__pk=self.request.user.experimenter.pk)
         elif is_participant(user):
-# nested dictionary, {ExperimentMetadata -> { status -> [experiments,...] }}
-# FIXME: could also use collections.defaultdict or regroup template tag to
-# accomplish this..
+        # nested dictionary, {ExperimentMetadata -> { status -> [experiments,...] }}
+        # FIXME: could also use collections.defaultdict or regroup template tag to
+        # accomplish this..
             experiment_dict = {}
-# FIXME: this needs to be refactored
+            # FIXME: this needs to be refactored
             for experiment in Experiment.objects.for_participant(user.participant):
                 if not experiment.experiment_metadata in experiment_dict:
-                    experiment_dict[experiment.experiment_metadata] = dict([(choice[0], list()) for choice in Experiment.Status])
+                    experiment_dict[experiment.experiment_metadata] = dict(
+                        [(choice[0], list()) for choice in Experiment.Status])
                 experiment_dict[experiment.experiment_metadata][experiment.status].append(experiment)
                 logger.info("experiment_dict %s", experiment_dict)
             return experiment_dict
@@ -157,10 +171,13 @@ def set_authentication_token(user, authentication_token=''):
     commons_user.authentication_token = authentication_token
     commons_user.save()
 
+
 def get_active_experiment(participant, experiment_metadata=None, **kwargs):
     pers = []
     if experiment_metadata is not None:
-        pers = ParticipantExperimentRelationship.objects.active(participant=participant, experiment__experiment_metadata=experiment_metadata, **kwargs)
+        pers = ParticipantExperimentRelationship.objects.active(participant=participant,
+                                                                experiment__experiment_metadata=experiment_metadata,
+                                                                **kwargs)
     else:
         pers = ParticipantExperimentRelationship.objects.active(participant=participant, **kwargs)
     if pers:
@@ -169,11 +186,22 @@ def get_active_experiment(participant, experiment_metadata=None, **kwargs):
     return None
 
 
+def autocomplete_account(request, term):
+    candidates = []
+    if term in ('major', 'institution'):
+        candidates = ["Implement", "Me"]
+        return JsonResponse(dumps({'success': True, 'candidates': candidates}))
+    else:
+        logger.debug("can't autocomplete unsupported term %s", term)
+        return JsonResponse(dumps({'success': False, 'message': "Unsupported autocomplete term %s" % term}))
+
+
 def api_logout(request):
     user = request.user
     set_authentication_token(user)
     auth.logout(request)
     return JsonResponse(SUCCESS_JSON)
+
 
 def participant_api_login(request):
     # FIXME: assumes participant login
@@ -185,7 +213,7 @@ def participant_api_login(request):
             auth.login(request, user)
             set_authentication_token(user, request.session.session_key)
             participant = user.participant
-# FIXME: defaulting to first active experiment... need to revisit this.
+            # FIXME: defaulting to first active experiment... need to revisit this.
             active_experiment = get_active_experiment(participant)
             participant_group_relationship = active_experiment.get_participant_group_relationship(participant)
             return JsonResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.pk}))
@@ -199,6 +227,7 @@ def participant_api_login(request):
 class LoginView(FormView, AnonymousMixin):
     form_class = LoginForm
     template_name = 'account/login.html'
+
     def form_valid(self, form):
         request = self.request
         user = form.user_cache
@@ -217,6 +246,7 @@ class LoginView(FormView, AnonymousMixin):
                 success_url = active_experiment.participant_url
         return return_url if return_url else success_url
 
+
 class LogoutView(TemplateView):
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -224,9 +254,11 @@ class LogoutView(TemplateView):
         auth.logout(request)
         return redirect('home')
 
+
 class RegistrationView(FormView, AnonymousMixin):
     form_class = RegistrationForm
     template_name = 'account/register.html'
+
     def form_valid(self, form):
         email = form.cleaned_data['email'].lower()
         password = form.cleaned_data['password']
@@ -247,16 +279,18 @@ class RegistrationView(FormView, AnonymousMixin):
         request = self.request
         auth.login(request, auth.authenticate(username=email, password=password))
         set_authentication_token(user, request.session.session_key)
-# FIXME: disabling auto registration, experiment configuration flags are not being set properly
-#        for experiment in Experiment.objects.public():
-#            experiment.add_participant(participant)
+        # FIXME: disabling auto registration, experiment configuration flags are not being set properly
+        #        for experiment in Experiment.objects.public():
+        #            experiment.add_participant(participant)
         return super(RegistrationView, self).form_valid(form)
 
     def get_success_url(self):
         return reverse('core:dashboard')
 
+
 class AccountView(FormView):
     pass
+
 
 @login_required
 def update_account_profile(request):
@@ -279,7 +313,7 @@ def update_account_profile(request):
 
         if p.user.email != email:
             users = User.objects.filter(email=email)
-            if users.count() > 0 :
+            if users.count() > 0:
                 return JsonResponse(dumps({
                     'success': False,
                     'message': 'This email is already registered with our system, please try another.'
@@ -299,8 +333,9 @@ def update_account_profile(request):
             'success': True,
             'message': 'Updated profile successfully.'
         }))
-    # logger.debug("Form had errors %s", form)
-    return JsonResponse(dumps({'success': False, 'message': 'You need to provide your major, class status and gender if you want to receive invitations'}))
+        # logger.debug("Form had errors %s", form)
+    return JsonResponse(dumps({'success': False,
+                               'message': 'You need to provide your major, class status and gender if you want to receive invitations'}))
 
 
 @login_required
@@ -324,42 +359,52 @@ def account_profile(request):
         # logger.debug(form)
     else:
         form = ExperimenterAccountForm(instance=user.experimenter)
-    return render(request, 'account/profile.html', { 'form': form })
+    return render(request, 'account/profile.html', {'form': form})
+
 
 ''' participant views '''
+
+
 class ParticipantMixin(object):
     @method_decorator(participant_required)
     def dispatch(self, *args, **kwargs):
         return super(ParticipantMixin, self).dispatch(*args, **kwargs)
+
 
 """
 experimenter views
 FIXME: add has_perms authorization to ensure that only experimenters can access
 these.
 """
+
+
 class ExperimenterMixin(object):
     @method_decorator(experimenter_required)
     def dispatch(self, *args, **kwargs):
         return super(ExperimenterMixin, self).dispatch(*args, **kwargs)
 
+
 class SingleExperimentMixin(SingleObjectMixin):
     model = Experiment
     context_object_name = 'experiment'
 
-# FIXME: is this the right place for this?  Useful when a form mixes this class in.
+    # FIXME: is this the right place for this?  Useful when a form mixes this class in.
     def get_initial(self):
         self.object = self.get_object()
-        return { "experiment_pk" : self.object.pk }
+        return {"experiment_pk": self.object.pk}
 
     def process(self):
         pass
+
     def check_user(self, user, experiment):
         return experiment
 
     def get_object(self, queryset=None):
         pk = self.kwargs.get('pk', None)
-        experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration', 'experimenter'), pk=pk)
+        experiment = get_object_or_404(
+            Experiment.objects.select_related('experiment_metadata', 'experiment_configuration', 'experimenter'), pk=pk)
         return self.check_user(experiment)
+
 
 class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
     def check_user(self, experiment):
@@ -369,14 +414,15 @@ class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
         logger.warning("unauthz access to experiment %s by user %s", experiment, user)
         raise PermissionDenied("You do not have access to %s" % experiment)
 
-class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin):
 
+class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin):
     def check_user(self, experiment):
         user = self.request.user
         if is_experimenter(user, experiment.experimenter):
             return experiment
         logger.warning("unauthz access to experiment %s by user %s", experiment, user)
         raise PermissionDenied("You do not have access to %s" % experiment)
+
 
 class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, TemplateView):
     def get(self, request, **kwargs):
@@ -393,7 +439,8 @@ def toggle_bookmark_experiment_metadata(request):
         experimenter = form.cleaned_data.get('experimenter')
         experiment_metadata = form.cleaned_data.get('experiment_metadata')
         if request.user.experimenter == experimenter:
-            bem, created = BookmarkedExperimentMetadata.objects.get_or_create(experiment_metadata=experiment_metadata, experimenter=experimenter)
+            bem, created = BookmarkedExperimentMetadata.objects.get_or_create(experiment_metadata=experiment_metadata,
+                                                                              experimenter=experimenter)
             if not created:
                 # toggle deletion, remove this bookmark
                 logger.debug("Deleting existing bookmark: %s", bem)
@@ -412,7 +459,7 @@ def monitor(request, pk=None):
         return render(request, 'experimenter/monitor.html', {
             'experiment': experiment,
             'experimentModelJson': experiment.to_json(include_round_data=True),
-            })
+        })
     else:
         logger.warning("unauthorized access to experiment %s by user %s", experiment, user)
         raise PermissionDenied("You do not have access to %s" % experiment)
@@ -423,6 +470,7 @@ def upload_excel_participants_file(request):
         form = RegisterExcelParticipantsForm(request.POST, request.FILES)
         if form.is_valid():
             import xlrd
+
             participant = request.user.participant
             experiment_id = form.cleaned_data.get('experiment_pk')
             experiment = get_object_or_404(Experiment, pk=experiment_id)
@@ -433,9 +481,11 @@ def upload_excel_participants_file(request):
                 workbook = xlrd.open_workbook(filename=dst.name)
                 logger.debug("workbook: %s", workbook)
 
+
 class RegisterEmailListView(ExperimenterSingleExperimentMixin, FormView):
     form_class = RegisterEmailListParticipantsForm
     template_name = 'experimenter/register-email-participants.html'
+
     def form_valid(self, form):
         emails = form.cleaned_data.get('participant_emails')
         institution = form.cleaned_data.get('institution')
@@ -444,10 +494,12 @@ class RegisterEmailListView(ExperimenterSingleExperimentMixin, FormView):
         experiment.authentication_code = form.cleaned_data.get('experiment_passcode')
         experiment.save()
         experiment.register_participants(emails=emails, institution=institution,
-                password=experiment.authentication_code)
+                                         password=experiment.authentication_code)
         return super(RegisterEmailListView, self).form_valid(form)
+
     def get_success_url(self):
-        return reverse('core:monitor_experiment', kwargs={'pk':self.object.pk})
+        return reverse('core:monitor_experiment', kwargs={'pk': self.object.pk})
+
 
 class RegisterTestParticipantsView(ExperimenterSingleExperimentMixin, FormView):
     form_class = RegisterTestParticipantsForm
@@ -460,22 +512,24 @@ class RegisterTestParticipantsView(ExperimenterSingleExperimentMixin, FormView):
         experiment = self.object
         experiment_passcode = form.cleaned_data.get('experiment_passcode')
         experiment.setup_test_participants(count=number_of_participants,
-                institution=form.institution,
-                email_suffix=email_suffix,
-                username_suffix=username_suffix,
-                password=experiment_passcode)
+                                           institution=form.institution,
+                                           email_suffix=email_suffix,
+                                           username_suffix=username_suffix,
+                                           password=experiment_passcode)
         return super(RegisterTestParticipantsView, self).form_valid(form)
 
     def get_success_url(self):
-        return reverse('core:monitor_experiment', kwargs={'pk':self.object.pk})
+        return reverse('core:monitor_experiment', kwargs={'pk': self.object.pk})
 
 # FIXME: these last two use GET (which should be idempotent) to modify database state which makes HTTP sadful
 class CloneExperimentView(ExperimenterSingleExperimentView):
     def process(self):
         self.experiment = self.experiment.clone()
         return self.experiment
+
     def render_to_response(self, context):
         return redirect('core:monitor_experiment', pk=self.experiment.pk)
+
 
 class ClearParticipantsExperimentView(ExperimenterSingleExperimentView):
     def process(self):
@@ -489,8 +543,10 @@ class ClearParticipantsExperimentView(ExperimenterSingleExperimentView):
     def render_to_response(self, context):
         return redirect('core:dashboard')
 
+
 class DataExportMixin(ExperimenterSingleExperimentMixin):
     file_extension = '.csv'
+
     def render_to_response(self, context, **response_kwargs):
         experiment = self.get_object()
         file_ext = self.file_extension
@@ -503,6 +559,7 @@ class DataExportMixin(ExperimenterSingleExperimentMixin):
         self.export_data(response, experiment)
         return response
 
+
 class CsvDataExporter(DataExportMixin):
     def export_data(self, response, experiment):
         writer = UnicodeWriter(response)
@@ -511,12 +568,13 @@ class CsvDataExporter(DataExportMixin):
             writer.writerow(itertools.chain.from_iterable([[group], group.participant_set.all()]))
         for round_data in experiment.round_data_set.all():
             round_configuration = round_data.round_configuration
-        # write out group-wide and participant data values
+            # write out group-wide and participant data values
             writer.writerow(['Owner', 'Round', 'Data Parameter', 'Data Parameter Value', 'Created On', 'Last Modified'])
-            for data_value in itertools.chain(round_data.group_data_value_set.all(), round_data.participant_data_value_set.all()):
+            for data_value in itertools.chain(round_data.group_data_value_set.all(),
+                                              round_data.participant_data_value_set.all()):
                 writer.writerow([data_value.owner, round_configuration, data_value.parameter.label,
-                    data_value.value, data_value.date_created, data_value.last_modified])
-            # write out all chat messages as a side bar
+                                 data_value.value, data_value.date_created, data_value.last_modified])
+                # write out all chat messages as a side bar
             chat_messages = ChatMessage.objects.filter(round_data=round_data)
             if chat_messages.count() > 0:
                 # sort by group first, then time
@@ -524,7 +582,7 @@ class CsvDataExporter(DataExportMixin):
                 writer.writerow(['Group', 'Participant', 'Message', 'Time', 'Round'])
                 for chat_message in chat_messages.order_by('participant_group_relationship__group', 'date_created'):
                     writer.writerow([chat_message.group, chat_message.participant, chat_message.message,
-                        chat_message.date_created, round_configuration])
+                                     chat_message.date_created, round_configuration])
 
 
 @experimenter_required
@@ -551,37 +609,44 @@ def download_data(request, pk=None, file_type='csv'):
     response = HttpResponse(content_type=content_type)
     response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
     writer = UnicodeWriter(response)
-# emit participant data (pk, email) in each group
+    # emit participant data (pk, email) in each group
     writer.writerow(['Group ID', 'Group Number', 'Session ID', 'Participant ID', 'Participant Email'])
     for group in experiment.group_set.order_by('pk').all():
         for pgr in group.participant_group_relationship_set.select_related('participant__user').all():
             writer.writerow([group.pk, group.number, group.session_id, pgr.pk, pgr.participant.email])
-# emit participant and group round data value tuples
-    writer.writerow(['Round', 'Participant ID', 'Participant Number', 'Group ID', 'Data Parameter', 'Data Parameter Value', 'Created On', 'Last Modified'])
+        # emit participant and group round data value tuples
+    writer.writerow(
+        ['Round', 'Participant ID', 'Participant Number', 'Group ID', 'Data Parameter', 'Data Parameter Value',
+         'Created On', 'Last Modified'])
     for round_data in experiment.round_data_set.select_related('round_configuration').all():
         # emit all participant data values
-        for data_value in round_data.participant_data_value_set.select_related('participant_group_relationship__group').all():
+        for data_value in round_data.participant_data_value_set.select_related(
+                'participant_group_relationship__group').all():
             pgr = data_value.participant_group_relationship
-            writer.writerow([round_data.round_number, pgr.pk, pgr.participant_number, pgr.group.pk, data_value.parameter.label,
-                data_value.value, data_value.date_created, data_value.last_modified])
-        # write out all chat messages
+            writer.writerow(
+                [round_data.round_number, pgr.pk, pgr.participant_number, pgr.group.pk, data_value.parameter.label,
+                 data_value.value, data_value.date_created, data_value.last_modified])
+            # write out all chat messages
         chat_messages = ChatMessage.objects.filter(round_data=round_data)
         if chat_messages.count() > 0:
             for chat_message in chat_messages.order_by('participant_group_relationship__group', 'date_created'):
                 pgr = chat_message.participant_group_relationship
-                writer.writerow([round_data.round_number, pgr.pk, pgr.participant_number, pgr.group.pk, "Chat Message", chat_message.string_value,
-                    chat_message.date_created, chat_message.last_modified])
-        # write out group round data
+                writer.writerow([round_data.round_number, pgr.pk, pgr.participant_number, pgr.group.pk, "Chat Message",
+                                 chat_message.string_value,
+                                 chat_message.date_created, chat_message.last_modified])
+            # write out group round data
         logger.debug("writing out group round data")
         for data_value in round_data.group_data_value_set.select_related('group').all():
             writer.writerow([round_data.round_number, '', '', data_value.group.pk, data_value.parameter.label,
-                data_value.value, data_value.date_created, data_value.last_modified])
+                             data_value.value, data_value.date_created, data_value.last_modified])
 
     return response
+
 
 @experimenter_required
 def download_data_excel(request, pk=None):
     import xlwt
+
     try:
         experiment = Experiment.objects.get(pk=pk)
         response = HttpResponse(mimetype='application/vnd.ms-excel')
@@ -617,6 +682,7 @@ def download_data_excel(request, pk=None):
     except Experiment.DoesNotExist as e:
         logger.warning(e)
 
+
 @experimenter_required
 def deactivate(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
@@ -627,13 +693,14 @@ def deactivate(request, pk=None):
     logger.warning("Invalid experiment deactivation request for %s by %s", experiment, experimenter)
     return redirect('core:dashboard')
 
+
 @experimenter_required
 def experiment_controller(request, pk=None, experiment_action=None):
     try:
         experimenter = request.user.experimenter
         experiment = Experiment.objects.get(pk=pk)
-# TODO: provide experimenter access to other users besides the creator of the
-# experiment?
+        # TODO: provide experimenter access to other users besides the creator of the
+        # experiment?
         if experimenter == experiment.experimenter:
             # FIXME: dangerous to expose all experiment methods, even if it's only to the experimenter, should expose
             # via experiment.invoke(action, experimenter) instead
@@ -644,14 +711,14 @@ def experiment_controller(request, pk=None, experiment_action=None):
                 return redirect('core:monitor_experiment', pk=pk)
             else:
                 error_message = "Invalid experiment action: You ({experimenter}) tried to invoke {experiment_action} on {experiment}".format(
-                      experimenter=experimenter, experiment_action=experiment_action, experiment=experiment)
+                    experimenter=experimenter, experiment_action=experiment_action, experiment=experiment)
         else:
             error_message = "Access denied for {experimenter}: You do not have permission to invoke {experiment_action} on {experiment}".format(
-                  experimenter=experimenter, experiment_action=experiment_action, experiment=experiment)
+                experimenter=experimenter, experiment_action=experiment_action, experiment=experiment)
 
     except Experiment.DoesNotExist:
         error_message = 'Could not invoke {experiment_action} on a non-existent experiment (id: {pk}, experimenter: {experimenter})'.format(
-                experimenter=experimenter, experiment_action=experiment_action, pk=pk)
+            experimenter=experimenter, experiment_action=experiment_action, pk=pk)
 
     logger.warning(error_message)
     messages.warning(request, error_message)
@@ -661,6 +728,7 @@ def experiment_controller(request, pk=None, experiment_action=None):
 def daily_report(request, pk=None, parameter_ids=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     round_data = experiment.get_round_data()
+
 
 @login_required
 def api_logger(request, participant_group_id=None):
@@ -678,6 +746,7 @@ def api_logger(request, participant_group_id=None):
     else:
         logger.error("Failed to validate log message form %s (%s)", request, form)
     return json_response(request, dumps({'success': success}))
+
 
 @participant_required
 def completed_survey(request):
@@ -697,13 +766,15 @@ def completed_survey(request):
         logger.debug("No ParticipantGroupRelationship found with id %s", pgr_id)
     return JsonResponse(dumps({'success': success}))
 
+
 @participant_required
 def check_survey_completed(request, pk=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=pk)
     return JsonResponse(dumps({
         'survey_completed': experiment.get_participant_group_relationship(participant).survey_completed,
-        }))
+    }))
+
 
 @participant_required
 def participant_ready(request):
@@ -711,7 +782,7 @@ def participant_ready(request):
     if form.is_valid():
         participant_group_id = form.cleaned_data.get('participant_group_id')
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group__experiment'),
-                pk=participant_group_id)
+                                pk=participant_group_id)
         experiment = pgr.group.experiment
         round_data = experiment.current_round_data
         pgr.set_participant_ready(round_data)
@@ -719,15 +790,44 @@ def participant_ready(request):
     else:
         return JsonResponse(dumps({'success': False, 'message': "Invalid form"}))
 
+
 def _ready_participants_dict(experiment):
     number_of_ready_participants = experiment.number_of_ready_participants
     all_participants_ready = (number_of_ready_participants == experiment.number_of_participants)
-    return { 'success': True, 'number_of_ready_participants': number_of_ready_participants, 'all_participants_ready': all_participants_ready }
+    return {'success': True, 'number_of_ready_participants': number_of_ready_participants,
+            'all_participants_ready': all_participants_ready}
+
 
 @login_required
 def check_ready_participants(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     return JsonResponse(dumps(_ready_participants_dict(experiment)))
+
+
+@participant_required
+def get_participant_sessions(request):
+    user = request.user
+    tomorrow = datetime.now() + timedelta(days=1)
+
+    active_experiment_sessions = ParticipantSignup.objects.filter(invitation__participant=user.participant, attendance=3)
+
+    active_invitation_pk_list = [ps.invitation.pk for ps in active_experiment_sessions]
+
+    invitations = Invitation.objects.filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow)\
+        .exclude(pk__in=active_invitation_pk_list)
+
+    # invitation_session_info = []
+    # for invite in invitations:
+    #     invitation_session_info.append({
+    #         'pk': invite.pk,
+    #         'experiment_session_detail': invite.experiment_session,
+    #         'experiment_metadata_name': invite.experiment_session.experiment_metadata.title
+    #     })
+    #
+    # logger.debug(invitations)
+
+    return render(request, "participant/participant-index.html", {"view_model_json": dumps(invitation_session_info)})
+
 
 def handler500(request):
     return render(request, '500.html')

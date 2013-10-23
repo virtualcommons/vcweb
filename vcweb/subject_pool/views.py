@@ -172,10 +172,9 @@ def send_invitations(request):
 
         experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
 
-        # get the experiment metadata pk of any session as all sessions belong to one experiment metadata
+        # get the experiment metadata pk of any session as all sessions selected by experimenter to send invitations
+        # belong to same experiment metadata
         experiment_metadata_pk = experiment_sessions[0].experiment_metadata.pk
-
-        logger.debug(experiment_metadata_pk)
 
         potential_participants = get_potential_participants(experiment_metadata_pk)
         potential_participants_count = len(potential_participants)
@@ -233,11 +232,17 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona S U"
 
 def get_unlikely_participants(days_threshold, experiment_metadata_pk):
     last_week_date = datetime.now() - timedelta(days=days_threshold)
-    invited_and_signup_in_threshold_days = Invitation.objects.exclude(date_created__lt=last_week_date)
-    # filtered_list is the list of participants who signed up for given experiment metadata in threshold days
-    filtered_list = [inv.participant.pk for inv in invited_and_signup_in_threshold_days if inv.experiment_session.experiment_metadata.pk == experiment_metadata_pk]
+    # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days
+    invited_in_last_threshold_days = Invitation.objects.exclude(date_created__lt=last_week_date).\
+        filter(experiment_session__experiment_metadata__pk=experiment_metadata_pk)
 
-    signup_participants = ParticipantSignup.objects.filter(attendance=0)
-    filtered_list1 = [p.participant.pk for p in signup_participants if p.invitation.experiment_session.experiment_metadata_pk == experiment_metadata_pk]
+    # filtered_list is the list of participants who received invitations for the given
+    # experiment_metadata in threshold days
+    filtered_list = [inv.participant.pk for inv in invited_in_last_threshold_days]
+
+    signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=experiment_metadata_pk)
+    # filtered_list1 is the list of participants who has already participated in the
+    # given Experiment Metadata sometime earlier
+    filtered_list1 = [p.invitation.participant.pk for p in signup_participants]
 
     return list(set(filtered_list) | set(filtered_list1))
