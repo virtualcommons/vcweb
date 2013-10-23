@@ -2309,11 +2309,12 @@ class Invitation(models.Model):
 
 
 class ParticipantSignup(models.Model):
+    ATTENDANCE = Choices((0, 'participated', _('participated')), (1, 'discharged', _('turned away')), (2, 'absent', _('absent')), (3, 'registered', _('signed up')))
+    """ Provides participated, discharged, absent, and initial attendance enum values """
     participant = models.ForeignKey(Participant, related_name='signup_set')
     invitation = models.ForeignKey(Invitation, related_name='signup_set')
     date_created = models.DateTimeField(default=datetime.now)
-    attendance = models.PositiveIntegerField(max_length=1, null=True, blank=True,
-                                             choices=((0, 'participated'), (1, 'turned away'), (2, 'absent')))
+    attendance = models.PositiveIntegerField(max_length=1, choices=ATTENDANCE, default=ATTENDANCE.registered)
 
 
 class SpoolParticipantStatistics(models.Model):
