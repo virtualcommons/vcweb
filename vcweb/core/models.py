@@ -2310,10 +2310,19 @@ class Invitation(models.Model):
 
 class ParticipantSignupQuerySet(models.query.QuerySet):
     
-    def participated(self, experiment_metadata=None, **kwargs):
-        criteria = { 'attendance': ParticipantSignup.ATTENDANCE.participated }
+    def _experiment_metadata_criteria(self, criteria, experiment_metadata=None, experiment_metadata_pk=None):
         if experiment_metadata is not None:
             criteria['invitation__experiment_session__experiment_metadata'] = experiment_metadata
+        elif experiment_metadata_pk is not None:
+            criteria['invitation__experiment_session__experiment_metadata__pk'] = experiment_metadata_pk
+        return criteria
+
+    def registered(self, **kwargs):
+        criteria = self._experiment_metadata_criteria({ 'attendance__in': (ParticipantSignup.ATTENDANCE.participated, ParticipantSignup.ATTENDANCE.registered)}, **kwargs)
+        return self.filter(**criteria)
+
+    def participated(self, **kwargs):
+        criteria = self._experiment_metadata_criteria({ 'attendance': ParticipantSignup.ATTENDANCE.participated }, **kwargs)
         return self.filter(**criteria)
 
 
