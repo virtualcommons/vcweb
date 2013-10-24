@@ -2,15 +2,13 @@
 Hello,
 </p>
 <p>
-Thanks in advance for participating in this experiment. You have been randomly allocated to a group of 5 along with four
-other students enrolled in <b>ASB 328 Rules, Games and Society</b>. You will earn one credit point for participating in
-this experiment plus up to 5 extra credit points by performing actions within the experiment to reduce your virtual
-carbon footprint.
+{{ experiment.registration_email_text }}
 </p>
 <p>
+The experiment will <b>begin on {{experiment.start_date}} at midnight and run for {{experiment.number_of_rounds}} days, ending at midnight, {{experiment.end_date}}</b>.
+To access the experiment please visit 
 {% comment %} FIXME: hard coded server root {% endcomment %}
-To access the experiment please visit <a href='https://vcweb.asu.edu{{experiment.participant_url}}'>https://vcweb.asu.edu{{experiment.participant_url}}</a> and login with the following
-credentials:
+<a href='https://vcweb.asu.edu{{experiment.participant_url}}'>https://vcweb.asu.edu{{experiment.participant_url}}</a> and login with the following credentials:
 </p>
 <table cellspacing="3" cellpadding="3">
     <tbody>
@@ -19,15 +17,11 @@ credentials:
     </tbody>
 </table>
 <p>
+<b>NOTE: you will only be able to access the experiment <span style='text-decoration: underline;'>after midnight on {{ experiment.start_date }}</span></b>
+</p>
+<p>
 You can reset your password at any time at <a href='https://vcweb.asu.edu/accounts/password/reset?email={{ participant.email }}'>https://vcweb.asu.edu/accounts/password/reset</a>
 </p>
-<p>
-The experiment will begin on {{experiment.start_date}} at midnight and run for {{experiment.number_of_rounds}} days, ending at
-midnight, {{experiment.end_date}}. If your group's average points per person reaches 160 points of carbon footprint savings,
-everyone in the group will earn 1 extra credit point. Every day your group reaches 160 points will result in 1 extra
-credit point being awarded to each member of your group, so you can earn 5 extra credit points total. 
-</p>
 
-<p>
-Each day at midnight your group's score will reset to 0.
-</p>
+Thank you for participating,<br>
+{{ sender }}
