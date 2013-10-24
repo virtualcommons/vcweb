@@ -490,8 +490,10 @@ class RegisterEmailListView(ExperimenterSingleExperimentMixin, FormView):
         emails = form.cleaned_data.get('participant_emails')
         institution = form.cleaned_data.get('institution')
         experiment = self.object
-        logger.debug("registering participants %s for experiment: %s", emails, experiment)
-        experiment.authentication_code = form.cleaned_data.get('experiment_passcode')
+        logger.debug("registering participants %s at institution %s for experiment: %s", emails, institution, experiment)
+        experiment.authentication_code = form.cleaned_data.get('experiment_password')
+        for field in ('start_date', 'registration_email_subject', 'registration_email_text'):
+            setattr(experiment, field, form.cleaned_data.get(field))
         experiment.save()
         experiment.register_participants(emails=emails, institution=institution,
                                          password=experiment.authentication_code)

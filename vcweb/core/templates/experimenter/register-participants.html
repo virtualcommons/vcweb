@@ -1,26 +1,28 @@
-{% extends "experimenter/base.html" %}
+{% extends "forms/base.html" %}
 
-{% block title %}Register participants for {{ experiment }} {% endblock %}
-{% block page %}
-<form id='vcweb-form' action='' method='post' class='form-horizontal'>
-    {% csrf_token %}
+{% block head %}
+{{ block.super }}
+<link rel="stylesheet" href='{{ STATIC_URL }}css/datepicker.css' />
+{% endblock head %}
+
+{% block title %}Register participants{% endblock %}
+{% block form %}
     {% block participant_registration_header %}
-    <h3>Participant registration</h3>
+    <h3>#{{experiment.pk}} {{ experiment.experiment_configuration }}</h3>
     {% endblock %}
-    <p><b>{{experiment}}</b> currently has <span class='badge badge-info'>{{experiment.participant_set.count}}</span> <b>registered participants</b></p>
     {% include "includes/bootstrap-form.html" %}
     <div class='form-actions'>
-        <button class='btn btn-primary' type='submit'>Register</button>
+        <button class='btn btn-primary' type='submit'>Register participants</button>
         <button class='btn'><a href='/dashboard'>Cancel</a></button>
     </div>
-</form>
-{% endblock page %}
+{% endblock form %}
 {% block javascript %}
 {{ block.super }}
-{% include "includes/jquery.validate.html" %}
+<script src='{{ STATIC_URL }}js/bootstrap-datepicker.min.js'></script>
 <script type='text/javascript'>
     $(function() {
         $('#vcweb-form').validate();
+        $('#id_start_date').datepicker({ startDate: '+1d' });
     });
 </script>
 {% endblock %}

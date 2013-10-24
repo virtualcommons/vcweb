@@ -227,7 +227,7 @@ class Institution(models.Model):
     cas_server_url = models.URLField(null=True, blank=True)
 
     def __unicode__(self):
-        return u"%s %s" % (self.name, self.url)
+        return self.name
 
 
 class CommonsUser(models.Model):
@@ -820,16 +820,16 @@ class Experiment(models.Model):
 
         Override the email template by creating <experiment-namespace>/email/experiment-registration.(txt|html) templates
         """
-        logger.debug("sending email to %s", participant_experiment_relationship.participant)
+        participant = participant_experiment_relationship.participant
+        logger.debug("creating email for %s", participant)
         plaintext_template = select_template(['%s/email/experiment-registration.txt' % self.namespace,
                                               'email/experiment-registration.txt'])
         html_template = select_template(['%s/email/experiment-registration.html' % self.namespace,
                                          'email/experiment-registration.html'])
-        participant = participant_experiment_relationship.participant
         user = participant.user
         if not password.strip():
             password = User.objects.make_random_password()
-        # FIXME: this resets existing user passwords..
+        # FIXME: resets existing user passwords, which might not be a good thing
         user.set_password(password)
         user.save()
         c = Context({

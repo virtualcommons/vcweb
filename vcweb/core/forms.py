@@ -2,13 +2,13 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
+from django.core.validators import email_re
 from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
+from bootstrap_toolkit.widgets import BootstrapDateInput
 from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete
 from vcweb.core.models import (Experimenter, Institution, Participant, ExperimentMetadata)
-
-from django.core.validators import email_re
 
 import autocomplete_light
 import logging
@@ -152,24 +152,24 @@ class EmailListField(forms.CharField):
 
 class RegisterParticipantsForm(forms.Form):
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
-    experiment_passcode = forms.CharField(required=False, min_length=3, label="Experiment passcode", help_text=_('The password used to login to your experiment.'), initial='test')
-    institution_name = forms.CharField(min_length=3, label="Institution name",
+    start_date = forms.DateField(required=False, widget=BootstrapDateInput(), help_text=_('The date this experiment will start, used for multi-day experiments with daily rounds'))
+    experiment_password = forms.CharField(required=False, min_length=3, help_text=_('Participants will login to the experiment using this password'), initial='test')
+    institution = forms.CharField(min_length=3, label="Institution name",
             required=False, initial='Arizona State University',
-            help_text=_('The name of the institution to be associated with these test participants'))
-    institution_url = forms.URLField(min_length=3, label='Institution URL',
-            required=False, initial='http://www.asu.edu/',
-            help_text=_('A URL, if applicable, for the institution (e.g., http://www.asu.edu)'))
+            widget=autocomplete_light.TextWidget(InstitutionAutocomplete),
+            help_text=_('Institution to associate with these participants'))
+    registration_email_subject = forms.CharField(min_length=3, label="Email subject", help_text=_('Subject line for registration email'), initial='VCWEB experiment registration')
+    registration_email_text = forms.CharField(required=False, widget=forms.Textarea, label="Email body")
 
-    def clean(self):
-        institution_name = self.cleaned_data.get('institution_name')
-        institution_url = self.cleaned_data.get('institution_url')
-        if institution_name is None and institution_url is None:
+    def clean_institution(self):
+        institution_name = self.cleaned_data.get('institution').strip()
+        if institution_name is None:
             self.institution = None
         else:
-            logger.debug("get or create institution with name [%s] and url [%s]", institution_name, institution_url)
-            (institution, created) = Institution.objects.get_or_create(name=institution_name, url=institution_url)
+            logger.debug("get or create institution %s", institution_name)
+            (institution, created) = Institution.objects.get_or_create(name=institution_name)
             self.institution = institution
-        return self.cleaned_data
+        return self.institution
 
 
 class RegisterTestParticipantsForm(RegisterParticipantsForm):
