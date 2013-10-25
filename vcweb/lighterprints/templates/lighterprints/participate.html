@@ -39,27 +39,23 @@
                 </p>
                 <p>
                     <i class='lighterprints-green icon-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by
-                    completing challenges.
-                    <span data-bind='if: hasScheduledActivities'>Your group will be eligible for prizes each day that
-                        your <b>group's average score shown in the Today's Progress Chart reaches <span data-bind='text: pointsToNextLevel'></span>.</b></span>
-                    <span data-bind='ifnot: hasScheduledActivities'>Rank up by <b>increasing your group's average score, shown in the
-                            Today's Progress Chart.</b></span>
+                    performing challenges.
+                    <span data-bind='if: hasScheduledActivities'>Your goal is to 
+                        your <b>group's average points per person</b>, shown in the <b>Group Score box</b>, reaches <span data-bind='text: pointsToNextLevel'></span>.</span>
+                    <span data-bind='ifnot: hasScheduledActivities'>Rank up by <b>increasing your group's score, shown in the Group Score box.</b></span>
                 </p>
                 <p>
                     <i class='icon-star text-gold'></i> Some challenges are unlocked all day, and others are only unlocked at specific times.
                     <span data-bind='ifnot: hasScheduledActivities'>Discover new challenges by ranking up!</span>
                 </p>
                 <p>
-                    <strong>Your point totals reset at midnight each night.</strong> 
-                    <span data-bind='ifnot: hasScheduledActivities'>If your group's average score isn't high enough to rank up, you must start over.</span>
+                <strong><i class='icon-warning-sign text-error'></i> Your group score resets at midnight every day.</strong> 
                 </p>
             </div>
             </div>
             <div class='row lighterprints-scoreboard'>
                 <div class='span2'>
-                    <h5 id='todays-score'><span class='lighterprints-scoreboard-uppercase'>Today's Score</span>
-                        <i id='score-info' style='margin:8px 0 0 0;' data-trigger='hover' data-placement='top' 
-                            data-content="This is your group's average score for the day." class='pull-right icon-info-sign'></i></h5>
+                    <h5 id='group-score'><span class='lighterprints-scoreboard-uppercase'>Group Score</span></h5>
                     <table>
                         <tr>
                             <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: averagePoints'></span></td>
@@ -69,14 +65,12 @@
                 </div>
                 <div class='span2 left-divider'>
                     <h5 id='current-level'><span data-bind='text: currentLevelText' class='lighterprints-scoreboard-uppercase'></span></h5>
-                    <div class='dashboard-content' data-bind='if: hasScheduledActivities'>
-                        <div data-bind='if: completed'>
-                            <img alt='Group Goal Met' class='group-level' width='120' height='70' src='{% static "images/lighterprints/group-goal-completed.png"%}'>
-                        </div>
-                        <div data-bind='ifnot: completed'>
-                            <img alt='Group Goal' class='group-level' width="120" height="70" src='{% static "images/lighterprints/group-goal-inactive.png"%}'>
-                        </div>
-                    </div>
+                    <table data-bind='if: hasScheduledActivities'>
+                        <tr>
+                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: totalPoints'></span></td>
+                            <td><i class='lighterprints-green icon-leaf icon-2x'></i></td>
+                        </tr>
+                    </table>
                     <div class='dashboard-content' data-bind='ifnot: hasScheduledActivities'>
                         <div data-bind='if: completed'>
                             <img alt='Experiment Completed' class='group-level' width='120' height='70' src='{% static "images/lighterprints/experiment-completed.png"%}'>
@@ -87,20 +81,16 @@
                     </div>
                 </div>
                 <div class='span2 left-divider'>
-                    <h5 id='todays-progress'><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span>
-                        <i id='progress-info' style='padding: 0px 0px 0px 0px; margin: -1px 0px 0px -1px;' data-trigger='hover'
-                            data-placement='top' data-content='This chart shows your current group score (green) in relation to your group score goal (gray).'
-                            class='icon-info-sign'></i>
-                    </h5>
-                    <div data-bind='popover: { content: "#todaysProgressChartPopoverContent", id: "todays-progress-chart-popover"}' class='chart'>
-                        <canvas id='todaysProgressChart' width="80px" height="80px" style='margin-left: auto; margin-right: auto; display: block;' ></canvas>
+                    <h5 id='progress'><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span></h5>
+                    <div data-bind='popover: { content: "#progressChartPopoverContent", id: "progress-chart-popover"}' class='chart'>
+                        <canvas id='progressChart' width="80px" height="80px" style='margin-left: auto; margin-right: auto; display: block;' ></canvas>
                     </div>
                 </div>
                 <div class='span2 left-divider'>
                     <h5 id='time-remaining'><span class='lighterprints-scoreboard-uppercase'>Time Remaining</span></h5>
                     <table>
                         <tr>
-                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: hoursLeft'></span>h</td>
+                            <td class='lighterprints-scoreboard-xlarge'><span class='text-data-bind='text: hoursLeft'></span>h</td>
                             <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: minutesLeft'></span>m</td>
                         </tr>
                     </table>
@@ -166,9 +156,9 @@
             select the challenge from the list below, and click the &quot;Perform&quot; button.
             </p>
             <p data-bind='if: hasScheduledActivities'>
-            To maximize your chances of earning a prize, your group must earn an average score of <strong class='lighterprints-green'><span data-bind='text: pointsToNextLevel'></span>
-            <i class='icon-leaf'></i></strong>. In order to reach this target you and a majority of the members of your group must perform high point challenges when they are available.
-        <b>Different challenges will be available on different days, so check back each day to see which challenges are available!</b>
+            In order to earn a prize your group score must reach <strong class='lighterprints-green'><span data-bind='text: pointsToNextLevel'></span>
+            <i class='icon-leaf'></i></strong>. In order to reach this target you and a majority of the members of your group will need to perform high point challenges when they are available.
+            <b>Different challenges will be available on different days, so check back each day to see which challenges are available</b>
             </p>
             <p data-bind='ifnot: hasScheduledActivities'>
             Your group is currently <strong class='text-gold'>Level <span data-bind='text:groupLevel'></span></strong> and has an average score of 
@@ -188,29 +178,30 @@
             </p>
             <h3 id='faq' class='underline'>Frequently Asked Questions</h3>
             <div class='well alert-white'>
-                <h4>I performed an activity worth 15 points but only 3 points were added to Today's Progress and Today's Score.  Why?</h4>
+                <h4>I performed an activity worth 15 points but only 3 points were added to my Group Score and Progress.  Why?</h4>
                 <p>
-                The numbers in Today's Score Today's Progress represent your group's <b>average number of earned green points</b>.  If there are 5
+                The numbers in the Group Score and Progress boxes represent your group's <b>average number of earned points</b>.  If there are 5
                 people in your group, performing a 15 point activity adds 3 points to the group average (15 / 5 = 3).
                 </p>
             </div>
+            <div data-bind='ifnot: hasScheduledActivities'>
             <div class='well alert-white'>
                 <h4>Why do the challenges performed in the previous day not count for today?</h4>
                 <p>
                 In order to advance in level and unlock more challenges you must reach an average level of points in your
-                group during one day, starting at 0.00AM.  Every day at midnight the server will check your group's average number of
-                points and determine whether or not you should move on to the next level.
-                If your group advances in level your group will once again start at 0 points with the additional unlocked
+                group during one day, starting at 12:00 AM. Every day at midnight the server will check your group's
+                average number of points and determine whether or not you should move on to the next level. If your
+                group advances in level your group will once again start at 0 points with the additional unlocked
                 challenges for that level available to perform. If your group did not reach the next level, your group
                 will start with 0 points at the same level with the same challenges available as the previous day.
                 </p>
             </div>
+        </div>
             <div class='well alert-white'>
                 <h4>I don't have a car or anyone to carpool with, so how can I carpool?</h4>
                 <p>
                 You don't have to actually perform the activity in the real world to click on "perform". These are just
-                virtual challenges for the time being. In the future we plan to allow participants to gain points by
-                actually performing these challenges.
+                virtual challenges for the moment. In the future we 
                 </p>
             </div>
         </div>
@@ -344,14 +335,9 @@ $(function() {
     var viewModel = new LighterFootprintsModel(viewModelData);
     // custom view model methods, some of these may be lifted into the model itself
     viewModel.tutorialTour = new Tour({ name: "lfpTutorial", labels: { end: "End tutorial", next: 'Next »', prev: '« Back' }});
-    viewModel.progressChart = ko.observable(new Chart(document.getElementById("todaysProgressChart").getContext("2d")));
+    viewModel.progressChart = ko.observable(new Chart(document.getElementById("progressChart").getContext("2d")));
     viewModel.currentLevelText = ko.computed(function() {
-        if (viewModel.hasScheduledActivities()) {
-            return viewModel.completed() ? "Group Goal Met" : "Group Goal";
-        }
-        else {
-            return "Current Level";
-        }
+        return viewModel.hasScheduledActivities() ? "Your Score" : "Current Level";
     });
     viewModel.setup = function() {
         viewModel.initializeChart();
@@ -369,23 +355,23 @@ $(function() {
         var tour = viewModel.tutorialTour;
         tour.addSteps([
         {
-            element: "#todays-score",
-            title: "Today's Score",
+            element: "#group-score",
+            title: "Group Score",
             placement: "top",
             content: "This is your group score for the day. The group score is the average number of points each member of your group has earned, starting at midnight each day."
         },
         {
             element: "#current-level",
             // FIXME: crappy special case logic to deal with scheduled activities vs level based activities
-            title: viewModel.hasScheduledActivities() ? "Group Goal" : "Current Level",
+            title: viewModel.hasScheduledActivities() ? "Your Score" : "Current Level",
             placement: "top",
-            content: viewModel.hasScheduledActivities() ? "This icon will light up when your group score exceeds the carbon footprint goal." : "This is your group's current level.  Each level unlocks 5 new challenges.  You are currently level " + viewModel.groupLevel() + "."
+            content: viewModel.hasScheduledActivities() ? "This shows the number of points you have contributed to your group today." : "This is your group's current level. Each new level unlocks 5 new challenges."
         },
         {
-            element: "#todays-progress",
+            element: "#progress",
             placement: "top",
-            title: "Today's Progress",
-            content: "This chart shows your current group score (green) in relation to your group score goal (gray). Maximize your chances at earning a prize by helping your group meet the group score goal each day."
+            title: "Progress",
+            content: "This chart shows your current group score (green) and your group score goal (gray). Maximize your chances to earn a prize by helping your group meet the group score goal each day."
         },
         {
             element: "#time-remaining",
@@ -396,7 +382,7 @@ $(function() {
         {
             element: "#unlocked-challenge-tab",
             title: "Perform Challenges",
-            content: "You can perform challenges by clicking on the green Perform button.  The points each challenge is worth is listed on the right."
+            content: "Perform challenges by clicking on the green Perform button. The points each challenge is worth is listed on the right."
         }]);
         if (viewModel.firstVisit()) {
             tour.start(true);
@@ -406,7 +392,7 @@ $(function() {
         viewModel.activateDashboardTab();
         viewModel.tutorialTour.restart();
     }
-    viewModel.todaysProgressChartData = ko.computed(function() {
+    viewModel.progressChartData = ko.computed(function() {
         var avgPoints = Math.max(1, viewModel.averagePoints());
         var pointsToNextLevel = viewModel.pointsToNextLevel();
         var data = [ { value: avgPoints, color: "#95CB29" } ]
@@ -417,7 +403,7 @@ $(function() {
         return data;
     });
     viewModel.initializeChart = function() {
-        viewModel.progressChart().Doughnut(viewModel.todaysProgressChartData());
+        viewModel.progressChart().Doughnut(viewModel.progressChartData());
     };
     viewModel.activateChallengesTab = activateTabFunctor('#challenges', '#lfp-navtabs', viewModel.endTour);
     viewModel.activateDashboardTab = activateTabFunctor('#dashboard', '#lfp-navtabs', viewModel.endTour);
@@ -471,7 +457,7 @@ $(function() {
 });
 </script>
 <!-- bootstrap popover templates -->
-<script type='text/html' id='todaysProgressChartPopoverContent'>
+<script type='text/html' id='progressChartPopoverContent'>
    Your group progress: <span data-bind='text: averagePoints'></span> / <span data-bind='text:pointsToNextLevel'></span>
 </script>
 <script type='text/html' id='commentPopoverForm'>

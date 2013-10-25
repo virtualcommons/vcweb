@@ -159,7 +159,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         'groupActivity': team_activity,
         'groupName': own_group.name,
         'activities': activity_status_list.activity_dict_list,
-        'totalParticipantPoints': total_participant_points,
+        'totalPoints': total_participant_points,
         })
 
 @participant_required
