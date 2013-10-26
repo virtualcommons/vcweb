@@ -60,6 +60,13 @@ def testdata():
 def migrate():
     local("{python} manage.py migrate".format(python=env.python), capture=False)
 
+def clean_update():
+    local("hg pull && hg up -C")
+
+def cu():
+    clean_update()
+    migrate()
+
 def psh():
     local("{python} manage.py shell_plus".format(python=env.python), capture=False)
 
