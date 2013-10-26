@@ -1,7 +1,7 @@
 from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.decorators import login_required
 from vcweb import settings
-from vcweb.core.views import (Dashboard, LoginView, LogoutView, RegistrationView, monitor,
+from vcweb.core.views import (dashboard, LoginView, LogoutView, RegistrationView, monitor,
         RegisterEmailListView, RegisterTestParticipantsView, completed_survey, toggle_bookmark_experiment_metadata,
         check_survey_completed, Participate, download_data, export_configuration, api_logger, participant_api_login,
         api_logout, participant_ready, check_ready_participants)
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 URLs for the core vcweb app
 '''
 urlpatterns = patterns('vcweb.core.views',
-    url(r'^dashboard/?$', login_required(Dashboard.as_view()), name='dashboard'),
+    url(r'^dashboard/?$', dashboard, name='dashboard'),
     url(r'^participant/session/?$','get_participant_sessions',name='participant_sessions'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
     url(r'^accounts/logout/$', login_required(LogoutView.as_view()), name='logout'),

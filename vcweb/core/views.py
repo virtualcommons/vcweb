@@ -83,79 +83,73 @@ class Participate(TemplateView):
             return redirect(experiment.participant_url)
 
 
-class Dashboard(ListView, TemplateResponseMixin):
-    """
-    general dashboard for participants or experimenters that displays a list of
-    experiments to either participate in or configure/manage/monitor, respectively
-    """
-    context_object_name = 'experiments'
+class DashboardViewModel(object):
 
-    def get_template_names(self):
-        user = self.request.user
-        # FIXME: need to replace participant dashboard with a landing page that displays only the active experiment they can
-        # participate in.
-        if is_experimenter(user):
-            return ['experimenter/dashboard.html']
+    def __init__(self, user=None):
+        self.is_experimenter = is_experimenter(user)
+        if self.is_experimenter:
+            self.experimenter = user.experimenter
+            _configuration_cache = {}
+            self.experiment_metadata_dict = defaultdict(list)
+            for ec in ExperimentConfiguration.objects.select_related('experiment_metadata', 'creator'):
+                self.experiment_metadata_dict[ec.experiment_metadata].append(ec)
+                _configuration_cache[ec.pk] = ec
+            self.experiment_metadata_list = []
+            bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=self.experimenter).values_list(
+                'experiment_metadata', flat=True)
+            for em, ecs in self.experiment_metadata_dict.iteritems():
+                d = em.to_dict(include_configurations=True, configurations=ecs)
+                d['bookmarked'] = em.pk in bem_pks
+                self.experiment_metadata_list.append(d)
+
+            experiment_status_dict = defaultdict(list)
+            for e in Experiment.objects.for_experimenter(self.experimenter).order_by('-pk'):
+                e.experiment_configuration = _configuration_cache[e.experiment_configuration.pk]
+                experiment_status_dict[e.status].append(e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
+            self.pending_experiments = experiment_status_dict['INACTIVE']
+            self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+            self.archived_experiments = experiment_status_dict['COMPLETED']
         else:
-            return ['participant/dashboard.html']
+            self.participant = user.participant
+            experiment_status_dict = defaultdict(list)
+            for e in self.participant.experiments.select_related('experiment_configuration').all():
+                experiment_status_dict[e.status].append(e.to_dict(attrs=('participant_url', 'start_date', 'status_line'), name=e.experiment_configuration.name))
+            self.pending_experiments = experiment_status_dict['INACTIVE']
+            self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
 
-    def get_experimenter_dashboard_view_model(self, experimenter):
-        _configuration_cache = {}
-        experiment_metadata_dict = defaultdict(list)
-        for ec in ExperimentConfiguration.objects.select_related('experiment_metadata', 'creator'):
-            experiment_metadata_dict[ec.experiment_metadata].append(ec)
-            _configuration_cache[ec.pk] = ec
-        experiment_metadata_list = []
-        bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).values_list(
-            'experiment_metadata', flat=True)
-        for em, ecs in experiment_metadata_dict.iteritems():
-            d = em.to_dict(include_configurations=True, configurations=ecs)
-            d['bookmarked'] = em.pk in bem_pks
-            experiment_metadata_list.append(d)
+    @property
+    def template_name(self):
+        if self.is_experimenter:
+            return 'experimenter/dashboard.html'
+        else:
+            return 'participant/dashboard.html'
 
-        experiment_status_dict = defaultdict(list)
-        for e in Experiment.objects.for_experimenter(experimenter).order_by('-pk'):
-            e.experiment_configuration = _configuration_cache[e.experiment_configuration.pk]
-            experiment_status_dict[e.status].append(e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
-        pending_experiments = experiment_status_dict['INACTIVE']
-        running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
-        archived_experiments = experiment_status_dict['COMPLETED']
-        data = {
-            'experimentMetadataList': experiment_metadata_list,
-            'pendingExperiments': pending_experiments,
-            'runningExperiments': running_experiments,
-            'archivedExperiments': archived_experiments,
-        }
+    def to_json(self):
+        return dumps(self.to_dict())
 
-        return dumps(data)
+    def to_dict(self):
+        if self.is_experimenter:
+            return {
+                'experimentMetadataList': self.experiment_metadata_list,
+                'pendingExperiments': self.pending_experiments,
+                'runningExperiments': self.running_experiments,
+                'archivedExperiments': self.archived_experiments
+            }
+        else:
+            return {
+                'pendingExperiments': self.pending_experiments,
+                'runningExperiments': self.running_experiments
+            }
 
-    def get_context_data(self, **kwargs):
-        context = super(Dashboard, self).get_context_data(**kwargs)
-        user = self.request.user
-        if is_experimenter(user):
-            experimenter = user.experimenter
-            context['dashboardViewModelJson'] = self.get_experimenter_dashboard_view_model(experimenter)
-        return context
-
-    def get_queryset(self):
-        user = self.request.user
-        if is_experimenter(user):
-            return Experiment.objects.select_related('experimenter', 'experiment_metadata',
-                                                     'experiment_configuration').filter(
-                experimenter__pk=self.request.user.experimenter.pk)
-        elif is_participant(user):
-        # nested dictionary, {ExperimentMetadata -> { status -> [experiments,...] }}
-        # FIXME: could also use collections.defaultdict or regroup template tag to
-        # accomplish this..
-            experiment_dict = {}
-            # FIXME: this needs to be refactored
-            for experiment in Experiment.objects.for_participant(user.participant):
-                if not experiment.experiment_metadata in experiment_dict:
-                    experiment_dict[experiment.experiment_metadata] = dict(
-                        [(choice[0], list()) for choice in Experiment.Status])
-                experiment_dict[experiment.experiment_metadata][experiment.status].append(experiment)
-                logger.info("experiment_dict %s", experiment_dict)
-            return experiment_dict
+@login_required
+def dashboard(request):
+    """
+    selects the appropriate dashboard template and data for participants and experimenters
+    """
+    user = request.user
+    dashboard_view_model = DashboardViewModel(user)
+    return render(request, dashboard_view_model.template_name,
+                  {'dashboardViewModelJson': dashboard_view_model.to_json()})
 
 
 def set_authentication_token(user, authentication_token=''):

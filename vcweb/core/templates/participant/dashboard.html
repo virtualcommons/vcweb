@@ -1,35 +1,38 @@
-{% extends "participant/base.html" %}
+{% extends "base.html" %}
 {% block title %}
 Participant Dashboard
 {% endblock %}
-{% block logo %}
-<h1>Dashboard</h1>
-{% endblock %}
 
 {% block page %}
+{{ block.super }}
 <div id='experiments'>
-    {% if experiments.items %}
     <div class='alert alert-info'>
-        Welcome back, {{request.user.participant}}.  Your available experiments are listed below.
+        Welcome back, {{request.user.participant}}.
     </div>
-    {% endif %}
-    {% for experiment_metadata, experiment_status_dict in experiments.items %}
-        <h3> {{ experiment_metadata.title }} </h3>
-        {% for experiment_status, experiments in experiment_status_dict.items %}
-            {% if experiments %}
-            <br>
-            {% for experiment in experiments %}
-                <div class='alert alert-message alert-block'>
-                    <a data-content='This experiment is being run by {{experiment.experimenter}}.' href='{{ experiment.participant_url }}'>
-                        <i class='icon-play'></i>{{ experiment.status_line }}</a>
-                </div>
-            {% endfor %}
-            {% endif %}
-        {% endfor %}
-    {% empty %}
-    <div class='alert alert-block alert-error'>
-        <i class='icon-warning-sign'></i>You aren't participating in any experiments at the moment.  
-    </div>
-    {% endfor %}
+    <h3>Upcoming experiments</h3>
+    <div data-bind="template: { name: 'experimentTemplate', foreach: pendingExperiments }"></div>
+    <h3>Running experiments</h3>
+    <div data-bind="template: { name: 'experimentTemplate', foreach: runningExperiments }"></div>
 </div>
 {% endblock page %}
+
+{%  block javascript %}
+<script type='text/html' id='experimentTemplate'>
+<div class='alert alert-message alert-block'>
+    <a data-bind='attr: { href: participant_url }'><i class='icon-play'></i><span data-bind='text: status_line'></span>
+    <span class='pull-right' data-bind='text: start_date'></span></a>
+</div>
+</script>
+    {{ block.super }}
+    <script type='text/javascript'>
+    $(function() {
+        function DashboardViewModel(viewModelObject) {
+            var self = this;
+            var model = ko.mapping.fromJS(viewModelObject);
+            return model;
+        }
+        var model = new DashboardViewModel($.parseJSON("{{ dashboardViewModelJson|escapejs }}"));
+        ko.applyBindings(model);
+    });
+    </script>
+{%  endblock javascript %}
