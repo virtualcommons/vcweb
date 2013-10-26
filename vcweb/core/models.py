@@ -827,7 +827,7 @@ class Experiment(models.Model):
         html_template = select_template(['%s/email/experiment-registration.html' % self.namespace,
                                          'email/experiment-registration.html'])
         user = participant.user
-        if not password.strip():
+        if password is None or not password.strip():
             password = User.objects.make_random_password()
         # FIXME: resets existing user passwords, which might not be a good thing
         user.set_password(password)
@@ -848,7 +848,11 @@ class Experiment(models.Model):
         msg.attach_alternative(html_content, "text/html")
         return msg
 
-    def setup_test_participants(self, count=20, institution=None, email_suffix='mailinator.com', username_suffix='asu', password='test'):
+    def setup_test_participants(self, count=20, institution=None, email_suffix='mailinator.com', username_suffix='asu', password=None):
+        if password is None:
+            password = self.authentication_code
+            if password is None:
+                password = 'test'
         number_of_participants = self.participant_set.count()
         if number_of_participants > 0:
             logger.warning("This experiment %s already has %d participants - aborting", self, number_of_participants)

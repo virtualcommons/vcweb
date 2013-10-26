@@ -19,10 +19,22 @@ logger = logging.getLogger(__name__)
 REQUIRED_EMAIL_ATTRIBUTES = { 'class' : 'required email' }
 REQUIRED_ATTRIBUTES = { 'class' : 'required' }
 
+class NumberInput(widgets.Input):
+    input_type = 'number'
+
+class RangeInput(widgets.Input):
+    input_type = 'range'
+
+class EmailInput(widgets.TextInput):
+    input_type = 'email'
+
+class URLInput(widgets.Input):
+    input_type = 'url'
+
 class BaseRegistrationForm(forms.Form):
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
+    email = forms.EmailField(widget=EmailInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     confirm_password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete),required=True, help_text=_('The primary institution, if any, you are affiliated with.'))
@@ -49,7 +61,7 @@ class VcwebPasswordResetForm(PasswordResetForm):
         super(VcwebPasswordResetForm, self).__init__(*args, **kwargs)
 
 class LoginForm(forms.Form):
-    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
+    email = forms.EmailField(widget=EmailInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
 
     def clean(self):
@@ -183,7 +195,7 @@ class RegisterTestParticipantsForm(RegisterParticipantsForm):
             20 participants with usernames ranging from s1asu@mailinator.com, s2asu@mailinator.com,
             s3asu@mailinator.com, ... s20asu@mailinator.com.
             '''))
-    number_of_participants = forms.IntegerField(min_value=1, help_text=_('The number of participants to register with this experiment.'))
+    number_of_participants = forms.IntegerField(min_value=2, initial=10, widget=NumberInput(attrs={'min': 2}))
 
 class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
     participant_emails = EmailListField(label="Participant emails", help_text=_('A newline delimited list of emails to register as participants for this experiment.'))

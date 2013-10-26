@@ -9,10 +9,14 @@ Participant Dashboard
     <div class='alert alert-info'>
         Welcome back, {{request.user.participant}}.
     </div>
-    <h3>Upcoming experiments</h3>
-    <div data-bind="template: { name: 'experimentTemplate', foreach: pendingExperiments }"></div>
-    <h3>Running experiments</h3>
-    <div data-bind="template: { name: 'experimentTemplate', foreach: runningExperiments }"></div>
+    <div data-bind='if: pendingExperiments'>
+        <h3>Upcoming experiments</h3>
+        <div data-bind="template: { name: 'experimentTemplate', foreach: pendingExperiments }"></div>
+    </div>
+    <div data-bind='if: runningExperiments'>
+        <h3>Running experiments</h3>
+        <div data-bind="template: { name: 'experimentTemplate', foreach: runningExperiments }"></div>
+    </div>
 </div>
 {% endblock page %}
 

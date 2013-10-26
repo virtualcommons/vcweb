@@ -476,43 +476,51 @@ def upload_excel_participants_file(request):
                 logger.debug("workbook: %s", workbook)
 
 
-class RegisterEmailListView(ExperimenterSingleExperimentMixin, FormView):
-    form_class = RegisterEmailListParticipantsForm
-    template_name = 'experimenter/register-email-participants.html'
+class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView):
 
     def form_valid(self, form):
-        emails = form.cleaned_data.get('participant_emails')
-        institution = form.cleaned_data.get('institution')
         experiment = self.object
-        logger.debug("registering participants %s at institution %s for experiment: %s", emails, institution, experiment)
         experiment.authentication_code = form.cleaned_data.get('experiment_password')
         for field in ('start_date', 'registration_email_subject', 'registration_email_text'):
             setattr(experiment, field, form.cleaned_data.get(field))
         experiment.save()
+        return super(BaseExperimentRegistrationView, self).form_valid(form)
+
+
+class RegisterEmailListView(BaseExperimentRegistrationView):
+    form_class = RegisterEmailListParticipantsForm
+    template_name = 'experimenter/register-email-participants.html'
+
+    def form_valid(self, form):
+        valid = super(RegisterEmailListView, self).form_valid(form)
+        emails = form.cleaned_data.get('participant_emails')
+        institution = form.cleaned_data.get('institution')
+        experiment = self.object
+        logger.debug("registering participants %s at institution %s for experiment: %s", emails, institution, experiment)
         experiment.register_participants(emails=emails, institution=institution,
                                          password=experiment.authentication_code)
-        return super(RegisterEmailListView, self).form_valid(form)
+        return valid
 
     def get_success_url(self):
         return reverse('core:monitor_experiment', kwargs={'pk': self.object.pk})
 
 
-class RegisterTestParticipantsView(ExperimenterSingleExperimentMixin, FormView):
+class RegisterTestParticipantsView(BaseExperimentRegistrationView):
     form_class = RegisterTestParticipantsForm
     template_name = 'experimenter/register-test-participants.html'
 
     def form_valid(self, form):
+        valid = super(RegisterTestParticipantsView, self).form_valid(form)
         number_of_participants = form.cleaned_data.get('number_of_participants')
         username_suffix = form.cleaned_data.get('username_suffix')
         email_suffix = form.cleaned_data.get('email_suffix')
+        institution = form.cleaned_data.get('institution')
         experiment = self.object
-        experiment_passcode = form.cleaned_data.get('experiment_passcode')
         experiment.setup_test_participants(count=number_of_participants,
-                                           institution=form.institution,
+                                           institution=institution,
                                            email_suffix=email_suffix,
-                                           username_suffix=username_suffix,
-                                           password=experiment_passcode)
-        return super(RegisterTestParticipantsView, self).form_valid(form)
+                                           username_suffix=username_suffix)
+        return valid
 
     def get_success_url(self):
         return reverse('core:monitor_experiment', kwargs={'pk': self.object.pk})
