@@ -113,7 +113,7 @@ class DashboardViewModel(object):
             self.participant = user.participant
             experiment_status_dict = defaultdict(list)
             for e in self.participant.experiments.select_related('experiment_configuration').all():
-                experiment_status_dict[e.status].append(e.to_dict(attrs=('participant_url', 'start_date', 'status_line'), name=e.experiment_configuration.name))
+                experiment_status_dict[e.status].append(e.to_dict(attrs=('participant_url', 'start_date'), name=e.experiment_metadata.title))
             self.pending_experiments = experiment_status_dict['INACTIVE']
             self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
 

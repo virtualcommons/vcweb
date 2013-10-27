@@ -9,11 +9,11 @@ Participant Dashboard
     <div class='alert alert-info'>
         Welcome back, {{request.user.participant}}.
     </div>
-    <div data-bind='if: pendingExperiments'>
+    <div data-bind='if: pendingExperiments().length > 0'>
         <h3>Upcoming experiments</h3>
         <div data-bind="template: { name: 'experimentTemplate', foreach: pendingExperiments }"></div>
     </div>
-    <div data-bind='if: runningExperiments'>
+    <div data-bind='if: runningExperiments().length > 0'>
         <h3>Running experiments</h3>
         <div data-bind="template: { name: 'experimentTemplate', foreach: runningExperiments }"></div>
     </div>
@@ -21,10 +21,14 @@ Participant Dashboard
 {% endblock page %}
 
 {%  block javascript %}
+<script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/moment.js/2.3.1/moment.min.js'></script>
 <script type='text/html' id='experimentTemplate'>
 <div class='alert alert-message alert-block'>
-    <a data-bind='attr: { href: participant_url }'><i class='icon-play'></i><span data-bind='text: status_line'></span>
-    <span class='pull-right' data-bind='text: start_date'></span></a>
+    <a data-bind='attr: { href: participant_url }'><i class='icon-play'></i> <span data-bind='text: name'></span>
+    <span data-bind='if: start_date'>
+    <span class='pull-right'><b>Experiment will start on <span data-bind='text: $root.formatDate(start_date())'></span></b> at midnight</i></span>
+    </span>
+    </a>
 </div>
 </script>
     {{ block.super }}
@@ -33,10 +37,12 @@ Participant Dashboard
         function DashboardViewModel(viewModelObject) {
             var self = this;
             var model = ko.mapping.fromJS(viewModelObject);
+            model.formatDate = function(dateString) { return moment(dateString).format("dddd MMM Do YYYY"); };
             return model;
         }
         var model = new DashboardViewModel($.parseJSON("{{ dashboardViewModelJson|escapejs }}"));
         ko.applyBindings(model);
+        globalModel = model;
     });
     </script>
 {%  endblock javascript %}

@@ -1,0 +1,21 @@
+{% extends "participant/base.html" %}
+{% load static from staticfiles %}
+{% block head %}
+{{ block.super }}
+<link rel='stylesheet' href='{% static "css/lighterprints/style.css" %}'/>
+<link rel="stylesheet" href="//fast.fonts.com/cssapi/e86344be-530a-495b-be28-7a22a9cda219.css"/>
+{% endblock %}
+{% block page %}
+{% if upcoming %}
+<h3>Upcoming Experiment</h3>
+<div class='alert alert-info alert-block'>
+    <i class='icon-2x icon-calendar'></i>
+    This experiment will <b>begin at 12:00 AM {{ experiment.start_date|date:"l, N d Y" }}</b> and end at <b>11:59 PM {{ experiment.end_date|date:"l, N d Y" }}</b>.<br>
+</div>
+{% else %}
+<div class='alert alert-error alert-block'>
+    <i class='icon-warning-sign'></i> This experiment is no longer active. Thank you for participating!
+</div>
+{% endif %}
+{% endblock page %}
+

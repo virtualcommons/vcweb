@@ -16,8 +16,8 @@ from vcweb.lighterprints.models import (
         get_lighterprints_experiment_metadata, get_foursquare_category_ids, get_time_remaining
         )
 
+from datetime import datetime
 import logging
-#import tempfile
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
@@ -210,22 +210,25 @@ def mobile_participate(request, experiment_id=None):
 def participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id, experiment_metadata=get_lighterprints_experiment_metadata())
-    round_configuration = experiment.current_round
-    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'), participant=participant, group__experiment=experiment)
-    compare_other_group = can_view_other_groups(round_configuration=round_configuration)
-    all_activities = Activity.objects.all()
-    view_model_json = get_view_model_json(pgr, activities=all_activities, experiment=experiment, round_configuration=round_configuration)
+    if experiment.is_active:
+        round_configuration = experiment.current_round
+        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'), participant=participant, group__experiment=experiment)
+        compare_other_group = can_view_other_groups(round_configuration=round_configuration)
+        all_activities = Activity.objects.all()
+        view_model_json = get_view_model_json(pgr, activities=all_activities, experiment=experiment, round_configuration=round_configuration)
 #    if request.mobile:
         # FIXME: change this to look up templates in a mobile templates directory?
 #        logger.warning("mobile request detected by %s, but we're not ready for mobile apps", participant)
         #return redirect('https://vcweb.asu.edu/devfoot')
-    return render(request, 'lighterprints/participate.html', {
-        'experiment': experiment,
-        'participant_group_relationship': pgr,
-        'compare_other_group': compare_other_group,
-        'view_model_json': view_model_json,
-        'all_activities': all_activities,
+        return render(request, 'lighterprints/participate.html', {
+            'experiment': experiment,
+            'participant_group_relationship': pgr,
+            'compare_other_group': compare_other_group,
+            'view_model_json': view_model_json,
+            'all_activities': all_activities,
         })
+    else:
+        return render(request, 'lighterprints/inactive.html', { 'experiment': experiment, 'upcoming': experiment.start_date > datetime.now().date() })
 
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)
