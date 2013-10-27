@@ -1,11 +1,8 @@
 <p>
-Hello,
-</p>
-<p>
 {{ experiment.registration_email_text }}
 </p>
 <p>
-The experiment will <b>begin on {{experiment.start_date}} at midnight and run for {{experiment.number_of_rounds}} days, ending at midnight, {{experiment.end_date}}</b>.
+The experiment will <b>begin at 12:00 AM, {{experiment.start_date}} and run for {{experiment.number_of_rounds}} days, ending at 11:59 PM, {{experiment.end_date}}</b>.
 To access the experiment please visit 
 {% comment %} FIXME: hard coded server root {% endcomment %}
 <a href='https://vcweb.asu.edu{{experiment.participant_url}}'>https://vcweb.asu.edu{{experiment.participant_url}}</a> and login with the following credentials:
@@ -17,10 +14,10 @@ To access the experiment please visit
     </tbody>
 </table>
 <p>
-<b>NOTE: you will only be able to access the experiment <span style='text-decoration: underline;'>after midnight on {{ experiment.start_date }}</span></b>
+You can reset your password at any time at <a href='https://vcweb.asu.edu/accounts/password/reset?email={{ participant.email }}'>https://vcweb.asu.edu/accounts/password/reset</a>
 </p>
 <p>
-You can reset your password at any time at <a href='https://vcweb.asu.edu/accounts/password/reset?email={{ participant.email }}'>https://vcweb.asu.edu/accounts/password/reset</a>
+<b>NOTE:</b> you will only be able to access the experiment <span style='text-decoration: underline;'>after 12:00 AM on {{ experiment.start_date }}</span>
 </p>
 
 Thank you for participating,<br>

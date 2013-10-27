@@ -1,20 +1,16 @@
-Hello,
-
 {{ registration_email_text }}
 
-The experiment will begin on {{experiment.start_date}} at midnight and run for {{experiment.number_of_rounds}} days, ending at
-midnight, {{experiment.end_date}}. To access the experiment please visit https://vcweb.asu.edu{{experiment.participant_url}} and login with the following credentials:
+The experiment will <b>begin at 12:00 AM, {{experiment.start_date}} and run for {{experiment.number_of_rounds}} days, ending at 11:59 PM, {{experiment.end_date}}</b>.
+To access the experiment please visit https://vcweb.asu.edu{{experiment.participant_url}} and login with the following credentials:
 
     Email:          {{ participant.email }}
     Password:       {{ password }} 
-
-NOTE: you will only be able to access the experiment after midnight on {{ experiment.start_date }}
 
 You can reset your password at any time by entering your email at
 
     https://vcweb.asu.edu/accounts/password/reset?email={{ participant.email }}
 
-
+NOTE: you will only be able to access the experiment after midnight on {{ experiment.start_date }}
 
 Thank you for participating,
 {{ sender }}
