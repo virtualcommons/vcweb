@@ -2,7 +2,7 @@
 {{ experiment.registration_email_text }}
 </p>
 <p>
-The experiment will <b>begin at 12:00 AM, {{experiment.start_date}} and run for {{experiment.number_of_rounds}} days, ending at 11:59 PM, {{experiment.end_date}}</b>.
+The experiment will <b>begin at 12:00 AM, {{experiment.start_date}} and run for {{experiment.number_of_rounds}} days, ending at 12:00 AM, {{experiment.end_date}}</b>.
 To access the experiment please visit 
 {% comment %} FIXME: hard coded server root {% endcomment %}
 <a href='https://vcweb.asu.edu{{experiment.participant_url}}'>https://vcweb.asu.edu{{experiment.participant_url}}</a> and login with the following credentials:
