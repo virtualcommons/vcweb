@@ -822,16 +822,6 @@ def get_participant_sessions(request):
     invitations = Invitation.objects.filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow)\
         .exclude(pk__in=active_invitation_pk_list)
 
-    # invitation_session_info = []
-    # for invite in invitations:
-    #     invitation_session_info.append({
-    #         'pk': invite.pk,
-    #         'experiment_session_detail': invite.experiment_session,
-    #         'experiment_metadata_name': invite.experiment_session.experiment_metadata.title
-    #     })
-    #
-    # logger.debug(invitations)
-
     return render(request, "participant/participant-index.html", {"view_model_json": dumps(invitation_session_info)})
 
 
