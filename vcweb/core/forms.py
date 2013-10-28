@@ -172,6 +172,7 @@ class RegisterParticipantsForm(forms.Form):
             help_text=_('Institution to associate with these participants'))
     registration_email_subject = forms.CharField(min_length=3, label="Email subject", help_text=_('Subject line for registration email'), initial='VCWEB experiment registration')
     registration_email_text = forms.CharField(required=False, widget=forms.Textarea, label="Email body")
+    sender = forms.CharField(required=False, initial="The vcweb Development Team")
 
     def clean_institution(self):
         institution_name = self.cleaned_data.get('institution').strip()

@@ -765,7 +765,7 @@ class Experiment(models.Model):
                 subject = 'VCWEB experiment registration for %s' % self.display_name
         return subject
 
-    def register_participants(self, users=None, emails=None, institution=None, password=None):
+    def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None):
         number_of_participants = self.participant_set.count()
         if number_of_participants > 0:
             logger.warning("This experiment %s already has %d participants - aborting", self, number_of_participants)
@@ -809,11 +809,11 @@ class Experiment(models.Model):
                 p.institution = institution
                 p.save()
             per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=self.experimenter.user)
-            email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created))
+            email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created, sender=sender))
         if email_messages:
             mail.get_connection().send_messages(email_messages)
 
-    def create_registration_email(self, participant_experiment_relationship, password='', **kwargs):
+    def create_registration_email(self, participant_experiment_relationship, password='', sender=None, **kwargs):
         """
         Creates a registration email, sets a password for the given participant_experiment_relationship, and sends it to
         in plain text. Totally insecure but convenient for lowering barrier to participant recruitment.
@@ -837,7 +837,8 @@ class Experiment(models.Model):
             'participant': participant,
             'experiment': self,
             'password': password,
-            })
+            'sender': sender
+        })
         plaintext_content = plaintext_template.render(c)
         html_content = html_template.render(c)
         subject = self.get_registration_email_subject()
@@ -976,9 +977,14 @@ class Experiment(models.Model):
             random.shuffle(participants)
         gs = self.group_set
         if gs.exists():
+            """
+            groups already exist, preserve or delete them
+            FIXME: would be safer to always preserve as it doesn't carry any risk of data loss, could autogenerate
+            a session id if one isn't found.
+            """
             if preserve_existing_groups:
                 logger.debug("preserving existing groups")
-                # verify incoming session id is an actual value
+                # initialize session_id to round configuration session_id if unset. if none can be found abort
                 if not session_id:
                     round_configuration = self.current_round
                     session_id = round_configuration.session_id
@@ -988,6 +994,7 @@ class Experiment(models.Model):
                         raise ValueError("Cannot allocate new groups and preserve existing groups without an appropriate session id set on this round configuration %s" % round_configuration)
             else:
                 logger.debug("deleting old groups")
+                # FIXME: fairly expensive operation to log all group members
                 gqs = gs.all()
                 for g in gqs:
                     self.log("reallocating/deleting group %s" % g.participant_group_relationship_set.all())

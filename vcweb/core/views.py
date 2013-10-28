@@ -495,10 +495,12 @@ class RegisterEmailListView(BaseExperimentRegistrationView):
         valid = super(RegisterEmailListView, self).form_valid(form)
         emails = form.cleaned_data.get('participant_emails')
         institution = form.cleaned_data.get('institution')
+        sender = form.cleaned_data.get('sender')
         experiment = self.object
         logger.debug("registering participants %s at institution %s for experiment: %s", emails, institution, experiment)
         experiment.register_participants(emails=emails, institution=institution,
-                                         password=experiment.authentication_code)
+                                         password=experiment.authentication_code,
+                                         sender=sender)
         return valid
 
     def get_success_url(self):
