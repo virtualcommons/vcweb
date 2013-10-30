@@ -7,7 +7,7 @@ from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
 from django.core.mail import send_mass_mail
 
-from forms import SessionForm, SessionDetailForm, SessionInviteForm
+from forms import SessionForm, SessionInviteForm
 
 import random
 import logging
@@ -146,15 +146,23 @@ def datetime_to_timestamp(date):
 
 def get_session_event_detail(request, pk):
     es = ExperimentSession.objects.get(pk=pk)
-    form = SessionDetailForm(instance=es)
+
+    session_detail = {'experiment_metadata': es.experiment_metadata, 'start_date': es.scheduled_date.date(),
+                      'start_time': es.scheduled_date.strftime('%I:%M %p'), 'end_date': es.scheduled_end_date.date(),
+                      'end_time': es.scheduled_end_date.strftime('%I:%M %p'),'location': es.location, 'capacity': es.capacity}
+
     invitations_sent = Invitation.objects.filter(experiment_session=es)
+
     participants = [{
-        'pk': ps.participant.pk,
-        'first_name': ps.participant.first_name,
-        'last_name': ps.participant.last_name
+        'pk': ps.invitation.participant.pk,
+        'first_name': ps.invitation.participant.first_name,
+        'last_name': ps.invitation.participant.last_name,
+        'email': ps.invitation.participant.email,
+        'attendance': ps.attendance
     }for ps in ParticipantSignup.objects.filter(invitation__in=invitations_sent)]
 
-    return render(request, 'subject-pool/session_detail.html', {'form': form})
+    return render(request, 'subject-pool/session_detail.html', {'session_detail': session_detail,
+                                                                'participants': dumps(participants)})
 
 
 def send_invitations(request):

@@ -10,7 +10,13 @@ Participant Dashboard
         <div id="content" class="span12">
             <h3>Pick Experiment Sessions</h3>
             <div id="error-messages"></div>
-            <form data-bind="submit: onSave">
+            <div data-bind="if: groupedInvitation.length === 0">
+                <div class="well">
+                    <p>You are currently not invited to any experiments.</p>
+                    <p>Please make sure that you have opted to receive invitations in your account profiles settings.</p>
+                </div>
+            </div>
+            <form data-bind="if: groupedInvitation.length > 0, submit: onSave">
                 <div class="well" data-bind="foreach: groupedInvitation">
                 <fieldset class="radiogroup">
                     <legend><span data-bind="text: name"></span></legend>
@@ -38,10 +44,22 @@ Participant Dashboard
                                     Location
                                     <span class="add-on"><i class="icon-flag"></i></span>
                                 </th>
+                                <th> Openings </th>
                             </tr>
                         </thead>
                         <tbody data-bind="foreach: children ">
-                            <tr>
+                            <tr data-bind= "if: openings <=0 " class="error">
+                                <td>
+                                    <input disabled type="radio" data-bind="value: invitation_pk, checked: selected, attr:{name: $parent.name}" />
+                                </td>
+                                <td data-bind="text: scheduled_date"></td>
+                                <td><b data-bind="text: scheduled_time"></b></td>
+                                <td data-bind="text: scheduled_end_date"></td>
+                                <td><b data-bind="text: scheduled_end_time"></b></td>
+                                <td data-bind="text: location"></td>
+                                <td data-bind="text: openings"></td>
+                            </tr>
+                            <tr data-bind=  "ifnot: openings <=0">
                                 <td>
                                     <input type="radio" data-bind="value: invitation_pk, checked: selected, attr:{name: $parent.name}"/>
                                 </td>
@@ -50,11 +68,12 @@ Participant Dashboard
                                 <td data-bind="text: scheduled_end_date"></td>
                                 <td><b data-bind="text: scheduled_end_time"></b></td>
                                 <td data-bind="text: location"></td>
+                                <td data-bind="text: openings"></td>
                             </tr>
                         </tbody>
                     </table>
                 </fieldset>
-               </div>
+                </div>
                 <input type="submit" class="btn btn-success" value="Submit" />
                 <input type="reset" class="btn" />
             </form>
@@ -67,13 +86,14 @@ Participant Dashboard
     <script type="text/javascript">
         var invitation_list = $.parseJSON("{{ view_model_json | escapejs }}");
 
+        console.log(invitation_list);
+
         var oldInvitationPkList=[];
 
         for (var key in invitation_list) {
             var inv = invitation_list[key].invitation;
             if(inv.selected) {
                 oldInvitationPkList.push(inv.invitation_pk)
-                console.log(oldInvitationPkList);
             }
         }
 
@@ -86,6 +106,7 @@ Participant Dashboard
                                        children: _.pluck(value, 'invitation')
                                 }
                        }).value();
+
         $(function(){
 
             function ExperimentListModel(groupedInvitation) {

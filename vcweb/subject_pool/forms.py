@@ -50,15 +50,11 @@ class SessionForm(forms.Form):
         return data
 
 
-class SessionDetailForm(forms.ModelForm):
-    class Meta:
-        model = ExperimentSession
-        fields = ('experiment_metadata', 'date_created', 'scheduled_date', 'scheduled_end_date', 'capacity')
-        labels = {
-            'experiment_metadata': 'Experiment',
-            'scheduled_date' : 'Start Date'
-        }
-
+# class SessionDetailForm(forms.ModelForm):
+#     class Meta:
+#         model = ExperimentSession
+#         fields = ('experiment_metadata', 'date_created', 'scheduled_date', 'scheduled_end_date', 'capacity')
+#
 
 class SessionInviteForm(forms.Form):
     no_of_people = forms.IntegerField(widgets.TextInput())

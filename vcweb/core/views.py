@@ -815,7 +815,8 @@ def get_participant_sessions(request):
     user = request.user
     tomorrow = datetime.now() + timedelta(days=1)
 
-    active_experiment_sessions = ParticipantSignup.objects.filter(invitation__participant=user.participant, attendance=3)
+    active_experiment_sessions = ParticipantSignup.objects.filter(invitation__participant=user.participant, attendance=3
+        , invitation__experiment_session__scheduled_date__gt=tomorrow)
     logger.debug(active_experiment_sessions)
     active_invitation_pk_list = [ps.invitation.pk for ps in active_experiment_sessions]
 
@@ -824,36 +825,47 @@ def get_participant_sessions(request):
 
     invitation_list = []
     for ps in active_experiment_sessions:
+        signup_count = ParticipantSignup.objects.filter(invitation__experiment_session__pk=ps.invitation.experiment_session.pk).count()
+
         invitation_list.append({
             'invitation': {
                 'invitation_pk': ps.invitation.pk,
                 'scheduled_date': ps.invitation.experiment_session.scheduled_date.date(),
                 'scheduled_time': ps.invitation.experiment_session.scheduled_date.strftime('%I:%M %p'),
-                'scheduled_end_date': ps.invitation.experiment_session.scheduled_end_date.date(),
+                'scheduled_end_date': compare_dates(ps.invitation.experiment_session.scheduled_date.date(), ps.invitation.experiment_session.scheduled_end_date.date()),
                 'scheduled_end_time': ps.invitation.experiment_session.scheduled_end_date.strftime('%I:%M %p'),
                 'location': ps.invitation.experiment_session.location,
+                'openings': ps.invitation.experiment_session.capacity-signup_count,
                 'selected': ps.invitation.pk
             },
             'experiment_metadata_name': ps.invitation.experiment_session.experiment_metadata.title
         })
 
     for invite in invitations:
+        signup_count = ParticipantSignup.objects.filter(invitation__experiment_session__pk=invite.experiment_session.pk).count()
+
         invitation_list.append({
             'invitation': {
                 'invitation_pk': invite.pk,
                 'scheduled_date': invite.experiment_session.scheduled_date.date(),
                 'scheduled_time': invite.experiment_session.scheduled_date.strftime('%I:%M %p'),
-                'scheduled_end_date': invite.experiment_session.scheduled_end_date.date(),
+                'scheduled_end_date': compare_dates(invite.experiment_session.scheduled_date.date(), invite.experiment_session.scheduled_end_date.date()),
                 'scheduled_end_time': invite.experiment_session.scheduled_end_date.strftime('%I:%M %p'),
                 'location': invite.experiment_session.location,
+                'openings': invite.experiment_session.capacity-signup_count,
                 'selected': ''
             },
             'experiment_metadata_name': invite.experiment_session.experiment_metadata.title
         })
-
-
-
     return render(request, "participant/participant-index.html", {"view_model_json": dumps(invitation_list)})
+
+
+def compare_dates(date1, date2):
+    if date1 == date2:
+        return ''
+    else:
+        return date2
+
 
 @participant_required
 def update_participant_sessions(request):
