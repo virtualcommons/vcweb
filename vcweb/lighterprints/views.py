@@ -228,7 +228,9 @@ def participate(request, experiment_id=None):
             'all_activities': all_activities,
         })
     else:
-        return render(request, 'lighterprints/inactive.html', { 'experiment': experiment, 'upcoming': experiment.start_date > datetime.now().date() })
+        sd = experiment.start_date
+        upcoming = sd > datetime.now().date() if sd is not None else False
+        return render(request, 'lighterprints/inactive.html', { 'experiment': experiment, 'upcoming': upcoming })
 
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)
