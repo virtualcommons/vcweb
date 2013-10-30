@@ -173,9 +173,26 @@ col.error {
     border-radius: 5px;
 }
 
-.radio{
-    list-style: none;
+/*.session-table{*/
+    /*width:100%;*/
+/*}*/
+
+.session-table tr td {
+    padding: 5px 15px;
 }
-.radio li {
-    list-style: none;
+
+.session-table tr td:nth-child(odd) {
+    text-align: center;
 }
+
+/*.session-label {*/
+    /*margin: 0 10px;*/
+/*}*/
+
+/*.group {*/
+    /*padding: 5px 0;*/
+/*}*/
+
+/*.invite-badge {*/
+    /*margin-left: 30px;*/
+/*}*/

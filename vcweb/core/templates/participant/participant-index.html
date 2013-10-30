@@ -5,62 +5,113 @@ Participant Dashboard
 {% block logo %}
 <h1>Dashboard</h1>
 {% endblock %}
-
 {% block page %}
-    <h3>Selected Experiment Session</h3>
-    <div class="well">
-        <fieldset class="radiogroup">
-            <legend>Select pizza crust <span class="required">(required)</span></legend>
-            <ul class="radio">
-                <li><input type="radio" name="crust" id="crust1" value="deep" /><label for="crust1">Deep dish</label></li>
-                <li><input type="radio" name="crust" id="crust2" value="thick" /><label for="crust2">Thick</label></li>
-                <li><input type="radio" name="crust" id="crust3" value="hand" /><label for="crust3">Hand thrown</label></li>
-                <li><input type="radio" name="crust" id="crust4" value="thin" /><label for="crust4">Thin</label></li>
-            </ul>
-        </fieldset>
-    </div>
-    <h3>Other available Experiment Sessions</h3>
-    <div class="well">
-        <fieldset class="radiogroup">
-            <legend>Select pizza crust <span class="required">(required)</span></legend>
-            <ul class="radio">
-                <li><input type="radio" name="crust" id="crust1" value="deep" /><label for="crust1">Deep dish</label></li>
-                <li><input type="radio" name="crust" id="crust2" value="thick" /><label for="crust2">Thick</label></li>
-                <li><input type="radio" name="crust" id="crust3" value="hand" /><label for="crust3">Hand thrown</label></li>
-                <li><input type="radio" name="crust" id="crust4" value="thin" /><label for="crust4">Thin</label></li>
-            </ul>
-        </fieldset>
+    <div class='row' id='page'>
+        <div id="content" class="span12">
+            <h3>Pick Experiment Sessions</h3>
+            <div id="error-messages"></div>
+            <form data-bind="submit: onSave">
+                <div class="well" data-bind="foreach: groupedInvitation">
+                <fieldset class="radiogroup">
+                    <legend><span data-bind="text: name"></span></legend>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Select</th>
+                                <th>
+                                    Start Date
+                                    <span class="add-on"><i class="icon-calendar"></i></span>
+                                </th>
+                                <th>
+                                    Start Time
+                                    <span class="add-on"><i class="icon-time"></i></span>
+                                </th>
+                                <th>
+                                    End Date
+                                    <span class="add-on"><i class="icon-calendar"></i></span>
+                                </th>
+                                <th>
+                                    End Time
+                                    <span class="add-on"><i class="icon-time"></i></span>
+                                </th>
+                                <th>
+                                    Location
+                                    <span class="add-on"><i class="icon-flag"></i></span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody data-bind="foreach: children ">
+                            <tr>
+                                <td>
+                                    <input type="radio" data-bind="value: invitation_pk, checked: selected, attr:{name: $parent.name}"/>
+                                </td>
+                                <td data-bind="text: scheduled_date"></td>
+                                <td><b data-bind="text: scheduled_time"></b></td>
+                                <td data-bind="text: scheduled_end_date"></td>
+                                <td><b data-bind="text: scheduled_end_time"></b></td>
+                                <td data-bind="text: location"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </fieldset>
+               </div>
+                <input type="submit" class="btn btn-success" value="Submit" />
+                <input type="reset" class="btn" />
+            </form>
+        </div>
     </div>
 {% endblock page %}
 {% block javascript %}
     {{ block.super }}
+    <script type= "text/javascript" src="{{ STATIC_URL }}js/underscore-min.js"></script>
     <script type="text/javascript">
-    var invitation_session_info = $.parseJSON("{{ view_model_json | escapejs }}");
-        console.log(invitation_session_info);
+        var invitation_list = $.parseJSON("{{ view_model_json | escapejs }}");
 
-        function SessionListViewModel(sessions_experiment_metadatas_object) {
-            var session_mapping = {
-                'session_list': {
-                    create: function (options) {
-                        return new SessionModel(options.data, { newSession: false });
-                    }
-                }
-            };
-            var model = ko.mapping.fromJS(sessions_experiment_metadatas_object, session_mapping);
+        var oldInvitationPkList=[];
 
-            model.activeSessions = ko.computed(function() {
-                return ko.utils.arrayFilter(model.session_list(), function(session) {
-                    return session.active();
-                });
-            });
-
-            model.pastSessions = ko.computed(function() {
-                return ko.utils.arrayFilter(model.session_list(), function(session) {
-                    return !session.active();
-                });
-            });
-
-            return model;
+        for (var key in invitation_list) {
+            var inv = invitation_list[key].invitation;
+            if(inv.selected) {
+                oldInvitationPkList.push(inv.invitation_pk)
+                console.log(oldInvitationPkList);
+            }
         }
+
+        var groupedInvitation =
+               _.chain(invitation_list)
+                .groupBy('experiment_metadata_name')
+                       .map(function(value, key){
+                                return {
+                                       name: key,
+                                       children: _.pluck(value, 'invitation')
+                                }
+                       }).value();
+        $(function(){
+
+            function ExperimentListModel(groupedInvitation) {
+
+                var model = ko.mapping.fromJS(groupedInvitation);
+
+                self.onSave = function(formElement) {
+                    var invitationPkList = $(formElement).find('input[type=radio]:checked').map(function() {
+                          return this.value
+                    }).get();
+                    console.log(oldInvitationPkList);
+                    console.log(invitationPkList);
+                    $.ajax("/participant/session/update", {
+                        data: 'invitation_pk_list='+ invitationPkList + '&old_invitation_pk_list=' + oldInvitationPkList,
+                        type: "POST",
+                        success: function(result) {
+                            if(result.success) {
+                                $("#error-messages").html('<div class="alert alert-success"><strong>Well done! </strong>'+ result.message + '</strong></div>');
+                            }
+                        }
+                    });
+                };
+                return model;
+            }
+
+            ko.applyBindings(new ExperimentListModel(groupedInvitation))
+        });
     </script>
 {% endblock %}

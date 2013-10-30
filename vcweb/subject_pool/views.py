@@ -31,6 +31,7 @@ def sessionListView(request):
         "endHour": session.scheduled_end_date.time().hour,
         "endMin": session.scheduled_end_date.time().minute,
         "capacity": session.capacity,
+        "location": session.location,
         "invite_count": Invitation.objects.filter(experiment_session=session).count()
     }for session in data]
 
@@ -61,6 +62,7 @@ def update_session(request):
             end_time = time(int(form.cleaned_data.get('end_hour')), int(form.cleaned_data.get('end_min')))
             es.scheduled_end_date = datetime.combine(end_date, end_time)
             es.capacity = form.cleaned_data.get('capacity')
+            es.location = form.cleaned_data.get('location')
             es.creator = user
             es.date_created = datetime.now()
             exp_pk = form.cleaned_data.get("experiment_metadata_pk")

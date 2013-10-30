@@ -14,7 +14,8 @@ URLs for the core vcweb app
 '''
 urlpatterns = patterns('vcweb.core.views',
     url(r'^dashboard/?$', dashboard, name='dashboard'),
-    url(r'^participant/session/?$','get_participant_sessions',name='participant_sessions'),
+    url(r'^participant/session/?$', 'get_participant_sessions', name='participant_sessions'),
+    url(r'^participant/session/update/?$', 'update_participant_sessions', name='update_participant_sessions'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
     url(r'^accounts/logout/$', login_required(LogoutView.as_view()), name='logout'),
     url(r'^accounts/add/$', RegistrationView.as_view(), name='register'),

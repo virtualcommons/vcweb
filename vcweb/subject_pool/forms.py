@@ -23,6 +23,7 @@ class SessionForm(forms.Form):
     end_hour = forms.ChoiceField(choices=HOUR_CHOICES, required=False)
     end_min = forms.ChoiceField(choices=MIN_CHOICES, required=False)
     capacity = forms.IntegerField(widget=widgets.TextInput(), required=False)
+    location = forms.CharField(widget=widgets.TextInput(), required=False)
     request_type = forms.CharField(widget=widgets.TextInput())
 
     def clean(self):
@@ -36,6 +37,7 @@ class SessionForm(forms.Form):
         end_hour = data.get('end_hour')
         end_min = data.get('end_min')
         capacity = data.get('capacity')
+        location = data.get('location')
         request_type = data.get('request_type')
 
         if not pk:

@@ -816,13 +816,73 @@ def get_participant_sessions(request):
     tomorrow = datetime.now() + timedelta(days=1)
 
     active_experiment_sessions = ParticipantSignup.objects.filter(invitation__participant=user.participant, attendance=3)
-
+    logger.debug(active_experiment_sessions)
     active_invitation_pk_list = [ps.invitation.pk for ps in active_experiment_sessions]
 
     invitations = Invitation.objects.filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow)\
         .exclude(pk__in=active_invitation_pk_list)
 
-    return render(request, "participant/participant-index.html", {"view_model_json": dumps(invitation_session_info)})
+    invitation_list = []
+    for ps in active_experiment_sessions:
+        invitation_list.append({
+            'invitation': {
+                'invitation_pk': ps.invitation.pk,
+                'scheduled_date': ps.invitation.experiment_session.scheduled_date.date(),
+                'scheduled_time': ps.invitation.experiment_session.scheduled_date.strftime('%I:%M %p'),
+                'scheduled_end_date': ps.invitation.experiment_session.scheduled_end_date.date(),
+                'scheduled_end_time': ps.invitation.experiment_session.scheduled_end_date.strftime('%I:%M %p'),
+                'location': ps.invitation.experiment_session.location,
+                'selected': ps.invitation.pk
+            },
+            'experiment_metadata_name': ps.invitation.experiment_session.experiment_metadata.title
+        })
+
+    for invite in invitations:
+        invitation_list.append({
+            'invitation': {
+                'invitation_pk': invite.pk,
+                'scheduled_date': invite.experiment_session.scheduled_date.date(),
+                'scheduled_time': invite.experiment_session.scheduled_date.strftime('%I:%M %p'),
+                'scheduled_end_date': invite.experiment_session.scheduled_end_date.date(),
+                'scheduled_end_time': invite.experiment_session.scheduled_end_date.strftime('%I:%M %p'),
+                'location': invite.experiment_session.location,
+                'selected': ''
+            },
+            'experiment_metadata_name': invite.experiment_session.experiment_metadata.title
+        })
+
+
+
+    return render(request, "participant/participant-index.html", {"view_model_json": dumps(invitation_list)})
+
+@participant_required
+def update_participant_sessions(request):
+    user = request.user
+    invitation_pk_list = request.POST.get('invitation_pk_list')
+    pk_list = invitation_pk_list.split(",")
+    old_pk_list = request.POST.get('old_invitation_pk_list')
+
+    logger.debug(pk_list)
+    logger.debug(old_pk_list)
+
+    unchanged_invite_pk_list = list(set(pk_list) & set(old_pk_list))
+
+    ParticipantSignup.objects.exclude(invitation__pk__in=unchanged_invite_pk_list).\
+        filter(invitation__participant=user.participant, attendance=3).delete()
+
+    new_signup_invite_pk = list(set(pk_list) - set(old_pk_list))
+
+    logger.debug(new_signup_invite_pk)
+    if new_signup_invite_pk[0] != '':
+        for invite_pk in new_signup_invite_pk:
+            logger.debug("I was here")
+            ps = ParticipantSignup()
+            ps.invitation = Invitation.objects.get(pk=invite_pk)
+            ps.date_created = datetime.now()
+            ps.attendance = 3
+            ps.save()
+
+    return JsonResponse(dumps({'success': True, 'message': "Successfully saved your registration"}))
 
 
 def handler500(request):
