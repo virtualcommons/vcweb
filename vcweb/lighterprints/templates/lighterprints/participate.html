@@ -55,17 +55,24 @@
             </div>
             <div class='row lighterprints-scoreboard'>
                 <div class='span2'>
+                    <h5 id='progress'><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span></h5>
+                    <div data-bind='popover: { content: "#progressChartPopoverContent", id: "progress-chart-popover"}' class='chart'>
+                        <canvas id='progressChart' width="74px" height="74px"></canvas>
+                    </div>
+                </div>
+                <div class='span2 left-divider'>
                     <h5 id='group-score'><span class='lighterprints-scoreboard-uppercase'>Group Score</span></h5>
                     <table>
                         <tr>
-                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: averagePoints'></span></td>
-                            <td><i class='lighterprints-blue icon-leaf icon-2x'></i></td>
+                            <td class='lighterprints-scoreboard-xlarge'><span class='lighterprints-blue' data-bind='text: averagePoints'></span></td>
+                            <td class='lighterprints-scoreboard-large'> / </td>
+                            <td class='lighterprints-scoreboard-xlarge'><span class='muted' data-bind='text:pointsToNextLevel'></span></td>
                         </tr>
                     </table>
                 </div>
                 <div class='span2 left-divider'>
                     <h5 id='current-level'><span data-bind='text: currentLevelText' class='lighterprints-scoreboard-uppercase'></span></h5>
-                    <table data-bind='if: hasScheduledActivities'>
+                    <table style='margin-top: -5px;' data-bind='if: hasScheduledActivities'>
                         <tr>
                             <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: totalPoints'></span></td>
                             <td><i class='lighterprints-green icon-leaf icon-2x'></i></td>
@@ -81,18 +88,11 @@
                     </div>
                 </div>
                 <div class='span2 left-divider'>
-                    <h5 id='progress'><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span></h5>
-                    <div data-bind='popover: { content: "#progressChartPopoverContent", id: "progress-chart-popover"}' class='chart'>
-                        <canvas id='progressChart' width="80px" height="80px" style='margin-left: auto; margin-right: auto; display: block;' ></canvas>
-                    </div>
-                </div>
-                <div class='span2 left-divider'>
                     <h5 id='time-remaining'><span class='lighterprints-scoreboard-uppercase'>Time Remaining</span></h5>
                     <table>
                         <tr>
-                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: hoursLeft'></span></td>
-                            <td class='lighterprints-scoreboard-large'>:</td>
-                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: minutesLeft'></span></td>
+                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: hoursLeft'></span>h</td>
+                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: minutesLeft'></span>m</td>
                         </tr>
                     </table>
                 </div>
@@ -434,7 +434,7 @@ $(function() {
         viewModel.showActivityPerformedModal();
         var id = challengeModel.pk();
         var formData = $('#challengeForm' + id).serialize();
-        console.debug("form data: " + formData);
+        // console.debug("form data: " + formData);
         $.post('/lighterprints/api/do-activity', formData, function(data) {
             console.debug(data);
             if (data.success) {

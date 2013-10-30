@@ -40,10 +40,6 @@ function LighterFootprintsModel(modelJson) {
             }
         }
         model.hoursLeft(hoursLeft);
-        var minutes = minutesLeft + "";
-        if (minutesLeft.length == 1) {
-            minutesLeft = "0" + minutesLeft;
-        }
         model.minutesLeft(minutesLeft);
     };
     setInterval(model.minuteTick, 1000*60);
