@@ -1,3 +1,4 @@
+from django.core.serializers import json
 from django.shortcuts import render
 from vcweb.core.models import ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation, Institution
 from vcweb.core.decorators import experimenter_required
@@ -154,7 +155,7 @@ def get_session_event_detail(request, pk):
     invitations_sent = Invitation.objects.filter(experiment_session=es)
 
     participants = [{
-        'pk': ps.invitation.participant.pk,
+        'pk': ps.pk,
         'first_name': ps.invitation.participant.first_name,
         'last_name': ps.invitation.participant.last_name,
         'email': ps.invitation.participant.email,
@@ -256,3 +257,41 @@ def get_unlikely_participants(days_threshold, experiment_metadata_pk):
     filtered_list1 = [p.invitation.participant.pk for p in signup_participants]
 
     return list(set(filtered_list) | set(filtered_list1))
+
+def update_participant_attendance(request):
+    if request.is_ajax():
+        try:
+            data = request.POST
+            #logger.debug(data)
+            dataDict = dict(data.iterlists())
+
+            pk_list = dataDict.get('pk')
+            attendance_list = dataDict.get('session-attendance')
+            #logger.debug(pk_list)
+            #logger.debug(attendance_list)
+
+            if len(pk_list) == len(attendance_list):
+                for x in xrange(len(pk_list)):
+                    ps = ParticipantSignup.objects.get(pk=pk_list[x])
+                    #logger.debug(ps.attendance)
+                    ps.attendance = int(attendance_list[x])
+                    #logger.debug(ps.attendance)
+                    if ps.attendance != 3:
+                        ps.save()
+                message = "Attendance Info has been saved."
+
+                return JsonResponse(dumps({
+                    'success': True,
+                    'message': message
+                }))
+        except KeyError:
+            #logger.debug("OH NO U FAIL")
+            message = "Something went wrong.... Please try again."
+
+            return JsonResponse(dumps({
+                    'success': False,
+                    'message': message
+                }))
+
+
+

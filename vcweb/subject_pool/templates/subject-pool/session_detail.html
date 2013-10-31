@@ -12,9 +12,9 @@
             {{ session_detail.experiment_metadata.title }}
             <p><strong>Date/Time: </strong> {{ session_detail.start_date }}, {{ session_detail.start_time }} -
             {% if session_detail.end_date != session_detail.start_date %}
-            {{ session_detail.end_date }},</p>
+            {{ session_detail.end_date }},
             {% endif %}
-            {{ session_detail.end_time }}
+            {{ session_detail.end_time }}</p>
             <p><strong>Location: </strong> {{ session_detail.location }}</p>
             <p><strong>Capacity: </strong> {{ session_detail.capacity }}</p>
         </div>
@@ -31,6 +31,7 @@
                 </thead>
                 <tbody data-bind="foreach: participant_list">
                     <tr>
+                        <input type="hidden" name="pk" data-bind="value: pk" />
                         <td data-bind="text: first_name"></td>
                         <td data-bind="text: last_name"></td>
                         <td data-bind="text: email"></td>
@@ -64,6 +65,19 @@
                 var model = ko.mapping.fromJS(participant_list);
 
                 self.onSave = function(formElement) {
+                    //data = $("#participant-info").find("table tbody tr").map(function(){ return {'pk': $('input[type=hidden]',this).val(), 'attendance':$('select',this).val()} }).get();
+                    data = $(formElement).serializeArray();
+                    $.ajax("/subject-pool/session/attendance", {
+                        data: data,
+                        type: "POST",
+                        success: function(result) {
+                            if(result.success) {
+                                $("#error-messages").html('<div class="alert alert-success"><strong>Success!&nbsp;&nbsp;</strong>'+ result.message + '</strong></div>');
+                            } else{
+                                 $("#error-messages").html('<div class="alert alert-danger"><strong>Whoops!&nbsp;&nbsp;</strong>'+ result.message + '</strong></div>');
+                            }
+                        }
+                    });
 
                 };
                 return model;
