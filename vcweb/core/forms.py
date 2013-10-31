@@ -19,17 +19,22 @@ logger = logging.getLogger(__name__)
 REQUIRED_EMAIL_ATTRIBUTES = { 'class' : 'required email' }
 REQUIRED_ATTRIBUTES = { 'class' : 'required' }
 
+
 class NumberInput(widgets.Input):
     input_type = 'number'
+
 
 class RangeInput(widgets.Input):
     input_type = 'range'
 
+
 class EmailInput(widgets.TextInput):
     input_type = 'email'
 
+
 class URLInput(widgets.Input):
     input_type = 'url'
+
 
 class BaseRegistrationForm(forms.Form):
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
@@ -38,6 +43,7 @@ class BaseRegistrationForm(forms.Form):
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     confirm_password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete),required=True, help_text=_('The primary institution, if any, you are affiliated with.'))
+
     def clean_email(self):
         email = self.cleaned_data['email'].lower()
         try:
@@ -53,12 +59,15 @@ class BaseRegistrationForm(forms.Form):
             return confirm_password
         raise forms.ValidationError(_("Please make sure your passwords match."))
 
+
 class RegistrationForm(BaseRegistrationForm):
     experimenter = forms.BooleanField(required=False, help_text=_('Check this box if you would like to request experimenter access.'))
+
 
 class VcwebPasswordResetForm(PasswordResetForm):
     def __init__(self, *args, **kwargs):
         super(VcwebPasswordResetForm, self).__init__(*args, **kwargs)
+
 
 class LoginForm(forms.Form):
     email = forms.EmailField(widget=EmailInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
@@ -80,15 +89,19 @@ class ParticipantAccountForm(forms.ModelForm):
     pk = forms.IntegerField(widget=widgets.HiddenInput())
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
-    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False, help_text=_('The primary institution, if any, you are affiliated with.'))
+    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES),
+                             help_text=_('We will never share your email.'))
+    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False,
+                                  help_text=_('The primary institution, if any, you are affiliated with.'))
+
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
         if instance is not None:
             super(ParticipantAccountForm, self).__init__(*args, **kwargs)
-            self.fields.keyOrder = ['pk', 'first_name', 'last_name', 'email', 'institution', 'can_receive_invitations', 'major', 'class_status', 'gender']
+            self.fields.keyOrder = ['pk', 'first_name', 'last_name', 'email', 'institution', 'can_receive_invitations',
+                                    'major', 'class_status', 'gender']
             self.fields['class_status'].label = 'Class Status'
-            for attr in ("pk", "first_name", 'last_name', 'email'):
+            for attr in ('pk', 'first_name', 'last_name', 'email'):
                 self.fields[attr].initial = getattr(instance, attr)
 
             institution = instance.institution
@@ -101,31 +114,31 @@ class ParticipantAccountForm(forms.ModelForm):
         model = Participant
         fields = ['major', 'class_status', 'gender', 'can_receive_invitations']
         """
+        FIXME: currently disabled, need to fix MajorAutocomplete
         widgets = {
             'major': autocomplete_light.TextWidget('MajorAutocomplete'),
         }
         """
 
-
     def clean(self):
         data = super(forms.ModelForm, self).clean()
-        m = data.get('email')
-        if not email_re.match(m):
-                raise ValidationError(_(u'%s is not a valid email address.' % data))
+        email_address = data.get('email')
+        if not email_re.match(email_address):
+            raise ValidationError(_('%s is not a valid email address.' % email_address))
         # raise forms.ValidationError(_("This email address is already in our system."))
 
         can_be_invited = data.get('can_receive_invitations')
         major = data.get('major')
         gender = data.get('gender')
         class_status = data.get('class_status')
-        if not m:
-            raise forms.ValidationError(_("You have forgotten your Email address"))
+        if not email_address:
+            raise forms.ValidationError(_("Please enter a valid email address"))
 
-        if can_be_invited:
-            if not major or not gender or not class_status:
-                raise forms.ValidationError(_("You need to enter your major, gender and class status if you wan't to receive Invitations"))
+        if can_be_invited and (not major or not gender or not class_status):
+            raise forms.ValidationError(_("Please enter your major, gender and class status to receive invitations"))
 
         return data
+
 
 class ExperimenterAccountForm(forms.ModelForm):
     class Meta:
@@ -133,8 +146,11 @@ class ExperimenterAccountForm(forms.ModelForm):
         exclude = ('user',)
 
 email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
+
+
 class EmailListField(forms.CharField):
     widget = forms.Textarea
+
     def clean(self, value):
         super(EmailListField, self).clean(value)
         lines = value.split('\n')
@@ -162,17 +178,25 @@ class EmailListField(forms.CharField):
             emails.append(line)
         return emails
 
+
 class RegisterParticipantsForm(forms.Form):
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
-    start_date = forms.DateField(required=False, widget=BootstrapDateInput(), help_text=_('The date this experiment will start, used for multi-day experiments with daily rounds'))
-    experiment_password = forms.CharField(required=False, min_length=3, help_text=_('Participants will login to the experiment using this password'), initial='test')
+    start_date = forms.DateField(required=False, widget=BootstrapDateInput(),
+                                 help_text=_('''Date this experiment should activate and start.
+                                 Used for multi-day experiments with daily rounds'''))
+    experiment_password = forms.CharField(required=False, min_length=3,
+                                          help_text=_('''Participant password to login to the experiment.
+                                           If blank, a password will be autogenerated for each participant.'''))
     institution = forms.CharField(min_length=3, label="Institution name",
-            required=False, initial='Arizona State University',
-            widget=autocomplete_light.TextWidget(InstitutionAutocomplete),
-            help_text=_('Institution to associate with these participants'))
-    registration_email_subject = forms.CharField(min_length=3, label="Email subject", help_text=_('Subject line for registration email'), initial='VCWEB experiment registration')
+                                  required=False, initial='Arizona State University',
+                                  widget=autocomplete_light.TextWidget(InstitutionAutocomplete),
+                                  help_text=_('Institution to associate with these participants'))
+    registration_email_from_address = forms.EmailField(widget=EmailInput(), label=_('Sender email'),
+                                                       help_text=_("Email address to use in the from field of the registration email"))
+    registration_email_subject = forms.CharField(min_length=3, label="Email subject",
+                                                 help_text=_('Subject line for the registration email'))
     registration_email_text = forms.CharField(required=False, widget=forms.Textarea, label="Email body")
-    sender = forms.CharField(required=False, initial="The vcweb Development Team")
+    sender = forms.CharField(required=False, initial="The vcweb development team")
 
     def clean_institution(self):
         institution_name = self.cleaned_data.get('institution').strip()
@@ -187,32 +211,38 @@ class RegisterParticipantsForm(forms.Form):
 
 class RegisterTestParticipantsForm(RegisterParticipantsForm):
     username_suffix = forms.CharField(min_length=1, initial='asu',
-            help_text=_('''Appended to every generated username before the "@" symbol, e.g., s1asu@foo.com'''))
+                                      help_text=_('''Appended to every generated username before the "@" symbol, e.g., s1asu@foo.com'''))
     email_suffix = forms.CharField(min_length=3, initial='mailinator.com',
-            help_text=_('''
-            An email suffix without the "@" symbol.  Generated participants will have usernames of the format
-            s1<username_suffix>@<email_suffix>..sn<username_suffix>@<email_suffix>.  For example, if you register 20
-            participants with a username suffix of asu and an email suffix of mailinator.com, the system will generate
-            20 participants with usernames ranging from s1asu@mailinator.com, s2asu@mailinator.com,
-            s3asu@mailinator.com, ... s20asu@mailinator.com.
-            '''))
+                                   help_text=_('''An email suffix without the "@" symbol.  Generated participants will
+                                    receive usernames of s1<username_suffix>@<email_suffix>..sn<username_suffix>@<email_suffix>.
+                                    For example, if you register 20 participants with a username suffix of asu and an
+                                    email suffix of mailinator.com, the system will generate 20 participants with
+                                    usernames ranging from s1asu@mailinator.com, s2asu@mailinator.com,
+                                    s3asu@mailinator.com, ... s20asu@mailinator.com.'''))
     number_of_participants = forms.IntegerField(min_value=2, initial=10, widget=NumberInput(attrs={'min': 2}))
 
+
 class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
-    participant_emails = EmailListField(label="Participant emails", help_text=_('A newline delimited list of emails to register as participants for this experiment.'))
+    participant_emails = EmailListField(label="Participant emails",
+                                        help_text=_('A newline delimited list of participant emails to register for this experiment.'))
+
 
 class RegisterExcelParticipantsForm(RegisterParticipantsForm):
     file = forms.FileField()
+
 
 class ChatForm(forms.Form):
     message = forms.CharField()
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
     target_participant_group_id = forms.IntegerField(widget=forms.HiddenInput, required=False)
+
     def clean_message(self):
         return self.cleaned_data['message']
 
+
 class ParticipantGroupIdForm(forms.Form):
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
+
 
 class GeoCheckinForm(forms.Form):
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
@@ -223,6 +253,7 @@ class GeoCheckinForm(forms.Form):
     altitudeAccuracy = forms.FloatField(required=False)
     heading = forms.FloatField(required=False)
     speed = forms.FloatField(required=False)
+
 
 class BookmarkExperimentMetadataForm(forms.Form):
     experiment_metadata_id = forms.IntegerField()
@@ -250,14 +281,17 @@ class ExperimentActionForm(forms.Form):
     experiment_id = forms.IntegerField(widget=forms.HiddenInput)
     experimenter_id = forms.IntegerField(widget=forms.HiddenInput)
 
+
 class LikeForm(forms.Form):
     target_id = forms.IntegerField(widget=forms.HiddenInput)
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
+
 
 class CommentForm(forms.Form):
     message = forms.CharField(max_length=512)
     target_id = forms.IntegerField(widget=forms.HiddenInput)
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
+
 
 class LogMessageForm(forms.Form):
     log_levels = [(getattr(logging, levelName), levelName) for levelName in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')]
@@ -270,10 +304,12 @@ class LogMessageForm(forms.Form):
             return level
         raise ValidationError(_("invalid log level %s" % level))
 
+
 class SingleIntegerDecisionForm(forms.Form):
     integer_decision = forms.IntegerField(required=True, min_value=0)
     participant_group_id = forms.IntegerField(required=True, widget=forms.widgets.HiddenInput)
     submitted = forms.BooleanField(required=False, widget=forms.widgets.HiddenInput)
+
 
 class QuizForm(forms.Form):
     name_question = forms.CharField(max_length=64, label=_("What is your name?"))

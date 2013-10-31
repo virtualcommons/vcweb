@@ -765,7 +765,7 @@ class Experiment(models.Model):
                 subject = 'VCWEB experiment registration for %s' % self.display_name
         return subject
 
-    def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None):
+    def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None, from_email=None):
         number_of_participants = self.participant_set.count()
         if number_of_participants > 0:
             logger.warning("This experiment %s already has %d participants - aborting", self, number_of_participants)
@@ -804,19 +804,21 @@ class Experiment(models.Model):
         for user in users:
             # FIXME: unsafe for concurrent usage, but only one experimenter at a time should be invoking this
             (p, created) = Participant.objects.get_or_create(user=user)
-            # FIXME: instead of asking for the email suffix, perhaps we just append the institution URL to keep it simpler?
+            # FIXME: instead of asking for the email suffix, just append the institution URL to keep it simpler?
             if institution and p.institution != institution:
                 p.institution = institution
                 p.save()
-            per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self, created_by=self.experimenter.user)
-            email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created, sender=sender))
+            per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self,
+                                                                   created_by=self.experimenter.user)
+            email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created,
+                                                                 sender=sender, from_email=from_email))
         if email_messages:
             mail.get_connection().send_messages(email_messages)
 
-    def create_registration_email(self, participant_experiment_relationship, password='', sender=None, **kwargs):
+    def create_registration_email(self, participant_experiment_relationship, password='', sender=None, from_email=None, **kwargs):
         """
         Creates a registration email, sets a password for the given participant_experiment_relationship, and sends it to
-        in plain text. Totally insecure but convenient for lowering barrier to participant recruitment.
+        in plain text. Totally insecure but convenient for lowering barrier to participant registration.
 
         Override the email template by creating <experiment-namespace>/email/experiment-registration.(txt|html) templates
         """
@@ -843,9 +845,11 @@ class Experiment(models.Model):
         html_content = html_template.render(c)
         subject = self.get_registration_email_subject()
         experimenter_email = self.experimenter.email
+        if from_email is None or not from_email.strip():
+            from_email = experimenter_email
         to_address = [participant_experiment_relationship.participant.email]
         bcc_address = [experimenter_email]
-        msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address, bcc_address)
+        msg = EmailMultiAlternatives(subject, plaintext_content, from_email, to_address, bcc_address)
         msg.attach_alternative(html_content, "text/html")
         return msg
 
@@ -886,12 +890,14 @@ class Experiment(models.Model):
             logger.debug("Aborting, round configuration isn't set to initialize data values")
             return
         elif round_configuration.is_repeating_round and self.current_repeated_round_sequence_number > 0:
-            logger.debug("ignoring initialize data values for repeating round # %d", self.current_repeated_round_sequence_number)
+            logger.debug("ignoring for repeating round %d", self.current_repeated_round_sequence_number)
             return
 
-        logger.debug("initializing data values on round data %s:\n[participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", round_data, participant_parameters, group_parameters, group_cluster_parameters)
+        logger.debug("[participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", round_data,
+                     participant_parameters, group_parameters, group_cluster_parameters)
         parameter_defaults = defaultdict(dict)
-        # defaults map parameter model instances to their default initial value, e.g., { footprint-level-parameter: 1, resource-level-parameter: 100 }
+        # defaults map parameter model instances to their default initial value, e.g.,
+        # { footprint-level-parameter: 1, resource-level-parameter: 100 }
         for parameter in itertools.chain(participant_parameters, group_parameters, group_cluster_parameters):
             if parameter in defaults:
                 parameter_defaults[parameter] = { parameter.value_field_name: defaults[parameter] }
@@ -907,7 +913,9 @@ class Experiment(models.Model):
                     logger.debug("gcdv: %s (%s)", gcdv, created)
         for group in self.groups:
             for parameter in group_parameters:
-                group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data, group=group, parameter=parameter, defaults=parameter_defaults[parameter])
+                group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data,
+                                                                                      group=group, parameter=parameter,
+                                                                                      defaults=parameter_defaults[parameter])
                 logger.debug("grdv: %s (%s)", group_data_value, created)
             if participant_parameters:
                 for pgr in group.participant_group_relationship_set.all():

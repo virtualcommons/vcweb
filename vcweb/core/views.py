@@ -478,6 +478,17 @@ def upload_excel_participants_file(request):
 
 class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView):
 
+    def get_initial(self):
+        _initial = super(BaseExperimentRegistrationView, self).get_initial()
+        experiment = self.object
+        _initial.update(
+                registration_email_from_address=experiment.experimenter.email,
+                experiment_password=experiment.authentication_code,
+                registration_email_subject=experiment.registration_email_subject,
+                registration_email_text=experiment.registration_email_text
+                )
+        return _initial
+
     def form_valid(self, form):
         experiment = self.object
         experiment.authentication_code = form.cleaned_data.get('experiment_password')
@@ -485,6 +496,9 @@ class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView
             setattr(experiment, field, form.cleaned_data.get(field))
         experiment.save()
         return super(BaseExperimentRegistrationView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('core:monitor_experiment', kwargs={'pk': self.object.pk})
 
 
 class RegisterEmailListView(BaseExperimentRegistrationView):
@@ -496,15 +510,13 @@ class RegisterEmailListView(BaseExperimentRegistrationView):
         emails = form.cleaned_data.get('participant_emails')
         institution = form.cleaned_data.get('institution')
         sender = form.cleaned_data.get('sender')
+        from_email = form.cleaned_data.get('registration_email_from_address')
         experiment = self.object
         logger.debug("registering participants %s at institution %s for experiment: %s", emails, institution, experiment)
         experiment.register_participants(emails=emails, institution=institution,
                                          password=experiment.authentication_code,
-                                         sender=sender)
+                                         sender=sender, from_email=from_email)
         return valid
-
-    def get_success_url(self):
-        return reverse('core:monitor_experiment', kwargs={'pk': self.object.pk})
 
 
 class RegisterTestParticipantsView(BaseExperimentRegistrationView):
@@ -523,9 +535,6 @@ class RegisterTestParticipantsView(BaseExperimentRegistrationView):
                                            email_suffix=email_suffix,
                                            username_suffix=username_suffix)
         return valid
-
-    def get_success_url(self):
-        return reverse('core:monitor_experiment', kwargs={'pk': self.object.pk})
 
 # FIXME: these last two use GET (which should be idempotent) to modify database state which makes HTTP sadful
 class CloneExperimentView(ExperimenterSingleExperimentView):
