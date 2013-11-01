@@ -222,7 +222,8 @@ def send_invitations(request):
 
         return JsonResponse(dumps({
             'success': True,
-            'message': message
+            'message': message,
+            'invitesCount': potential_participants_count
         }))
     else:
         logger.debug("Form is not valid")

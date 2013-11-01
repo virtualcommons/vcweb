@@ -186,7 +186,7 @@ Experiment Session Management
                                     <span class="label label-info session-label">Invites: </span>
                                 </td>
                                 <td>
-                                    <span class="badge invite-badge" data-bind="text: inviteCount">0</span>
+                                    <span class="badge invite-badge" data-bind="text: invitesSent">0</span>
                                 </td>
                                 <td data-bind="if: active">
                                     <input type="button" class="btn btn-danger" value="Remove" data-bind="click: $root.removeSession" />
@@ -236,7 +236,6 @@ Experiment Session Management
 
             function SessionModel(sessionData, options) {
                 var self = this;
-                console.log(sessionData.location);
                 self.pk = ko.observable(sessionData.pk);
                 self.selected_experiment_metadata_pk = ko.observable(sessionData.experiment_metadata.pk);
                 self.startDate = ko.observable(options.newSession ? new Date(new Date().getTime() + 24 * 60 * 60 * 1000) : new Date(sessionData.startDate));
@@ -247,7 +246,7 @@ Experiment Session Management
                 self.endMin = ko.observable(sessionData.endMin);
                 self.capacity = ko.observable(sessionData.capacity);
                 self.location = ko.observable(sessionData.location);
-                self.inviteCount = ko.observable(sessionData.invite_count);
+                self.invitesSent = ko.observable(sessionData.invite_count);
                 self.editable = ko.observable(options.newSession);
                 self.active = ko.computed( function() {
                     var yesterdayTimestamp = new Date().getTime() - (24 * 60 * 60 * 1000);
@@ -379,11 +378,15 @@ Experiment Session Management
                                     model.inviteCount(0);
                                     $("#error-messages").html('<div class="alert alert-success"><strong>Well done! </strong>'+ result.message + '</strong></div>');
                                     $('#invite-form form')[0].reset();
+
+                                    ko.utils.arrayForEach(model.session_list(), function(session) {
+                                        if($.inArray(session.pk(), session_pk_list) >= 0 ){
+                                            session.invitesSent(session.invitesSent() + result.invitesCount);
+                                        }
+                                    });
                                 } else {
                                     $("#error-messages").html('<div class="alert alert-danger"><strong>' + result.message + '</strong></div>');
                                 }
-
-                                console.log(model.session_list)
                             }
                         });
                     }
