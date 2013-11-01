@@ -20,7 +20,7 @@ def sessionListView(request):
     experimenter = request.user.experimenter
     data = ExperimentSession.objects.filter(creator=request.user)
     experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.bookmarked(experimenter)]
-    logger.debug(experiment_metadata_list)
+    #logger.debug(experiment_metadata_list)
     session_list = [{
         "pk": session.pk,
         "experiment_metadata": session.experiment_metadata,

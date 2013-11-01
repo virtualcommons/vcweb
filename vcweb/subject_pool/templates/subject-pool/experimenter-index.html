@@ -260,6 +260,10 @@ Experiment Session Management
 
                 self.onSave = function(formElement) {
                     var formData;
+
+                    if(formElement.elements["start_date"].value > formElement.elements["end_date"].value){
+                       alert("ERROR: End date cannot be earlier than the Start date. Please choose a later end date.");
+                    }else
                     if(formElement.elements["pk"].value == -1){
                         formData = $(formElement).serialize()  + '&request_type=create';
                     } else {
