@@ -1,4 +1,3 @@
-from django.core.serializers import json
 from django.shortcuts import render
 from vcweb.core.models import ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation, Institution
 from vcweb.core.decorators import experimenter_required
@@ -258,40 +257,33 @@ def get_unlikely_participants(days_threshold, experiment_metadata_pk):
 
     return list(set(filtered_list) | set(filtered_list1))
 
+
 def update_participant_attendance(request):
-    if request.is_ajax():
-        try:
-            data = request.POST
-            #logger.debug(data)
-            dataDict = dict(data.iterlists())
 
-            pk_list = dataDict.get('pk')
-            attendance_list = dataDict.get('session-attendance')
-            #logger.debug(pk_list)
-            #logger.debug(attendance_list)
+        pk_list = request.POST.get('pk_list')
+        pk_list = pk_list.split(",")
+        attendance_list = request.POST.get('attendance_list').split(",")
+        #logger.debug(pk_list)
+        #logger.debug(attendance_list)
 
-            if len(pk_list) == len(attendance_list):
-                for x in xrange(len(pk_list)):
-                    ps = ParticipantSignup.objects.get(pk=pk_list[x])
-                    #logger.debug(ps.attendance)
-                    ps.attendance = int(attendance_list[x])
-                    #logger.debug(ps.attendance)
-                    if ps.attendance != 3:
-                        ps.save()
-                message = "Attendance Info has been saved."
-
-                return JsonResponse(dumps({
-                    'success': True,
-                    'message': message
-                }))
-        except KeyError:
-            #logger.debug("OH NO U FAIL")
-            message = "Something went wrong.... Please try again."
+        if len(pk_list) == len(attendance_list):
+            ps = ParticipantSignup.objects.filter(pk__in=pk_list)
+            index = 0
+            for p in ps:
+                p.attendance = int(attendance_list[index])
+                index += 1
+                #logger.debug(p.attendance)
+                p.save()
+            message = "Attendance Info has been saved."
 
             return JsonResponse(dumps({
-                    'success': False,
-                    'message': message
-                }))
+                'success': True,
+                'message': message
+            }))
 
+        message = "Something went wrong.... Please try again."
 
-
+        return JsonResponse(dumps({
+                'success': False,
+                'message': message
+            }))

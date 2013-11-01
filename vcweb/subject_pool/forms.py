@@ -1,6 +1,5 @@
 from django import forms
-from django.forms import widgets, ValidationError
-from vcweb.core.models import ExperimentSession
+from django.forms import widgets
 from django.utils.translation import ugettext_lazy as _
 
 import logging
@@ -50,14 +49,8 @@ class SessionForm(forms.Form):
         return data
 
 
-# class SessionDetailForm(forms.ModelForm):
-#     class Meta:
-#         model = ExperimentSession
-#         fields = ('experiment_metadata', 'date_created', 'scheduled_date', 'scheduled_end_date', 'capacity')
-#
-
 class SessionInviteForm(forms.Form):
-    no_of_people = forms.IntegerField(widgets.TextInput())
-    invitation_subject = forms.CharField(widgets.TextInput())
-    invitation_text = forms.CharField(widgets.Textarea())
+    no_of_people = forms.IntegerField()
+    invitation_subject = forms.CharField()
+    invitation_text = forms.CharField()
     session_pk_list = forms.CharField()

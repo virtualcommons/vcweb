@@ -54,7 +54,6 @@
 {% block javascript %}
     {{ block.super }}
     <script type="text/javascript" charset="utf8" src="//ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>
-    <script type= "text/javascript" src="{{ STATIC_URL }}js/underscore-min.js"></script>
 
     <script type="text/javascript">
         var participant_list = $.parseJSON("{{ participants | escapejs }}");
@@ -65,10 +64,11 @@
                 var model = ko.mapping.fromJS(participant_list);
 
                 self.onSave = function(formElement) {
-                    //data = $("#participant-info").find("table tbody tr").map(function(){ return {'pk': $('input[type=hidden]',this).val(), 'attendance':$('select',this).val()} }).get();
-                    data = $(formElement).serializeArray();
+                    var participantSignupPK = $("#participant-info").find("table tbody tr input[type=hidden]").map(function(){ return this.value }).get();
+                    var participantAttendance = $("#participant-info").find("table tbody tr select").map(function(){ return this.value }).get();
+
                     $.ajax("/subject-pool/session/attendance", {
-                        data: data,
+                        data: 'pk_list='+ participantSignupPK + '&attendance_list=' + participantAttendance,
                         type: "POST",
                         success: function(result) {
                             if(result.success) {
