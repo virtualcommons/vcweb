@@ -631,29 +631,36 @@ def download_data(request, pk=None, file_type='csv'):
             writer.writerow([group.pk, group.number, group.session_id, pgr.pk, pgr.participant.email])
         # emit participant and group round data value tuples
     writer.writerow(
-        ['Round', 'Participant ID', 'Participant Number', 'Group ID', 'Data Parameter', 'Data Parameter Value',
-         'Created On', 'Last Modified'])
+        ['Round', 'Participant ID', 'Participant Number', 'Group ID', 'Parameter', 'Value',
+         'Creation Date', 'Creation Time', 'Last Modified Date', 'Last Modified Time'])
     for round_data in experiment.round_data_set.select_related('round_configuration').all():
         # emit all participant data values
+        round_number = round_data.round_number
         for data_value in round_data.participant_data_value_set.select_related(
                 'participant_group_relationship__group').all():
             pgr = data_value.participant_group_relationship
+            dc = data_value.date_created
+            lm = data_value.last_modified
             writer.writerow(
-                [round_data.round_number, pgr.pk, pgr.participant_number, pgr.group.pk, data_value.parameter.label,
-                 data_value.value, data_value.date_created, data_value.last_modified])
+                [round_number, pgr.pk, pgr.participant_number, pgr.group.pk, data_value.parameter.label,
+                 data_value.value, dc.date(), dc.time(), lm.date(), lm.time()
+                 ])
             # write out all chat messages
         chat_messages = ChatMessage.objects.filter(round_data=round_data)
         if chat_messages.count() > 0:
             for chat_message in chat_messages.order_by('participant_group_relationship__group', 'date_created'):
                 pgr = chat_message.participant_group_relationship
-                writer.writerow([round_data.round_number, pgr.pk, pgr.participant_number, pgr.group.pk, "Chat Message",
-                                 chat_message.string_value,
-                                 chat_message.date_created, chat_message.last_modified])
+                dc = chat_message.date_created
+                lm = chat_message.last_modified
+                writer.writerow([round_number, pgr.pk, pgr.participant_number, pgr.group.pk, "Chat Message",
+                                 chat_message.string_value, dc.date(), dc.time(), lm.date(), lm.time()])
             # write out group round data
         logger.debug("writing out group round data")
         for data_value in round_data.group_data_value_set.select_related('group').all():
-            writer.writerow([round_data.round_number, '', '', data_value.group.pk, data_value.parameter.label,
-                             data_value.value, data_value.date_created, data_value.last_modified])
+            dc = data_value.date_created
+            lm = chat_message.last_modified
+            writer.writerow([round_number, '', '', data_value.group.pk, data_value.parameter.label,
+                             data_value.value, dc.date(), dc.time(), lm.date(), lm.time()])
 
     return response
 
