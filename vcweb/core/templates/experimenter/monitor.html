@@ -4,7 +4,7 @@
 {% endblock %}
 {% block page %}
 {{block.super}}
-<h3>{{experiment}}</h3>
+<h3><span data-bind='if: isArchived'><span style='padding: 8px; -webkit-border-radius: 3px; border-radius: 3px; -moz-border-radius: 3px; border: 1px solid #fbeed5;' class='alert-success'><i class='icon-save'></i> ARCHIVED</span> </span> {{experiment}}</h3>
 <div class='row-fluid'>
     <div class='span6'>
         <div class='alert alert-white' data-bind='visible: isActive'>
@@ -29,11 +29,6 @@
                         <i class='icon-circle-arrow-up'></i> restart experiment</a>
                     <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment and disables participant logins.'><i class='icon-off'></i> deactivate</a>
                 </div>
-            </div>
-        </div>
-        <div data-bind='if: isArchived()'>
-            <div class='alert alert-success'>
-                <i class='icon-save'></i> This experiment has been archived.
             </div>
         </div>
         <div data-bind="ifnot: isActive() || isArchived()">
@@ -64,6 +59,17 @@
             <div><span data-bind='text:roundStatusLabel'></span></div>
             <div>Round started on: <span data-bind='text:currentRoundStartTime'></span></div>
             <div>Time remaining: <span data-bind='text:timeRemaining'></span></div>
+            {% comment %}
+            FIXME: might want to put this functionality into each round data object
+            {% endcomment %}
+            <form id="experimenterNotesForm" class='form-inline'>
+                <div class='control-group'>
+                    <div class='controls'>
+                        <textarea style='resize: vertical' class='input-block-level' id='experimenterNotesText' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
+                        <button id='submitExperimenterNotesButton' class='btn btn-primary' type='submit' data-bind='click: saveExperimenterNotes'>Save</button>
+                    </div>
+                </div>
+            </form>
         </div>
         <div class='accordion-group'>
                 <div class='accordion-heading'>
@@ -102,28 +108,21 @@
                 <li><a href='export/configuration.json'><i class='icon-pencil'></i> json</a></li>
             </ul>
             {% endcomment %}
-            <a class='btn btn-danger' data-bind='css: { disabled: isArchived}, click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i> archive</a>
+            <div data-bind='ifnot: isArchived'>
+                <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i>
+                    archive</a>
+            </div>
         </div>
     </div>
     <div class='span6'>
         <div style='padding-right: 8px;' class='alert alert-messages'>
             <h4>EXPERIMENT LOG</h4>
-            <div  id='experiment-messages' data-bind='foreach: messages'>
+            <div id='experiment-messages' data-bind='foreach: messages'>
                 <div>
                     <span data-bind='text: $data'></span>
                 </div>
             </div>
         </div>
-        {% comment %}
-        FIXME: might want to put this functionality into each round data object
-        {% endcomment %}
-        <h4>Experimenter Notes (<span data-bind='text: roundSequenceLabel'></span>)</h4>
-        <form id="experimenterNotesForm" class='form-inline'>
-            <div class='controls'>
-                <textarea class='input-block-level' id='experimenterNotesText' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
-                <button id='submitExperimenterNotesButton' class='btn btn-primary' type='submit' data-bind='click: saveExperimenterNotes'>Save</button>
-            </div>
-        </form>
     </div>
 </div>
 <h3>Experiment Data</h3>
