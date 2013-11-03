@@ -92,6 +92,22 @@ def _render_experiment_monitor_block(block, experiment, request):
 
 @experimenter_required
 @dajaxice_register(method='POST')
+def archive(request, experiment_id):
+    experiment = _get_experiment(request, experiment_id)
+    experiment.complete()
+    return JsonResponse(dumps({'success': True, 'experiment': experiment.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))}))
+
+
+@experimenter_required
+@dajaxice_register(method='POST')
+def clear_participants(request, experiment_id):
+    experiment = _get_experiment(request, experiment_id)
+    experiment.clear_participants()
+    return JsonResponse(dumps({'success': True, 'experiment': experiment.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))}))
+
+
+@experimenter_required
+@dajaxice_register(method='POST')
 def clone_experiment(request, experiment_id):
     logger.debug("cloning experiment %s", experiment_id)
     experiment = get_object_or_404(Experiment, pk=experiment_id)

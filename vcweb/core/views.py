@@ -152,6 +152,11 @@ def dashboard(request):
                   {'dashboardViewModelJson': dashboard_view_model.to_json()})
 
 
+@login_required
+def get_dashboard_view_model(request):
+    return JsonResponse(dumps({ 'success': True, 'dashboardViewModelJson': DashboardViewModel(request.user).to_json()}))
+
+
 def set_authentication_token(user, authentication_token=''):
     commons_user = None
     if is_participant(user):

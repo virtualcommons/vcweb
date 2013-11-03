@@ -416,7 +416,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
         return u"%s %s" % (self.name, self.experiment_metadata)
 
     class Meta:
-        ordering = ['experiment_metadata', 'creator', 'date_created']
+        ordering = ['experiment_metadata', 'creator', '-date_created']
 
 
 class ExperimentQuerySet(models.query.QuerySet):

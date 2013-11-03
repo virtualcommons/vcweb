@@ -40,13 +40,15 @@
 
         <div class='tab-pane active' id='running'>
             <div data-bind='if: runningExperiments().length === 0'>
-                You currently don't have any active experiments - would you like to <a href='#start' data-bind='click: activateStartExperimentTab'>create a new one?</a>.
+                <div class='alert alert-message'>
+                    No active experiments, <a href='#start' data-bind='click: activateStartExperimentTab'>start a new one?</a>.
+                </div>
             </div>
             <div data-bind='template: { name: "experiment-controller-template", foreach: runningExperiments }'></div>
         </div>
         <div class='tab-pane' id='archived'>
-            <div data-bind='if: archivedExperiments().length == 0'>
-                No archived experiments.
+            <div data-bind='if: archivedExperiments().length === 0'>
+                <div class='alert alert-message'>No archived experiments.</div>
             </div>
             <div data-bind='template: { name: "experiment-controller-template", foreach: archivedExperiments }'></div>
         </div>
@@ -59,7 +61,7 @@
     <h4><span data-bind='text: status_line'></span> <span class='pull-right'><span data-bind='text: participantCount' class='badge badge-important'></span> participants</span></h4>
     <div class='btn-group'>
         <a class='btn' data-bind='attr: { href: monitor_url }'><i class='icon-zoom-in'></i> monitor</a>
-        <button class='btn confirm-experiment-action' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
+        <button class='btn' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
             data-bind='click: $root.cloneExperiment'><i class='icon-copy'></i> clone</button>
         <button class='btn' data-content='Register participants for this experiment with actual email addresses'
             data-bind='enable: $root.canRegisterParticipants($data), click: $root.gotoExperimentUrl.bind($data, "register-email-list")'>
@@ -68,24 +70,33 @@
             data-bind='enable: $root.canRegisterParticipants($data), click: $root.gotoExperimentUrl.bind($data, "register-test-participants")'>
             <i class='icon-group'></i> test participants</button>
         <button data-content='Remove all participants from the experiment, including any data they may have generated.'
-            data-bind='enable: $root.canClearParticipants($data), attr: {href: $root.controllerUrl($data, "clear-participants")}' class='btn confirm-experiment-action'>
+            data-action='clear-participants'
+            data-bind='enable: $root.canClearParticipants($data), click: $root.clearParticipants' class='btn'>
             <i class='icon-trash'></i> clear all participants</button>
         <button data-action='complete' data-content='Archive and mark this experiment as completed'
-            data-bind='disable: isArchived, attr: {href: $root.controllerUrl($data, "archive")}' class='btn confirm-experiment-action'><i class='icon-save'></i> archive</button>
+            data-bind='disable: isArchived, click: $root.archive' class='btn'><i class='icon-save'></i> archive</button>
         <button data-action='deactivate' data-content='Flag this experiment as inactive'
-            data-bind='disable: isArchived, attr: { href: $root.controllerUrl($data, "deactivate")}' class='btn confirm-experiment-action'><i class='icon-off'></i> deactivate</button>
+            data-bind='disable: isArchived, click: $root.deactivate' class='btn'><i class='icon-off'></i> deactivate</button>
     </div>
 </div>
 </script>
 {{ block.super }}
 <script type='text/javascript'>
-    var dashboardViewModelJson = $.parseJSON("{{ dashboardViewModelJson|escapejs }}");
+    var viewModelObject = $.parseJSON("{{ dashboardViewModelJson|escapejs }}");
     $(function() {
-        function DashboardViewModel(dashboardViewModelJson) {
+        function DashboardViewModel(viewModelObject) {
             var self = this;
-            var model = ko.mapping.fromJS(dashboardViewModelJson);
+            var model = ko.mapping.fromJS(viewModelObject);
             model.activateStartExperimentTab = activateTabFunctor('#start');
             model.activatePendingExperimentsTab = activateTabFunctor('#pending');
+            model.refreshViewModel = function() {
+                $.get('api/dashboard', function(response) {
+                    if (response.success) {
+                        console.debug(response.dashboardViewModel);
+                        ko.mapping.fromJSON(response.dashboardViewModelJson, model);
+                    }
+                });
+            }
             model.sortedExperimentMetadataList = ko.computed(function() {
                 return model.experimentMetadataList.sort(function(a, b) {
                     if (a.bookmarked() && b.bookmarked()) {
@@ -115,6 +126,21 @@
                     }
                 });
             }
+            model.confirmExperimentAction = function(experimentModel, event) {
+                console.debug(experimentModel);
+                var btn = $(event.target);
+                var description = btn.attr("data-content");
+                var controllerAction = btn.attr("data-action");
+                if (btn.hasClass('disabled')) {
+                    console.debug("clicked on disabled button, ignoring");
+                    return false;
+                }
+                bootbox.confirm(description + ". Continue?", function(confirmed) {
+                    if (confirmed) {
+                        Dajaxice.vcweb.core.experiment_controller(function (data) {ko.mapping.fromJS(data.dashboardViewModel);}, { action: controllerAction });
+                    }
+                });
+            }
             model.gotoExperimentUrl = function(urlAction, experimentModel) {
                 var url = model.controllerUrl(experimentModel, urlAction);
                 window.location = url;
@@ -129,12 +155,30 @@
                     model.activatePendingExperimentsTab();
                 }
             }
-            model.createNewExperiment = function(configurationModel) {
-                Dajaxice.vcweb.core.create_experiment(pendingExperimentCallback, { experiment_configuration_id: configurationModel.pk() });
-
+            function modifyExperimentCallback(experimentModel) {
+                return function(data) {
+                    console.debug("updating experiment model from");
+                    console.debug(experimentModel);
+                    console.debug("to");
+                    console.debug(data.experiment);
+                    model.refreshViewModel();
+                }
             }
-            model.cloneExperiment = function(experimentModel) {
+            // FIXME: get rid of code duplication 
+            model.createNewExperiment = function(configurationModel, event) {
+                Dajaxice.vcweb.core.create_experiment(pendingExperimentCallback, { experiment_configuration_id: configurationModel.pk() });
+            }
+            model.cloneExperiment = function(experimentModel, event) {
                 Dajaxice.vcweb.core.clone_experiment(pendingExperimentCallback, { experiment_id: experimentModel.pk() });
+            }
+            model.clearParticipants = function(experimentModel, event) {
+                Dajaxice.vcweb.core.clear_participants(modifyExperimentCallback(experimentModel), { experiment_id: experimentModel.pk() });
+            }
+            model.archive = function(experimentModel, event) {
+                Dajaxice.vcweb.core.archive(modifyExperimentCallback(experimentModel), { experiment_id: experimentModel.pk() });
+            }
+            model.deactivate = function(experimentModel, event) {
+                Dajaxice.vcweb.core.deactivate(modifyExperimentCallback(experimentModel), { experiment_id: experimentModel.pk() });
             }
             model.modify = function() {
                 console.debug("modify existing configuration");
@@ -148,25 +192,8 @@
 
             return model;
         }
-        var model = new DashboardViewModel(dashboardViewModelJson);
+        var model = new DashboardViewModel(viewModelObject);
         ko.applyBindings(model);
-        // FIXME: rework this so that we make proper ajax posts on confirmation instead of get requests that modify
-        // experiment state.
-        $('a.confirm-experiment-action').click(function(evt) {
-            evt.preventDefault();
-            var self = $(this);
-            var description = self.attr("data-content");
-            var href = self.attr("href");
-            if (self.hasClass('disabled')) {
-                return false;
-            }
-            bootbox.confirm(description + "  Continue?", function(confirmed) {
-                if (confirmed) {
-                    window.location = self.attr("href");
-                }
-            });
-            return false;
-        });
     });
 </script>
 {% endblock %}

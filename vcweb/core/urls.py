@@ -4,7 +4,7 @@ from vcweb import settings
 from vcweb.core.views import (dashboard, LoginView, LogoutView, RegistrationView, monitor,
         RegisterEmailListView, RegisterTestParticipantsView, completed_survey, toggle_bookmark_experiment_metadata,
         check_survey_completed, Participate, download_data, export_configuration, api_logger, participant_api_login,
-        api_logout, participant_ready, check_ready_participants)
+        api_logout, participant_ready, check_ready_participants, get_dashboard_view_model, )
 import logging
 import urllib
 
@@ -43,6 +43,7 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'api/log/(?P<participant_group_id>\d+)$', api_logger, name='api-logger'),
     url(r'api/login', participant_api_login, name='participant_api_login'),
     url(r'api/logout', api_logout, name='api_logout'),
+    url(r'api/dashboard', get_dashboard_view_model, name='dashboard_view_model'),
     )
 
 def foursquare_auth_dict(**kwargs):
