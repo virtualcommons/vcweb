@@ -658,7 +658,7 @@ def download_data(request, pk=None, file_type='csv'):
         logger.debug("writing out group round data")
         for data_value in round_data.group_data_value_set.select_related('group').all():
             dc = data_value.date_created
-            lm = chat_message.last_modified
+            lm = data_value.last_modified
             writer.writerow([round_number, '', '', data_value.group.pk, data_value.parameter.label,
                              data_value.value, dc.date(), dc.time(), lm.date(), lm.time()])
 
