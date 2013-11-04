@@ -308,7 +308,7 @@ def update_active_experiments(sender, time=None, start_date=None, send_emails=Tr
     if start_date is None:
         start_date = date.today() - timedelta(1);
     active_experiments = get_active_experiments()
-    logger.debug("updating active level based experiments [%s] for %s", active_experiments, start_date)
+    logger.debug("updating active based experiments [%s] for %s", active_experiments, start_date)
     all_messages = []
     for experiment in active_experiments:
         round_data = experiment.current_round_data
@@ -637,7 +637,7 @@ def get_activity_availability_cache():
 def do_activity(activity, participant_group_relationship):
     round_data = participant_group_relationship.current_round_data
     if activity.is_available_for(participant_group_relationship, round_data):
-        logger.debug("performing available activity %s", activity)
+        logger.debug("pgr %d performing available activity %s", participant_group_relationship.pk, activity)
         return ParticipantRoundDataValue.objects.create(parameter=get_activity_performed_parameter(),
                                                         participant_group_relationship=participant_group_relationship,
                                                         round_data=round_data,
