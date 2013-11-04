@@ -40,8 +40,10 @@
                 <p>
                     <i class='lighterprints-green icon-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by
                     performing challenges.
-                    <span data-bind='if: hasScheduledActivities'>Your goal is to 
-                        your <b>group's average points per person</b>, shown in the <b>Group Score box</b>, reaches <span data-bind='text: pointsToNextLevel'></span>.</span>
+                    <span data-bind='if: hasScheduledActivities'>
+                        Your goal is to have your <b>group's average points per person</b>, shown in the <b>Group Score
+                        box</b>, reach <span data-bind='text: pointsToNextLevel'></span>.
+                    </span>
                     <span data-bind='ifnot: hasScheduledActivities'>Rank up by <b>increasing your group's score, shown in the Group Score box.</b></span>
                 </p>
                 <p>
@@ -121,7 +123,6 @@
         <div class='tab-pane' id='challenges'>
             <h1 class='header'><i class='icon-star'></i> Challenges</h1>
             <div class='alert alert-block alert-white'>
-                <button type="button" class="close" data-dismiss="alert"><i class='icon-remove-sign'></i></button>
                 <h2>Complete challenges to earn green points.</h2>
                 <p data-bind='if: hasScheduledActivities'>
                 Different challenges are available at different times and days. In order to maximize your chances at
