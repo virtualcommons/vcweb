@@ -77,9 +77,9 @@ def update_session(request):
             'success': True,
             'session': es
         }))
-
     return JsonResponse(dumps({
-        'success': False
+        'success': False,
+        'message': form.errors
     }))
 
 
@@ -158,6 +158,8 @@ def get_session_event_detail(request, pk):
         'first_name': ps.invitation.participant.first_name,
         'last_name': ps.invitation.participant.last_name,
         'email': ps.invitation.participant.email,
+        'major': ps.invitation.participant.major,
+        'class_status': ps.invitation.participant.class_status,
         'attendance': ps.attendance
     }for ps in ParticipantSignup.objects.filter(invitation__in=invitations_sent)]
 
@@ -183,7 +185,7 @@ def send_invitations(request):
         experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
 
         # get the experiment metadata pk of any session as all sessions selected by experimenter to send invitations
-        # belong to same experiment metadata
+        # belong to same experiment metadata(This is ensured as it is a constraint)
         experiment_metadata_pk = experiment_sessions[0].experiment_metadata.pk
 
         potential_participants = get_potential_participants(experiment_metadata_pk)
@@ -192,16 +194,16 @@ def send_invitations(request):
         final_participants = None
 
         if potential_participants_count == 0:
-            logger.debug("You Have already sent out invitations to all potential participants")
+            # logger.debug("You Have already sent out invitations to all potential participants")
             message = "You Have already sent out invitations to all potential participants"
         else:
             if potential_participants_count < no_of_invitations:
                 final_participants = random.sample(potential_participants, potential_participants_count)
-                logger.debug("Invitations were sent to only %s participants", potential_participants_count)
+                # logger.debug("Invitations were sent to only %s participants", potential_participants_count)
                 message = "Your invitations were sent to only " + str(potential_participants_count) + " participants"
             else:
                 final_participants = random.sample(potential_participants, no_of_invitations)
-                logger.debug("Invitations were sent to %s participants", no_of_invitations)
+                # logger.debug("Invitations were sent to %s participants", no_of_invitations)
                 message = "Your invitations were sent to " + str(no_of_invitations) + " participants"
 
             today = datetime.now()
@@ -212,7 +214,7 @@ def send_invitations(request):
                 for es in experiment_sessions:
                     invitations.append(Invitation(participant=participant, experiment_session=es, date_created=today, sender=user))
 
-            logger.debug(len(recipient_list))
+            # logger.debug(len(recipient_list))
 
             datatuple = (invitation_subject, invitation_text, from_email, recipient_list)
 
@@ -226,7 +228,7 @@ def send_invitations(request):
             'invitesCount': potential_participants_count
         }))
     else:
-        logger.debug("Form is not valid")
+        # logger.debug("Form is not valid")
         return JsonResponse(dumps({
             'success': False,
             'message': message

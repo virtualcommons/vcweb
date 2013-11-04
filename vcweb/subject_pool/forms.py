@@ -30,12 +30,7 @@ class SessionForm(forms.Form):
         pk = data.get('pk')
         experiment_metadata_pk = data.get('experiment_metadata_pk')
         start_date = data.get('start_date')
-        start_hour = data.get('start_hour')
-        start_min = data.get('start_min')
         end_date = data.get('end_date')
-        end_hour = data.get('end_hour')
-        end_min = data.get('end_min')
-        capacity = data.get('capacity')
         location = data.get('location')
         request_type = data.get('request_type')
 
@@ -45,7 +40,9 @@ class SessionForm(forms.Form):
             logger.debug(data)
             if request_type != 'delete':
                 if not experiment_metadata_pk or not start_date or not end_date:
-                    raise forms.ValidationError(_("Please Fill in all the Fields"))
+                    raise forms.ValidationError(_("Please Fill Start date or End date"))
+                if not location:
+                    raise forms.ValidationError(_("Please Enter location for the Experiment Session"))
         return data
 
 
