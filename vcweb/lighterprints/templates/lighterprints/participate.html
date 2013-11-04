@@ -356,6 +356,12 @@ $(function() {
         var tour = viewModel.tutorialTour;
         tour.addSteps([
         {
+            element: "#progress",
+            placement: "top",
+            title: "Progress",
+            content: "This chart shows your current group score (green) and your group score goal (gray). Maximize your chances to earn a prize by helping your group meet the group score goal each day."
+        },
+        {
             element: "#group-score",
             title: "Group Score",
             placement: "top",
@@ -367,12 +373,6 @@ $(function() {
             title: viewModel.hasScheduledActivities() ? "Your Score" : "Current Level",
             placement: "top",
             content: viewModel.hasScheduledActivities() ? "This shows the number of points you have contributed to your group today." : "This is your group's current level. Each new level unlocks 5 new challenges."
-        },
-        {
-            element: "#progress",
-            placement: "top",
-            title: "Progress",
-            content: "This chart shows your current group score (green) and your group score goal (gray). Maximize your chances to earn a prize by helping your group meet the group score goal each day."
         },
         {
             element: "#time-remaining",

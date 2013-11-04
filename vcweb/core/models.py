@@ -889,7 +889,7 @@ class Experiment(models.Model):
             logger.debug("ignoring for repeating round %d", self.current_repeated_round_sequence_number)
             return
 
-        logger.debug("[participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", round_data,
+        logger.debug("round data %s initializing [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ", round_data,
                      participant_parameters, group_parameters, group_cluster_parameters)
         parameter_defaults = defaultdict(dict)
         # defaults map parameter model instances to their default initial value, e.g.,
