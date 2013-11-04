@@ -787,15 +787,20 @@ class Experiment(models.Model):
                 full_name = full_name.strip()
                 # crudely splitting last token as last_name and everything else as first_name
                 (first_name, separator, last_name) = full_name.rpartition(' ')
+                logger.debug("first_name %s, last_name %s", first_name, last_name)
                 try:
                     u = User.objects.get(username=email_address)
                 except User.DoesNotExist:
                     u = User.objects.create_user(username=email_address, email=email_address, password=password)
-                    if first_name and last_name:
-                        logger.debug("setting first name [%s] and last name [%s]", first_name, last_name)
-                        u.first_name = first_name
-                        u.last_name = last_name
-                        u.save()
+                updated = False
+                if first_name and not u.first_name:
+                    u.first_name = first_name
+                    updated = True
+                if last_name and not u.last_name:
+                    u.last_name = last_name
+                    updated = True
+                if updated:
+                    u.save()
                 users.append(u)
         email_messages = []
         for user in users:
