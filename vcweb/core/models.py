@@ -782,10 +782,11 @@ class Experiment(models.Model):
                     continue
                 # FIXME: parsing logic was already performed once in EmailListField.clean, redundant
                 (full_name, email_address) = email.utils.parseaddr(email_line)
-                # crudely splitting first token as first_name and everything else as last_name
-                (first_name, separator, last_name) = full_name.partition(' ')
                 # lowercase all usernames/email addresses internally and strip all whitespace
                 email_address = email_address.lower().strip()
+                full_name = full_name.strip()
+                # crudely splitting last token as last_name and everything else as first_name
+                (first_name, separator, last_name) = full_name.rpartition(' ')
                 try:
                     u = User.objects.get(username=email_address)
                 except User.DoesNotExist:
