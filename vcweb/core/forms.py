@@ -1,3 +1,4 @@
+from bootstrap_toolkit.widgets import BootstrapDateInput
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm
@@ -6,11 +7,11 @@ from django.core.validators import email_re
 from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from bootstrap_toolkit.widgets import BootstrapDateInput
 from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete
 from vcweb.core.models import (Experimenter, Institution, Participant, ExperimentMetadata)
 
 import autocomplete_light
+import email
 import logging
 import re
 
@@ -159,22 +160,17 @@ class EmailListField(forms.CharField):
             raise ValidationError(_(u'You must enter at least one email address.'))
         emails = []
         for line in lines:
-            # try to split by spaces first, expect first name last name email
-            data = line.split()
-            email = ''
-            if len(data) == 1:
-                email = data[0]
-            elif len(data) == 3:
-                (first_name, last_name, email) = data
-                logger.debug("first name %s, last name %s, email %s", first_name, last_name, email)
-            email = email.strip()
-            if not email:
+            # check for emails in the form of Allen T Lee <allen.t.lee@asu.edu>
+            (full_name, email_address) = email.utils.parseaddr(line)
+            logger.debug("full name %s, email %s", full_name, email_address)
+            email_address = email_address.strip()
+            if not email_address:
                 logger.debug("blank line, ignoring")
                 continue
             # FIXME: the only way to really test a valid email address is to try to send an email to it but keeping it
             # simple for the time being.
-            if not email_re.match(email):
-                raise ValidationError(_(u'%s is not a valid email address.' % data))
+            if not email_re.match(email_address):
+                raise ValidationError(_(u'%s is not a valid email address.' % email_address))
             emails.append(line)
         return emails
 

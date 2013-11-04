@@ -8,7 +8,6 @@ from vcweb.core.decorators import participant_required
 from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
-from vcweb.core.services import foursquare_venue_search
 from vcweb.core.views import dumps, get_active_experiment, set_authentication_token
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (
@@ -232,6 +231,7 @@ def participate(request, experiment_id=None):
         upcoming = sd > datetime.now().date() if sd is not None else False
         return render(request, 'lighterprints/inactive.html', { 'experiment': experiment, 'upcoming': upcoming })
 
+@participant_required
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)
     if form.is_valid():
@@ -242,9 +242,9 @@ def checkin(request):
         logger.debug("%s checking at at (%s, %s)", participant_group_relationship, latitude, longitude)
         if request.user.participant == participant_group_relationship.participant:
 # perform checkin logic here, query foursquare API for nearest "green" venu
-            venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
-                    categoryId=','.join(get_foursquare_category_ids()))
-            logger.debug("Found venues: %s", venues)
+#            venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
+#                    categoryId=','.join(get_foursquare_category_ids()))
+#            logger.debug("Found venues: %s", venues)
             return JsonResponse(dumps({'success':True}))
         else:
             logger.warning("authenticated user %s tried to checkin at (%s, %s) for %s", request.user, latitude, longitude, participant_group_relationship)

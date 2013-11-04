@@ -21,6 +21,7 @@ from string import Template
 from vcweb.core import signals, simplecache, dumps
 
 import base64
+import email
 import hashlib
 import itertools
 import logging
@@ -775,25 +776,20 @@ class Experiment(models.Model):
             if emails is None:
                 logger.warning("No users or emails supplied, aborting.")
                 return
-            for email in emails:
-                if not email:
-                    logger.debug("invalid participant data: %s", email)
+            for email_line in emails:
+                if not email_line:
+                    logger.debug("invalid participant data: %s", email_line)
                     continue
-                # FIXME: push this logic into the form clean / EmailListField.clean instead?
-                # XXX: handle incoming firstname lastname email data
-                data = email.split()
-                first_name = None
-                last_name = None
-                if len(data) >= 3:
-                    email = data.pop()
-                    last_name = data.pop()
-                    first_name = ' '.join(data)
+                # FIXME: parsing logic was already performed once in EmailListField.clean, redundant
+                (full_name, email_address) = email.utils.parseaddr(email_line)
+                # crudely splitting first token as first_name and everything else as last_name
+                (first_name, separator, last_name) = full_name.partition(' ')
                 # lowercase all usernames/email addresses internally and strip all whitespace
-                email = email.lower().strip()
+                email_address = email_address.lower().strip()
                 try:
-                    u = User.objects.get(username=email)
+                    u = User.objects.get(username=email_address)
                 except User.DoesNotExist:
-                    u = User.objects.create_user(username=email, email=email, password=password)
+                    u = User.objects.create_user(username=email_address, email=email_address, password=password)
                     if first_name and last_name:
                         logger.debug("setting first name [%s] and last name [%s]", first_name, last_name)
                         u.first_name = first_name
