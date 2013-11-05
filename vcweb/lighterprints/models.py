@@ -8,7 +8,7 @@ from django.template import Context
 from django.template.loader import select_template
 from django.utils.timesince import timesince
 from model_utils.managers import PassThroughManager
-from vcweb.core import signals, simplecache, enum
+from vcweb.core import signals, simplecache
 from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, RoundParameterValue, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
 from collections import defaultdict
 from datetime import datetime, date, time, timedelta
@@ -572,7 +572,7 @@ def get_treatment_type_parameter():
     return Parameter.objects.get(name='treatment_type')
 
 
-def get_group_threshold(round_configuration, default=160):
+def get_group_threshold(round_configuration, default=125):
     return round_configuration.get_parameter_value(name='threshold', default=default).int_value
 
 
