@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @experimenter_required
-def sessionListView(request):
+def session_list_view(request):
     experimenter = request.user.experimenter
     data = ExperimentSession.objects.filter(creator=request.user)
     experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.bookmarked(experimenter)]
@@ -39,7 +39,6 @@ def sessionListView(request):
         "session_list": session_list,
         "experiment_metadata_list": experiment_metadata_list
     }
-
     return render(request, "subject-pool/experimenter-index.html", {"view_model_json": dumps(session_data)})
 
 @experimenter_required
@@ -49,7 +48,10 @@ def update_session(request):
     if form.is_valid():
         pk = form.cleaned_data.get('pk')
         request_type = form.cleaned_data.get('request_type')
-        if request_type != 'delete':
+        if request_type == 'delete':
+            es = ExperimentSession.objects.get(pk=pk)
+            es.delete()
+        else:
             if request_type == 'create':
                 es = ExperimentSession()
             elif request_type == 'update':
@@ -67,11 +69,7 @@ def update_session(request):
             es.date_created = datetime.now()
             exp_pk = form.cleaned_data.get("experiment_metadata_pk")
             es.experiment_metadata = ExperimentMetadata.objects.get(pk=exp_pk)
-
             es.save()
-        else:
-            es = ExperimentSession.objects.get(pk=pk)
-            es.delete()
 
         return JsonResponse(dumps({
             'success': True,
@@ -85,8 +83,8 @@ def update_session(request):
 
 def get_session_events(request):
 
-    from_date = request.GET.get('from', False)
-    to_date = request.GET.get('to', False)\
+    from_date = request.GET.get('from', None)
+    to_date = request.GET.get('to', None)
 
     queryset = ExperimentSession.objects.filter()
 
@@ -97,12 +95,12 @@ def get_session_events(request):
 
     objects_body = []
     for event in queryset:
-        index = event.pk % 20
+        index = event.pk % 20  # for color selection
         field = {
             "id": event.pk,
             "title": event.experiment_metadata.title,
             "url": "session/detail/event/" + str(event.pk),
-            "class" : "event-color-" + str(index),
+            "class": "event-color-" + str(index),
             "start": datetime_to_timestamp(event.scheduled_date),
             "end": datetime_to_timestamp(event.scheduled_end_date),
             "capacity": event.capacity
@@ -143,13 +141,17 @@ def datetime_to_timestamp(date):
     else:
         return ""
 
-
+@experimenter_required
 def get_session_event_detail(request, pk):
     es = ExperimentSession.objects.get(pk=pk)
 
-    session_detail = {'experiment_metadata': es.experiment_metadata, 'start_date': es.scheduled_date.date(),
-                      'start_time': es.scheduled_date.strftime('%I:%M %p'), 'end_date': es.scheduled_end_date.date(),
-                      'end_time': es.scheduled_end_date.strftime('%I:%M %p'),'location': es.location, 'capacity': es.capacity}
+    session_detail = {'experiment_metadata': es.experiment_metadata,
+                      'start_date': es.scheduled_date.date(),
+                      'start_time': es.scheduled_date.strftime('%I:%M %p'),
+                      'end_date': es.scheduled_end_date.date(),
+                      'end_time': es.scheduled_end_date.strftime('%I:%M %p'),
+                      'location': es.location,
+                      'capacity': es.capacity}
 
     invitations_sent = Invitation.objects.filter(experiment_session=es)
 
@@ -161,12 +163,12 @@ def get_session_event_detail(request, pk):
         'major': ps.invitation.participant.major,
         'class_status': ps.invitation.participant.class_status,
         'attendance': ps.attendance
-    }for ps in ParticipantSignup.objects.filter(invitation__in=invitations_sent)]
+    }for ps in ParticipantSignup.objects.select_related('invitation__participant').filter(invitation__in=invitations_sent)]
 
     return render(request, 'subject-pool/session_detail.html', {'session_detail': session_detail,
                                                                 'participants': dumps(participants)})
 
-
+@experimenter_required
 def send_invitations(request):
     user = request.user
     form = SessionInviteForm(request.POST or None)
@@ -178,6 +180,7 @@ def send_invitations(request):
 
         session_pk_list = form.cleaned_data.get('session_pk_list').split(",")
         no_of_invitations = form.cleaned_data.get('no_of_people')
+        affiliated_university = form.cleaned_data.get('affiliated_university')
 
         # days_threshold = 7
         # institution = "ASU"
@@ -188,7 +191,7 @@ def send_invitations(request):
         # belong to same experiment metadata(This is ensured as it is a constraint)
         experiment_metadata_pk = experiment_sessions[0].experiment_metadata.pk
 
-        potential_participants = get_potential_participants(experiment_metadata_pk)
+        potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_university)
         potential_participants_count = len(potential_participants)
 
         final_participants = None
@@ -253,11 +256,11 @@ def get_unlikely_participants(days_threshold, experiment_metadata_pk):
     last_week_date = datetime.now() - timedelta(days=days_threshold)
     # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
     # given Experiment metadata
-    invited_in_last_threshold_days = Invitation.objects.exclude(date_created__lt=last_week_date).\
-        filter(experiment_session__experiment_metadata__pk=experiment_metadata_pk)
+    invited_in_last_threshold_days = Invitation.objects\
+        .filter(date_created__gt=last_week_date, experiment_session__experiment_metadata__pk=experiment_metadata_pk)
 
-    # filtered_list is the list of participants who received invitations for the given
-    # experiment_metadata in threshold days
+    # filtered_list is the list of participants who have received invitations for the given
+    # experiment_metadata in last threshold days
     filtered_list = [inv.participant.pk for inv in invited_in_last_threshold_days]
 
     signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=experiment_metadata_pk)
@@ -268,32 +271,28 @@ def get_unlikely_participants(days_threshold, experiment_metadata_pk):
     return list(set(filtered_list) | set(filtered_list1))
 
 
+@experimenter_required
 def update_participant_attendance(request):
 
-        pk_list = request.POST.get('pk_list')
-        pk_list = pk_list.split(",")
-        attendance_list = request.POST.get('attendance_list').split(",")
-        #logger.debug(pk_list)
-        #logger.debug(attendance_list)
+    pk_list = request.POST.get('pk_list')
+    pk_list = pk_list.split(",")
+    attendance_list = request.POST.get('attendance_list').split(",")
 
-        if len(pk_list) == len(attendance_list):
-            ps = ParticipantSignup.objects.filter(pk__in=pk_list)
-            index = 0
-            for p in ps:
-                p.attendance = int(attendance_list[index])
-                index += 1
-                #logger.debug(p.attendance)
-                p.save()
-            message = "Attendance Info has been saved."
-
-            return JsonResponse(dumps({
-                'success': True,
-                'message': message
-            }))
-
-        message = "Something went wrong.... Please try again."
+    if len(pk_list) == len(attendance_list):
+        ps = ParticipantSignup.objects.filter(pk__in=pk_list)
+        for p, attendance in zip(ps, attendance_list):
+            p.attendance = int(attendance)
+            p.save()
+        message = "Attendance Info has been saved."
 
         return JsonResponse(dumps({
-                'success': False,
-                'message': message
-            }))
+            'success': True,
+            'message': message
+        }))
+
+    message = "Something went wrong...Please try again. If the problem persists please contact administrator"
+
+    return JsonResponse(dumps({
+            'success': False,
+            'message': message
+        }))

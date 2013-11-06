@@ -48,6 +48,7 @@ class SessionForm(forms.Form):
 
 class SessionInviteForm(forms.Form):
     no_of_people = forms.IntegerField()
+    affiliated_university = forms.CharField()
     invitation_subject = forms.CharField()
     invitation_text = forms.CharField()
     session_pk_list = forms.CharField()

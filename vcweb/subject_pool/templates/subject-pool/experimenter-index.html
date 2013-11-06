@@ -41,6 +41,12 @@ Experiment Session Management
                         </div>
                     </div>
                     <div class="control-group">
+                        <label class="control-label" for="affiliated-univ">Affiliated University</label>
+                        <div class="controls">
+                            <input type="text" id="affiliated-univ" name="affiliated_university">
+                        </div>
+                    </div>
+                    <div class="control-group">
                         <label class="control-label" for="invitationSubject">Email Subject Line</label>
                         <div class="controls">
                             <input type="text" id="invitationSubject" name="invitation_subject">
@@ -395,7 +401,7 @@ Experiment Session Management
 
                 model.addSession = function() {
                     model.session_list.push(
-                        new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: "", endDate: "", capacity:10, invite_count: 0}, { newSession: true})
+                        new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: "", endDate: "", capacity:10, invite_count: 0, location: "Online"}, { newSession: true})
                     );
                 };
 
@@ -430,6 +436,7 @@ Experiment Session Management
                                     $('#invite-form').slideUp("slow");
                                     $('#active').find('input[type=checkbox]:checked').removeProp('checked');
                                     model.inviteCount(0);
+                                    model.invite_experiment_metadata_pk_list = -1;
                                     $("#error-messages").html('<div class="alert alert-success"><strong>Well done! </strong>'+ result.message + '</strong></div>');
                                     $('#invite-form form')[0].reset();
 
