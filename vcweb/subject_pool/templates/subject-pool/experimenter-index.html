@@ -49,7 +49,7 @@ Experiment Session Management
                     <div class="control-group">
                         <label class="control-label" for="invitationText">Email Content</label>
                         <div class="controls">
-                            <textarea rows="3" id="invitationText" name="invitation_text"></textarea>
+                            <textarea rows="4" id="invitationText" name="invitation_text"></textarea>
                         </div>
                     </div>
                     <div class="control-group">
@@ -101,8 +101,8 @@ Experiment Session Management
                         <tbody>
                             <tr>
                                 <td rowspan="2" data-bind="if: active">
-                                    <span data-bind= "visible: !editable()">
-                                        <input type="checkbox" data-bind="value: pk, click: $root.addInvite">
+                                    <span>
+                                        <input type="checkbox" data-bind="value: pk, click: $root.addInvite, enable: !editable()">
                                     </span>
                                 </td>
                                 <td>
@@ -145,20 +145,56 @@ Experiment Session Management
                                 <td>
                                     <input class="span1" name="capacity" type="number" min="2" data-bind ="value : capacity, enable: editable" />
                                 </td>
-                                <td data-bind="if: active">
-                                    <span data-bind = "visible: editable" >
+                                <td data-bind="if: active" rowspan="2">
+                                    <div class="btn-group" data-bind = "visible: editable">
+                                        <a class="btn" data-bind="attr: {href: 'session/detail/event/'+ pk()}">
+                                            <i class="icon-eye-open"></i>
+                                            view
+                                        </a>
                                         <button type="submit" class="btn btn-success">
                                             <i class="icon-save"></i>
                                             save
                                         </button>
-                                    </span>
-                                    <span data-bind= "visible: !editable()" >
+                                        <button class="btn btn-danger" data-bind="click: $root.removeSession">
+                                            <i class="icon-trash"></i>
+                                            remove
+                                        </button>
+                                    </div>
+                                    <div class="btn-group" data-bind = "visible: !editable()">
+                                         <a class="btn" data-bind="attr: {href: 'session/detail/event/'+ pk()} ">
+                                            <i class="icon-eye-open"></i>
+                                            view
+                                        </a>
                                         <button class="btn btn-success" data-bind="click: makeEditable">
                                             <i class="icon-edit"></i>
                                             edit
                                         </button>
-                                    </span>
+                                        <button class="btn btn-danger" data-bind="click: $root.removeSession">
+                                            <i class="icon-trash"></i>
+                                            remove
+                                        </button>
+                                    </div>
                                 </td>
+{#                                <td data-bind="if: active" rowspan="2">#}
+{#                                    <span data-bind = "visible: editable" >#}
+{#                                        <button type="submit" class="btn btn-success">#}
+{#                                            <i class="icon-save"></i>#}
+{#                                            save#}
+{#                                        </button>#}
+{#                                    </span>#}
+{#                                    <span data-bind= "visible: !editable()" >#}
+{#                                        <button class="btn btn-success" data-bind="click: makeEditable">#}
+{#                                            <i class="icon-edit"></i>#}
+{#                                            edit#}
+{#                                        </button>#}
+{#                                    </span>#}
+{#                                </td>#}
+{#                                <td data-bind="if: active" rowspan="2">#}
+{#                                    <button class="btn btn-danger" data-bind="click: $root.removeSession">#}
+{#                                        <i class="icon-trash"></i>#}
+{#                                        remove#}
+{#                                    </button>#}
+{#                                </td>#}
                             </tr>
                             <tr>
                                 <td>
@@ -196,12 +232,6 @@ Experiment Session Management
                                 </td>
                                 <td>
                                     <span class="badge invite-badge" data-bind="text: invitesSent">0</span>
-                                </td>
-                                <td data-bind="if: active">
-                                    <button class="btn btn-danger" data-bind="click: $root.removeSession">
-                                        <i class="icon-trash"></i>
-                                        remove
-                                    </button>
                                 </td>
                             </tr>
                         </tbody>

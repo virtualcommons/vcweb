@@ -4,11 +4,13 @@
 {% endblock %}
 {% block page %}
     <div id='page'>
-        <div class="callout callout-info">
-            Welcome back, {{ request.user.get_full_name}}.
-        </div>
+{#        <div class="callout callout-info">#}
+{#            Welcome back, {{ request.user.get_full_name}}.#}
+{#        </div>#}
+        <a class="btn" href="/subject-pool/session"><i class="icon-arrow-left"></i> Back</a>
+
         <div id="error-messages"></div>
-        <div id="session-detail" class="callout callout-warning">
+        <div id="session-detail" class="callout callout-info">
             <h3>Experiment Session Detail:</h3>
             <p><strong>Experiment: </strong>
             {{ session_detail.experiment_metadata.title }}
@@ -21,7 +23,7 @@
             <p><strong>Capacity: </strong> {{ session_detail.capacity }}</p>
         </div>
 
-        <h3>List of Participants attending Experiment Session.</h3>
+        <h3>List of Participants signed up for Experiment Session.</h3>
         <form id="participant-info" data-bind="submit: onSave">
             <table cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" id="participant-table">
                 <thead>
@@ -88,7 +90,6 @@
                             }
                         }
                     });
-
                 };
                 return model;
             }

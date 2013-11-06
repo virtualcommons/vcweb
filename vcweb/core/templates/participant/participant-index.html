@@ -1,6 +1,6 @@
 {% extends "participant/base.html" %}
 {% block title %}
-Participant Dashboard
+Participant Session Invitation Management
 {% endblock %}
 {% block logo %}
 <h1>Dashboard</h1>
@@ -86,8 +86,6 @@ Participant Dashboard
     <script type="text/javascript">
         var invitation_list = $.parseJSON("{{ view_model_json | escapejs }}");
 
-        console.log(invitation_list);
-
         var oldInvitationPkList=[];
 
         for (var key in invitation_list) {
@@ -117,8 +115,6 @@ Participant Dashboard
                     var invitationPkList = $(formElement).find('input[type=radio]:checked').map(function() {
                           return this.value
                     }).get();
-                    console.log(oldInvitationPkList);
-                    console.log(invitationPkList);
                     $.ajax("/participant/session/update", {
                         data: 'invitation_pk_list='+ invitationPkList + '&old_invitation_pk_list=' + oldInvitationPkList,
                         type: "POST",
@@ -131,8 +127,8 @@ Participant Dashboard
                 };
                 return model;
             }
-
             ko.applyBindings(new ExperimentListModel(groupedInvitation))
         });
     </script>
+
 {% endblock %}

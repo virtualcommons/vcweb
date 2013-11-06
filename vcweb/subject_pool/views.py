@@ -170,7 +170,7 @@ def get_session_event_detail(request, pk):
 def send_invitations(request):
     user = request.user
     form = SessionInviteForm(request.POST or None)
-    message = "Please provide all details in the invitation form"
+    message = "Please fill all details of the invitation form"
     if form.is_valid():
         invitation_subject = form.cleaned_data.get('invitation_subject')
         invitation_text = form.cleaned_data.get('invitation_text')
@@ -184,7 +184,7 @@ def send_invitations(request):
 
         experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
 
-        # get the experiment metadata pk of any session as all sessions selected by experimenter to send invitations
+        # get the experiment metadata pk of any session, as all sessions selected by experimenter to send invitations
         # belong to same experiment metadata(This is ensured as it is a constraint)
         experiment_metadata_pk = experiment_sessions[0].experiment_metadata.pk
 
@@ -212,7 +212,8 @@ def send_invitations(request):
             for participant in final_participants:
                 recipient_list.append(participant.email)
                 for es in experiment_sessions:
-                    invitations.append(Invitation(participant=participant, experiment_session=es, date_created=today, sender=user))
+                    invitations.append(Invitation(participant=participant, experiment_session=es, date_created=today,
+                                                  sender=user))
 
             # logger.debug(len(recipient_list))
 
@@ -236,16 +237,22 @@ def send_invitations(request):
 
 
 def get_potential_participants(experiment_metadata_pk, institution="Arizona S U", days_threshold=7):
+    # Get the institution object
     affiliated_institution = Institution.objects.get(name=institution)
+    # Get unlikely participants for the given parameters
     unlikely_participants = get_unlikely_participants(days_threshold, experiment_metadata_pk)
-    potential_participants = Participant.objects.filter(can_receive_invitations=True, institution=affiliated_institution).exclude(pk__in=unlikely_participants)
+
+    potential_participants = Participant.objects.filter(can_receive_invitations=True,
+                                                        institution=affiliated_institution)\
+        .exclude(pk__in=unlikely_participants)
 
     return potential_participants
 
 
 def get_unlikely_participants(days_threshold, experiment_metadata_pk):
     last_week_date = datetime.now() - timedelta(days=days_threshold)
-    # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days
+    # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
+    # given Experiment metadata
     invited_in_last_threshold_days = Invitation.objects.exclude(date_created__lt=last_week_date).\
         filter(experiment_session__experiment_metadata__pk=experiment_metadata_pk)
 
