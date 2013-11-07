@@ -1,3 +1,4 @@
+from django.forms.formsets import formset_factory
 from django.shortcuts import render
 from vcweb.core.models import ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation, Institution
 from vcweb.core.decorators import experimenter_required
@@ -7,7 +8,7 @@ from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
 from django.core.mail import send_mass_mail
 
-from forms import SessionForm, SessionInviteForm
+from forms import SessionForm, SessionInviteForm, SessionAttendanceForm
 
 import random
 import logging
@@ -168,8 +169,12 @@ def get_session_event_detail(request, pk):
         'attendance': ps.attendance
     }for ps in ParticipantSignup.objects.select_related('invitation__participant').filter(invitation__in=invitations_sent)]
 
+    form = SessionAttendanceForm()
+    AttendanceFormSet = formset_factory(SessionAttendanceForm)
+    formset = AttendanceFormSet()
+
     return render(request, 'subject-pool/session_detail.html', {'session_detail': session_detail,
-                                                                'participants': dumps(participants)})
+                                                                'participants': participants, 'formset': formset})
 
 @experimenter_required
 def send_invitations(request):

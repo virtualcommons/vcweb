@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 REQUIRED_ATTRIBUTES = {'class': 'required'}
 HOUR_CHOICES = (('0', '0'),('1', '1'),('2','2'),('3','3'),('4','4'),('5','5'),('6','6'),('7','7'),('8','8'),('9','9'),('10','10'),('11','11'),('12','12'),('13','13'),('14','14'),('15','15'),('16','16'),('17','17'),('18','18'),('19','19'),('20','20'),('21','21'),('22','22'),('23','23'))
 MIN_CHOICES = (('0','0'),('15','15'),('30','30'),('45','45'))
+ATTENDANCE_CHOICES = (('0', 'participated'), ('1', 'absent'), ('2', 'turned away'), ('3', 'select'))
 
 
 class SessionForm(forms.Form):
@@ -54,3 +55,26 @@ class SessionInviteForm(forms.Form):
     affiliated_university = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete))
     invitation_subject = forms.CharField(widget=widgets.TextInput())
     invitation_text = forms.CharField(widget=widgets.Textarea(attrs={'rows': '4'}))
+
+class SessionAttendanceForm(forms.Form):
+    READONLY_FIELDS = ('first_name', 'last_name', 'email', 'major', 'class_status')
+
+    pk = forms.IntegerField(widget=widgets.HiddenInput())
+    first_name = forms.CharField(widget=widgets.TextInput())
+    last_name = forms.CharField(widget=widgets.TextInput())
+    email = forms.CharField(widget=widgets.TextInput())
+    major = forms.CharField(widget=widgets.TextInput())
+    class_status = forms.CharField(widget=widgets.TextInput())
+    attendance = forms.ChoiceField(choices=ATTENDANCE_CHOICES)
+
+    def __init__(self, *args, **kwargs):
+         instance = kwargs.get('instance')
+         if instance is not None:
+            super(SessionAttendanceForm, self).__init__(*args, **kwargs)
+            for field in self.READONLY_FIELDS:
+                self.fields[field].widget.attrs['readonly'] = True
+         else:
+            super(SessionAttendanceForm, self).__init__(*args, **kwargs)
+
+
+
