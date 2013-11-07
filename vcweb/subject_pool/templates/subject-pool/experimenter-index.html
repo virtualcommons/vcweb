@@ -34,34 +34,9 @@ Experiment Session Management
             </div>
             <div id="invite-form">
                 <form class="form-horizontal" data-bind="submit: onInvite">
-                    <div class="control-group">
-                        <label class="control-label" for="noOfPeople">No. of People to Invite</label>
-                        <div class="controls">
-                            <input type="number" class="input-mini" value="50" id="noOfPeople" name="no_of_people">
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label" for="affiliated-univ">Affiliated University</label>
-                        <div class="controls">
-                            <input type="text" id="affiliated-univ" name="affiliated_university">
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label" for="invitationSubject">Email Subject Line</label>
-                        <div class="controls">
-                            <input type="text" id="invitationSubject" name="invitation_subject">
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label" for="invitationText">Email Content</label>
-                        <div class="controls">
-                            <textarea rows="4" id="invitationText" name="invitation_text"></textarea>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <div class="controls">
-                            <button type="submit" class="btn">Invite them all!!</button>
-                        </div>
+                    {% include "includes/bootstrap-form.html" %}
+                    <div class="controls">
+                        <button type="submit" class="btn">Invite them all!!</button>
                     </div>
                 </form>
             </div>
@@ -88,6 +63,8 @@ Experiment Session Management
 
 {% block javascript %}
 {{ block.super }}
+    {% include "includes/jquery.validate.html" %}
+    {% include "autocomplete_light/static.html" %}
     <script src='{{ STATIC_URL }}js/bootstrap-datepicker.min.js'></script>
     <link rel="stylesheet" href='{{ STATIC_URL }}css/datepicker.css' />
 
@@ -181,26 +158,6 @@ Experiment Session Management
                                         </button>
                                     </div>
                                 </td>
-{#                                <td data-bind="if: active" rowspan="2">#}
-{#                                    <span data-bind = "visible: editable" >#}
-{#                                        <button type="submit" class="btn btn-success">#}
-{#                                            <i class="icon-save"></i>#}
-{#                                            save#}
-{#                                        </button>#}
-{#                                    </span>#}
-{#                                    <span data-bind= "visible: !editable()" >#}
-{#                                        <button class="btn btn-success" data-bind="click: makeEditable">#}
-{#                                            <i class="icon-edit"></i>#}
-{#                                            edit#}
-{#                                        </button>#}
-{#                                    </span>#}
-{#                                </td>#}
-{#                                <td data-bind="if: active" rowspan="2">#}
-{#                                    <button class="btn btn-danger" data-bind="click: $root.removeSession">#}
-{#                                        <i class="icon-trash"></i>#}
-{#                                        remove#}
-{#                                    </button>#}
-{#                                </td>#}
                             </tr>
                             <tr>
                                 <td>

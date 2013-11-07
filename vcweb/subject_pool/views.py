@@ -39,7 +39,10 @@ def session_list_view(request):
         "session_list": session_list,
         "experiment_metadata_list": experiment_metadata_list
     }
-    return render(request, "subject-pool/experimenter-index.html", {"view_model_json": dumps(session_data)})
+
+    form = SessionInviteForm()
+
+    return render(request, "subject-pool/experimenter-index.html", {"view_model_json": dumps(session_data), "form": form})
 
 @experimenter_required
 def update_session(request):
@@ -178,7 +181,7 @@ def send_invitations(request):
         invitation_text = form.cleaned_data.get('invitation_text')
         from_email = user.email
 
-        session_pk_list = form.cleaned_data.get('session_pk_list').split(",")
+        session_pk_list = request.POST.get('session_pk_list').split(",")
         no_of_invitations = form.cleaned_data.get('no_of_people')
         affiliated_university = form.cleaned_data.get('affiliated_university')
 
