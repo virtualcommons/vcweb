@@ -1,4 +1,5 @@
 from django.forms.formsets import formset_factory
+from django.forms.models import modelformset_factory
 from django.shortcuts import render
 from vcweb.core.models import ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation, Institution
 from vcweb.core.decorators import experimenter_required
@@ -8,7 +9,7 @@ from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
 from django.core.mail import send_mass_mail
 
-from forms import SessionForm, SessionInviteForm, SessionAttendanceForm
+from forms import SessionForm, SessionInviteForm
 
 import random
 import logging
@@ -145,36 +146,31 @@ def datetime_to_timestamp(date):
     else:
         return ""
 
-@experimenter_required
-def get_session_event_detail(request, pk):
-    es = ExperimentSession.objects.get(pk=pk)
-
-    session_detail = {'experiment_metadata': es.experiment_metadata,
-                      'start_date': es.scheduled_date.date(),
-                      'start_time': es.scheduled_date.strftime('%I:%M %p'),
-                      'end_date': es.scheduled_end_date.date(),
-                      'end_time': es.scheduled_end_date.strftime('%I:%M %p'),
-                      'location': es.location,
-                      'capacity': es.capacity}
-
-    invitations_sent = Invitation.objects.filter(experiment_session=es)
-
-    participants = [{
-        'pk': ps.pk,
-        'first_name': ps.invitation.participant.first_name,
-        'last_name': ps.invitation.participant.last_name,
-        'email': ps.invitation.participant.email,
-        'major': ps.invitation.participant.major,
-        'class_status': ps.invitation.participant.class_status,
-        'attendance': ps.attendance
-    }for ps in ParticipantSignup.objects.select_related('invitation__participant').filter(invitation__in=invitations_sent)]
-
-    form = SessionAttendanceForm()
-    AttendanceFormSet = formset_factory(SessionAttendanceForm)
-    formset = AttendanceFormSet()
-
-    return render(request, 'subject-pool/session_detail.html', {'session_detail': session_detail,
-                                                                'participants': participants, 'formset': formset})
+# @experimenter_required
+# def get_session_event_detail(request, pk):
+#     es = ExperimentSession.objects.get(pk=pk)
+#
+#     session_detail = {'experiment_metadata': es.experiment_metadata,
+#                       'start_date': es.scheduled_date.date(),
+#                       'start_time': es.scheduled_date.strftime('%I:%M %p'),
+#                       'end_date': es.scheduled_end_date.date(),
+#                       'end_time': es.scheduled_end_date.strftime('%I:%M %p'),
+#                       'location': es.location,
+#                       'capacity': es.capacity}
+#
+#     invitations_sent = Invitation.objects.filter(experiment_session=es)
+#
+#     # participants = [{
+#     #     'pk': ps.pk,
+#     #     'full_name': ps.invitation.participant.full_name,
+#     #     'email': ps.invitation.participant.email,
+#     #     'major': ps.invitation.participant.major,
+#     #     'class_status': ps.invitation.participant.class_status,
+#     #     'attendance': ps.attendance
+#     # }for ps in ParticipantSignup.objects.select_related('invitation__participant').filter(invitation__in=invitations_sent)]
+#
+#
+#     return render(request, 'subject-pool/session_detail.html', {'session_detail': session_detail, 'formset': formset})
 
 @experimenter_required
 def send_invitations(request):
@@ -282,21 +278,22 @@ def get_unlikely_participants(days_threshold, experiment_metadata_pk):
 @experimenter_required
 def update_participant_attendance(request):
 
-    pk_list = request.POST.get('pk_list')
-    pk_list = pk_list.split(",")
-    attendance_list = request.POST.get('attendance_list').split(",")
-
-    if len(pk_list) == len(attendance_list):
-        ps = ParticipantSignup.objects.filter(pk__in=pk_list)
-        for p, attendance in zip(ps, attendance_list):
-            p.attendance = int(attendance)
-            p.save()
-        message = "Attendance Info has been saved."
-
-        return JsonResponse(dumps({
-            'success': True,
-            'message': message
-        }))
+    # pk_list = request.POST.get('pk_list')
+    # pk_list = pk_list.split(",")
+    # attendance_list = request.POST.get('attendance_list').split(",")
+    #
+    # if len(pk_list) == len(attendance_list):
+    #     ps = ParticipantSignup.objects.filter(pk__in=pk_list)
+    #     for p, attendance in zip(ps, attendance_list):
+    #         p.attendance = int(attendance)
+    #         p.save()
+    #     message = "Attendance Info has been saved."
+    #
+    #     return JsonResponse(dumps({
+    #         'success': True,
+    #         'message': message
+    #     }))
+    #
 
     message = "Something went wrong...Please try again. If the problem persists please contact administrator"
 
@@ -304,3 +301,32 @@ def update_participant_attendance(request):
             'success': False,
             'message': message
         }))
+
+
+@experimenter_required
+def manage_participant_attendance(request, pk=None):
+    AttendanceFormSet = modelformset_factory(ParticipantSignup, exclude=('date_created',), extra=0)
+
+    if request.method == "POST":
+        logger.debug('I was here')
+        formset = AttendanceFormSet(request.POST)
+        logger.debug(formset)
+        # if formset.is_valid():
+        #     formset.save()
+            # Do something.
+    else:
+        es = ExperimentSession.objects.get(pk=pk)
+
+        session_detail = {'experiment_metadata': es.experiment_metadata,
+                          'start_date': es.scheduled_date.date(),
+                          'start_time': es.scheduled_date.strftime('%I:%M %p'),
+                          'end_date': es.scheduled_end_date.date(),
+                          'end_time': es.scheduled_end_date.strftime('%I:%M %p'),
+                          'location': es.location,
+                          'capacity': es.capacity}
+
+        invitations_sent = Invitation.objects.filter(experiment_session=es)
+
+        formset = AttendanceFormSet(queryset=ParticipantSignup.objects.select_related('invitation__participant')
+                .filter(invitation__in=invitations_sent))
+        return render(request, 'subject-pool/session_detail.html', {'session_detail': session_detail, 'formset': formset})

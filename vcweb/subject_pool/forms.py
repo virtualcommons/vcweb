@@ -55,26 +55,3 @@ class SessionInviteForm(forms.Form):
     affiliated_university = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete))
     invitation_subject = forms.CharField(widget=widgets.TextInput())
     invitation_text = forms.CharField(widget=widgets.Textarea(attrs={'rows': '4'}))
-
-class SessionAttendanceForm(forms.Form):
-    READONLY_FIELDS = ('first_name', 'last_name', 'email', 'major', 'class_status')
-
-    pk = forms.IntegerField(widget=widgets.HiddenInput())
-    first_name = forms.CharField(widget=widgets.TextInput())
-    last_name = forms.CharField(widget=widgets.TextInput())
-    email = forms.CharField(widget=widgets.TextInput())
-    major = forms.CharField(widget=widgets.TextInput())
-    class_status = forms.CharField(widget=widgets.TextInput())
-    attendance = forms.ChoiceField(choices=ATTENDANCE_CHOICES)
-
-    def __init__(self, *args, **kwargs):
-         instance = kwargs.get('instance')
-         if instance is not None:
-            super(SessionAttendanceForm, self).__init__(*args, **kwargs)
-            for field in self.READONLY_FIELDS:
-                self.fields[field].widget.attrs['readonly'] = True
-         else:
-            super(SessionAttendanceForm, self).__init__(*args, **kwargs)
-
-
-
