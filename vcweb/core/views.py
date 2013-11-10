@@ -19,7 +19,7 @@ from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
                                Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation, ParticipantSignup)
-from vcweb.core.unicodecsv import UnicodeWriter
+import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
 import tempfile
@@ -582,7 +582,7 @@ class DataExportMixin(ExperimenterSingleExperimentMixin):
 
 class CsvDataExporter(DataExportMixin):
     def export_data(self, response, experiment):
-        writer = UnicodeWriter(response)
+        writer = unicodecsv.writer(response, encoding='utf-8')
         writer.writerow(['Group', 'Members'])
         for group in experiment.group_set.all():
             writer.writerow(itertools.chain.from_iterable([[group], group.participant_set.all()]))
@@ -628,19 +628,19 @@ def download_data(request, pk=None, file_type='csv'):
     logger.debug("Downloading data as %s", content_type)
     response = HttpResponse(content_type=content_type)
     response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
-    writer = UnicodeWriter(response)
-    # emit participant data (pk, email) in each group
+    writer = unicodecsv.writer(response, encoding='utf-8')
+    """ header for group membership, session id, and base participant data """
     writer.writerow(['Group ID', 'Group Number', 'Session ID', 'Participant ID', 'Participant Email'])
     for group in experiment.group_set.order_by('pk').all():
         for pgr in group.participant_group_relationship_set.select_related('participant__user').all():
             writer.writerow([group.pk, group.number, group.session_id, pgr.pk, pgr.participant.email])
-        # emit participant and group round data value tuples
+    """ header for participant data values, chat messages, and per-group data ordered per-round"""
     writer.writerow(
         ['Round', 'Participant ID', 'Participant Number', 'Group ID', 'Parameter', 'Value',
          'Creation Date', 'Creation Time', 'Last Modified Date', 'Last Modified Time'])
     for round_data in experiment.round_data_set.select_related('round_configuration').all():
-        # emit all participant data values
         round_number = round_data.round_number
+        # emit all participant data values
         for data_value in round_data.participant_data_value_set.select_related(
                 'participant_group_relationship__group').all():
             pgr = data_value.participant_group_relationship
@@ -650,7 +650,7 @@ def download_data(request, pk=None, file_type='csv'):
                 [round_number, pgr.pk, pgr.participant_number, pgr.group.pk, data_value.parameter.label,
                  data_value.value, dc.date(), dc.time(), lm.date(), lm.time()
                  ])
-            # write out all chat messages
+        # emit all chat messages
         chat_messages = ChatMessage.objects.filter(round_data=round_data)
         if chat_messages.count() > 0:
             for chat_message in chat_messages.order_by('participant_group_relationship__group', 'date_created'):
@@ -659,14 +659,12 @@ def download_data(request, pk=None, file_type='csv'):
                 lm = chat_message.last_modified
                 writer.writerow([round_number, pgr.pk, pgr.participant_number, pgr.group.pk, "Chat Message",
                                  chat_message.string_value, dc.date(), dc.time(), lm.date(), lm.time()])
-            # write out group round data
-        logger.debug("writing out group round data")
+        # emit round data for the group as a whole
         for data_value in round_data.group_data_value_set.select_related('group').all():
             dc = data_value.date_created
             lm = data_value.last_modified
             writer.writerow([round_number, '', '', data_value.group.pk, data_value.parameter.label,
                              data_value.value, dc.date(), dc.time(), lm.date(), lm.time()])
-
     return response
 
 
