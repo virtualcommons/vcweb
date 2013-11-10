@@ -35,24 +35,21 @@
                     </tr>
                 </thead>
                 {% endif %}
-                <tbody>
-                    <tr>
-                        <td> <input type="hidden" name="pk" value={{ form.instance.pk }}/> {{ form.instance.invitation.participant.first_name }}</td>
-                        <td>{{ form.instance.invitation.participant.last_name }}</td>
-                        <td>{{ form.instance.invitation.participant.email }}</td>
-                        <td>{{ form.instance.invitation.participant.major }}</td>
-                        <td>{{ form.instance.invitation.participant.class_status }}</td>
-                        <td>
-                            <select name="session-attendance" value={{ form.instance.attendance }}>
-                                <option value="3">Select</option>
-                                <option value="0">Participated</option>
-                                <option value="1">Absent</option>
-                                <option value="2">Turned Away</option>
-                            </select>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
+                <tr>
+                    <td>
+                        {% for hidden in form.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+                        {{ form.instance.invitation.participant.first_name }}</td>
+                    <td>{{ form.instance.invitation.participant.last_name }}</td>
+                    <td>{{ form.instance.invitation.participant.email }}</td>
+                    <td>{{ form.instance.invitation.participant.major }}</td>
+                    <td>{{ form.instance.invitation.participant.class_status }}</td>
+                    {% for field in form.visible_fields %}
+                        <td>{{ field }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
             </table>
             <button type="submit" class="btn btn-success" id="submit-attendance">
                 <i class="icon-save"></i>
@@ -69,25 +66,6 @@
         <script type="text/javascript">
 
         $(function(){
-
-{#            $('#submit-attendance').click( function(e) {#}
-{#                e.preventDefault();#}
-{#                var participantSignupPK = $("#participant-info").find("table tbody tr input[type=hidden]").map(function(){ return this.value }).get();#}
-{#                var participantAttendance = $("#participant-info").find("table tbody tr select").map(function(){ return this.value }).get();#}
-{#                var formData = $('#participant-info').serialize()#}
-{##}
-{#                $.ajax("/subject-pool/session/attendance", {#}
-{#                    type: "POST",#}
-{#                    data: formData,#}
-{#                    success: function(result) {#}
-{#                        if(result.success) {#}
-{#                            $("#error-messages").html('<div class="alert alert-success"><strong>Success!&nbsp;&nbsp;</strong>'+ result.message + '</strong></div>');#}
-{#                        } else{#}
-{#                             $("#error-messages").html('<div class="alert alert-danger"><strong>Whoops!&nbsp;&nbsp;</strong>'+ result.message + '</strong></div>');#}
-{#                        }#}
-{#                    }#}
-{#                });#}
-{#            });#}
 
             /* API method to get paging information */
             $.fn.dataTableExt.oApi.fnPagingInfo = function ( oSettings ) {

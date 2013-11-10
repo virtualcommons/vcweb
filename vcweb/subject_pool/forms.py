@@ -1,6 +1,7 @@
 import autocomplete_light
 from django import forms
-from django.forms import widgets
+from django.forms import widgets, ModelForm
+from vcweb.core.models import ParticipantSignup
 from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete
 from vcweb.core.forms import NumberInput
 from django.utils.translation import ugettext_lazy as _
@@ -55,3 +56,9 @@ class SessionInviteForm(forms.Form):
     affiliated_university = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete))
     invitation_subject = forms.CharField(widget=widgets.TextInput())
     invitation_text = forms.CharField(widget=widgets.Textarea(attrs={'rows': '4'}))
+
+
+class ParticipantAttendanceForm(ModelForm):
+    class Meta:
+        model = ParticipantSignup
+        fields = ['attendance']
