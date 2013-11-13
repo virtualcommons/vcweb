@@ -18,8 +18,8 @@ from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountFor
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
-                               Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation, ParticipantSignup)
-import unicodecsv
+                               Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation, ParticipantSignup,
+                               ExperimentSession)
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
 import tempfile
@@ -84,7 +84,6 @@ class Participate(TemplateView):
 
 
 class DashboardViewModel(object):
-
     def __init__(self, user=None):
         self.is_experimenter = is_experimenter(user)
         if self.is_experimenter:
@@ -105,7 +104,8 @@ class DashboardViewModel(object):
             experiment_status_dict = defaultdict(list)
             for e in Experiment.objects.for_experimenter(self.experimenter).order_by('-pk'):
                 e.experiment_configuration = _configuration_cache[e.experiment_configuration.pk]
-                experiment_status_dict[e.status].append(e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
+                experiment_status_dict[e.status].append(
+                    e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
             self.pending_experiments = experiment_status_dict['INACTIVE']
             self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
             self.archived_experiments = experiment_status_dict['COMPLETED']
@@ -113,7 +113,8 @@ class DashboardViewModel(object):
             self.participant = user.participant
             experiment_status_dict = defaultdict(list)
             for e in self.participant.experiments.select_related('experiment_configuration').all():
-                experiment_status_dict[e.status].append(e.to_dict(attrs=('participant_url', 'start_date'), name=e.experiment_metadata.title))
+                experiment_status_dict[e.status].append(
+                    e.to_dict(attrs=('participant_url', 'start_date'), name=e.experiment_metadata.title))
             self.pending_experiments = experiment_status_dict['INACTIVE']
             self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
 
@@ -141,6 +142,7 @@ class DashboardViewModel(object):
                 'runningExperiments': self.running_experiments
             }
 
+
 @login_required
 def dashboard(request):
     """
@@ -154,7 +156,7 @@ def dashboard(request):
 
 @login_required
 def get_dashboard_view_model(request):
-    return JsonResponse(dumps({ 'success': True, 'dashboardViewModelJson': DashboardViewModel(request.user).to_json()}))
+    return JsonResponse(dumps({'success': True, 'dashboardViewModelJson': DashboardViewModel(request.user).to_json()}))
 
 
 def set_authentication_token(user, authentication_token=''):
@@ -482,16 +484,15 @@ def upload_excel_participants_file(request):
 
 
 class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView):
-
     def get_initial(self):
         _initial = super(BaseExperimentRegistrationView, self).get_initial()
         experiment = self.object
         _initial.update(
-                registration_email_from_address=experiment.experimenter.email,
-                experiment_password=experiment.authentication_code,
-                registration_email_subject=experiment.registration_email_subject,
-                registration_email_text=experiment.registration_email_text
-                )
+            registration_email_from_address=experiment.experimenter.email,
+            experiment_password=experiment.authentication_code,
+            registration_email_subject=experiment.registration_email_subject,
+            registration_email_text=experiment.registration_email_text
+        )
         return _initial
 
     def form_valid(self, form):
@@ -517,7 +518,8 @@ class RegisterEmailListView(BaseExperimentRegistrationView):
         sender = form.cleaned_data.get('sender')
         from_email = form.cleaned_data.get('registration_email_from_address')
         experiment = self.object
-        logger.debug("registering participants %s at institution %s for experiment: %s", emails, institution, experiment)
+        logger.debug("registering participants %s at institution %s for experiment: %s", emails, institution,
+                     experiment)
         experiment.register_participants(emails=emails, institution=institution,
                                          password=experiment.authentication_code,
                                          sender=sender, from_email=from_email)
@@ -649,8 +651,8 @@ def download_data(request, pk=None, file_type='csv'):
             writer.writerow(
                 [round_number, pgr.pk, pgr.participant_number, pgr.group.pk, data_value.parameter.label,
                  data_value.value, dc.date(), dc.time(), lm.date(), lm.time()
-                 ])
-        # emit all chat messages
+                ])
+            # emit all chat messages
         chat_messages = ChatMessage.objects.filter(round_data=round_data)
         if chat_messages.count() > 0:
             for chat_message in chat_messages.order_by('participant_group_relationship__group', 'date_created'):
@@ -659,7 +661,7 @@ def download_data(request, pk=None, file_type='csv'):
                 lm = chat_message.last_modified
                 writer.writerow([round_number, pgr.pk, pgr.participant_number, pgr.group.pk, "Chat Message",
                                  chat_message.string_value, dc.date(), dc.time(), lm.date(), lm.time()])
-        # emit round data for the group as a whole
+                # emit round data for the group as a whole
         for data_value in round_data.group_data_value_set.select_related('group').all():
             dc = data_value.date_created
             lm = data_value.last_modified
@@ -832,51 +834,64 @@ def check_ready_participants(request, pk=None):
 @participant_required
 def get_participant_sessions(request):
     user = request.user
+    # If the Experiment Session is being conducted tomorrow then don't show invitation to user
     tomorrow = datetime.now() + timedelta(days=1)
 
-    active_experiment_sessions = ParticipantSignup.objects.filter(invitation__participant=user.participant, attendance=3
-        , invitation__experiment_session__scheduled_date__gt=tomorrow)
-    logger.debug(active_experiment_sessions)
+    active_experiment_sessions = ParticipantSignup.objects.select_related('invitation', 'invitation__experiment_session')\
+        .filter(invitation__participant=user.participant, attendance=3)
+    # logger.debug(active_experiment_sessions)
     active_invitation_pk_list = [ps.invitation.pk for ps in active_experiment_sessions]
 
-    invitations = Invitation.objects.filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow)\
+    invitations = Invitation.objects.select_related('experiment_session')\
+        .filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow)\
         .exclude(pk__in=active_invitation_pk_list)
 
     invitation_list = []
     for ps in active_experiment_sessions:
-        signup_count = ParticipantSignup.objects.filter(invitation__experiment_session__pk=ps.invitation.experiment_session.pk).count()
+        signup_count = ParticipantSignup.objects.filter(
+            invitation__experiment_session__pk=ps.invitation.experiment_session.pk).count()
 
         invitation_list.append({
             'invitation': {
                 'invitation_pk': ps.invitation.pk,
                 'scheduled_date': ps.invitation.experiment_session.scheduled_date.date(),
                 'scheduled_time': ps.invitation.experiment_session.scheduled_date.strftime('%I:%M %p'),
-                'scheduled_end_date': compare_dates(ps.invitation.experiment_session.scheduled_date.date(), ps.invitation.experiment_session.scheduled_end_date.date()),
+                'scheduled_end_date': compare_dates(ps.invitation.experiment_session.scheduled_date.date(),
+                                                    ps.invitation.experiment_session.scheduled_end_date.date()),
                 'scheduled_end_time': ps.invitation.experiment_session.scheduled_end_date.strftime('%I:%M %p'),
                 'location': ps.invitation.experiment_session.location,
-                'openings': ps.invitation.experiment_session.capacity-signup_count,
-                'selected': ps.invitation.pk
+                'openings': ps.invitation.experiment_session.capacity - signup_count,
+                'selected': True
             },
             'experiment_metadata_name': ps.invitation.experiment_session.experiment_metadata.title
         })
 
     for invite in invitations:
-        signup_count = ParticipantSignup.objects.filter(invitation__experiment_session__pk=invite.experiment_session.pk).count()
+        signup_count = ParticipantSignup.objects.filter(
+            invitation__experiment_session__pk=invite.experiment_session.pk).count()
 
         invitation_list.append({
             'invitation': {
                 'invitation_pk': invite.pk,
                 'scheduled_date': invite.experiment_session.scheduled_date.date(),
                 'scheduled_time': invite.experiment_session.scheduled_date.strftime('%I:%M %p'),
-                'scheduled_end_date': compare_dates(invite.experiment_session.scheduled_date.date(), invite.experiment_session.scheduled_end_date.date()),
+                'scheduled_end_date': compare_dates(invite.experiment_session.scheduled_date.date(),
+                                                    invite.experiment_session.scheduled_end_date.date()),
                 'scheduled_end_time': invite.experiment_session.scheduled_end_date.strftime('%I:%M %p'),
                 'location': invite.experiment_session.location,
-                'openings': invite.experiment_session.capacity-signup_count,
-                'selected': ''
+                'openings': invite.experiment_session.capacity - signup_count,
+                'selected': False
             },
             'experiment_metadata_name': invite.experiment_session.experiment_metadata.title
         })
-    return render(request, "participant/participant-index.html", {"view_model_json": dumps(invitation_list)})
+
+    # groups = defaultdict(list)
+    # for obj in invitation_list:
+    #     logger.debug(obj)
+    #     groups[obj.get('experiment_metadata_name')].append(obj.get('invitation'))
+    # new_list = [{'experiment': k, 'invitations': v} for k,v in groups.items()]
+
+    return render(request, "participant/participant-index.html", {"invitation_list": invitation_list})
 
 
 def compare_dates(date1, date2):
@@ -893,25 +908,31 @@ def update_participant_sessions(request):
     pk_list = invitation_pk_list.split(",")
     old_pk_list = request.POST.get('old_invitation_pk_list')
 
-    logger.debug(pk_list)
-    logger.debug(old_pk_list)
-
     unchanged_invite_pk_list = list(set(pk_list) & set(old_pk_list))
 
-    ParticipantSignup.objects.exclude(invitation__pk__in=unchanged_invite_pk_list).\
+    ParticipantSignup.objects.exclude(invitation__pk__in=unchanged_invite_pk_list). \
         filter(invitation__participant=user.participant, attendance=3).delete()
 
     new_signup_invite_pk = list(set(pk_list) - set(old_pk_list))
 
-    logger.debug(new_signup_invite_pk)
     if new_signup_invite_pk[0] != '':
         for invite_pk in new_signup_invite_pk:
-            logger.debug("I was here")
-            ps = ParticipantSignup()
-            ps.invitation = Invitation.objects.get(pk=invite_pk)
-            ps.date_created = datetime.now()
-            ps.attendance = 3
-            ps.save()
+
+            inv = Invitation.objects.get(pk=invite_pk)
+
+            lock = ExperimentSession.objects.select_for_update().get(pk=inv.experiment_session.pk)
+            signup_count = ParticipantSignup.objects.filter(
+                invitation__experiment_session__pk=inv.experiment_session.pk).count()
+
+            if signup_count < inv.experiment_session.capacity:
+
+                ps = ParticipantSignup()
+                ps.invitation = inv
+                ps.date_created = datetime.now()
+                ps.attendance = 3
+                ps.save()
+            else:
+                return JsonResponse(dumps({'success': False, 'message': "Sorry"}))
 
     return JsonResponse(dumps({'success': True, 'message': "Successfully saved your registration"}))
 
