@@ -20,6 +20,7 @@ from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperi
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
                                Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation, ParticipantSignup,
                                ExperimentSession)
+import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
 import tempfile
@@ -834,6 +835,44 @@ def check_ready_participants(request, pk=None):
 @participant_required
 def get_participant_sessions(request):
     user = request.user
+    success = ""
+    if request.method == 'POST':
+        data = dict(request.POST.iterlists())
+        #logger.debug(data)
+        invitation_pk_list = []
+        experiment_metadata_pk = None
+        for key in data:
+            #logger.debug(key)
+            if key != 'experiment_metadata_pk':
+                invitation_pk_list += data[key]
+            else:
+                experiment_metadata_pk = data[key]
+
+        if len(invitation_pk_list) == 1:
+            inv = Invitation.objects.get(pk=invitation_pk_list[0])
+            lock = ExperimentSession.objects.select_for_update().get(pk=inv.experiment_session.pk)
+            signup_count = ParticipantSignup.objects.filter(
+                invitation__experiment_session__pk=inv.experiment_session.pk).count()
+
+            if signup_count < inv.experiment_session.capacity:
+                ps = ParticipantSignup.objects.filter(
+                    invitation__participant=user.participant,
+                    invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk[0], attendance=3)
+                if not ps:
+                    ps = ParticipantSignup()
+                else:
+                    ps = ps[0]
+
+                ps.invitation = inv
+                ps.date_created = datetime.now()
+                ps.attendance = 3
+                ps.save()
+                success = "true"
+            else:
+                success = "false"
+        else:
+            ParticipantSignup.objects.filter(
+                invitation__participant=user.participant, attendance=3, invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk[0],).delete()
     # If the Experiment Session is being conducted tomorrow then don't show invitation to user
     tomorrow = datetime.now() + timedelta(days=1)
 
@@ -863,7 +902,8 @@ def get_participant_sessions(request):
                 'openings': ps.invitation.experiment_session.capacity - signup_count,
                 'selected': True
             },
-            'experiment_metadata_name': ps.invitation.experiment_session.experiment_metadata.title
+            'experiment_metadata_name': ps.invitation.experiment_session.experiment_metadata.title,
+            'experiment_metadata_pk': ps.invitation.experiment_session.experiment_metadata.pk
         })
 
     for invite in invitations:
@@ -882,16 +922,13 @@ def get_participant_sessions(request):
                 'openings': invite.experiment_session.capacity - signup_count,
                 'selected': False
             },
-            'experiment_metadata_name': invite.experiment_session.experiment_metadata.title
+            'experiment_metadata_name': invite.experiment_session.experiment_metadata.title,
+            'experiment_metadata_pk': invite.experiment_session.experiment_metadata.pk
         })
 
-    # groups = defaultdict(list)
-    # for obj in invitation_list:
-    #     logger.debug(obj)
-    #     groups[obj.get('experiment_metadata_name')].append(obj.get('invitation'))
-    # new_list = [{'experiment': k, 'invitations': v} for k,v in groups.items()]
-
-    return render(request, "participant/participant-index.html", {"invitation_list": invitation_list})
+    #logger.debug(invitation_list)
+    new_list = sorted(invitation_list, key=lambda key:key['invitation']['scheduled_date'])
+    return render(request, "participant/participant-index.html", {"invitation_list": new_list, "success": success})
 
 
 def compare_dates(date1, date2):
@@ -904,35 +941,44 @@ def compare_dates(date1, date2):
 @participant_required
 def update_participant_sessions(request):
     user = request.user
-    invitation_pk_list = request.POST.get('invitation_pk_list')
-    pk_list = invitation_pk_list.split(",")
-    old_pk_list = request.POST.get('old_invitation_pk_list')
+    data = dict(request.POST.iterlists())
+    pk_list = []
+    for value in data.values():
+        pk_list += value
 
-    unchanged_invite_pk_list = list(set(pk_list) & set(old_pk_list))
 
-    ParticipantSignup.objects.exclude(invitation__pk__in=unchanged_invite_pk_list). \
-        filter(invitation__participant=user.participant, attendance=3).delete()
+    logger.debug(pk_list)
+    # invitations = Invitation.objects.filter(participant= user.participant)
+    # old_pk_list = [invitation.pk for invitation in invitations]
+    # logger.debug(old_pk_list)
 
-    new_signup_invite_pk = list(set(pk_list) - set(old_pk_list))
+    #invitation_pk_list = request.POST.get('invitation_pk_list')
+    # pk_list = invitation_pk_list.split(",")
+    # old_pk_list = request.POST.get('old_invitation_pk_list')
+    # unchanged_invite_pk_list = list(set(pk_list) & set(old_pk_list))
 
-    if new_signup_invite_pk[0] != '':
-        for invite_pk in new_signup_invite_pk:
+    ParticipantSignup.objects.filter(invitation__participant=user.participant, attendance=3).delete()
 
-            inv = Invitation.objects.get(pk=invite_pk)
+    # new_signup_invite_pk = list(set(pk_list))
+    # logger.debug(new_signup_invite_pk)
 
-            lock = ExperimentSession.objects.select_for_update().get(pk=inv.experiment_session.pk)
-            signup_count = ParticipantSignup.objects.filter(
-                invitation__experiment_session__pk=inv.experiment_session.pk).count()
+    for invite_pk in pk_list:
 
-            if signup_count < inv.experiment_session.capacity:
+        inv = Invitation.objects.get(pk=invite_pk)
 
-                ps = ParticipantSignup()
-                ps.invitation = inv
-                ps.date_created = datetime.now()
-                ps.attendance = 3
-                ps.save()
-            else:
-                return JsonResponse(dumps({'success': False, 'message': "Sorry"}))
+        lock = ExperimentSession.objects.select_for_update().get(pk=inv.experiment_session.pk)
+        signup_count = ParticipantSignup.objects.filter(
+            invitation__experiment_session__pk=inv.experiment_session.pk).count()
+
+        if signup_count < inv.experiment_session.capacity:
+
+            ps = ParticipantSignup()
+            ps.invitation = inv
+            ps.date_created = datetime.now()
+            ps.attendance = 3
+            ps.save()
+        else:
+            return JsonResponse(dumps({'success': False, 'message': "Sorry"}))
 
     return JsonResponse(dumps({'success': True, 'message': "Successfully saved your registration"}))
 

@@ -6,103 +6,116 @@ Participant Session Invitation Management
 <h1>Dashboard</h1>
 {% endblock %}
 {% block page %}
-    {% regroup invitation_list by experiment_metadata_name as grouped_invitations %}
+    {% regroup invitation_list|dictsort:"experiment_metadata_name" by experiment_metadata_name as grouped_invitations %}
     <div class='row' id='page'>
         <div id="content" class="span12">
             <h3>Pick Experiment Sessions</h3>
-            <div id="error-messages"></div>
-            <form method="POST" action="session/update">
-                {% for exp in grouped_invitations %}
-                <div class="callout callout-info">
-                <fieldset class="radiogroup">
-                    <legend><span> {{ exp.grouper }}</span></legend>
-                    <table class="table table-striped">
-                        <thead>
+            <div id="error-messages">
+                {% if success == "true" %}
+                    <div class='alert alert-success'><strong>Congratulations,</strong> You were successfully registered for the experiment session.</div>
+                {% elif success == "false"%}
+                    <div class='alert alert-danger'><strong>Sorry, </strong>You were NOT registered for the experiment session.</div>
+                {% endif %}
+            </div>
+            {% for exp in grouped_invitations %}
+            <div class="callout callout-info">
+                <form method="POST" action="">
+                <input type="hidden" name="experiment_metadata_pk" value={{ exp.list.0.experiment_metadata_pk }}  />
+                <legend><span> {{ exp.grouper }}</span></legend>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Select</th>
+                            <th>
+                                Start Date
+                                <span class="add-on"><i class="icon-calendar"></i></span>
+                            </th>
+                            <th>
+                                Start Time
+                                <span class="add-on"><i class="icon-time"></i></span>
+                            </th>
+                            {% with exp.list.0.invitation as first_invitation %}
+                                {% if first_invitation.scheduled_end_date != '' %}
+                                    <th>
+                                        End Date
+                                        <span class="add-on"><i class="icon-calendar"></i></span>
+                                    </th>
+                                {% endif %}
+                            {% endwith %}
+                            <th>
+                                End Time
+                                <span class="add-on"><i class="icon-time"></i></span>
+                            </th>
+                            <th>
+                                Location
+                                <span class="add-on"><i class="icon-flag"></i></span>
+                            </th>
+                            <th> Openings </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in exp.list %}
+                            {% if item.invitation.openings  != 0 %}
                             <tr>
-                                <th>Select</th>
-                                <th>
-                                    Start Date
-                                    <span class="add-on"><i class="icon-calendar"></i></span>
-                                </th>
-                                <th>
-                                    Start Time
-                                    <span class="add-on"><i class="icon-time"></i></span>
-                                </th>
-                                {% with exp.list.0.invitation as first_invitation %}
-                                    {% if first_invitation.scheduled_end_date != '' %}
-                                        <th>
-                                            End Date
-                                            <span class="add-on"><i class="icon-calendar"></i></span>
-                                        </th>
+                                <td>
+                                    {% if item.invitation.selected == True %}
+                                        <input type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} checked />
+                                    {% else %}
+                                        <input type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} />
                                     {% endif %}
-                                {% endwith %}
-                                <th>
-                                    End Time
-                                    <span class="add-on"><i class="icon-time"></i></span>
-                                </th>
-                                <th>
-                                    Location
-                                    <span class="add-on"><i class="icon-flag"></i></span>
-                                </th>
-                                <th> Openings </th>
+                                </td>
+                                <td> {{ item.invitation.scheduled_date }}</td>
+                                <td><b> {{ item.invitation.scheduled_time }}</b></td>
+                                {% if item.invitation.scheduled_end_date != '' %}
+                                    <td> {{ item.invitation.scheduled_end_date }}</td>
+                                {% endif %}
+                                <td><b> {{ item.invitation.scheduled_end_time }}</b></td>
+                                <td> {{ item.invitation.location }}</td>
+                                <td> {{ item.invitation.openings }}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in exp.list %}
-                                {% if item.invitation.openings  != 0 %}
-                                <tr>
-                                    <td>
-                                        {% if item.invitation.selected == True %}
-                                            <input type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} checked />
-                                        {% else %}
-                                            <input type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} />
-                                        {% endif %}
-                                    </td>
-                                    <td> {{ item.invitation.scheduled_date }}</td>
-                                    <td><b> {{ item.invitation.scheduled_time }}</b></td>
-                                    {% if item.invitation.scheduled_end_date != '' %}
-                                        <td> {{ item.invitation.scheduled_end_date }}</td>
+                            {% else %}
+                            <tr class="error">
+                                <td>
+                                   {% if item.invitation.selected == True %}
+                                        <input disabled type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} checked />
+                                   {% else %}
+                                        <input disabled type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} />
                                     {% endif %}
-                                    <td><b> {{ item.invitation.scheduled_end_time }}</b></td>
-                                    <td> {{ item.invitation.location }}</td>
-                                    <td> {{ item.invitation.openings }}</td>
-                                </tr>
-                                {% else %}
-                                <tr class="error">
-                                    <td>
-                                       {% if item.invitation.selected == True %}
-                                            <input disabled type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} checked />
-                                       {% else %}
-                                            <input disabled type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} />
-                                        {% endif %}
-                                    </td>
-                                    <td> {{ item.invitation.scheduled_date }}</td>
-                                    <td><b> {{ item.invitation.scheduled_time }}</b></td>
-                                    {% if item.invitation.scheduled_end_date != '' %}
-                                        <td> {{ item.invitation.scheduled_end_date }}</td>
-                                    {% endif %}
-                                    <td><b> {{ item.invitation.scheduled_end_time }}</b></td>
-                                    <td> {{ item.invitation.location }}</td>
-                                    <td> {{ item.invitation.openings }}</td>
-                                </tr>
-                            {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </fieldset>
-                </div>
-                {% empty %}
-                    <div class="callout callout-warning">
-                        <p>You are currently not invited to any experiments.</p>
-                        <p>Please make sure that you have opted to receive invitations in your account profiles settings.</p>
-                    </div>
-                {% endfor %}
+                                </td>
+                                <td> {{ item.invitation.scheduled_date }}</td>
+                                <td><b> {{ item.invitation.scheduled_time }}</b></td>
+                                {% if item.invitation.scheduled_end_date != '' %}
+                                    <td> {{ item.invitation.scheduled_end_date }}</td>
+                                {% endif %}
+                                <td><b> {{ item.invitation.scheduled_end_time }}</b></td>
+                                <td> {{ item.invitation.location }}</td>
+                                <td> {{ item.invitation.openings }}</td>
+                            </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
                 <input type="submit" class="btn btn-success" value="Submit" />
-                <input type="reset" class="btn" />
+                <input type="reset" class="btn clear" value="clear" />
             </form>
+            </div>
+            {% endfor %}
+            {% if grouped_invitations|length  == 0 %}
+                <div class="callout callout-warning">
+                    <p>You are currently not invited to any experiments.</p>
+                    <p>Please make sure that you have opted to receive invitations in your account profiles settings.</p>
+                </div>
+            {% endif %}
         </div>
     </div>
 {% endblock page %}
 {% block javascript %}
     {{ block.super }}
+    <script>
+        $(function(){
+           $(".clear").click( function() {
+               $(this).parent().find("input:radio").removeAttr("checked");
+           });
+        });
+    </script>
 {% endblock %}
