@@ -405,6 +405,7 @@ Experiment Session Management
                                 } else {
                                     $("#error-messages").html('<div class="alert alert-danger"><strong>' + result.message + '</strong></div>');
                                 }
+                                $(window).scrollTop($('#error-messages').offset().top - 100);
                             }
                         });
                     }
