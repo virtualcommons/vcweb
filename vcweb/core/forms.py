@@ -7,7 +7,7 @@ from django.core.validators import email_re
 from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete
+from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete, ParticipantMajorAutocomplete
 from vcweb.core.models import (Experimenter, Institution, Participant, ExperimentMetadata)
 
 import autocomplete_light
@@ -114,12 +114,12 @@ class ParticipantAccountForm(forms.ModelForm):
     class Meta:
         model = Participant
         fields = ['major', 'class_status', 'gender', 'can_receive_invitations']
-        """
-        FIXME: currently disabled, need to fix MajorAutocomplete
+
+        #FIXME: currently disabled, need to fix MajorAutocomplete
         widgets = {
-            'major': autocomplete_light.TextWidget('MajorAutocomplete'),
+            'major': autocomplete_light.TextWidget(ParticipantMajorAutocomplete),
         }
-        """
+
 
     def clean(self):
         data = super(forms.ModelForm, self).clean()
