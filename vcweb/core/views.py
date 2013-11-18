@@ -835,14 +835,12 @@ def check_ready_participants(request, pk=None):
 @participant_required
 def get_participant_sessions(request):
     user = request.user
-    success = ""
+    success = None
     if request.method == 'POST':
         data = dict(request.POST.iterlists())
-        #logger.debug(data)
         invitation_pk_list = []
         experiment_metadata_pk = None
         for key in data:
-            #logger.debug(key)
             if key != 'experiment_metadata_pk':
                 invitation_pk_list += data[key]
             else:
@@ -867,25 +865,40 @@ def get_participant_sessions(request):
                 ps.date_created = datetime.now()
                 ps.attendance = 3
                 ps.save()
-                success = "true"
+                success = True
             else:
-                success = "false"
+                success = False
         else:
             ParticipantSignup.objects.filter(
-                invitation__participant=user.participant, attendance=3, invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk[0],).delete()
-            success = "true"
+                invitation__participant=user.participant, attendance=3,
+                invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk[0]).delete()
+            success = False
 
     # If the Experiment Session is being conducted tomorrow then don't show invitation to user
     tomorrow = datetime.now() + timedelta(days=1)
 
-    active_experiment_sessions = ParticipantSignup.objects.select_related('invitation', 'invitation__experiment_session')\
+    active_experiment_sessions = ParticipantSignup.objects \
+        .select_related('invitation', 'invitation__experiment_session') \
         .filter(invitation__participant=user.participant, attendance=3)
+
+    # Making sure that user don't see invitations for a experiment for which he has already participated
+    # useful in cases when the experiment has lots of sessions spanning to lots of days. It avoids a user to participate
+    # in another experiment session after attending one of the experiment session of same experiment in last couple
+    # of days
+    participated_experiment_metadata = ParticipantSignup.objects \
+        .select_related('invitation', 'invitation__experiment_session',
+                        'invitation__experiment_session__experiment_metadata') \
+        .filter(invitation__participant=user.participant, attendance=0)
+
+    participated_experiment_metadata_pk_list = [ps.invitation.experiment_session.experiment_metadata.pk for ps in
+                                                participated_experiment_metadata]
     # logger.debug(active_experiment_sessions)
     active_invitation_pk_list = [ps.invitation.pk for ps in active_experiment_sessions]
 
-    invitations = Invitation.objects.select_related('experiment_session')\
-        .filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow)\
-        .exclude(pk__in=active_invitation_pk_list)
+    invitations = Invitation.objects.select_related('experiment_session') \
+        .filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow) \
+        .exclude(pk__in=active_invitation_pk_list,
+                 experiment_session__experiment_metadata__pk__in=participated_experiment_metadata_pk_list)
 
     invitation_list = []
     for ps in active_experiment_sessions:
@@ -928,7 +941,6 @@ def get_participant_sessions(request):
             'experiment_metadata_pk': invite.experiment_session.experiment_metadata.pk
         })
 
-    #logger.debug(invitation_list)
     new_list = sorted(invitation_list, key=lambda key: key['invitation']['scheduled_date'])
     return render(request, "participant/participant-index.html", {"invitation_list": new_list, "success": success})
 
@@ -942,4 +954,3 @@ def compare_dates(date1, date2):
 
 def handler500(request):
     return render(request, '500.html')
-

@@ -11,9 +11,9 @@ Participant Session Invitation Management
         <div id="content" class="span12">
             <h3>Pick Experiment Sessions</h3>
             <div id="error-messages">
-                {% if success == "true" %}
+                {% if success == True %}
                     <div class='alert alert-success'><strong>Congratulations,</strong> Your registration changes have been saved.</div>
-                {% elif success == "false"%}
+                {% elif success == False %}
                     <div class='alert alert-danger'><strong>Sorry, </strong>You were NOT registered for the experiment session.</div>
                 {% endif %}
             </div>

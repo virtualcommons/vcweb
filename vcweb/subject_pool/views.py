@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.forms.formsets import formset_factory
 from django.forms.models import modelformset_factory
 from django.shortcuts import render
@@ -155,14 +156,12 @@ def send_invitations(request):
     if form.is_valid():
         invitation_subject = form.cleaned_data.get('invitation_subject')
         invitation_text = form.cleaned_data.get('invitation_text')
+        # current logged in experimenter is the sender of the invitations.
         from_email = user.email
 
         session_pk_list = request.POST.get('session_pk_list').split(",")
         no_of_invitations = form.cleaned_data.get('no_of_people')
         affiliated_university = form.cleaned_data.get('affiliated_university')
-
-        # days_threshold = 7
-        # institution = "ASU"
 
         experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
 
@@ -244,9 +243,11 @@ def get_unlikely_participants(days_threshold, experiment_metadata_pk):
 
     signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=experiment_metadata_pk)
     # filtered_list1 is the list of participants who has already participated in the
-    # given Experiment Metadata sometime earlier
+    # given Experiment Metadata(in the past or currently participating)
     filtered_list1 = [p.invitation.participant.pk for p in signup_participants]
 
+    # returned list the list of participants who have already received invitations in last threshold days or have already
+    # participated in same experiment
     return list(set(filtered_list) | set(filtered_list1))
 
 
@@ -266,7 +267,12 @@ def manage_participant_attendance(request, pk=None):
                                     queryset=ParticipantSignup.objects.select_related('invitation__participant')
                                     .filter(invitation__in=invitations_sent))
         if formset.is_valid():
-            formset.save()
+            messages.add_message(request, messages.SUCCESS, 'Well done...Your changes were successfully saved.')
+            if formset.has_changed():
+                formset.save()
+        else:
+            messages.add_message(request, messages.ERROR,
+                                 'Something went wrong...Your changes were not saved. Please try again')
     else:
         formset = AttendanceFormSet(queryset=ParticipantSignup.objects.filter(invitation__in=invitations_sent))
 
