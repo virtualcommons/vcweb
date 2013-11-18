@@ -892,14 +892,15 @@ def get_participant_sessions(request):
 
     participated_experiment_metadata_pk_list = [ps.invitation.experiment_session.experiment_metadata.pk for ps in
                                                 participated_experiment_metadata]
-    # logger.debug(active_experiment_sessions)
+    # logger.debug(participated_experiment_metadata_pk_list)
     active_invitation_pk_list = [ps.invitation.pk for ps in active_experiment_sessions]
-
-    invitations = Invitation.objects.select_related('experiment_session') \
+    # logger.debug(active_invitation_pk_list)
+    invitations = Invitation.objects.select_related('experiment_session', 'experiment_session__experiment_metadata__pk') \
         .filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow) \
-        .exclude(pk__in=active_invitation_pk_list,
-                 experiment_session__experiment_metadata__pk__in=participated_experiment_metadata_pk_list)
+        .exclude(experiment_session__experiment_metadata__pk__in=participated_experiment_metadata_pk_list) \
+        .exclude(pk__in=active_invitation_pk_list)
 
+    # logger.debug(invitations)
     invitation_list = []
     for ps in active_experiment_sessions:
         signup_count = ParticipantSignup.objects.filter(
