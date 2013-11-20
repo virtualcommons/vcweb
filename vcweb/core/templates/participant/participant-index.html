@@ -12,7 +12,7 @@ Participant Session Invitation Management
             <h3>Pick Experiment Sessions</h3>
             <div id="error-messages">
                 {% if success == True %}
-                    <div class='alert alert-success'><strong>Congratulations,</strong> Your registration changes have been saved.</div>
+                    <div class='alert alert-success'><strong>Well done,</strong> Your registration changes have been saved.</div>
                 {% elif success == False %}
                     <div class='alert alert-danger'><strong>Sorry, </strong>You were NOT registered for the experiment session.</div>
                 {% endif %}
@@ -77,7 +77,7 @@ Participant Session Invitation Management
                             <tr class="error">
                                 <td>
                                    {% if item.invitation.selected == True %}
-                                        <input disabled type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} checked />
+                                        <input type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} checked />
                                    {% else %}
                                         <input disabled type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} />
                                     {% endif %}

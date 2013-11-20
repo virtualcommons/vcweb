@@ -837,25 +837,27 @@ def get_participant_sessions(request):
     user = request.user
     success = None
     if request.method == 'POST':
-        data = dict(request.POST.iterlists())
-        invitation_pk_list = []
+        data = dict(request.POST.iteritems())
+        invitation_pk = None
         experiment_metadata_pk = None
+
         for key in data:
             if key != 'experiment_metadata_pk':
-                invitation_pk_list += data[key]
+                invitation_pk = int(data[key])
             else:
-                experiment_metadata_pk = data[key]
+                experiment_metadata_pk = int(data[key])
 
-        if len(invitation_pk_list) == 1:
-            inv = Invitation.objects.get(pk=invitation_pk_list[0])
+        if invitation_pk is not None:
+            inv = Invitation.objects.get(pk=invitation_pk)
             lock = ExperimentSession.objects.select_for_update().get(pk=inv.experiment_session.pk)
             signup_count = ParticipantSignup.objects.filter(
                 invitation__experiment_session__pk=inv.experiment_session.pk).count()
 
+            ps = ParticipantSignup.objects.filter(
+                invitation__participant=user.participant,
+                invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk, attendance=3)
+
             if signup_count < inv.experiment_session.capacity:
-                ps = ParticipantSignup.objects.filter(
-                    invitation__participant=user.participant,
-                    invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk[0], attendance=3)
                 if not ps:
                     ps = ParticipantSignup()
                 else:
@@ -867,12 +869,15 @@ def get_participant_sessions(request):
                 ps.save()
                 success = True
             else:
-                success = False
+                if ps[0].invitation.pk == invitation_pk:
+                    success = True
+                else:
+                    success = False
         else:
             ParticipantSignup.objects.filter(
                 invitation__participant=user.participant, attendance=3,
-                invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk[0]).delete()
-            success = False
+                invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk).delete()
+            success = True
 
     # If the Experiment Session is being conducted tomorrow then don't show invitation to user
     tomorrow = datetime.now() + timedelta(days=1)

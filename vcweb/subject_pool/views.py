@@ -1,8 +1,8 @@
 from django.contrib import messages
-from django.forms.formsets import formset_factory
 from django.forms.models import modelformset_factory
 from django.shortcuts import render
-from vcweb.core.models import ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation, Institution
+from vcweb.core.models import (ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation,
+                               Institution)
 from vcweb.core.decorators import experimenter_required
 from datetime import datetime, time, timedelta
 from time import mktime
@@ -36,7 +36,7 @@ def session_list_view(request):
         "capacity": session.capacity,
         "location": session.location,
         "invite_count": Invitation.objects.filter(experiment_session=session).count()
-    }for session in data]
+    } for session in data]
 
     session_data = {
         "session_list": session_list,
@@ -87,6 +87,7 @@ def update_session(request):
     }))
 
 
+@experimenter_required
 def get_session_events(request):
 
     from_date = request.GET.get('from', None)
@@ -152,7 +153,7 @@ def datetime_to_timestamp(date):
 def send_invitations(request):
     user = request.user
     form = SessionInviteForm(request.POST or None)
-    message = "Please fill all details of the invitation form"
+    message = "Please fill in all the details of the invitation form"
     if form.is_valid():
         invitation_subject = form.cleaned_data.get('invitation_subject')
         invitation_text = form.cleaned_data.get('invitation_text')
