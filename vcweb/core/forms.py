@@ -46,18 +46,18 @@ class BaseRegistrationForm(forms.Form):
     institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete),required=True, help_text=_('The primary institution, if any, you are affiliated with.'))
 
     def clean_email(self):
-        email = self.cleaned_data['email'].lower()
+        email_address = self.cleaned_data['email'].lower()
         try:
-            User.objects.get(email=email)
+            User.objects.get(email=email_address)
         except User.DoesNotExist:
-            return email
+            return email_address
         raise forms.ValidationError(_("This email address is already in our system."))
 
     def clean_confirm_password(self):
-        password = self.cleaned_data['password']
-        confirm_password = self.cleaned_data['confirm_password']
-        if password == confirm_password:
-            return confirm_password
+        pw = self.cleaned_data['password']
+        confirm_pw = self.cleaned_data['confirm_password']
+        if pw == confirm_pw:
+            return confirm_pw
         raise forms.ValidationError(_("Please make sure your passwords match."))
 
 
@@ -75,10 +75,10 @@ class LoginForm(forms.Form):
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
 
     def clean(self):
-        email = self.cleaned_data['email'].lower()
+        email_address = self.cleaned_data['email'].lower()
         password = self.cleaned_data.get('password')
-        if email and password:
-            self.user_cache = authenticate(username=email, password=password)
+        if email_address and password:
+            self.user_cache = authenticate(username=email_address, password=password)
             if self.user_cache is None:
                 raise forms.ValidationError(_("Your combination of email and password was incorrect."))
             elif not self.user_cache.is_active:

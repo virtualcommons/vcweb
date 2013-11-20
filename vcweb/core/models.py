@@ -1252,7 +1252,6 @@ class Experiment(models.Model):
                                          experiment_metadata=self.experiment_metadata,
                                          experiment_configuration=self.experiment_configuration,
                                          duration=self.duration,
-                                         tick_duration=self.tick_duration,
                                          status=Experiment.Status.INACTIVE)
 
     def _reset_survey_completed_flags(self):
