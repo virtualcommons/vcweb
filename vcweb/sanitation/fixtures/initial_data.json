@@ -56,7 +56,6 @@
             "is_experimenter_driven": false,
             "start_date_time": null,
             "status": "INACTIVE",
-            "tick_duration": "10s",
             "last_modified": "2011-07-07 15:13:04",
             "date_created": "2011-07-07 15:13:03",
             "total_elapsed_time": 0

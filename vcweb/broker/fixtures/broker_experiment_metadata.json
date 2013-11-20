@@ -68,7 +68,6 @@
             "experiment_metadata": 7,
             "status": "INACTIVE",
             "date_activated": null,
-            "tick_duration": "",
             "authentication_code": "broker_test",
             "current_round_start_time": null,
             "last_modified": "2013-02-13T15:53:45.902",
@@ -76,8 +75,7 @@
             "current_round_sequence_number": 1,
             "duration": "",
             "date_created": "2013-02-13T15:52:55",
-            "experiment_configuration": 8,
-            "amqp_exchange_name": "vcweb.default.exchange"
+            "experiment_configuration": 8
         }
     },
     {
