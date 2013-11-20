@@ -27,8 +27,7 @@
             "date_activated": null,
             "status": "INACTIVE",
             "date_created": "2011-07-07 15:12:07",
-            "last_modified": "2011-07-07 15:13:03",
-            "tick_duration": "10s"
+            "last_modified": "2011-07-07 15:13:03"
         },
         "model": "core.experiment",
         "pk": 4
@@ -39,7 +38,6 @@
         "fields": {
             "experiment_metadata": 3, 
             "status": "INACTIVE", 
-            "tick_duration": "", 
             "authentication_code": "vcweb.auth.code", 
             "current_round_start_time": null, 
             "last_modified": "2013-04-27T00:02:20.965", 
@@ -49,8 +47,7 @@
             "duration": "", 
             "date_created": "2013-04-27T00:02:08", 
             "experiment_configuration": 4, 
-            "current_repeated_round_sequence_number": 0, 
-            "amqp_exchange_name": "vcweb.default.exchange"
+            "current_repeated_round_sequence_number": 0
         }
     },
     {
