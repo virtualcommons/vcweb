@@ -869,8 +869,11 @@ def get_participant_sessions(request):
                 ps.save()
                 success = True
             else:
-                if ps[0].invitation.pk == invitation_pk:
-                    success = True
+                if ps:
+                    if ps[0].invitation.pk == invitation_pk:
+                        success = True
+                    else:
+                        success = False
                 else:
                     success = False
         else:

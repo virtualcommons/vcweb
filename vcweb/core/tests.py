@@ -401,53 +401,25 @@ class RoundConfigurationTest(BaseVcwebTest):
             self.assertEqual(rp.value, sample_values_for_type[type])
 
 
-def test_concurrently(times):
-    """
-    Add this decorator to small pieces of code that you want to test
-    concurrently to make sure they don't raise exceptions when run at the
-    same time.  E.g., some Django views that do a SELECT and then a subsequent
-    INSERT might fail when the INSERT assumes that the data has not changed
-    since the SELECT.
-    """
-
-    def test_concurrently_decorator(test_func):
-        def wrapper(*args, **kwargs):
-            exceptions = []
-
-            def call_test_func(index):
-                logger.debug("Hello")
-                try:
-                    test_func(index, **kwargs)
-                except Exception, e:
-                    exceptions.append(e)
-                    raise
-
-            threads = []
-            logger.debug(test_func)
-            for i in range(times):
-                threads.append(threading.Thread(target=call_test_func(2)))
-            for t in threads:
-                t.start()
-            for t in threads:
-                t.join()
-            if exceptions:
-                raise Exception('test_concurrently intercepted %s exceptions: %s' % (len(exceptions), exceptions))
-                #logger.debug("I was here!!!")
-
-        return wrapper
-
-    return test_concurrently_decorator
-
-
 class MyTestCase(BaseVcwebTest):
     def set_up_participants(self):
         password = "test"
+        users = []
+        #bulk create the users first
         for x in xrange(500):
-            email = "student" + str(x) + "asu@asu.edu"
-            user = User.objects.create_user(username=email, email=email, password=password)
-            user.first_name = u'Student'
-            user.last_name = u"%d" % x
-            user.save()
+             email = "student" + str(x) + "asu@asu.edu"
+             user = User(first_name='Stude',
+                last_name='%d' % x,
+                username=email,
+                email=email,
+                password=password)
+             users.append(user)
+        User.objects.bulk_create(users)
+
+        created_users = User.objects.filter(first_name="Stude")
+        participants = []
+        # now bulk create the participants
+        for user in created_users:
             p = Participant(user=user)
             p.can_receive_invitations = random.choice([True, False])
             p.gender = random.choice(['M', 'F'])
@@ -459,7 +431,11 @@ class MyTestCase(BaseVcwebTest):
             p.major = 'CS'
             p.class_status = random.choice(['Freshman', 'Sophomore', 'Junior', 'Senior'])
             p.institution = Institution.objects.get(name="Arizona State University")
-            p.save()
+            participants.append(p)
+
+        Participant.objects.bulk_create(participants)
+
+        logger.debug("TOTAL PARTICIPANTS %d", len(Participant.objects.all()))
 
     def set_up_experiment_sessions(self):
         e = self.experiment
@@ -473,7 +449,7 @@ class MyTestCase(BaseVcwebTest):
             random_date = datetime(year, month, day)
             es.scheduled_date = random_date
             es.scheduled_end_date = random_date
-            es.capacity = random.choice(range(2, 20))
+            es.capacity = 1
             es.location = "Online"
             es.creator = User.objects.get(pk=256) #creator is vcweb
             es.date_created = datetime.now()
@@ -537,7 +513,6 @@ class MyTestCase(BaseVcwebTest):
         Invitation.objects.bulk_create(invitations)
 
     def testInvitations(self):
-        url = reverse('core:participant_sessions')
 
         self.set_up_participants()
 
@@ -570,20 +545,55 @@ class MyTestCase(BaseVcwebTest):
             Participant.objects.filter(can_receive_invitations=True, institution__name='Arizona State University',
                                        pk__in=pk_list).count(), len(x))
 
+        es = ExperimentSession.objects.filter(capacity=1)[0]
+        @test_concurrently(2)
+        def toggle_registration(index):
+            url = reverse('core:participant_sessions')
+            # perform the code you want to test here; it must be thread-safe
+            c = Client()
+            username = "student" + str(index) + "asu@asu.edu"
+            login = c.login(username=username, password="test")
+            self.assertTrue(login)
+            #response = c.post(url, {'experiment_metadata_pk': self.experiment_metadata.pk, 'BrokerExperiment': es.pk}, follow=True)
+            #logger.debug(response.redirect_chain)
+            #self.assertEqual(response.status_code, 200)
 
-        # self.set_up_participant_signup(x)
-        # #assert
-        # self.set_up_inv()
+        toggle_registration()
 
-        # @test_concurrently(2)
-        # def toggle_registration(index):
-        #     #logger.debug("I was here")
-        #     # perform the code you want to test here; it must be thread-safe
-        #     c = Client()
-        #     username = 's' + str(index) + 'asu@asu.edu'
-        #     c.login(username=username, password='test')
-        #     # c2 = Client()
-        #     # c2.login(username='tejas@mailinator.com', password='test')
-        #     response = c.post(url, {'experiment_metadata_pk': 7, 'BrokerExperiment': 31})
-        #     logger.debug(response)
-        # toggle_registration()
+
+def test_concurrently(times):
+    """
+    Add this decorator to small pieces of code that you want to test
+    concurrently to make sure they don't raise exceptions when run at the
+    same time.  E.g., some Django views that do a SELECT and then a subsequent
+    INSERT might fail when the INSERT assumes that the data has not changed
+    since the SELECT.
+    """
+
+    def test_concurrently_decorator(test_func):
+        def wrapper(*args, **kwargs):
+            exceptions = []
+
+            def call_test_func(index):
+                logger.debug("Hello")
+                try:
+                    test_func(index, **kwargs)
+                except Exception, e:
+                    exceptions.append(e)
+                    raise
+
+            threads = []
+            logger.debug(test_func)
+            for i in range(times):
+                threads.append(threading.Thread(target=call_test_func(i)))
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            if exceptions:
+                raise Exception('test_concurrently intercepted %s exceptions: %s' % (len(exceptions), exceptions))
+                #logger.debug("I was here!!!")
+
+        return wrapper
+
+    return test_concurrently_decorator
