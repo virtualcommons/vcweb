@@ -1,14 +1,22 @@
+from datetime import datetime, timedelta
+import random
+import threading
+from django.contrib.auth.models import User
 from django.core import serializers
+from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.test.client import RequestFactory, Client
+from vcweb.core.views import get_participant_sessions
 from vcweb.core import signals
 from vcweb.core.models import (Experiment, Experimenter, ExperimentConfiguration, ParticipantRoundDataValue,
-    Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
-    ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue, Institution,
-    GroupActivityLog)
+                               Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
+                               ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue, Institution,
+                               GroupActivityLog, ExperimentSession, Invitation, ParticipantSignup)
 import logging
+from vcweb.subject_pool.views import get_potential_participants
 
 logger = logging.getLogger(__name__)
+
 
 class BaseVcwebTest(TestCase):
     """
@@ -54,7 +62,8 @@ class BaseVcwebTest(TestCase):
         if experimenter is None:
             experimenter = Experimenter.objects.get(pk=1)
         experiment_configuration = ExperimentConfiguration.objects.create(experiment_metadata=experiment_metadata,
-                name='Test Experiment Configuration', creator=experimenter)
+                                                                          name='Test Experiment Configuration',
+                                                                          creator=experimenter)
         logger.debug("creating new experiment configuration: %s", experiment_configuration)
         for index in xrange(1, 10):
             rc = experiment_configuration.round_configuration_set.create(sequence_number=index)
@@ -63,7 +72,8 @@ class BaseVcwebTest(TestCase):
                 rc.save()
         logger.debug("created round configurations: %s", experiment_configuration.round_configuration_set.all())
         return Experiment.objects.create(experimenter=experimenter,
-                experiment_metadata=experiment_metadata, experiment_configuration=experiment_configuration)
+                                         experiment_metadata=experiment_metadata,
+                                         experiment_configuration=experiment_configuration)
 
 
     def setUp(self, **kwargs):
@@ -91,13 +101,16 @@ class BaseVcwebTest(TestCase):
 
     def create_new_round_configuration(self, round_type='REGULAR', template_filename=''):
         return RoundConfiguration.objects.create(experiment_configuration=self.experiment_configuration,
-                sequence_number=(self.experiment_configuration.last_round_sequence_number + 1),
-                round_type=round_type,
-                template_filename=template_filename
-                )
+                                                 sequence_number=(
+                                                     self.experiment_configuration.last_round_sequence_number + 1),
+                                                 round_type=round_type,
+                                                 template_filename=template_filename
+        )
 
-    def create_new_parameter(self, name='vcweb.test.parameter', scope=Parameter.Scope.EXPERIMENT, parameter_type='string'):
-        return Parameter.objects.create(experiment_metadata=self.experiment_metadata, creator=self.experimenter, name=name, scope=scope, type=parameter_type)
+    def create_new_parameter(self, name='vcweb.test.parameter', scope=Parameter.Scope.EXPERIMENT,
+                             parameter_type='string'):
+        return Parameter.objects.create(experiment_metadata=self.experiment_metadata, creator=self.experimenter,
+                                        name=name, scope=scope, type=parameter_type)
 
     def create_new_group(self, max_size=10, experiment=None):
         if not experiment:
@@ -106,7 +119,6 @@ class BaseVcwebTest(TestCase):
 
     class Meta:
         abstract = True
-
 
 
 class ExperimentMetadataTest(BaseVcwebTest):
@@ -118,7 +130,7 @@ class ExperimentMetadataTest(BaseVcwebTest):
     def test_valid_namespaces(self):
         valid_namespaces = ('forestry/hooha', 'furestry', 'f', 'hallo/h', '/f',
                             'abcdefghijklmnopqrstuvwxyz1234567890/abcdefghijklmnopqrstuvwxyz1234567890',
-                            )
+        )
         for namespace in valid_namespaces:
             self.assertTrue(self.namespace_regex.match(namespace))
             em = self.create_experiment_metadata(namespace)
@@ -126,6 +138,7 @@ class ExperimentMetadataTest(BaseVcwebTest):
 
     def test_invalid_namespaces(self):
         from django.core.exceptions import ValidationError
+
         invalid_namespaces = ('#$what the!',
                               "$$!it's a trap!",
                               '/!@')
@@ -137,7 +150,8 @@ class ExperimentMetadataTest(BaseVcwebTest):
     def test_unicode(self):
         em = self.create_experiment_metadata('test_unicode_namespace')
         em.save()
-        self.assertTrue(em.pk and (em.pk > 0), 'test unicode namespace experiment metadata record should have valid id now')
+        self.assertTrue(em.pk and (em.pk > 0),
+                        'test unicode namespace experiment metadata record should have valid id now')
         self.assertTrue(unicode(em))
         #self.assertRaises(ValueError, unicode(em).index, '{')
 
@@ -150,6 +164,7 @@ class ExperimentConfigurationTest(BaseVcwebTest):
 
     def test_serialization_stream(self):
         pass
+
     def test_xml_serialization(self):
         e = self.experiment
         ec = e.experiment_configuration
@@ -165,14 +180,16 @@ class ExperimentConfigurationTest(BaseVcwebTest):
                 found = True
         self.assertTrue(found)
 
+
 class ExperimentTest(BaseVcwebTest):
     def round_started_test_handler(self, experiment=None, time=None, round_configuration=None, **kwargs):
-        logger.debug("invoking round started test handler with args experiment:%s time:%s round configuration:%s", experiment, time, round_configuration)
+        logger.debug("invoking round started test handler with args experiment:%s time:%s round configuration:%s",
+                     experiment, time, round_configuration)
         self.assertEqual(experiment, self.experiment)
         self.assertEqual(round_configuration, self.experiment.current_round)
         self.assertTrue(time, "time should be set")
         logger.debug("done with assertions, about to raise")
-# this ValueError shouldn't bubble up since we're using send_robust now
+        # this ValueError shouldn't bubble up since we're using send_robust now
         raise ValueError
 
     def test_start_round(self):
@@ -185,7 +202,7 @@ class ExperimentTest(BaseVcwebTest):
         experiment.allocate_groups(randomize=False)
         logger.debug("experiment participants is %s", experiment.participant_set.all())
         self.assertEqual(experiment.group_set.count(), 2, "there should be 2 groups after non-randomized allocation")
-        self.assertEqual( 10, sum([group.participant_set.count() for group in experiment.group_set.all()]) )
+        self.assertEqual(10, sum([group.participant_set.count() for group in experiment.group_set.all()]))
 
     def test_participant_numbering(self):
         experiment = self.experiment
@@ -227,27 +244,30 @@ class ExperimentTest(BaseVcwebTest):
         current_round_data = e.current_round_data
         self.assertEqual(current_round_data.group_data_value_set.count(), 0)
         if e.experiment_configuration.is_experimenter_driven:
-            self.assertEqual(current_round_data.participant_data_value_set.count(), e.participant_set.count()) 
+            self.assertEqual(current_round_data.participant_data_value_set.count(), e.participant_set.count())
         else:
-            self.assertEqual(current_round_data.participant_data_value_set.count(), 0) 
+            self.assertEqual(current_round_data.participant_data_value_set.count(), 0)
 
     def test_playable_round(self):
-# advance_to_next_round automatically starts it
+    # advance_to_next_round automatically starts it
         e = self.advance_to_data_round()
         current_round_data = e.current_round_data
         for group in e.group_set.all():
             for parameter in group.data_parameters.all():
                 group_data_value, created = current_round_data.group_data_value_set.get_or_create(group=group,
-                        parameter=parameter)
+                                                                                                  parameter=parameter)
                 self.assertFalse(created)
             for pgr in group.participant_group_relationship_set.all():
                 for parameter in e.parameters(scope=Parameter.Scope.PARTICIPANT):
-                    participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(round_data=current_round_data, participant_group_relationship=pgr, parameter=parameter)
+                    participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(
+                        round_data=current_round_data, participant_group_relationship=pgr, parameter=parameter)
                     self.assertFalse(created)
+
 
 class GroupClusterTest(BaseVcwebTest):
     def test_group_cluster(self):
         pass
+
 
 class GroupTest(BaseVcwebTest):
     def test_set_data_value(self):
@@ -262,7 +282,8 @@ class GroupTest(BaseVcwebTest):
                 self.assertEqual(g.get_scalar_data_value(parameter=data_value.parameter), test_data_value)
 
     def test_transfer_to_next_round(self):
-        parameter = self.create_new_parameter(scope=Parameter.Scope.GROUP, name='test_group_parameter', parameter_type='int')
+        parameter = self.create_new_parameter(scope=Parameter.Scope.GROUP, name='test_group_parameter',
+                                              parameter_type='int')
         test_data_value = 37
         e = self.experiment
         first_pass = True
@@ -280,7 +301,6 @@ class GroupTest(BaseVcwebTest):
                     self.assertEqual(g.get_scalar_data_value(parameter=parameter), test_data_value)
                     g.transfer_to_next_round(parameter)
             e.advance_to_next_round()
-
 
 
     def test_group_add(self):
@@ -301,23 +321,23 @@ class GroupTest(BaseVcwebTest):
 
 
 class ParticipantExperimentRelationshipTest(BaseVcwebTest):
-
     def test_send_emails(self):
         e = self.experiment.clone()
         institution = Institution.objects.get(pk=1)
         number_of_participants = 10
         emails = ['test%s@asu.edu' % index for index in range(number_of_participants)]
         e.register_participants(emails=emails, institution=institution,
-                password='test')
+                                password='test')
 
     def test_participant_identifier(self):
         """ exercises the generation of participant_identifier """
         e = self.experiment.clone()
         for p in self.participants:
             per = ParticipantExperimentRelationship.objects.create(participant=p,
-                    experiment=e, created_by=self.experimenter.user)
+                                                                   experiment=e, created_by=self.experimenter.user)
             self.assertTrue(per.id > 0)
-            logger.debug("Participant identifier is %s - sequential id is %i", per.participant_identifier, per.sequential_participant_identifier)
+            logger.debug("Participant identifier is %s - sequential id is %i", per.participant_identifier,
+                         per.sequential_participant_identifier)
             self.assertTrue(per.participant_identifier)
             self.assertTrue(per.sequential_participant_identifier > 0)
 
@@ -325,7 +345,6 @@ class ParticipantExperimentRelationshipTest(BaseVcwebTest):
 
 
 class RoundConfigurationTest(BaseVcwebTest):
-
     def test_repeating_round(self):
         self.advance_to_data_round()
         e = self.experiment
@@ -351,13 +370,15 @@ class RoundConfigurationTest(BaseVcwebTest):
 
     def test_parameterized_value(self):
         e = self.experiment
-        p = Parameter.objects.create(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
+        p = Parameter.objects.create(scope='round', name='test_round_parameter', type='int', creator=e.experimenter,
+                                     experiment_metadata=e.experiment_metadata)
         rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round, value='14')
         self.assertEqual(14, rp.int_value)
 
     def test_round_parameters(self):
         e = self.experiment
-        p = Parameter.objects.create(scope='round', name='test_round_parameter', type='int', creator=e.experimenter, experiment_metadata=e.experiment_metadata)
+        p = Parameter.objects.create(scope='round', name='test_round_parameter', type='int', creator=e.experimenter,
+                                     experiment_metadata=e.experiment_metadata)
         self.assertTrue(p.pk > 0)
         self.assertEqual(p.value_field_name, 'int_value')
 
@@ -369,15 +390,200 @@ class RoundConfigurationTest(BaseVcwebTest):
         '''
         The type field in Parameter generates the value_field_name property by concatenating the name of the type with _value.
         '''
-        sample_values_for_type = {'int':3, 'float':3.0, 'string':'ich bin ein mublumubla', 'boolean':True}
+        sample_values_for_type = {'int': 3, 'float': 3.0, 'string': 'ich bin ein mublumubla', 'boolean': True}
         for type in ('int', 'float', 'string', 'boolean'):
-
-            p = Parameter.objects.create(scope='round', name="test_nonunique_round_parameter_%s" % type, type=type, creator=e.experimenter, experiment_metadata=e.experiment_metadata)
+            p = Parameter.objects.create(scope='round', name="test_nonunique_round_parameter_%s" % type, type=type,
+                                         creator=e.experimenter, experiment_metadata=e.experiment_metadata)
             self.assertTrue(p.pk > 0)
             self.assertEqual(p.value_field_name, '%s_value' % type)
-            rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round, value=sample_values_for_type[type])
+            rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round,
+                                                    value=sample_values_for_type[type])
             self.assertEqual(rp.value, sample_values_for_type[type])
 
 
+def test_concurrently(times):
+    """
+    Add this decorator to small pieces of code that you want to test
+    concurrently to make sure they don't raise exceptions when run at the
+    same time.  E.g., some Django views that do a SELECT and then a subsequent
+    INSERT might fail when the INSERT assumes that the data has not changed
+    since the SELECT.
+    """
+
+    def test_concurrently_decorator(test_func):
+        def wrapper(*args, **kwargs):
+            exceptions = []
+
+            def call_test_func(index):
+                logger.debug("Hello")
+                try:
+                    test_func(index, **kwargs)
+                except Exception, e:
+                    exceptions.append(e)
+                    raise
+
+            threads = []
+            logger.debug(test_func)
+            for i in range(times):
+                threads.append(threading.Thread(target=call_test_func(2)))
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            if exceptions:
+                raise Exception('test_concurrently intercepted %s exceptions: %s' % (len(exceptions), exceptions))
+                #logger.debug("I was here!!!")
+
+        return wrapper
+
+    return test_concurrently_decorator
 
 
+class MyTestCase(BaseVcwebTest):
+    def set_up_participants(self):
+        password = "test"
+        for x in xrange(500):
+            email = "student" + str(x) + "asu@asu.edu"
+            user = User.objects.create_user(username=email, email=email, password=password)
+            user.first_name = u'Student'
+            user.last_name = u"%d" % x
+            user.save()
+            p = Participant(user=user)
+            p.can_receive_invitations = random.choice([True, False])
+            p.gender = random.choice(['M', 'F'])
+            year = random.choice(range(1980, 1995))
+            month = random.choice(range(1, 12))
+            day = random.choice(range(1, 28))
+            random_date = datetime(year, month, day)
+            p.birthdate = random_date
+            p.major = 'CS'
+            p.class_status = random.choice(['Freshman', 'Sophomore', 'Junior', 'Senior'])
+            p.institution = Institution.objects.get(name="Arizona State University")
+            p.save()
+
+    def set_up_experiment_sessions(self):
+        e = self.experiment
+
+        for x in xrange(4):
+            es = ExperimentSession()
+            es.experiment_metadata = e.experiment_metadata
+            year = 2013
+            month = 12
+            day = random.choice(range(1, 28))
+            random_date = datetime(year, month, day)
+            es.scheduled_date = random_date
+            es.scheduled_end_date = random_date
+            es.capacity = random.choice(range(2, 20))
+            es.location = "Online"
+            es.creator = User.objects.get(pk=256) #creator is vcweb
+            es.date_created = datetime.now()
+            es.save()
+
+    def get_final_participants(self):
+        potential_participants = get_potential_participants(self.experiment_metadata.pk, "Arizona State University")
+        potential_participants_count = len(potential_participants)
+        logger.debug(potential_participants_count)
+
+        final_participants = None
+        no_of_invitations = 50
+
+        if potential_participants_count == 0:
+            # logger.debug("You Have already sent out invitations to all potential participants")
+            message = "You Have already sent out invitations to all potential participants"
+        else:
+            if potential_participants_count < no_of_invitations:
+                final_participants = random.sample(potential_participants, potential_participants_count)
+                # logger.debug("Invitations were sent to only %s participants", potential_participants_count)
+                message = "Your invitations were sent to only " + str(potential_participants_count) + " participants"
+            else:
+                final_participants = random.sample(potential_participants, no_of_invitations)
+                # logger.debug("Invitations were sent to %s participants", no_of_invitations)
+                message = "Your invitations were sent to " + str(no_of_invitations) + " participants"
+
+        return final_participants
+
+    def set_up_participant_signup(self, participant_list):
+        participant_list = participant_list[:25]
+
+        for person in participant_list:
+            inv = Invitation.objects.filter(participant=person).order_by('?')[:1]
+            ps = ParticipantSignup()
+            ps.invitation = inv[0]
+            year = 2013
+            month = random.choice([10, 11])
+            day = random.choice(range(1, 21))
+            random_date = datetime(year, month, day)
+            ps.date_created = random_date
+            # logger.debug(random_date)
+            ps.attendance = random.choice([0, 1, 2, 3])
+            # logger.debug(ps.attendance)
+            ps.save()
+
+    def set_up_inv(self, participants):
+        invitations = []
+        experiment_sessions = ExperimentSession.objects.all()
+        user = User.objects.get(pk=256)
+
+        for participant in participants:
+        # recipient_list.append(participant.email)
+            for es in experiment_sessions:
+                year = 2013
+                month = 11
+                day = random.choice(range(1, 22))
+                random_date = datetime(year, month, day)
+                invitations.append(Invitation(participant=participant, experiment_session=es, date_created=random_date,
+                                              sender=user))
+
+        Invitation.objects.bulk_create(invitations)
+
+    def testInvitations(self):
+        url = reverse('core:participant_sessions')
+
+        self.set_up_participants()
+
+        self.set_up_experiment_sessions()
+
+        # First Iteration
+        x = self.get_final_participants()
+
+        self.set_up_inv(x)
+
+        self.set_up_participant_signup(x)
+
+        # Second Iteration
+        x = self.get_final_participants()
+
+        self.set_up_inv(x)
+
+        self.set_up_participant_signup(x)
+
+        # third Iteration
+        x = self.get_final_participants()
+
+        pk_list = [p.pk for p in x]
+
+        last_week_date = datetime.now() - timedelta(days=7)
+        self.assertEqual(ParticipantSignup.objects.filter(attendance__in=[0, 3], invitation__participant__in=x).count(),
+                         0)
+        self.assertEqual(Invitation.objects.filter(participant__in=x, date_created__gt=last_week_date).count(), 0)
+        self.assertEqual(
+            Participant.objects.filter(can_receive_invitations=True, institution__name='Arizona State University',
+                                       pk__in=pk_list).count(), len(x))
+
+
+        # self.set_up_participant_signup(x)
+        # #assert
+        # self.set_up_inv()
+
+        # @test_concurrently(2)
+        # def toggle_registration(index):
+        #     #logger.debug("I was here")
+        #     # perform the code you want to test here; it must be thread-safe
+        #     c = Client()
+        #     username = 's' + str(index) + 'asu@asu.edu'
+        #     c.login(username=username, password='test')
+        #     # c2 = Client()
+        #     # c2.login(username='tejas@mailinator.com', password='test')
+        #     response = c.post(url, {'experiment_metadata_pk': 7, 'BrokerExperiment': 31})
+        #     logger.debug(response)
+        # toggle_registration()
