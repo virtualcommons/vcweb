@@ -1,4 +1,3 @@
-from functools import wraps
 from django.shortcuts import redirect
 
 from django.contrib.auth.decorators import user_passes_test
@@ -7,7 +6,6 @@ from dajaxice.core import dajaxice_functions
 
 from vcweb.core.models import is_experimenter, is_participant
 
-import threading
 import logging
 logger = logging.getLogger(__name__)
 
@@ -46,3 +44,36 @@ def create_user_decorator(view_function, is_valid_user, redirect_to='core:dashbo
         _decorated_view.__doc__ = fn.__doc__
         return _decorated_view
     return decorator if view_function is None else decorator(view_function)
+
+
+def concurrency_test(times):
+    """
+    Add this decorator to small pieces of code that you want to test
+    concurrently to make sure they don't raise exceptions when run at the
+    same time.  E.g., some Django views that do a SELECT and then a subsequent
+    INSERT might fail when the INSERT assumes that the data has not changed
+    since the SELECT.
+    """
+    def test_concurrently_decorator(test_func):
+        def wrapper(*args, **kwargs):
+            exceptions = []
+            import threading
+            def call_test_func():
+                try:
+                    test_func(*args, **kwargs)
+                except Exception, e:
+                    exceptions.append(e)
+                    raise
+
+            threads = []
+            for i in range(times):
+                threads.append(threading.Thread(target=call_test_func))
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            if exceptions:
+                raise Exception('test_concurrently intercepted %s exceptions: %s' % (len(exceptions), exceptions))
+                #logger.debug("I was here!!!")
+        return wrapper
+    return test_concurrently_decorator

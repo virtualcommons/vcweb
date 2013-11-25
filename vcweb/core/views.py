@@ -887,7 +887,8 @@ def get_participant_sessions(request):
 
     active_experiment_sessions = ParticipantSignup.objects \
         .select_related('invitation', 'invitation__experiment_session') \
-        .filter(invitation__participant=user.participant, attendance=3)
+        .filter(invitation__participant=user.participant, attendance=3,
+                invitation__experiment_session__scheduled_date__gt=tomorrow)
 
     # Making sure that user don't see invitations for a experiment for which he has already participated
     # useful in cases when the experiment has lots of sessions spanning to lots of days. It avoids a user to participate

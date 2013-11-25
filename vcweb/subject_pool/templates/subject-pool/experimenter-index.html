@@ -425,7 +425,7 @@ Experiment Session Management
                     //when a user changes the date, update the view model
                     ko.utils.registerEventHandler(element, "changeDate", function(event) {
                         var value = valueAccessor();
-                        if (ko.isObservable(value)) {
+                        if (ko.isObservable(value) && event.date > new Date()) {
                             value(event.date);
                         }
                     });
@@ -436,6 +436,7 @@ Experiment Session Management
                     if (widget) {
                         widget.date = new Date(ko.utils.unwrapObservable(valueAccessor()));
                         widget.setValue();
+                        console.log(widget)
                     }
                 }
             };
