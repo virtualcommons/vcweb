@@ -265,9 +265,16 @@ Experiment Session Management
 
                 self.onSave = function(formElement) {
                     var formData;
+                    var start_time = parseInt(formElement.elements["start_hour"].value);
+                    var end_time = parseInt(formElement.elements["end_hour"].value);
+                    var start_date = new Date(formElement.elements["start_date"].value);
+                    var end_date = new Date(formElement.elements["end_date"].value);
 
-                    if(formElement.elements["start_date"].value > formElement.elements["end_date"].value){
+                    if(start_date > end_date){
                         alert("ERROR: End date cannot be earlier than the Start date. Please choose a later end date.");
+                        return;
+                    } else if(start_date == end_date && start_time > end_time) {
+                        alert("ERROR: Scheduled End Time cannot be earlier than the Start Time. Please choose a later end Time.");
                         return;
                     }
                     if(formElement.elements["pk"].value == -1){
@@ -311,7 +318,7 @@ Experiment Session Management
 
                     if( data.selected_experiment_metadata_pk() == model.invite_experiment_metadata_pk_list || model.invite_experiment_metadata_pk_list == -1 ) {
                         var oldCount = model.inviteCount();
-                        if($(event.target).prop('checked')){
+                        if($(event.target).is(':checked')){
                             model.invite_experiment_metadata_pk_list = data.selected_experiment_metadata_pk();
                             model.inviteCount(oldCount + 1);
                         } else {
@@ -324,7 +331,7 @@ Experiment Session Management
                         }
                         return true;
                     } else {
-                        alert("You can not invite participants for a list of experiment sessions spanning to more than one experiment metadata");
+                        alert("You can not invite participants for a list of experiment sessions spanning to more than one experiment");
                         return false;
                     }
                 }
@@ -391,10 +398,10 @@ Experiment Session Management
                             success: function(result) {
                                 if(result.success == true){
                                     $('#invite-form').slideUp("slow");
-                                    $('#active').find('input[type=checkbox]:checked').removeProp('checked');
+                                    $('#active').find('input[type=checkbox]:checked').removeAttr('checked');
                                     model.inviteCount(0);
                                     model.invite_experiment_metadata_pk_list = -1;
-                                    $("#error-messages").html('<div class="alert alert-success"><strong>Well done! </strong>'+ result.message + '</strong></div>');
+                                    $("#error-messages").html('<div class="alert alert-success">' + result.message + '</strong></div>');
                                     $('#invite-form form')[0].reset();
 
                                     ko.utils.arrayForEach(model.session_list(), function(session) {
@@ -436,7 +443,6 @@ Experiment Session Management
                     if (widget) {
                         widget.date = new Date(ko.utils.unwrapObservable(valueAccessor()));
                         widget.setValue();
-                        console.log(widget)
                     }
                 }
             };

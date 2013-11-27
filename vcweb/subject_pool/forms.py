@@ -11,10 +11,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-REQUIRED_ATTRIBUTES = {'class': 'required'}
 HOUR_CHOICES = (('0', '0'),('1', '1'),('2','2'),('3','3'),('4','4'),('5','5'),('6','6'),('7','7'),('8','8'),('9','9'),('10','10'),('11','11'),('12','12'),('13','13'),('14','14'),('15','15'),('16','16'),('17','17'),('18','18'),('19','19'),('20','20'),('21','21'),('22','22'),('23','23'))
 MIN_CHOICES = (('0','0'),('15','15'),('30','30'),('45','45'))
-ATTENDANCE_CHOICES = (('0', 'participated'), ('1', 'absent'), ('2', 'turned away'), ('3', 'select'))
 
 
 class SessionForm(forms.Form):
@@ -33,7 +31,6 @@ class SessionForm(forms.Form):
     def clean(self):
         data = super(forms.Form, self).clean()
         pk = data.get('pk')
-        experiment_metadata_pk = data.get('experiment_metadata_pk')
         start_date = data.get('start_date')
         end_date = data.get('end_date')
         location = data.get('location')
@@ -42,9 +39,9 @@ class SessionForm(forms.Form):
         if not pk:
             raise forms.ValidationError(_("Invalid Experiment session PK"))
         else:
-            logger.debug(data)
+            # logger.debug(data)
             if request_type != 'delete':
-                if not experiment_metadata_pk or not start_date or not end_date:
+                if not start_date or not end_date:
                     raise forms.ValidationError(_("Please Fill Start date or End date"))
                 if not location:
                     raise forms.ValidationError(_("Please Enter location for the Experiment Session"))

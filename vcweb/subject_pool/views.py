@@ -23,7 +23,7 @@ def session_list_view(request):
     experimenter = request.user.experimenter
     data = ExperimentSession.objects.filter(creator=request.user)
     experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.bookmarked(experimenter)]
-    #logger.debug(experiment_metadata_list)
+
     session_list = [{
         "pk": session.pk,
         "experiment_metadata": session.experiment_metadata,
@@ -166,50 +166,58 @@ def send_invitations(request):
 
         experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
 
-        # get the experiment metadata pk of any session, as all sessions selected by experimenter to send invitations
-        # belong to same experiment metadata(This is ensured as it is a constraint)
-        experiment_metadata_pk = experiment_sessions[0].experiment_metadata.pk
+        if len(experiment_sessions) == 1:
+            # get the experiment metadata pk of any session, as all sessions selected by experimenter to send invitations
+            # belong to same experiment metadata(This is ensured as it is a constraint)
+            experiment_metadata_pk = experiment_sessions[0].experiment_metadata.pk
 
-        potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_university)
-        potential_participants_count = len(potential_participants)
+            potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_university)
+            potential_participants_count = len(potential_participants)
 
-        final_participants = None
+            final_participants = None
 
-        if potential_participants_count == 0:
-            # logger.debug("You Have already sent out invitations to all potential participants")
-            message = "You Have already sent out invitations to all potential participants"
-        else:
-            if potential_participants_count < no_of_invitations:
-                final_participants = random.sample(potential_participants, potential_participants_count)
-                # logger.debug("Invitations were sent to only %s participants", potential_participants_count)
-                message = "Your invitations were sent to only " + str(potential_participants_count) + " participants"
+            if potential_participants_count == 0:
+                # logger.debug("You Have already sent out invitations to all potential participants")
+                message = "You Have already sent out invitations to all potential participants"
             else:
-                final_participants = random.sample(potential_participants, no_of_invitations)
-                # logger.debug("Invitations were sent to %s participants", no_of_invitations)
-                message = "Your invitations were sent to " + str(no_of_invitations) + " participants"
+                if potential_participants_count < no_of_invitations:
+                    # final_participants = random.sample(potential_participants, potential_participants_count)
+                    final_participants = potential_participants
+                    # logger.debug("Invitations were sent to only %s participants", potential_participants_count)
+                    message = "Your invitations were sent to only " + str(potential_participants_count) + " participants"
+                else:
+                    final_participants = random.sample(potential_participants, no_of_invitations)
+                    # logger.debug("Invitations were sent to %s participants", no_of_invitations)
+                    message = "Your invitations were sent to " + str(no_of_invitations) + " participants"
 
-            today = datetime.now()
-            invitations = []
-            recipient_list = []
-            for participant in final_participants:
-                recipient_list.append(participant.email)
-                for es in experiment_sessions:
-                    invitations.append(Invitation(participant=participant, experiment_session=es, date_created=today,
-                                                  sender=user))
+                today = datetime.now()
+                invitations = []
+                recipient_list = []
+                for participant in final_participants:
+                    recipient_list.append(participant.email)
+                    for es in experiment_sessions:
+                        invitations.append(Invitation(participant=participant, experiment_session=es, date_created=today,
+                                                      sender=user))
 
-            # logger.debug(len(recipient_list))
+                # logger.debug(len(recipient_list))
 
-            datatuple = (invitation_subject, invitation_text, from_email, recipient_list)
+                datatuple = (invitation_subject, invitation_text, from_email, recipient_list)
 
-            send_mass_mail((datatuple, ), fail_silently=False)
+                send_mass_mail((datatuple, ), fail_silently=False)
 
-            Invitation.objects.bulk_create(invitations)
+                Invitation.objects.bulk_create(invitations)
 
-        return JsonResponse(dumps({
-            'success': True,
-            'message': message,
-            'invitesCount': potential_participants_count
-        }))
+            return JsonResponse(dumps({
+                'success': True,
+                'message': message,
+                'invitesCount': potential_participants_count
+            }))
+        else:
+            message = "To Invite Participants Please Select Experiment Sessions of same Experiment"
+            return JsonResponse(dumps({
+                'success': False,
+                'message': message
+            }))
     else:
         # logger.debug("Form is not valid")
         return JsonResponse(dumps({
@@ -220,17 +228,21 @@ def send_invitations(request):
 
 def get_potential_participants(experiment_metadata_pk, institution="Arizona S U", days_threshold=7):
     # Get the institution object
-    affiliated_institution = Institution.objects.filter(name=institution)
+    try:
+        affiliated_institution = Institution.objects.get(name=institution)
+    except Institution.DoesNotExist:
+        affiliated_institution = None
+
     if affiliated_institution:
         # Get unlikely participants for the given parameters
         unlikely_participants = get_unlikely_participants(days_threshold, experiment_metadata_pk)
 
         potential_participants = Participant.objects.filter(can_receive_invitations=True,
-                                                            institution=affiliated_institution[0])\
+                                                            institution=affiliated_institution)\
             .exclude(pk__in=unlikely_participants)
     else:
         potential_participants = []
-
+    logger.debug(potential_participants)
     return potential_participants
 
 

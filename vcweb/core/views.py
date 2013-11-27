@@ -849,6 +849,12 @@ def get_participant_sessions(request):
 
         if invitation_pk is not None:
             inv = Invitation.objects.get(pk=invitation_pk)
+            # import time
+            # if invitation_pk == 542:
+            #     print str(invitation_pk) + "got slept New"
+            #     time.sleep(30)
+
+            # Obtaining lock on the experiment session
             lock = ExperimentSession.objects.select_for_update().get(pk=inv.experiment_session.pk)
             signup_count = ParticipantSignup.objects.filter(
                 invitation__experiment_session__pk=inv.experiment_session.pk).count()
@@ -876,10 +882,12 @@ def get_participant_sessions(request):
                         success = False
                 else:
                     success = False
+            lock.save()
         else:
-            ParticipantSignup.objects.filter(
-                invitation__participant=user.participant, attendance=3,
-                invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk).delete()
+            ParticipantSignup.objects \
+                .select_related('invitation', 'invitation__experiment_session__experiment_metadata') \
+                .filter(invitation__participant=user.participant, attendance=3,
+                        invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk).delete()
             success = True
 
     # If the Experiment Session is being conducted tomorrow then don't show invitation to user

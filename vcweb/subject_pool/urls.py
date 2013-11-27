@@ -8,4 +8,3 @@ urlpatterns = patterns('vcweb.subject_pool.views',
     url(r'^session/invite$', 'send_invitations', name='send_invites'),
     url(r'^session/attendance$', 'manage_participant_attendance', name='participant_attendance')
 )
-
