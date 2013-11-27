@@ -220,13 +220,16 @@ def send_invitations(request):
 
 def get_potential_participants(experiment_metadata_pk, institution="Arizona S U", days_threshold=7):
     # Get the institution object
-    affiliated_institution = Institution.objects.get(name=institution)
-    # Get unlikely participants for the given parameters
-    unlikely_participants = get_unlikely_participants(days_threshold, experiment_metadata_pk)
+    affiliated_institution = Institution.objects.filter(name=institution)
+    if affiliated_institution:
+        # Get unlikely participants for the given parameters
+        unlikely_participants = get_unlikely_participants(days_threshold, experiment_metadata_pk)
 
-    potential_participants = Participant.objects.filter(can_receive_invitations=True,
-                                                        institution=affiliated_institution)\
-        .exclude(pk__in=unlikely_participants)
+        potential_participants = Participant.objects.filter(can_receive_invitations=True,
+                                                            institution=affiliated_institution[0])\
+            .exclude(pk__in=unlikely_participants)
+    else:
+        potential_participants = []
 
     return potential_participants
 
