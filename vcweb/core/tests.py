@@ -1,18 +1,18 @@
 from datetime import datetime, timedelta
-import random
+
 from django.contrib.auth.models import User
 from django.core import serializers
-from django.core.urlresolvers import reverse
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase
 from django.test.client import RequestFactory, Client
-from vcweb.core.decorators import concurrency_test
 from vcweb.core import signals
 from vcweb.core.models import (Experiment, Experimenter, ExperimentConfiguration, ParticipantRoundDataValue,
                                Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
                                ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue, Institution,
                                GroupActivityLog, ExperimentSession, Invitation, ParticipantSignup)
-import logging
 from vcweb.subject_pool.views import get_potential_participants
+
+import random
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -400,7 +400,7 @@ class RoundConfigurationTest(BaseVcwebTest):
             self.assertEqual(rp.value, sample_values_for_type[type])
 
 
-class MyTestCase(BaseVcwebTest):
+class InvitationAlgorithmTest(BaseVcwebTest):
     def set_up_participants(self):
         password = "test"
         participants = []
@@ -426,7 +426,7 @@ class MyTestCase(BaseVcwebTest):
             p.institution = Institution.objects.get(name="Arizona State University")
             participants.append(p)
         Participant.objects.bulk_create(participants)
-        logger.debug("TOTAL PARTICIPANTS %d", len(Participant.objects.all()))
+        # logger.debug("TOTAL PARTICIPANTS %d", len(Participant.objects.all()))
 
     def set_up_experiment_sessions(self):
         e = self.experiment
@@ -449,7 +449,7 @@ class MyTestCase(BaseVcwebTest):
     def get_final_participants(self):
         potential_participants = get_potential_participants(self.experiment_metadata.pk, "Arizona State University")
         potential_participants_count = len(potential_participants)
-        logger.debug(potential_participants_count)
+        # logger.debug(potential_participants_count)
 
         final_participants = None
         no_of_invitations = 50

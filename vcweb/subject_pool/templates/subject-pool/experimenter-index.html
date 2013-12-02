@@ -36,7 +36,7 @@ Experiment Session Management
                 <form class="form-horizontal" data-bind="submit: onInvite">
                     {% include "includes/bootstrap-form.html" %}
                     <div class="controls">
-                        <button type="submit" class="btn">Invite them all!!</button>
+                        <button type="submit" class="btn">Invite</button>
                     </div>
                 </form>
             </div>
@@ -158,6 +158,16 @@ Experiment Session Management
                                         </button>
                                     </div>
                                 </td>
+                                <!-- ko ifnot: active -->
+                                <td rowspan="2">
+                                    <div class="btn-group">
+                                        <a class="btn" data-bind="attr: {href: 'session/detail/event/'+ pk()}">
+                                            <i class="icon-eye-open"></i>
+                                            view
+                                        </a>
+                                    </div>
+                                </td>
+                                <!-- /ko -->
                             </tr>
                             <tr>
                                 <td>
@@ -205,13 +215,14 @@ Experiment Session Management
     </script>
 
     <script type="text/javascript">
+
         var sessions_experiment_metadatas_object = $.parseJSON("{{ view_model_json | escapejs }}");
 
         $(function(){
 
             $('#invite-form').hide();
 
-            function makeCalendar() {
+            function createCalendar() {
                return $('#calendar').calendar({
                     events_url:'session/events',
                     tmpl_path: '/static/tmpls/',
@@ -223,7 +234,7 @@ Experiment Session Management
                 });
             }
 
-            var calendar = makeCalendar();
+            var calendar = createCalendar();
 
             $('.btn-group button[data-calendar-nav]').each(function() {
                 var $this = $(this);
@@ -273,7 +284,7 @@ Experiment Session Management
                     if(start_date > end_date){
                         alert("ERROR: End date cannot be earlier than the Start date. Please choose a later end date.");
                         return;
-                    } else if(start_date == end_date && start_time > end_time) {
+                    } else if(+start_date == +end_date && start_time > end_time) {
                         alert("ERROR: Scheduled End Time cannot be earlier than the Start Time. Please choose a later end Time.");
                         return;
                     }
@@ -289,7 +300,7 @@ Experiment Session Management
                             if(result.success) {
                                 self.pk(result.session.pk);
                                 self.editable(false);
-                                calendar = makeCalendar();
+                                calendar = createCalendar();
                             } else {
                                 $("#error-messages").html('<div class="alert alert-danger"><strong></strong></div>');
                                 for(index in result.message.__all__) {
@@ -379,7 +390,7 @@ Experiment Session Management
                             success: function(result) {
                                 if(result.success == true){
                                     model.session_list.remove(session);
-                                    calendar = makeCalendar();
+                                    calendar = createCalendar();
                                 }
                             }
                         });
@@ -449,5 +460,6 @@ Experiment Session Management
 
             ko.applyBindings(new SessionListViewModel(sessions_experiment_metadatas_object));
         });
+
     </script>
 {% endblock %}

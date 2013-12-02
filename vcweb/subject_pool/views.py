@@ -242,7 +242,6 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona S U"
             .exclude(pk__in=unlikely_participants)
     else:
         potential_participants = []
-    logger.debug(potential_participants)
     return potential_participants
 
 
