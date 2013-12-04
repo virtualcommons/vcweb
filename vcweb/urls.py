@@ -44,7 +44,8 @@ urlpatterns = patterns('',
     url(r'', include('vcweb.core.urls', namespace='core', app_name='core')),
     url(r'^autocomplete/', include('autocomplete_light.urls')),
 
-
+    (r'^cas/login', 'cas.views.login'),
+    (r'^cas/logout', 'cas.views.logout'),
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),

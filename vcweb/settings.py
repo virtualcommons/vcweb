@@ -78,6 +78,7 @@ MIDDLEWARE_CLASSES = (
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'vcweb.core.middleware.ExceptionHandlingMiddleware',
+        'cas.middleware.CASMiddleware',
         )
 
 ROOT_URLCONF = 'vcweb.urls'
@@ -114,6 +115,7 @@ INSTALLED_APPS = (
         'django_extensions',
         'mptt',
         'bootstrap_toolkit',
+        'cas',
         )
 
 SOUTH_TESTS_MIGRATE = False
@@ -201,6 +203,7 @@ AUTHENTICATION_BACKENDS = (
         'social_auth.backends.OpenIDBackend',
         "vcweb.core.auth.AuthenticationBackend",
         "django.contrib.auth.backends.ModelBackend",
+        'cas.backends.CASBackend',
         )
 
 STATIC_URL = '/static/'
@@ -334,3 +337,26 @@ INTERNAL_IPS = ('127.0.0.1',)
 DEBUG_TOOLBAR_CONFIG = {
         'INTERCEPT_REDIRECTS': False,
         }
+
+# CAS_ADMIN_PREFIX = '/admin'
+# CAS_IGNORE_REFERER = False
+CAS_SERVER_URL = "https://weblogin.asu.edu/cas/"
+CAS_LOGOUT_COMPLETELY = True
+CAS_PROVIDE_URL_TO_LOGOUT = True
+# CAS_REDIRECT_URL = "/dashboard"
+
+# from cas.backends import CASBackend
+#
+# class PopulatedCASBackend(CASBackend):
+#     """CAS authentication backend with user data populated from AD"""
+#
+#     def authenticate(self, ticket, service):
+#         """Authenticates CAS ticket and retrieves user data"""
+#
+#         user = super(PopulatedCASBackend, self).authenticate(
+#             ticket, service)
+#
+#         print(user)
+#         # Connect to AD, modify user object, etc.
+#
+#         return user
