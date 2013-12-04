@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.localflavor.us.forms import USZipCodeField
+from localflavor.us.forms import USZipCodeField
 
 class ActivityForm(forms.Form):
     activity_id = forms.IntegerField(widget=forms.HiddenInput)

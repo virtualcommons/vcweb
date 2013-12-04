@@ -3,7 +3,7 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
-from django.core.validators import email_re
+from django.core.validators import validate_email
 from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
@@ -124,8 +124,7 @@ class ParticipantAccountForm(forms.ModelForm):
     def clean(self):
         data = super(forms.ModelForm, self).clean()
         email_address = data.get('email')
-        if not email_re.match(email_address):
-            raise ValidationError(_('%s is not a valid email address.' % email_address))
+        validate_email(email_address)
         # raise forms.ValidationError(_("This email address is already in our system."))
 
         can_be_invited = data.get('can_receive_invitations')
@@ -169,8 +168,7 @@ class EmailListField(forms.CharField):
                 continue
             # FIXME: the only way to really test a valid email address is to try to send an email to it but keeping it
             # simple for the time being.
-            if not email_re.match(email_address):
-                raise ValidationError(_(u'%s is not a valid email address.' % email_address))
+            validate_email(email_address)
             emails.append(line)
         return emails
 

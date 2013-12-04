@@ -12,7 +12,7 @@ from vcweb.core.views import dumps, get_active_experiment, set_authentication_to
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (
         Activity, GroupScores, ActivityStatusList, do_activity, get_group_activity, can_view_other_groups,
-        get_lighterprints_experiment_metadata, get_foursquare_category_ids, get_time_remaining
+        get_lighterprints_experiment_metadata, get_time_remaining
         )
 
 from datetime import datetime
@@ -23,10 +23,11 @@ logger = logging.getLogger(__name__)
 @participant_required
 def perform_activity(request):
     form = ActivityForm(request.POST or None)
-    message = "Unable to perform activity"
+    logger.debug("performing activity: %s", form)
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
         participant_group_id = form.cleaned_data['participant_group_id']
+        logger.debug("%s performing activity %s", participant_group_id, activity_id)
         participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'), pk=participant_group_id)
 #        latitude = form.cleaned_data['latitude']
 #        longitude = form.cleaned_data['longitude']
@@ -48,6 +49,7 @@ def perform_activity(request):
         else:
             message = "You're not authorized to perform this activity as this person %s" % participant_group_relationship
             logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id, participant_group_relationship)
+    logger.warning("Invalid form, did not perform activity %s", message)
     return JsonResponse(dumps({'success': False, 'response': message}))
 
 @csrf_exempt

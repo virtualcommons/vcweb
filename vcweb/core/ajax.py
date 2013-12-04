@@ -1,5 +1,3 @@
-from dajaxice.decorators import dajaxice_register
-
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader_tags import BlockNode, ExtendsNode
@@ -91,24 +89,24 @@ def _render_experiment_monitor_block(block, experiment, request):
 
 
 @experimenter_required
-@dajaxice_register(method='POST')
-def archive(request, experiment_id):
+def archive(request):
+    experiment_id = request.POST.get('experiment_id')
     experiment = _get_experiment(request, experiment_id)
     experiment.complete()
     return JsonResponse(dumps({'success': True, 'experiment': experiment.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))}))
 
 
 @experimenter_required
-@dajaxice_register(method='POST')
-def clear_participants(request, experiment_id):
+def clear_participants(request):
+    experiment_id = request.POST.get('experiment_id')
     experiment = _get_experiment(request, experiment_id)
     experiment.clear_participants()
     return JsonResponse(dumps({'success': True, 'experiment': experiment.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))}))
 
 
 @experimenter_required
-@dajaxice_register(method='POST')
-def clone_experiment(request, experiment_id):
+def clone_experiment(request):
+    experiment_id = request.POST.get('experiment_id')
     logger.debug("cloning experiment %s", experiment_id)
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     experimenter = request.user.experimenter
@@ -116,9 +114,8 @@ def clone_experiment(request, experiment_id):
     return JsonResponse(dumps({'success': True, 'experiment': cloned_experiment.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))}))
 
 @experimenter_required
-@dajaxice_register(method='POST')
-def create_experiment(request, experiment_configuration_id):
-    logger.debug("incoming create experiment request POST: %s with id %s", request.POST, experiment_configuration_id, )
+def create_experiment(request):
+    experiment_configuration_id = request.POST.get('experiment_configuration_id')
     experiment_configuration = get_object_or_404(ExperimentConfiguration.objects.select_related('experiment_metadata'), pk=experiment_configuration_id)
     experimenter = request.user.experimenter
     authentication_code = 'test'
@@ -132,8 +129,9 @@ def create_experiment(request, experiment_configuration_id):
 
 
 @experimenter_required
-@dajaxice_register
-def save_experimenter_notes(request, experiment_id, notes=None):
+def save_experimenter_notes(request):
+    experiment_id = request.POST.get('experiment_id')
+    notes = request.POST.get('notes')
     experiment = _get_experiment(request, experiment_id)
     current_round_data = experiment.current_round_data
     current_experimenter_notes = current_round_data.experimenter_notes
@@ -148,14 +146,13 @@ def save_experimenter_notes(request, experiment_id, notes=None):
 
 
 @experimenter_required
-@dajaxice_register
 def get_experiment_model(request, pk):
     return _get_experiment(request, pk).to_json()
 
 @experimenter_required
-@dajaxice_register
-def get_round_data(request, pk):
+def get_round_data(request):
     # FIXME: naively implemented performance wise, revisit if this turns into a hot spot..
+    pk = request.POST.get('pk')
     round_data = get_object_or_404(RoundData, pk=pk)
     group_data_values = [gdv.to_dict(cacheable=True) for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()]
     participant_data_values = [pdv.to_dict(include_email=True, cacheable=True) for pdv in round_data.participant_data_value_set.select_related('participant_group_relationship__participant__user', 'parameter').exclude(parameter=get_chat_message_parameter())]
@@ -165,8 +162,9 @@ def get_round_data(request, pk):
         })
 
 @experimenter_required
-@dajaxice_register
-def experiment_controller(request, pk, action=None):
+def experiment_controller(request):
+    pk = request.POST.get('pk')
+    action = request.POST.get('action')
     experimenter = request.user.experimenter
     experiment = _get_experiment(request, pk)
     logger.debug("experimenter %s invoking %s on %s", experimenter, action, experiment)

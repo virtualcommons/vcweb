@@ -1,7 +1,7 @@
 import autocomplete_light
 # import every app/autocomplete_light_registry.py
 autocomplete_light.autodiscover()
-from django.conf.urls.defaults import patterns, url, include
+from django.conf.urls import patterns, url, include
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.decorators.cache import cache_page
@@ -10,9 +10,6 @@ from django.views.generic.base import TemplateView
 from vcweb import settings
 from django.contrib.auth.forms import PasswordResetForm
 
-from dajaxice.core import dajaxice_autodiscover, dajaxice_config
-# set up dajaxice URLs
-dajaxice_autodiscover()
 # set up admin URLs
 admin.autodiscover()
 
@@ -26,8 +23,6 @@ urlpatterns = patterns('',
     url(r'^accounts/password_reset/done/$', 'django.contrib.auth.views.password_reset_done', { 'template_name': 'account/password_reset_done.html' }),
     url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$', 'django.contrib.auth.views.password_reset_confirm'),
     url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete'),
-# dajaxice core
-    url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
 
     # FIXME: ideally this should be set up dynamically by iterating through each
     # ExperimentMetadata instance and using their namespace (e.g., replace all

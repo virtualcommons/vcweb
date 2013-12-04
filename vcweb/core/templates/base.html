@@ -1,4 +1,3 @@
-{% load dajaxice_templatetags %}
 {% load tags %}
 {% load url from future %}
 {% load static from staticfiles %}
@@ -140,7 +139,6 @@
         <script src='{{STATIC_URL}}js/ko/knockout.min.js'></script>
         <script src='{{STATIC_URL}}js/ko/knockout.mapping.min.js'></script>
         <script src='{{STATIC_URL}}js/common.js'></script>
-        {% dajaxice_js_import %}
         {% block javascript %}
         {% endblock %}
     </footer>

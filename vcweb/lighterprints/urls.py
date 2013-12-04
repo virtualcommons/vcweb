@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import url, patterns
+from django.conf.urls import url, patterns
 
 from vcweb.lighterprints.views import (
         post_chat_message, post_comment, perform_activity, participate, like, checkin, get_view_model,

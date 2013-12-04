@@ -126,21 +126,6 @@
                     }
                 });
             }
-            model.confirmExperimentAction = function(experimentModel, event) {
-                console.debug(experimentModel);
-                var btn = $(event.target);
-                var description = btn.attr("data-content");
-                var controllerAction = btn.attr("data-action");
-                if (btn.hasClass('disabled')) {
-                    console.debug("clicked on disabled button, ignoring");
-                    return false;
-                }
-                bootbox.confirm(description + ". Continue?", function(confirmed) {
-                    if (confirmed) {
-                        Dajaxice.vcweb.core.experiment_controller(function (data) {ko.mapping.fromJS(data.dashboardViewModel);}, { action: controllerAction });
-                    }
-                });
-            }
             model.gotoExperimentUrl = function(urlAction, experimentModel) {
                 var url = model.controllerUrl(experimentModel, urlAction);
                 window.location = url;
@@ -164,9 +149,11 @@
                     model.refreshViewModel();
                 }
             }
-            // FIXME: get rid of code duplication 
+            // FIXME: get rid of dajaxice
             model.createNewExperiment = function(configurationModel, event) {
-                Dajaxice.vcweb.core.create_experiment(pendingExperimentCallback, { experiment_configuration_id: configurationModel.pk() });
+                $.post("/api/experiment/create", { experiment_configuration_id: configurationModel.pk() })
+                 .done(pendingExperimentCallback);
+                // Dajaxice.vcweb.core.create_experiment(pendingExperimentCallback, { experiment_configuration_id: configurationModel.pk() });
             }
             model.cloneExperiment = function(experimentModel, event) {
                 Dajaxice.vcweb.core.clone_experiment(pendingExperimentCallback, { experiment_id: experimentModel.pk() });

@@ -28,7 +28,8 @@ class BaseTest(BaseVcwebTest):
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
-                    })
+                    }, follow=True)
+                logger.debug("response: %s - request chain %s", response, response.redirect_chain)
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
                 self.assertEqual(expected_success, json_object['success'])

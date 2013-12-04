@@ -1,6 +1,6 @@
 Django
 fabric
-django-dajaxice
+django-localflavor
 django-extensions
 django-kronos
 django-model-utils
@@ -43,3 +43,4 @@ django-debug-toolbar
 #pymongo
 #brabeion
 django-autocomplete-light
+git+ssh://git@github.com/kstateome/django-cas.git@0.9.1#egg=cas

@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import url, patterns
+from django.conf.urls import url, patterns
 from vcweb.bound.views import (participate, submit_harvest_decision, get_view_model)
 
 urlpatterns = patterns('vcweb.bound.views',

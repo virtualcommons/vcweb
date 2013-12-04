@@ -108,7 +108,6 @@ INSTALLED_APPS = (
         'vcweb.broker',
         'vcweb.subject_pool',
 #        'vcweb.sanitation',
-        'dajaxice',
         'raven.contrib.django',
         'kronos',
         'south',
@@ -120,12 +119,10 @@ INSTALLED_APPS = (
 
 SOUTH_TESTS_MIGRATE = False
 
-DAJAXICE_MEDIA_PREFIX = "dajaxice"
 
 STATICFILES_FINDERS = (
         'django.contrib.staticfiles.finders.FileSystemFinder',
         'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-        'dajaxice.finders.DajaxiceFinder',
         )
 
 # django social auth keys

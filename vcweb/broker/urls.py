@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import url, patterns
+from django.conf.urls import url, patterns
 from vcweb.broker.views import (participate, submit_decision, get_view_model, submit_chat_preferences)
 
 urlpatterns = patterns('vcweb.broker.views',

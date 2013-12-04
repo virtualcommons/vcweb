@@ -1046,7 +1046,7 @@ class Experiment(models.Model):
                        'deactivate', 'complete', 'restart_round', 'restart', 'clone')
 
     def invoke(self, action_name, experimenter=None):
-        if action_name in Experiment.ALLOWED_ACTIONS:
+        if action_name in Experiment.ALLOWED_ACTIONS and experimenter == self.experimenter:
             logger.debug("experimenter %s invoking action %s", experimenter, action_name)
             action = getattr(self, action_name)
             return action()

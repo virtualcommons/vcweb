@@ -3,7 +3,7 @@ from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
-from django.core.validators import email_re
+from django.core.validators import validate_email
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
@@ -751,11 +751,6 @@ def experiment_controller(request, pk=None, experiment_action=None):
     logger.warning(error_message)
     messages.warning(request, error_message)
     return redirect('core:dashboard')
-
-# FIXME: unimplemented: add filters by round_data parameters
-def daily_report(request, pk=None, parameter_ids=None):
-    experiment = get_object_or_404(Experiment, pk=pk)
-    round_data = experiment.get_round_data()
 
 
 @login_required

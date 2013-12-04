@@ -231,6 +231,17 @@
             model.saveExperimenterNotes = function(localModel, evt) {
                 var notes = $('#experimenterNotesText').val();
                 $('#submitExperimenterNotesButton').html("Submitting..");
+                $.post("/api/experimenter/save-notes", { experiment_id: {{ experiment.pk }}, notes: notes })
+                 .done(function() {
+                     model.addMessage("Saved experimenter notes: " + notes);
+                 })
+                 .fail(function(response) {
+                     model.addMessage(response.message);
+                 })
+                 .always(function() {
+                    setTimeout(function() { $('#submitExperimenterNotesButton').html("Save"); }, 1000);
+                 });
+                 /*
                 Dajaxice.vcweb.core.save_experimenter_notes(function(data) {
                     if (data.success) {
                         model.addMessage("Saved experimenter notes: " + notes);
@@ -238,9 +249,9 @@
                     else {
                         model.addMessage(data.message);
                     }
-                    setTimeout(function() { $('#submitExperimenterNotesButton').html("Save"); }, 1000);
                 },
                 { experiment_id: {{ experiment.pk }}, notes: notes });
+                */
             }
             // FIXME: factor out the code duplication with this and confirmExperimentControllerAction for
             // showing the modal and invoking the ajax call if possible
@@ -255,41 +266,33 @@
                     console.debug("assuming round data has already been loaded");
                     return;
                 }
-                Dajaxice.vcweb.core.get_round_data(function(data) {
-                    localModel.groupDataValues(data.groupDataValues);
-                    localModel.participantDataValues(data.participantDataValues);
-                },
-                {pk: localModel.pk()});
-            };
+                $.get("/api/experimenter/round-data", { pk: localModel.pk() })
+                 .done(function(response) {
+                     localModel.groupDataValues(response.groupDataValues);
+                     localModel.participantDataValues(response.participantDataValues);
+                 })
+                 .fail(function(response) {
+                     console.debug("unable to get round data for " + localModel.pk());
+                 });
+            }
             model.update = function(localModel, evt) {
                 $('#progress-modal').modal('show');
-                Dajaxice.vcweb.core.get_experiment_model(function(data) {
-                    ko.mapping.fromJS(data, model);
-                    console.debug("time remaining: " + model.timeRemaining());
-                    model.startTimer();
-                    $('#progress-modal').modal('hide');
-                },
-                {pk: {{experiment.pk}}});
+                $.get("/api/experimenter/experiment-model", { pk: {{ experiment.pk }} })
+                 .done(function(data) {
+                     ko.mapping.fromJS(data, model);
+                     console.debug("time remaining: " + model.timeRemaining());
+                     model.startTimer();
+                     $('#progress-modal').modal('hide');
+                 })
+                 .fail(function(response) {
+                     console.debug("unable to get experiment model for " + {{ experiment.pk }});
+                 });
             }
             model.startTimer = function() {
                 if (model.timeRemaining() > 0) {
                     model.setCurrentInterval( setInterval( model.tick, 1000 ) );
                 }
             };
-            model.advanceToNextRound = function() {
-                $('#progress-modal').modal('show');
-                Dajaxice.vcweb.core.experiment_controller(function(response) {
-                    if (response.success) {
-                        ko.mapping.fromJS(response.experiment, model);
-                        model.startTimer();
-                        sendUpdateEvent();
-                        $('#progress-modal').modal('hide');
-                    }
-                    else {
-                        console.debug("Unable to advance to next round: " + response.message);
-                    }
-                }, {pk: {{experiment.pk}}, 'action':"advance_to_next_round"});
-            }
             model.confirmExperimentControllerAction = function(shouldUpdateParticipants, localModel, evt) {
                 element = evt.target;
                 if ($(element).hasClass('disabled')) {
@@ -302,6 +305,21 @@
                         return false;
                     }
                     $('#progress-modal').modal('show');
+                    $.post("/api/experimenter/experiment-controller", { pk: {{ experiment.pk }}, action: action })
+                     .done(function(response) {
+                        if (response.success) {
+                            ko.mapping.fromJS(response.experiment, model);
+                            model.startTimer();
+                            if (shouldUpdateParticipants) {
+                                sendUpdateEvent();
+                            }
+                            $('#progress-modal').modal('hide');
+                        }
+                     })
+                     .fail(function(response) {
+                         console.debug("Unable to perform experiment controller action: " + response.message);
+                     });
+                     /*
                     Dajaxice.vcweb.core.experiment_controller(function(response) {
                         if (response.success) {
                             ko.mapping.fromJS(response.experiment, model);
@@ -315,6 +333,7 @@
                             console.debug("Unable to perform experiment controller action: " + response.message);
                         }
                     }, {pk: {{experiment.pk}}, 'action':action});
+                    */
                 });
             }
             model.startOrStopExperimentAction = ko.computed(function() {
@@ -332,12 +351,11 @@
                 }
                 model.isCheckingParticipants(true);
                 console.debug("checking if all participants are ready");
-                $.get('/experiment/{{experiment.pk}}/check-ready-participants', function(response) {
+                $.get('/api/experiment/{{experiment.pk}}/check-ready-participants', function(response) {
                     if (response.all_participants_ready) {
                         model.addMessage("All participants are ready, ready to advance to the next round");
                         // FIXME: need to ensure that this can only get called once, otherwise we run the risk of
                         // invoking advance to next round twice.  See https://bitbucket.org/virtualcommons/vcweb/issue/113/
-                        // model.advanceToNextRound()
                     }
                 });
                 model.isCheckingParticipants(false);
