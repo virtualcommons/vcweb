@@ -206,7 +206,7 @@
 <script type='text/javascript'>
     var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
     $(function() {
-        var ALLOWED_ACTIONS = ["activate", "advance_to_next_round", "restart", "deactivate"]
+        var ALLOWED_ACTIONS = ["activate", "advance_to_next_round", "restart", "deactivate", "complete"]
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);

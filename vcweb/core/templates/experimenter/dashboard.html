@@ -156,16 +156,24 @@
                 // Dajaxice.vcweb.core.create_experiment(pendingExperimentCallback, { experiment_configuration_id: configurationModel.pk() });
             }
             model.cloneExperiment = function(experimentModel, event) {
-                Dajaxice.vcweb.core.clone_experiment(pendingExperimentCallback, { experiment_id: experimentModel.pk() });
+                $.post("/api/experiment/clone", { experiment_id: experimentModel.pk() })
+                 .done(pendingExperimentCallback);
+                // Dajaxice.vcweb.core.clone_experiment(pendingExperimentCallback, { experiment_id: experimentModel.pk() });
             }
             model.clearParticipants = function(experimentModel, event) {
-                Dajaxice.vcweb.core.clear_participants(modifyExperimentCallback(experimentModel), { experiment_id: experimentModel.pk() });
+                $.post("/api/experiment/clear-participants", {experiment_id: experimentModel.pk() })
+                 .done(modifyExperimentCallback(experimentModel));
+                // Dajaxice.vcweb.core.clear_participants(modifyExperimentCallback(experimentModel), { experiment_id: experimentModel.pk() });
             }
             model.archive = function(experimentModel, event) {
-                Dajaxice.vcweb.core.archive(modifyExperimentCallback(experimentModel), { experiment_id: experimentModel.pk() });
+                $.post("/api/experiment/archive", { experiment_id: experimentModel.pk() })
+                 .done(modifyExperimentCallback(experimentModel));
+                // Dajaxice.vcweb.core.archive(modifyExperimentCallback(experimentModel), { experiment_id: experimentModel.pk() });
             }
             model.deactivate = function(experimentModel, event) {
-                Dajaxice.vcweb.core.deactivate(modifyExperimentCallback(experimentModel), { experiment_id: experimentModel.pk() });
+                $.post("/api/experiment/deactivate", { experiment_id: experimentModel.pk() })
+                 .done(modifyExperimentCallback(experimentModel));
+                // Dajaxice.vcweb.core.deactivate(modifyExperimentCallback(experimentModel), { experiment_id: experimentModel.pk() });
             }
             model.modify = function() {
                 console.debug("modify existing configuration");
