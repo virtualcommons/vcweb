@@ -3,6 +3,7 @@ import autocomplete_light
 autocomplete_light.autodiscover()
 from django.conf.urls import patterns, url, include
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.decorators.cache import cache_page
 from django.views.generic.base import TemplateView
@@ -19,10 +20,10 @@ urlpatterns = patterns('',
     url(r'^contact/$', cache_page(60*15)(TemplateView.as_view(template_name='contact.html')), name='contact'),
     # FIXME: customize password reset email and forms to not go through django admin?
     #url(r'^accounts/password_reset/$', 'django.contrib.auth.views.password_reset', {'template_name':'password_reset_form.html', 'email_template_name':'userpanel/password_reset_email.html'}),
-    url(r'^accounts/password/reset/$', 'django.contrib.auth.views.password_reset', { 'template_name': 'account/password_reset_form.html', 'password_reset_form': PasswordResetForm}, name='password-reset'),
-    url(r'^accounts/password_reset/done/$', 'django.contrib.auth.views.password_reset_done', { 'template_name': 'account/password_reset_done.html' }),
-    url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$', 'django.contrib.auth.views.password_reset_confirm'),
-    url(r'^accounts/reset/done/$', 'django.contrib.auth.views.password_reset_complete'),
+    url(r'^accounts/password/reset/$', auth_views.password_reset, { 'template_name': 'account/password_reset_form.html', 'password_reset_form': PasswordResetForm}, name='password_reset'),
+    url(r'^accounts/password/reset/done/$', auth_views.password_reset_done, { 'template_name': 'account/password_reset_done.html' }, name='password_reset_done'),
+    url(r'^accounts/password/reset/confirm/(?P<uidb64>[0-9A-Za-z]+)-(?P<token>.+)/$', auth_views.password_reset_confirm, name='password_reset_confirm'),
+    url(r'^accounts/password/reset/complete/$', auth_views.password_reset_complete, name='password_reset_complete'),
 
     # FIXME: ideally this should be set up dynamically by iterating through each
     # ExperimentMetadata instance and using their namespace (e.g., replace all
