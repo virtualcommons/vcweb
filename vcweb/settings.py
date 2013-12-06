@@ -335,25 +335,13 @@ DEBUG_TOOLBAR_CONFIG = {
         'INTERCEPT_REDIRECTS': False,
         }
 
-# CAS_ADMIN_PREFIX = '/admin'
-# CAS_IGNORE_REFERER = False
+
 CAS_SERVER_URL = "https://weblogin.asu.edu/cas/"
 CAS_LOGOUT_COMPLETELY = True
 CAS_PROVIDE_URL_TO_LOGOUT = True
-# CAS_REDIRECT_URL = "/dashboard"
+CAS_REDIRECT_URL = "/"
+CAS_AUTO_CREATE_USERS = False
 
-# from cas.backends import CASBackend
-#
-# class PopulatedCASBackend(CASBackend):
-#     """CAS authentication backend with user data populated from AD"""
-#
-#     def authenticate(self, ticket, service):
-#         """Authenticates CAS ticket and retrieves user data"""
-#
-#         user = super(PopulatedCASBackend, self).authenticate(
-#             ticket, service)
-#
-#         print(user)
-#         # Connect to AD, modify user object, etc.
-#
-#         return user
+CAS_RESPONSE_CALLBACKS = (
+    'vcweb.core.views.get_cas_user',
+)
