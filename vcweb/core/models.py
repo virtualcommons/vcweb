@@ -1953,6 +1953,11 @@ class Address(models.Model):
 class Participant(CommonsUser):
     GENDER_CHOICES = (('M', 'Male'), ('F', 'Female'),)
     CLASS_CHOICES = Choices('Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate', 'Other')
+    SPORT_CHOICES = Choices('Football', 'Baseball', 'Hockey', 'Basketball', 'Other')
+    COLOR_CHOICES = Choices('red', 'blue', 'green', 'yellow', 'black', 'white', 'pink', 'purple', 'other')
+    FOOD_CHOICES = Choices('Fast food', 'Haute cuisine', 'Asian', 'Mexican', 'Other')
+    MOVIE_GENRE_CHOICES = Choices('Family', 'Action', 'Comedy', 'Science Fiction', 'Documentary', 'Cult', 'Sport',
+            'Musical', 'Horror', 'Foreign', 'Romance', 'Independent', 'Drama')
     can_receive_invitations = models.BooleanField(default=False)
     groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participant_set')
     experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participant_set')
@@ -1962,6 +1967,10 @@ class Participant(CommonsUser):
     class_status = models.CharField(max_length=32, choices=CLASS_CHOICES, blank=True)
     address = models.ForeignKey(Address, null=True, blank=True)
     institution_username = NullCharField(max_length=64, unique=True, help_text=_('Unique institution-specific username, e.g., ASURITE, IU Network ID'))
+    favorite_sport = models.CharField(max_length=32, choices=SPORT_CHOICES, blank=True)
+    favorite_color = models.CharField(max_length=32, choices=COLOR_CHOICES, blank=True)
+    favorite_food = models.CharField(max_length=32, choices=FOOD_CHOICES, blank=True)
+    favorite_movie_genre = models.CharField(max_length=64, choices=MOVIE_GENRE_CHOICES, blank=True)
 
     class Meta:
         ordering = ['user']

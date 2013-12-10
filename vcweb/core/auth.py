@@ -4,6 +4,7 @@ from django.core.validators import validate_email
 import logging
 
 logger = logging.getLogger(__name__)
+
 class AuthenticationBackend(ModelBackend):
     """
     allow users to login with their email as their username,
