@@ -1,32 +1,51 @@
 {% extends "forms/base.html" %}
 
 {% block title %}Virtual Commons Web Login{% endblock %}
-
-
-{% block form %}
-    <h3>Returning User</h3>
-    <p>
-    Don&#39;t have an account or a first-time user?  Please <a href='{% url "core:register" %}'>register first</a>.
-    <br>
-    If you've forgotten your password, you can <a href='{% url "password_reset" %}'>request a new one</a>.
-    </p>
-    {% include "includes/bootstrap-form.html" %}
-    <div class='controls'>
-        <button type='submit' class='btn btn-primary'><i class='icon-user'></i> Login</button>
+{% block page %}
+<div class="row-fluid">
+    <div class="span6">
+        <form id='vcweb-form' method='post' class='form-horizontal'>
+            {% csrf_token %}
+            <h3>Returning User</h3>
+            <p>
+            Don&#39;t have an account or a first-time user?  Please <a href='{% url "core:register" %}'>register first</a>.
+            <br>
+            If you've forgotten your password, you can <a href='{% url "password_reset" %}'>request a new one</a>.
+            </p>
+            {% include "includes/bootstrap-form.html" %}
+            <div class='controls'>
+                <button type='submit' class='btn btn-primary'><i class='icon-user'></i> Login</button>
+            </div>
+            {% comment %}
+            FIXME: disabling social auth until its more thoroughly debugged (and we know what social platforms we want to
+            integrate with)
+            <br><br>
+            You can also register or sign in using your other social accounts:
+            <ul class="authbadges">
+                <!-- <li><a href="{% url socialauth_begin 'openid' %}">OpenID login</a></li> -->
+                <li><a href="{% url socialauth_begin 'twitter' %}"><img width="150", height="24" src="{{STATIC_URL}}images/oauth/sign-in-with-twitter_0.png"></a></li>
+                <li><a href="{% url socialauth_begin 'foursquare' %}"><img src="{{STATIC_URL}}images/oauth/foursquare-connect-black.png"></a></li>
+                <li><a href="{% url socialauth_begin 'facebook' %}"><img width="193", height="23" src="{{STATIC_URL}}images/oauth/facebook-connect-button.png"></a></li>
+            </ul>
+            {% endcomment %}
+        </form>
     </div>
-    {% comment %}
-    FIXME: disabling social auth until its more thoroughly debugged (and we know what social platforms we want to
-    integrate with)
-    <br><br>
-    You can also register or sign in using your other social accounts:
-    <ul class="authbadges">
-        <!-- <li><a href="{% url socialauth_begin 'openid' %}">OpenID login</a></li> -->
-        <li><a href="{% url socialauth_begin 'twitter' %}"><img width="150", height="24" src="{{STATIC_URL}}images/oauth/sign-in-with-twitter_0.png"></a></li>
-        <li><a href="{% url socialauth_begin 'foursquare' %}"><img src="{{STATIC_URL}}images/oauth/foursquare-connect-black.png"></a></li>
-        <li><a href="{% url socialauth_begin 'facebook' %}"><img width="193", height="23" src="{{STATIC_URL}}images/oauth/facebook-connect-button.png"></a></li>
-    </ul>
-    {% endcomment %}
-{% endblock form %}
+    <div class="span6">
+        <div class="cas-login">
+            <p>
+                {% load staticfiles %}
+                <img src=" {% static "images/ASU/ASU_logo.jpg" %}" alt="ASU Logo" width="50%">
+            </p>
+            <p>
+                Login via ASU using your ASURITE User-ID and Password.
+            </p>
+            <div id="login_submit">
+                <a href="{% url 'cas.views.login' %}" class='submit'>Sign In</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock page %}
 
 {% block javascript %}
 {{ block.super }}

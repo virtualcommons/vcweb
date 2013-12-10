@@ -1,4 +1,5 @@
 from collections import defaultdict
+import socket
 import urllib2
 import xml.etree.ElementTree as ET
 from django.contrib import auth, messages
@@ -12,6 +13,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.generic import FormView, TemplateView
 from django.views.generic.detail import SingleObjectMixin
+from vcweb import settings
 from vcweb.core import dumps
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
@@ -972,8 +974,8 @@ def get_cas_user(tree):
     user, user_created = User.objects.get_or_create(username=username)
 
     if user_created:
-        print "user not found!"
-        url = "https://webapp4.asu.edu/directory/ws/search?asuriteId="+username
+        url = settings.WEB_DIRECTORY_URL + username
+
         r = urllib2.Request(url, headers={"Accept": "application/xml"})
         parsed = ET.parse(urllib2.urlopen(r))
         root = parsed.getroot()
@@ -993,7 +995,12 @@ def get_cas_user(tree):
         plans = person.find('plans')
         plan = plans.find('plan')
         major = plan.find('acadPlanDescr').text
-        institution = Institution.objects.get(name="Arizona State University")
+        institution, institution_created = Institution.objects.get_or_create(name=settings.CAS_UNIVERSITY_NAME)
+        if institution_created:
+            institution.url = settings.CAS_UNIVERSITY_URL
+            institution.cas_server_url = settings.CAS_SERVER_URL
+            institution.save()
+
         reset_password(email)
         participant = Participant(user=user)
         participant.major = major
@@ -1004,8 +1011,11 @@ def get_cas_user(tree):
 def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):
     form = PasswordResetForm({'email': email})
     if form.is_valid():
-        return form.save(from_email=from_email, email_template_name=template, domain_override="vcweb.asu.edu")
+        # domain = socket.gethostbyname(socket.gethostname())
+        domain = "vcweb.asu.edu"
+        return form.save(from_email=from_email, email_template_name=template, domain_override=domain)
     return None
+
 
 def handler500(request):
     return render(request, '500.html')
