@@ -100,8 +100,10 @@ class ParticipantAccountForm(forms.ModelForm):
         if instance is not None:
             super(ParticipantAccountForm, self).__init__(*args, **kwargs)
             self.fields.keyOrder = ['pk', 'first_name', 'last_name', 'email', 'institution', 'can_receive_invitations',
-                                    'major', 'class_status', 'gender']
+                                    'major', 'class_status', 'gender', 'favorite_sport', 'favorite_color',
+                                    'favorite_food', 'favorite_movie_genre']
             self.fields['class_status'].label = 'Class Status'
+
             for attr in ('pk', 'first_name', 'last_name', 'email'):
                 self.fields[attr].initial = getattr(instance, attr)
 
@@ -113,13 +115,13 @@ class ParticipantAccountForm(forms.ModelForm):
 
     class Meta:
         model = Participant
-        fields = ['major', 'class_status', 'gender', 'can_receive_invitations']
+        fields = ['major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_sport', 'favorite_color',
+                  'favorite_food', 'favorite_movie_genre']
 
         #FIXME: currently disabled, need to fix MajorAutocomplete
         widgets = {
             'major': autocomplete_light.TextWidget(ParticipantMajorAutocomplete),
         }
-
 
     def clean(self):
         data = super(forms.ModelForm, self).clean()

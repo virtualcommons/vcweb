@@ -154,9 +154,16 @@ def dashboard(request):
     selects the appropriate dashboard template and data for participants and experimenters
     """
     user = request.user
+    if user.participant:
+        # FIXME: A better way would be to used a boolean flag in database that can tell if it's first login or not
+        first_login = (user.last_login - user.date_joined) <= timedelta(seconds=5)
+        if first_login:
+            return redirect('core:profile')
+
     dashboard_view_model = DashboardViewModel(user)
     return render(request, dashboard_view_model.template_name,
                   {'dashboardViewModelJson': dashboard_view_model.to_json()})
+
 
 
 @login_required
@@ -1005,6 +1012,7 @@ def get_cas_user(tree):
         participant = Participant(user=user)
         participant.major = major
         participant.institution = institution
+        participant.institution_username = username
         participant.save()
 
 
