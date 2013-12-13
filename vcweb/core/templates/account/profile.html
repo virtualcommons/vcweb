@@ -35,6 +35,18 @@
                     gender: {
                         required: "#id_can_receive_invitations:checked"
                     },
+                    favorite_sport: {
+                        required: "#id_can_receive_invitations:checked"
+                    },
+                    favorite_color: {
+                        required: "#id_can_receive_invitations:checked"
+                    },
+                    favorite_food: {
+                        required: "#id_can_receive_invitations:checked"
+                    },
+                    favorite_movie_genre: {
+                        required: "#id_can_receive_invitations:checked"
+                    },
                     email: {
                         required: true,
                         email: true,
@@ -74,21 +86,6 @@
                     });
                 }
             });
-
-{#            $("#id_email").blur(function(){#}
-{#                $.get('/accounts/check-email', {email: $(this).val()})#}
-{#                        .done(function(response){#}
-{#                         if(response.success != undefined) {#}
-{##}
-{#                             if(response.success) {#}
-{#                                    $("#error-messages").html('<div class="alert alert-success"><strong>'+response.message+'</strong></div>');#}
-{#                                } else {#}
-{#                                    $("#error-messages").html('<div class="alert alert-danger"><strong>'+response.message+'</strong></div>');#}
-{#                                }#}
-{#                         }#}
-{#                     });#}
-{#                 });#}
-
         });
     </script>
     {%  endblock javascript %}

@@ -155,9 +155,9 @@ def dashboard(request):
     """
     user = request.user
     if user.participant:
-        # FIXME: A better way would be to used a boolean flag in database that can tell if it's first login or not
-        first_login = (user.last_login - user.date_joined) <= timedelta(seconds=5)
-        if first_login:
+        # first_login = (user.last_login - user.date_joined) <= timedelta(seconds=5)
+        redirect_user = user.participant.can_receive_invitations
+        if not redirect_user:
             return redirect('core:profile')
 
     dashboard_view_model = DashboardViewModel(user)
