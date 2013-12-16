@@ -118,7 +118,6 @@ class ParticipantAccountForm(forms.ModelForm):
         fields = ['major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_sport', 'favorite_color',
                   'favorite_food', 'favorite_movie_genre']
 
-        #FIXME: currently disabled, need to fix MajorAutocomplete
         widgets = {
             'major': autocomplete_light.TextWidget(ParticipantMajorAutocomplete),
         }
@@ -133,11 +132,17 @@ class ParticipantAccountForm(forms.ModelForm):
         major = data.get('major')
         gender = data.get('gender')
         class_status = data.get('class_status')
+        favorite_food = data.get('favorite_food')
+        favorite_color = data.get('favorite_color')
+        favorite_sport = data.get('favorite_sport')
+        favorite_movie_genre = data.get('favorite_movie_genre')
         if not email_address:
             raise forms.ValidationError(_("Please enter a valid email address"))
 
-        if can_be_invited and (not major or not gender or not class_status):
-            raise forms.ValidationError(_("Please enter your major, gender and class status to receive invitations"))
+        if can_be_invited and (not major or not gender or not class_status or not favorite_food or not favorite_color
+                               or not favorite_sport or not favorite_movie_genre):
+            raise forms.ValidationError(_("Please enter your major, gender, class status, favorite food, favorite color"
+                                          ", favorite sport and favorite movie genre to receive invitations"))
 
         return data
 
@@ -322,4 +327,3 @@ class QuizForm(forms.Form):
         for name, value in self.cleaned_data.items():
             if name.startswith('quiz_question_'):
                 yield (self.fields[name].label, value)
-

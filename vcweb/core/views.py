@@ -332,7 +332,8 @@ def update_account_profile(request):
                     'message': 'This email is already registered with our system, please try another.'
                 }))
 
-        for attr in ('major', 'class_status', 'gender', 'can_receive_invitations'):
+        for attr in ('major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food', 'favorite_sport',
+                     'favorite_color', 'favorite_movie_genre'):
             setattr(p, attr, form.cleaned_data.get(attr))
 
         for attr in ('first_name', 'last_name', 'email'):
@@ -348,7 +349,9 @@ def update_account_profile(request):
         }))
         # logger.debug("Form had errors %s", form)
     return JsonResponse(dumps({'success': False,
-                               'message': 'You need to provide your major, class status and gender if you want to receive invitations'}))
+                               'message': 'You need to provide your major, class status, gender, favorite sport, '
+                                          'favorite food, favorite color and favorite movie genre, if you want to '
+                                          'receive invitations'}))
 
 
 @login_required
