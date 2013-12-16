@@ -73,6 +73,8 @@ Experiment Session Management
     <script type="text/javascript" src="{{ STATIC_URL }}js/calendar.js"></script>
     <link rel="stylesheet" href="{{ STATIC_URL }}css/calendar.css">
 
+    <script type="text/javascript" src="{{ STATIC_URL }}js/bootbox.min.js"></script>
+
     <script type='text/html' id='session-controller-template'>
         <div class="well-large well">
             <form data-bind="submit: onSave" class="form-inline" style="margin-bottom:0">
@@ -122,20 +124,17 @@ Experiment Session Management
                                     <div class="btn-group" data-bind = "visible: editable">
                                         <button type="submit" class="btn btn-success">
                                             <i class="icon-save"></i>
-                                            save
                                         </button>
                                         <button class="btn btn-danger" data-bind="click: $root.removeSession">
                                             <i class="icon-trash"></i>
                                         </button>
                                     </div>
                                     <div class="btn-group" data-bind = "visible: !editable()">
-                                        <a class="btn" data-bind="attr: {href: 'session/detail/event/'+ pk()} ">
+                                        <a class="btn btn-primary" data-bind="attr: {href: 'session/detail/event/'+ pk()} ">
                                             <i class="icon-eye-open"></i>
-                                            view
                                         </a>
                                         <button class="btn btn-success" data-bind="click: makeEditable">
                                             <i class="icon-edit"></i>
-                                            edit
                                         </button>
                                         <button class="btn btn-danger" data-bind="click: $root.removeSession">
                                             <i class="icon-trash"></i>
@@ -145,9 +144,8 @@ Experiment Session Management
                                 <!-- ko ifnot: active -->
                                 <td rowspan="2">
                                     <div class="btn-group">
-                                        <a class="btn" data-bind="attr: {href: 'session/detail/event/'+ pk()}">
+                                        <a class="btn btn-primary" data-bind="attr: {href: 'session/detail/event/'+ pk()}">
                                             <i class="icon-eye-open"></i>
-                                            view
                                         </a>
                                     </div>
                                 </td>
@@ -256,10 +254,10 @@ Experiment Session Management
                     var end_date = new Date(formElement.elements["end_date"].value);
 
                     if(start_date > end_date){
-                        alert("ERROR: End date cannot be earlier than the Start date. Please choose a later end date.");
+                        bootbox.alert("ERROR: End date cannot be earlier than the Start date. Please choose a later end date.", function() {});
                         return;
                     } else if(+start_date == +end_date && start_time >= end_time) {
-                        alert("ERROR: Scheduled End Time cannot be earlier than the Start Time. Please choose a later end Time.");
+                        bootbox.alert("ERROR: Scheduled End Time cannot be earlier than the Start Time. Please choose a later end Time.", function() {});
                         return;
                     }
                     if(formElement.elements["pk"].value == -1){
@@ -319,7 +317,7 @@ Experiment Session Management
                         }
                         return true;
                     } else {
-                        alert("You can not invite participants for a list of experiment sessions spanning to more than one experiment");
+                        bootbox.alert("You can not invite participants for a list of experiment sessions spanning to more than one experiment", function() {});
                         return false;
                     }
                 }
@@ -358,22 +356,27 @@ Experiment Session Management
                 };
 
                 model.removeSession = function(session, event) {
-                    var formData = $(event.target).parents("form").serialize();
 
-                    if(session.pk() != -1){
-                        $.ajax("/subject-pool/session/update", {
-                            type : "POST",
-                            data : formData + '&request_type=delete',
-                            success: function(result) {
-                                if(result.success == true){
-                                    model.session_list.remove(session);
-                                    calendar = createCalendar();
-                                }
+                    bootbox.confirm("Are you sure you want to delete this session. All the data associated with this Experiment Session will be lost?", function(result) {
+                        if (result) {
+                            var formData = $(event.target).parents("form").serialize();
+
+                            if(session.pk() != -1){
+                                $.ajax("/subject-pool/session/update", {
+                                        type : "POST",
+                                        data : formData + '&request_type=delete',
+                                        success: function(result) {
+                                            if(result.success == true){
+                                                model.session_list.remove(session);
+                                                calendar = createCalendar();
+                                            }
+                                        }
+                                    });
+                            } else {
+                                model.session_list.remove(session);
                             }
-                        });
-                    } else {
-                        model.session_list.remove(session);
-                    }
+                        }
+                    });
                 };
 
                 model.onInvite = function(formElement) {
