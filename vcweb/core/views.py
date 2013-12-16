@@ -154,10 +154,10 @@ def dashboard(request):
     selects the appropriate dashboard template and data for participants and experimenters
     """
     user = request.user
-    if user.participant:
+    if is_participant(user):
         # first_login = (user.last_login - user.date_joined) <= timedelta(seconds=5)
-        redirect_user = user.participant.can_receive_invitations
-        if not redirect_user:
+        profile_complete = False
+        if not profile_complete:
             return redirect('core:profile')
 
     dashboard_view_model = DashboardViewModel(user)
