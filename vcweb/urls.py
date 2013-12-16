@@ -34,8 +34,6 @@ urlpatterns = patterns('',
     url(r'^broker/', include('vcweb.broker.urls', namespace='broker', app_name='broker')),
     url(r'^subject-pool/', include('vcweb.subject_pool.urls', namespace='subject-pool', app_name='subject-pool')),
     url(r'^admin/', include(admin.site.urls)),
-    # social auth urls for logging in via fb, google, foursquare, etc.
-    url(r'', include('social_auth.urls')),
     # core catches everything else
     url(r'', include('vcweb.core.urls', namespace='core', app_name='core')),
     url(r'^autocomplete/', include('autocomplete_light.urls')),
