@@ -165,11 +165,12 @@ def send_invitations(request):
         affiliated_university = form.cleaned_data.get('affiliated_university')
 
         experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
+        experiment_metadata_pk_list = experiment_sessions.values_list('experiment_metadata__pk', flat=True)
 
-        if len(experiment_sessions) == 1:
+        if len(set(experiment_metadata_pk_list)) == 1:
             # get the experiment metadata pk of any session, as all sessions selected by experimenter to send invitations
             # belong to same experiment metadata(This is ensured as it is a constraint)
-            experiment_metadata_pk = experiment_sessions[0].experiment_metadata.pk
+            experiment_metadata_pk = experiment_metadata_pk_list[0]
 
             potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_university)
             potential_participants_count = len(potential_participants)

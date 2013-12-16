@@ -156,7 +156,7 @@ def dashboard(request):
     user = request.user
     if is_participant(user):
         # first_login = (user.last_login - user.date_joined) <= timedelta(seconds=5)
-        profile_complete = False
+        profile_complete = is_profile_complete(user.participant)
         if not profile_complete:
             return redirect('core:profile')
 
@@ -165,6 +165,14 @@ def dashboard(request):
                   {'dashboardViewModelJson': dashboard_view_model.to_json()})
 
 
+def is_profile_complete(participant):
+    if participant.can_receive_invitations:
+        if participant.class_status and participant.gender and participant.favorite_sport and participant.favorite_color and participant.favorite_food and participant.favorite_movie_genre:
+            return True
+        else:
+            return False
+    else:
+        return False
 
 @login_required
 def get_dashboard_view_model(request):
