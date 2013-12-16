@@ -106,10 +106,10 @@ Experiment Session Management
                                         </span>
                                     </span>
                                     <select  class="input-mini" name="start_hour" data-bind ="foreach: $root.allHours,value : startHour, enable: editable">
-                                        <option data-bind="value: $data, text: $data "></option>
+                                        <option data-bind="value: $index(), text: $data "></option>
                                     </select>
                                     <select class="input-mini" name="start_min" data-bind ="foreach: $root.allMinutes,value : startMin, enable: editable">
-                                        <option data-bind="value: $data, text: $data"></option>
+                                        <option data-bind="value: $index(), text: $data"></option>
                                      </select>
                                 </td>
                                 <td>
@@ -168,10 +168,10 @@ Experiment Session Management
                                         </span>
                                     </span>
                                     <select  class="input-mini" name="end_hour" data-bind ="foreach: $root.allHours ,value : endHour, enable: editable">
-                                        <option data-bind="value: $data, text: $data "></option>
+                                        <option data-bind="value: $index(), text: $data "></option>
                                     </select>
                                     <select class="input-mini" name="end_min" data-bind ="foreach: $root.allMinutes ,value : endMin, enable: editable">
-                                        <option data-bind="value: $data, text: $data"></option>
+                                        <option data-bind="value: $index(), text: $data"></option>
                                     </select>
                                 </td>
                                 <td>
