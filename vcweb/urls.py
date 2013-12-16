@@ -32,7 +32,7 @@ urlpatterns = patterns('',
     url(r'^bound/', include('vcweb.bound.urls', namespace='bound', app_name='bound')),
     url(r'^lighterprints/', include('vcweb.lighterprints.urls', namespace='lighterprints', app_name='lighterprints')),
     url(r'^broker/', include('vcweb.broker.urls', namespace='broker', app_name='broker')),
-    url(r'^subject-pool/', include('vcweb.subject_pool.urls', namespace='subject-pool', app_name='subject-pool')),
+    url(r'^subject-pool/', include('vcweb.subject_pool.urls', namespace='subject_pool', app_name='subject_pool')),
     url(r'^admin/', include(admin.site.urls)),
     # core catches everything else
     url(r'', include('vcweb.core.urls', namespace='core', app_name='core')),

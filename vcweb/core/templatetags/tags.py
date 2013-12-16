@@ -3,7 +3,12 @@
 ### active tag taken from http://gnuvince.wordpress.com/2007/09/14/a-django-template-tag-for-the-current-active-page/
 
 from django import template
+import re
 register = template.Library()
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 @register.simple_tag
 def active(request, pattern):
@@ -11,7 +16,7 @@ def active(request, pattern):
 
 @register.simple_tag
 def active_re(request, pattern):
-    import re
+    logger.debug("looking for pattern %s", pattern)
     return 'active' if re.search(pattern, request.path) else 'inactive'
 
 @register.filter

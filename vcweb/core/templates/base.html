@@ -11,6 +11,7 @@
 {% url 'core:profile' as profile %}
 {% url 'core:dashboard' as dashboard %}
 {% url 'core:participate' as participate %}
+{% url 'subject_pool:index' as subjectpool %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,6 +38,7 @@
                 <li class='{% active_re request participate %}'><a href='{{ participate }}'><i class='icon-group'></i> Participate</a></li>
                 {% elif request.user.experimenter %}
                 <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'><i class='icon-dashboard'></i> Dashboard</a></li>
+                <li class='{% active_re request subjectpool %}'><a href='{{ subjectpool }}'><i class='icon-group'></i> Subject recruitment</a></li>
                 {% endif %}
                 {% endif %}
                 <li class='{% active request contact %}'><a href='{{ contact }}'><i class='icon-bell'></i> Contact us</a></li>
