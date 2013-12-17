@@ -8,7 +8,7 @@ from datetime import datetime, time, timedelta
 from time import mktime
 from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
-from django.core.mail import send_mass_mail
+from django.core.mail import send_mass_mail, EmailMessage
 
 from forms import SessionForm, SessionInviteForm, ParticipantAttendanceForm
 
@@ -24,19 +24,7 @@ def session_list_view(request):
     data = ExperimentSession.objects.filter(creator=request.user)
     experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.bookmarked(experimenter)]
 
-    session_list = [{
-        "pk": session.pk,
-        "experiment_metadata": session.experiment_metadata,
-        "startDate": session.scheduled_date.date(),
-        "startHour": session.scheduled_date.time().hour,
-        "startMin": session.scheduled_date.time().minute,
-        "endDate": session.scheduled_end_date.date(),
-        "endHour": session.scheduled_end_date.time().hour,
-        "endMin": session.scheduled_end_date.time().minute,
-        "capacity": session.capacity,
-        "location": session.location,
-        "invite_count": Invitation.objects.filter(experiment_session=session).count()
-    } for session in data]
+    session_list = [session.to_dict() for session in data]
 
     session_data = {
         "session_list": session_list,
@@ -178,17 +166,19 @@ def send_invitations(request):
             final_participants = None
 
             if potential_participants_count == 0:
-                message = "You have already sent out invitations to all potential participants"
+                final_participants = []
+                # logger.debug("You Have already sent out invitations to all potential participants")
+                message = "You Have already sent out invitations to all potential participants"
             else:
                 if potential_participants_count < no_of_invitations:
                     # final_participants = random.sample(potential_participants, potential_participants_count)
                     final_participants = potential_participants
                     # logger.debug("Invitations were sent to only %s participants", potential_participants_count)
-                    message = "Your invitations were only sent to %s / %s participants" % (potential_participants_count, no_of_invitations)
+                    message = "Your invitations were sent to only " + str(potential_participants_count) + " participants"
                 else:
                     final_participants = random.sample(potential_participants, no_of_invitations)
                     # logger.debug("Invitations were sent to %s participants", no_of_invitations)
-                    message = "Your invitations were sent to %s participants" % no_of_invitations
+                    message = "Your invitations were sent to " + str(no_of_invitations) + " participants"
 
                 today = datetime.now()
                 invitations = []
@@ -201,16 +191,19 @@ def send_invitations(request):
 
                 # logger.debug(len(recipient_list))
 
-                datatuple = (invitation_subject, invitation_text, from_email, recipient_list)
+                # datatuple = (invitation_subject, invitation_text, from_email, recipient_list)
+                #
+                # send_mass_mail((datatuple, ), fail_silently=False)
 
-                send_mass_mail((datatuple, ), fail_silently=False)
-
+                email = EmailMessage(invitation_subject, invitation_text, from_email, [from_email], recipient_list,
+                                     cc=['allen.lee@asu.edu'])
+                email.send(fail_silently=False)
                 Invitation.objects.bulk_create(invitations)
 
             return JsonResponse(dumps({
                 'success': True,
                 'message': message,
-                'invitesCount': potential_participants_count
+                'invitesCount': len(final_participants)
             }))
         else:
             message = "To Invite Participants Please Select Experiment Sessions of same Experiment"

@@ -2324,10 +2324,28 @@ class ExperimentSession(models.Model):
     scheduled_end_date = models.DateTimeField(null=True, blank=True)
     capacity = models.PositiveIntegerField(default=20)
     creator = models.ForeignKey(User, related_name='experiment_session_set')
-# wire up with autocomplete
+    # wire up with autocomplete
     location = models.CharField(max_length=128, blank=True, help_text=_('Location where this experiment session will be held.'))
-# FIXME: consider placing this somewhere more re-usable, or allow use of ExperimentConfiguration.invitation_text as a fallback
+    # FIXME: consider placing this somewhere more re-usable, or allow use of ExperimentConfiguration.invitation_text as a fallback
     invitation_text = models.TextField(blank=True)
+
+    def to_dict(self, **kwargs):
+        scheduled_date = self.scheduled_date
+        scheduled_end_date = self.scheduled_end_date
+        data = {
+            "pk": self.pk,
+            "experiment_metadata": self.experiment_metadata,
+            "startDate": scheduled_date.date(),
+            "startHour": scheduled_date.time().hour,
+            "startMin": scheduled_date.time().minute,
+            "endDate": scheduled_end_date.date(),
+            "endHour": scheduled_end_date.time().hour,
+            "endMin": scheduled_end_date.time().minute,
+            "capacity": self.capacity,
+            "location": self.location,
+            "invite_count": Invitation.objects.filter(experiment_session=self).count()
+        }
+        return data
 
 
 class Invitation(models.Model):
@@ -2335,6 +2353,28 @@ class Invitation(models.Model):
     experiment_session = models.ForeignKey(ExperimentSession)
     date_created = models.DateTimeField(default=datetime.now)
     sender = models.ForeignKey(User)
+
+    def to_dict(self, signup_count):
+        experiment_session = self.experiment_session
+        experiment_metadata = experiment_session.experiment_metadata
+        scheduled_date = experiment_session.scheduled_date
+        scheduled_end_date = experiment_session.scheduled_end_date
+        data = {
+            'invitation': {
+                'invitation_pk': self.pk,
+                'scheduled_date': experiment_session.scheduled_date.date(),
+                'scheduled_time': scheduled_date.strftime('%I:%M %p'),
+                'scheduled_end_date': compare_dates(scheduled_date.date(),
+                                                    scheduled_end_date.date()),
+                'scheduled_end_time': scheduled_end_date.strftime('%I:%M %p'),
+                'location': experiment_session.location,
+                'openings': experiment_session.capacity - signup_count,
+                'selected': False
+            },
+            'experiment_metadata_name': experiment_metadata.title,
+            'experiment_metadata_pk': experiment_metadata.pk
+        }
+        return data
 
 
 class ParticipantSignupQuerySet(models.query.QuerySet):
@@ -2363,6 +2403,37 @@ class ParticipantSignup(models.Model):
     attendance = models.PositiveIntegerField(max_length=1, choices=ATTENDANCE, default=ATTENDANCE.registered)
 
     objects = PassThroughManager.for_queryset_class(ParticipantSignupQuerySet)()
+
+    def to_dict(self, signup_count):
+        experiment_session = self.invitation.experiment_session
+        experiment_metadata = experiment_session.experiment_metadata
+        scheduled_date = experiment_session.scheduled_date
+        scheduled_end_date = experiment_session.scheduled_end_date
+
+        data = {
+            'invitation': {
+                'invitation_pk': self.invitation.pk,
+                'scheduled_date': scheduled_date.date(),
+                'scheduled_time': scheduled_date.strftime('%I:%M %p'),
+                'scheduled_end_date': compare_dates(scheduled_date.date(),
+                                                    scheduled_end_date.date()),
+                'scheduled_end_time': scheduled_end_date.strftime('%I:%M %p'),
+                'location': experiment_session.location,
+                'openings': experiment_session.capacity - signup_count,
+                'selected': True
+            },
+            'experiment_metadata_name': experiment_metadata.title,
+            'experiment_metadata_pk': experiment_metadata.pk
+        }
+        return data
+
+
+def compare_dates(date1, date2):
+    if date1 == date2:
+        return ''
+    else:
+        return date2
+
 
 class SpoolParticipantStatistics(models.Model):
     participant = models.ForeignKey(Participant, related_name='spool_statistics_set')
