@@ -849,6 +849,7 @@ def check_ready_participants(request, pk=None):
     return JsonResponse(dumps(_ready_participants_dict(experiment)))
 
 
+# FIXME: replace magic numbers with constant references
 @participant_required
 def get_participant_sessions(request):
     user = request.user
@@ -866,12 +867,8 @@ def get_participant_sessions(request):
 
         if invitation_pk is not None:
             inv = Invitation.objects.get(pk=invitation_pk)
-            # import time
-            # if invitation_pk == 542:
-            #     print str(invitation_pk) + "got slept New"
-            #     time.sleep(30)
-
-            # Obtaining lock on the experiment session
+            # lock on the experiment session to prevent concurrent participant signups for an experiment session
+            # exceeding its capacity
             lock = ExperimentSession.objects.select_for_update().get(pk=inv.experiment_session.pk)
             signup_count = ParticipantSignup.objects.filter(
                 invitation__experiment_session__pk=inv.experiment_session.pk).count()
@@ -893,17 +890,14 @@ def get_participant_sessions(request):
                 success = True
             else:
                 if ps:
-                    if ps[0].invitation.pk == invitation_pk:
-                        success = True
-                    else:
-                        success = False
+                    success = (ps[0].invitation.pk == invitation_pk)
                 else:
                     success = False
             lock.save()
         else:
             ParticipantSignup.objects \
                 .select_related('invitation', 'invitation__experiment_session__experiment_metadata') \
-                .filter(invitation__participant=user.participant, attendance=3,
+                .filter(invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.registered,
                         invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk).delete()
             success = True
 
@@ -911,8 +905,8 @@ def get_participant_sessions(request):
     tomorrow = datetime.now() + timedelta(days=1)
 
     active_experiment_sessions = ParticipantSignup.objects \
-        .select_related('invitation', 'invitation__experiment_session') \
-        .filter(invitation__participant=user.participant, attendance=3,
+       .select_related('invitation', 'invitation__experiment_session') \
+        .filter(invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.registered,
                 invitation__experiment_session__scheduled_date__gt=tomorrow)
 
     # Making sure that user don't see invitations for a experiment for which he has already participated
@@ -923,6 +917,7 @@ def get_participant_sessions(request):
         .select_related('invitation', 'invitation__experiment_session',
                         'invitation__experiment_session__experiment_metadata') \
         .filter(invitation__participant=user.participant, attendance=0)
+
 
     participated_experiment_metadata_pk_list = [ps.invitation.experiment_session.experiment_metadata.pk for ps in
                                                 participated_experiment_metadata]

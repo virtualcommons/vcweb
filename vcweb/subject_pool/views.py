@@ -178,18 +178,17 @@ def send_invitations(request):
             final_participants = None
 
             if potential_participants_count == 0:
-                # logger.debug("You Have already sent out invitations to all potential participants")
-                message = "You Have already sent out invitations to all potential participants"
+                message = "You have already sent out invitations to all potential participants"
             else:
                 if potential_participants_count < no_of_invitations:
                     # final_participants = random.sample(potential_participants, potential_participants_count)
                     final_participants = potential_participants
                     # logger.debug("Invitations were sent to only %s participants", potential_participants_count)
-                    message = "Your invitations were sent to only " + str(potential_participants_count) + " participants"
+                    message = "Your invitations were only sent to %s / %s participants" % (potential_participants_count, no_of_invitations)
                 else:
                     final_participants = random.sample(potential_participants, no_of_invitations)
                     # logger.debug("Invitations were sent to %s participants", no_of_invitations)
-                    message = "Your invitations were sent to " + str(no_of_invitations) + " participants"
+                    message = "Your invitations were sent to %s participants" % no_of_invitations
 
                 today = datetime.now()
                 invitations = []
