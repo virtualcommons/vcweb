@@ -111,7 +111,7 @@ Experiment Session Management
                                         <option data-bind="value: $index(), text: $data "></option>
                                     </select>
                                     <select class="input-mini" name="start_min" data-bind ="foreach: $root.allMinutes,value : startMin, enable: editable">
-                                        <option data-bind="value: $index(), text: $data"></option>
+                                        <option data-bind="value: $index() * 15, text: $data"></option>
                                      </select>
                                 </td>
                                 <td>
@@ -169,7 +169,7 @@ Experiment Session Management
                                         <option data-bind="value: $index(), text: $data "></option>
                                     </select>
                                     <select class="input-mini" name="end_min" data-bind ="foreach: $root.allMinutes ,value : endMin, enable: editable">
-                                        <option data-bind="value: $index(), text: $data"></option>
+                                        <option data-bind="value: $index() * 15, text: $data"></option>
                                     </select>
                                 </td>
                                 <td>
@@ -196,7 +196,7 @@ Experiment Session Management
 
             function createCalendar() {
                return $('#calendar').calendar({
-                    events_url:'session/events',
+                    events_source:'session/events',
                     tmpl_path: '/static/tmpls/',
                     onAfterViewLoad: function(view) {
                         $('.page-header h3').text(this.getTitle());
