@@ -11,19 +11,19 @@ Experiment Session Management
             <div id="error-messages"></div>
             <div class="tabbable">
                 <ul class='nav nav-tabs'>
-                    <li class='active'><a href='#active' data-toggle='tab'><i class='icon-wrench'></i> Active sessions</a></li>
-                    <li><a href='#past' data-toggle='tab'><i class='icon-archive'></i> Past sessions</a></li>
+                    <li class='active'><a href='#active' data-toggle='tab'><i class='fa fa-wrench'></i> Active sessions</a></li>
+                    <li><a href='#past' data-toggle='tab'><i class='fa fa-archive'></i> Past sessions</a></li>
                 </ul>
                 <div class='tab-content'>
                     <div class='tab-pane active' id="active">
                         <div data-bind='template: { name: "session-controller-template", foreach: activeSessions }'></div>
 
                         <button data-bind="click: addSession" class="btn">
-                            <i class="icon-plus"></i>
+                            <i class="fa fa-plus"></i>
                             Add Session
                         </button>
                         <button data-bind="click: function() { $('#invite-form').slideDown('slow'); }, enable: ifSelectedSessions" class="btn btn-primary">
-                            <i class="icon-envelope"></i>
+                            <i class="fa fa-envelope"></i>
                             Invite
                         </button>
                     </div>
@@ -104,7 +104,7 @@ Experiment Session Management
                                     <span class="input-append">
                                         <input name="start_date" type="text" class="date-start input-small" data-bind="datepicker : startDate, value: startDate , enable: editable" />
                                         <span class="add-on">
-                                            <i class="icon-calendar"></i>
+                                            <i class="fa fa-calendar"></i>
                                         </span>
                                     </span>
                                     <select  class="input-mini" name="start_hour" data-bind ="foreach: $root.allHours,value : startHour, enable: editable">
@@ -123,21 +123,21 @@ Experiment Session Management
                                 <td data-bind="if: active" rowspan="2">
                                     <div class="btn-group" data-bind = "visible: editable">
                                         <button type="submit" class="btn btn-success">
-                                            <i class="icon-save"></i>
+                                            <i class="fa fa-floppy-o"></i>
                                         </button>
                                         <button class="btn btn-danger" data-bind="click: $root.removeSession">
-                                            <i class="icon-trash"></i>
+                                            <i class="fa fa-trash-o"></i>
                                         </button>
                                     </div>
                                     <div class="btn-group" data-bind = "visible: !editable()">
                                         <a class="btn btn-primary" data-bind="attr: {href: 'session/detail/event/'+ pk()} ">
-                                            <i class="icon-eye-open"></i>
+                                            <i class="fa fa-eye"></i>
                                         </a>
                                         <button class="btn btn-success" data-bind="click: makeEditable">
-                                            <i class="icon-edit"></i>
+                                            <i class="fa fa-pencil-square-o"></i>
                                         </button>
                                         <button class="btn btn-danger" data-bind="click: $root.removeSession">
-                                            <i class="icon-trash"></i>
+                                            <i class="fa fa-trash-o"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -145,7 +145,7 @@ Experiment Session Management
                                 <td rowspan="2">
                                     <div class="btn-group">
                                         <a class="btn btn-primary" data-bind="attr: {href: 'session/detail/event/'+ pk()}">
-                                            <i class="icon-eye-open"></i>
+                                            <i class="fa fa-eye"></i>
                                         </a>
                                     </div>
                                 </td>
@@ -162,7 +162,7 @@ Experiment Session Management
                                     <span class="input-append">
                                         <input name="end_date" type="text" class="date-end input-small" data-bind="datepicker : endDate, value: endDate, enable: editable" />
                                         <span class="add-on">
-                                            <i class="icon-calendar"></i>
+                                            <i class="fa fa-calendar"></i>
                                         </span>
                                     </span>
                                     <select  class="input-mini" name="end_hour" data-bind ="foreach: $root.allHours ,value : endHour, enable: editable">

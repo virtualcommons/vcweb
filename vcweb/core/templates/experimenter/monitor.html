@@ -4,30 +4,30 @@
 {% endblock %}
 {% block page %}
 {{block.super}}
-<h3><span data-bind='if: isArchived'><span style='padding: 8px; -webkit-border-radius: 3px; border-radius: 3px; -moz-border-radius: 3px; border: 1px solid #fbeed5;' class='alert-success'><i class='icon-save'></i> ARCHIVED</span> </span> {{experiment}}</h3>
+<h3><span data-bind='if: isArchived'><span style='padding: 8px; -webkit-border-radius: 3px; border-radius: 3px; -moz-border-radius: 3px; border: 1px solid #fbeed5;' class='alert-success'><i class='fa fa-floppy-o'></i> ARCHIVED</span> </span> {{experiment}}</h3>
 <div class='row-fluid'>
     <div class='span6'>
         <div class='alert alert-white' data-bind='visible: isActive'>
             <h4>ROUND MANAGEMENT</h4>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
-                    <a class='btn btn-success' data-bind="visible: isRoundInProgress, click: confirmExperimentControllerAction.bind($data, true)" data-action='end_round' data-content='Ends the round.'><i class='icon-stop'></i> end round</a>
-                    <a class='btn btn-success' data-bind="visible: ! isRoundInProgress(), click: confirmExperimentControllerAction.bind($data, true)" data-action='start_round' data-content='Starts the round.'><i class='icon-play'></i> start</a>
-                    <a class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, true)' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='icon-step-forward'></i> next round</a>
+                    <a class='btn btn-success' data-bind="visible: isRoundInProgress, click: confirmExperimentControllerAction.bind($data, true)" data-action='end_round' data-content='Ends the round.'><i class='fa fa-stop'></i> end round</a>
+                    <a class='btn btn-success' data-bind="visible: ! isRoundInProgress(), click: confirmExperimentControllerAction.bind($data, true)" data-action='start_round' data-content='Starts the round.'><i class='fa fa-play'></i> start</a>
+                    <a class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, true)' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='fa fa-step-forward'></i> next round</a>
                 </div>
             </div>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
-                    <a class='btn btn-primary' data-bind='click: updateParticipants' data-content='Updates all connected participants.' ><i class='icon-exchange'></i> update participants</a>
-                    <a class='btn btn-primary' data-bind='click: refresh' data-content='Updates this page.' ><i class='icon-refresh'></i> refresh</a>
+                    <a class='btn btn-primary' data-bind='click: updateParticipants' data-content='Updates all connected participants.' ><i class='fa fa-exchange'></i> update participants</a>
+                    <a class='btn btn-primary' data-bind='click: refresh' data-content='Updates this page.' ><i class='fa fa-refresh'></i> refresh</a>
                 </div>
             </div>
             <div class='btn-toolbar'>
                 <div class='btn-group'>
                     <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
                         data-action='restart' data-content='Restart the experiment from the beginning, clearing all group and participant data and returning to the first round.' data-original-title='Reset Experiment'>
-                        <i class='icon-circle-arrow-up'></i> restart experiment</a>
-                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment and disables participant logins.'><i class='icon-off'></i> deactivate</a>
+                        <i class='fa fa-arrow-circle-up'></i> restart experiment</a>
+                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment and disables participant logins.'><i class='fa fa-off'></i> deactivate</a>
                 </div>
             </div>
         </div>
@@ -35,7 +35,7 @@
             <div data-bind="ifnot: hasParticipants">
                 <div class='alert alert-error alert-block'>
                     <h4>No participants</h4>
-                    <i class='icon-warning-sign'></i><a href='{{experiment.controller_url}}/register-email-list'>Register bulk email addresses</a> or
+                    <i class='fa fa-warning'></i><a href='{{experiment.controller_url}}/register-email-list'>Register bulk email addresses</a> or
                     <a href='{{experiment.controller_url}}/register-test-participants'>add test participants</a>?
                 </div>
             </div>
@@ -49,7 +49,7 @@
                     <p class='text-error'>NOTE: activating an experiment <b>deletes all existing data</b>
                     </p>
                     <a data-content='Starts this experiment, assigns participants to groups, etc.'
-                        class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='activate'><i class='icon-off'></i> activate</a>
+                        class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='activate'><i class='fa fa-off'></i> activate</a>
                 </div>
             </div>
         </div>
@@ -95,9 +95,9 @@
                 </div>
             </div>
         <div class='alert alert-message alert-block'>
-            <h4><i class='icon-download'></i> Download Data</h4>
+            <h4><i class='fa fa-arrow-circle-o-down'></i> Download Data</h4>
             <ul class='inline'>
-                <li><a href='download/csv'><i class='icon-file-text'></i> csv</a></li>
+                <li><a href='download/csv'><i class='fa fa-file-text'></i> csv</a></li>
                 <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/> excel</a></li>
             </ul>
             {% comment %}
@@ -109,7 +109,7 @@
             </ul>
             {% endcomment %}
             <div data-bind='ifnot: isArchived'>
-                <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='icon-save'></i>
+                <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='fa fa-floppy-o'></i>
                     archive</a>
             </div>
         </div>

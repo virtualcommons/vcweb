@@ -4,7 +4,7 @@
 {% endblock %}
 {% block page %}
     <div id='page'>
-        <a class="btn" href="/subject-pool/session"><i class="icon-arrow-left"></i> Back</a>
+        <a class="btn" href="/subject-pool/session"><i class="fa fa-arrow-left"></i> Back</a>
         <div id="session-detail" class="callout callout-info">
             <h3>Experiment Session Detail:</h3>
             <p><strong>Experiment: </strong>
@@ -51,7 +51,7 @@
             </table>
             {% if formset.forms|length > 0 %}
                 <button type="submit" class="btn btn-success" id="submit-attendance">
-                    <i class="icon-save"></i>
+                    <i class="fa fa-floppy-o"></i>
                     save
                 </button>
             {% endif %}

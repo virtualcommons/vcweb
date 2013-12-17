@@ -28,27 +28,27 @@ Participant Session Invitation Management
                             <th>Select</th>
                             <th>
                                 Start Date
-                                <span class="add-on"><i class="icon-calendar"></i></span>
+                                <span class="add-on"><i class="fa fa-calendar"></i></span>
                             </th>
                             <th>
                                 Start Time
-                                <span class="add-on"><i class="icon-time"></i></span>
+                                <span class="add-on"><i class="fa fa-clock-o"></i></span>
                             </th>
                             {% with exp.list.0.invitation as first_invitation %}
                                 {% if first_invitation.scheduled_end_date != '' %}
                                     <th>
                                         End Date
-                                        <span class="add-on"><i class="icon-calendar"></i></span>
+                                        <span class="add-on"><i class="fa fa-calendar"></i></span>
                                     </th>
                                 {% endif %}
                             {% endwith %}
                             <th>
                                 End Time
-                                <span class="add-on"><i class="icon-time"></i></span>
+                                <span class="add-on"><i class="fa fa-clock-o"></i></span>
                             </th>
                             <th>
                                 Location
-                                <span class="add-on"><i class="icon-flag"></i></span>
+                                <span class="add-on"><i class="fa fa-flag"></i></span>
                             </th>
                             <th> Openings </th>
                         </tr>
