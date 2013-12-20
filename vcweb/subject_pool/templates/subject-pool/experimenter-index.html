@@ -77,7 +77,7 @@ Experiment Session Management
 
     <script type='text/html' id='session-controller-template'>
         <div class="well-large well">
-            <form data-bind="submit: onSave" class="form-inline" style="margin-bottom:0">
+            <form data-bind="submit: onSave" role="form" class="form-inline" style="margin-bottom:0">
                 <fieldset>
                     <span class="hide">
                         <input type="hidden" name="pk" data-bind="value: pk" />
@@ -91,26 +91,28 @@ Experiment Session Management
                                     </span>
                                 </td>
                                 <td>
-                                    <select name="experiment_metadata_pk" data-bind="foreach: $root.experiment_metadata_group, value: selected_experiment_metadata_pk, enable: editable">
+				<div class="form-group">
+                                    <select class="form-control input-sm" name="experiment_metadata_pk" data-bind="foreach: $root.experiment_metadata_group, value: selected_experiment_metadata_pk, enable: editable">
                                         <optgroup data-bind="attr: {label: label}, foreach: experiment_metadata_list">
                                             <option data-bind="text: title, value:pk"></option>
                                         </optgroup>
                                     </select>
+				</div>
                                 </td>
                                 <td>
                                     <span class="label label-info session-label">Start Date/Time: </span>
-                                </td>
-                                <td>
-                                    <span class="input-append">
-                                        <input name="start_date" type="text" class="date-start input-small" data-bind="datepicker : startDate, value: startDate , enable: editable" />
-                                        <span class="add-on">
+				</td>
+                                <td class="form-group">
+				    <span class="input-group col-md-7">
+                                        <input name="start_date" type="text" class="form-control date-start input-sm" data-bind="datepicker : startDate, value: startDate , enable: editable" />
+                                        <span class="input-group-addon">
                                             <i class="fa fa-calendar"></i>
                                         </span>
                                     </span>
-                                    <select  class="input-mini" name="start_hour" data-bind ="foreach: $root.allHours,value : startHour, enable: editable">
+				    <select  class="form-control input-sm" name="start_hour" data-bind ="foreach: $root.allHours,value : startHour, enable: editable">
                                         <option data-bind="value: $index(), text: $data "></option>
                                     </select>
-                                    <select class="input-mini" name="start_min" data-bind ="foreach: $root.allMinutes,value : startMin, enable: editable">
+                                    <select class="form-control input-sm" name="start_min" data-bind ="foreach: $root.allMinutes,value : startMin, enable: editable">
                                         <option data-bind="value: $index() * 15, text: $data"></option>
                                      </select>
                                 </td>
@@ -118,8 +120,10 @@ Experiment Session Management
                                     <span class=" label label-info session-label">Capacity:</span>
                                 </td>
                                 <td>
-                                    <input class="span1" name="capacity" type="number" min="2" data-bind ="value : capacity, enable: editable" />
-                                </td>
+				    <div class="col-md-7">
+                                    <input class="form-control input-sm" name="capacity" type="number" min="2" data-bind ="value : capacity, enable: editable" />
+				    </div>
+				</td>
                                 <td data-bind="if: active" rowspan="2">
                                     <div class="btn-group" data-bind = "visible: editable">
                                         <button type="submit" class="btn btn-success">
@@ -153,22 +157,22 @@ Experiment Session Management
                             </tr>
                             <tr>
                                 <td>
-                                    <input type="text" name="location" placeholder="Location(e.g., online)" data-bind='value: location, enable: editable' />
-                                </td>
+				     <input type="text"class="form-control input-sm" name="location" placeholder="Location(e.g., online)" data-bind='value: location, enable: editable' />
+				</td>
                                 <td>
                                     <span class="label label-info session-label">End Date/Time: </span>
                                 </td>
-                                <td>
-                                    <span class="input-append">
-                                        <input name="end_date" type="text" class="date-end input-small" data-bind="datepicker : endDate, value: endDate, enable: editable" />
-                                        <span class="add-on">
+                                <td class="form-group">
+                                    <span class="input-group col-md-8">
+                                        <input name="end_date" type="text" class="form-control date-end input-sm" data-bind="datepicker : endDate, value: endDate, enable: editable" />
+                                        <span class="input-group-addon">
                                             <i class="fa fa-calendar"></i>
                                         </span>
                                     </span>
-                                    <select  class="input-mini" name="end_hour" data-bind ="foreach: $root.allHours ,value : endHour, enable: editable">
+                                    <select  class="form-control input-sm" name="end_hour" data-bind ="foreach: $root.allHours ,value : endHour, enable: editable">
                                         <option data-bind="value: $index(), text: $data "></option>
                                     </select>
-                                    <select class="input-mini" name="end_min" data-bind ="foreach: $root.allMinutes ,value : endMin, enable: editable">
+                                    <select class="form-control input-sm" name="end_min" data-bind ="foreach: $root.allMinutes ,value : endMin, enable: editable">
                                         <option data-bind="value: $index() * 15, text: $data"></option>
                                     </select>
                                 </td>
@@ -416,7 +420,7 @@ Experiment Session Management
                 //initialize datepicker with some optional options
                     var options = {
                         format: 'yyyy-mm-dd',
-                        startDate: new Date('12/17/2013')
+                        startDate: '-d'
                     };
                     $(element).datepicker(options);
 

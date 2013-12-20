@@ -4,7 +4,7 @@
 {% endblock %}
 {% block page %}
     <div id='page'>
-        <a class="btn" href="/subject-pool/session"><i class="fa fa-arrow-left"></i> Back</a>
+        <a class="btn btn-default" href="/subject-pool/session"><i class="fa fa-arrow-left"></i> Back</a>
         <div id="session-detail" class="callout callout-info">
             <h3>Experiment Session Detail:</h3>
             <p><strong>Experiment: </strong>
@@ -94,8 +94,8 @@
                         };
 
                         $(nPaging).addClass('pagination').append(
-                            '<ul>'+
-                                '<li class="prev disabled"><a href="#">&larr; '+oLang.sPrevious+'</a></li>'+
+                            '<ul class="pager">'+
+                                '<li class="previous disabled"><a href="#">&larr; '+oLang.sPrevious+'</a></li>'+
                                 '<li class="next disabled"><a href="#">'+oLang.sNext+' &rarr; </a></li>'+
                             '</ul>'
                         );
