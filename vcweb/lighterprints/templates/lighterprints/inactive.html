@@ -9,12 +9,12 @@
 {% if upcoming %}
 <h3>Upcoming Experiment</h3>
 <div class='alert alert-info alert-block'>
-    <i class='icon-2x icon-calendar'></i>
+    <i class=' fa fa-2x fa-calendar'></i>
     This experiment will <b>begin at 12:00 AM {{ experiment.start_date|date:"l, N d Y" }}</b> and end at <b>12:00 AM {{ experiment.end_date|date:"l, N d Y" }}</b>.<br>
 </div>
 {% else %}
 <div class='alert alert-error alert-block'>
-    <i class='icon-warning-sign'></i> This experiment is no longer active. Thank you for participating!
+    <i class='fa fa-warning'></i> This experiment is no longer active. Thank you for participating!
 </div>
 {% endif %}
 {% endblock page %}
