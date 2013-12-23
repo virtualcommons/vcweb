@@ -36,9 +36,9 @@ h4.challenge-name {
 .challenge-row {
     padding: 20px 0 20px 0;
     border-bottom: 1px solid #ddd;
+    margin: 0;
 }
 .challenges {
-    margin-top: -20px;
     background-color: #FFFFFF;
     border-left: 1px solid #ddd;
     border-right: 1px solid #ddd;

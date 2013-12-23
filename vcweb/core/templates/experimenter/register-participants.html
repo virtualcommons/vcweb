@@ -11,9 +11,11 @@
     <h3>#{{experiment.pk}} {{ experiment.experiment_configuration }}</h3>
     {% endblock %}
     {% include "includes/bootstrap-form.html" %}
-    <div class='form-actions'>
-        <button class='btn btn-primary' type='submit'>Register participants</button>
-        <button class='btn'><a href='/dashboard'>Cancel</a></button>
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-10">
+            <button class='btn btn-primary' type='submit'>Register participants</button>
+            <a class="btn btn-default " href='/dashboard'>Cancel</a>
+        </div>
     </div>
 {% endblock form %}
 {% block javascript %}
@@ -26,4 +28,3 @@
     });
 </script>
 {% endblock %}
-

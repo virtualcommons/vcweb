@@ -3,31 +3,30 @@
 {{ experiment.experiment_metadata }} #{{ experiment.pk }}
 {% endblock %}
 {% block page %}
-{{block.super}}
 <h3><span data-bind='if: isArchived'><span style='padding: 8px; -webkit-border-radius: 3px; border-radius: 3px; -moz-border-radius: 3px; border: 1px solid #fbeed5;' class='alert-success'><i class='fa fa-floppy-o'></i> ARCHIVED</span> </span> {{experiment}}</h3>
-<div class='row-fluid'>
-    <div class='span6'>
+<div class='row'>
+    <div class='col-md-6'>
         <div class='alert alert-white' data-bind='visible: isActive'>
             <h4>ROUND MANAGEMENT</h4>
-            <div class='btn-toolbar'>
+            <div class='btn btn-toolbar'>
                 <div class='btn-group'>
                     <a class='btn btn-success' data-bind="visible: isRoundInProgress, click: confirmExperimentControllerAction.bind($data, true)" data-action='end_round' data-content='Ends the round.'><i class='fa fa-stop'></i> end round</a>
                     <a class='btn btn-success' data-bind="visible: ! isRoundInProgress(), click: confirmExperimentControllerAction.bind($data, true)" data-action='start_round' data-content='Starts the round.'><i class='fa fa-play'></i> start</a>
                     <a class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, true)' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='fa fa-step-forward'></i> next round</a>
                 </div>
             </div>
-            <div class='btn-toolbar'>
+            <div class='btn btn-toolbar'>
                 <div class='btn-group'>
                     <a class='btn btn-primary' data-bind='click: updateParticipants' data-content='Updates all connected participants.' ><i class='fa fa-exchange'></i> update participants</a>
                     <a class='btn btn-primary' data-bind='click: refresh' data-content='Updates this page.' ><i class='fa fa-refresh'></i> refresh</a>
                 </div>
             </div>
-            <div class='btn-toolbar'>
+            <div class='btn btn-toolbar'>
                 <div class='btn-group'>
                     <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
                         data-action='restart' data-content='Restart the experiment from the beginning, clearing all group and participant data and returning to the first round.' data-original-title='Reset Experiment'>
                         <i class='fa fa-arrow-circle-up'></i> restart experiment</a>
-                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment and disables participant logins.'><i class='fa fa-off'></i> deactivate</a>
+                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment and disables participant logins.'><i class='fa fa-power-off'></i> deactivate</a>
                 </div>
             </div>
         </div>
@@ -40,11 +39,11 @@
                 </div>
             </div>
             <div data-bind="if: hasParticipants">
-                <div class='alert alert-message'>
+                <div class='alert alert-warning'>
                     <h4>Inactive Experiment</h4>
                     <p>
-                    There are <span data-bind='text:participantCount' class='badge badge-info'></span> registered participants.
-                    Activate the experiment whenever you are ready to collect data.
+                        There are <span data-bind='text:participantCount' class='badge badge-info'></span> registered participants.
+                        Activate the experiment whenever you are ready to collect data.
                     </p>
                     <p class='text-error'>NOTE: activating an experiment <b>deletes all existing data</b>
                     </p>
@@ -55,48 +54,51 @@
         </div>
         <div class='well experimenter-round-status'>
             <h5>ROUND STATUS</h5>
-            <div><b class='text-info' data-bind='text:roundSequenceLabel'></b></div>
-            <div><span data-bind='text:roundStatusLabel'></span></div>
-            <div>Round started on: <span data-bind='text:currentRoundStartTime'></span></div>
-            <div>Time remaining: <span data-bind='text:timeRemaining'></span></div>
+            <p><b class='text-info' data-bind='text:roundSequenceLabel'></b></p>
+            <p><span data-bind='text:roundStatusLabel'></span></p>
+            <p>Round started on: <span data-bind='text:currentRoundStartTime'></span></p>
+            <p>Time remaining: <span data-bind='text:timeRemaining'></span></p>
             {% comment %}
             FIXME: might want to put this functionality into each round data object
             {% endcomment %}
-            <form id="experimenterNotesForm" class='form-inline'>
-                <div class='control-group'>
-                    <div class='controls'>
-                        <textarea style='resize: vertical' class='input-block-level' id='experimenterNotesText' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
-                        <button id='submitExperimenterNotesButton' class='btn btn-primary' type='submit' data-bind='click: saveExperimenterNotes'>Save</button>
-                    </div>
+            <form id="experimenterNotesForm">
+                <div class='form-group'>
+                    <textarea style='resize: vertical' class='input-block-level form-control' id='experimenterNotesText' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
                 </div>
+                <button id='submitExperimenterNotesButton' class='btn btn-primary' type='submit' data-bind='click: saveExperimenterNotes'>Save</button>
             </form>
         </div>
-        <div class='accordion-group'>
-                <div class='accordion-heading'>
-                    <a class='accordion-toggle' data-toggle='collapse'
-                        data-parent='#registeredParticipantsAccordion' href='#registeredParticipants'>
-                        Registered participants: <span id='participantCountId' data-bind='text:participantCount' class='badge badge-info'></span>
-                    </a>
-                </div>
-                <div id='registeredParticipants' class='accordion-body collapse'>
-                    <div class='accordion-inner' data-bind='foreach: groups'>
-                        <table class='table table-compact table-striped table-bordered'>
-                            <caption class='text-info'><b><span data-bind='text: name'></span> (PK: <span data-bind='text: pk'></span>)</b></caption>
-                            <thead><tr><th>PGR PK</th><th>Participant</th><th>Email</th></tr></thead>
-                            <tbody data-bind='foreach: participant_group_relationships'>
-                                <tr>
-                                    <td data-bind='text: pk'>
-                                    <td data-bind='text: participant_number'>
-                                    <td data-bind='text: email'>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+
+        <div class='panel-group'>
+            <div class="panel panel-default">
+                <div class='panel-heading'>
+                    <h4 class="panel-title">
+                        <a data-toggle='collapse' data-parent='#registeredParticipantsAccordion' href='#registeredParticipants'>
+                            Registered participants: <span id='participantCountId' data-bind='text:participantCount' class='badge badge-info'></span>
+                        </a>
+                    </h4>
                 </div>
             </div>
-        <div class='alert alert-message alert-block'>
+            <div id='registeredParticipants' class='panel-collapse collapse'>
+                <div class='panel-body' data-bind='foreach: groups'>
+                    <table class='table table-compact table-striped table-bordered'>
+                        <caption class='text-info'><b><span data-bind='text: name'></span> (PK: <span data-bind='text: pk'></span>)</b></caption>
+                        <thead><tr><th>PGR PK</th><th>Participant</th><th>Email</th></tr></thead>
+                        <tbody data-bind='foreach: participant_group_relationships'>
+                            <tr>
+                                <td data-bind='text: pk'>
+                                <td data-bind='text: participant_number'>
+                                <td data-bind='text: email'>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class='alert alert-warning alert-block'>
             <h4><i class='fa fa-arrow-circle-o-down'></i> Download Data</h4>
-            <ul class='inline'>
+            <ul class='list-inline'>
                 <li><a href='download/csv'><i class='fa fa-file-text'></i> csv</a></li>
                 <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/> excel</a></li>
             </ul>
@@ -108,14 +110,14 @@
                 <li><a href='export/configuration.json'><i class='icon-pencil'></i> json</a></li>
             </ul>
             {% endcomment %}
-            <div data-bind='ifnot: isArchived'>
+            <div style="padding-top: 5px;" data-bind='ifnot: isArchived'>
                 <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='fa fa-floppy-o'></i>
                     archive</a>
             </div>
         </div>
     </div>
-    <div class='span6'>
-        <div style='padding-right: 8px;' class='alert alert-messages'>
+    <div class="col-md-6">
+        <div style='padding-right: 8px;' class='alert alert-warning'>
             <h4>EXPERIMENT LOG</h4>
             <div id='experiment-messages' data-bind='foreach: messages'>
                 <div>
@@ -126,13 +128,17 @@
     </div>
 </div>
 <h3>Experiment Data</h3>
-<div class='accordion' id='experiment-chat-accordion'>
-    <div class='accordion-group'>
-        <div class='accordion-heading'>
-            <a class='accordion-toggle' data-toggle='collapse' data-parent='#experiment-chat-accordion' href='#experiment-chat-messages'>All Chat Messages</a>
+<div id='experiment-chat-accordion'>
+    <div class='panel-group'>
+        <div class="panel panel-default">
+            <div class='panel-heading'>
+                <h4 class="panel-title">
+                    <a data-toggle='collapse' data-parent='#experiment-chat-accordion' href='#experiment-chat-messages'>All Chat Messages</a>
+                </h4>
+            </div>
         </div>
-        <div id='experiment-chat-messages' class='scrollable-messages accordion-body collapse'>
-            <div class='alert' data-bind='foreach: chatMessages'>
+        <div id='experiment-chat-messages' class='scrollable-messages panel-collapse collapse in'>
+            <div class='alert alert-warning panel-body' data-bind='foreach: chatMessages'>
                 <div>
                     <span data-bind='text: participant_number'></span>(<span data-bind='text: group'></span>): <strong data-bind='text: value'></strong>
                     <span class='pull-right' data-bind='text: short_date_created'></span>
@@ -142,59 +148,77 @@
     </div>
 </div>
 
-<div class='accordion' id='round-data-accordion' data-bind='foreach: allRoundData'>
-    <div class='accordion-group'>
-        <div class='accordion-heading'>
-            <a class='accordion-toggle' data-toggle='collapse' data-parent='#round-data-accordion'
-                data-bind='click: $root.loadRoundData, attr: { href: "#" + roundDataId() }'>
-                <span class='label label-success' data-bind='text: roundType'></span>Round <span data-bind='text: roundNumber'></span></a>
-        </div>
-        <div data-bind='attr: { id: roundDataId }' class='accordion-body collapse'>
-            <div class='accordion-inner'>
-                <div data-bind='if: experimenterNotes'>
-                    <h4>Experimenter Notes</h4>
-                    <div class='alert alert-message' data-bind='text: experimenterNotes'>
-                    </div>
-                </div>
-                <table class='table table-striped table-bordered'>
-                    <caption>Group data</caption>
-                    <thead>
-                        <tr><th>Group</th><th>Parameter</th><th>Value</th><th>Date created</th></tr>
-                    </thead>
-                    <tbody data-bind='foreach: groupDataValues'>
-                    <tr>
-                        <td data-bind='text: group'></td>
-                        <td data-bind='text: parameter_label'></td>
-                        <td data-bind='text: value'></td>
-                        <td data-bind='text: date_created'></td>
-                    </tr>
-                    </tbody>
-                </table>
-                <table class='table table-striped table-bordered'>
-                    <caption>Participant data</caption>
-                    <thead>
-                        <tr><th>Participant</th><th>Parameter</th><th>Value</th><th>Date Created</th></tr>
-                    </thead>
-                    <tbody data-bind='foreach: participantDataValues'>
-                    <tr>
-                        <td><span data-bind='text: participant_name'></span> (<span data-bind='text: participant_email'></span>)</td>
-                        <td data-bind='text: parameter_label'></td>
-                        <td data-bind='text: value'></td>
-                        <td data-bind='text: date_created'></td>
-                    </tr>
-                    </tbody>
-                </table>
+<div id='round-data-accordion' data-bind='foreach: allRoundData'>
+    <div class='panel-group'>
+        <div class="panel panel-default">
+            <div class='panel-heading'>
+                <h4 class="panel-title">
+                    <a class='accordion-toggle' data-toggle='collapse' data-parent='#round-data-accordion'
+                        data-bind='click: $root.loadRoundData, attr: { href: "#" + roundDataId() }'>
+                    <span class='label label-success' data-bind='text: roundType'></span>Round <span data-bind='text: roundNumber'></span></a>
+                </h4>
             </div>
         </div>
+        <div data-bind="attr: { id: roundDataId }" class="accordion-body collapse">
+        <div class="accordion-inner">
+            <div data-bind="if: experimenterNotes">
+                 <h4>Experimenter Notes</h4>
+                <div class="alert alert-warning" data-bind="text: experimenterNotes"></div>
+            </div>
+            <table class="table table-striped table-bordered">
+                <caption>Group data</caption>
+                <thead>
+                    <tr>
+                        <th>Group</th>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                        <th>Date created</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: groupDataValues">
+                    <tr>
+                        <td data-bind="text: group"></td>
+                        <td data-bind="text: parameter_label"></td>
+                        <td data-bind="text: value"></td>
+                        <td data-bind="text: date_created"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="table table-striped table-bordered">
+                <caption>Participant data</caption>
+                <thead>
+                    <tr>
+                        <th>Participant</th>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                        <th>Date Created</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: participantDataValues">
+                    <tr>
+                        <td><span data-bind="text: participant_name"></span> (<span data-bind="text: participant_email"></span>)</td>
+                        <td
+                        data-bind="text: parameter_label"></td>
+                            <td data-bind="text: value"></td>
+                            <td data-bind="text: date_created"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
     </div>
 </div>
-<div id='progress-modal' class='modal hide fade'>
-    <div class='modal-header'>
-        <h3>Updating experiment data</h3>
-    </div>
-    <div class='modal-body'>
-        <div class='progress progress-striped active'>
-            <div id='progress-bar' class='bar' style='width: 100%'></div>
+<div id="progress-modal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                 <h3>Updating experiment data</h3>
+            </div>
+            <div class="modal-body">
+                <div class="progress progress-striped active">
+                    <div id="progress-bar" class="progress-bar progress-bar-info" role="progressbar" style="width: 100%;"></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

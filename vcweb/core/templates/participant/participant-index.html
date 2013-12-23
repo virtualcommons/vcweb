@@ -8,7 +8,7 @@ Participant Session Invitation Management
 {% block page %}
     {% regroup invitation_list|dictsort:"experiment_metadata_name" by experiment_metadata_name as grouped_invitations %}
     <div class='row' id='page'>
-        <div id="content" class="span12">
+        <div id="content" class="col-md-12">
             <h3>Pick Experiment Sessions</h3>
             <div id="error-messages">
                 {% if success == True %}

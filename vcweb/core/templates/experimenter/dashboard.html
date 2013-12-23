@@ -1,82 +1,84 @@
 {% extends "experimenter/base.html" %}
 {% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
 {% block page %}
-{{ block.super }}
-<h2>Experimenter Dashboard</h2>
-{% comment %} FIXME: UI refinement needed as the list of experiments grows {% endcomment %}
-<div id='dashboard'>
-    <ul class='nav nav-tabs'>
-        <li class='active'><a href='#running' data-toggle='tab'><i class='fa fa-wrench'></i> Running experiments</a></li>
-        <li><a href='#pending' data-toggle='tab'><i class='fa fa-wrench'></i> Pending experiments</a></li>
-        <li><a href='#archived' data-toggle='tab'><i class='fa fa-archive'></i> Archived experiments</a></li>
-        <li><a href='#start' data-toggle='tab'><i class='fa fa-flask'></i> Start a new experiment</a></li>
-    </ul>
-    <div class='tab-content'>
-        <div class='tab-pane' id='start'>
-            <div data-bind='foreach: sortedExperimentMetadataList'>
-                <h3><span data-bind='text: title'></span>
-                    <i style='cursor: pointer;' class="fa" data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data), css: { "fa-star-o": ! bookmarked(), "fa-star text-gold": bookmarked}'></i>
-                </h3>
-                <div data-bind='foreach: configurations'>
-                    <div class='alert alert-message'>
-                        <h4><span data-bind='text: name'>configuration name</span> (treatment id: <span data-bind='text: treatment_id() || "None"'></span>) <span class='pull-right' data-bind='text: date_created'></span></h4>
-                        <span data-bind='text: number_of_rounds'></span> rounds, groups of <span data-bind='text: max_group_size'></span>
-                        <br>
-                        <div class='btn-group'>
-                            <a class='btn' data-bind='click: $root.createNewExperiment.bind($data)'><i class='fa fa-plus-circle'></i> start new experiment</a>
-                            <a class='btn' disabled data-bind='click: $root.modify'><i class='fa fa-pencil-square-o'></i> edit configuration</a>
+    <div class='row' id='page'>
+        <div id='dashboard' class='col-md-12'>
+            <h2>Experimenter Dashboard</h2>
+            {% comment %} FIXME: UI refinement needed as the list of experiments grows {% endcomment %}
+
+            <ul class='nav nav-tabs'>
+                <li class='active'><a href='#running' data-toggle='tab'><i class='fa fa-wrench'></i> Running experiments</a></li>
+                <li><a href='#pending' data-toggle='tab'><i class='fa fa-wrench'></i> Pending experiments</a></li>
+                <li><a href='#archived' data-toggle='tab'><i class='fa fa-archive'></i> Archived experiments</a></li>
+                <li><a href='#start' data-toggle='tab'><i class='fa fa-flask'></i> Start a new experiment</a></li>
+            </ul>
+            <div class='tab-content'>
+                <div class='tab-pane' id='start'>
+                    <div data-bind='foreach: sortedExperimentMetadataList'>
+                        <h3><span data-bind='text: title'></span>
+                            <i style='cursor: pointer;' class="fa" data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data), css: { "fa-star-o": ! bookmarked(), "fa-star text-gold": bookmarked}'></i>
+                        </h3>
+                        <div data-bind='foreach: configurations'>
+                            <div class='alert alert-warning'>
+                                <h4><span data-bind='text: name'>configuration name</span> (treatment id: <span data-bind='text: treatment_id() || "None"'></span>) <span class='pull-right' data-bind='text: date_created'></span></h4>
+                                <span data-bind='text: number_of_rounds'></span> rounds, groups of <span data-bind='text: max_group_size'></span>
+                                <br>
+                                <div class='btn-group'>
+                                    <a class='btn btn-default' data-bind='click: $root.createNewExperiment.bind($data)'><i class='fa fa-plus-circle'></i> start new experiment</a>
+                                    <a class='btn btn-default' disabled data-bind='click: $root.modify'><i class='fa fa-pencil-square-o'></i> edit configuration</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class='tab-pane' id='pending'>
-            <h3>Pending experiments</h3>
-            <div data-bind='if: pendingExperiments().length === 0'>
-                No pending experiments.
-            </div>
-            <div data-bind='template: { name: "experiment-controller-template", foreach: pendingExperiments }'></div>
-        </div>
+                <div class='tab-pane' id='pending'>
+                    <h3>Pending experiments</h3>
+                    <div data-bind='if: pendingExperiments().length === 0'>
+                        No pending experiments.
+                    </div>
+                    <div data-bind='template: { name: "experiment-controller-template", foreach: pendingExperiments }'></div>
+                </div>
 
-        <div class='tab-pane active' id='running'>
-            <div data-bind='if: runningExperiments().length === 0'>
-                <div class='alert alert-message'>
-                    No active experiments, <a href='#start' data-bind='click: activateStartExperimentTab'>start a new one?</a>.
+                <div class='tab-pane active' id='running'>
+                    <div data-bind='if: runningExperiments().length === 0'>
+                        <div class='alert alert-warning'>
+                            No active experiments, <a href='#start' data-bind='click: activateStartExperimentTab'>start a new one?</a>.
+                        </div>
+                    </div>
+                    <div data-bind='template: { name: "experiment-controller-template", foreach: runningExperiments }'></div>
+                </div>
+                <div class='tab-pane' id='archived'>
+                    <div data-bind='if: archivedExperiments().length === 0'>
+                        <div class='alert alert-warning'>No archived experiments.</div>
+                    </div>
+                    <div data-bind='template: { name: "experiment-controller-template", foreach: archivedExperiments }'></div>
                 </div>
             </div>
-            <div data-bind='template: { name: "experiment-controller-template", foreach: runningExperiments }'></div>
-        </div>
-        <div class='tab-pane' id='archived'>
-            <div data-bind='if: archivedExperiments().length === 0'>
-                <div class='alert alert-message'>No archived experiments.</div>
-            </div>
-            <div data-bind='template: { name: "experiment-controller-template", foreach: archivedExperiments }'></div>
         </div>
     </div>
-</div>
 {% endblock page %}
 {% block javascript %}
 <script type='text/html' id='experiment-controller-template'>
-    <div class='alert alert-message'>
-    <h4><span data-bind='text: status_line'></span> <span class='pull-right'><span data-bind='text: participantCount' class='badge badge-important'></span> participants</span></h4>
+    <div class='alert alert-warning'>
+    <h4><span data-bind='text: status_line'></span> <span class='pull-right'><span data-bind='text: participantCount' class='badge'></span> participants</span></h4>
     <div class='btn-group'>
-        <a class='btn' data-bind='attr: { href: monitor_url }'><i class='fa fa-search-plus'></i> monitor</a>
-        <button class='btn' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
+        <a class='btn btn-default' data-bind='attr: { href: monitor_url }'><i class='fa fa-search-plus'></i> monitor</a>
+        <button class='btn btn-default' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
             data-bind='click: $root.cloneExperiment'><i class='fa fa-files-o'></i> clone</button>
-        <button class='btn' data-content='Register participants for this experiment with actual email addresses'
+        <button class='btn btn-default' data-content='Register participants for this experiment with actual email addresses'
             data-bind='enable: $root.canRegisterParticipants($data), click: $root.gotoExperimentUrl.bind($data, "register-email-list")'>
             <i class='fa fa-users'></i> register participants</button>
-        <button class='btn' data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.'
+        <button class='btn btn-default' data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.'
             data-bind='enable: $root.canRegisterParticipants($data), click: $root.gotoExperimentUrl.bind($data, "register-test-participants")'>
             <i class='fa fa-users'></i> test participants</button>
         <button data-content='Remove all participants from the experiment, including any data they may have generated.'
             data-action='clear-participants'
-            data-bind='enable: $root.canClearParticipants($data), click: $root.clearParticipants' class='btn'>
+            data-bind='enable: $root.canClearParticipants($data), click: $root.clearParticipants' class='btn btn-default'>
             <i class='fa fa-trash-o'></i> clear all participants</button>
         <button data-action='complete' data-content='Archive and mark this experiment as completed'
-            data-bind='disable: isArchived, click: $root.archive' class='btn'><i class='fa fa-floppy-o'></i> archive</button>
+            data-bind='disable: isArchived, click: $root.archive' class='btn btn-default'><i class='fa fa-floppy-o'></i> archive</button>
         <button data-action='deactivate' data-content='Flag this experiment as inactive'
-            data-bind='disable: isArchived, click: $root.deactivate' class='btn'><i class='fa fa-power-off'></i> deactivate</button>
+            data-bind='disable: isArchived, click: $root.deactivate' class='btn btn-default'><i class='fa fa-power-off'></i> deactivate</button>
     </div>
 </div>
 </script>

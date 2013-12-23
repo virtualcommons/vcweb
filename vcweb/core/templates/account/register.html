@@ -1,34 +1,40 @@
 {% extends "forms/base.html" %}
 
 {% block title %}VCWEB Account Registration{% endblock %}
-{% block form %}
-<h3>New User</h3>
-<p>
-Already have an account?  You can <a href='{% url "core:login" %}'>login here</a> or <a href='{% url "password_reset" %}'>retrieve your password</a>.
-</p>
-{% include "includes/bootstrap-form.html" %}
-<div class='form-actions'>
-    <button type='submit' class='btn btn-primary'>Submit</button>
-</div>
-{% endblock form %}
-{% block javascript %}
-{{ block.super }}
-<script type='text/javascript'>
-$(document).ready(function() {
-	$("#vcweb-form :input:visible:enabled:first").focus();
-    console.debug("about to validate form");
-	$('#vcweb-form').validate();
-	$('#id_password').rules("add", {
-		minlength: 3
-	});
-	$('#id_confirm_password').rules("add", {
-		equalTo: "#id_password",
-		minlength: 3,
-		messages: {
-			equalTo: "Please make sure your passwords match."
-		}
-	});
-});
-</script>
-{% endblock %}
 
+{% block form-title %}
+    <h3>New User</h3>
+    <p>
+        Already have an account?  You can <a href='{% url "core:login" %}'>login here</a> or <a href='{% url "password_reset" %}'>retrieve your password</a>.
+    </p>
+{% endblock form-title%}
+
+{% block form %}
+    {% include "includes/bootstrap-form.html" %}
+    <div class="form-group">
+    <div class="col-md-offset-2 col-md-10">
+          <button type='submit' class='btn btn-primary'>Submit</button>
+    </div>
+  </div>
+{% endblock form %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script type='text/javascript'>
+    $(document).ready(function() {
+        $("#vcweb-form :input:visible:enabled:first").focus();
+        console.debug("about to validate form");
+        $('#vcweb-form').validate();
+        $('#id_password').rules("add", {
+            minlength: 3
+        });
+        $('#id_confirm_password').rules("add", {
+            equalTo: "#id_password",
+            minlength: 3,
+            messages: {
+                equalTo: "Please make sure your passwords match."
+            }
+        });
+    });
+    </script>
+{% endblock %}

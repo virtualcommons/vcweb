@@ -18,6 +18,7 @@
 {% block head %}
 <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
 <link rel='stylesheet' href="{% static 'bootstrap/css/font-awesome.min.css' %}">
 <link rel="stylesheet" href="{% static 'css/style.css' %}" media="screen" />
@@ -26,13 +27,22 @@
 </head>
 <body>
 {% block header %}
-<div class='navbar navbar-fixed-top'>
-    <div class='navbar-inner'>
-        <div class='container'>
-            {% block headernav %}
-            {% block headerlinks %}
-            <ul class='nav'>
-                <li><a class='brand {% active request home %}' href='{{ home}}'><img class='logo' src='{{STATIC_URL}}images/vcweb-logo.png' width='30' height='23' alt='vcweb logo'/>virtual commons</a></li>
+<header class='navbar navbar-default navbar-fixed-top' role='banner'>
+    <div class='container'>
+        {% block headernav %}
+        {% block headerlinks %}
+        <div class="navbar-header">
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class='navbar-brand {% active request home %}' href='{{ home}}'><img class='logo' src='{{STATIC_URL}}images/vcweb-logo.png' width='30' height='23' alt='vcweb logo'/>virtual commons</a>
+{#            <a href="../" class="navbar-brand">Bootstrap</a>#}
+        </div>
+        <nav class="collapse navbar-collapse" role='navigation'>
+            <ul class='nav navbar-nav'>
                 {% if request.user.is_authenticated %}
                 {% if request.user.participant %}
                 <li class='{% active_re request participate %}'><a href='{{ participate }}'><i class='fa fa-users'></i> Participate</a></li>
@@ -46,10 +56,10 @@
             </ul>
             {% endblock headerlinks %}
             {% block login %}
-            <ul class='nav pull-right'>
+            <ul class='nav navbar-nav navbar-right'>
                 {% if request.user.is_authenticated %}
                 <li class='{% active request login %} dropdown'>
-                <a class='dropdown-toggle' data-toggle='dropdown' href='#'>{{request.user.email}}<i class='fa fa-cog'></i><b class='caret'></b></a>
+                <a class='dropdown-toggle' data-toggle='dropdown' href='#'>{{request.user.email}} <i class='fa fa-cog'></i><b class='caret'></b></a>
                     <ul class='dropdown-menu'>
                         <li><a href='{{ profile }}'>Account</a></li>
                         <li><a href='{{ logout }}'>Logout</a></li>
@@ -68,19 +78,19 @@
             </ul>
             {% endblock login %}
             {% endblock headernav %}
-        </div>
+        </nav>
     </div>
-</div>
+</header>
 {% endblock %}
 <div class='container fill'>
     <noscript>
-        <div class='alert alert-error alert-block'>
+        <div class='alert alert-danger alert-block'>
             <p>Please <b>enable JavaScript</b> before using this site.
             <p>Experiments may not function properly without JavaScript enabled.</p>
         </div>
     </noscript>
     {% if DEBUG %}
-    <div class='alert alert-error alert-block'>
+    <div class='alert alert-danger alert-block'>
         <h2>Development Server</h2>
         <i class='fa fa-exclamation-triangle fa-2x'></i>You are accessing a <b>development version</b> of the vcweb software.  Any changes you make here will <b>NOT</b>
         be persistent.
@@ -98,52 +108,51 @@
 
     {% block page %}
     <div class='row' id='page'>
-        <div id='content' class='span9'>
+        <div id='content' class='col-md-9'>
             {% block content %}
             {% endblock %}
         </div>
-        <div id='sidebar' class='span3 filler sidebar'>
+        <div id='sidebar' class='col-md-3 filler sidebar'>
             {% block sidebar %}
             {% endblock %}
         </div>
     </div>
     {% endblock page %}
 </div>
-<div id='footer'>
-    <footer class="footer">
-        {% block footer %}
-        <div class='container'>
-            <div class='row'>
-                <div class='span9'>
-                    {% block footerlinks %}
-                    <ul class='nav-footer'>
-                        <li><a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a></li>
-                        <li><a href='http://shesc.asu.edu'>School of Human Evolution and Social Change</a></li>
-                        <li><a href='http://www.azregents.edu/'>&copy; {% now "Y" %} Arizona Board of Regents</a></li>
-                    </ul>
-                    {% endblock footerlinks %}
-                </div>
-                <div class='span3'>
-                    {% block footerlogo %}
-                    <ul class='nav-footer'>
-                        <li><a class='pull-right brand {% active request home %}' href='{{home}}'><img class='logo' src='{{STATIC_URL}}images/vcweb-logo.png' width='30' height='23' alt='vcweb logo'/>virtual commons</a></li>
-                    </ul>
-                    {% endblock footerlogo %}
-                </div>
+<footer id="footer">
+    {% block footer %}
+    <div class='container'>
+        <div class='row'>
+            <div class='col-md-9'>
+                {% block footerlinks %}
+                <ul class='nav-footer'>
+                    <li><a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a></li>
+                    <li><a href='http://shesc.asu.edu'>School of Human Evolution and Social Change</a></li>
+                    <li><a href='http://www.azregents.edu/'>&copy; {% now "Y" %} Arizona Board of Regents</a></li>
+                </ul>
+                {% endblock footerlinks %}
+            </div>
+            <div class='col-md-3'>
+                {% block footerlogo %}
+                <ul class='nav-footer'>
+                    <li><a class='pull-right brand {% active request home %}' href='{{home}}'><img class='logo' src='{{STATIC_URL}}images/vcweb-logo.png' width='30' height='23' alt='vcweb logo'/>virtual commons</a></li>
+                </ul>
+                {% endblock footerlogo %}
             </div>
         </div>
-        {% endblock footer %}
-        {% with jquery_version="1.10.2" %}
-        <script src='//ajax.googleapis.com/ajax/libs/jquery/{{jquery_version}}/jquery.min.js'></script>
-        {% endwith %}
-        <script src='{{STATIC_URL}}bootstrap/js/bootstrap.min.js'></script>
-        <script src='{{STATIC_URL}}js/jquery.cookie.js'></script>
-        <script src='{{STATIC_URL}}js/ko/knockout.min.js'></script>
-        <script src='{{STATIC_URL}}js/ko/knockout.mapping.min.js'></script>
-        <script src='{{STATIC_URL}}js/common.js'></script>
-        {% block javascript %}
-        {% endblock %}
-    </footer>
-</div>
+    </div>
+    {% endblock footer %}
+</footer>
+    {% with jquery_version="2.0.3" %}
+    <script src='//ajax.googleapis.com/ajax/libs/jquery/{{jquery_version}}/jquery.min.js'></script>
+    {% endwith %}
+    <script src='{{STATIC_URL}}bootstrap/js/bootstrap.min.js'></script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src='{{STATIC_URL}}js/jquery.cookie.js'></script>
+    <script src='{{STATIC_URL}}js/ko/knockout.min.js'></script>
+    <script src='{{STATIC_URL}}js/ko/knockout.mapping.min.js'></script>
+    <script src='{{STATIC_URL}}js/common.js'></script>
+    {% block javascript %}
+    {% endblock %}
 </body>
 </html>

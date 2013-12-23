@@ -168,7 +168,7 @@ col.error {
 */
 #invite-form {
     margin-top: 25px;
-    padding-top: 25px;
+    padding: 25px;
     border: 1px solid rgb(204, 204, 204);
     border-radius: 5px;
 }

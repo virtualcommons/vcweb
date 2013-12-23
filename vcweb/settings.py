@@ -113,7 +113,7 @@ INSTALLED_APPS = (
     'south',
     'django_extensions',
     'mptt',
-    'bootstrap_toolkit',
+    'bootstrap3',
     'cas',
 )
 

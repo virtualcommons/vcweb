@@ -2,19 +2,18 @@
 
 {% block title %}Virtual Commons Web Login{% endblock %}
 {% block page %}
-<div class="row-fluid">
-    <div class="span6">
+<div class="row">
+    <div class="col-md-6">
+        <h3>Returning User</h3>
+            <p>Don&#39;t have an account or a first-time user?  Please <a href='{% url "core:register" %}'>register first</a>.</p>
+            <p>If you've forgotten your password, you can <a href='{% url "password_reset" %}'>request a new one</a>.</p>
         <form id='vcweb-form' method='post' class='form-horizontal'>
             {% csrf_token %}
-            <h3>Returning User</h3>
-            <p>
-            Don&#39;t have an account or a first-time user?  Please <a href='{% url "core:register" %}'>register first</a>.
-            <br>
-            If you've forgotten your password, you can <a href='{% url "password_reset" %}'>request a new one</a>.
-            </p>
             {% include "includes/bootstrap-form.html" %}
-            <div class='controls'>
-                <button type='submit' class='btn btn-primary'><i class='fa fa-user'></i> Login</button>
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-10">
+                  <button type='submit' class='btn btn-primary'><i class='fa fa-user'></i> Login</button>
+                </div>
             </div>
             {% comment %}
             FIXME: disabling social auth until its more thoroughly debugged (and we know what social platforms we want to
@@ -30,7 +29,7 @@
             {% endcomment %}
         </form>
     </div>
-    <div class="span6">
+    <div class="col-md-6">
         <div class="cas-login">
             <p>
                 {% load staticfiles %}

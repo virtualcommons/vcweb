@@ -23,7 +23,7 @@ Participant Dashboard
 {%  block javascript %}
 <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/moment.js/2.3.1/moment.min.js'></script>
 <script type='text/html' id='experimentTemplate'>
-<div class='alert alert-message alert-block'>
+<div class='alert alert-warning alert-block'>
     <a data-bind='attr: { href: participant_url }'><i class='fa fa-play'></i> <span data-bind='text: name'></span>
     <span data-bind='if: start_date'>
     <span class='pull-right'><b>Experiment will start on <span data-bind='text: $root.formatDate(start_date())'></span></b> at midnight</i></span>
