@@ -117,6 +117,8 @@
 .cal-row-head [class*="cal-cell"]:first-child,
 .cal-row-head [class*="cal-cell"] {
   min-height: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .cal-events-num {
   margin-top: 20px;
@@ -383,7 +385,7 @@ span[data-cal-date]:hover {
   box-shadow: inset 0px 0px 15px 0px rgba(0, 0, 0, 0.5);
 }
 #cal-slide-tick {
-  background-image: url("../images/tick.png");
+  background-image: url("../images/tick.png?2");
 }
 #cal-slide-content:hover {
   background-color: transparent;
@@ -406,86 +408,4 @@ a.cal-event-week {
 }
 .badge-important {
   background-color: #b94a48;
-}
-
-
-
-.event-color-1 {
-  background-color: #1f77b4;
-}
-
-.event-color-2 {
-  background-color: #aec7e8;
-}
-
-.event-color-3 {
-  background-color: #ff7f0e;
-}
-
-.event-color-4 {
-  background-color: #ffbb78;
-}
-
-.event-color-5 {
-  background-color: #2ca02c;
-}
-
-.event-color-6 {
-  background-color: #98df8a;
-}
-
-.event-color-7 {
-  background-color: #d62728;
-}
-
-.event-color-8 {
-  background-color: #ff9896;
-}
-
-.event-color-9 {
-  background-color: #9467bd;
-}
-
-.event-color-10 {
-  background-color: #c5b0d5;
-}
-
-.event-color-11 {
-  background-color: #8c564b;
-}
-
-.event-color-12 {
-  background-color: #c49c94;
-}
-
-.event-color-13 {
-  background-color: #e377c2;
-}
-
-.event-color-14 {
-  background-color: #f7b6d2;
-}
-
-.event-color-15 {
-  background-color: #7f7f7f;
-}
-
-.event-color-16 {
-  background-color: #c7c7c7;
-}
-
-.event-color-17 {
-  background-color: #bcbd22;
-}
-
-.event-color-18 {
-  background-color: #dbdb8d;
-}
-
-.event-color-19 {
-  background-color: #17becf;
-}
-
-.event-color-20 {
-  background-color: #9edae5;
 }

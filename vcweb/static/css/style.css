@@ -249,3 +249,7 @@ col.error {
 	background-position: 0 -35px;
     text-decoration: none;
 }
+
+.datatable-pager {
+    margin: -40px 0;
+}
