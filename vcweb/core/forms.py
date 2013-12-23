@@ -1,4 +1,3 @@
-from bootstrap_toolkit.widgets import BootstrapDateInput
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm
@@ -182,7 +181,7 @@ class EmailListField(forms.CharField):
 
 class RegisterParticipantsForm(forms.Form):
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
-    start_date = forms.DateField(required=False, widget=BootstrapDateInput(),
+    start_date = forms.DateField(required=False,
                                  help_text=_('''Date this experiment should activate and start.
                                  Used for multi-day experiments with daily rounds'''))
     experiment_password = forms.CharField(required=False, min_length=3,
