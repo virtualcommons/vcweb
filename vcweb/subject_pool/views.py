@@ -20,6 +20,10 @@ logger = logging.getLogger(__name__)
 
 @experimenter_required
 def session_list_view(request):
+    """
+    Returns by rendering the Subject Recruitment page with all the active experiment sessions and past experiment
+    sessions.
+    """
     experimenter = request.user.experimenter
     data = ExperimentSession.objects.filter(creator=request.user)
     experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.bookmarked(experimenter)]
@@ -37,9 +41,13 @@ def session_list_view(request):
 
 @experimenter_required
 def update_session(request):
+    """
+    Depending upon the type of request, view method can be used to create, update or delete Experiment session.
+    """
     user = request.user
     form = SessionForm(request.POST or None)
     if form.is_valid():
+        # if the form is valid get the experiment_session pk
         pk = form.cleaned_data.get('pk')
         request_type = form.cleaned_data.get('request_type')
         if request_type == 'delete':
@@ -77,7 +85,9 @@ def update_session(request):
 
 @experimenter_required
 def get_session_events(request):
-
+    """
+    Returns all the Experiment sessions that falls within provided range.
+    """
     from_date = request.GET.get('from', None)
     to_date = request.GET.get('to', None)
 
@@ -109,8 +119,7 @@ def get_session_events(request):
 
 def timestamp_to_datetime(timestamp):
     """
-    Converts string timestamp to datetime
-    with json fix
+    Converts string timestamp to python datetime object with json fix
     """
     if isinstance(timestamp, (str, unicode)):
 
@@ -124,8 +133,7 @@ def timestamp_to_datetime(timestamp):
 
 def datetime_to_timestamp(date):
     """
-    Converts datetime to timestamp
-    with json fix
+    Converts python datetime object to timestamp with json fix
     """
     if isinstance(date, datetime):
 
@@ -139,6 +147,10 @@ def datetime_to_timestamp(date):
 
 @experimenter_required
 def send_invitations(request):
+    """
+    Sends Invitations to Potential Participants matching the required criteria of invitation,
+    via E-mail with the provided E-mail subject and Invitation text .
+    """
     user = request.user
     form = SessionInviteForm(request.POST or None)
     message = "Please fill in all the details of the invitation form"
@@ -220,7 +232,9 @@ def send_invitations(request):
 
 
 def get_potential_participants(experiment_metadata_pk, institution="Arizona S U", days_threshold=7):
-    # Get the institution object
+    """
+    Returns the pool of potential participants matching the required criteria for invitation.
+    """
     try:
         affiliated_institution = Institution.objects.get(name=institution)
     except Institution.DoesNotExist:
@@ -239,6 +253,9 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona S U"
 
 
 def get_unlikely_participants(days_threshold, experiment_metadata_pk):
+    """
+    Returns the pool of unlikely participants that don't match the criteria for invitation.
+    """
     last_week_date = datetime.now() - timedelta(days=days_threshold)
     # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
     # given Experiment metadata
@@ -261,6 +278,9 @@ def get_unlikely_participants(days_threshold, experiment_metadata_pk):
 
 @experimenter_required
 def manage_participant_attendance(request, pk=None):
+    """
+    Performs Update ot Get operation on the ParticipantSignup Model depending upon the request.
+    """
     AttendanceFormSet = modelformset_factory(ParticipantSignup, form=ParticipantAttendanceForm,
                                              exclude=('date_created',), extra=0)
     es = ExperimentSession.objects.get(pk=pk)

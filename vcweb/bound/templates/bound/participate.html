@@ -9,13 +9,17 @@
     <div id='content' class='col-md-8'>
         <div data-bind='template: { name: templateId(), afterRender: afterRenderTemplate}'>
         </div>
-        <div id='progress-modal' class='modal fade'>
-            <div class='model-header'>
-                <h3>Updating experiment data</h3>
-            </div>
-            <div class='modal-body'>
-                <div class='progress progress-striped active'>
-                    <div id='progress-bar' class='bar' style='width: 100%'></div>
+        <div id="progress-modal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                         <h3>Updating experiment data</h3>
+                    </div>
+                    <div class="modal-body">
+                        <div class="progress progress-striped active">
+                            <div id="progress-bar" class="progress-bar progress-bar-info" role="progressbar" style="width: 100%;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -66,7 +70,7 @@
     </div>
     <ul class='pager'>
         <li class='next'>
-        <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantGroupId() + " finished reading session summary.") '>Ok, I'm ready</a>
+        <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished reading session summary.") '>Ok, I'm ready</a>
         </li>
     </ul>
 </script>
@@ -88,7 +92,7 @@
     {% endcomment %}
     <ul class='pager' data-bind='visible: surveyCompleted()'>
         <li class='next' data-bind='css: { disabled: ! surveyCompleted() }'>
-        <a href='javascript: void()' data-bind='click: practiceRoundSurveyCompleted'>Ok, continue</a>
+        <a href="javascript: void(0)" data-bind='click: practiceRoundSurveyCompleted'>Ok, continue</a>
         </li>
     </ul>
 </script>
@@ -120,10 +124,10 @@
 
     <ul class='pager'>
         <li class='previous'>
-        <a href='javascript: void()' data-bind='click: activateTemplate.bind($data, "PRACTICE_ROUND_RESULTS")'>Back</a>
+        <a href='javascript: void(0)' data-bind='click: activateTemplate.bind($data, "PRACTICE_ROUND_RESULTS")'>Back</a>
         </li>
         <li class='next'>
-        <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantGroupId() + " finished paid experiment instructions") '>Ok, I understand</a>
+        <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished paid experiment instructions") '>Ok, I understand</a>
         </li>
     </ul>
 </script>
@@ -134,7 +138,8 @@
             <tr><th>Session 1</th><th>Session 2</th></tr>
         </thead>
         <tbody>
-            <tr><td><span class='badge badge-success' data-bind='text: sessionOneStorage'></span> tokens:  <span class='text-success' data-bind='text: sessionOneEarnings'</span></td>
+            <tr>
+                <td><span class='badge badge-success' data-bind='text: sessionOneStorage'></span> tokens:  <span class='text-success' data-bind='text: sessionOneEarnings'></span></td>
                 <td><span class='badge badge-success' data-bind='text: sessionTwoStorage'></span> tokens:  <span class='text-success' data-bind='text: sessionTwoEarnings'></span></td>
             </tr>
         </tbody>
@@ -169,7 +174,7 @@ Similarly, they may observe your group in the same way.
 </ul>
 <ul class='pager'>
     <li class='next'>
-    <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantGroupId() + " finished treatment A instructions")'>Ok, I am ready to start</a>
+    <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished treatment A instructions")'>Ok, I am ready to start</a>
     </li>
 </ul>
 </script>
@@ -186,7 +191,7 @@ Similarly, they may observe your group in the same way.
     </ul>
     <ul class='pager'>
         <li class='next'>
-        <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantGroupId() + " finished treatment B instructions")'>Ok, I am ready to start</a>
+        <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished treatment B instructions")'>Ok, I am ready to start</a>
         </li>
     </ul>
 </script>
@@ -206,7 +211,7 @@ Similarly, they may observe your group in the same way.
     </ul>
     <ul class='pager'>
         <li class='next'>
-        <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantGroupId() + " finished treatment C instructions")'>Ok, I am ready to start</a>
+        <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished treatment C instructions")'>Ok, I am ready to start</a>
         </li>
     </ul>
 </script>
@@ -223,7 +228,7 @@ twice the capacity of a single-group forest.
 </ul>
 <ul class='pager'>
     <li class='next'>
-    <a href='javascript: void()' data-bind='click: participantReady.bind($data, participantGroupId() + " finished treatment D instructions")'>Ok, I am ready to start</a>
+    <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished treatment D instructions")'>Ok, I am ready to start</a>
     </li>
 </ul>
 </script>
@@ -284,7 +289,7 @@ However, the final outcome depends on your choices and those of your group membe
 </p>
 <ul class='pager'>
 <li class='next'>
-<a href='javascript: void();' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS2")'>OK, I understand</a>
+<a href='javascript: void(0);' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS2")'>OK, I understand</a>
 </li>
 </ul>
 </div>
@@ -320,10 +325,10 @@ highest sustainable amount that can be harvested, when the forest is at half its
 </div>
 <ul class='pager'>
 <li class='previous'>
-<a href='javascript: void();' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS")' >Back</a>
+<a href='javascript: void(0);' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS")' >Back</a>
 </li>
 <li class='next'>
-<a href='javascript: void();' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS3")' >OK, I understand</a>
+<a href='javascript: void(0);' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS3")' >OK, I understand</a>
 </li>
 </ul>
 </div>
@@ -345,10 +350,10 @@ please click the button to continue.
 </p>
 <ul class='pager'>
 <li class='previous'>
-<a href='javascript: void();' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS2")' >Back</a>
+<a href='javascript: void(0);' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS2")' >Back</a>
 </li>
 <li class='next'>
-<a href='javascript: void();' data-bind='click: activateTemplate.bind($data, "PRACTICE_ROUND_INSTRUCTIONS")'>OK, Continue to practice rounds</a>
+<a href='javascript: void(0);' data-bind='click: activateTemplate.bind($data, "PRACTICE_ROUND_INSTRUCTIONS")'>OK, Continue to practice rounds</a>
 </li>
 </ul>
 </div>
@@ -387,10 +392,10 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </p>
 <ul class='pager'>
 <li class='previous'>
-<a href='javascript:void();' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS3")'>Back</a>
+<a href='javascript:void(0);' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS3")'>Back</a>
 </li>
 <li class='next'>
-<a href='javascript: void();' data-bind='click: participantReady.bind($data, participantGroupId() + " finished practice round instructions")'>I have fully read and understand these instructions</a>
+<a href='javascript: void(0);' data-bind='click: participantReady.bind($data, participantGroupId() + " finished practice round instructions")'>I have fully read and understand these instructions</a>
 </li>
 </ul>
 </script>

@@ -48,7 +48,7 @@
                     <p class='text-error'>NOTE: activating an experiment <b>deletes all existing data</b>
                     </p>
                     <a data-content='Starts this experiment, assigns participants to groups, etc.'
-                        class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='activate'><i class='fa fa-off'></i> activate</a>
+                        class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='activate'><i class='fa fa-power-off'></i> activate</a>
                 </div>
             </div>
         </div>
@@ -438,7 +438,7 @@
             };
             return experimentModel;
         }
-        $('[data-content]').popover({placement: 'top', trigger: 'hover'});
+        $('[data-content]').popover({placement: 'top', trigger: 'hover', container: 'body'});
         // initialize experiment model JSON from experiment model
         initialize(experimentModelJson);
     });

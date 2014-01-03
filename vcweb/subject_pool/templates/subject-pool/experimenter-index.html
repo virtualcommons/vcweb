@@ -17,7 +17,11 @@ Experiment Session Management
                 <div class='tab-content'>
                     <div class='tab-pane active' id="active">
                         <div data-bind='template: { name: "session-controller-template", foreach: activeSessions }'></div>
-
+                        <!-- ko ifnot: activeSessions().length > 0 -->
+                        <div class="callout callout-warning">
+                            No Active Experiment Sessions. Use Add Session button below to create a session.
+                        </div>
+                        <!-- /ko -->
                         <button data-bind="click: addSession" class="btn">
                             <i class="fa fa-plus"></i>
                             Add Session
@@ -29,6 +33,12 @@ Experiment Session Management
                     </div>
                     <div class='tab-pane' id="past">
                         <div data-bind='template: { name: "session-controller-template", foreach: pastSessions }'></div>
+                        <!-- ko ifnot: pastSessions().length > 0 -->
+                        <div class="callout callout-warning">
+                            No Past Experiment Sessions found.
+                        </div>
+                        <!-- /ko -->
+
                     </div>
                 </div>
             </div>
