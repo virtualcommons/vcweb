@@ -20,6 +20,7 @@ Contents:
    intro
    tutorial
    core
+   subjectpool
 
 
 

@@ -22,7 +22,7 @@ neo4j-embedded
 xlrd
 xlwt
 pillow
-django-bootstrap-toolkit
+django-bootstrap3
 unicodecsv
 # FIXME: this will fail on Mac OS X, see http://lxml.de/installation.html#macos-x for workarounds.  
 # easiest is to use MacPorts, sudo port install py27-lxml beforehand to set up the appropriate xml libraries

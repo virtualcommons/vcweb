@@ -53,6 +53,11 @@ class DefaultValue(object):
 
 
 class ParameterValueMixin(object):
+    """
+    Model classes using this mixin should expose a 'parameter_value_set' attribute containing a QuerySet of
+    ParameterizedValues to have get_parameter_value 
+
+    """
     def get_parameter_value(self, parameter=None, name=None, default=None):
         if parameter is None and name is None:
             logger.error("Can't lookup parameter values with no name or parameter, returning default %s", default)
