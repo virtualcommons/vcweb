@@ -249,7 +249,32 @@ col.error {
 	background-position: 0 -35px;
     text-decoration: none;
 }
-
+.badge:hover {
+    color: #ffffff;
+    text-decoration: none;
+    cursor: pointer;
+}
+.badge-error {
+    background-color: #b94a48;
+}
+.badge-error:hover {
+    background-color: #953b39;
+}
+.badge-success {
+    background-color: #468847;
+}
+.badge-success:hover {
+    background-color: #356635;
+}
+.badge-info {
+    background-color: #3a87ad;
+}
+.badge-info:hover {
+    background-color: #2d6987;
+}
+.badge-important {
+    background-color: #b94a48;
+}
 .datatable-pager {
     margin: -40px 0;
 }

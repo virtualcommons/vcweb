@@ -8,20 +8,20 @@
     <div class='col-md-6'>
         <div class='alert alert-white' data-bind='visible: isActive'>
             <h4>ROUND MANAGEMENT</h4>
-            <div class='btn btn-toolbar'>
+            <div class='btn-toolbar' role='toolbar'>
                 <div class='btn-group'>
                     <a class='btn btn-success' data-bind="visible: isRoundInProgress, click: confirmExperimentControllerAction.bind($data, true)" data-action='end_round' data-content='Ends the round.'><i class='fa fa-stop'></i> end round</a>
                     <a class='btn btn-success' data-bind="visible: ! isRoundInProgress(), click: confirmExperimentControllerAction.bind($data, true)" data-action='start_round' data-content='Starts the round.'><i class='fa fa-play'></i> start</a>
                     <a class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, true)' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='fa fa-step-forward'></i> next round</a>
                 </div>
             </div>
-            <div class='btn btn-toolbar'>
+            <div class='btn-toolbar' role='toolbar'>
                 <div class='btn-group'>
                     <a class='btn btn-primary' data-bind='click: updateParticipants' data-content='Updates all connected participants.' ><i class='fa fa-exchange'></i> update participants</a>
                     <a class='btn btn-primary' data-bind='click: refresh' data-content='Updates this page.' ><i class='fa fa-refresh'></i> refresh</a>
                 </div>
             </div>
-            <div class='btn btn-toolbar'>
+            <div class='btn-toolbar' role='toolbar'>
                 <div class='btn-group'>
                     <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
                         data-action='restart' data-content='Restart the experiment from the beginning, clearing all group and participant data and returning to the first round.' data-original-title='Reset Experiment'>
@@ -53,19 +53,19 @@
             </div>
         </div>
         <div class='well experimenter-round-status'>
-            <h5>ROUND STATUS</h5>
-            <p><b class='text-info' data-bind='text:roundSequenceLabel'></b></p>
-            <p><span data-bind='text:roundStatusLabel'></span></p>
-            <p>Round started on: <span data-bind='text:currentRoundStartTime'></span></p>
-            <p>Time remaining: <span data-bind='text:timeRemaining'></span></p>
+            <h4>ROUND STATUS</h4>
+            <b class='text-info' data-bind='text:roundSequenceLabel'></b><br>
+            <span data-bind='text:roundStatusLabel'></span><br>
+            Round started on: <span data-bind='text:currentRoundStartTime'></span><br>
+            Time remaining: <span data-bind='text:timeRemaining'></span><br>
             {% comment %}
-            FIXME: might want to put this functionality into each round data object
+            FIXME: embed the form into each round data object instead?
             {% endcomment %}
-            <form id="experimenterNotesForm">
+            <form id="experimenterNotesForm" role='form'>
                 <div class='form-group'>
                     <textarea style='resize: vertical' class='input-block-level form-control' id='experimenterNotesText' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
                 </div>
-                <button id='submitExperimenterNotesButton' class='btn btn-primary' type='submit' data-bind='click: saveExperimenterNotes'>Save</button>
+                <button id='submitExperimenterNotesButton' class='btn btn-success' type='submit' data-bind='click: saveExperimenterNotes'>Save</button>
             </form>
         </div>
 
@@ -80,7 +80,7 @@
                 </div>
             </div>
             <div id='registeredParticipants' class='panel-collapse collapse'>
-                <div class='panel-body' data-bind='foreach: groups'>
+                <div class='panel-default panel-body' data-bind='foreach: groups'>
                     <table class='table table-compact table-striped table-bordered'>
                         <caption class='text-info'><b><span data-bind='text: name'></span> (PK: <span data-bind='text: pk'></span>)</b></caption>
                         <thead><tr><th>PGR PK</th><th>Participant</th><th>Email</th></tr></thead>
