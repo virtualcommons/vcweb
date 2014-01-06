@@ -42,7 +42,7 @@ def session_list_view(request):
 @experimenter_required
 def update_session(request):
     """
-    Depending upon the type of request, view method can be used to create, update or delete Experiment session.
+    Depending upon the type of request, this view method can be used to create, update or delete Experiment sessions.
     """
     user = request.user
     form = SessionForm(request.POST or None)
@@ -86,7 +86,8 @@ def update_session(request):
 @experimenter_required
 def get_session_events(request):
     """
-    Returns all the Experiment sessions that falls within provided range.
+    Returns all the Experiment sessions, which falls within the given range,
+    in order to display on the calendar.
     """
     from_date = request.GET.get('from', None)
     to_date = request.GET.get('to', None)
@@ -148,8 +149,8 @@ def datetime_to_timestamp(date):
 @experimenter_required
 def send_invitations(request):
     """
-    Sends Invitations to Potential Participants matching the required criteria of invitation,
-    via E-mail with the provided E-mail subject and Invitation text .
+    Sends invitation email to random participants which match the required invitation criteria,
+    using the provided subject and message and returns the total number of invites sent.
     """
     user = request.user
     form = SessionInviteForm(request.POST or None)
@@ -233,7 +234,7 @@ def send_invitations(request):
 
 def get_potential_participants(experiment_metadata_pk, institution="Arizona S U", days_threshold=7):
     """
-    Returns the pool of potential participants matching the required criteria for invitation.
+    Returns the pool of participants which match the required invitation criteria.
     """
     try:
         affiliated_institution = Institution.objects.get(name=institution)
@@ -254,7 +255,7 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona S U"
 
 def get_unlikely_participants(days_threshold, experiment_metadata_pk):
     """
-    Returns the pool of unlikely participants that don't match the criteria for invitation.
+    Returns the pool of participants which do not match the required invitation criteria.
     """
     last_week_date = datetime.now() - timedelta(days=days_threshold)
     # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
@@ -279,7 +280,9 @@ def get_unlikely_participants(days_threshold, experiment_metadata_pk):
 @experimenter_required
 def manage_participant_attendance(request, pk=None):
     """
-    Performs Update ot Get operation on the ParticipantSignup Model depending upon the request.
+    Performs Update or Get operation on the ParticipantSignup model depending upon the request.
+    If request is GET, then the function will return the attendance formset. If request is POST then
+    the function will update the Participant Attendance and return the updated formset.
     """
     AttendanceFormSet = modelformset_factory(ParticipantSignup, form=ParticipantAttendanceForm,
                                              exclude=('date_created',), extra=0)
