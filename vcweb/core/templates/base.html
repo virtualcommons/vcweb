@@ -1,7 +1,7 @@
 {% load tags %}
 {% load url from future %}
 {% load static from staticfiles %}
-
+{% load bootstrap3 %}
 {% url 'home' as home %}
 {% url 'about' as about %}
 {% url 'contact' as contact %}
@@ -98,12 +98,7 @@
     {% endif %}
     {% if messages %}
     <h3>Messages</h3>
-    {% for message in messages %}
-    <div class='alert'>
-        <button class='close' data-dismiss='alert'>&times;</button>
-        {{message}}
-    </div>
-    {% endfor %}
+        {% bootstrap_messages %}
     {% endif %}
 
     {% block page %}
