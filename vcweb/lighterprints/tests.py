@@ -18,7 +18,7 @@ class BaseTest(BaseVcwebTest):
         performed_activities = set()
         for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=self.experiment):
             participant = participant_group_relationship.participant
-            self.client.login(username=participant.email, password='test')
+            self.assertTrue(self.client.login(username=participant.email, password='test'), "%s failed to login" % participant)
             for activity in activities:
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
                 expected_success = activity.is_available_for(participant_group_relationship, rd)
