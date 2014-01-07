@@ -23,7 +23,7 @@ from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
                                Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation, ParticipantSignup,
-                               ExperimentSession)
+                               ExperimentSession, Experimenter)
 import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
@@ -316,51 +316,86 @@ class AccountView(FormView):
 
 @login_required
 def update_account_profile(request):
-    form = ParticipantAccountForm(request.POST or None)
-    # logger.debug("form is: %s", form)
-    # logger.debug("Can Be Invited: %s", form.cleaned_data.get('can_receive_invitations'))
-    if form.is_valid():
-        pk = form.cleaned_data.get('pk')
-        email = form.cleaned_data.get('email')
-        institution = form.cleaned_data.get('institution')
+    user = request.user
 
-        p = Participant.objects.get(pk=pk)
+    if is_experimenter(user):
+        form = ExperimenterAccountForm(request.POST or None)
+        if form.is_valid():
+            email = form.cleaned_data.get('email')
+            institution = form.cleaned_data.get('institution')
+            e = Experimenter.objects.get(pk=user.experimenter.pk)
 
-        if institution:
-            ins, created = Institution.objects.get_or_create(name=institution)
-            p.institution = ins
-        else:
-            p.institution = None
-            logger.debug('Institution is empty')
+            if institution:
+                ins, created = Institution.objects.get_or_create(name=institution)
+                e.institution = ins
+            else:
+                e.institution = None
+                logger.debug('Institution is empty')
 
-        if p.user.email != email:
-            users = User.objects.filter(email=email)
-            if users.count() > 0:
-                return JsonResponse(dumps({
-                    'success': False,
-                    'message': 'This email is already registered with our system, please try another.'
-                }))
+            if e.user.email != email:
+                users = User.objects.filter(email=email)
+                if users.count() > 0:
+                    return JsonResponse(dumps({
+                        'success': False,
+                        'message': 'This email is already registered with our system, please try another.'
+                    }))
 
-        for attr in ('major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food', 'favorite_sport',
-                     'favorite_color', 'favorite_movie_genre'):
-            setattr(p, attr, form.cleaned_data.get(attr))
+            for attr in ('first_name', 'last_name', 'email'):
+                setattr(e.user, attr, form.cleaned_data.get(attr))
 
-        for attr in ('first_name', 'last_name', 'email'):
-            setattr(p.user, attr, form.cleaned_data.get(attr))
+            e.save()
+            e.user.save()
 
-        p.save()
-        p.user.save()
-        # logger.debug("P: %s, P.User: %s", p, p.user)
+            return JsonResponse(dumps({
+                'success': True,
+                'message': 'Profile updated successfully.'
+            }))
+        return JsonResponse(dumps({'success': False,
+                                   'message': 'Something wen wrong. Please try again.'}))
 
-        return JsonResponse(dumps({
-            'success': True,
-            'message': 'Updated profile successfully.'
-        }))
-        # logger.debug("Form had errors %s", form)
-    return JsonResponse(dumps({'success': False,
-                               'message': 'You need to provide your major, class status, gender, favorite sport, '
-                                          'favorite food, favorite color and favorite movie genre, if you want to '
-                                          'receive invitations'}))
+    else:
+        form = ParticipantAccountForm(request.POST or None)
+
+        if form.is_valid():
+            email = form.cleaned_data.get('email')
+            institution = form.cleaned_data.get('institution')
+
+            p = Participant.objects.get(pk=user.participant.pk)
+
+            if institution:
+                ins, created = Institution.objects.get_or_create(name=institution)
+                p.institution = ins
+            else:
+                p.institution = None
+                logger.debug('Institution is empty')
+
+            if p.user.email != email:
+                users = User.objects.filter(email=email)
+                if users.count() > 0:
+                    return JsonResponse(dumps({
+                        'success': False,
+                        'message': 'This email is already registered with our system, please try another.'
+                    }))
+
+            for attr in ('major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food', 'favorite_sport',
+                         'favorite_color', 'favorite_movie_genre'):
+                setattr(p, attr, form.cleaned_data.get(attr))
+
+            for attr in ('first_name', 'last_name', 'email'):
+                setattr(p.user, attr, form.cleaned_data.get(attr))
+
+            p.save()
+            p.user.save()
+
+            return JsonResponse(dumps({
+                'success': True,
+                'message': 'Updated profile successfully.'
+            }))
+
+        return JsonResponse(dumps({'success': False,
+                                   'message': 'You need to provide your major, class status, gender, favorite sport, '
+                                              'favorite food, favorite color and favorite movie genre, if you want to '
+                                              'receive invitations'}))
 
 
 @login_required

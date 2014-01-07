@@ -86,7 +86,6 @@ class LoginForm(forms.Form):
 
 
 class ParticipantAccountForm(forms.ModelForm):
-    pk = forms.IntegerField(widget=widgets.HiddenInput())
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES),
@@ -98,12 +97,12 @@ class ParticipantAccountForm(forms.ModelForm):
         instance = kwargs.get('instance')
         if instance is not None:
             super(ParticipantAccountForm, self).__init__(*args, **kwargs)
-            self.fields.keyOrder = ['pk', 'first_name', 'last_name', 'email', 'institution', 'can_receive_invitations',
+            self.fields.keyOrder = ['first_name', 'last_name', 'email', 'institution', 'can_receive_invitations',
                                     'major', 'class_status', 'gender', 'favorite_sport', 'favorite_color',
                                     'favorite_food', 'favorite_movie_genre']
             self.fields['class_status'].label = 'Class Status'
 
-            for attr in ('pk', 'first_name', 'last_name', 'email'):
+            for attr in ('first_name', 'last_name', 'email'):
                 self.fields[attr].initial = getattr(instance, attr)
 
             institution = instance.institution
@@ -147,9 +146,31 @@ class ParticipantAccountForm(forms.ModelForm):
 
 
 class ExperimenterAccountForm(forms.ModelForm):
+    first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES),
+                             help_text=_('We will never share your email.'))
+    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False,
+                                  help_text=_('The primary institution, if any, you are affiliated with.'))
+
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance')
+        if instance is not None:
+            super(ExperimenterAccountForm, self).__init__(*args, **kwargs)
+            self.fields.keyOrder = ['first_name', 'last_name', 'email', 'institution', ]
+
+            for attr in ('first_name', 'last_name', 'email'):
+                self.fields[attr].initial = getattr(instance, attr)
+
+            institution = instance.institution
+            if institution:
+                self.fields['institution'].initial = institution.name
+        else:
+            super(ExperimenterAccountForm, self).__init__(*args, **kwargs)
+
     class Meta:
         model = Experimenter
-        exclude = ('user',)
+        exclude = ('approved', 'institution', 'failed_password_attempts', 'authentication_token', 'user')
 
 email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
 
