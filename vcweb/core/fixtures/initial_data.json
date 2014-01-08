@@ -39,10 +39,17 @@
             "last_name": "Experimenter", 
             "is_active": true, 
             "is_superuser": false, 
-            "is_staff": false, 
+            "is_staff": true, 
             "last_login": "2013-04-26T13:28:34", 
             "groups": [], 
-            "user_permissions": [], 
+            "user_permissions": [
+                /* FIXME: enable for test experimenter perms for experiment configuration admin site
+                34, 35,
+                166, 167,
+                40, 41,
+                49, 50
+                */
+            ], 
             "password": "pbkdf2_sha256$10000$KDNffwswH525$kgkT27m+3VqMHn1J63P9jPIyOZieDddGcUl8Q5/WopI=", 
             "email": "vcweb@mailinator.com", 
             "date_joined": "2013-04-26T13:28:34"

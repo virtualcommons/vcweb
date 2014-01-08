@@ -2,12 +2,13 @@ from django.conf.urls import patterns, url
 from django.contrib.auth.decorators import login_required
 from vcweb import settings
 from vcweb.core.ajax import (get_round_data, save_experimenter_notes, experiment_controller, create_experiment,
-        clone_experiment, archive, clear_participants,
+        clone_experiment, archive,
         )
 from vcweb.core.views import (dashboard, LoginView, LogoutView, RegistrationView, monitor,
         RegisterEmailListView, RegisterTestParticipantsView, completed_survey, toggle_bookmark_experiment_metadata,
         check_survey_completed, Participate, download_data, export_configuration, api_logger, participant_api_login,
-        api_logout, participant_ready, check_ready_participants, get_dashboard_view_model, )
+        api_logout, participant_ready, check_ready_participants, get_dashboard_view_model,
+        edit_experiment_configuration, clone_experiment_configuration)
 import logging
 import urllib
 
@@ -38,9 +39,9 @@ urlpatterns = patterns('vcweb.core.views',
 #    url(r'^experiment/(?P<pk>\d+)/add-participants/(?P<count>[\d]+)$', 'add_participants', name='add_participants'),
     url(r'^experiment/(?P<pk>\d+)/download/(?P<file_type>[\w]+)$', download_data, name='download_data'),
     url(r'^experiment/(?P<pk>\d+)/export/configuration(?P<file_extension>.[\w]+)$', export_configuration, name='export_configuration'),
+    url(r'^configuration/(?P<pk>\d+)/edit', edit_experiment_configuration, name='edit_experiment_configuration'),
     url(r'^experimenter/bookmark-experiment-metadata$', toggle_bookmark_experiment_metadata, name='bookmark_experiment_metadata'),
-# experiment controller actions are the most general, needs to be matched at the very end
-    # deliberately match any prefix to api/2525/log
+    url(r'^api/configuration/clone', clone_experiment_configuration, name='clone_experiment_configuration'),
     url(r'^api/experiment/(?P<pk>\d+)/check-ready-participants$', check_ready_participants, name='check_ready_participants'),
     url(r'^api/experiment/archive', archive, name='archive'),
     url(r'^api/experiment/clone', clone_experiment, name='clone_experiment'),
@@ -48,6 +49,7 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^api/experimenter/save-notes', save_experimenter_notes, name='save-experimenter-notes'),
     url(r'^api/experimenter/experiment-controller', experiment_controller, name='experiment-controller'),
     url(r'^api/experimenter/round-data', get_round_data, name='get-round-data'),
+    # match arbitrary experiment URL prefix fragments for logging / login / logout / accessing the dashboard view model
     url(r'api/log/(?P<participant_group_id>\d+)$', api_logger, name='api-logger'),
     url(r'api/login', participant_api_login, name='participant_api_login'),
     url(r'api/logout', api_logout, name='api_logout'),

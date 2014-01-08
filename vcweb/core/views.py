@@ -1034,3 +1034,10 @@ def reset_password(email, from_email='vcweb@asu.edu', template='registration/pas
 
 def handler500(request):
     return render(request, '500.html')
+
+
+def edit_experiment_configuration(request, pk):
+    pass
+
+def clone_experiment_configuration(request, pk):
+    pass
