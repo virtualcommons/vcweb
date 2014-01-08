@@ -402,8 +402,8 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 <script type='text/html' id='REGULAR'>
 <div class='row'>
     <div class='col-md-7'>
-        <h3>My Status</h3>
         <div class='row'>
+        <h3>My Status</h3>
             <div class='alert alert-warning bound-status-dashboard col-md-2'>
                 <h4 id="dashboard-last-harvest">Last Harvest <i class='fa fa-info-circle' data-content="The number of trees you harvested last round."></i> </h4>
                 <p>
@@ -467,12 +467,13 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </div>
 {% comment %} resource visualization section {% endcomment %}
 <div class='row'>
-    <div data-bind='css: { "col-md-12": ! canObserveOtherGroup() }, template: { name: "resource-visualization-template" }'></div>
+    <div class='col-md-12' data-bind='template: { name: "resource-visualization-template" }'></div>
 </div>
 {% comment %} resource harvest decision section {% endcomment %}
 <div class='row' data-bind='ifnot: isResourceEmpty'>
-    <div class='col-md-8'>
-        <h3 class='compact'>Harvest</h3>
+    <div class='col-md-12'>
+        <div class='row'>
+        <h3>Harvest</h3>
         <div data-bind='ifnot: alive'>
             <div class='alert alert-danger'>
                 <b><i class='fa fa-ambulance'></i></b> You didn't harvest enough trees to meet the cost of living and are now
@@ -486,6 +487,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                     <div data-bind='template: { name: "harvest-decision-multiselect-template" }'></div>
                 </div>
             </form>
+        </div>
         </div>
     </div>
 </div>
@@ -519,13 +521,16 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </div>
 </script>
 <script type='text/html' id='resource-visualization-template'>
+<div class='row'>
 <div data-bind='if: isPracticeRound'>
     <div class='alert alert-danger alert-block'>
         <h4>PRACTICE ROUND</h4>
         This is a practice round.  The decisions you make in this round will <b>NOT</b> contribute to your earnings.
     </div>
 </div>
+</div>
 
+<div class='row'>
 <div data-bind='css: { "col-md-4": canObserveOtherGroup }'>
 <h3 class='compact'>My Group</h3>
 <div data-bind='template: { name: "tree-template", data: myGroup }'></div>
@@ -533,6 +538,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 <div data-bind='if: canObserveOtherGroup, css: { "col-md-4" : canObserveOtherGroup }'>
     <h3 class='compact'>Other Group</h3>
     <div data-bind='template: {name: "tree-template", data: otherGroup }'></div>
+</div>
 </div>
 </script>
 <script type='text/html' id='harvest-decision-multiselect-template'>
