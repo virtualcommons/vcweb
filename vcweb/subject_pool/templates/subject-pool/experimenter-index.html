@@ -19,7 +19,7 @@ Experiment Session Management
                         <div data-bind='template: { name: "session-controller-template", foreach: activeSessions }'></div>
                         <!-- ko ifnot: activeSessions().length > 0 -->
                         <div class="callout callout-warning">
-                            No Active Experiment Sessions. Use Add Session button below to create a session.
+                            No Active Experiment Sessions Found. Use Add Session button below to create one.
                         </div>
                         <!-- /ko -->
                         <button data-bind="click: addSession" class="btn">
@@ -296,10 +296,7 @@ Experiment Session Management
                                 self.editable(false);
                                 calendar = createCalendar();
                             } else {
-                                $("#error-messages").html('<div class="alert alert-danger"><strong></strong></div>');
-                                for(index in result.message.__all__) {
-                                    $("#error-messages .alert strong").append(result.message.__all__[index]);
-                                }
+                                $("#error-messages").html(result.message);
                             }
                         }
                     });
@@ -378,27 +375,26 @@ Experiment Session Management
                 };
 
                 model.removeSession = function(session, event) {
+                    if(session.pk() != -1){
+                        bootbox.confirm("Are you sure you want to delete this session. All the data associated with this Experiment Session will be lost?", function(result) {
+                            if (result) {
+                                var formData = $(event.target).parents("form").serialize();
 
-                    bootbox.confirm("Are you sure you want to delete this session. All the data associated with this Experiment Session will be lost?", function(result) {
-                        if (result) {
-                            var formData = $(event.target).parents("form").serialize();
-
-                            if(session.pk() != -1){
                                 $.ajax("/subject-pool/session/update", {
-                                        type : "POST",
-                                        data : formData + '&request_type=delete',
-                                        success: function(result) {
-                                            if(result.success == true){
-                                                model.session_list.remove(session);
-                                                calendar = createCalendar();
-                                            }
+                                    type : "POST",
+                                    data : formData + '&request_type=delete',
+                                    success: function(result) {
+                                        if(result.success == true){
+                                            model.session_list.remove(session);
+                                            calendar = createCalendar();
                                         }
-                                    });
-                            } else {
-                                model.session_list.remove(session);
+                                    }
+                                });
                             }
-                        }
-                    });
+                        });
+                    } else {
+                        model.session_list.remove(session);
+                    }
                 };
 
                 model.onInvite = function(formElement) {

@@ -77,9 +77,15 @@ def update_session(request):
             'success': True,
             'session': es
         }))
+
+    message = '''<div class="alert alert-danger alert-dismissable alert-link">
+                   <button class=close data-dismiss=alert aria-hidden=true>
+                   &times;</button>{errors}</div>\n
+                '''.format(errors='\n'.join(['<p>{e}</p>'.format(e=e) for e in form.non_field_errors()]))
+
     return JsonResponse(dumps({
         'success': False,
-        'message': form.errors
+        'message': message
     }))
 
 

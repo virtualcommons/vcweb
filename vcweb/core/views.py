@@ -351,7 +351,7 @@ def update_account_profile(request):
                 'message': 'Profile updated successfully.'
             }))
         return JsonResponse(dumps({'success': False,
-                                   'message': 'Something wen wrong. Please try again.'}))
+                                   'message': 'Something went wrong. Please try again.'}))
 
     else:
         form = ParticipantAccountForm(request.POST or None)
@@ -1039,5 +1039,11 @@ def handler500(request):
 def edit_experiment_configuration(request, pk):
     pass
 
-def clone_experiment_configuration(request, pk):
-    pass
+@experimenter_required
+def clone_experiment_configuration(request):
+    experiment_configuration_id = request.POST.get('experiment_configuration_id')
+    logger.debug("cloning experiment configuration %s", experiment_configuration_id)
+    experiment_configuration = get_object_or_404(ExperimentConfiguration, pk=experiment_configuration_id)
+    experimenter = request.user.experimenter
+    cloned_experiment_configuration = experiment_configuration.clone(creator=experimenter)
+    return JsonResponse(dumps({'success': True, 'experiment_configuration': cloned_experiment_configuration.to_dict()}))

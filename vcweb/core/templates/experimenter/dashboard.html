@@ -26,6 +26,7 @@
                                 <div class='btn-group'>
                                     <a class='btn btn-default' data-bind='click: $root.createNewExperiment.bind($data)'><i class='fa fa-plus-circle'></i> start new experiment</a>
                                     <a class='btn btn-default' disabled data-bind='click: $root.modify'><i class='fa fa-pencil-square-o'></i> edit configuration</a>
+                                    <a class='btn btn-default' data-bind='click: $root.cloneExperimentConfiguration.bind($data)'><i class='fa fa-files-o'></i> clone configuration</a>
                                 </div>
                             </div>
                         </div>
@@ -142,6 +143,17 @@
                     model.activatePendingExperimentsTab();
                 }
             }
+            function clonedExperimentConfigurationCallback(data) {
+                if (data.success) {
+                    clonedExperimentConfiguration = ko.mapping.fromJS(data.experiment_configuration);
+
+                    ko.utils.arrayForEach(model.experimentMetadataList(), function(item) {
+                        if(item.pk() == clonedExperimentConfiguration.experiment_metadata_pk()) {
+                            item.configurations.push(clonedExperimentConfiguration);
+                        }
+                    });
+                }
+            }
             function modifyExperimentCallback(experimentModel) {
                 return function(data) {
                     console.debug("updating experiment model from");
@@ -179,6 +191,10 @@
             }
             model.modify = function() {
                 console.debug("modify existing configuration");
+            }
+            model.cloneExperimentConfiguration = function(configurationModel, Event) {
+                $.post("/api/configuration/clone", { experiment_configuration_id: configurationModel.pk() })
+                 .done(clonedExperimentConfigurationCallback);
             }
             model.canClearParticipants = function(experimentModel) {
                 return experimentModel.status() === 'INACTIVE' && experimentModel.participantCount() > 0;

@@ -400,6 +400,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     def to_dict(self, **kwargs):
         return {
             'pk': self.pk,
+            'experiment_metadata_pk': self.experiment_metadata.pk,
             'name': self.name,
             'treatment_id': self.treatment_id,
             'date_created': self.date_created.strftime("%m-%d-%Y %H:%M"),
