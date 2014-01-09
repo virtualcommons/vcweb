@@ -7,7 +7,7 @@ from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
 from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete, ParticipantMajorAutocomplete
-from vcweb.core.models import (Experimenter, Institution, Participant, ExperimentMetadata)
+from vcweb.core.models import (Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration, Parameter, ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
 
 import autocomplete_light
 import email
@@ -173,6 +173,29 @@ class ExperimenterAccountForm(forms.ModelForm):
         exclude = ('approved', 'institution', 'failed_password_attempts', 'authentication_token', 'user')
 
 email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
+
+class ExperimentConfigurationForm(forms.ModelForm):
+
+    class Meta:
+        model = ExperimentConfiguration
+        exclude = ('creator', 'last_modified', 'date_created', 'cached_final_sequence_number')
+
+class ExperimentParameterValuesForm(forms.ModelForm):
+
+    class Meta:
+        model = ExperimentParameterValue
+
+class RoundConfigurationForm(forms.ModelForm):
+
+    class Meta:
+        model = RoundConfiguration
+        exclude = ('last_modified', 'date_created', 'group_cluster_size', 'template_filename')
+
+class RoundParameterValuesForm(forms.ModelForm):
+
+    class Meta:
+        model = RoundParameterValue
+
 
 
 class EmailListField(forms.CharField):
