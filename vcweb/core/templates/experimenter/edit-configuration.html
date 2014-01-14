@@ -1,0 +1,276 @@
+{% extends "experimenter/base.html" %}
+{% load bootstrap3 %}
+{% load tags %}
+
+{% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
+{% block head %}
+{{ block.super }}
+{% endblock %}
+
+{% block page %}
+    <div class="panel-group" id="accordion">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+                        Experiment Configuration
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseOne" class="panel-collapse collapse in">
+                <div class="panel-body">
+                    <form method="post" class="form-horizontal" data-bind="with: experiment_config">
+                        {{ experiment_config_form.non_field_errors }}
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="col-md-4 control-label">Experiment metadata</label>
+                                <div class="col-md-8">
+                                    {{ experiment_config_form.experiment_metadata|addcss:"form-control input-sm" }}
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-4 control-label">Name</label>
+                                <div class="col-md-8">
+                                    {{ experiment_config_form.name|addcss:"form-control input-sm" }}
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-4 control-label">Treatment id</label>
+                                <div class="col-md-8">
+                                    {{ experiment_config_form.treatment_id|addcss:"form-control input-sm" }}
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-4 control-label">Registration email subject</label>
+                                <div class="col-md-8">
+                                    {{ experiment_config_form.registration_email_subject|addcss:"form-control input-sm" }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="col-md-5 control-label">Max number of participants</label>
+                                <div class="col-md-2">
+                                    {{ experiment_config_form.max_number_of_participants|addcss:"form-control input-sm" }}
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-5 control-label">Max group size</label>
+                                <div class="col-md-2">
+                                    {{ experiment_config_form.max_group_size|addcss:"form-control input-sm" }}
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-5 control-label">Exchange rate</label>
+                                <div class="col-md-2">
+                                    {{ experiment_config_form.exchange_rate|addcss:"form-control input-sm" }}
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-5 control-label">Is Public</label>
+                                <div class="col-md-7">
+                                    <div class="checkbox">
+                                        <label>{{ experiment_config_form.is_public }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-5 control-label">Is experimenter driven</label>
+                                <div class="col-md-7">
+                                    <div class="checkbox">
+                                        <label>{{ experiment_config_form.is_experimenter_driven }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-5 control-label">Has daily rounds</label>
+                                <div class="col-md-7">
+                                    <div class="checkbox">
+                                        <label>{{ experiment_config_form.has_daily_rounds }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
+                        Experiment Parameter Value
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseTwo" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <ul class="well well-large" data-bind="foreach: experiment_param_val">
+                        <li data-bind="text: fields.round_type, click: $root.showExperimentParamValModal.bind($data)"></li>
+                    </ul>
+                    <button type="button" class="btn" data-bind="click: $root.addExperimentParam" ><i class='fa fa-plus'></i> Add Parameter Value</button>
+                </div>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">
+                        Round Configuration
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseThree" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <ul class="well well-large" data-bind="foreach: round_config">
+                        <li data-bind="text: display_name, click: $root.showRoundConfigModal.bind($data)"></li>
+                    </ul>
+                    <button type="button" class="btn" data-bind="click: $root.addRoundConfig"><i class='fa fa-plus'></i> Add Round Configuration</button>
+                </div>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#collapseFour">
+                        Round Parameter Value
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseFour" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <ul class="well well-large" data-bind="foreach: round_param_values">
+                        <li data-bind="text: display_name, click: $root.showRoundParamValModal.bind($data)"></li>
+                    </ul>
+                    <button type="button" class="btn" data-bind="click: $root.addRoundParam"><i class='fa fa-plus'></i> Add Round Parameter Value</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" data-bind="showModal: showRoundParamModal" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" data-bind="click:hideRoundParamModal">&times;</button>
+                    <h4 class="modal-title">Edit Form</h4>
+                </div>
+                <div class="modal-body">
+                    <form method="post" class="form-horizontal" data-bind="with: modalFieldValues">
+                        <div class="form-group">
+                            <label class="col-md-3 control-label">Parameter</label>
+                            <div class="col-md-6">
+                                <select class="form-control" id="id_parameter" name="parameter" placeholder="Parameter">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-md-3 control-label">String value</label>
+                            <div class="col-md-6">
+                                <textarea class="form-control" cols="80" id="id_string_value" name="string_value" placeholder="String value" rows="3" data-bind="value: string_value"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-md-3 control-label">Int value</label>
+                            <div class="col-md-6">
+                                <input class="form-control" id="id_int_value" name="int_value" placeholder="Int value" type="number" data-bind="value: int_value">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-md-3 control-label">Float value</label>
+                            <div class="col-md-6">
+                                <input class="form-control" id="id_float_value" name="float_value" placeholder="Float value" step="any" type="number" data-bind="value: float_value">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-md-3 control-label">Boolean value</label>
+                            <div class="col-md-6">
+                                <select class="form-control" id="id_boolean_value" name="boolean_value" placeholder="Boolean value"></select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-md-3 control-label">&nbsp;</label>
+                            <div class="col-md-6">
+                                <div class="checkbox">
+                                    <label><input checked="checked" id="id_is_active" name="is_active" type="checkbox" data-bind="checked: is_active"> Is active</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-md-3 control-label">Round configuration</label>
+                            <div class="col-md-6">
+                                <select class="form-control" id="id_experiment_configuration" name="experiment_configuration" placeholder="Experiment configuration" required="" title=""></select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <a href="#" class="btn">Save</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock page %}
+{% block javascript %}
+{{ block.super }}
+    <script type="text/javascript">
+        var data = $.parseJSON("{{ json_data | escapejs }}");
+        window.x = data;
+        $(function() {
+            function editConfigModel(viewModelObject) {
+                var self = this;
+                var model = ko.mapping.fromJS(viewModelObject);
+
+                model.showRoundParamModal = ko.observable(false);
+                model.hideRoundParamModal = function() {
+                    model.showRoundParamModal(false);
+                }
+                model.modalFieldValues = ko.observable();
+
+                model.showRoundConfigModal = function(round_config, Event) {
+                    console.log(round_config);
+                }
+                model.showExperimentParamValModal = function(exp_param_val, Event) {
+                    console.log(exp_param_val);
+                }
+                model.showRoundParamValModal = function(round_param_val, Event) {
+                    model.showRoundParamModal(true);
+                    model.modalFieldValues(round_param_val);
+                }
+                model.addRoundConfig = function() {
+                    console.log("yaya");
+                }
+                model.addExperimentParam = function() {
+                    console.log("yaya");
+                }
+                model.addRoundParam = function() {
+                    console.log("yaya");
+                    model.showRoundParamModal(true);
+                }
+
+                return model;
+            }
+
+            var model = new editConfigModel(data);
+
+            ko.bindingHandlers.showModal = {
+                init: function (element, valueAccessor) {
+                },
+                update: function (element, valueAccessor) {
+                    var value = valueAccessor();
+                    if (ko.utils.unwrapObservable(value)) {
+                        $(element).modal('show');
+                        // this is to focus input field inside dialog
+                        $("input", element).focus();
+                    }
+                    else {
+                        $(element).modal('hide');
+                        $(element).find('form')[0].reset();
+                    }
+                }
+            };
+            ko.applyBindings(model);
+        });
+
+    </script>
+{% endblock javascript %}

@@ -18,12 +18,12 @@ from vcweb.core import dumps
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
                               ParticipantGroupIdForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
-                              RegisterExcelParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm)
+                              RegisterExcelParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm, ExperimentConfigurationForm, ExperimentParameterValueForm, RoundConfigurationForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
                                Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation, ParticipantSignup,
-                               ExperimentSession, Experimenter)
+                               ExperimentSession, Experimenter, ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
 import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
@@ -1035,9 +1035,25 @@ def reset_password(email, from_email='vcweb@asu.edu', template='registration/pas
 def handler500(request):
     return render(request, '500.html')
 
-
+@experimenter_required
 def edit_experiment_configuration(request, pk):
-    pass
+    logger.debug(request.user.experimenter)
+    ec = ExperimentConfiguration.objects.get(pk=pk)
+    ecf = ExperimentConfigurationForm(instance=ec)
+
+    epv = ExperimentParameterValue.objects.filter(experiment_configuration=ec)
+    epvf = ExperimentParameterValueForm()
+
+    round_config = RoundConfiguration.objects.filter(experiment_configuration=ec)
+    round_config_list = [round.to_dict() for round in round_config]
+
+    round_param_values = RoundParameterValue.objects.filter(round_configuration__in=round_config)
+    round_param_values_list = [round_param.to_dict() for round_param in round_param_values]
+
+    json_data = {'experiment_config': ec, 'experiment_param_val': epv, 'round_config': round_config_list,
+                 'round_param_values': round_param_values_list}
+
+    return render(request, 'experimenter/edit-configuration.html', {'json_data': dumps(json_data), 'form': epvf, 'experiment_config_form': ecf})
 
 @experimenter_required
 def clone_experiment_configuration(request):

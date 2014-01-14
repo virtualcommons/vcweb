@@ -396,11 +396,11 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
                 rpv.save()
         return ec
 
-
     def to_dict(self, **kwargs):
         return {
             'pk': self.pk,
             'experiment_metadata_pk': self.experiment_metadata.pk,
+            'experiment_metadata_name': self.experiment_metadata.title,
             'name': self.name,
             'treatment_id': self.treatment_id,
             'date_created': self.date_created.strftime("%m-%d-%Y %H:%M"),
@@ -1407,6 +1407,12 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
         else:
             return u"%d of %d" % (self.sequence_number, self.experiment_configuration.final_sequence_number)
 
+    def to_dict(self, **kwargs):
+        return {
+            'display_name': u"%s %s" % (self.get_round_type_display(), self.sequence_label),
+            'pk': self.pk
+        }
+
     def __unicode__(self):
         return u"%s %s %s %s" % (self.get_round_type_display(), self.sequence_label, self.experiment_configuration,
                                    self.session_id)
@@ -1662,6 +1668,22 @@ class RoundParameterValue(ParameterizedValue):
     Represents a specific piece of round configuration data.
     """
     round_configuration = models.ForeignKey(RoundConfiguration, related_name='parameter_value_set')
+
+    def to_dict(self, **kwargs):
+        rc = self.round_configuration
+        return {
+            'display_name': u"{0}:{1} -> [{2}: {3}]".format(rc.experiment_configuration, rc.sequence_label, self.parameter, self.value),
+            'pk': self.pk,
+            'parameter_pk': self.parameter.pk,
+            'parameter_name': self.parameter,
+            'string_value': self.string_value,
+            'int_value': self.int_value,
+            'float_value': self.float_value,
+            'boolean_value': self.boolean_value,
+            'is_active': self.is_active,
+            'round_configuration_pk': self.round_configuration.pk,
+            'round_configuration': self.round_configuration
+        }
 
     def __unicode__(self):
         rc = self.round_configuration

@@ -22,3 +22,7 @@ def active_re(request, pattern):
 @register.filter
 def mkrange(value):
     return range(value)
+
+@register.filter(name='addcss')
+def addcss(field, css):
+   return field.as_widget(attrs={"class":css})

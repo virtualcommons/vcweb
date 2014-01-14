@@ -174,22 +174,33 @@ class ExperimenterAccountForm(forms.ModelForm):
 
 email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
 
+
 class ExperimentConfigurationForm(forms.ModelForm):
 
     class Meta:
         model = ExperimentConfiguration
-        exclude = ('creator', 'last_modified', 'date_created', 'cached_final_sequence_number')
+        exclude = ('creator', 'last_modified', 'date_created', 'cached_final_sequence_number', 'invitation_text')
+        widgets = {
+            'registration_email_subject': forms.Textarea(attrs={'class': 'form-control', 'cols': 40, 'rows': 2}),
+            }
 
-class ExperimentParameterValuesForm(forms.ModelForm):
+
+class ExperimentParameterValueForm(forms.ModelForm):
 
     class Meta:
         model = ExperimentParameterValue
+        exclude = ('last_modified', 'date_created')
+        widgets = {
+            'string_value': forms.Textarea(attrs={'cols': 40, 'rows': 3}),
+        }
+
 
 class RoundConfigurationForm(forms.ModelForm):
 
     class Meta:
         model = RoundConfiguration
         exclude = ('last_modified', 'date_created', 'group_cluster_size', 'template_filename')
+
 
 class RoundParameterValuesForm(forms.ModelForm):
 
