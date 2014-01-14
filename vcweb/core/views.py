@@ -1050,6 +1050,18 @@ def edit_experiment_configuration(request, pk):
     round_param_values = RoundParameterValue.objects.filter(round_configuration__in=round_config)
     round_param_values_list = [round_param.to_dict() for round_param in round_param_values]
 
+    param_list = []
+    #Get the round parameter values for each round
+    for round in round_config_list:
+        for param in round_param_values_list:
+            if round['pk'] == param['round_configuration_pk'] :
+                param_list.append(param)
+        #set the round params list as this round's children
+        round['children'] = param_list
+
+    #logger.debug(round_config_list)
+
+
     json_data = {'experiment_config': ec, 'experiment_param_val': epv, 'round_config': round_config_list,
                  'round_param_values': round_param_values_list}
 

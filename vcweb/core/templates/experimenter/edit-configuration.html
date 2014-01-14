@@ -8,97 +8,85 @@
 {% endblock %}
 
 {% block page %}
+    <h2> Experiment Configuration</h2>
+        <form method="post" class="form-horizontal" data-bind="with: experiment_config">
+            {{ experiment_config_form.non_field_errors }}
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="col-md-4 control-label">Experiment metadata</label>
+                    <div class="col-md-8">
+                        {{ experiment_config_form.experiment_metadata|addcss:"form-control input-sm" }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-4 control-label">Name</label>
+                    <div class="col-md-8">
+                        {{ experiment_config_form.name|addcss:"form-control input-sm" }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-4 control-label">Treatment id</label>
+                    <div class="col-md-8">
+                        {{ experiment_config_form.treatment_id|addcss:"form-control input-sm" }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-4 control-label">Registration email subject</label>
+                    <div class="col-md-8">
+                        {{ experiment_config_form.registration_email_subject|addcss:"form-control input-sm" }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="col-md-5 control-label">Max number of participants</label>
+                    <div class="col-md-2">
+                        {{ experiment_config_form.max_number_of_participants|addcss:"form-control input-sm" }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-5 control-label">Max group size</label>
+                    <div class="col-md-2">
+                        {{ experiment_config_form.max_group_size|addcss:"form-control input-sm" }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-5 control-label">Exchange rate</label>
+                    <div class="col-md-2">
+                        {{ experiment_config_form.exchange_rate|addcss:"form-control input-sm" }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-5 control-label">Is Public</label>
+                    <div class="col-md-7">
+                        <div class="checkbox">
+                            <label>{{ experiment_config_form.is_public }}</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-5 control-label">Is experimenter driven</label>
+                    <div class="col-md-7">
+                        <div class="checkbox">
+                            <label>{{ experiment_config_form.is_experimenter_driven }}</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-5 control-label">Has daily rounds</label>
+                    <div class="col-md-7">
+                        <div class="checkbox">
+                            <label>{{ experiment_config_form.has_daily_rounds }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
     <div class="panel-group" id="accordion">
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h4 class="panel-title">
-                    <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
-                        Experiment Configuration
-                    </a>
-                </h4>
-            </div>
-            <div id="collapseOne" class="panel-collapse collapse in">
-                <div class="panel-body">
-                    <form method="post" class="form-horizontal" data-bind="with: experiment_config">
-                        {{ experiment_config_form.non_field_errors }}
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="col-md-4 control-label">Experiment metadata</label>
-                                <div class="col-md-8">
-                                    {{ experiment_config_form.experiment_metadata|addcss:"form-control input-sm" }}
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-4 control-label">Name</label>
-                                <div class="col-md-8">
-                                    {{ experiment_config_form.name|addcss:"form-control input-sm" }}
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-4 control-label">Treatment id</label>
-                                <div class="col-md-8">
-                                    {{ experiment_config_form.treatment_id|addcss:"form-control input-sm" }}
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-4 control-label">Registration email subject</label>
-                                <div class="col-md-8">
-                                    {{ experiment_config_form.registration_email_subject|addcss:"form-control input-sm" }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="col-md-5 control-label">Max number of participants</label>
-                                <div class="col-md-2">
-                                    {{ experiment_config_form.max_number_of_participants|addcss:"form-control input-sm" }}
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-5 control-label">Max group size</label>
-                                <div class="col-md-2">
-                                    {{ experiment_config_form.max_group_size|addcss:"form-control input-sm" }}
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-5 control-label">Exchange rate</label>
-                                <div class="col-md-2">
-                                    {{ experiment_config_form.exchange_rate|addcss:"form-control input-sm" }}
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-5 control-label">Is Public</label>
-                                <div class="col-md-7">
-                                    <div class="checkbox">
-                                        <label>{{ experiment_config_form.is_public }}</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-5 control-label">Is experimenter driven</label>
-                                <div class="col-md-7">
-                                    <div class="checkbox">
-                                        <label>{{ experiment_config_form.is_experimenter_driven }}</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-5 control-label">Has daily rounds</label>
-                                <div class="col-md-7">
-                                    <div class="checkbox">
-                                        <label>{{ experiment_config_form.has_daily_rounds }}</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h4 class="panel-title">
-                    <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
+                    <a data-toggle="collapse" href="#collapseTwo">
                         Experiment Parameter Value
                     </a>
                 </h4>
@@ -115,7 +103,7 @@
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h4 class="panel-title">
-                    <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">
+                    <a data-toggle="collapse" href="#collapseThree">
                         Round Configuration
                     </a>
                 </h4>
@@ -132,7 +120,7 @@
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h4 class="panel-title">
-                    <a data-toggle="collapse" data-parent="#accordion" href="#collapseFour">
+                    <a data-toggle="collapse" href="#collapseFour">
                         Round Parameter Value
                     </a>
                 </h4>
