@@ -8,7 +8,7 @@ from datetime import datetime, time, timedelta
 from time import mktime
 from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
-from django.core.mail import send_mass_mail, EmailMessage
+from django.core.mail import EmailMessage
 
 from forms import SessionForm, SessionInviteForm, ParticipantAttendanceForm
 
@@ -164,11 +164,11 @@ def send_invitations(request):
     if form.is_valid():
         invitation_subject = form.cleaned_data.get('invitation_subject')
         invitation_text = form.cleaned_data.get('invitation_text')
-        # current logged in experimenter is the sender of the invitations.
+        # use currently logged in experimenter as the sender of the invitations.
         from_email = user.email
 
         session_pk_list = request.POST.get('session_pk_list').split(",")
-        no_of_invitations = form.cleaned_data.get('no_of_people')
+        invitation_count = form.cleaned_data.get('no_of_people')
         affiliated_university = form.cleaned_data.get('affiliated_university')
 
         experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
@@ -186,18 +186,14 @@ def send_invitations(request):
 
             if potential_participants_count == 0:
                 final_participants = []
-                # logger.debug("You Have already sent out invitations to all potential participants")
-                message = "You Have already sent out invitations to all potential participants"
+                message = "There are no more eligible participants that can be invited for this experiment."
             else:
-                if potential_participants_count < no_of_invitations:
-                    # final_participants = random.sample(potential_participants, potential_participants_count)
+                if potential_participants_count < invitation_count:
+                    # less candidate participants than the number of requested participants, use them all
                     final_participants = potential_participants
-                    # logger.debug("Invitations were sent to only %s participants", potential_participants_count)
-                    message = "Your invitations were sent to only " + str(potential_participants_count) + " participants"
                 else:
-                    final_participants = random.sample(potential_participants, no_of_invitations)
-                    # logger.debug("Invitations were sent to %s participants", no_of_invitations)
-                    message = "Your invitations were sent to " + str(no_of_invitations) + " participants"
+                    final_participants = random.sample(potential_participants, invitation_count)
+                message = "Your invitations were sent to %s / %s participants." % (potential_participants_count, invitation_count)
 
                 today = datetime.now()
                 invitations = []
@@ -207,17 +203,14 @@ def send_invitations(request):
                     for es in experiment_sessions:
                         invitations.append(Invitation(participant=participant, experiment_session=es, date_created=today,
                                                       sender=user))
-
-                # logger.debug(len(recipient_list))
-
-                # datatuple = (invitation_subject, invitation_text, from_email, recipient_list)
-                #
-                # send_mass_mail((datatuple, ), fail_silently=False)
-
-                email = EmailMessage(invitation_subject, invitation_text, from_email, [from_email], recipient_list,
-                                     cc=['allen.lee@asu.edu'])
-                email.send(fail_silently=False)
                 Invitation.objects.bulk_create(invitations)
+                email = EmailMessage(subject=invitation_subject,
+                        body=invitation_text,
+                        from_email=from_email,
+                        to=[from_email],
+                        bcc=recipient_list,
+                        cc=['allen.lee@asu.edu'])
+                email.send(fail_silently=False)
 
             return JsonResponse(dumps({
                 'success': True,

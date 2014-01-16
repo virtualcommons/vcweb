@@ -16,13 +16,21 @@ Experiment Session Management
                 </ul>
                 <div class='tab-content'>
                     <div class='tab-pane active' id="active">
-                        <div data-bind='template: { name: "session-controller-template", foreach: activeSessions }'></div>
-                        <!-- ko ifnot: activeSessions().length > 0 -->
-                        <div class="callout callout-warning">
-                            No Active Experiment Sessions Found. Use Add Session button below to create one.
+                        <div data-bind='if: activeSessions().length > 0'>
+                            <div class='alert alert-info'>
+                                Invite participants by selecting the checkboxes next to the experiment sessions and
+                                clicking the "Invite" button.
+                            </div>
+                            <div data-bind='template: { name: "session-template", foreach: activeSessions }'></div>
                         </div>
+                        <div data-bind='if: activeSessions().length == 0'>
+                            <div class="callout callout-warning">
+                                No active experiment sessions. Click the "Add Session" button below to add a new one.
+                            </div>
+                        </div>
+                        <!-- ko ifnot: activeSessions().length > 0 -->
                         <!-- /ko -->
-                        <button data-bind="click: addSession" class="btn">
+                        <button data-bind="click: addSession" class="btn btn-primary">
                             <i class="fa fa-plus"></i>
                             Add Session
                         </button>
@@ -32,10 +40,10 @@ Experiment Session Management
                         </button>
                     </div>
                     <div class='tab-pane' id="past">
-                        <div data-bind='template: { name: "session-controller-template", foreach: pastSessions }'></div>
+                        <div data-bind='template: { name: "session-template", foreach: pastSessions }'></div>
                         <!-- ko ifnot: pastSessions().length > 0 -->
                         <div class="callout callout-warning">
-                            No Past Experiment Sessions found.
+                            No past experiment sessions.
                         </div>
                         <!-- /ko -->
 
@@ -87,7 +95,7 @@ Experiment Session Management
 
     <script type="text/javascript" src="{{ STATIC_URL }}js/bootbox.min.js"></script>
 
-    <script type='text/html' id='session-controller-template'>
+    <script type='text/html' id='session-template'>
         <div class="well-large well">
             <form data-bind="submit: onSave" role="form" class="form-inline" style="margin-bottom:0">
                 <fieldset>
@@ -376,7 +384,7 @@ Experiment Session Management
 
                 model.removeSession = function(session, event) {
                     if(session.pk() != -1){
-                        bootbox.confirm("Are you sure you want to delete this session. All the data associated with this Experiment Session will be lost?", function(result) {
+                        bootbox.confirm("Delete this session? All associated invitations and signups will be removed.", function(result) {
                             if (result) {
                                 var formData = $(event.target).parents("form").serialize();
 

@@ -37,14 +37,15 @@ class SessionForm(forms.Form):
         request_type = data.get('request_type')
 
         if not pk:
-            raise forms.ValidationError(_("Invalid Experiment session PK"))
+            logger.error("No experiment session pk found: %s", data)
+            raise forms.ValidationError(_("No experiment session pk was found"))
         else:
             # logger.debug(data)
             if request_type != 'delete':
                 if not start_date or not end_date:
-                    raise forms.ValidationError(_("Please Fill Start date or End date"))
+                    raise forms.ValidationError(_("Please enter a start and end date"))
                 if not location:
-                    raise forms.ValidationError(_("Please Enter location for the Experiment Session"))
+                    raise forms.ValidationError(_("Please enter a location for the experiment session"))
         return data
 
 

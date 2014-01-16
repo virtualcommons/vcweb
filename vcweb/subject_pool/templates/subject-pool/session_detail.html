@@ -6,7 +6,6 @@
     <div id='page'>
         <a class="btn btn-default" href="/subject-pool/session"><i class="fa fa-arrow-left"></i> Back</a>
         <div id="session-detail" class="callout callout-info">
-            <h3>Experiment Session Detail:</h3>
             <p><strong>Experiment: </strong>
             {{ session_detail.experiment_metadata.title }}
             <p><strong>Date/Time: </strong> {{ session_detail.start_date }}, {{ session_detail.start_time }} -
@@ -17,7 +16,7 @@
             <p><strong>Location: </strong> {{ session_detail.location }}</p>
             <p><strong>Capacity: </strong> {{ session_detail.capacity }}</p>
         </div>
-        <h3>List of Participants signed up for Experiment Session.</h3>
+        <h3>Registered Participants</h3>
         <form method="POST" id="participant-info" class="form-inline">
         {{ formset.management_form }}
             <table cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" id="participant-table">
