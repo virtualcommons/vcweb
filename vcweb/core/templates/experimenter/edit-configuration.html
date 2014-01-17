@@ -8,8 +8,9 @@
 {% endblock %}
 
 {% block page %}
+
     <h2> Experiment Configuration</h2>
-        <form method="post" class="form-horizontal" data-bind="with: experiment_config">
+    <form method="post" class="form-horizontal">
             {{ experiment_config_form.non_field_errors }}
             <div class="col-md-6">
                 <div class="form-group">
@@ -82,6 +83,7 @@
                 </div>
             </div>
         </form>
+
     <div class="panel-group" id="accordion">
         <div class="panel panel-default">
             <div class="panel-heading">
@@ -93,10 +95,10 @@
             </div>
             <div id="collapseTwo" class="panel-collapse collapse">
                 <div class="panel-body">
-                    <ul class="well well-large" data-bind="foreach: experiment_param_val">
-                        <li data-bind="text: fields.round_type, click: $root.showExperimentParamValModal.bind($data)"></li>
-                    </ul>
-                    <button type="button" class="btn" data-bind="click: $root.addExperimentParam" ><i class='fa fa-plus'></i> Add Parameter Value</button>
+{#                    <ul class="well well-large" data-bind="foreach: experiment_param_val">#}
+{#                        <li data-bind="text: fields.round_type, click: $root.showExperimentParamValModal.bind($data)"></li>#}
+{#                    </ul>#}
+{#                    <button type="button" class="btn" data-bind="click: $root.addExperimentParam" ><i class='fa fa-plus'></i> Add Parameter Value</button>#}
                 </div>
             </div>
         </div>
@@ -110,31 +112,39 @@
             </div>
             <div id="collapseThree" class="panel-collapse collapse">
                 <div class="panel-body">
-                    <ul class="well well-large" data-bind="foreach: round_config">
-                        <li data-bind="text: display_name, click: $root.showRoundConfigModal.bind($data)"></li>
-                    </ul>
-                    <button type="button" class="btn" data-bind="click: $root.addRoundConfig"><i class='fa fa-plus'></i> Add Round Configuration</button>
-                </div>
-            </div>
-        </div>
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h4 class="panel-title">
-                    <a data-toggle="collapse" href="#collapseFour">
-                        Round Parameter Value
-                    </a>
-                </h4>
-            </div>
-            <div id="collapseFour" class="panel-collapse collapse">
-                <div class="panel-body">
-                    <ul class="well well-large" data-bind="foreach: round_param_values">
-                        <li data-bind="text: display_name, click: $root.showRoundParamValModal.bind($data)"></li>
-                    </ul>
-                    <button type="button" class="btn" data-bind="click: $root.addRoundParam"><i class='fa fa-plus'></i> Add Round Parameter Value</button>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div id="tree">
+                                <ul data-bind="foreach: round_config">
+                                    <li>
+                                        <span class="tree-item fa" data-bind="
+                                            css: {
+                                                'fa-minus-square': isExpanded() && children().length > 0,
+                                                'fa-plus-square': !isExpanded() && children().length > 0,
+                                                'fa-stop': children().length === 0,
+                                                'pointer-icon': children().length > 0
+                                            }, click: toggleVisibility
+                                            "></span>
+                                        <span data-bind="text: display_name, click: $root.activateRoundConfigModal"></span>
+                                        <div data-bind="slideVisible: isExpanded">
+                                            <ul data-bind="foreach: children">
+                                                <li>
+                                                    <span class="tree-item fa fa-stop"></span>
+                                                    <span data-bind="text: display_name, click: $root.activateRoundParamModal"></span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+{#                    <button type="button" class="btn" data-bind="click: $root.addRoundConfig"><i class='fa fa-plus'></i> Add Round Configuration</button>#}
                 </div>
             </div>
         </div>
     </div>
+
     <div class="modal fade" data-bind="showModal: showRoundParamModal" data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -143,43 +153,53 @@
                     <h4 class="modal-title">Edit Form</h4>
                 </div>
                 <div class="modal-body">
-                    <form method="post" class="form-horizontal" data-bind="with: modalFieldValues">
+                    <form method="post" class="form-horizontal" data-bind="with: modalData">
                         <div class="form-group">
                             <label class="col-md-3 control-label">Parameter</label>
                             <div class="col-md-6">
-                                <select class="form-control" id="id_parameter" name="parameter" placeholder="Parameter">
+                                <select class="form-control" id="id_parameter" name="parameter" placeholder="Parameter" data-bind="
+                                    options: parameters,
+                                    optionsText: 'name',
+                                    optionsValue: 'pk',
+                                    value: selectedParameterPk
+                                    ">
                                 </select>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" data-bind="visible: isVisible('string') ">
                             <label class="col-md-3 control-label">String value</label>
                             <div class="col-md-6">
-                                <textarea class="form-control" cols="80" id="id_string_value" name="string_value" placeholder="String value" rows="3" data-bind="value: string_value"></textarea>
+                                <textarea class="form-control" id="id_string_value" name="string_value" placeholder="String value"
+                                          rows="3" data-bind="value: stringValue"></textarea>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" data-bind="visible: isVisible('int')">
                             <label class="col-md-3 control-label">Int value</label>
                             <div class="col-md-6">
-                                <input class="form-control" id="id_int_value" name="int_value" placeholder="Int value" type="number" data-bind="value: int_value">
+                                <input class="form-control" id="id_int_value" name="int_value" placeholder="Int value" type="number" data-bind="value: intValue">
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" data-bind="visible: isVisible('float')">
                             <label class="col-md-3 control-label">Float value</label>
                             <div class="col-md-6">
-                                <input class="form-control" id="id_float_value" name="float_value" placeholder="Float value" step="any" type="number" data-bind="value: float_value">
+                                <input class="form-control" id="id_float_value" name="float_value" placeholder="Float value" step="any" type="number" data-bind="value: floatValue">
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" data-bind="visible: isVisible('boolean')">
                             <label class="col-md-3 control-label">Boolean value</label>
                             <div class="col-md-6">
-                                <select class="form-control" id="id_boolean_value" name="boolean_value" placeholder="Boolean value"></select>
+                                <select class="form-control" id="id_boolean_value" name="boolean_value" data-bind="value: booleanValue">
+                                    <option value="2">Choose...</option>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
                             </div>
                         </div>
                         <div class="form-group">
                             <label class="col-md-3 control-label">&nbsp;</label>
                             <div class="col-md-6">
                                 <div class="checkbox">
-                                    <label><input checked="checked" id="id_is_active" name="is_active" type="checkbox" data-bind="checked: is_active"> Is active</label>
+                                    <label><input checked="checked" id="id_is_active" name="is_active" type="checkbox" data-bind="checked: isActive"> Is active</label>
                                 </div>
                             </div>
                         </div>
@@ -201,48 +221,95 @@
 {% endblock page %}
 {% block javascript %}
 {{ block.super }}
+
     <script type="text/javascript">
         var data = $.parseJSON("{{ json_data | escapejs }}");
         window.x = data;
+
         $(function() {
-            function editConfigModel(viewModelObject) {
+
+            function NodeModel(data) {
+
                 var self = this;
-                var model = ko.mapping.fromJS(viewModelObject);
+
+                self.isExpanded = ko.observable(false);
+                self.display_name = ko.observable(data.display_name);
+                self.children = ko.observableArray(data.children);
+
+                self.toggleVisibility = function() {
+                    self.isExpanded(!self.isExpanded());
+                };
+            };
+
+            var Parameter = function(data) {
+                this.name = ko.observable(data.parameter_name);
+                this.value = ko.observable(data.parameter_pk);
+                this.type = ko.observable(data.parameter_type);
+            }
+
+            function RoundParamViewModel(data, parameter_list) {
+                var self = this;
+
+                self.parameters = ko.observableArray(parameter_list());
+                self.selectedParameterPk = ko.observable(data.parameter_pk);
+                self.stringValue = ko.observable(data.string_value);
+                self.intValue = ko.observable(data.int_value);
+                self.floatValue = ko.observable(data.float_value);
+                self.booleanValue = ko.observable(data.boolean_value);
+                self.isActive = ko.observable(data.is_active);
+
+                self.parameterType = ko.observable(data.parameter_type);
+
+                self.isVisible = function(type){
+                   return type === self.parameterType();
+                };
+                self.selectedParameterPk.subscribe(function (data) {
+                    console.log(data);
+                });
+            }
+
+            function PageModel(data) {
+
+                var session_mapping = {
+                    'round_config': {
+                        create: function (options) {
+                            return new NodeModel(options.data);
+                        }
+                    }
+                };
+                var model = ko.mapping.fromJS(data, session_mapping);
 
                 model.showRoundParamModal = ko.observable(false);
+                model.modalData = ko.observable();
+
+                model.activateRoundConfigModal = function (data, event) {
+                    console.log("activate me");
+                    console.log(data);
+                }
+
+                model.activateRoundParamModal = function (data, event) {
+                    model.modalData(new RoundParamViewModel(data, model.parameter_list));
+                    model.showRoundParamModal(true);
+                }
+
                 model.hideRoundParamModal = function() {
                     model.showRoundParamModal(false);
-                }
-                model.modalFieldValues = ko.observable();
-
-                model.showRoundConfigModal = function(round_config, Event) {
-                    console.log(round_config);
-                }
-                model.showExperimentParamValModal = function(exp_param_val, Event) {
-                    console.log(exp_param_val);
-                }
-                model.showRoundParamValModal = function(round_param_val, Event) {
-                    model.showRoundParamModal(true);
-                    model.modalFieldValues(round_param_val);
-                }
-                model.addRoundConfig = function() {
-                    console.log("yaya");
-                }
-                model.addExperimentParam = function() {
-                    console.log("yaya");
-                }
-                model.addRoundParam = function() {
-                    console.log("yaya");
-                    model.showRoundParamModal(true);
+                    model.modalData("");
                 }
 
                 return model;
-            }
-
-            var model = new editConfigModel(data);
+            };
 
             ko.bindingHandlers.showModal = {
                 init: function (element, valueAccessor) {
+                    $(element).on('hidden', function () {
+                        var value = valueAccessor();
+                        value(false);
+                    });
+                    $(element).on('shown'), function () {
+                        var value = valueAccessor();
+                        value(true);
+                    }
                 },
                 update: function (element, valueAccessor) {
                     var value = valueAccessor();
@@ -253,12 +320,26 @@
                     }
                     else {
                         $(element).modal('hide');
-                        $(element).find('form')[0].reset();
                     }
                 }
             };
-            ko.applyBindings(model);
+
+            ko.bindingHandlers.slideVisible = {
+                init: function(element, valueAccessor) {
+                    // Initially set the element to be instantly visible/hidden depending on the value
+                    var value = valueAccessor();
+                    $(element).toggle(ko.unwrap(value)); // Use "unwrapObservable" so we can handle values that may or may not be observable
+                },
+                update: function(element, valueAccessor) {
+                    // Whenever the value subsequently changes, slowly fade the element in or out
+                    var value = valueAccessor();
+                    ko.unwrap(value) ? $(element).slideDown() : $(element).slideUp();
+                }
+            };
+
+            ko.applyBindings(new PageModel(data));
         });
 
     </script>
+
 {% endblock javascript %}

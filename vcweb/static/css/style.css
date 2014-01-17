@@ -278,3 +278,25 @@ col.error {
 .datatable-pager {
     margin: -40px 0;
 }
+
+
+#tree ul {
+	list-style-type: none;
+}
+
+#tree {
+	padding-left: 0;
+}
+
+#tree > ul {
+	padding-left: 20px;
+}
+
+.tree-item {
+	-webkit-font-smoothing: antialiased;
+	font-size: 100%;
+}
+
+.pointer-icon {
+	cursor: pointer;
+}

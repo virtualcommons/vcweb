@@ -1672,10 +1672,11 @@ class RoundParameterValue(ParameterizedValue):
     def to_dict(self, **kwargs):
         rc = self.round_configuration
         return {
-            'display_name': u"{0}:{1} -> [{2}: {3}]".format(rc.experiment_configuration, rc.sequence_label, self.parameter, self.value),
+            'display_name': u"{0}: {1}".format(self.parameter, self.value),
             'pk': self.pk,
             'parameter_pk': self.parameter.pk,
             'parameter_name': self.parameter,
+            'parameter_type': self.parameter.type,
             'string_value': self.string_value,
             'int_value': self.int_value,
             'float_value': self.float_value,

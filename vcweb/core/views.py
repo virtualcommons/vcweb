@@ -23,7 +23,7 @@ from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
                                Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation, ParticipantSignup,
-                               ExperimentSession, Experimenter, ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
+                               ExperimentSession, Experimenter, ExperimentParameterValue, RoundConfiguration, RoundParameterValue, Parameter)
 import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
@@ -1050,20 +1050,17 @@ def edit_experiment_configuration(request, pk):
     round_param_values = RoundParameterValue.objects.filter(round_configuration__in=round_config)
     round_param_values_list = [round_param.to_dict() for round_param in round_param_values]
 
-    param_list = []
+    parameter_list = Parameter.objects.filter(scope='round').values('pk', 'name', 'type')
+
     #Get the round parameter values for each round
     for round in round_config_list:
+        round["children"] = []
         for param in round_param_values_list:
-            if round['pk'] == param['round_configuration_pk'] :
-                param_list.append(param)
+            if round['pk'] == param['round_configuration_pk']:
+                round["children"].append(param)
         #set the round params list as this round's children
-        round['children'] = param_list
 
-    #logger.debug(round_config_list)
-
-
-    json_data = {'experiment_config': ec, 'experiment_param_val': epv, 'round_config': round_config_list,
-                 'round_param_values': round_param_values_list}
+    json_data = {'experiment_param_val': epv, 'round_config': round_config_list, 'parameter_list': [parameter for parameter in parameter_list]}
 
     return render(request, 'experimenter/edit-configuration.html', {'json_data': dumps(json_data), 'form': epvf, 'experiment_config_form': ecf})
 
