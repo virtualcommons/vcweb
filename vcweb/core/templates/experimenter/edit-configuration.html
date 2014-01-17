@@ -264,7 +264,15 @@
                    return type === self.parameterType();
                 };
                 self.selectedParameterPk.subscribe(function (data) {
-                    console.log(data);
+                    //console.log(data);
+                    ko.utils.arrayForEach(parameter_list(), function(param){
+                        //console.log(param);
+                        if (param.pk() === data){
+                            //console.log("match found!!");
+                            self.parameterType = param.type;
+                            //console.log(self.parameterType());
+                        }
+                    });
                 });
             }
 
