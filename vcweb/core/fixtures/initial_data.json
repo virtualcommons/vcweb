@@ -43,12 +43,6 @@
             "last_login": "2013-04-26T13:28:34", 
             "groups": [], 
             "user_permissions": [
-                /* FIXME: enable for test experimenter perms for experiment configuration admin site
-                34, 35,
-                166, 167,
-                40, 41,
-                49, 50
-                */
             ], 
             "password": "pbkdf2_sha256$10000$KDNffwswH525$kgkT27m+3VqMHn1J63P9jPIyOZieDddGcUl8Q5/WopI=", 
             "email": "vcweb@mailinator.com", 

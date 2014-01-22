@@ -5,10 +5,7 @@
 <div class="row">
     <div class="col-md-6">
         <h3>Returning User</h3>
-            <p>Don&#39;t have an account or a first-time user?  Please <a href='{% url "core:register" %}'>register first</a>.</p>
-            <p>If you've forgotten your password, you can <a href='{% url "password_reset" %}'>request a new one</a>.</p>
-
-
+        <p>If you've forgotten your password, you can <a href='{% url "password_reset" %}'>request a new one</a>.</p>
         <form id='vcweb-form' role="form" class="form-horizontal" method="post">
             {% csrf_token %}
             {%  bootstrap_form form layout="horizontal" field_class="col-md-6"%}
@@ -26,7 +23,7 @@
                 <img src=" {% static "images/ASU/ASU_logo.jpg" %}" alt="ASU Logo" width="50%">
             </p>
             <p>
-                Login via ASURITE 
+                Login via ASURITE
             </p>
             <div id="login_submit">
                 <a href="{% url 'cas.views.login' %}" class='submit'>Sign In</a>
