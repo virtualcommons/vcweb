@@ -1410,7 +1410,18 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     def to_dict(self, **kwargs):
         return {
             'display_name': u"%s %s" % (self.get_round_type_display(), self.sequence_label),
-            'pk': self.pk
+            'pk': self.pk,
+            'display_number': self.display_number,
+            'duration': self.duration,
+            'template_id': self.template_id,
+            'survery_url': self.survey_url,
+            'ramdomize_groups': self.randomize_groups,
+            'preserve_existing_groups': self.preserve_existing_groups,
+            'create_group_clusters': self.create_group_clusters,
+            'session_id': self.session_id,
+            'repeat': self.repeat,
+            'initialize_data_values': self.initialize_data_values,
+            'chat_enabled': self.chat_enabled
         }
 
     def __unicode__(self):
@@ -1672,7 +1683,7 @@ class RoundParameterValue(ParameterizedValue):
     def to_dict(self, **kwargs):
         rc = self.round_configuration
         return {
-            'display_name': u"{0}: {1}".format(self.parameter, self.value),
+            'display_name': u"{0}".format(self.parameter),
             'pk': self.pk,
             'parameter_pk': self.parameter.pk,
             'parameter_name': self.parameter,

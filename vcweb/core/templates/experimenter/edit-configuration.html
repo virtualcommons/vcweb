@@ -125,12 +125,16 @@
                                                 'pointer-icon': children().length > 0
                                             }, click: toggleVisibility
                                             "></span>
-                                        <span data-bind="text: display_name, click: $root.activateRoundConfigModal"></span>
+                                        <span data-bind="text: display_name"></span>
+                                        <a href='#' data-bind='click: $root.addRoundParam'>Add Round Parameter</a>
+                                        <a href='#' data-bind='click: $root.editRoundConfig'>edit</a>
                                         <div data-bind="slideVisible: isExpanded">
                                             <ul data-bind="foreach: children">
                                                 <li>
                                                     <span class="tree-item fa fa-stop"></span>
-                                                    <span data-bind="text: display_name, click: $root.activateRoundParamModal"></span>
+                                                    <span data-bind="text: display_name"></span>
+                                                    <a href='#' data-bind='click: $root.removeRoundParam'>delete</a>
+                                                    <a href='#' data-bind='click: $root.editRoundParam'>edit</a>
                                                 </li>
                                             </ul>
                                         </div>
@@ -139,88 +143,198 @@
                             </div>
                         </div>
                     </div>
-{#                    <button type="button" class="btn" data-bind="click: $root.addRoundConfig"><i class='fa fa-plus'></i> Add Round Configuration</button>#}
+                    <button type="button" class="btn" data-bind="click: $root.activateRoundConfigModal"><i class='fa fa-plus'></i> Add Round Configuration</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" data-bind="showModal: showRoundParamModal" data-backdrop="static" data-keyboard="false">
+    <div class="modal fade" data-bind="showModal: activateModal" data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" data-bind="click:hideRoundParamModal">&times;</button>
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" data-bind="click:hideModal">&times;</button>
                     <h4 class="modal-title">Edit Form</h4>
                 </div>
-                <div class="modal-body">
-                    <form method="post" class="form-horizontal" data-bind="with: modalData">
-                        <div class="form-group">
-                            <label class="col-md-3 control-label">Parameter</label>
-                            <div class="col-md-6">
-                                <select class="form-control" id="id_parameter" name="parameter" placeholder="Parameter" data-bind="
-                                    options: parameters,
-                                    optionsText: 'name',
-                                    optionsValue: 'pk',
-                                    value: selectedParameterPk
-                                    ">
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group" data-bind="visible: isVisible('string') ">
-                            <label class="col-md-3 control-label">String value</label>
-                            <div class="col-md-6">
-                                <textarea class="form-control" id="id_string_value" name="string_value" placeholder="String value"
-                                          rows="3" data-bind="value: stringValue"></textarea>
-                            </div>
-                        </div>
-                        <div class="form-group" data-bind="visible: isVisible('int')">
-                            <label class="col-md-3 control-label">Int value</label>
-                            <div class="col-md-6">
-                                <input class="form-control" id="id_int_value" name="int_value" placeholder="Int value" type="number" data-bind="value: intValue">
-                            </div>
-                        </div>
-                        <div class="form-group" data-bind="visible: isVisible('float')">
-                            <label class="col-md-3 control-label">Float value</label>
-                            <div class="col-md-6">
-                                <input class="form-control" id="id_float_value" name="float_value" placeholder="Float value" step="any" type="number" data-bind="value: floatValue">
-                            </div>
-                        </div>
-                        <div class="form-group" data-bind="visible: isVisible('boolean')">
-                            <label class="col-md-3 control-label">Boolean value</label>
-                            <div class="col-md-6">
-                                <select class="form-control" id="id_boolean_value" name="boolean_value" data-bind="value: booleanValue">
-                                    <option value="2">Choose...</option>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="col-md-3 control-label">&nbsp;</label>
-                            <div class="col-md-6">
-                                <div class="checkbox">
-                                    <label><input checked="checked" id="id_is_active" name="is_active" type="checkbox" data-bind="checked: isActive"> Is active</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="col-md-3 control-label">Round configuration</label>
-                            <div class="col-md-6">
-                                <select class="form-control" id="id_experiment_configuration" name="experiment_configuration" placeholder="Experiment configuration" required="" title=""></select>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <a href="#" class="btn">Save</a>
+                <div class="modal-body" data-bind="with: modalData" >
+                    <div data-bind='template: { name: $root.template }'></div>
                 </div>
             </div>
         </div>
     </div>
-
 {% endblock page %}
 {% block javascript %}
 {{ block.super }}
+
+
+    <script type='text/html' id='template'>
+        <form method="post" class="form-horizontal" data-bind="submit: $root.saveRoundParam">
+            <input type="hidden" data-bind="value: pk">
+            <!-- ko if: parent_pk -->
+            <input type="hidden" data-bind="value: parent_pk" class="parent_pk">
+            <!-- /ko -->
+            <div class="form-group">
+                    <label class="col-md-3 control-label">Parameter</label>
+                    <div class="col-md-6">
+                        <select class="form-control" id="id_parameter" name="parameter" placeholder="Parameter" data-bind="
+                            options: $root.parameter_list,
+                            optionsText: function(item) {
+                                var firstLetterCapital = item.name().charAt(0).toUpperCase() + item.name().slice(1);
+                                return firstLetterCapital.replace(/_(.)/g, function(match, group1) {
+                                    return ' '+group1.toUpperCase();
+                                });
+                            },
+                            optionsValue: 'pk',
+                            value: selectedParameterPk
+                            ">
+                        </select>
+                    </div>
+                </div>
+            <div class="form-group" data-bind="visible: isVisible('string') ">
+                <label class="col-md-3 control-label">String value</label>
+                <div class="col-md-6">
+                    <textarea class="form-control" id="id_string_value" name="string_value" placeholder="String value"
+                              rows="3" data-bind="value: stringValue"></textarea>
+                </div>
+            </div>
+            <div class="form-group" data-bind="visible: isVisible('int')">
+                <label class="col-md-3 control-label">Int value</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="id_int_value" name="int_value" placeholder="Int value" type="number" data-bind="value: intValue">
+                </div>
+            </div>
+            <div class="form-group" data-bind="visible: isVisible('float')">
+                <label class="col-md-3 control-label">Float value</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="id_float_value" name="float_value" placeholder="Float value" step="any" type="number" data-bind="value: floatValue">
+                </div>
+            </div>
+            <div class="form-group" data-bind="visible: isVisible('boolean')">
+                <label class="col-md-3 control-label">Boolean value</label>
+                <div class="col-md-6">
+                    <select class="form-control" id="id_boolean_value" name="boolean_value" data-bind="value: booleanValue">
+                        <option value="2">Choose...</option>
+                        <option value="1">Yes</option>
+                        <option value="0">No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-3 control-label">&nbsp;</label>
+                <div class="col-md-6">
+                    <div class="checkbox">
+                        <label><input checked="checked" id="id_is_active" name="is_active" type="checkbox" data-bind="checked: isActive"> Is active</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </script>
+
+    <script type="text/html" id="round-config-template">
+
+    <form class="form-horizontal" data-bind="submit: $root.saveRoundConfig">
+        <input type="hidden" data-bind="value: pk">
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="round_type">Round Type</label>
+          <div class="col-md-6">
+            <select id="round_type" name="round_type" class="form-control input-sm">
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="display_number">Display Number</label>
+          <div class="col-md-6">
+              <input id="display_number" name="display_number" type="text" placeholder="" class="form-control input-sm" data-bind="value: display_number">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="duration">Duration</label>
+          <div class="col-md-6">
+            <input id="duration" name="duration" type="text" placeholder="" class="form-control input-sm" data-bind="value: duration">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="template_id">Template ID</label>
+          <div class="col-md-6">
+          <input id="template_id" name="template_id" type="text" placeholder="" class="form-control input-sm" data-bind="value: template_id">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="survey_url">Survey Url</label>
+          <div class="col-md-6">
+          <input id="survey_url" name="survey_url" type="text" placeholder="" class="form-control input-sm" data-bind="value: survey_url">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="session_id">Session ID</label>
+          <div class="col-md-6">
+          <input id="session_id" name="session_id" type="text" placeholder="" class="form-control input-sm" data-bind="value: session_id">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="repeat">Repeat</label>
+          <div class="col-md-6">
+              <input id="repeat" name="repeat" type="text" class="form-control input-sm" data-bind="value: repeat">
+          </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-4 col-sm-8">
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" name="randomize_groups" data-bind="checked: randomize_groups"> Randomize Groups
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-4 col-sm-8">
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" name="preserve_existing_groups" data-bind="checked: preserve_existing_groups">
+                        Preserve Existing Groups
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-4 col-sm-8">
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" name="create_group_clusters" data-bind="checked: create_group_clusters">
+                        Create Group Clusters
+                    </label>
+              </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-4 col-sm-8">
+                <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="initialize_data_values" data-bind="checked: initialize_data_values">
+                      Initialize Data Values
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-4 col-sm-8">
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" name="chat_enabled" data-bind="checked: chat_enabled">
+                        Chat Enabled
+                    </label>
+                 </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+    </form>
+
+    </script>
 
     <script type="text/javascript">
         var data = $.parseJSON("{{ json_data | escapejs }}");
@@ -236,21 +350,151 @@
                 self.display_name = ko.observable(data.display_name);
                 self.children = ko.observableArray(data.children);
 
+                self.pk = ko.observable(data.pk);
+                self.display_number = ko.observable(data.display_number);
+                self.duration = ko.observable(data.duration);
+                self.template_id = ko.observable(data.template_id);
+                self.survey_url = ko.observable(data.survey_url);
+                self.randomize_groups = ko.observable(data.randomize_groups);
+                self.preserve_existing_groups = ko.observable(data.preserve_existing_groups);
+                self.create_group_clusters = ko.observable(data.create_group_clusters);
+                self.session_id = ko.observable(data.session_id);
+                self.repeat = ko.observable(data.repeat);
+                self.initialize_data_values = ko.observable(data.initialize_data_values);
+                self.chat_enabled = ko.observable(data.chat_enabled);
+
                 self.toggleVisibility = function() {
                     self.isExpanded(!self.isExpanded());
                 };
+
+                self.update = function(nodeObject) {
+                    self.display_number(nodeObject.display_number);
+                    self.duration(nodeObject.duration);
+                    self.template_id(nodeObject.template_id);
+                    self.survey_url(nodeObject.survey_url);
+                    self.randomize_groups(nodeObject.randomize_groups);
+                    self.preserve_existing_groups(nodeObject.preserve_existing_groups);
+                    self.create_group_clusters(nodeObject.create_group_clusters);
+                    self.session_id(nodeObject.session_id);
+                    self.repeat(nodeObject.repeat);
+                    self.initialize_data_values(nodeObject.initialize_data_values);
+                    self.chat_enabled(nodeObject.chat_enabled);
+                }
             };
 
-            var Parameter = function(data) {
-                this.name = ko.observable(data.parameter_name);
-                this.value = ko.observable(data.parameter_pk);
-                this.type = ko.observable(data.parameter_type);
-            }
+            function PageModel(data) {
 
-            function RoundParamViewModel(data, parameter_list) {
+                var session_mapping = {
+                    'round_config': {
+                        create: function (options) {
+                            return new NodeModel(options.data);
+                        }
+                    }
+                };
+                var model = ko.mapping.fromJS(data, session_mapping);
+
+                model.template = ko.observable();
+                model.activateModal = ko.observable(false);
+                model.modalData = ko.observable();
+
+                model.addRoundParam = function(roundConfig) {
+                    var temp = new RoundParamViewModel({'parent_pk': roundConfig.pk()});
+                    model.modalData(temp);
+                    model.template("template");
+                    model.activateModal(true);
+                }
+                model.removeRoundParam = function(round_config) {
+                    $.each(model.round_config(), function() { this.children.remove(round_config) })
+                };
+
+                model.editRoundParam = function(round_param) {
+                    model.modalData(new RoundParamViewModel(round_param, model.parameter_list));
+                    model.template("template");
+                    model.activateModal(true);
+                }
+
+                model.editRoundConfig = function(data) {
+                    model.modalData(data);
+                    model.template("round-config-template");
+                    model.activateModal(true);
+                }
+
+                model.activateRoundConfigModal = function (data, event) {
+                    model.modalData(new NodeModel({}));
+                    model.template("round-config-template");
+                    model.activateModal(true);
+                }
+
+                model.hideModal = function() {
+                    model.activateModal(false);
+                    model.template("");
+                    model.modalData("");
+                }
+
+                model.saveRoundParam = function(form) {
+{#                  var formData = "pk="+data.pk+"&parameter="+data.selectedParameterPk()+"&string_value="+data.stringValue()+"&int_value="+data.intValue()+"&float_value="+data.floatValue()+"&boolean_value="+data.booleanValue()+"&is_active="+data.isActive();#}
+                    form = $(form);
+                    window.form = form;
+                    var update = parseInt(form.find("input[type='hidden']").val());
+                    var roundPk = form.find("input[type='hidden'].parent_pk").val();
+                    var jsonObject  = form.serializeObject();
+
+                    var httpVerb = !update ? "POST" : "PUT";
+
+                    if (update) {
+                        var match = ko.utils.arrayFirst(model.round_config(), function (item) {
+                            return ko.utils.arrayFirst(item.children(), function(i){
+                                if(update == i.pk) {
+                                    i.string_value = jsonObject.string_value;
+                                    i.int_value = jsonObject.int_value;
+                                    i.float_value = jsonObject.float_value;
+                                    i.boolean_value = jsonObject.boolean_value;
+                                    i.is_active = jsonObject.is_active;
+                               }
+                            });
+                        });
+                        model.hideModal();
+                    }
+                    else {
+                        var match = ko.utils.arrayFirst(model.round_config(), function (item) {
+                            return parseInt(roundPk) == item.pk();
+                        });
+
+{#                        Create API to create RoundConfig and return the created roundConfig is JSON format and then add to the DOM #}
+{#                        match.children.push(jsonObject);#}
+                    }
+                }
+                model.saveRoundConfig = function(form) {
+
+                    form = $(form);
+                    var update = form.find("input[type='hidden']").val();
+                    var jsonObject  = form.serializeObject();
+
+                    var httpVerb = !update ? "POST" : "PUT";
+
+                    if (update) {
+                        var match = ko.utils.arrayFirst(model.round_config(), function (item) {
+                            return parseInt(update) === item.pk();
+                        });
+                        match.update(jsonObject);
+                        model.hideModal();
+                    }
+                    else {
+{#                        Create API to create RoundConfig and return the created roundConfig is JSON format and then add to the DOM #}
+{#                           model.round_config.push();#}
+                    }
+                }
+
+                return model;
+            };
+
+            var pageModel = new PageModel(data);
+
+            function RoundParamViewModel(data) {
                 var self = this;
 
-                self.parameters = ko.observableArray(parameter_list());
+                self.pk = ko.observable(data.pk);
+                self.parent_pk = ko.observable(data.parent_pk);
                 self.selectedParameterPk = ko.observable(data.parameter_pk);
                 self.stringValue = ko.observable(data.string_value);
                 self.intValue = ko.observable(data.int_value);
@@ -264,49 +508,16 @@
                    return type === self.parameterType();
                 };
                 self.selectedParameterPk.subscribe(function (data) {
-                    //console.log(data);
-                    ko.utils.arrayForEach(parameter_list(), function(param){
-                        //console.log(param);
+
+                    ko.utils.arrayForEach(pageModel.parameter_list(), function(param){
+
                         if (param.pk() === data){
-                            //console.log("match found!!");
-                            self.parameterType = param.type;
-                            //console.log(self.parameterType());
+                            self.parameterType(param.type());
+                            self.selectedParameterPk(param.pk());
                         }
                     });
                 });
             }
-
-            function PageModel(data) {
-
-                var session_mapping = {
-                    'round_config': {
-                        create: function (options) {
-                            return new NodeModel(options.data);
-                        }
-                    }
-                };
-                var model = ko.mapping.fromJS(data, session_mapping);
-
-                model.showRoundParamModal = ko.observable(false);
-                model.modalData = ko.observable();
-
-                model.activateRoundConfigModal = function (data, event) {
-                    console.log("activate me");
-                    console.log(data);
-                }
-
-                model.activateRoundParamModal = function (data, event) {
-                    model.modalData(new RoundParamViewModel(data, model.parameter_list));
-                    model.showRoundParamModal(true);
-                }
-
-                model.hideRoundParamModal = function() {
-                    model.showRoundParamModal(false);
-                    model.modalData("");
-                }
-
-                return model;
-            };
 
             ko.bindingHandlers.showModal = {
                 init: function (element, valueAccessor) {
@@ -345,7 +556,24 @@
                 }
             };
 
-            ko.applyBindings(new PageModel(data));
+            $.fn.serializeObject = function() {
+                var o = {};
+                var a = this.serializeArray();
+                $.each(a, function() {
+                    if (o[this.name] !== undefined) {
+                        if (!o[this.name].push) {
+                            o[this.name] = [o[this.name]];
+                        }
+                        o[this.name].push(this.value || '');
+                    } else {
+                        o[this.name] = this.value || '';
+                    }
+                });
+                return o;
+            };
+
+            ko.applyBindings(pageModel);
+
         });
 
     </script>

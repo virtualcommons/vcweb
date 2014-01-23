@@ -1037,12 +1037,11 @@ def handler500(request):
 
 @experimenter_required
 def edit_experiment_configuration(request, pk):
-    logger.debug(request.user.experimenter)
+
     ec = ExperimentConfiguration.objects.get(pk=pk)
     ecf = ExperimentConfigurationForm(instance=ec)
 
     epv = ExperimentParameterValue.objects.filter(experiment_configuration=ec)
-    epvf = ExperimentParameterValueForm()
 
     round_config = RoundConfiguration.objects.filter(experiment_configuration=ec)
     round_config_list = [round.to_dict() for round in round_config]
@@ -1062,7 +1061,7 @@ def edit_experiment_configuration(request, pk):
 
     json_data = {'experiment_param_val': epv, 'round_config': round_config_list, 'parameter_list': [parameter for parameter in parameter_list]}
 
-    return render(request, 'experimenter/edit-configuration.html', {'json_data': dumps(json_data), 'form': epvf, 'experiment_config_form': ecf})
+    return render(request, 'experimenter/edit-configuration.html', {'json_data': dumps(json_data), 'experiment_config_form': ecf})
 
 @experimenter_required
 def clone_experiment_configuration(request):
