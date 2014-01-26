@@ -13,6 +13,9 @@
     <form method="post" class="form-horizontal">
             {{ experiment_config_form.non_field_errors }}
             <div class="col-md-6">
+		<div id="experiment_config_pk" style="display: none;">
+		{{experiment_config.pk}}
+		</div>
                 <div class="form-group">
                     <label class="col-md-4 control-label">Experiment metadata</label>
                     <div class="col-md-8">
@@ -237,6 +240,7 @@
 
     <form class="form-horizontal" data-bind="submit: $root.saveRoundConfig">
         <input type="hidden" data-bind="value: pk">
+	<input type="hidden" id="sequence_number" name="sequence_number" type="text" data-bind="value: sequence_number">
         <div class="form-group">
           <label class="col-md-4 control-label" for="round_type">Round Type</label>
           <div class="col-md-6">
@@ -351,6 +355,7 @@
                 self.children = ko.observableArray(data.children);
 
                 self.pk = ko.observable(data.pk);
+		self.sequence_number = ko.observable(data.sequence_number)
                 self.display_number = ko.observable(data.display_number);
                 self.duration = ko.observable(data.duration);
                 self.template_id = ko.observable(data.template_id);
@@ -481,7 +486,21 @@
                     }
                     else {
 {#                        Create API to create RoundConfig and return the created roundConfig is JSON format and then add to the DOM #}
-{#                           model.round_config.push();#}
+                        
+			var experiment_config_pk = parseInt($('#experiment_config_pk').text())	
+			formData = form.serialize() + '&request_type=create' + '&experiment_config_pk=' + experiment_config_pk;
+                        console.log(formData);
+			$.ajax("/api/configuration/round", {
+                        data: formData,
+                        type: "POST",
+                        success: function(result) {
+			    if(result.success){
+				console.log("Here is the created/updated round_config!")
+				console.log(result.round_config)
+				//model.round_config.push(result.round_config)
+			    }
+                        }
+                        });
                     }
                 }
 

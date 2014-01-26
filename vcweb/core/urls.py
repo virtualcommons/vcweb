@@ -8,7 +8,7 @@ from vcweb.core.views import (dashboard, LoginView, LogoutView, RegistrationView
         RegisterEmailListView, RegisterTestParticipantsView, completed_survey, toggle_bookmark_experiment_metadata,
         check_survey_completed, Participate, download_data, export_configuration, api_logger, participant_api_login,
         api_logout, participant_ready, check_ready_participants, get_dashboard_view_model,
-        edit_experiment_configuration, clone_experiment_configuration)
+        update_round_configuration, edit_experiment_configuration, clone_experiment_configuration)
 import logging
 import urllib
 
@@ -40,6 +40,7 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^experiment/(?P<pk>\d+)/download/(?P<file_type>[\w]+)$', download_data, name='download_data'),
     url(r'^experiment/(?P<pk>\d+)/export/configuration(?P<file_extension>.[\w]+)$', export_configuration, name='export_configuration'),
     url(r'^configuration/(?P<pk>\d+)/edit', edit_experiment_configuration, name='edit_experiment_configuration'),
+    url(r'^api/configuration/round', update_round_configuration, name='update_round_configuration'),
     url(r'^experimenter/bookmark-experiment-metadata$', toggle_bookmark_experiment_metadata, name='bookmark_experiment_metadata'),
     url(r'^api/configuration/clone', clone_experiment_configuration, name='clone_experiment_configuration'),
     url(r'^api/experiment/(?P<pk>\d+)/check-ready-participants$', check_ready_participants, name='check_ready_participants'),

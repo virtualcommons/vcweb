@@ -194,19 +194,15 @@ class ExperimentParameterValueForm(forms.ModelForm):
             'string_value': forms.Textarea(attrs={'cols': 40, 'rows': 3}),
         }
 
-
 class RoundConfigurationForm(forms.ModelForm):
-
     class Meta:
-        model = RoundConfiguration
-        exclude = ('last_modified', 'date_created', 'group_cluster_size', 'template_filename')
-
+	model = RoundConfiguration
+	exclude = ('experiment_configuration','last_modified', 'date_created', 'template_filename')
 
 class RoundParameterValuesForm(forms.ModelForm):
 
     class Meta:
         model = RoundParameterValue
-
 
 
 class EmailListField(forms.CharField):
