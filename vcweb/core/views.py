@@ -377,8 +377,9 @@ def update_account_profile(request):
                         'message': 'This email is already registered with our system, please try another.'
                     }))
 
-            for attr in ('major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food', 'favorite_sport',
-                         'favorite_color', 'favorite_movie_genre'):
+            for attr in (
+                'major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food', 'favorite_sport',
+                'favorite_color', 'favorite_movie_genre'):
                 setattr(p, attr, form.cleaned_data.get(attr))
 
             for attr in ('first_name', 'last_name', 'email'):
@@ -1037,86 +1038,65 @@ def handler500(request):
 
 
 @experimenter_required
-def update_round_configuration(request):
-    exp_config_pk = request.POST['experiment_config_pk']
-    data = request.POST.copy()
+def update_round_configuration(request, pk):
+
+    form = RoundConfigurationForm(request.POST or None)
     request_type = request.POST['request_type']
-    del data['experiment_config_pk']
-    ec = ExperimentConfiguration.objects.get(pk=exp_config_pk)
-    logger.debug(data)
-    '''
-    FIX: need to set default values for these fields on form...
-    '''
-    if data['sequence_number'] == '':
-	data['sequence_number'] = 0
-    if data['display_number'] == '':
-	data['display_number'] = 0 
-    if data['duration'] == '':
-	data['duration'] = 0
-    
-    if data['repeat'] == '':
-	data['repeat'] = 0
-    	
-    '''
-    FIX: need to pass round_type choices to front-end select... WELCOME is just dummy value
-    '''
-    data['round_type'] = 'WELCOME'
-    
-    form = RoundConfigurationForm(data=data)
+    if request_type == 'delete':
+        rc = RoundConfiguration.objects.get(pk=pk).delete()
+        return JsonResponse(dumps({
+            'success': True
+        }))
+
     if form.is_valid():
-        logger.debug('form is VALID')
-	
-	if request_type == 'create':
-		logger.debug('creation mode')
-		rc = RoundConfiguration()
-	elif request_type == 'update':
-		logger.debug('update mode')
-		rc = RoundConfiguration.objects.get(pk=pk)
-	
-	rc.round_type = form.cleaned_data.get('round_type')
-	rc.sequence_number = form.cleaned_data.get('sequence_number')
-	rc.display_number = form.cleaned_data.get('display_number')
-	rc.duration = form.cleaned_data.get('duration')
-	rc.template_id = form.cleaned_data.get('template_id')
-	rc.survey_url = form.cleaned_data.get('survey_url')
-	rc.session_id = form.cleaned_data.get('session_id')
-	rc.request = form.cleaned_data.get('request')
-	rc.randomize_groups = form.cleaned_data.get('randomize_groups')
-	rc.preserve_existing_groups = form.cleaned_data.get('preserve_existing_groups')
-	rc.create_group_clusters = form.cleaned_data.get('create_group_clusters')
-	rc.initialize_data_values = form.cleaned_data.get('initialize_data_values')
-	rc.chat_enabled = form.cleaned_data.get('chat_enabled')
-	rc.experiment_configuration = ExperimentConfiguration.objects.get(pk=exp_config_pk)
+        if request_type == 'create':
+            rc = RoundConfiguration()
+            exp_config_pk = request.POST['experiment_config_pk']
+            ec = ExperimentConfiguration.objects.get(pk=exp_config_pk)
+            rc.experiment_configuration = ec
+        elif request_type == "update":
+            rc = RoundConfiguration.objects.get(pk=pk)
 
-	logger.debug('SAVE!!')
-	
-	rc.save()
-	
-	return JsonResponse(dumps({
-	    'success': True,
-	    'round_config' : rc
-	}))
+        rc.round_type = form.cleaned_data.get('round_type')
+        rc.sequence_number = form.cleaned_data.get('sequence_number')
+        rc.display_number = form.cleaned_data.get('display_number')
+        rc.duration = form.cleaned_data.get('duration')
+        rc.template_id = form.cleaned_data.get('template_id')
+        rc.survey_url = form.cleaned_data.get('survey_url')
+        rc.session_id = form.cleaned_data.get('session_id')
+        rc.repeat = form.cleaned_data.get('repeat')
+        rc.randomize_groups = form.cleaned_data.get('randomize_groups')
+        rc.preserve_existing_groups = form.cleaned_data.get('preserve_existing_groups')
+        rc.create_group_clusters = form.cleaned_data.get('create_group_clusters')
+        rc.initialize_data_values = form.cleaned_data.get('initialize_data_values')
+        rc.chat_enabled = form.cleaned_data.get('chat_enabled')
+        rc.save()
 
-    logger.debug(form.errors)
-    logger.debug(form.non_field_errors())
-    message = '''<div class="alert alert-danger alert-dismissable alert-link">
-		  <button class=close data-dismiss=alert aria-hidden=true>
-		  &times;</button>{errors}</div>\n
-	      '''.format(errors='\n'.join(['<p>{e}</p>'.format(e=e) for e in form.non_field_errors()]))
+        return JsonResponse(dumps({
+            'success': True,
+            'round_config': rc.to_dict()
+        }))
+    #
+    # logger.debug(form.errors)
+    # logger.debug(form.non_field_errors())
+    # message = '''<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>{errors}</div>\n'''.format(
+    #     errors='\n'.join(['<p>{e}</p>'.format(e=e) for e in form.non_field_errors()]))
     return JsonResponse(dumps({
-	'success': False,
-	'message': message
+        'success': False,
+        'message': "error"
     }))
-
 
 
 @experimenter_required
 def edit_experiment_configuration(request, pk):
-
     ec = ExperimentConfiguration.objects.get(pk=pk)
     ecf = ExperimentConfigurationForm(instance=ec)
 
     epv = ExperimentParameterValue.objects.filter(experiment_configuration=ec)
+    exp_param_values_list = [param.to_dict() for param in epv]
+
+    exp_parameter_list = Parameter.objects.filter(scope='experiment').values('pk', 'name', 'type')
+    logger.debug(exp_param_values_list)
 
     round_config = RoundConfiguration.objects.filter(experiment_configuration=ec)
     round_config_list = [round.to_dict() for round in round_config]
@@ -1124,20 +1104,27 @@ def edit_experiment_configuration(request, pk):
     round_param_values = RoundParameterValue.objects.filter(round_configuration__in=round_config)
     round_param_values_list = [round_param.to_dict() for round_param in round_param_values]
 
-    parameter_list = Parameter.objects.filter(scope='round').values('pk', 'name', 'type')
+    round_parameter_list = Parameter.objects.filter(scope='round').values('pk', 'name', 'type')
 
-    #Get the round parameter values for each round
+    # Get the round parameter values for each round
     for round in round_config_list:
         round["children"] = []
         for param in round_param_values_list:
             if round['pk'] == param['round_configuration_pk']:
-                round["children"].append(param)
-        #set the round params list as this round's children
+                round["children"].append(param)  # set the round params list as this round's children
 
-    json_data = {'experiment_param_val': epv, 'round_config': round_config_list, 'parameter_list': [parameter for parameter in parameter_list]}
-   # logger.debug(ec.pk)
+    json_data = {
+        'experiment_param_val': exp_param_values_list,
+        'exp_parameter_list': [parameter for parameter in exp_parameter_list],
+        'round_config': round_config_list,
+        'round_parameter_list': [parameter for parameter in round_parameter_list]
+    }
 
-    return render(request, 'experimenter/edit-configuration.html', {'json_data': dumps(json_data), 'experiment_config_form': ecf, 'experiment_config': ec})
+    return render(request, 'experimenter/edit-configuration.html', {
+        'json_data': dumps(json_data),
+        'experiment_config_form': ecf,
+        'experiment_config': ec
+    })
 
 @experimenter_required
 def clone_experiment_configuration(request):

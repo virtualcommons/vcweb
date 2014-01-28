@@ -196,8 +196,9 @@ class ExperimentParameterValueForm(forms.ModelForm):
 
 class RoundConfigurationForm(forms.ModelForm):
     class Meta:
-	model = RoundConfiguration
-	exclude = ('experiment_configuration','last_modified', 'date_created', 'template_filename')
+        model = RoundConfiguration
+        exclude = ('experiment_configuration','last_modified', 'date_created', 'template_filename')
+
 
 class RoundParameterValuesForm(forms.ModelForm):
 

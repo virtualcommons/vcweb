@@ -1409,13 +1409,15 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
 
     def to_dict(self, **kwargs):
         return {
-            'display_name': u"%s %s" % (self.get_round_type_display(), self.sequence_label),
+            'display_name': self.get_round_type_display(),
             'pk': self.pk,
+            'round_type':self.round_type,
             'display_number': self.display_number,
+            'sequence_number': self.sequence_number,
             'duration': self.duration,
             'template_id': self.template_id,
             'survery_url': self.survey_url,
-            'ramdomize_groups': self.randomize_groups,
+            'randomize_groups': self.randomize_groups,
             'preserve_existing_groups': self.preserve_existing_groups,
             'create_group_clusters': self.create_group_clusters,
             'session_id': self.session_id,
@@ -1668,6 +1670,21 @@ class ParameterizedValue(models.Model):
 class ExperimentParameterValue(ParameterizedValue):
     """ Represents an experiment configuration parameter applicable across the entire experiment """
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='parameter_value_set')
+
+    def to_dict(self, **kwargs):
+        rc = self.round_configuration
+        return {
+            'display_name': u"{0}".format(self.parameter),
+            'pk': self.pk,
+            'parameter_pk': self.parameter.pk,
+            'parameter_name': self.parameter,
+            'parameter_type': self.parameter.type,
+            'string_value': self.string_value,
+            'int_value': self.int_value,
+            'float_value': self.float_value,
+            'boolean_value': self.boolean_value,
+            'is_active': self.is_active,
+        }
 
     def __unicode__(self):
         ec = self.experiment_configuration

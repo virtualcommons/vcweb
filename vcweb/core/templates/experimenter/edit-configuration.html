@@ -13,9 +13,9 @@
     <form method="post" class="form-horizontal">
             {{ experiment_config_form.non_field_errors }}
             <div class="col-md-6">
-		<div id="experiment_config_pk" style="display: none;">
-		{{experiment_config.pk}}
-		</div>
+                <div id="experiment_config_pk" style="display: none;">
+                    {{experiment_config.pk}}
+                </div>
                 <div class="form-group">
                     <label class="col-md-4 control-label">Experiment metadata</label>
                     <div class="col-md-8">
@@ -98,10 +98,17 @@
             </div>
             <div id="collapseTwo" class="panel-collapse collapse">
                 <div class="panel-body">
-{#                    <ul class="well well-large" data-bind="foreach: experiment_param_val">#}
-{#                        <li data-bind="text: fields.round_type, click: $root.showExperimentParamValModal.bind($data)"></li>#}
-{#                    </ul>#}
-{#                    <button type="button" class="btn" data-bind="click: $root.addExperimentParam" ><i class='fa fa-plus'></i> Add Parameter Value</button>#}
+                    <div data-bind='if: experiment_param_val().length == 0'>
+                        <div class="callout callout-warning">
+                            No experiment parameters found. Click the "Add Experiment Parameter" button below to add a new one.
+                        </div>
+                    </div>
+                    <ul data-bind="foreach: experiment_param_val">
+                        <li>
+                            <span data-bind="text: display_name"></span>
+                        </li>
+                    </ul>
+                    <button type="button" class="btn" data-bind="click: $root.showExpParamModel"><i class='fa fa-plus'></i> Add Experiment Parameter</button>
                 </div>
             </div>
         </div>
@@ -115,38 +122,40 @@
             </div>
             <div id="collapseThree" class="panel-collapse collapse">
                 <div class="panel-body">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div id="tree">
-                                <ul data-bind="foreach: round_config">
-                                    <li>
-                                        <span class="tree-item fa" data-bind="
-                                            css: {
-                                                'fa-minus-square': isExpanded() && children().length > 0,
-                                                'fa-plus-square': !isExpanded() && children().length > 0,
-                                                'fa-stop': children().length === 0,
-                                                'pointer-icon': children().length > 0
-                                            }, click: toggleVisibility
-                                            "></span>
-                                        <span data-bind="text: display_name"></span>
-                                        <a href='#' data-bind='click: $root.addRoundParam'>Add Round Parameter</a>
-                                        <a href='#' data-bind='click: $root.editRoundConfig'>edit</a>
-                                        <div data-bind="slideVisible: isExpanded">
-                                            <ul data-bind="foreach: children">
-                                                <li>
-                                                    <span class="tree-item fa fa-stop"></span>
-                                                    <span data-bind="text: display_name"></span>
-                                                    <a href='#' data-bind='click: $root.removeRoundParam'>delete</a>
-                                                    <a href='#' data-bind='click: $root.editRoundParam'>edit</a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
+                    <div data-bind='if: round_config().length == 0'>
+                        <div class="callout callout-warning">
+                            No Rounds found for this Experiment Configuration. Click the "Add Round Configuration" button below to add a new one.
                         </div>
                     </div>
-                    <button type="button" class="btn" data-bind="click: $root.activateRoundConfigModal"><i class='fa fa-plus'></i> Add Round Configuration</button>
+                    <div id="tree">
+                        <ul data-bind="foreach: round_config">
+                            <li>
+                                <span class="tree-item fa" data-bind="
+                                    css: {
+                                        'fa-minus-square-o': isExpanded() && children().length > 0,
+                                        'fa-plus-square-o': !isExpanded() && children().length > 0,
+                                        'fa-square-o': children().length === 0,
+                                        'pointer-icon': children().length > 0
+                                    }, click: toggleVisibility
+                                    "></span>
+                                <span data-bind="text: display_name"></span>
+                                <a href='#' data-bind='click: $root.addRoundParam'><i class="fa fa-plus"></i></a>
+                                <a href='#' data-bind='click: $root.editRoundConfig'><i class="fa fa-edit"></i></a>
+                                <a href='#' data-bind='click: $root.removeRoundConfig'><i class="fa fa-power-off"></i></a>
+                                <div data-bind="slideVisible: isExpanded">
+                                    <ul data-bind="foreach: children">
+                                        <li>
+                                            <span class="tree-item fa fa-stop"></span>
+                                            <span data-bind="text: display_name"></span>
+                                            <a href='#' data-bind='click: $root.editRoundParam'><i class="fa fa-edit"></i></a>
+                                            <a href='#' data-bind='click: $root.removeRoundParam'><i class="fa fa-power-off"></i></a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <button type="button" class="btn" data-bind="click: $root.showRoundConfigModal"><i class='fa fa-plus'></i> Add Round Configuration</button>
                 </div>
             </div>
         </div>
@@ -157,7 +166,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true" data-bind="click:hideModal">&times;</button>
-                    <h4 class="modal-title">Edit Form</h4>
+                    <h4 class="modal-title">Edit Details and Click Save</h4>
                 </div>
                 <div class="modal-body" data-bind="with: modalData" >
                     <div data-bind='template: { name: $root.template }'></div>
@@ -169,120 +178,147 @@
 {% block javascript %}
 {{ block.super }}
 
+    <script src="{{ STATIC_URL }}js/jquery-ui.min.js"></script>
 
-    <script type='text/html' id='template'>
+    <script type='text/html' id='round-param-template'>
         <form method="post" class="form-horizontal" data-bind="submit: $root.saveRoundParam">
             <input type="hidden" data-bind="value: pk">
             <!-- ko if: parent_pk -->
             <input type="hidden" data-bind="value: parent_pk" class="parent_pk">
             <!-- /ko -->
-            <div class="form-group">
-                    <label class="col-md-3 control-label">Parameter</label>
-                    <div class="col-md-6">
-                        <select class="form-control" id="id_parameter" name="parameter" placeholder="Parameter" data-bind="
-                            options: $root.parameter_list,
-                            optionsText: function(item) {
-                                var firstLetterCapital = item.name().charAt(0).toUpperCase() + item.name().slice(1);
-                                return firstLetterCapital.replace(/_(.)/g, function(match, group1) {
-                                    return ' '+group1.toUpperCase();
-                                });
-                            },
-                            optionsValue: 'pk',
-                            value: selectedParameterPk
-                            ">
-                        </select>
-                    </div>
-                </div>
-            <div class="form-group" data-bind="visible: isVisible('string') ">
-                <label class="col-md-3 control-label">String value</label>
-                <div class="col-md-6">
-                    <textarea class="form-control" id="id_string_value" name="string_value" placeholder="String value"
-                              rows="3" data-bind="value: stringValue"></textarea>
-                </div>
-            </div>
-            <div class="form-group" data-bind="visible: isVisible('int')">
-                <label class="col-md-3 control-label">Int value</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="id_int_value" name="int_value" placeholder="Int value" type="number" data-bind="value: intValue">
-                </div>
-            </div>
-            <div class="form-group" data-bind="visible: isVisible('float')">
-                <label class="col-md-3 control-label">Float value</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="id_float_value" name="float_value" placeholder="Float value" step="any" type="number" data-bind="value: floatValue">
-                </div>
-            </div>
-            <div class="form-group" data-bind="visible: isVisible('boolean')">
-                <label class="col-md-3 control-label">Boolean value</label>
-                <div class="col-md-6">
-                    <select class="form-control" id="id_boolean_value" name="boolean_value" data-bind="value: booleanValue">
-                        <option value="2">Choose...</option>
-                        <option value="1">Yes</option>
-                        <option value="0">No</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-md-3 control-label">&nbsp;</label>
-                <div class="col-md-6">
-                    <div class="checkbox">
-                        <label><input checked="checked" id="id_is_active" name="is_active" type="checkbox" data-bind="checked: isActive"> Is active</label>
-                    </div>
-                </div>
-            </div>
+            <!-- ko template: { name: 'param-template' }-->
+            <!-- /ko -->
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">Save</button>
             </div>
         </form>
     </script>
 
-    <script type="text/html" id="round-config-template">
+    <script type='text/html' id='exp-param-template'>
+        <form method="post" class="form-horizontal" data-bind="submit: $root.saveExpParam">
+            <!-- ko template: { name: 'param-template' }-->
+            <!-- /ko -->
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </script>
 
-    <form class="form-horizontal" data-bind="submit: $root.saveRoundConfig">
+    <script type="text/html" id="param-template">
+        <div class="form-group">
+            <label class="col-md-3 control-label">Parameter</label>
+            <div class="col-md-6">
+                <select class="form-control" id="id_parameter" name="parameter" placeholder="Parameter" data-bind="
+                    options: parameter_list,
+                    optionsText: function(item) {
+                        var firstLetterCapital = item.name().charAt(0).toUpperCase() + item.name().slice(1);
+                        return firstLetterCapital.replace(/_(.)/g, function(match, group1) {
+                            return ' '+group1.toUpperCase();
+                        });
+                    },
+                    optionsValue: 'pk',
+                    value: selectedParameterPk
+                    ">
+                </select>
+            </div>
+        </div>
+        <div class="form-group" data-bind="visible: isVisible('string,enum,foreignkey') ">
+            <label class="col-md-3 control-label">String value</label>
+            <div class="col-md-6">
+                <textarea class="form-control" id="id_string_value" name="string_value" placeholder="String value" rows="3" data-bind="value: stringValue"></textarea>
+            </div>
+        </div>
+        <div class="form-group" data-bind="visible: isVisible('int')">
+            <label class="col-md-3 control-label">Int value</label>
+            <div class="col-md-6">
+                <input class="form-control" id="id_int_value" name="int_value" placeholder="Int value" type="number" data-bind="value: intValue">
+            </div>
+        </div>
+        <div class="form-group" data-bind="visible: isVisible('float')">
+            <label class="col-md-3 control-label">Float value</label>
+            <div class="col-md-6">
+                <input class="form-control" id="id_float_value" name="float_value" placeholder="Float value" step="any" type="number" data-bind="value: floatValue">
+            </div>
+        </div>
+        <div class="form-group" data-bind="visible: isVisible('boolean')">
+            <label class="col-md-3 control-label">Boolean value</label>
+            <div class="col-md-6">
+                <select class="form-control" id="id_boolean_value" name="boolean_value" data-bind="value: booleanValue">
+                    <option value="2">Choose...</option>
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-md-3 control-label">&nbsp;</label>
+            <div class="col-md-6">
+                <div class="checkbox">
+                    <label><input checked="checked" id="id_is_active" name="is_active" type="checkbox" data-bind="checked: isActive"> Is active</label>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <script type="text/html" id="round-config-template">
+        <form class="form-horizontal" data-bind="submit: $root.saveRoundConfig">
         <input type="hidden" data-bind="value: pk">
-	<input type="hidden" id="sequence_number" name="sequence_number" type="text" data-bind="value: sequence_number">
         <div class="form-group">
-          <label class="col-md-4 control-label" for="round_type">Round Type</label>
-          <div class="col-md-6">
-            <select id="round_type" name="round_type" class="form-control input-sm">
-            </select>
-          </div>
+            <label class="col-md-4 control-label" for="round_type">Round Type</label>
+            <div class="col-md-6">
+                <select id="id_round_type" name="round_type" class="form-control input-sm" data-bind="value: round_type">
+                    <option value="CHAT">Chat round</option>
+                    <option value="DEBRIEFING">Debriefing round</option>
+                    <option value="GENERAL_INSTRUCTIONS">General introduction to the experiment</option>
+                    <option value="INSTRUCTIONS">Instructions round</option>
+                    <option value="PRACTICE">Practice round</option>
+                    <option value="QUIZ">Quiz round</option>
+                    <option value="REGULAR">Regular experiment round</option>
+                    <option value="WELCOME" selected="selected">Initial welcome page</option>
+                </select>
+            </div>
+        </div>
+   	    <div class="form-group">
+            <label class="col-md-4 control-label" for="round_type">Sequence Number</label>
+            <div class="col-md-6">
+                <input type="text" id="sequence_number" name="sequence_number" class="form-control input-sm" data-bind="value: sequence_number">
+            </div>
         </div>
         <div class="form-group">
-          <label class="col-md-4 control-label" for="display_number">Display Number</label>
-          <div class="col-md-6">
-              <input id="display_number" name="display_number" type="text" placeholder="" class="form-control input-sm" data-bind="value: display_number">
-          </div>
+            <label class="col-md-4 control-label" for="display_number">Display Number</label>
+            <div class="col-md-6">
+                <input id="display_number" name="display_number" type="text" class="form-control input-sm" data-bind="value: display_number">
+            </div>
         </div>
         <div class="form-group">
-          <label class="col-md-4 control-label" for="duration">Duration</label>
-          <div class="col-md-6">
-            <input id="duration" name="duration" type="text" placeholder="" class="form-control input-sm" data-bind="value: duration">
-          </div>
+            <label class="col-md-4 control-label" for="duration">Duration</label>
+            <div class="col-md-6">
+                <input id="duration" name="duration" type="text" class="form-control input-sm" data-bind="value: duration">
+            </div>
         </div>
         <div class="form-group">
-          <label class="col-md-4 control-label" for="template_id">Template ID</label>
-          <div class="col-md-6">
-          <input id="template_id" name="template_id" type="text" placeholder="" class="form-control input-sm" data-bind="value: template_id">
-          </div>
+            <label class="col-md-4 control-label" for="template_id">Template ID</label>
+            <div class="col-md-6">
+                <input id="template_id" name="template_id" type="text" class="form-control input-sm" data-bind="value: template_id">
+            </div>
         </div>
         <div class="form-group">
-          <label class="col-md-4 control-label" for="survey_url">Survey Url</label>
-          <div class="col-md-6">
-          <input id="survey_url" name="survey_url" type="text" placeholder="" class="form-control input-sm" data-bind="value: survey_url">
-          </div>
+            <label class="col-md-4 control-label" for="survey_url">Survey Url</label>
+            <div class="col-md-6">
+                <input id="survey_url" name="survey_url" type="text" placeholder="" class="form-control input-sm" data-bind="value: survey_url">
+            </div>
         </div>
         <div class="form-group">
-          <label class="col-md-4 control-label" for="session_id">Session ID</label>
-          <div class="col-md-6">
-          <input id="session_id" name="session_id" type="text" placeholder="" class="form-control input-sm" data-bind="value: session_id">
-          </div>
+            <label class="col-md-4 control-label" for="session_id">Session ID</label>
+            <div class="col-md-6">
+                <input id="session_id" name="session_id" type="text" placeholder="" class="form-control input-sm" data-bind="value: session_id">
+            </div>
         </div>
         <div class="form-group">
-          <label class="col-md-4 control-label" for="repeat">Repeat</label>
-          <div class="col-md-6">
-              <input id="repeat" name="repeat" type="text" class="form-control input-sm" data-bind="value: repeat">
-          </div>
+            <label class="col-md-4 control-label" for="repeat">Repeat</label>
+            <div class="col-md-6">
+                <input id="repeat" name="repeat" type="text" class="form-control input-sm" data-bind="value: repeat">
+            </div>
         </div>
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8">
@@ -337,12 +373,11 @@
             <button type="submit" class="btn btn-primary">Save</button>
         </div>
     </form>
-
     </script>
 
     <script type="text/javascript">
-        var data = $.parseJSON("{{ json_data | escapejs }}");
-        window.x = data;
+        var JSONdata = $.parseJSON("{{ json_data | escapejs }}");
+        window.x = JSONdata;
 
         $(function() {
 
@@ -355,7 +390,8 @@
                 self.children = ko.observableArray(data.children);
 
                 self.pk = ko.observable(data.pk);
-		self.sequence_number = ko.observable(data.sequence_number)
+		        self.round_type = ko.observable(data.round_type);
+                self.sequence_number = ko.observable(data.sequence_number)
                 self.display_number = ko.observable(data.display_number);
                 self.duration = ko.observable(data.duration);
                 self.template_id = ko.observable(data.template_id);
@@ -367,13 +403,23 @@
                 self.repeat = ko.observable(data.repeat);
                 self.initialize_data_values = ko.observable(data.initialize_data_values);
                 self.chat_enabled = ko.observable(data.chat_enabled);
+                self.old_sequence_number = -1;
+
+                self.sequence_number.subscribe( function (old_value) {
+                    self.old_sequence_number = old_value;
+                    console.log(old_value);
+
+                }, self, 'beforeChange');
 
                 self.toggleVisibility = function() {
                     self.isExpanded(!self.isExpanded());
                 };
 
                 self.update = function(nodeObject) {
+                    self.display_name(nodeObject.display_name);
+                    self.round_type(nodeObject.round_type);
                     self.display_number(nodeObject.display_number);
+                    self.sequence_number(nodeObject.sequence_number);
                     self.duration(nodeObject.duration);
                     self.template_id(nodeObject.template_id);
                     self.survey_url(nodeObject.survey_url);
@@ -387,34 +433,67 @@
                 }
             };
 
+            function ExperimentParamModel(data) {
+                var self = this;
+
+                self.display_name = ko.observable(data.display_name);
+            }
+
             function PageModel(data) {
 
-                var session_mapping = {
+                var mapping = {
                     'round_config': {
                         create: function (options) {
                             return new NodeModel(options.data);
                         }
+                    },
+                    'experiment_param_val': {
+                        create: function (options) {
+                            return new ExperimentParamModel(options.data);
+                        }
                     }
                 };
-                var model = ko.mapping.fromJS(data, session_mapping);
+                var model = ko.mapping.fromJS(data, mapping);
 
                 model.template = ko.observable();
                 model.activateModal = ko.observable(false);
                 model.modalData = ko.observable();
+                model.old_sequence_number = "";
 
-                model.addRoundParam = function(roundConfig) {
-                    var temp = new RoundParamViewModel({'parent_pk': roundConfig.pk()});
+                model.showExpParamModel = function (data, event) {
+                    var temp = new ParamViewModel({}, model.exp_parameter_list());
                     model.modalData(temp);
-                    model.template("template");
+                    model.template("exp-param-template");
                     model.activateModal(true);
                 }
-                model.removeRoundParam = function(round_config) {
-                    $.each(model.round_config(), function() { this.children.remove(round_config) })
+
+                model.addRoundParam = function(roundConfig) {
+                    var temp = new ParamViewModel({'parent_pk': roundConfig.pk()}, model.round_parameter_list());
+                    model.modalData(temp);
+                    model.template("round-param-template");
+                    model.activateModal(true);
+                }
+
+                model.removeRoundParam = function(round_param) {
+                    $.each(model.round_config(), function() { this.children.remove(round_param) })
                 };
 
+                model.removeRoundConfig = function(round_config) {
+
+                    $.ajax("/api/configuration/round/"+ round_config.pk(), {
+                        data: 'request_type=delete',
+                        type: "POST",
+                        success: function(result) {
+                            if(result.success){
+                                model.round_config.remove(round_config);
+                            }
+                        }
+                    });
+                }
+
                 model.editRoundParam = function(round_param) {
-                    model.modalData(new RoundParamViewModel(round_param, model.parameter_list));
-                    model.template("template");
+                    model.modalData(new ParamViewModel(round_param, model.round_parameter_list()));
+                    model.template("round-param-template");
                     model.activateModal(true);
                 }
 
@@ -424,7 +503,7 @@
                     model.activateModal(true);
                 }
 
-                model.activateRoundConfigModal = function (data, event) {
+                model.showRoundConfigModal = function (data, event) {
                     model.modalData(new NodeModel({}));
                     model.template("round-config-template");
                     model.activateModal(true);
@@ -437,14 +516,10 @@
                 }
 
                 model.saveRoundParam = function(form) {
-{#                  var formData = "pk="+data.pk+"&parameter="+data.selectedParameterPk()+"&string_value="+data.stringValue()+"&int_value="+data.intValue()+"&float_value="+data.floatValue()+"&boolean_value="+data.booleanValue()+"&is_active="+data.isActive();#}
-                    form = $(form);
-                    window.form = form;
+                    var form = $(form);
                     var update = parseInt(form.find("input[type='hidden']").val());
                     var roundPk = form.find("input[type='hidden'].parent_pk").val();
                     var jsonObject  = form.serializeObject();
-
-                    var httpVerb = !update ? "POST" : "PUT";
 
                     if (update) {
                         var match = ko.utils.arrayFirst(model.round_config(), function (item) {
@@ -471,46 +546,83 @@
                 }
                 model.saveRoundConfig = function(form) {
 
-                    form = $(form);
+                    var form = $(form);
                     var update = form.find("input[type='hidden']").val();
-                    var jsonObject  = form.serializeObject();
-
-                    var httpVerb = !update ? "POST" : "PUT";
+                    var formData = form.serialize();
 
                     if (update) {
                         var match = ko.utils.arrayFirst(model.round_config(), function (item) {
                             return parseInt(update) === item.pk();
                         });
-                        match.update(jsonObject);
-                        model.hideModal();
+                        $.ajax("/api/configuration/round/"+ update, {
+                            data: formData + '&request_type=update',
+                            type: "POST",
+                            success: function(result) {
+                                if(result.success){
+
+                                    var old_sequence_number = match.old_sequence_number;
+                                    var new_sequence_number = match.sequence_number();
+                                    console.log(old_sequence_number);
+                                    console.log(new_sequence_number);
+
+                                    $.each(model.round_config(), function() {
+                                        var current_sequence_number = this.sequence_number();
+                                        if( current_sequence_number > old_sequence_number && current_sequence_number <= new_sequence_number){
+                                            this.display_name()
+                                            this.sequence_number(current_sequence_number - 1);
+                                        }
+                                    });
+                                    match.update(result.round_config);
+                                    model.hideModal();
+                                }
+                            }
+                        });
                     }
                     else {
-{#                        Create API to create RoundConfig and return the created roundConfig is JSON format and then add to the DOM #}
-                        
-			var experiment_config_pk = parseInt($('#experiment_config_pk').text())	
-			formData = form.serialize() + '&request_type=create' + '&experiment_config_pk=' + experiment_config_pk;
-                        console.log(formData);
-			$.ajax("/api/configuration/round", {
-                        data: formData,
-                        type: "POST",
-                        success: function(result) {
-			    if(result.success){
-				console.log("Here is the created/updated round_config!")
-				console.log(result.round_config)
-				//model.round_config.push(result.round_config)
-			    }
-                        }
+                        var experiment_config_pk = parseInt($('#experiment_config_pk').text())
+                        formData += '&experiment_config_pk=' + experiment_config_pk;
+
+                        $.ajax("/api/configuration/round/-1", {
+                            data: formData + '&request_type=create',
+                            type: "POST",
+                            success: function(result) {
+                                if(result.success){
+                                    model.round_config.push(new NodeModel(result.round_config));
+                                    model.hideModal();
+                                }
+                            }
                         });
                     }
                 }
 
+                model.saveExpParam = function(form) {
+                    var form = $(form);
+                    var update = parseInt(form.find("input[type='hidden']").val());
+                    var jsonObject  = form.serializeObject();
+
+                    var httpVerb = !update ? "POST" : "PUT";
+
+                    if (update) {
+                        var match = ko.utils.arrayFirst(model.experiment_param_val(), function (item) {
+                            return parseInt(update) == item.pk();
+                        });
+                        model.hideModal();
+                    }
+                    else {
+{#                      Create API to create RoundConfig and return the created roundConfig is JSON format and then add to the DOM #}
+                        model.experiment_param_val.push({'display_name': jsonObject.parameter});
+                        model.hideModal();
+                    }
+                }
                 return model;
             };
 
-            var pageModel = new PageModel(data);
+            var pageModel = new PageModel(JSONdata);
 
-            function RoundParamViewModel(data) {
+            function ParamViewModel(data, parameter_list) {
                 var self = this;
+
+                self.parameter_list = ko.observable(parameter_list);
 
                 self.pk = ko.observable(data.pk);
                 self.parent_pk = ko.observable(data.parent_pk);
@@ -523,12 +635,18 @@
 
                 self.parameterType = ko.observable(data.parameter_type);
 
-                self.isVisible = function(type){
-                   return type === self.parameterType();
+                self.isVisible = function(types){
+                    var typeList = types.split(',');
+                    for(var index in typeList) {
+                        if(typeList[index] === self.parameterType()) {
+                            return true;
+                        }
+                    }
+                    return false;
                 };
                 self.selectedParameterPk.subscribe(function (data) {
 
-                    ko.utils.arrayForEach(pageModel.parameter_list(), function(param){
+                    ko.utils.arrayForEach(self.parameter_list(), function(param){
 
                         if (param.pk() === data){
                             self.parameterType(param.type());
@@ -571,7 +689,7 @@
                 update: function(element, valueAccessor) {
                     // Whenever the value subsequently changes, slowly fade the element in or out
                     var value = valueAccessor();
-                    ko.unwrap(value) ? $(element).slideDown() : $(element).slideUp();
+                    ko.unwrap(value) ? $(element).slideDown(200) : $(element).slideUp(200);
                 }
             };
 
