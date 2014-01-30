@@ -1409,7 +1409,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
 
     def to_dict(self, **kwargs):
         return {
-            'display_name': self.get_round_type_display(),
+            'name': self.get_round_type_display(),
             'pk': self.pk,
             'round_type':self.round_type,
             'display_number': self.display_number,

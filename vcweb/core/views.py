@@ -1043,7 +1043,7 @@ def update_round_configuration(request, pk):
     form = RoundConfigurationForm(request.POST or None)
     request_type = request.POST['request_type']
     if request_type == 'delete':
-        rc = RoundConfiguration.objects.get(pk=pk).delete()
+        # rc = RoundConfiguration.objects.get(pk=pk).delete()
         return JsonResponse(dumps({
             'success': True
         }))
@@ -1070,7 +1070,7 @@ def update_round_configuration(request, pk):
         rc.create_group_clusters = form.cleaned_data.get('create_group_clusters')
         rc.initialize_data_values = form.cleaned_data.get('initialize_data_values')
         rc.chat_enabled = form.cleaned_data.get('chat_enabled')
-        rc.save()
+        # rc.save()
 
         return JsonResponse(dumps({
             'success': True,

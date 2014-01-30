@@ -138,7 +138,7 @@
                                         'pointer-icon': children().length > 0
                                     }, click: toggleVisibility
                                     "></span>
-                                <span data-bind="text: display_name"></span>
+                                <span data-bind="text: display_name()"></span>
                                 <a href='#' data-bind='click: $root.addRoundParam'><i class="fa fa-plus"></i></a>
                                 <a href='#' data-bind='click: $root.editRoundConfig'><i class="fa fa-edit"></i></a>
                                 <a href='#' data-bind='click: $root.removeRoundConfig'><i class="fa fa-power-off"></i></a>
@@ -381,34 +381,75 @@
 
         $(function() {
 
+            //wrapper to an observable that requires accept/cancel
+            ko.protectedObservable = function(initialValue) {
+                //private variables
+                var _actualValue = ko.observable(initialValue),
+                    _tempValue = initialValue;
+
+                //computed observable that we will return
+                var result = ko.computed({
+                    //always return the actual value
+                    read: function() {
+                       return _actualValue();
+                    },
+                    //stored in a temporary spot until commit
+                    write: function(newValue) {
+                         _tempValue = newValue;
+                    }
+                });
+
+                //if different, commit temp value
+                result.commit = function() {
+                    if (_tempValue !== _actualValue()) {
+                         _actualValue(_tempValue);
+                    }
+                };
+
+                //return updatedValue
+                result.updateValue = function() {
+                    return _tempValue;
+                }
+
+                //force subscribers to take original
+                result.reset = function() {
+                    _actualValue.valueHasMutated();
+                    _tempValue = _actualValue();   //reset temp value
+                };
+
+                return result;
+            };
+
             function NodeModel(data) {
 
                 var self = this;
 
                 self.isExpanded = ko.observable(false);
-                self.display_name = ko.observable(data.display_name);
+
+                self.name = ko.protectedObservable(data.name);
+                self.display_name = function() {
+                   return self.repeat() > 0 ? self.name() + ' ' + self.sequence_number() + ' [x '+ self.repeat() +']': self.name() + ' ' + self.sequence_number();
+                }
                 self.children = ko.observableArray(data.children);
 
-                self.pk = ko.observable(data.pk);
-		        self.round_type = ko.observable(data.round_type);
-                self.sequence_number = ko.observable(data.sequence_number)
-                self.display_number = ko.observable(data.display_number);
-                self.duration = ko.observable(data.duration);
-                self.template_id = ko.observable(data.template_id);
-                self.survey_url = ko.observable(data.survey_url);
-                self.randomize_groups = ko.observable(data.randomize_groups);
-                self.preserve_existing_groups = ko.observable(data.preserve_existing_groups);
-                self.create_group_clusters = ko.observable(data.create_group_clusters);
-                self.session_id = ko.observable(data.session_id);
-                self.repeat = ko.observable(data.repeat);
-                self.initialize_data_values = ko.observable(data.initialize_data_values);
-                self.chat_enabled = ko.observable(data.chat_enabled);
+                self.pk = ko.protectedObservable(data.pk);
+		        self.round_type = ko.protectedObservable(data.round_type);
+                self.sequence_number = ko.protectedObservable(data.sequence_number)
+                self.display_number = ko.protectedObservable(data.display_number);
+                self.duration = ko.protectedObservable(data.duration);
+                self.template_id = ko.protectedObservable(data.template_id);
+                self.survey_url = ko.protectedObservable(data.survey_url);
+                self.randomize_groups = ko.protectedObservable(data.randomize_groups);
+                self.preserve_existing_groups = ko.protectedObservable(data.preserve_existing_groups);
+                self.create_group_clusters = ko.protectedObservable(data.create_group_clusters);
+                self.session_id = ko.protectedObservable(data.session_id);
+                self.repeat = ko.protectedObservable(data.repeat);
+                self.initialize_data_values = ko.protectedObservable(data.initialize_data_values);
+                self.chat_enabled = ko.protectedObservable(data.chat_enabled);
                 self.old_sequence_number = -1;
 
                 self.sequence_number.subscribe( function (old_value) {
                     self.old_sequence_number = old_value;
-                    console.log(old_value);
-
                 }, self, 'beforeChange');
 
                 self.toggleVisibility = function() {
@@ -416,20 +457,16 @@
                 };
 
                 self.update = function(nodeObject) {
-                    self.display_name(nodeObject.display_name);
-                    self.round_type(nodeObject.round_type);
-                    self.display_number(nodeObject.display_number);
-                    self.sequence_number(nodeObject.sequence_number);
-                    self.duration(nodeObject.duration);
-                    self.template_id(nodeObject.template_id);
-                    self.survey_url(nodeObject.survey_url);
-                    self.randomize_groups(nodeObject.randomize_groups);
-                    self.preserve_existing_groups(nodeObject.preserve_existing_groups);
-                    self.create_group_clusters(nodeObject.create_group_clusters);
-                    self.session_id(nodeObject.session_id);
-                    self.repeat(nodeObject.repeat);
-                    self.initialize_data_values(nodeObject.initialize_data_values);
-                    self.chat_enabled(nodeObject.chat_enabled);
+                    var fields = [
+                        "name", "round_type", "display_number", "sequence_number", "duration", "template_id",
+                        "survey_url", "randomize_groups", "preserve_existing_groups", "create_group_clusters",
+                        "session_id", "repeat", "initialize_data_values", "chat_enabled"
+                    ];
+                    $.each(fields, function() {
+                        var property = self[this];
+                        property(nodeObject[this]);
+                        property.commit();
+                    });
                 }
             };
 
@@ -459,6 +496,10 @@
                 model.activateModal = ko.observable(false);
                 model.modalData = ko.observable();
                 model.old_sequence_number = "";
+
+                model.sorted_round_config = function() {
+                    return model.round_config().sort(function(left, right) { return left.sequence_number() < right.sequence_number() ? -1 : 1 });
+                };
 
                 model.showExpParamModel = function (data, event) {
                     var temp = new ParamViewModel({}, model.exp_parameter_list());
@@ -559,20 +600,23 @@
                             type: "POST",
                             success: function(result) {
                                 if(result.success){
-
-                                    var old_sequence_number = match.old_sequence_number;
-                                    var new_sequence_number = match.sequence_number();
+                                    var old_sequence_number = match.sequence_number();
+                                    var new_sequence_number = match.sequence_number.updateValue();
                                     console.log(old_sequence_number);
                                     console.log(new_sequence_number);
 
                                     $.each(model.round_config(), function() {
                                         var current_sequence_number = this.sequence_number();
                                         if( current_sequence_number > old_sequence_number && current_sequence_number <= new_sequence_number){
-                                            this.display_name()
                                             this.sequence_number(current_sequence_number - 1);
+                                            this.sequence_number.commit();
+                                        } else if( current_sequence_number >= new_sequence_number && current_sequence_number <= old_sequence_number){
+                                            this.sequence_number(current_sequence_number + 1);
+                                            this.sequence_number.commit();
                                         }
                                     });
                                     match.update(result.round_config);
+                                    model.round_config(model.round_config().sort(function(left, right) { return left.sequence_number() < right.sequence_number() ? -1 : 1 }));
                                     model.hideModal();
                                 }
                             }
@@ -587,7 +631,16 @@
                             type: "POST",
                             success: function(result) {
                                 if(result.success){
+                                    var new_sequence_number = result.round_config.sequence_number;
+                                        $.each(model.round_config(), function() {
+                                            var current_sequence_number = this.sequence_number();
+                                            if( current_sequence_number >= new_sequence_number){
+                                                this.sequence_number(current_sequence_number + 1);
+                                                this.sequence_number.commit();
+                                            }
+                                        });
                                     model.round_config.push(new NodeModel(result.round_config));
+                                    model.round_config(model.round_config().sort(function(left, right) { return left.sequence_number() < right.sequence_number() ? -1 : 1 }));
                                     model.hideModal();
                                 }
                             }
