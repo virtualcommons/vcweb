@@ -103,11 +103,17 @@
                             No experiment parameters found. Click the "Add Experiment Parameter" button below to add a new one.
                         </div>
                     </div>
+		    <div id="tree">
                     <ul data-bind="foreach: experiment_param_val">
                         <li>
+			    <span class="tree-item fa" data-bind="
+				css: 'fa-square-o'"></span>
                             <span data-bind="text: display_name"></span>
+			    <a href='#' data-bind='click: $root.editExpParam'><i class="fa fa-edit"></i></a>
+		    	    <a href='#' data-bind='click: $root.removeExpParam'><i class="fa fa-power-off"></i></a>
                         </li>
                     </ul>
+		    </div>
                     <button type="button" class="btn" data-bind="click: $root.showExpParamModel"><i class='fa fa-plus'></i> Add Experiment Parameter</button>
                 </div>
             </div>
@@ -178,8 +184,6 @@
 {% block javascript %}
 {{ block.super }}
 
-    <script src="{{ STATIC_URL }}js/jquery-ui.min.js"></script>
-
     <script type='text/html' id='round-param-template'>
         <form method="post" class="form-horizontal" data-bind="submit: $root.saveRoundParam">
             <input type="hidden" data-bind="value: pk">
@@ -196,6 +200,7 @@
 
     <script type='text/html' id='exp-param-template'>
         <form method="post" class="form-horizontal" data-bind="submit: $root.saveExpParam">
+	    <input type="hidden" data-bind="value: pk">
             <!-- ko template: { name: 'param-template' }-->
             <!-- /ko -->
             <div class="modal-footer">
@@ -244,7 +249,7 @@
             <label class="col-md-3 control-label">Boolean value</label>
             <div class="col-md-6">
                 <select class="form-control" id="id_boolean_value" name="boolean_value" data-bind="value: booleanValue">
-                    <option value="2">Choose...</option>
+                    <option value>Choose...</option>
                     <option value="1">Yes</option>
                     <option value="0">No</option>
                 </select>
@@ -446,11 +451,6 @@
                 self.repeat = ko.protectedObservable(data.repeat);
                 self.initialize_data_values = ko.protectedObservable(data.initialize_data_values);
                 self.chat_enabled = ko.protectedObservable(data.chat_enabled);
-                self.old_sequence_number = -1;
-
-                self.sequence_number.subscribe( function (old_value) {
-                    self.old_sequence_number = old_value;
-                }, self, 'beforeChange');
 
                 self.toggleVisibility = function() {
                     self.isExpanded(!self.isExpanded());
@@ -470,10 +470,36 @@
                 }
             };
 
-            function ExperimentParamModel(data) {
+            function ExperimentParamModel(data, parameter_list) {
                 var self = this;
-
+		self.parameter_list = ko.observable(parameter_list)
                 self.display_name = ko.observable(data.display_name);
+		self.selectedParameterPk = ko.observable(data.parameter_pk);
+		self.stringValue = ko.observable(data.string_value);
+		self.intValue = ko.observable(data.int_value);
+		self.floatValue = ko.observable(data.float_value);
+		self.booleanValue= ko.observable(data.boolean_value);
+		self.isActive = ko.observable(data.is_active);
+		self.pk = ko.observable(data.pk);
+		self.parameterType = ko.observable(data.parameter_type);
+		
+		self.isVisible = function(types){
+			var typeList = types.split(',');
+			for(var index in typeList) {
+				if(typeList[index] === self.parameterType){
+					return true;
+				}
+			}
+			return false;
+		};
+		self.selectedParameterPk.subscribe(function (data) {
+			ko.utils.arrayForEach(self.parameter_list(), function(param){
+				if (param.pk() === data){
+					self.parameterType(param.type());
+					self.selectedParameterPk(param.pk());
+				}
+			});
+		});
             }
 
             function PageModel(data) {
@@ -495,18 +521,37 @@
                 model.template = ko.observable();
                 model.activateModal = ko.observable(false);
                 model.modalData = ko.observable();
-                model.old_sequence_number = "";
 
                 model.sorted_round_config = function() {
                     return model.round_config().sort(function(left, right) { return left.sequence_number() < right.sequence_number() ? -1 : 1 });
                 };
 
                 model.showExpParamModel = function (data, event) {
-                    var temp = new ParamViewModel({}, model.exp_parameter_list());
+                    var temp = new ExperimentParamModel({}, model.exp_parameter_list());
                     model.modalData(temp);
                     model.template("exp-param-template");
                     model.activateModal(true);
                 }
+		
+		model.editExpParam = function (data){
+			model.modalData(new ExperimentParamModel(data, model.exp_parameter_list()));
+			model.template("exp-param-template");
+			model.activateModal(true);
+		}
+
+		model.removeExpParam = function (experiment_param){
+			console.log(experiment_param);
+			$.ajax("/api/configuration/experiment/" + experiment_param.pk(), {
+			    data: 'request_type=delete',
+			    type: "POST",
+			    success: function(result) {
+				if (result.success){
+				    model.experiment_param_val.remove(experiment_param);
+				}
+			    }
+			});
+		}
+
 
                 model.addRoundParam = function(roundConfig) {
                     var temp = new ParamViewModel({'parent_pk': roundConfig.pk()}, model.round_parameter_list());
@@ -516,8 +561,17 @@
                 }
 
                 model.removeRoundParam = function(round_param) {
-                    $.each(model.round_config(), function() { this.children.remove(round_param) })
-                };
+
+                    $.ajax("/api/configuration/round/param/"+ round_param.pk, {
+                        data: 'request_type=delete',
+                        type: "POST",
+                        success: function(result) {
+                            if(result.success){
+                                 $.each(model.round_config(), function() { this.children.remove(round_param) })
+                            }
+                        }
+                    });
+                }
 
                 model.removeRoundConfig = function(round_config) {
 
@@ -561,6 +615,7 @@
                     var update = parseInt(form.find("input[type='hidden']").val());
                     var roundPk = form.find("input[type='hidden'].parent_pk").val();
                     var jsonObject  = form.serializeObject();
+                    var formData = form.serialize();
 
                     if (update) {
                         var match = ko.utils.arrayFirst(model.round_config(), function (item) {
@@ -574,15 +629,31 @@
                                }
                             });
                         });
-                        model.hideModal();
+                         $.ajax("/api/configuration/round/param/" + update, {
+                            data: formData + '&round_configuration=' + update + '&request_type=update',
+                            type: "POST",
+                            success: function(result){
+                                if(result.success){
+                                    model.hideModal();
+                                }
+                            }
+                        });
                     }
                     else {
                         var match = ko.utils.arrayFirst(model.round_config(), function (item) {
-                            return parseInt(roundPk) == item.pk();
+                            return parseInt(roundPk) === item.pk();
                         });
-
-{#                        Create API to create RoundConfig and return the created roundConfig is JSON format and then add to the DOM #}
-{#                        match.children.push(jsonObject);#}
+                        $.ajax("/api/configuration/round/param/-1", {
+                            data: formData + '&round_configuration=' + roundPk + '&request_type=create',
+                            type: "POST",
+                            success: function(result){
+                                if(result.success){
+                                    console.log('it worked!!');
+                                    match.children.push(result.round_param);
+                                    model.hideModal();
+                                }
+                            }
+                        });
                     }
                 }
                 model.saveRoundConfig = function(form) {
@@ -652,19 +723,42 @@
                     var form = $(form);
                     var update = parseInt(form.find("input[type='hidden']").val());
                     var jsonObject  = form.serializeObject();
+                    var formData = form.serialize();
 
                     var httpVerb = !update ? "POST" : "PUT";
 
                     if (update) {
                         var match = ko.utils.arrayFirst(model.experiment_param_val(), function (item) {
-                            return parseInt(update) == item.pk();
+                            return parseInt(update) === item.pk();
                         });
-                        model.hideModal();
+			$.ajax("/api/configuration/round/"+ update, {
+			    data: formData + '&request_type=update',
+			    type: "POST",
+			    success: function(result){
+			    	if(result.success){
+					//console.log(result.experiment_param);
+					match.update(result.experiment_param);
+					model.hideModal();
+				}
+			     }	
+   			});
                     }
                     else {
-{#                      Create API to create RoundConfig and return the created roundConfig is JSON format and then add to the DOM #}
-                        model.experiment_param_val.push({'display_name': jsonObject.parameter});
-                        model.hideModal();
+                        var experiment_config_pk = parseInt($('#experiment_config_pk').text())
+                        formData += '&experiment_configuration=' + experiment_config_pk;
+			console.log(formData)
+			$.ajax("/api/configuration/experiment/-1", {
+                            data: formData + '&request_type=create',
+                            type: "POST",
+                            success: function(result) {
+                                if(result.success){
+                                   // console.log("It worked!!");
+				   // console.log(result.experiment_param);
+				    model.experiment_param_val.push(new ExperimentParamModel(result.experiment_param, model.exp_parameter_list()));
+				    model.hideModal();
+                                }
+                            }
+                        });
                     }
                 }
                 return model;
@@ -676,7 +770,8 @@
                 var self = this;
 
                 self.parameter_list = ko.observable(parameter_list);
-
+		
+		self.display_name = ko.observable(data.display_name);
                 self.pk = ko.observable(data.pk);
                 self.parent_pk = ko.observable(data.parent_pk);
                 self.selectedParameterPk = ko.observable(data.parameter_pk);

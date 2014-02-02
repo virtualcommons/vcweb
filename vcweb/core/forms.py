@@ -189,7 +189,7 @@ class ExperimentParameterValueForm(forms.ModelForm):
 
     class Meta:
         model = ExperimentParameterValue
-        exclude = ('last_modified', 'date_created')
+        exclude = ('experiment_configuration','last_modified', 'date_created')
         widgets = {
             'string_value': forms.Textarea(attrs={'cols': 40, 'rows': 3}),
         }
@@ -204,6 +204,7 @@ class RoundParameterValuesForm(forms.ModelForm):
 
     class Meta:
         model = RoundParameterValue
+        exclude = ('round_configuration', 'last_modified', 'date_created')
 
 
 class EmailListField(forms.CharField):

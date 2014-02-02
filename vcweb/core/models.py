@@ -1672,7 +1672,7 @@ class ExperimentParameterValue(ParameterizedValue):
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='parameter_value_set')
 
     def to_dict(self, **kwargs):
-        rc = self.round_configuration
+       
         return {
             'display_name': u"{0}".format(self.parameter),
             'pk': self.pk,
@@ -1710,8 +1710,7 @@ class RoundParameterValue(ParameterizedValue):
             'float_value': self.float_value,
             'boolean_value': self.boolean_value,
             'is_active': self.is_active,
-            'round_configuration_pk': self.round_configuration.pk,
-            'round_configuration': self.round_configuration
+            'round_configuration_pk': self.round_configuration.pk
         }
 
     def __unicode__(self):
