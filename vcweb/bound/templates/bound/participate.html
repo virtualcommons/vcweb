@@ -912,7 +912,7 @@ function onYouTubeIframeAPIReady() {
                         experimentModel.update();
                         break;
                     case 'participant_ready':
-                        $.get('/experiment/{{experiment.pk}}/check-ready-participants', function(response) {
+                        $.get('/api/experiment/{{experiment.pk}}/check-ready-participants', function(response) {
                             experimentModel.readyParticipants(response.number_of_ready_participants);
                         });
                         break;
