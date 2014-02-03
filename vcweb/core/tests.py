@@ -32,9 +32,9 @@ class BaseVcwebTest(TestCase):
             experiment = self.create_new_experiment(experiment_metadata, **kwargs)
         self.experiment = experiment
         if experiment.participant_set.count() == 0:
-            experiment.setup_test_participants(email_suffix='asu.edu', count=10)
+            experiment.setup_test_participants(email_suffix='asu.edu', count=10, password='test')
         experiment.save()
-        logger.debug("loaded experiment: %s", experiment)
+        logger.debug("loaded experiment: %s with participants %s", experiment, experiment.participant_set.all())
         return experiment
 
     @property
