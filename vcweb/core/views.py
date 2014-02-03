@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 # from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.forms import PasswordResetForm
 from django.core.urlresolvers import reverse
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
@@ -986,16 +986,29 @@ def get_participant_sessions(request):
 
 def get_cas_user(tree):
     username = tree[0][0].text
-    user, user_created = User.objects.get_or_create(username=username)
+    url = settings.WEB_DIRECTORY_URL + username
+    user_created = False
 
-    if user_created:
-        url = settings.WEB_DIRECTORY_URL + username
-
+    try:
+        user = User.objects.get(username=username)
+    except ObjectDoesNotExist:
+        logger.debug("USer Not Found")
+        # Get the email from the ASU Web Directory
         r = urllib2.Request(url, headers={"Accept": "application/xml"})
         parsed = ET.parse(urllib2.urlopen(r))
         root = parsed.getroot()
-
         person = root.find('person')
+        email = person.find('email').text
+        try:
+            user = User.objects.get(username=email)
+            user.username = username
+            user.save()
+        except ObjectDoesNotExist:
+            logger.debug("USer Not Found")
+            user = User.objects.create_user(username=username)
+            user_created = True
+
+    if user_created:
         first_name = person.find('firstName').text
         last_name = person.find('lastName').text
         email = person.find('email').text
@@ -1040,98 +1053,93 @@ def handler500(request):
 def update_experiment_param_value(request, pk):
     form = ExperimentParameterValueForm(request.POST or None)
     request_type = request.POST['request_type']
-    logger.debug(request.POST)
+
     if request_type == 'delete':
         epv = ExperimentParameterValue.objects.get(pk=pk).delete()
         return JsonResponse(dumps({
-	    'success': True
-	}))
+            'success': True
+        }))
     
-    exp_config_pk = request.POST['experiment_configuration']
     if form.is_valid():
-	logger.debug('valid@!!')
-	if request_type == 'create':
-		logger.debug('creation mode')
-		epv = ExperimentParameterValue()
-		logger.debug(exp_config_pk)
-		epv.experiment_configuration = ExperimentConfiguration.objects.get(pk=exp_config_pk)
-	elif request_type == 'update':
-		logger.debug('update mode')
-		epv = ExperimentParameterValue.objects.get(pk=pk)
-	
-	epv.parameter = form.cleaned_data.get('parameter')
-	epv.boolean_value=form.cleaned_data.get('boolean_value')
-	epv.float_value=form.cleaned_data.get('float_value')
-	epv.int_value=form.cleaned_data.get('int_value')
-	epv.string_value =form.cleaned_data.get('string_value')
-	epv.is_active=form.cleaned_data.get('is_active')
+        if request_type == 'create':
+            epv = ExperimentParameterValue()
+            exp_config_pk = request.POST['experiment_configuration']
+            epv.experiment_configuration = ExperimentConfiguration.objects.get(pk=exp_config_pk)
+        elif request_type == 'update':
+            epv = ExperimentParameterValue.objects.get(pk=pk)
 
-	logger.debug('SAVE!!')
-	epv.save()
-	return JsonResponse(dumps({
-		'success': True,
-		'experiment_param': epv.to_dict()
-	}))
+        epv.parameter = form.cleaned_data.get('parameter')
+        epv.boolean_value = form.cleaned_data.get('boolean_value')
+        epv.float_value = form.cleaned_data.get('float_value')
+        epv.int_value = form.cleaned_data.get('int_value')
+        epv.string_value = form.cleaned_data.get('string_value')
+        epv.is_active = form.cleaned_data.get('is_active')
+
+        epv.save()
+        return JsonResponse(dumps({
+            'success': True,
+            'experiment_param': epv.to_dict()
+        }))
     else:
-	logger.debug('not valid')
-	logger.debug(form._errors)
-	logger.debug(form.non_field_errors())
-	 	
+        logger.debug(form._errors)
+        logger.debug(form.non_field_errors())
+        return JsonResponse(dumps({
+            'success': False,
+            'message': "error"
+        }))
+
 @experimenter_required
 def update_round_param_value(request, pk):
     form = RoundParameterValuesForm(request.POST or None);
     request_type = request.POST['request_type']
-    logger.debug(request_type)
     if request_type == 'delete':
-        # rpv = RoundParameterValue.objects.get(pk=pk).delete()
+        rpv = RoundParameterValue.objects.get(pk=pk).delete()
         return JsonResponse(dumps({
             'success': True
         }))
 
     if form.is_valid():
         if request_type == 'create':
-            logger.debug('valid@!!')
             rpv = RoundParameterValue()
             round_config_pk = form.cleaned_data.get("round_configuration")
-            # rc = RoundConfiguration.objects.get(pk=round_config_pk)
             rpv.round_configuration = round_config_pk
         elif request_type == "update":
             rpv = RoundParameterValue.objects.get(pk=pk)
 
         rpv.parameter = form.cleaned_data.get('parameter')
-        rpv.boolean_value=form.cleaned_data.get('boolean_value')
-        rpv.float_value=form.cleaned_data.get('float_value')
-        rpv.int_value=form.cleaned_data.get('int_value')
-        rpv.string_value=form.cleaned_data.get('string_value')
+        rpv.boolean_value = form.cleaned_data.get('boolean_value')
+        rpv.float_value = form.cleaned_data.get('float_value')
+        rpv.int_value = form.cleaned_data.get('int_value')
+        rpv.string_value = form.cleaned_data.get('string_value')
         rpv.is_active = form.cleaned_data.get('is_active')
-
-
-        logger.debug("SAVE!")
-        #rpv.save()
+        rpv.save()
         return JsonResponse(dumps({
             'success': True,
             'round_param': rpv.to_dict()
         }))
     else:
-        logger.debug('not valid')
         logger.debug(form.errors)
         logger.debug(form.non_field_errors())
+        return JsonResponse(dumps({
+            'success': False,
+            'message': "error"
+        }))
 
 
 def sort_round_configurations(old_sequence_number, new_sequence_number, exp_config_pk):
-	logger.debug('Sorting Round Configuration sequence numbers!!')
-	round_configs = RoundConfiguration.objects.filter(experiment_configuration__pk = exp_config_pk)
-	#logger.debug(round_configs)
-	for rc in round_configs:
-	    current_sequence_number = rc.sequence_number
-	    if current_sequence_number > old_sequence_number and current_sequence_number <= new_sequence_number:
-	        rc.sequence_number = current_sequence_number - 1
-		logger.debug('sequence_number decreased by 1')
-		#rc.save()
-	    elif current_sequence_number >= new_sequence_number and current_sequence_number <= old_sequence_number:
-	    	rc.sequence_number = current_sequence_number + 1
-		logger.debug('sequence_number increased by 1')
-		#rc.save()	
+    logger.debug('Sorting Round Configuration sequence numbers!!')
+    round_configs = RoundConfiguration.objects.filter(experiment_configuration__pk=exp_config_pk)
+    #logger.debug(round_configs)
+    for rc in round_configs:
+        current_sequence_number = rc.sequence_number
+        if old_sequence_number < current_sequence_number <= new_sequence_number:
+            rc.sequence_number = current_sequence_number - 1
+            logger.debug('sequence_number decreased by 1')
+            rc.save()
+        elif new_sequence_number <= current_sequence_number <= old_sequence_number:
+            rc.sequence_number = current_sequence_number + 1
+            logger.debug('sequence_number increased by 1')
+            rc.save()
 
 
 @experimenter_required
@@ -1140,7 +1148,7 @@ def update_round_configuration(request, pk):
     form = RoundConfigurationForm(request.POST or None)
     request_type = request.POST['request_type']
     if request_type == 'delete':
-        # rc = RoundConfiguration.objects.get(pk=pk).delete()
+        rc = RoundConfiguration.objects.get(pk=pk).delete()
         return JsonResponse(dumps({
             'success': True
         }))
@@ -1153,8 +1161,9 @@ def update_round_configuration(request, pk):
             rc.experiment_configuration = ec
         elif request_type == "update":
             rc = RoundConfiguration.objects.get(pk=pk)
-	    if form.cleaned_data.get('sequence_number') != rc.sequence_number:
-	        sort_round_configurations(rc.sequence_number, form.cleaned_data.get('sequence_number'), rc.experiment_configuration.pk)
+        if form.cleaned_data.get('sequence_number') != rc.sequence_number:
+            sort_round_configurations(rc.sequence_number, form.cleaned_data.get('sequence_number'),
+                                      rc.experiment_configuration.pk)
 
         rc.round_type = form.cleaned_data.get('round_type')
         rc.sequence_number = form.cleaned_data.get('sequence_number')
@@ -1169,7 +1178,7 @@ def update_round_configuration(request, pk):
         rc.create_group_clusters = form.cleaned_data.get('create_group_clusters')
         rc.initialize_data_values = form.cleaned_data.get('initialize_data_values')
         rc.chat_enabled = form.cleaned_data.get('chat_enabled')
-        # rc.save()
+        rc.save()
 
         return JsonResponse(dumps({
             'success': True,
@@ -1213,10 +1222,10 @@ def edit_experiment_configuration(request, pk):
                 round["children"].append(param)  # set the round params list as this round's children
 
     json_data = {
-        'experiment_param_val': exp_param_values_list,
-        'exp_parameter_list': [parameter for parameter in exp_parameter_list],
-        'round_config': round_config_list,
-        'round_parameter_list': [parameter for parameter in round_parameter_list]
+        'expParamValuesList': exp_param_values_list,
+        'expParameterList': [parameter for parameter in exp_parameter_list],
+        'roundConfigList': round_config_list,
+        'roundParameterList': [parameter for parameter in round_parameter_list]
     }
 
     return render(request, 'experimenter/edit-configuration.html', {
