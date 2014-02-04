@@ -1674,7 +1674,7 @@ class ExperimentParameterValue(ParameterizedValue):
     def to_dict(self, **kwargs):
        
         return {
-            'display_name': u"{0}".format(self.parameter),
+            'display_name': u"{0}: {1}".format(self.parameter, self.value),
             'pk': self.pk,
             'parameter_pk': self.parameter.pk,
             'parameter_name': self.parameter,
@@ -1700,7 +1700,7 @@ class RoundParameterValue(ParameterizedValue):
     def to_dict(self, **kwargs):
         rc = self.round_configuration
         return {
-            'display_name': u"{0}".format(self.parameter),
+            'display_name': u"{0}: {1}".format(self.parameter, self.value),
             'pk': self.pk,
             'parameter_pk': self.parameter.pk,
             'parameter_name': self.parameter,

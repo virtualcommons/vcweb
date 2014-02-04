@@ -8,7 +8,7 @@ from vcweb.core.views import (dashboard, LoginView, LogoutView, RegistrationView
         RegisterEmailListView, RegisterTestParticipantsView, completed_survey, toggle_bookmark_experiment_metadata,
         check_survey_completed, Participate, download_data, export_configuration, api_logger, participant_api_login,
         api_logout, participant_ready, check_ready_participants, get_dashboard_view_model,
-        update_round_configuration, edit_experiment_configuration, clone_experiment_configuration, update_round_param_value, update_experiment_param_value)
+        update_round_configuration, edit_experiment_configuration, clone_experiment_configuration, update_round_param_value, update_experiment_param_value, update_experiment_configuration)
 import logging
 import urllib
 
@@ -42,7 +42,8 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^configuration/(?P<pk>\d+)/edit', edit_experiment_configuration, name='edit_experiment_configuration'),
     url(r'^api/configuration/round/(?P<pk>\-?\d+)$', update_round_configuration, name='update_round_configuration'),
     url(r'^api/configuration/round/param/(?P<pk>\-?\d+)$', update_round_param_value, name='update_round_param_value'),
-    url(r'^api/configuration/experiment/(?P<pk>\-?\d+)$', update_experiment_param_value, name='update_experiment_configuration'),
+    url(r'^api/configuration/experiment/(?P<pk>\-?\d+)$', update_experiment_configuration, name='update_experiment_configuration'),
+    url(r'^api/configuration/experiment/param/(?P<pk>\-?\d+)$', update_experiment_param_value, name='update_experiment_param_value'),
     url(r'^experimenter/bookmark-experiment-metadata$', toggle_bookmark_experiment_metadata, name='bookmark_experiment_metadata'),
     url(r'^api/configuration/clone', clone_experiment_configuration, name='clone_experiment_configuration'),
     url(r'^api/experiment/(?P<pk>\d+)/check-ready-participants$', check_ready_participants, name='check_ready_participants'),

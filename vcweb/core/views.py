@@ -1090,7 +1090,7 @@ def update_experiment_param_value(request, pk):
 
 @experimenter_required
 def update_round_param_value(request, pk):
-    form = RoundParameterValuesForm(request.POST or None);
+    form = RoundParameterValuesForm(request.POST or None)
     request_type = request.POST['request_type']
     if request_type == 'delete':
         rpv = RoundParameterValue.objects.get(pk=pk).delete()
@@ -1101,8 +1101,16 @@ def update_round_param_value(request, pk):
     if form.is_valid():
         if request_type == 'create':
             rpv = RoundParameterValue()
-            round_config_pk = form.cleaned_data.get("round_configuration")
-            rpv.round_configuration = round_config_pk
+            round_config_pk = request.POST["round_configuration"]
+            logger.debug(round_config_pk)
+            try:
+                round_config = RoundConfiguration.objects.get(pk=round_config_pk)
+                rpv.round_configuration = round_config
+            except ObjectDoesNotExist:
+                return JsonResponse(dumps({
+                    'success': False,
+                    'message': "Error Occured"
+                }))
         elif request_type == "update":
             rpv = RoundParameterValue.objects.get(pk=pk)
 
@@ -1192,6 +1200,41 @@ def update_round_configuration(request, pk):
     return JsonResponse(dumps({
         'success': False,
         'message': "error"
+    }))
+
+@experimenter_required
+def update_experiment_configuration(request, pk):
+
+    form = ExperimentConfigurationForm(request.POST or None)
+
+    if form.is_valid():
+        try:
+            ec = ExperimentConfiguration.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+                return JsonResponse(dumps({
+                    'success': False,
+                    'message': "Experiment Configuration with provided pk does not exist"
+                }))
+
+        ec.experiment_metadata = form.cleaned_data.get('experiment_metadata')
+        ec.name = form.cleaned_data.get('name')
+        ec.treatment_id = form.cleaned_data.get('treatment_id')
+        ec.registration_email_subject = form.cleaned_data.get('registration_email_subject')
+        ec.max_number_of_participants = form.cleaned_data.get('max_number_of_participants')
+        ec.max_group_size = form.cleaned_data.get('max_group_size')
+        ec.exchange_rate = form.cleaned_data.get('exchange_rate')
+        ec.is_public = form.cleaned_data.get('is_public')
+        ec.is_experimenter_driven = form.cleaned_data.get('is_experimenter_driven')
+        ec.has_daily_rounds = form.cleaned_data.get('has_daily_rounds')
+
+        ec.save()
+        return JsonResponse(dumps({
+            'success': True,
+        }))
+
+    return JsonResponse(dumps({
+        'success': False,
+        'message': "Something bad happened"
     }))
 
 
