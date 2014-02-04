@@ -321,7 +321,7 @@ def update_account_profile(request):
     if is_experimenter(user):
         form = ExperimenterAccountForm(request.POST or None)
         if form.is_valid():
-            email = form.cleaned_data.get('email')
+            email = form.cleaned_data.get('email').lower()
             institution = form.cleaned_data.get('institution')
             e = Experimenter.objects.get(pk=user.experimenter.pk)
 
@@ -357,7 +357,7 @@ def update_account_profile(request):
         form = ParticipantAccountForm(request.POST or None)
 
         if form.is_valid():
-            email = form.cleaned_data.get('email')
+            email = form.cleaned_data.get('email').lower()
             institution = form.cleaned_data.get('institution')
 
             p = Participant.objects.get(pk=user.participant.pk)
@@ -401,7 +401,7 @@ def update_account_profile(request):
 
 @login_required
 def check_user_email(request):
-    email = request.GET.get("email")
+    email = request.GET.get("email").lower()
     current_user = request.user
     success = False
     if current_user.email != email:
@@ -985,7 +985,7 @@ def get_participant_sessions(request):
 
 
 def get_cas_user(tree):
-    username = tree[0][0].text
+    username = tree[0][0].text.lower()
     url = settings.WEB_DIRECTORY_URL + username
     user_created = False
 
@@ -998,7 +998,7 @@ def get_cas_user(tree):
         parsed = ET.parse(urllib2.urlopen(r))
         root = parsed.getroot()
         person = root.find('person')
-        email = person.find('email').text
+        email = person.find('email').text.lower()
         try:
             user = User.objects.get(username=email)
             user.username = username
