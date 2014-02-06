@@ -3,8 +3,6 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Model
 from django.db.models.query import QuerySet
 from django.utils.functional import curry
-from functools import partial
-import fcntl
 import json
 import logging
 
@@ -20,6 +18,7 @@ class VcwebJSONEncoder(DjangoJSONEncoder):
             return DjangoJSONEncoder.default(self, obj)
 
 dumps = curry(json.dumps, cls=VcwebJSONEncoder)
+
 
 # FIXME: deprecate this in favor of django.cache memcached caching?
 class simplecache(object):
@@ -37,20 +36,7 @@ class simplecache(object):
             self.cached_object = self.func()
         return self.cached_object
 
+
 def enum(*sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
     return type('Enum', (), enums)
-
-class ModelLock(object):
-    def __init__(self, model):
-        self.filename = "/tmp/django-%s.%d.lock" % (model._meta.object_name, model.pk)
-        self.handle = open(self.filename, 'w')
-
-    def acquire(self):
-        return fcntl.flock(self.handle, fcntl.LOCK_EX)
-
-    def release(self):
-        return fcntl.flock(self.handle, fcntl.LOCK_UN)
-
-    def __del__(self):
-        self.handle.close()

@@ -314,7 +314,7 @@ class GroupTest(BaseVcwebTest):
             g = pgr.group
             count += 1
             if count > 10:
-                count = count % 10
+                count %= 10
             self.assertEqual(g.participant_set.count(), count, "group.participant_set count should be %i" % count)
             self.assertEqual(g.size, count, "group size should be %i" % count)
 

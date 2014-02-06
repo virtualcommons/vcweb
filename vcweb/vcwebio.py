@@ -17,8 +17,10 @@ from vcweb import settings
 # FIXME: currently tornadio.vcweb to avoid confusion with vcweb loggers
 logger = logging.getLogger('tornadio.vcweb')
 
+
 def info_json(message):
     return json.dumps({'message_type': 'info', 'message': message})
+
 
 class ConnectionManager:
     '''
@@ -37,6 +39,9 @@ class ConnectionManager:
     experiment.
     '''
     refresh_json = json.dumps({ 'message_type': 'refresh' })
+
+    def __init__(self, *args, **kwargs):
+        pass
 
     def __str__(self):
         return u"Participants: %s------Experimenters: %s" % (self.participant_to_connection, self.experimenter_to_connection)

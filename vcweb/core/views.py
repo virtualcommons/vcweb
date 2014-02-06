@@ -90,6 +90,9 @@ class Participate(TemplateView):
 
 class DashboardViewModel(object):
     def __init__(self, user=None):
+        if user is None:
+            logger.error("no user given to dashboard view model")
+            raise ValueError("dashboard view model must have a valid user")
         self.is_experimenter = is_experimenter(user)
         if self.is_experimenter:
             self.experimenter = user.experimenter
@@ -457,32 +460,29 @@ class SingleExperimentMixin(SingleObjectMixin):
     def process(self):
         pass
 
-    def check_user(self, user, experiment):
-        return experiment
+    def can_access_experiment(self, user, experiment):
+        return True
 
     def get_object(self, queryset=None):
         pk = self.kwargs.get('pk', None)
         experiment = get_object_or_404(
             Experiment.objects.select_related('experiment_metadata', 'experiment_configuration', 'experimenter'), pk=pk)
-        return self.check_user(experiment)
+        user = self.request.user
+        if self.can_access_experiment(user, experiment):
+            return experiment
+        else:
+            logger.warning("unauthorized access by user %s to experiment %s", user, experiment)
+            raise PermissionDenied("You do not have access to %s" % experiment)
 
 
 class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
-    def check_user(self, experiment):
-        user = self.request.user
-        if experiment.participant_set.filter(participant__user=user).count() == 1:
-            return experiment
-        logger.warning("unauthz access to experiment %s by user %s", experiment, user)
-        raise PermissionDenied("You do not have access to %s" % experiment)
+    def can_access_experiment(self, user, experiment):
+        return experiment.participant_set.filter(participant__user=user).count() == 1
 
 
 class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin):
-    def check_user(self, experiment):
-        user = self.request.user
-        if is_experimenter(user, experiment.experimenter):
-            return experiment
-        logger.warning("unauthz access to experiment %s by user %s", experiment, user)
-        raise PermissionDenied("You do not have access to %s" % experiment)
+    def can_access_experiment(self, user, experiment):
+        return is_experimenter(user, experiment.experimenter)
 
 
 class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, TemplateView):

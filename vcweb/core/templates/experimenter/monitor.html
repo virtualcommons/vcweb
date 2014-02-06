@@ -230,7 +230,7 @@
 <script type='text/javascript'>
     var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
     $(function() {
-        var ALLOWED_ACTIONS = ["activate", "advance_to_next_round", "restart", "deactivate", "complete"]
+        var ALLOWED_ACTIONS = ["activate", "advance_to_next_round", "restart", "deactivate", "complete"];
         function ExperimentModel(experimentModelJson) {
             var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
@@ -238,20 +238,20 @@
             model.setCurrentInterval = function(intervalId) {
                 model.clearCurrentInterval();
                 model.currentInterval(intervalId);
-            }
+            };
             model.clearCurrentInterval = function() {
                 if (model.currentInterval()) {
                     clearInterval(model.currentInterval());
                     model.currentInterval(undefined);
                 }
-            }
+            };
             model.tick = function() {
                 model.timeRemaining(model.timeRemaining() - 1);
                 if (model.timeRemaining() < 0) {
                     model.addMessage("Round time has expired, ready to move on to next round.");
                     model.clearCurrentInterval();
                 }
-            }
+            };
             model.saveExperimenterNotes = function(localModel, evt) {
                 var notes = $('#experimenterNotesText').val();
                 $('#submitExperimenterNotesButton').html("Submitting..");
@@ -265,18 +265,7 @@
                  .always(function() {
                     setTimeout(function() { $('#submitExperimenterNotesButton').html("Save"); }, 1000);
                  });
-                 /*
-                Dajaxice.vcweb.core.save_experimenter_notes(function(data) {
-                    if (data.success) {
-                        model.addMessage("Saved experimenter notes: " + notes);
-                    }
-                    else {
-                        model.addMessage(data.message);
-                    }
-                },
-                { experiment_id: {{ experiment.pk }}, notes: notes });
-                */
-            }
+            };
             // FIXME: factor out the code duplication with this and confirmExperimentControllerAction for
             // showing the modal and invoking the ajax call if possible
             model.refresh = function() {
@@ -298,7 +287,7 @@
                  .fail(function(response) {
                      console.debug("unable to get round data for " + localModel.pk());
                  });
-            }
+            };
             model.update = function(localModel, evt) {
                 $('#progress-modal').modal('show');
                 $.get("/api/experimenter/experiment-model", { pk: {{ experiment.pk }} })
@@ -311,7 +300,7 @@
                  .fail(function(response) {
                      console.debug("unable to get experiment model for " + {{ experiment.pk }});
                  });
-            }
+            };
             model.startTimer = function() {
                 if (model.timeRemaining() > 0) {
                     model.setCurrentInterval( setInterval( model.tick, 1000 ) );
@@ -343,23 +332,8 @@
                      .fail(function(response) {
                          console.debug("Unable to perform experiment controller action: " + response.message);
                      });
-                     /*
-                    Dajaxice.vcweb.core.experiment_controller(function(response) {
-                        if (response.success) {
-                            ko.mapping.fromJS(response.experiment, model);
-                            model.startTimer();
-                            if (shouldUpdateParticipants) {
-                                sendUpdateEvent();
-                            }
-                            $('#progress-modal').modal('hide');
-                        }
-                        else {
-                            console.debug("Unable to perform experiment controller action: " + response.message);
-                        }
-                    }, {pk: {{experiment.pk}}, 'action':action});
-                    */
                 });
-            }
+            };
             model.startOrStopExperimentAction = ko.computed(function() {
                     return model.isRoundInProgress() ? "stop_round" : "start_round";
                     });
@@ -383,7 +357,7 @@
                     }
                 });
                 model.isCheckingParticipants(false);
-            }
+            };
             model.updateParticipants = function(m, evt) {
                 confirmAction(evt.target, function(confirmed, action) {
                     if (confirmed) {
@@ -391,7 +365,7 @@
                         sendUpdateEvent();
                     }
                 });
-            }
+            };
             model.addMessage = function(message) {
                 model.messages.unshift(message);
             };

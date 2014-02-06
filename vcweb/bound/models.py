@@ -3,7 +3,7 @@ from django.dispatch import receiver
 from vcweb.core import signals, simplecache
 from vcweb.core.models import (
         DefaultValue, ExperimentMetadata, Parameter, ParticipantRoundDataValue, GroupRelationship, RoundData,
-        RoundConfiguration
+        RoundConfiguration, get_participant_ready_parameter
         )
 from vcweb.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, get_harvest_decision_dv,
                                    get_group_harvest_parameter, get_reset_resource_level_parameter,
@@ -307,9 +307,16 @@ def round_started_handler(sender, experiment=None, **kwargs):
             existing_resource_level = get_resource_level_dv(group, round_data, round_configuration,
                                                             shared_resource_enabled=shared_resource_enabled)
             if existing_resource_level.int_value <= 0:
-                group.log("depleted resource %s, zeroing out all harvest decisions" % existing_resource_level)
+                group.log("depleted resource %s, zeroing out all harvest decisions and marking all group members as deceased" % existing_resource_level)
                 _zero_harvest_decisions(group.participant_group_relationship_set.values_list('pk', flat=True), round_data)
-
+                # depleted resource kills all participants in that group
+                ParticipantRoundDataValue.objects.filter(parameter=get_player_status_parameter(),
+                        participant_group_relationship__group=group,
+                        round_data=round_data).update(boolean_value=False)
+                ParticipantRoundDataValue.objects.filter(parameter=get_storage_parameter(),
+                        participant_group_relationship__group=group,
+                        round_data=round_data).update(int_value=0)
+                return
         # next, check for dead participants and set their ready and harvest decision flags
         deceased_participants = ParticipantRoundDataValue.objects.filter(
             parameter=get_player_status_parameter(),
@@ -327,9 +334,7 @@ def _zero_harvest_decisions(participant_group_relationship_ids, round_data):
     for dv in data_values:
         if dv.parameter == get_harvest_decision_parameter():
             dv.update_int(0, submitted=True)
-
-        set_harvest_decision(pgr, 0, round_data, submitted=True)
-        pgr.set_participant_ready(round_data)
+        dv.participant_group_relationship.set_participant_ready(round_data)
 
 
 def adjust_harvest_decisions(current_resource_level, group, round_data, total_harvest, group_size=0):

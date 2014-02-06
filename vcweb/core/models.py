@@ -668,7 +668,11 @@ class Experiment(models.Model):
             elif next_round:
                 current += 1
             ps.update(repeating_round_sequence_number=current)
-        return RoundData.objects.select_related('round_configuration').get(experiment=self, **ps)
+        try:
+            return RoundData.objects.select_related('round_configuration').get(experiment=self, **ps)
+        except RoundData.DoesNotExist:
+            logger.error("No round data exists yet for round configuration %s", round_configuration)
+            return None
 
     @property
     def playable_round_data(self):
@@ -993,11 +997,9 @@ class Experiment(models.Model):
             random.shuffle(participants)
         gs = self.group_set
         if gs.exists():
-            """
-            groups already exist, preserve or delete them
-            FIXME: would be safer to always preserve as it doesn't carry any risk of data loss, could autogenerate
-            a session id if one isn't found.
-            """
+            #groups already exist, preserve or delete them
+            # FIXME: would be safer to always preserve as it doesn't carry any risk of data loss, could autogenerate
+            # a session id if one isn't found.
             if preserve_existing_groups:
                 logger.debug("preserving existing groups")
                 # initialize session_id to round configuration session_id if unset. if none can be found abort

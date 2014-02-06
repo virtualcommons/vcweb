@@ -2,7 +2,7 @@
 <script type="text/javascript">
 var socket;
 var DEFAULT_PORT = {{WEBSOCKET_PORT|default_if_none:8882}};
-var DEFAULT_URI = "/participant"
+var DEFAULT_URI = "/participant";
 function connect(uri, port) {
     if ( !port ) {
         console.log("no port specified, using default port: " + DEFAULT_PORT);

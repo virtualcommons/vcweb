@@ -117,7 +117,7 @@
     <h3>Harvest Choice</h3>
     <p>
     You will have a maximum of <i class='fa fa-clock-o'></i><span data-bind='text: roundDuration'></span> seconds to make a
-    harvest decision each round.  A countdown will alert you when there are 
+    harvest decision each round.  A countdown will alert you when there are
     <span data-bind='text: warningCountdownTime'></span> seconds remaining to make a harvest choice.  When the countdown
     reaches zero, any value you have selected will be submitted.  <strong>The default harvest is zero.</strong>
     </p>
@@ -498,7 +498,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
     <div class='well'>
     <center><img alt='depleted trees' src="{% static 'images/bound/depleted-trees.jpg' %}" class="img-polaroid" width="425" height="282"></center>
     </div>
-    <div class='alert alert-danger'><i class='fa fa-warning'></i> There are no more trees to harvest. Please wait until the next round begins.</div>
+    <div class='alert alert-danger'><i class='fa fa-warning'></i> There are no more trees to harvest and every member of your group is now deceased. Please wait until the next round begins.</div>
 </div>
 <div data-bind='ifnot: isResourceEmpty'>
 {% comment %} resource level visualization pre-regrowth {% endcomment %}
@@ -634,23 +634,23 @@ function onYouTubeIframeAPIReady() {
                     return;
                 }
                 model.tour(new Tour());
-                model.tour().addSteps([{ 
+                model.tour().addSteps([{
                     element: "#dashboard-last-harvest", title: "Last harvest",  placement: "right",
                     content: "Your last round's harvest decision will be displayed here.  Since this is the first practice round this is currently 0."
                 },
-                { 
+                {
                     element: "#dashboard-storage", title: "Savings", placement: "right",
                     content: "Your total savings will be displayed here.  You must have at least " + model.costOfLiving() + " in savings to survive each round."
                 },
-                { 
+                {
                     element: "#dashboard-time", title: "Time Left", placement: "right",
-                    content: "The time remaining in this round will be displayed here.  It will turn red when " +model.warningCountdownTime() + " seconds are left."
+                    content: "The time remaining in this round is displayed here.  It will turn red when " + model.warningCountdownTime() + " seconds are left."
                 },
-                { 
+                {
                     element: "#chatMessage", title: "Text Chat", placement: "left",
                     content: "When chat is enabled, you can communicate with your group by typing messages into this box and hitting the enter key."
                 },
-                { 
+                {
                     element: "#harvest-decision-td-10", title: "Harvest Decision", placement: "bottom",
                     content: "Click on the number of trees you'd like to harvest here.  For the purposes of this practice round, please select 10 now and click the 'Ok, I'm ready' button."
                 }]);
@@ -885,6 +885,7 @@ function onYouTubeIframeAPIReady() {
                                         $.get('/participate/{{experiment.pk}}/check-survey-completed', model.checkSurveyCompleted);
                                     }, 6000)
                                 );
+                            // explicit fallthrough
                         case "FINAL_DEBRIEFING":
                             $('#sidebar').hide();
                             $('#content').removeClass('col-md-8').addClass('col-md-12');

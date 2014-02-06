@@ -74,9 +74,9 @@ $(function() {
     };
     //send the message when submit is clicked
     $('#chatform').submit(function (evt) {
-        var line = $('#chatText').val()
+        var line = $('#chatText').val();
         if (line) {
-            $('#chatText').val('')
+            $('#chatText').val('');
             s.send(createMessageEvent(line));
         }
         return false;

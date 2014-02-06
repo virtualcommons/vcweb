@@ -357,7 +357,7 @@ $(function() {
         }
         console.debug("ending tour");
         tour.end();
-    }
+    };
     viewModel.setupTour = function() {
         var tour = viewModel.tutorialTour;
         tour.addSteps([
@@ -394,15 +394,15 @@ $(function() {
         if (viewModel.firstVisit()) {
             tour.start(true);
         }
-    }
+    };
     viewModel.restartTour = function() {
         viewModel.activateDashboardTab();
         viewModel.tutorialTour.restart();
-    }
+    };
     viewModel.progressChartData = ko.computed(function() {
         var avgPoints = Math.max(1, viewModel.averagePoints());
         var pointsToNextLevel = viewModel.pointsToNextLevel();
-        var data = [ { value: avgPoints, color: "#13a5e6" } ]
+        var data = [ { value: avgPoints, color: "#13a5e6" } ];
         var pointsNeeded = Math.max(0, pointsToNextLevel - avgPoints);
         if (pointsNeeded > 0) {
             data.push({ value: pointsNeeded, color: "#D0D0D0" });
@@ -427,7 +427,7 @@ $(function() {
         $('#activityPerformedModal .progress').addClass('hide');
         $('#activityPerformedModalText').removeClass('hide');
         $('#activityPerformedModal .btn').removeClass('disabled');
-    }
+    };
     viewModel.perform = function(challengeModel) {
         if (! challengeModel.availableNow()) {
             // FIXME: modal is slow, no feedback on this for now

@@ -99,7 +99,7 @@
                         ko.mapping.fromJSON(response.dashboardViewModelJson, model);
                     }
                 });
-            }
+            };
             model.sortedExperimentMetadataList = ko.computed(function() {
                 return model.experimentMetadataList.sort(function(a, b) {
                     if (a.bookmarked() && b.bookmarked()) {
@@ -128,14 +128,14 @@
                         experimentMetadataModel.bookmarked(! bookmarked);
                     }
                 });
-            }
+            };
             model.gotoExperimentUrl = function(urlAction, experimentModel) {
                 var url = model.controllerUrl(experimentModel, urlAction);
                 window.location = url;
-            }
+            };
             model.controllerUrl = function(experimentModel, urlAction) {
                 return experimentModel.controller_url() + "/" + urlAction;
-            }
+            };
             function pendingExperimentCallback(data) {
                 if (data.success) {
                     pendingExperimentModel = ko.mapping.fromJS(data.experiment);
@@ -163,42 +163,36 @@
                     model.refreshViewModel();
                 }
             }
-            // FIXME: get rid of dajaxice
             model.createNewExperiment = function(configurationModel, event) {
                 $.post("/api/experiment/create", { experiment_configuration_id: configurationModel.pk() })
                  .done(pendingExperimentCallback);
-                // Dajaxice.vcweb.core.create_experiment(pendingExperimentCallback, { experiment_configuration_id: configurationModel.pk() });
-            }
+            };
             model.cloneExperiment = function(experimentModel, event) {
                 $.post("/api/experiment/clone", { experiment_id: experimentModel.pk() })
                  .done(pendingExperimentCallback);
-                // Dajaxice.vcweb.core.clone_experiment(pendingExperimentCallback, { experiment_id: experimentModel.pk() });
-            }
+            };
             model.clearParticipants = function(experimentModel, event) {
                 $.post("/api/experiment/clear-participants", {experiment_id: experimentModel.pk() })
                  .done(modifyExperimentCallback(experimentModel));
-                // Dajaxice.vcweb.core.clear_participants(modifyExperimentCallback(experimentModel), { experiment_id: experimentModel.pk() });
-            }
+            };
             model.archive = function(experimentModel, event) {
                 $.post("/api/experiment/archive", { experiment_id: experimentModel.pk() })
                  .done(modifyExperimentCallback(experimentModel));
-                // Dajaxice.vcweb.core.archive(modifyExperimentCallback(experimentModel), { experiment_id: experimentModel.pk() });
-            }
+            };
             model.deactivate = function(experimentModel, event) {
                 $.post("/api/experiment/deactivate", { experiment_id: experimentModel.pk() })
                  .done(modifyExperimentCallback(experimentModel));
-                // Dajaxice.vcweb.core.deactivate(modifyExperimentCallback(experimentModel), { experiment_id: experimentModel.pk() });
-            }
+            };
             model.cloneExperimentConfiguration = function(configurationModel, Event) {
                 $.post("/api/configuration/clone", { experiment_configuration_id: configurationModel.pk() })
                  .done(clonedExperimentConfigurationCallback);
-            }
+            };
             model.canClearParticipants = function(experimentModel) {
                 return experimentModel.status() === 'INACTIVE' && experimentModel.participantCount() > 0;
-            }
+            };
             model.canRegisterParticipants = function(experimentModel) {
                 return ! experimentModel.isArchived() && (experimentModel.participantCount() === 0);
-            }
+            };
 
             return model;
         }

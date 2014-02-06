@@ -415,7 +415,7 @@
                 //return updatedValue
                 result.updateValue = function() {
                     return _tempValue;
-                }
+                };
 
                 //force subscribers to take original
                 result.reset = function() {
@@ -434,7 +434,7 @@
                 self.name = ko.protectedObservable(data.name);
                 self.display_name = function() {
                    return self.repeat() > 0 ? self.name() + ' ' + self.sequence_number() + ' [x '+ self.repeat() +']': self.name() + ' ' + self.sequence_number();
-                }
+                };
                 self.children = ko.observableArray(data.children);
 
                 self.pk = ko.protectedObservable(data.pk);

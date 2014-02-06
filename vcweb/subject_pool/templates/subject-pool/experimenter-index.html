@@ -322,7 +322,7 @@ Experiment Session Management
                 var model = ko.mapping.fromJS(sessions_experiment_metadatas_object, session_mapping);
 
                 model.allHours = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
-                model.allMinutes = ['00', '15', '30', '45']
+                model.allMinutes = ['00', '15', '30', '45'];
 
                 model.inviteCount = ko.observable(0);
                 model.invite_experiment_metadata_pk_list = -1;
@@ -347,7 +347,7 @@ Experiment Session Management
                         bootbox.alert("You can not invite participants for a list of experiment sessions spanning to more than one experiment", function() {});
                         return false;
                     }
-                }
+                };
 
                 model.ifSelectedSessions = ko.computed(function() {
                     return model.inviteCount() ? true : false;
@@ -433,7 +433,7 @@ Experiment Session Management
                             }
                         });
                     }
-                }
+                };
                 return model;
             }
 

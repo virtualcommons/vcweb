@@ -10,25 +10,25 @@ function LighterFootprintsModel(modelJson) {
             statusCss += " disabled";
         }
         return statusCss;
-    }
+    };
     model.isActivityDisabled = function(activity) {
         return activity.status() !== 'available';
-    }
+    };
     model.isCompleted = function(activity) {
         return hasStatus(activity, 'completed');
-    }
+    };
     model.isExpired = function(activity) {
         return hasStatus(activity, 'expired');
-    }
+    };
     model.isUpcoming = function(activity) {
         return hasStatus(activity, 'upcoming');
-    }
+    };
     model.isAvailable = function(activity) {
         return hasStatus(activity, 'available');
-    }
+    };
     model.isLocked = function(activity) {
         return hasStatus(activity, 'locked');
-    }
+    };
     model.minuteTick = function() {
         var hoursLeft = model.hoursLeft();
         var minutesLeft = model.minutesLeft() - 1;
