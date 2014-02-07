@@ -248,8 +248,23 @@ class Struct:
     def __unicode__(self):
         return u"%s" % self.__dict__
 
+
 def to_event(message):
     return Struct(**message)
+
+
+def verify_auth_token(event):
+    try:
+        auth_token = event.auth_token
+        per = ParticipantExperimentRelationship.objects.select_related('participant').get(
+            pk=event.participant_experiment_relationship_id)
+        participant = per.participant
+        return per, participant.authentication_token == auth_token
+    except ParticipantExperimentRelationship.DoesNotExist:
+        logger.error("no participant experiment relationship found for id %s",
+                     event.participant_experiment_relationship_id)
+        return None, False
+
 
 class BaseConnection(SockJSConnection):
     def get_handler(self, event_type):
@@ -261,20 +276,12 @@ class BaseConnection(SockJSConnection):
         return handler
 
     def default_handler(self, event, experiment=None, **kwargs):
-        logger.warning("unhandled message: %s", event)
+        logger.warning("%s unhandled message: %s", self, event)
 
-    def verify_auth_token(self, event):
-        try:
-            auth_token = event.auth_token
-            per = ParticipantExperimentRelationship.objects.select_related('participant').get(pk=event.participant_experiment_relationship_id)
-            participant = per.participant
-            return (per, participant.authentication_token == auth_token)
-        except ParticipantExperimentRelationship.DoesNotExist:
-            logger.error("no participant experiment relationship found for id %s", event.participant_experiment_relationship_id)
-            return (None, False)
 
 class ParticipantConnection(BaseConnection):
     default_channel = 'vcweb.participant.websocket'
+
     def __init__(self, *args, **kwargs):
         super(ParticipantConnection, self).__init__(*args, **kwargs)
         #self.client = tornadoredis.Client()
@@ -290,7 +297,7 @@ class ParticipantConnection(BaseConnection):
 
     def handle_all_participants_ready(self, event, experiment, **kwargs):
         logger.debug("all participants ready to move on to the next round for %s", experiment)
-        (per, valid) = self.verify_auth_token(event)
+        (per, valid) = verify_auth_token(event)
         if valid:
             connection_manager.send_to_experimenter(create_message_event("All participants are ready to move on to the next round.", event_type="all_participants_ready"), experiment=experiment)
         else:
@@ -299,7 +306,7 @@ class ParticipantConnection(BaseConnection):
 
     def handle_participant_ready(self, event, experiment, **kwargs):
         logger.debug("handling participant ready event %s for experiment %s", event, experiment)
-        (per, valid) = self.verify_auth_token(event)
+        (per, valid) = verify_auth_token(event)
         if valid:
             if not getattr(event, 'message', None):
                 event.message = "Participant %s is ready." % per.participant
@@ -312,7 +319,7 @@ class ParticipantConnection(BaseConnection):
 
     def handle_connect(self, event, experiment, **kwargs):
         logger.debug("connection event: %s", event)
-        (per, valid) = self.verify_auth_token(event)
+        (per, valid) = verify_auth_token(event)
         if valid:
             participant_tuple = connection_manager.add_participant(self, per)
             logger.debug("added connection: %s", participant_tuple)
@@ -321,7 +328,7 @@ class ParticipantConnection(BaseConnection):
             self.send(UNAUTHORIZED_EVENT)
 
     def handle_chat(self, event, experiment, **kwargs):
-        (per, valid) = self.verify_auth_token(event)
+        (per, valid) = verify_auth_token(event)
         if valid:
             pgr = connection_manager.get_participant_group_relationship(self, experiment)
             current_round_data = experiment.current_round_data

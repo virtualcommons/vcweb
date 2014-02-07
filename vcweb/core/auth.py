@@ -5,6 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class AuthenticationBackend(ModelBackend):
     """
     allow users to login with their email as their username,
@@ -13,7 +14,7 @@ class AuthenticationBackend(ModelBackend):
 
     FIXME: should we check for and handle Participant experiment auth codes separately from actual login?
     """
-    def authenticate(self, username=None, password=None):
+    def authenticate(self, username=None, password=None, **kwargs):
         lowercase_username = username.lower()
         try:
             validate_email(lowercase_username)
