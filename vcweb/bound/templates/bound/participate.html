@@ -602,9 +602,6 @@ function onYouTubeIframeAPIReady() {
             model.clampedStorage = ko.computed(function() {
                 return Math.max(0, model.storage());
             });
-            model.canHarvestResource = ko.computed(function() {
-                return model.alive() && ! model.isResourceEmpty();
-            });
             model.harvestDecisionOptions = ko.computed(function() {
                 return ko.utils.range(0, model.maxHarvestDecision());
             });
@@ -725,6 +722,9 @@ function onYouTubeIframeAPIReady() {
             model.isResourceEmpty = ko.computed(function() {
                 return model.resourceLevel() == 0;
             })
+            model.canHarvestResource = ko.computed(function() {
+                return model.alive() && ! model.isResourceEmpty();
+            });
             model.resourcesPerRow = ko.computed(function() {
                 if (model.canObserveOtherGroup()) {
                     return 37;
