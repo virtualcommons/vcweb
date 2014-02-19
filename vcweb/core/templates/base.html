@@ -147,13 +147,11 @@
     <script src='//ajax.aspnetcdn.com/ajax/knockout/knockout-3.0.0.js'></script>
     <script src='{{STATIC_URL}}js/ko/knockout.mapping.min.js'></script>
     <script src='{{STATIC_URL}}js/common.js'></script>
-    <script src="//cdn.ravenjs.com/1.1.2/jquery,native/raven.min.js"></script>
-
-    <script type="text/javascript">
+    <script src="//cdn.ravenjs.com/1.1.11/jquery,native/raven.min.js"></script>
+    <script>
         Raven.config('https://d266113006054187b70e3af60d9561f3@vcweb.asu.edu/sentry/1', {
             whitelistUrls: [/vcweb\.asu\.edu/]
         }).install();
-        window.onerror = Raven.process;
     </script>
     {% block javascript %}
     {% endblock %}

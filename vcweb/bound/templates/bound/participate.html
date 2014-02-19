@@ -480,7 +480,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                 <b>deceased</b>.  You will not be able to chat or submit harvest decisions until this session is over.
             </div>
         </div>
-        <div data-bind='ifnot: isResourceEmpty'>
+        <div data-bind='if: canHarvestResource'>
             <form id='vcweb-form' method='post' class='form-horizontal' >
                 {% csrf_token %}
                 <div id='harvestDecisionDiv' class='control-group'>
@@ -601,6 +601,9 @@ function onYouTubeIframeAPIReady() {
             model.tour = ko.observable();
             model.clampedStorage = ko.computed(function() {
                 return Math.max(0, model.storage());
+            });
+            model.canHarvestResource = ko.computed(function() {
+                return model.alive() && ! model.isResourceEmpty();
             });
             model.harvestDecisionOptions = ko.computed(function() {
                 return ko.utils.range(0, model.maxHarvestDecision());

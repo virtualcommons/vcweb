@@ -304,7 +304,7 @@ class GroupScores(object):
 
 @receiver(signals.pre_system_daily_tick)
 def update_active_experiments(sender, time=None, start_date=None, send_emails=True, **kwargs):
-# since this happens at midnight we need to look at the previous day
+    # this method should be invoked after midnight, so start_date should be set the previous day
     if start_date is None:
         start_date = date.today() - timedelta(1);
     active_experiments = get_active_experiments()
