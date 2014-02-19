@@ -67,6 +67,7 @@ def get_view_model(request, experiment_id=None):
 experiment_model_defaults = {
         'submitted': False,
         'chatEnabled': False,
+        'alive': True,
         'resourceLevel': 0,
         'maxEarnings': 20.00,
         'maximumResourcesToDisplay': 20,
