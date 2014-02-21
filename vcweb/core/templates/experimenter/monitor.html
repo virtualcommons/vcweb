@@ -318,7 +318,7 @@
                         return false;
                     }
                     $('#progress-modal').modal('show');
-                    $.post("/api/experimenter/experiment-controller", { pk: {{ experiment.pk }}, action: action })
+                    $.post("/api/experiment/update", { experiment_id: {{ experiment.pk }}, action: action })
                      .done(function(response) {
                         if (response.success) {
                             ko.mapping.fromJS(response.experiment, model);
