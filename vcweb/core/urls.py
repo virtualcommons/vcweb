@@ -1,14 +1,14 @@
 from django.conf.urls import patterns, url
 from django.contrib.auth.decorators import login_required
 from vcweb import settings
-from vcweb.core.ajax import (get_round_data, save_experimenter_notes, experiment_controller, create_experiment,
-        clone_experiment, archive,
+from vcweb.core.ajax import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, archive,
         )
 from vcweb.core.views import (dashboard, LoginView, LogoutView, RegistrationView, monitor,
         RegisterEmailListView, RegisterTestParticipantsView, completed_survey, toggle_bookmark_experiment_metadata,
         check_survey_completed, Participate, download_data, export_configuration, api_logger, participant_api_login,
-        api_logout, participant_ready, check_ready_participants, get_dashboard_view_model,
-        update_round_configuration, edit_experiment_configuration, clone_experiment_configuration, update_round_param_value, update_experiment_param_value, update_experiment_configuration)
+        api_logout, participant_ready, check_ready_participants, get_dashboard_view_model, update_experiment,
+        update_round_configuration, edit_experiment_configuration, clone_experiment_configuration,
+        update_round_param_value, update_experiment_param_value, update_experiment_configuration)
 import logging
 import urllib
 
@@ -50,8 +50,8 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^api/experiment/archive', archive, name='archive'),
     url(r'^api/experiment/clone', clone_experiment, name='clone_experiment'),
     url(r'^api/experiment/create', create_experiment, name='create_experiment'),
+    url(r'^api/experiment/update', update_experiment, name='update_experiment'),
     url(r'^api/experimenter/save-notes', save_experimenter_notes, name='save-experimenter-notes'),
-    url(r'^api/experimenter/experiment-controller', experiment_controller, name='experiment-controller'),
     url(r'^api/experimenter/round-data', get_round_data, name='get-round-data'),
     # match arbitrary experiment URL prefix fragments for logging / login / logout / accessing the dashboard view model
     url(r'api/log/(?P<participant_group_id>\d+)$', api_logger, name='api-logger'),

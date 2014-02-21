@@ -156,13 +156,25 @@
             }
             function modifyExperimentCallback(experimentModel) {
                 return function(data) {
-                    console.debug("updating experiment model from");
-                    console.debug(experimentModel);
-                    console.debug("to");
-                    console.debug(data.experiment);
-                    model.refreshViewModel();
+                    console.debug(data);
+                    if (data.success) {
+                        console.debug("updating experiment model from");
+                        console.debug(experimentModel);
+                        console.debug("to");
+                        console.debug(data.experiment);
+                        // FIXME: using naive update for now
+                        model.refreshViewModel();
+                    }
+                    else {
+                        console.error("invalid request");
+                    }
                 }
             }
+            model.updateExperiment = function(experimentModel, action) {
+                $.post("/api/experiment/update", {experiment_id: experimentModel.pk(), action: action })
+                 .done(modifyExperimentCallback(experimentModel))
+                 .fail(function(response) { console.error("Invalid request: " + response); });
+            };
             model.createNewExperiment = function(configurationModel, event) {
                 $.post("/api/experiment/create", { experiment_configuration_id: configurationModel.pk() })
                  .done(pendingExperimentCallback);
@@ -171,16 +183,16 @@
                 $.post("/api/experiment/clone", { experiment_id: experimentModel.pk() })
                  .done(pendingExperimentCallback);
             };
+            // FIXME: unify these, eliminate redundant code
             model.clearParticipants = function(experimentModel, event) {
-                $.post("/api/experiment/clear-participants", {experiment_id: experimentModel.pk() })
-                 .done(modifyExperimentCallback(experimentModel));
+                model.updateExperiment(experimentModel, "clear_participants");
             };
             model.archive = function(experimentModel, event) {
-                $.post("/api/experiment/archive", { experiment_id: experimentModel.pk() })
+                $.post("/api/experiment/update", { experiment_id: experimentModel.pk(), action: "archive" })
                  .done(modifyExperimentCallback(experimentModel));
             };
             model.deactivate = function(experimentModel, event) {
-                $.post("/api/experiment/deactivate", { experiment_id: experimentModel.pk() })
+                $.post("/api/experiment/update", { experiment_id: experimentModel.pk(), action: "update" })
                  .done(modifyExperimentCallback(experimentModel));
             };
             model.cloneExperimentConfiguration = function(configurationModel, Event) {

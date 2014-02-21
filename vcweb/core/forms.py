@@ -329,10 +329,9 @@ class BookmarkExperimentMetadataForm(forms.Form):
         return experimenter_id
 
 
-class ExperimentActionForm(forms.Form):
+class UpdateExperimentForm(forms.Form):
     action = forms.CharField(max_length=64)
     experiment_id = forms.IntegerField(widget=forms.HiddenInput)
-    experimenter_id = forms.IntegerField(widget=forms.HiddenInput)
 
 
 class LikeForm(forms.Form):

@@ -1051,7 +1051,7 @@ class Experiment(models.Model):
         return RoundConfiguration.objects.get(experiment_configuration__experiment=self, sequence_number=sequence_number)
 
     ALLOWED_ACTIONS = ('advance_to_next_round', 'end_round', 'start_round', 'move_to_previous_round', 'activate',
-                       'deactivate', 'complete', 'restart_round', 'restart', 'clone')
+                       'deactivate', 'complete', 'restart_round', 'restart', 'clone', 'clear_participants')
 
     def invoke(self, action_name, experimenter=None):
         if action_name in Experiment.ALLOWED_ACTIONS and experimenter == self.experimenter:

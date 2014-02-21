@@ -1,5 +1,4 @@
 from collections import defaultdict
-import socket
 import urllib2
 import xml.etree.ElementTree as ET
 from django.contrib import auth, messages
@@ -16,9 +15,10 @@ from django.views.generic.detail import SingleObjectMixin
 from vcweb import settings
 from vcweb.core import dumps
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
-from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
+from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm, UpdateExperimentForm, 
                               ParticipantGroupIdForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
-                              RegisterExcelParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm, ExperimentConfigurationForm, ExperimentParameterValueForm, RoundConfigurationForm, RoundParameterValuesForm)
+                              RegisterExcelParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm, ExperimentConfigurationForm,
+                              ExperimentParameterValueForm, RoundConfigurationForm, RoundParameterValuesForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
@@ -603,28 +603,6 @@ class RegisterTestParticipantsView(BaseExperimentRegistrationView):
                                            username_suffix=username_suffix)
         return valid
 
-# FIXME: these last two use GET (which should be idempotent) to modify database state which makes HTTP sadful
-class CloneExperimentView(ExperimenterSingleExperimentView):
-    def process(self):
-        self.experiment = self.experiment.clone()
-        return self.experiment
-
-    def render_to_response(self, context):
-        return redirect('core:monitor_experiment', pk=self.experiment.pk)
-
-
-class ClearParticipantsExperimentView(ExperimenterSingleExperimentView):
-    def process(self):
-        e = self.experiment
-        logger.debug("clearing all participants for experiment %s", e)
-        ParticipantExperimentRelationship.objects.filter(experiment=e).delete()
-        e.deactivate()
-        ParticipantGroupRelationship.objects.filter(group__experiment=e).delete()
-        return e
-
-    def render_to_response(self, context):
-        return redirect('core:dashboard')
-
 
 class DataExportMixin(ExperimenterSingleExperimentMixin):
     file_extension = '.csv'
@@ -782,34 +760,26 @@ def deactivate(request, pk=None):
 
 
 @experimenter_required
-def experiment_controller(request, pk=None, experiment_action=None):
-    try:
+def update_experiment(request):
+    form = UpdateExperimentForm(request.POST or None)
+    if form.is_valid():
+        experiment = get_object_or_404(Experiment, pk=form.cleaned_data['experiment_id'])
+        action = form.cleaned_data['action']
         experimenter = request.user.experimenter
-        experiment = Experiment.objects.get(pk=pk)
-        # TODO: provide experimenter access to other users besides the creator of the
-        # experiment?
-        if experimenter == experiment.experimenter:
-            # FIXME: dangerous to expose all experiment methods, even if it's only to the experimenter, should expose
-            # via experiment.invoke(action, experimenter) instead
-            experiment_func = getattr(experiment, experiment_action.replace('-', '_'), None)
-            if hasattr(experiment_func, '__call__'):
-                # pass params?  start_round() takes a sender for instance..
-                experiment_func()
-                return redirect('core:monitor_experiment', pk=pk)
-            else:
-                error_message = "Invalid experiment action: You ({experimenter}) tried to invoke {experiment_action} on {experiment}".format(
-                    experimenter=experimenter, experiment_action=experiment_action, experiment=experiment)
-        else:
-            error_message = "Access denied for {experimenter}: You do not have permission to invoke {experiment_action} on {experiment}".format(
-                experimenter=experimenter, experiment_action=experiment_action, experiment=experiment)
-
-    except Experiment.DoesNotExist:
-        error_message = 'Could not invoke {experiment_action} on a non-existent experiment (id: {pk}, experimenter: {experimenter})'.format(
-            experimenter=experimenter, experiment_action=experiment_action, pk=pk)
-
-    logger.warning(error_message)
-    messages.warning(request, error_message)
-    return redirect('core:dashboard')
+        logger.debug("experimenter %s invoking %s on %s", experimenter, action, experiment)
+        try:
+            response_tuples = experiment.invoke(action, experimenter)
+            logger.debug("invoking action %s: %s", action, str(response_tuples))
+            return JsonResponse(dumps({
+                'success': True,
+                'experiment': experiment.to_dict()
+            }))
+        except AttributeError as e:
+            logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
+    return JsonResponse(dumps({
+        'success': False,
+        'message': 'Invalid update experiment request: %s' % form
+    }))
 
 
 @login_required
@@ -1059,7 +1029,6 @@ def update_experiment_param_value(request, pk):
         return JsonResponse(dumps({
             'success': True
         }))
-    
     if form.is_valid():
         if request_type == 'create':
             epv = ExperimentParameterValue()
