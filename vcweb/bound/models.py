@@ -308,15 +308,16 @@ def round_started_handler(sender, experiment=None, **kwargs):
                                                             shared_resource_enabled=shared_resource_enabled)
             if existing_resource_level.int_value <= 0:
                 group.log("depleted resource %s, zeroing out all harvest decisions and marking all group members as deceased" % existing_resource_level)
-                _zero_harvest_decisions(group.participant_group_relationship_set.values_list('pk', flat=True), round_data)
+                participant_group_relationship_pks = group.participant_group_relationship_set.values_list('pk', flat=True)
+                _zero_harvest_decisions(participant_group_relationship_pks,  round_data)
                 # depleted resource kills all participants in that group
                 ParticipantRoundDataValue.objects.filter(parameter=get_player_status_parameter(),
-                        participant_group_relationship__group=group,
+                        participant_group_relationship__pk__in=participant_group_relationship_pks,
                         round_data=round_data).update(boolean_value=False)
                 ParticipantRoundDataValue.objects.filter(parameter=get_storage_parameter(),
-                        participant_group_relationship__group=group,
+                        participant_group_relationship__pk__in=participant_group_relationship_pks,
                         round_data=round_data).update(int_value=0)
-                return
+        # FIXME: this is redundant if the resource is depleted, clean up this logic
         # next, check for dead participants and set their ready and harvest decision flags
         deceased_participants = ParticipantRoundDataValue.objects.filter(
             parameter=get_player_status_parameter(),
@@ -334,7 +335,8 @@ def _zero_harvest_decisions(participant_group_relationship_ids, round_data):
     for dv in data_values:
         if dv.parameter == get_harvest_decision_parameter():
             dv.update_int(0, submitted=True)
-        dv.participant_group_relationship.set_participant_ready(round_data)
+        elif dv.parameter == get_participant_ready_parameter():
+            dv.update_boolean(True)
 
 
 def adjust_harvest_decisions(current_resource_level, group, round_data, total_harvest, group_size=0):
