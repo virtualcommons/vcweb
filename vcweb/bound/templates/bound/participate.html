@@ -467,12 +467,11 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </div>
 {% comment %} resource visualization section {% endcomment %}
 <div class='row'>
-    <div class='col-md-12' data-bind='template: { name: "resource-visualization-template" }'></div>
+    <div data-bind='template: { name: "resource-visualization-template" }'></div>
 </div>
 {% comment %} resource harvest decision section {% endcomment %}
-<div class='row' data-bind='ifnot: isResourceEmpty'>
-    <div class='col-md-12'>
-        <div class='row'>
+<div data-bind='ifnot: isResourceEmpty'>
+    <div class='row'>
         <h3>Harvest</h3>
         <div data-bind='ifnot: alive'>
             <div class='alert alert-danger'>
@@ -487,7 +486,6 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                     <div data-bind='template: { name: "harvest-decision-multiselect-template" }'></div>
                 </div>
             </form>
-        </div>
         </div>
     </div>
 </div>
@@ -521,21 +519,18 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </div>
 </script>
 <script type='text/html' id='resource-visualization-template'>
-<div class='row'>
-<div data-bind='if: isPracticeRound'>
+<div class='row' data-bind='if: isPracticeRound'>
     <div class='alert alert-danger alert-block'>
         <h4>PRACTICE ROUND</h4>
         This is a practice round.  The decisions you make in this round will <b>NOT</b> contribute to your earnings.
     </div>
 </div>
-</div>
-
 <div class='row'>
-<div data-bind='css: { "col-md-4": canObserveOtherGroup }'>
+<div data-bind='css: { "col-md-6": canObserveOtherGroup }'>
 <h3 class='compact'>My Group</h3>
 <div data-bind='template: { name: "tree-template", data: myGroup }'></div>
 </div>
-<div data-bind='if: canObserveOtherGroup, css: { "col-md-4" : canObserveOtherGroup }'>
+<div data-bind='if: canObserveOtherGroup, css: { "col-md-6" : canObserveOtherGroup }'>
     <h3 class='compact'>Other Group</h3>
     <div data-bind='template: {name: "tree-template", data: otherGroup }'></div>
 </div>
