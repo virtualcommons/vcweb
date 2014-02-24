@@ -244,6 +244,7 @@ class CommonsUser(models.Model):
     user = models.OneToOneField(User, related_name='%(class)s', verbose_name=u'Django User', unique=True)
     failed_password_attempts = models.PositiveIntegerField(default=0)
     institution = models.ForeignKey(Institution, null=True, blank=True)
+    institution_username = NullCharField(max_length=64, unique=True, help_text=_('Unique institution-specific username, e.g., ASURITE, IU Network ID'))
     authentication_token = models.CharField(max_length=64, blank=True)
 
     @property
@@ -2024,7 +2025,6 @@ class Participant(CommonsUser):
     major = models.CharField(max_length=64, blank=True)
     class_status = models.CharField(max_length=32, choices=CLASS_CHOICES, blank=True)
     address = models.ForeignKey(Address, null=True, blank=True)
-    institution_username = NullCharField(max_length=64, unique=True, help_text=_('Unique institution-specific username, e.g., ASURITE, IU Network ID'))
     favorite_sport = models.CharField(max_length=32, choices=SPORT_CHOICES, blank=True)
     favorite_color = models.CharField(max_length=32, choices=COLOR_CHOICES, blank=True)
     favorite_food = models.CharField(max_length=32, choices=FOOD_CHOICES, blank=True)
