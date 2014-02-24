@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load bootstrap3 %}
 {% block title %}
 Experiment Session Management
 {% endblock %}
@@ -28,8 +29,6 @@ Experiment Session Management
                                 No active experiment sessions. Click the "Add Session" button below to add a new one.
                             </div>
                         </div>
-                        <!-- ko ifnot: activeSessions().length > 0 -->
-                        <!-- /ko -->
                         <button data-bind="click: addSession" class="btn btn-primary">
                             <i class="fa fa-plus"></i>
                             Add Session
@@ -38,27 +37,28 @@ Experiment Session Management
                             <i class="fa fa-envelope"></i>
                             Invite
                         </button>
+                        <div id="invite-form" class="clearfix">
+                            <form class="form-horizontal col-md-5" role="form" data-bind="submit: $root.onInvite">
+                                {%  bootstrap_form form layout="horizontal" label_class="col-md-5" field_class="col-md-7" %}
+                                <div class="form-group">
+                                    <div class="col-md-offset-5 col-md-7">
+                                        <button type="submit" class="btn">Invite</button>
+                                        <button type="button" class="btn" data-bind="click: $root.emailPreview">Email Preview</button>
+                                    </div>
+                                </div>
+                            </form>
+                            <div class="col-md-7" id="email-content"></div>
+                        </div>
                     </div>
                     <div class='tab-pane' id="past">
                         <div data-bind='template: { name: "session-template", foreach: pastSessions }'></div>
                         <!-- ko ifnot: pastSessions().length > 0 -->
-                        <div class="callout callout-warning">
-                            No past experiment sessions.
-                        </div>
+                            <div class="callout callout-warning">
+                                No past experiment sessions.
+                            </div>
                         <!-- /ko -->
-
                     </div>
                 </div>
-            </div>
-            <div id="invite-form" class="clearfix">
-                <form class="form-horizontal" role="form" data-bind="submit: onInvite">
-                    {% include "includes/bootstrap-form.html" %}
-                    <div class="form-group">
-                        <div class="col-md-offset-2 col-md-10">
-                            <button type="submit" class="btn">Invite</button>
-                        </div>
-                    </div>
-                </form>
             </div>
             <div class="page-header clearfix">
                 <h3 style="display: inline"></h3>
@@ -256,10 +256,10 @@ Experiment Session Management
                 var self = this;
                 self.pk = ko.observable(sessionData.pk);
                 self.selected_experiment_metadata_pk = ko.observable(sessionData.experiment_metadata.pk);
-                self.startDate = ko.observable(options.newSession ? new Date(new Date().getTime() + 24 * 60 * 60 * 1000) : new Date(sessionData.startDate));
+                self.startDate = ko.observable(sessionData.startDate);
                 self.startHour = ko.observable(sessionData.startHour);
                 self.startMin = ko.observable(sessionData.startMin);
-                self.endDate = ko.observable(options.newSession ? new Date(new Date().getTime() + 24 * 60 * 60 * 1000) : new Date(sessionData.endDate));
+                self.endDate = ko.observable(sessionData.endDate);
                 self.endHour = ko.observable(sessionData.endHour);
                 self.endMin = ko.observable(sessionData.endMin);
                 self.capacity = ko.observable(sessionData.capacity);
@@ -335,11 +335,12 @@ Experiment Session Management
                             model.invite_experiment_metadata_pk_list = data.selected_experiment_metadata_pk();
                             model.inviteCount(oldCount + 1);
                         } else {
-                            model.invite_experiment_metadata_pk_list = -1;
                             model.inviteCount(oldCount - 1);
                             if(oldCount == 1) {
+                                model.invite_experiment_metadata_pk_list = -1;
                                 $('#invite-form').slideUp("slow");
                                 $('#invite-form form')[0].reset();
+                                $('#email-content').html("");
                             }
                         }
                         return true;
@@ -377,8 +378,11 @@ Experiment Session Management
                 ];
 
                 model.addSession = function() {
+                    var tom = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+
+                    var date = tom.getFullYear() + "-" +tom.getMonthFormatted() + "-" + tom.getDateFormatted();
                     model.session_list.push(
-                        new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: "", endDate: "", capacity:10, invite_count: 0, location: ""}, { newSession: true})
+                        new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: date, endDate: date, capacity:10, invite_count: 0, location: ""}, { newSession: true})
                     );
                 };
 
@@ -420,6 +424,7 @@ Experiment Session Management
                                     model.invite_experiment_metadata_pk_list = -1;
                                     $("#error-messages").html('<div class="alert alert-success">' + result.message + '</strong></div>');
                                     $('#invite-form form')[0].reset();
+                                    $('#email-content').html("");
 
                                     ko.utils.arrayForEach(model.session_list(), function(session) {
                                         if($.inArray(session.pk(), session_pk_list) >= 0 ){
@@ -434,6 +439,26 @@ Experiment Session Management
                         });
                     }
                 };
+
+                model.emailPreview = function(data, event) {
+                    var session_pk_list = $('#active').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
+                    if(session_pk_list.length) {
+                        var formData = $("#invite-form form").serialize()  + '&session_pk_list='+ session_pk_list;
+
+                        $.ajax("/subject-pool/session/email-preview", {
+                            type : "POST",
+                            data : formData,
+                            success: function(result) {
+                                $("#email-content").html('<fieldset class="scheduler-border"><legend class="scheduler-border">Email Preview</legend><div id="email-text"></div></fieldset>');
+                                if(result.success == true){
+                                    $("#email-text").html(result.content);
+                                } else {
+                                    $("#email-text").html(result.message);
+                                }
+                            }
+                        });
+                    }
+                }
                 return model;
             }
 

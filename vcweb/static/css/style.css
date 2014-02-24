@@ -300,3 +300,100 @@ col.error {
 .pointer-icon {
 	cursor: pointer;
 }
+
+fieldset.scheduler-border {
+    border: 1px groove #ddd !important;
+    padding: 0 1.4em 1.4em 1.4em !important;
+    margin: 0 0 1.5em 0 !important;
+    -webkit-box-shadow:  0px 0px 0px 0px #000;
+            box-shadow:  0px 0px 0px 0px #000;
+}
+
+legend.scheduler-border {
+    font-size: 1.2em !important;
+    font-weight: bold !important;
+    text-align: left !important;
+    width:auto;
+    padding:0 10px;
+    border-bottom:none;
+}
+/* Calendar Event colors */
+.event-color-1 {
+  background-color: #1f77b4 !important;
+}
+
+.event-color-2 {
+  background-color: #aec7e8 !important;
+}
+
+.event-color-3 {
+  background-color: #ff7f0e !important;
+}
+
+.event-color-4 {
+  background-color: #ffbb78 !important;
+}
+
+.event-color-5 {
+  background-color: #2ca02c !important;
+}
+
+.event-color-6 {
+  background-color: #98df8a !important;
+}
+
+.event-color-7 {
+  background-color: #d62728 !important;
+}
+
+.event-color-8 {
+  background-color: #ff9896 !important;
+}
+
+.event-color-9 {
+  background-color: #9467bd !important;
+}
+
+.event-color-10 {
+  background-color: #c5b0d5 !important;
+}
+
+.event-color-11 {
+  background-color: #8c564b !important;
+}
+
+.event-color-12 {
+  background-color: #c49c94 !important;
+}
+
+.event-color-13 {
+  background-color: #e377c2 !important;
+}
+
+.event-color-14 {
+  background-color: #f7b6d2 !important;
+}
+
+.event-color-15 {
+  background-color: #7f7f7f !important;
+}
+
+.event-color-16 {
+  background-color: #c7c7c7 !important;
+}
+
+.event-color-17 {
+  background-color: #bcbd22 !important;
+}
+
+.event-color-18 {
+  background-color: #dbdb8d !important;
+}
+
+.event-color-19 {
+  background-color: #17becf !important;
+}
+
+.event-color-20 {
+  background-color: #9edae5 !important;
+}

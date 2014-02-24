@@ -856,7 +856,6 @@ def check_ready_participants(request, pk=None):
     return JsonResponse(dumps(_ready_participants_dict(experiment)))
 
 
-# FIXME: replace magic numbers with constant references
 @participant_required
 def get_participant_sessions(request):
     user = request.user

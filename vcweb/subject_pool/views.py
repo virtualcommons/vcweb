@@ -1,6 +1,8 @@
 from django.contrib import messages
 from django.forms.models import modelformset_factory
 from django.shortcuts import render
+from django.template import Context
+from django.template.loader import get_template
 from vcweb.core.models import (ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation,
                                Institution)
 from vcweb.core.decorators import experimenter_required
@@ -8,9 +10,11 @@ from datetime import datetime, time, timedelta
 from time import mktime
 from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 
 from forms import SessionForm, SessionInviteForm, ParticipantAttendanceForm
+
+import markdown
 
 import random
 import logging
@@ -204,13 +208,36 @@ def send_invitations(request):
                         invitations.append(Invitation(participant=participant, experiment_session=es, date_created=today,
                                                       sender=user))
                 Invitation.objects.bulk_create(invitations)
-                email = EmailMessage(subject=invitation_subject,
-                        body=invitation_text,
-                        from_email=from_email,
-                        to=[from_email],
-                        bcc=recipient_list,
-                        cc=['allen.lee@asu.edu'])
-                email.send(fail_silently=False)
+
+                plaintext_template = get_template('email/invitation-email.txt')
+
+                experiment = ExperimentMetadata.objects.get(pk=experiment_metadata_pk)
+                c = Context({
+                    'invitation_text': invitation_text,
+                    'experiment': experiment,
+                    'session_list': ExperimentSession.objects.filter(pk__in=session_pk_list),
+                })
+
+                plaintext_content = plaintext_template.render(c)
+
+                html_content = markdown.markdown(plaintext_content)
+
+                msg = EmailMultiAlternatives(invitation_subject,
+                                             plaintext_content,
+                                             from_email,
+                                             [from_email],
+                                             recipient_list)
+                msg.attach_alternative(html_content, "text/html")
+
+                msg.send()
+
+                # email = EmailMessage(subject=invitation_subject,
+                #         body=invitation_text,
+                #         from_email=from_email,
+                #         to=[from_email],
+                #         bcc=recipient_list,
+                #         cc=['allen.lee@asu.edu'])
+                # email.send(fail_silently=False)
 
             return JsonResponse(dumps({
                 'success': True,
@@ -229,6 +256,47 @@ def send_invitations(request):
             'success': False,
             'message': message
         }))
+
+
+def invite_email_preview(request):
+    user = request.user
+    form = SessionInviteForm(request.POST or None)
+    message = "Please fill in all the details of the invitation form to preview email"
+
+    if form.is_valid():
+        invitation_text = form.cleaned_data.get('invitation_text')
+
+        session_pk_list = request.POST.get('session_pk_list').split(",")
+
+        experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
+        experiment_metadata_pk_list = experiment_sessions.values_list('experiment_metadata__pk', flat=True)
+
+        experiment_metadata_pk = experiment_metadata_pk_list[0]
+
+        plaintext_template = get_template('email/invitation-email.txt')
+
+        experiment = ExperimentMetadata.objects.get(pk=experiment_metadata_pk)
+        c = Context({
+            'invitation_text': invitation_text,
+            'experiment': experiment,
+            'session_list': ExperimentSession.objects.filter(pk__in=session_pk_list),
+        })
+
+        plaintext_content = plaintext_template.render(c)
+        logger.debug(plaintext_content)
+        html_content = markdown.markdown(plaintext_content)
+
+        return JsonResponse(dumps({
+            'success': True,
+            'content': html_content
+        }))
+    else:
+        # logger.debug("Form is not valid")
+        return JsonResponse(dumps({
+            'success': False,
+            'message': message
+        }))
+
 
 
 def get_potential_participants(experiment_metadata_pk, institution="Arizona S U", days_threshold=7):

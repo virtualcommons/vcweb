@@ -1,0 +1,17 @@
+Hi,
+
+{{invitation_text}}
+
+You can choose to attend one session from the following available sessions of the **{{ experiment.title }} Experiment**.
+
+{% for session in session_list %}
+-  **Session {{forloop.counter}}** :- From: {{ session.scheduled_date }} To: {{ session.scheduled_end_date }}
+{% endfor %}
+
+To participate please click on link below or copy paste the url in your browser's address bar.
+
+<a href="http://vcweb.asu.edu/participant/session">http://vcweb.asu.edu/participant/session</a>
+
+Thanks,
+
+Team VCWEB
