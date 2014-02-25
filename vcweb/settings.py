@@ -181,9 +181,9 @@ DEFAULT_FROM_EMAIL = 'commons@asu.edu'
 
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (
+    'cas.backends.CASBackend',
     "vcweb.core.auth.AuthenticationBackend",
     "django.contrib.auth.backends.ModelBackend",
-    'cas.backends.CASBackend',
 )
 
 STATIC_URL = '/static/'

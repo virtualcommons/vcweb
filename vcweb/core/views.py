@@ -961,7 +961,7 @@ def get_cas_user(tree):
     try:
         user = User.objects.get(username=username)
     except ObjectDoesNotExist:
-        logger.debug("USer Not Found")
+        logger.debug("User Not Found")
         # Get the email from the ASU Web Directory
         r = urllib2.Request(url, headers={"Accept": "application/xml"})
         parsed = ET.parse(urllib2.urlopen(r))
@@ -987,7 +987,6 @@ def get_cas_user(tree):
         user.email = email
         password = User.objects.make_random_password()
         user.set_password(password)
-        user.save()
 
         plans = person.find('plans')
         plan = plans.find('plan')
@@ -998,12 +997,14 @@ def get_cas_user(tree):
             institution.cas_server_url = settings.CAS_SERVER_URL
             institution.save()
 
-        reset_password(email)
         participant = Participant(user=user)
         participant.major = major
         participant.institution = institution
         participant.institution_username = username
         participant.save()
+        user.save()
+        reset_password(email)
+
 
 
 def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):
