@@ -69,6 +69,10 @@ def get_observe_other_group_parameter():
 def get_shared_resource_enabled_parameter():
     return Parameter.objects.for_round(name='shared_resource')
 
+#@simplecache
+#def get_empty_resource_death_parameter():
+#    return Parameter.objects.for_round(name='empty_resource_death_enabled')
+
 
 ''' value accessors '''
 
@@ -76,6 +80,10 @@ def get_shared_resource_enabled_parameter():
 def get_regrowth_rate(round_configuration):
     return round_configuration.get_parameter_value(name='regrowth_rate', default=0.40).float_value
 
+
+#def is_empty_resource_death_enabled(round_configuration):
+#    return round_configuration.get_parameter_value(parameter=get_empty_resource_death_parameter(),
+#            default=False).boolean_value
 
 def can_observe_other_group(round_configuration):
     return round_configuration.get_parameter_value(parameter=get_observe_other_group_parameter(),
@@ -309,20 +317,22 @@ def round_started_handler(sender, experiment=None, **kwargs):
                                                         round_data=round_data).update(boolean_value=True)
     elif round_configuration.is_playable_round:
         # first check for a depleted resource
-        for group in experiment.groups:
-            existing_resource_level = get_resource_level_dv(group, round_data, round_configuration,
-                                                            shared_resource_enabled=shared_resource_enabled)
-            if existing_resource_level.int_value <= 0:
-                group.log("depleted resource %s, zeroing out all harvest decisions and marking all group members as deceased" % existing_resource_level)
-                participant_group_relationship_pks = group.participant_group_relationship_set.values_list('pk', flat=True)
-                _zero_harvest_decisions(participant_group_relationship_pks,  round_data)
-                # depleted resource kills all participants in that group
-                ParticipantRoundDataValue.objects.filter(parameter=get_player_status_parameter(),
-                        participant_group_relationship__pk__in=participant_group_relationship_pks,
-                        round_data=round_data).update(boolean_value=False)
-                ParticipantRoundDataValue.objects.filter(parameter=get_storage_parameter(),
-                        participant_group_relationship__pk__in=participant_group_relationship_pks,
-                        round_data=round_data).update(int_value=0)
+        # FIXME: currently disabled again as per Tim's instructions
+        # if is_empty_resource_death_enabled():
+        #     for group in experiment.groups:
+        #         existing_resource_level = get_resource_level_dv(group, round_data, round_configuration,
+        #                                                         shared_resource_enabled=shared_resource_enabled)
+        #         if existing_resource_level.int_value <= 0:
+        #             group.log("depleted resource %s, zeroing out all harvest decisions and marking all group members as deceased" % existing_resource_level)
+        #             participant_group_relationship_pks = group.participant_group_relationship_set.values_list('pk', flat=True)
+        #             _zero_harvest_decisions(participant_group_relationship_pks,  round_data)
+        #             # depleted resource kills all participants in that group
+        #             ParticipantRoundDataValue.objects.filter(parameter=get_player_status_parameter(),
+        #                     participant_group_relationship__pk__in=participant_group_relationship_pks,
+        #                     round_data=round_data).update(boolean_value=False)
+        #             ParticipantRoundDataValue.objects.filter(parameter=get_storage_parameter(),
+        #                     participant_group_relationship__pk__in=participant_group_relationship_pks,
+        #                     round_data=round_data).update(int_value=0)
         # FIXME: this is redundant if the resource is depleted, clean up this logic
         # next, check for dead participants and set their ready and harvest decision flags
         deceased_participants = ParticipantRoundDataValue.objects.filter(

@@ -2353,6 +2353,7 @@ class Like(ParticipantRoundDataValue):
 class ActivityLog(models.Model):
     log_message = models.TextField()
     date_created = models.DateTimeField(default=datetime.now)
+
     def __unicode__(self):
         return u"%s - %s" % (self.date_created.strftime("%m-%d-%Y %H:%M"), self.log_message)
 
