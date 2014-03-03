@@ -178,11 +178,17 @@ def get_final_session_storage_queryset(experiment, participant):
     The query must be done by participant as participant group relationships change when we re-randomize
     groups.
     """
-    debriefing_session_round_data = experiment.round_data_set.filter(round_configuration__round_type=RoundConfiguration.RoundType.DEBRIEFING).exclude(round_configuration__session_id=u'')
-    return ParticipantRoundDataValue.objects.filter(
+    debriefing_session_round_data = experiment.round_data_set.filter(round_configuration__round_type=RoundConfiguration.RoundType.DEBRIEFING).exclude(round_configuration__session_id__exact='')
+    session_storages = ParticipantRoundDataValue.objects.filter(
         participant_group_relationship__participant=participant,
         parameter=get_storage_parameter(),
         round_data__in=debriefing_session_round_data).order_by('date_created')
+    if len(session_storages) == 2:
+        return session_storages
+    else:
+        error_message = "bound: looking for 2 final session storages for participant %s in experiment %s but only found %s" % (participant, experiment, session_storages)
+        logger.error(error_message)
+        raise ParticipantRoundDataValue.DoesNotExist(error_message)
 
 
 def _zero_if_none(value):
@@ -489,13 +495,17 @@ def round_ended_handler(sender, experiment=None, **kwargs):
         for pgr in experiment.participant_group_relationships:
             # FIXME: not thread-safe but this *should* only be invoked once per experiment.  If we start getting
             # spurious data values, revisit this section
-            prdv, created = ParticipantRoundDataValue.objects.get_or_create(
+            prdvs = ParticipantRoundDataValue.objects.filter(
                     round_data=round_data,
                     participant_group_relationship=pgr,
                     parameter=harvest_decision_parameter,
-                    is_active=True,
-                    defaults={ 'int_value': 0 })
-            if created:
+                    is_active=True)
+            if prdvs.count() == 0:
+                prdv = ParticipantRoundDataValue.objects.create(round_data=round_data,
+                        participant_group_relationship=pgr,
+                        parameter=harvest_decision_parameter,
+                        is_active=True,
+                        int_value=0)
                 logger.debug("created new harvest decision prdv %s for participant %s", prdv, pgr)
 
         # FIXME: generify and merge update_shared_resource_level and update_resource_level to operate on "group-like" objects if possible

@@ -86,22 +86,20 @@ class DataValueMixin(object):
                      ('round_data', self.experiment.current_round_data if round_data is None else round_data)],
                     **kwargs)
 
-    def get_data_value(self, parameter=None, parameter_name=None, round_data=None, should_filter=False, default=None):
+    def get_data_value(self, parameter=None, parameter_name=None, round_data=None, use_filter=False, default=None):
         if round_data is None:
             round_data = self.experiment.current_round_data
         criteria = self._criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         data_value_set = self.data_value_set.select_related('parameter')
-        data_value_class = data_value_set.model
-        try:
-            if should_filter:
-                return data_value_set.filter(**criteria)
-            else:
-                return data_value_set.get(**criteria)
-        except data_value_class.DoesNotExist as e:
-            if default is None:
-                raise e
-            else:
-                return DefaultValue(default)
+        #data_value_class = data_value_set.model
+        dvs = data_value_set.filter(**criteria)
+        if use_filter:
+            return dvs
+        elif dvs.count() > 0:
+            return dvs[0]
+        else:
+            logger.warn("No data values found with criteria %s - returning default %s", criteria, default)
+            return DefaultValue(default)
 
     def copy_to_next_round(self, *data_values, **kwargs):
         e = self.experiment

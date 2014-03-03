@@ -954,6 +954,23 @@ def get_participant_sessions(request):
 
 
 def get_cas_user(tree):
+    """
+    Callback invoked by the CAS module that ensures that the user signing in via CAS has a valid Django User associated
+    with them. Primary responsibility is to create a Django User / Participant if none existed, or to associate the CAS
+    login id with the given User. This needs to be done *before* the CAS module creates a User object so that we don't
+    end up creating duplicate users with a different username and the same email address.
+
+    1. If no Django user exists with the given username (institutional username), get details from the ASU web directory
+    (FIXME: this is brittle and specific to ASU, will need to update if we ever roll CAS login out for other
+    institutions) and populate a Django user / vcweb Participant with those details
+    2. If a Django user does exist with the given institutional username (e.g., asurite) there are a few corner cases to
+    consider:
+    a. the account could have been created before CAS was implemented, so there is no institutional username set (or
+    it's set to the email address instead of the ASURITE id). In this case we need to set the username to
+    the ASURITE id
+    b. easy case, the account was created via CAS and all the fields are correct
+
+    """
     username = tree[0][0].text.lower()
     url = settings.WEB_DIRECTORY_URL + username
     user_created = False
