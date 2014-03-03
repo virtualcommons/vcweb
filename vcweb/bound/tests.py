@@ -21,10 +21,24 @@ class BaseTest(BaseVcwebTest):
         super(BaseTest, self).setUp(experiment_metadata=get_experiment_metadata(), **kwargs)
         logger.debug("boundary effects test loaded experiment %s", self.experiment)
 
+class MultipleHarvestDecisionTest(BaseTest):
+
+    def test_duplicate_harvest_decisions(self):
+        e = self.experiment
+        self.advance_to_data_round()
+        self.create_harvest_decisions()
+        for pgr in e.participant_group_relationships:
+            set_harvest_decision(pgr, 9, submitted=True)
+            # XXX: set multiple is_active flags
+            ParticipantRoundDataValue.objects.filter(
+                    round_data=e.current_round_data,
+                    parameter=get_harvest_decision_parameter()).update(is_active=True)
+        e.advance_to_next_round()
+
 class AdjustHarvestDecisionsTest(BaseTest):
     def test_adjust_harvest_decisions(self):
         e = self.experiment
-        e.activate()
+        self.advance_to_data_round()
         for rl in range(30, 40):
             e.start_round()
             self.create_harvest_decisions()
