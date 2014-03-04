@@ -71,7 +71,7 @@ class ParameterValueMixin(object):
         except parameter_value_set.model.DoesNotExist:
             return DefaultValue(default)
 
-    def set_parameter_value(self, parameter=None, name=None, value=None):
+    def set_parameter_value(self, parameter=None, name=None, value=None, **kwargs):
         if parameter is None and name is None:
             raise ValueError("Can't set parameter value with no name or parameter given")
         parameter_value_set = self.parameter_value_set
@@ -81,7 +81,17 @@ class ParameterValueMixin(object):
         except parameter_value_set.model.DoesNotExist:
             pv = parameter_value_set.create(parameter=parameter)
         if pv is not None:
-            pv.value = value
+            if value is not None:
+                pv.value = value
+            elif len(kwargs) == 1:
+                # assume appropriate _value accessor in the kwargs
+                k, v = kwargs.popitem()
+                if '_value' not in k:
+                    logger.error("invalid attribute accessor for %s: %s=%s", pv, k, v)
+                    raise ValueError("Invalid attribute accessor %s" % k)
+                setattr(pv, k, v)
+            else:
+                raise ValueError("Can only specify a single value accessor when setting parameter values, received %s instead" % kwargs)
             pv.save()
             return pv
         logger.error("Unable to set parameter %s to %s", parameter if parameter else name, value)

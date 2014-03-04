@@ -20,7 +20,8 @@ class BaseTest(BaseVcwebTest):
     def setUp(self, **kwargs):
         super(BaseTest, self).setUp(experiment_metadata=get_experiment_metadata(), **kwargs)
         e = self.experiment
-        e.current_round.set_parameter_value(parameter=get_reset_resource_level_parameter(), value=True)
+        cr = e.current_round
+        cr.set_parameter_value(parameter=get_reset_resource_level_parameter(), boolean_value=True)
         logger.debug("boundary effects test loaded experiment %s", e)
 
 class MultipleHarvestDecisionTest(BaseTest):
