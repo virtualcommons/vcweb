@@ -19,13 +19,15 @@ class BaseTest(BaseVcwebTest):
 
     def setUp(self, **kwargs):
         super(BaseTest, self).setUp(experiment_metadata=get_experiment_metadata(), **kwargs)
-        logger.debug("boundary effects test loaded experiment %s", self.experiment)
+        e = self.experiment
+        e.current_round.set_parameter_value(parameter=get_reset_resource_level_parameter(), value=True)
+        logger.debug("boundary effects test loaded experiment %s", e)
 
 class MultipleHarvestDecisionTest(BaseTest):
 
     def test_duplicate_harvest_decisions(self):
         e = self.experiment
-        self.advance_to_data_round()
+        e.activate()
         self.create_harvest_decisions()
         for pgr in e.participant_group_relationships:
             set_harvest_decision(pgr, 9, submitted=True)
@@ -34,11 +36,15 @@ class MultipleHarvestDecisionTest(BaseTest):
                     round_data=e.current_round_data,
                     parameter=get_harvest_decision_parameter()).update(is_active=True)
         e.advance_to_next_round()
+        current_round_data = e.current_round_data
+        for g in e.groups:
+            dv = get_resource_level_dv(g, current_round_data)
+            logger.debug("current resource level: %s", dv.int_value)
 
 class AdjustHarvestDecisionsTest(BaseTest):
     def test_adjust_harvest_decisions(self):
         e = self.experiment
-        self.advance_to_data_round()
+        e.activate()
         for rl in range(30, 40):
             e.start_round()
             self.create_harvest_decisions()

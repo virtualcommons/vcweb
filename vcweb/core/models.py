@@ -68,8 +68,23 @@ class ParameterValueMixin(object):
                 return parameter_value_set.get(parameter=parameter)
             elif name:
                 return parameter_value_set.get(parameter__name=name)
-        except parameter_value_set.model.DoesNotExist as e:
+        except parameter_value_set.model.DoesNotExist:
             return DefaultValue(default)
+
+    def set_parameter_value(self, parameter=None, name=None, value=None):
+        if parameter is None and name is None:
+            raise ValueError("Can't set parameter value with no name or parameter given")
+        parameter_value_set = self.parameter_value_set
+        pv = None
+        try:
+            pv = parameter_value_set.get(parameter=parameter) if parameter else parameter_value_set.get(parameter__name=name)
+        except parameter_value_set.model.DoesNotExist:
+            pv = parameter_value_set.create(parameter=parameter)
+        if pv is not None:
+            pv.value = value
+            pv.save()
+            return pv
+        logger.error("Unable to set parameter %s to %s", parameter if parameter else name, value)
 
 
 class DataValueMixin(object):
