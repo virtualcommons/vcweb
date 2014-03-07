@@ -269,6 +269,7 @@ class CommonsUser(models.Model):
     institution = models.ForeignKey(Institution, null=True, blank=True)
     institution_username = NullCharField(max_length=64, unique=True, help_text=_('Unique institution-specific username, e.g., ASURITE, IU Network ID'))
     authentication_token = models.CharField(max_length=64, blank=True)
+    date_created = models.DateTimeField(default=datetime.now)
 
     @property
     def full_name(self):
@@ -819,20 +820,11 @@ class Experiment(models.Model):
                 # lowercase all usernames/email addresses internally and strip all whitespace
                 email_address = email_address.lower().strip()
                 full_name = full_name.strip()
-                # crudely splitting last token as last_name and everything else as first_name
-                (first_name, separator, last_name) = full_name.rpartition(' ')
-                logger.debug("first_name %s, last_name %s", first_name, last_name)
                 try:
                     u = User.objects.get(username=email_address)
                 except User.DoesNotExist:
                     u = User.objects.create_user(username=email_address, email=email_address, password=password)
-                updated = False
-                if first_name and not u.first_name:
-                    u.first_name = first_name
-                    updated = True
-                if last_name and not u.last_name:
-                    u.last_name = last_name
-                    updated = True
+                updated = set_full_name(u, full_name)
                 if updated:
                     u.save()
                 users.append(u)
@@ -2589,3 +2581,16 @@ def reset_password(email, from_email='vcweb@asu.edu', template='registration/pas
     form = PasswordResetForm({'email': email, })
     return form.save(from_email=from_email, email_template_name=template)
 
+
+def set_full_name(user, full_name):
+    """ crudely splits last token as last_name and everything else as first_name """
+    (first_name, separator, last_name) = full_name.rpartition(' ')
+    logger.debug("first_name %s, last_name %s", first_name, last_name)
+    updated = False
+    if first_name and not user.first_name:
+        user.first_name = first_name
+        updated = True
+    if last_name and not user.last_name:
+        user.last_name = last_name
+        updated = True
+    return updated
