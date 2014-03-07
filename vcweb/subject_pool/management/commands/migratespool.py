@@ -23,12 +23,11 @@ class Command(BaseCommand):
         cursor.execute(query)
         asu_institution = Institution.objects.get(name='Arizona State University')
         existing_users = []
-        users = []
-        participants = []
+        new_users = []
+        new_participants = []
         skipped_participants = []
         class_status_offsets = {'Freshman': timedelta(days=365*3), 'Sophomore': timedelta(days=365*2), 'Junior': timedelta(days=365)}
         now = datetime.now()
-
         for (username, full_name, date_created, email, gender, class_status, major, affiliation) in cursor:
             if class_status == 'Senior':
                 self.stdout.write("skipping seniors {}".format(email))
@@ -48,13 +47,15 @@ class Command(BaseCommand):
                 existing_users.append(u)
             except User.DoesNotExist:
                 u = User(username=username, email=email, password=User.objects.make_random_password())
-                users.append(u)
+                new_users.append(u)
                 set_full_name(u, full_name)
                 p = Participant(user=u, can_receive_invitations=True, gender=gender, major=major,
                         class_status=class_status, date_created=date_created, institution=asu_institution)
                 self.stdout.write(u"processing {} {} {}, created {}".format(full_name, username, email, p))
-                participants.append(p)
-        self.stdout.write("new participants: {}, existing users: {}".format(len(participants), len(existing_users)))
+                new_participants.append(p)
+        User.objects.bulk_create(new_users)
+        Participant.objects.bulk_create(new_participants)
+        self.stdout.write("new participants: {}, existing users: {}".format(len(new_participants), len(existing_users)))
         self.stdout.write("existing users: %s" % existing_users)
         self.stdout.write("skipped users: %s" % skipped_participants)
         cnx.close()
