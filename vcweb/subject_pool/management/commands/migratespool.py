@@ -49,9 +49,25 @@ class Command(BaseCommand):
                 u = User(username=username, email=email, password=User.objects.make_random_password())
                 new_users.append(u)
                 set_full_name(u, full_name)
-                p = Participant(user=u, can_receive_invitations=True, gender=gender, major=major,
-                        class_status=class_status, date_created=date_created, institution=asu_institution)
-                self.stdout.write(u"processing {} {} {}, created {}".format(full_name, username, email, p))
+            try:
+                p = Participant.objects.get(user=u)
+                self.stdout.write(u"Participant %s already exists" % p)
+            except Participant.DoesNotExist:
+                p = Participant(user=u)
+            if not p.major:
+                p.major = major
+            if not p.gender:
+                p.gender = gender
+            if not p.class_status:
+                p.class_status = class_status
+            p.date_created = date_created
+            p.can_receive_invitations = True
+            p.institution = asu_institution
+            if p.pk:
+                self.stdout.write("Updating existing participant {}".format(p))
+                p.save()
+            else:
+                self.stdout.write(u"Creating participant {} major: {} gender: {} class_status {} institution {}".format(p, p.major, p.gender, p.class_status, asu_institution))
                 new_participants.append(p)
         User.objects.bulk_create(new_users)
         Participant.objects.bulk_create(new_participants)
