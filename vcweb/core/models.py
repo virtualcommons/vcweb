@@ -2044,6 +2044,23 @@ class Participant(CommonsUser):
     favorite_color = models.CharField(max_length=32, choices=COLOR_CHOICES, blank=True)
     favorite_food = models.CharField(max_length=32, choices=FOOD_CHOICES, blank=True)
     favorite_movie_genre = models.CharField(max_length=64, choices=MOVIE_GENRE_CHOICES, blank=True)
+    
+    UNDERGRADUATE_CLASS_CHOICES = ('Freshman', 'Sophomore', 'Junior', 'Senior')
+
+    @property
+    def undergraduate(self):
+        return Participant.is_undergraduate(self.class_status, self.date_created)
+
+    @staticmethod
+    def is_undergraduate(class_status, date_created):
+        # FIXME: add a check against asu directory as well?
+        class_status_offsets = {'Freshman': timedelta(days=365*3), 'Sophomore': timedelta(days=365*2), 'Junior': timedelta(days=365), 'Senior': timedelta(days=180)}
+        now = datetime.now()
+        if class_status in Participant.UNDERGRADUATE_CLASS_CHOICES:
+            delta = class_status_offsets[class_status]
+            return date_created + delta > now
+        return False
+
 
     class Meta:
         ordering = ['user']
