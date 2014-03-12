@@ -10,16 +10,16 @@ from vcweb.core import signals
 #def every_hour():
 #    signals.hour_tick.send(sender=None, time=datetime.now())
 
-@register('1 0 * * *')
+@register('0 0 * * *')
 def pre_system_daily_tick():
     signals.pre_system_daily_tick.send(sender=None, time=datetime.now())
 
 
-@register('2 0 * * *')
+@register('1 0 * * *')
 def system_daily_tick():
     signals.system_daily_tick.send(sender=None, time=datetime.now())
 
-@register('3 0 * * *')
+@register('2 0 * * *')
 def post_system_daily_tick():
     signals.post_system_daily_tick.send(sender=None, time=datetime.now())
 

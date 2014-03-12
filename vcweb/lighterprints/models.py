@@ -382,11 +382,10 @@ class ActivityManager(TreeManager, PassThroughManager):
         #return ActivityAvailability.objects.select_related('activity').filter(activity__id__in=(available_activity_ids), **kwargs).values_list('activity', flat=True)
 
     def already_performed(self, activity, participant_group_relationship, round_data):
-        today = datetime.combine(date.today(), time())
+        #today = datetime.combine(date.today(), time())
         already_performed = participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(),
-                int_value=activity.id,
-                round_data=round_data,
-                date_created__gte=today)
+                int_value=activity.pk,
+                round_data=round_data)
         return already_performed.count() > 0
 
     def is_available_now(self, activity):
