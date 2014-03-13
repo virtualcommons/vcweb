@@ -96,8 +96,8 @@ def update_session(request):
 @experimenter_required
 def get_session_events(request):
     """
-    Returns all the Experiment sessions, which falls within the given range,
-    in order to display on the calendar.
+    Returns the list of Experiment sessions that fall within the given range,
+    Used by calendar on he subject recruitment page to display experiment sessions falling in that period.
     """
     from_date = request.GET.get('from', None)
     to_date = request.GET.get('to', None)
@@ -159,11 +159,12 @@ def datetime_to_timestamp(date):
 @experimenter_required
 def send_invitations(request):
     """
-    Sends invitation email to random participants which match the required invitation criteria,
-    using the provided subject and message and returns the total number of invites sent.
+    Sends out invitation emails to random participants which match the required invitation criteria,
+    using the provided email subject and message. Also returns the total number of invites sent.
     """
     user = request.user
     form = SessionInviteForm(request.POST or None)
+    # Default Message
     message = "Please fill in all the details of the invitation form"
     if form.is_valid():
         invitation_subject = form.cleaned_data.get('invitation_subject')
@@ -183,7 +184,7 @@ def send_invitations(request):
             # belong to same experiment metadata(This is ensured as it is a constraint)
             experiment_metadata_pk = experiment_metadata_pk_list[0]
 
-            potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_university)
+            potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_university, only_undergrad=form.cleaned_data.get('only_undergrad'))
             potential_participants_count = len(potential_participants)
 
             final_participants = None
@@ -226,18 +227,11 @@ def send_invitations(request):
                                              plaintext_content,
                                              from_email,
                                              [from_email],
-                                             recipient_list)
+                                             recipient_list,
+                                             cc=['allen.lee@asu.edu'])
                 msg.attach_alternative(html_content, "text/html")
 
                 msg.send()
-
-                # email = EmailMessage(subject=invitation_subject,
-                #         body=invitation_text,
-                #         from_email=from_email,
-                #         to=[from_email],
-                #         bcc=recipient_list,
-                #         cc=['allen.lee@asu.edu'])
-                # email.send(fail_silently=False)
 
             return JsonResponse(dumps({
                 'success': True,
@@ -251,7 +245,7 @@ def send_invitations(request):
                 'message': message
             }))
     else:
-        # logger.debug("Form is not valid")
+        # Form is not valid
         return JsonResponse(dumps({
             'success': False,
             'message': message
@@ -259,7 +253,9 @@ def send_invitations(request):
 
 
 def invite_email_preview(request):
-    user = request.user
+    """
+    Generates email Preview for the provided invitation details
+    """
     form = SessionInviteForm(request.POST or None)
     message = "Please fill in all the details of the invitation form to preview email"
 
@@ -291,18 +287,19 @@ def invite_email_preview(request):
             'content': html_content
         }))
     else:
-        # logger.debug("Form is not valid")
+        # Form is not Valid
         return JsonResponse(dumps({
             'success': False,
             'message': message
         }))
 
 
-
-def get_potential_participants(experiment_metadata_pk, institution="Arizona S U", days_threshold=7):
+def get_potential_participants(experiment_metadata_pk, institution="Arizona S U", days_threshold=7, only_undergrad=True):
     """
     Returns the pool of participants which match the required invitation criteria.
     """
+    undergrad_choices = ['Freshman', 'Sophomore', 'Junior', 'Senior']
+
     try:
         affiliated_institution = Institution.objects.get(name=institution)
     except Institution.DoesNotExist:
@@ -312,9 +309,15 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona S U"
         # Get unlikely participants for the given parameters
         unlikely_participants = get_unlikely_participants(days_threshold, experiment_metadata_pk)
 
-        potential_participants = Participant.objects.filter(can_receive_invitations=True,
-                                                            institution=affiliated_institution)\
-            .exclude(pk__in=unlikely_participants)
+        if only_undergrad:
+            potential_participants = Participant.objects.filter(can_receive_invitations=True,
+                                                                institution=affiliated_institution,
+                                                                class_status__in=undergrad_choices)\
+                .exclude(pk__in=unlikely_participants)
+        else:
+            potential_participants = Participant.objects.filter(can_receive_invitations=True,
+                                                                institution=affiliated_institution)\
+                .exclude(pk__in=unlikely_participants)
     else:
         potential_participants = []
     return potential_participants

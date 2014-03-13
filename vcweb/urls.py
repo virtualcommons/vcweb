@@ -40,6 +40,7 @@ urlpatterns = patterns('',
 
     (r'^cas/login', 'cas.views.login'),
     (r'^cas/logout', 'cas.views.logout'),
+    (r'cas/error', 'vcweb.core.views.cas_error'),
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),

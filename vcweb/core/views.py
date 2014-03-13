@@ -24,6 +24,7 @@ from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperi
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
                                Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation, ParticipantSignup,
                                ExperimentSession, Experimenter, ExperimentParameterValue, RoundConfiguration, RoundParameterValue, Parameter)
+from cas.backends import CASBackend
 import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
@@ -953,75 +954,146 @@ def get_participant_sessions(request):
     return render(request, "participant/participant-index.html", {"invitation_list": new_list, "success": success})
 
 
-def get_cas_user(tree):
-    """
-    Callback invoked by the CAS module that ensures that the user signing in via CAS has a valid Django User associated
-    with them. Primary responsibility is to create a Django User / Participant if none existed, or to associate the CAS
-    login id with the given User. This needs to be done *before* the CAS module creates a User object so that we don't
-    end up creating duplicate users with a different username and the same email address.
 
+
+
+
+
+
+class UniversityProfile:
+    """
+    A class that encapsulates the complexity of getting the user profile from the WEB Directory
+    """
+
+    def __init__(self, username):
+        self.profile_url = settings.WEB_DIRECTORY_URL + username
+        self.profile_data = None
+
+    def __get_profile(self):
+        parsed = ET.parse(urllib2.urlopen(urllib2.Request(self.profile_url, headers={"Accept": "application/xml"})))
+        root = parsed.getroot()
+        self.profile_data = root.find('person')
+
+    def get_first_name(self):
+        if not self.profile_data:
+            self.__get_profile()
+        return self.profile_data.find('firstName').text
+
+    def get_last_name(self):
+        if not self.profile_data:
+            self.__get_profile()
+        return self.profile_data.find('lastName').text
+
+    def get_email(self):
+        if not self.profile_data:
+            self.__get_profile()
+        return self.profile_data.find('email').text
+
+    def get_major(self):
+        if not self.profile_data:
+            self.__get_profile()
+        plans = self.profile_data.find('plans')
+        plan = plans.find('plan')
+        return plan.find('acadPlanDescr').text
+
+    def get_class_status(self):
+        if not self.profile_data:
+            self.__get_profile()
+        plans = self.profile_data.find('plans')
+        plan = plans.find('plan')
+        return plan.find('acadCareerDescr').text
+
+
+class PopulatedCASBackend(CASBackend):
+    """
+    CAS authentication backend with user data populated from University Web Directory.
+
+    Primary responsibility is to modify the Django user details and create vcweb Participant if the user was
+    created by the CAS
     1. If no Django user exists with the given username (institutional username), get details from the ASU web directory
     (FIXME: this is brittle and specific to ASU, will need to update if we ever roll CAS login out for other
     institutions) and populate a Django user / vcweb Participant with those details
-    2. If a Django user does exist with the given institutional username (e.g., asurite) there are a few corner cases to
+
+    """
+    def authenticate(self, ticket, service):
+        """Authenticates CAS ticket and retrieves user data"""
+        user = super(PopulatedCASBackend, self).authenticate(
+            ticket, service)
+
+        # If user is not in the system then an user with empty fields will be created by the CAS.
+        # Update the user details by fetching the data from the University Web Directory
+        if not user.email:
+            user_profile = UniversityProfile(user.username)
+            email = user_profile.get_email()
+
+            # Create vcweb Participant only if the user is an undergrad student
+            if user_profile.get_class_status() == "Undergraduate":
+                user.first_name = user_profile.get_first_name()
+                user.last_name = user_profile.get_last_name()
+                user.email = user_profile.get_email()
+
+                password = User.objects.make_random_password()
+                user.set_password(password)
+
+                institution, institution_created = Institution.objects.get_or_create(name=settings.CAS_UNIVERSITY_NAME)
+
+                if institution_created:
+                    institution.url = settings.CAS_UNIVERSITY_URL
+                    institution.cas_server_url = settings.CAS_SERVER_URL
+                    institution.save()
+
+                participant = Participant(user=user)
+                participant.major = user_profile.get_major()
+                participant.institution = institution
+                participant.institution_username = user.username
+                participant.save()
+                user.save()
+                reset_password(email)
+            else:
+                # Delete the user as it has an "unusable" password
+                user.delete()
+                raise PermissionDenied("We don't take Grad student registrations for the time being.")
+        return user
+
+
+def get_cas_user(tree):
+    """
+    Callback invoked by the CAS module that ensures that the user signing in via CAS has a valid Django User associated
+    with them. Primary responsibility is to associate the CAS login id with the given User.
+    This needs to be done *before* the CAS module creates a User object so that we don't end up creating duplicate users
+    with a different username and the same email address.
+
+    1. If a Django user does exist with the given institutional username (e.g., asurite) there are a few corner cases to
     consider:
     a. the account could have been created before CAS was implemented, so there is no institutional username set (or
     it's set to the email address instead of the ASURITE id). In this case we need to set the username to
     the ASURITE id
     b. easy case, the account was created via CAS and all the fields are correct
 
+    To make it working for any specific institution you'll need to change the CAS settings in the settings.py file
+
+    Following settings are important and required by the VCWEB and are university specific
+
+    1. CAS_UNIVERSITY_NAME - The university name of the CAS provider
+    2. CAS_UNIVERSITY_URL - The web url of the University
+    3. WEB_DIRECTORY_URL - The web Url provided by the university to get the details about the user
+    4. CAS_SERVER_URL - The CAS Url used by the university to centrally authorize users
+    5. CAS_REDIRECT_URL - The redirect url holds the relative url to which the user should be re-directed by successful authentication
+    6. CAS_RESPONSE_CALLBACKS - The call back function that is being called after the successful authentication by CAS
     """
     username = tree[0][0].text.lower()
-    url = settings.WEB_DIRECTORY_URL + username
-    user_created = False
 
     try:
-        user = User.objects.get(username=username)
+        User.objects.get(username=username)
     except ObjectDoesNotExist:
-        logger.debug("User Not Found")
-        # Get the email from the ASU Web Directory
-        r = urllib2.Request(url, headers={"Accept": "application/xml"})
-        parsed = ET.parse(urllib2.urlopen(r))
-        root = parsed.getroot()
-        person = root.find('person')
-        email = person.find('email').text.lower()
+        user_profile = UniversityProfile(username)
+        email = user_profile.get_email()
         try:
             user = User.objects.get(username=email)
             user.username = username
             user.save()
         except ObjectDoesNotExist:
-            logger.debug("USer Not Found")
-            user = User.objects.create_user(username=username)
-            user_created = True
-
-    if user_created:
-        first_name = person.find('firstName').text
-        last_name = person.find('lastName').text
-        email = person.find('email').text
-
-        user.first_name = first_name
-        user.last_name = last_name
-        user.email = email
-        password = User.objects.make_random_password()
-        user.set_password(password)
-
-        plans = person.find('plans')
-        plan = plans.find('plan')
-        major = plan.find('acadPlanDescr').text
-        institution, institution_created = Institution.objects.get_or_create(name=settings.CAS_UNIVERSITY_NAME)
-        if institution_created:
-            institution.url = settings.CAS_UNIVERSITY_URL
-            institution.cas_server_url = settings.CAS_SERVER_URL
-            institution.save()
-
-        participant = Participant(user=user)
-        participant.major = major
-        participant.institution = institution
-        participant.institution_username = username
-        participant.save()
-        user.save()
-        reset_password(email)
-
+            logger.debug("User Does not exist in System")
 
 
 def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):
@@ -1031,6 +1103,10 @@ def reset_password(email, from_email='vcweb@asu.edu', template='registration/pas
         domain = "vcweb.asu.edu"
         return form.save(from_email=from_email, email_template_name=template, domain_override=domain)
     return None
+
+
+def cas_error(request):
+    return render(request, 'cas_access_forbidden.html')
 
 
 def handler500(request):

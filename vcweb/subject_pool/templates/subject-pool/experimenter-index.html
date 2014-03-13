@@ -22,7 +22,7 @@ Experiment Session Management
                                 Invite participants by selecting the checkboxes next to the experiment sessions and
                                 clicking the "Invite" button.
                             </div>
-                            <div data-bind='template: { name: "session-template", foreach: activeSessions }'></div>
+                            <div id="active-sessions" data-bind='template: { name: "session-template", foreach: activeSessions }'></div>
                         </div>
                         <div data-bind='if: activeSessions().length == 0'>
                             <div class="callout callout-warning">
@@ -410,7 +410,7 @@ Experiment Session Management
                 };
 
                 model.onInvite = function(formElement) {
-                    var session_pk_list = $('#active').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
+                    var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
                     if(session_pk_list.length) {
                         var formData = $(formElement).serialize()  + '&session_pk_list='+ session_pk_list;
                         $.ajax("/subject-pool/session/invite", {
@@ -419,7 +419,7 @@ Experiment Session Management
                             success: function(result) {
                                 if(result.success == true){
                                     $('#invite-form').slideUp("slow");
-                                    $('#active').find('input[type=checkbox]:checked').removeAttr('checked');
+                                    $('#active-sessions').find('input[type=checkbox]:checked').removeAttr('checked');
                                     model.inviteCount(0);
                                     model.invite_experiment_metadata_pk_list = -1;
                                     $("#error-messages").html('<div class="alert alert-success">' + result.message + '</strong></div>');
@@ -441,7 +441,7 @@ Experiment Session Management
                 };
 
                 model.emailPreview = function(data, event) {
-                    var session_pk_list = $('#active').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
+                    var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
                     if(session_pk_list.length) {
                         var formData = $("#invite-form form").serialize()  + '&session_pk_list='+ session_pk_list;
 

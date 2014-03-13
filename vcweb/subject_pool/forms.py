@@ -1,6 +1,6 @@
 import autocomplete_light
 from django import forms
-from django.forms import widgets, ModelForm
+from django.forms import widgets, ModelForm, CheckboxInput
 from vcweb.core.models import ParticipantSignup
 from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete
 from vcweb.core.forms import NumberInput
@@ -51,6 +51,7 @@ class SessionForm(forms.Form):
 
 class SessionInviteForm(forms.Form):
     no_of_people = forms.IntegerField(widget=NumberInput(attrs={'value': 50, 'class': 'input-mini'}))
+    only_undergrad = forms.BooleanField(widget=CheckboxInput(attrs={'checked': True}))
     affiliated_university = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete))
     invitation_subject = forms.CharField(widget=widgets.TextInput())
     invitation_text = forms.CharField(widget=widgets.Textarea(attrs={'rows': '4'}))

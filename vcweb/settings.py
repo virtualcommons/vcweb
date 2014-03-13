@@ -181,7 +181,8 @@ DEFAULT_FROM_EMAIL = 'commons@asu.edu'
 
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (
-    'cas.backends.CASBackend',
+    # 'cas.backends.CASBackend',
+    'vcweb.core.views.PopulatedCASBackend',
     "vcweb.core.auth.AuthenticationBackend",
     "django.contrib.auth.backends.ModelBackend",
 )
@@ -333,3 +334,4 @@ CAS_REDIRECT_URL = "/dashboard"
 CAS_RESPONSE_CALLBACKS = (
     'vcweb.core.views.get_cas_user',
 )
+CAS_CUSTOM_FORBIDDEN = 'vcweb.core.views.cas_error'
