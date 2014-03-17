@@ -15,15 +15,20 @@ from django.views.generic.detail import SingleObjectMixin
 from vcweb import settings
 from vcweb.core import dumps
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
-from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm, UpdateExperimentForm, 
+from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
+                              UpdateExperimentForm,
                               ParticipantGroupIdForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
-                              RegisterExcelParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm, ExperimentConfigurationForm,
+                              RegisterExcelParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm,
+                              ExperimentConfigurationForm,
                               ExperimentParameterValueForm, RoundConfigurationForm, RoundParameterValuesForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
-                               ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment, ExperimentMetadata,
-                               Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation, ParticipantSignup,
-                               ExperimentSession, Experimenter, ExperimentParameterValue, RoundConfiguration, RoundParameterValue, Parameter)
+                               ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment,
+                               ExperimentMetadata,
+                               Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation,
+                               ParticipantSignup,
+                               ExperimentSession, Experimenter, ExperimentParameterValue, RoundConfiguration,
+                               RoundParameterValue, Parameter)
 from cas.backends import CASBackend
 import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
@@ -382,8 +387,8 @@ def update_account_profile(request):
                     }))
 
             for attr in (
-                'major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food', 'favorite_sport',
-                'favorite_color', 'favorite_movie_genre'):
+                    'major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food', 'favorite_sport',
+                    'favorite_color', 'favorite_movie_genre'):
                 setattr(p, attr, form.cleaned_data.get(attr))
 
             for attr in ('first_name', 'last_name', 'email'):
@@ -657,6 +662,7 @@ def export_configuration(request, pk=None, file_extension='.xml'):
     response['Content-Disposition'] = 'attachment; filename=%s' % experiment.configuration_file_name(file_extension)
     experiment.experiment_configuration.serialize(stream=response)
     return response
+
 
 # FIXME: add data converter objects to write to csv, excel, etc.
 @experimenter_required
@@ -954,13 +960,13 @@ def get_participant_sessions(request):
     return render(request, "participant/participant-index.html", {"invitation_list": new_list, "success": success})
 
 
-
 class UniversityProfile(object):
     """
     A class that encapsulates the complexity of getting the user profile from the WEB Directory
     """
 
     def __init__(self, username):
+        logger.debug("The username provided was %s", username)
         self.username = username
         parsed = ET.parse(urllib2.urlopen(urllib2.Request(self.profile_url, headers={"Accept": "application/xml"})))
         root = parsed.getroot()
@@ -987,15 +993,17 @@ class UniversityProfile(object):
 
     @property
     def plans(self):
-        if self.plans is None:
-            self.plans = self.profile_data.find('plans')
-        return self.plans
+        try:
+            return self.profile_data.find('plans')
+        except:
+            return None
 
     @property
     def plan(self):
-        if self.plan is None:
-            self.plan = self.profile_data.find('plan')
-        return self.plan
+        try:
+            return self.plans.find('plan')
+        except:
+            return None
 
     @property
     def major(self):
@@ -1011,10 +1019,13 @@ class UniversityProfile(object):
         except:
             return None
 
-
     @property
     def is_undergraduate(self):
         return self.class_status == "Undergraduate"
+
+    @property
+    def is_graduate(self):
+        return self.class_status == "Graduate"
 
 
 class PopulatedCASBackend(CASBackend):
@@ -1022,53 +1033,67 @@ class PopulatedCASBackend(CASBackend):
     CAS authentication backend with user data populated from University Web Directory.
 
     Primary responsibility is to modify the Django user details and create vcweb Participant if the user was
-    created by the CAS
+    created by the CAS (i.e user logging in is a new user)
     1. If no Django user exists with the given username (institutional username), get details from the ASU web directory
     (FIXME: this is brittle and specific to ASU, will need to update if we ever roll CAS login out for other
-    institutions) and populate a Django user / vcweb Participant with those details
-
+    institutions)
+        a. If the user is an undergrad student then populate the Django user / vcweb Participant with the details
+            fetched from the ASU web Directory
+        b. If the user is an Graduate student or Other than don't create the vcweb participant for that user.
     """
+
     def authenticate(self, ticket, service):
         """Authenticates CAS ticket and retrieves user data"""
         user = super(PopulatedCASBackend, self).authenticate(ticket, service)
 
         # If user is not in the system then an user with empty fields will be created by the CAS.
         # Update the user details by fetching the data from the University Web Directory
-        if not user.email:
+
+        if not user.email:  # A simple check to see if the user was created by the CAS or not
             user_profile = UniversityProfile(user.username)
             email = user_profile.email
             logger.debug("%s (%s)", user_profile, email)
 
+            user.first_name = user_profile.first_name
+            user.last_name = user_profile.last_name
+            user.email = user_profile.email
+
+            password = User.objects.make_random_password()
+            user.set_password(password)
+
+            institution, institution_created = Institution.objects.get_or_create(name=settings.CAS_UNIVERSITY_NAME)
+
+            if institution_created:
+                institution.url = settings.CAS_UNIVERSITY_URL
+                institution.cas_server_url = settings.CAS_SERVER_URL
+                institution.save()
+
             # Create vcweb Participant only if the user is an undergrad student
             if user_profile.is_undergraduate:
-                user.first_name = user_profile.first_name
-                user.last_name = user_profile.last_name
-                user.email = user_profile.email
-
-                password = User.objects.make_random_password()
-                user.set_password(password)
-
-                institution, institution_created = Institution.objects.get_or_create(name=settings.CAS_UNIVERSITY_NAME)
-
-                if institution_created:
-                    institution.url = settings.CAS_UNIVERSITY_URL
-                    institution.cas_server_url = settings.CAS_SERVER_URL
-                    institution.save()
 
                 participant = Participant(user=user)
                 participant.major = user_profile.major
                 participant.institution = institution
                 participant.institution_username = user.username
                 participant.save()
-                user.save()
-                reset_password(email)
-# FIXME: disabling this for now, this disallows experimenter login as well
-#            else:
+
+            elif user_profile.is_graduate:
+                logger.debug("The user is a grad student")
                 # FIXME: ensure this is a safe operation
                 # Delete the user as it has an "unusable" password
                 # user.delete()
-                
-#                raise PermissionDenied("Your account is currently disabled. Please contact us for more information.")
+                user.save()
+                reset_password(email)
+                raise PermissionDenied("Your account is currently disabled. Please contact us for more information.")
+
+            else:
+                # FIXME: Creating Experimenter request if the new user is not undergrad or a grad student
+                experimenter_request = ExperimenterRequest.objects.create(user=user)
+                logger.debug("creating new experimenter request: %s", experimenter_request)
+
+            user.save()
+            reset_password(email)
+
         return user
 
 
@@ -1104,12 +1129,13 @@ def get_cas_user(tree):
     except ObjectDoesNotExist:
         user_profile = UniversityProfile(username)
         logger.debug("found user profile %s (%s)", user_profile, user_profile.email)
-        email = user_profile.email
+
         try:
-            user = User.objects.get(username=email)
+            user = User.objects.get(username=user_profile.email)
             user.username = username
             user.save()
         except ObjectDoesNotExist:
+            # If this exception is throw it basically means that User Loggin in via CAS is a new user
             logger.debug("No user found with username %s", username)
 
 
@@ -1128,6 +1154,7 @@ def cas_error(request):
 
 def handler500(request):
     return render(request, '500.html')
+
 
 @experimenter_required
 def update_experiment_param_value(request, pk):
@@ -1166,6 +1193,7 @@ def update_experiment_param_value(request, pk):
             'success': False,
             'message': "error"
         }))
+
 
 @experimenter_required
 def update_round_param_value(request, pk):
@@ -1231,7 +1259,6 @@ def sort_round_configurations(old_sequence_number, new_sequence_number, exp_conf
 
 @experimenter_required
 def update_round_configuration(request, pk):
-
     form = RoundConfigurationForm(request.POST or None)
     request_type = request.POST['request_type']
     if request_type == 'delete':
@@ -1281,19 +1308,19 @@ def update_round_configuration(request, pk):
         'message': "error"
     }))
 
+
 @experimenter_required
 def update_experiment_configuration(request, pk):
-
     form = ExperimentConfigurationForm(request.POST or None)
 
     if form.is_valid():
         try:
             ec = ExperimentConfiguration.objects.get(pk=pk)
         except ObjectDoesNotExist:
-                return JsonResponse(dumps({
-                    'success': False,
-                    'message': "Experiment Configuration with provided pk does not exist"
-                }))
+            return JsonResponse(dumps({
+                'success': False,
+                'message': "Experiment Configuration with provided pk does not exist"
+            }))
 
         ec.experiment_metadata = form.cleaned_data.get('experiment_metadata')
         ec.name = form.cleaned_data.get('name')
@@ -1355,6 +1382,7 @@ def edit_experiment_configuration(request, pk):
         'experiment_config_form': ecf,
         'experiment_config': ec
     })
+
 
 @experimenter_required
 def clone_experiment_configuration(request):
