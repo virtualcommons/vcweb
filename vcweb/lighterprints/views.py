@@ -12,7 +12,7 @@ from vcweb.core.views import dumps, get_active_experiment, set_authentication_to
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (
         Activity, GroupScores, ActivityStatusList, do_activity, get_group_activity, can_view_other_groups,
-        get_lighterprints_experiment_metadata, get_time_remaining
+        get_lighterprints_experiment_metadata, get_time_remaining, is_linear_public_good_game,
         )
 
 from datetime import datetime
@@ -132,6 +132,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     if round_data is None:
         round_data = experiment.current_round_data
     compare_other_group = can_view_other_groups(round_configuration=round_configuration)
+    linear_public_good = is_linear_public_good_game(round_configuration.experiment_configuration)
     group_scores = GroupScores(experiment, round_data, participant_group_relationship=participant_group_relationship)
     total_participant_points = group_scores.total_participant_points
     group_data = group_scores.get_group_data_list()
@@ -154,6 +155,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         'firstVisit': first_visit,
         # FIXME: extract this from groupData instead..
         'groupLevel': own_group_level,
+        'linearPublicGood': linear_public_good,
         'averagePoints': group_scores.average_points(own_group),
         'pointsToNextLevel': group_scores.get_points_goal(own_group),
         'hasScheduledActivities': group_scores.has_scheduled_activities,

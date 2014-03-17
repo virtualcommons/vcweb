@@ -44,3 +44,5 @@ django-debug-toolbar
 #brabeion
 django-autocomplete-light
 git+ssh://git@github.com/kstateome/django-cas.git@0.9.1#egg=cas
+# for migratespool task
+mysql-connector-python

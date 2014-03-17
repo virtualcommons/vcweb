@@ -535,15 +535,13 @@ class ActivityAvailability(models.Model):
 
 
 @simplecache
-def get_available_activity_parameter():
-    return Parameter.objects.for_round(name='available_activity')
+def get_linear_public_good_parameter():
+    return Parameter.objects.for_experiment(name='linear_public_good')
+
 
 @simplecache
-def get_foursquare_category_ids(parent_category_name='Travel', subcategory_names=['Light Rail', 'Bike', 'Bus Station', 'Train Station']):
-    categories = fetch_foursquare_categories()
-    for parent_category in categories:
-        if parent_category_name in parent_category['name']:
-            return [subcategory['id'] for subcategory in parent_category['categories'] if subcategory['shortName'] in subcategory_names]
+def get_available_activity_parameter():
+    return Parameter.objects.for_round(name='available_activity')
 
 
 @simplecache
@@ -569,6 +567,11 @@ def get_experiment_completed_parameter():
 @simplecache
 def get_treatment_type_parameter():
     return Parameter.objects.get(name='treatment_type')
+
+
+def is_linear_public_good_game(experiment_configuration, default=True):
+    return experiment_configuration.get_parameter_value(parameter=get_linear_public_good_parameter(),
+            default=default).boolean_value
 
 
 def get_group_threshold(round_configuration, default=125):
