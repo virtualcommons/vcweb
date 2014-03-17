@@ -1028,18 +1028,22 @@ class UniversityProfile(object):
         return self.class_status == "Graduate"
 
 
+def is_new_user(user):
+    return not user.email and not user.first_name and not user.last_name
+
+
 class PopulatedCASBackend(CASBackend):
     """
     CAS authentication backend with user data populated from University Web Directory.
 
     Primary responsibility is to modify the Django user details and create vcweb Participant if the user was
     created by the CAS (i.e user logging in is a new user)
-    1. If no Django user exists with the given username (institutional username), get details from the ASU web directory
-    (FIXME: this is brittle and specific to ASU, will need to update if we ever roll CAS login out for other
-    institutions)
+    1. Get details from the ASU web directory (FIXME: this is brittle and specific to ASU, will need to update if we
+        ever roll CAS login out for other institutions)
         a. If the user is an undergrad student then populate the Django user / vcweb Participant with the details
-            fetched from the ASU web Directory
-        b. If the user is an Graduate student or Other than don't create the vcweb participant for that user.
+            fetched from the ASU web Directory.
+        b. If the user is not an undergrad student then don't create the vcweb participant for that user and
+            Redirect such users to error page. Moreover delete the newly created user.
     """
 
     def authenticate(self, ticket, service):
@@ -1049,51 +1053,42 @@ class PopulatedCASBackend(CASBackend):
         # If user is not in the system then an user with empty fields will be created by the CAS.
         # Update the user details by fetching the data from the University Web Directory
 
-        if not user.email:  # A simple check to see if the user was created by the CAS or not
+        # A simple check to see if the user was created by the CAS or not
+        if is_new_user(user):
             user_profile = UniversityProfile(user.username)
             email = user_profile.email
             logger.debug("%s (%s)", user_profile, email)
 
-            user.first_name = user_profile.first_name
-            user.last_name = user_profile.last_name
-            user.email = user_profile.email
-
-            password = User.objects.make_random_password()
-            user.set_password(password)
-
-            institution, institution_created = Institution.objects.get_or_create(name=settings.CAS_UNIVERSITY_NAME)
-
-            if institution_created:
-                institution.url = settings.CAS_UNIVERSITY_URL
-                institution.cas_server_url = settings.CAS_SERVER_URL
-                institution.save()
-
             # Create vcweb Participant only if the user is an undergrad student
             if user_profile.is_undergraduate:
+
+                user.first_name = user_profile.first_name
+                user.last_name = user_profile.last_name
+                user.email = user_profile.email
+
+                password = User.objects.make_random_password()
+                user.set_password(password)
+
+                institution, institution_created = Institution.objects.get_or_create(name=settings.CAS_UNIVERSITY_NAME)
+
+                if institution_created:
+                    institution.url = settings.CAS_UNIVERSITY_URL
+                    institution.cas_server_url = settings.CAS_SERVER_URL
+                    institution.save()
 
                 participant = Participant(user=user)
                 participant.major = user_profile.major
                 participant.institution = institution
                 participant.institution_username = user.username
                 participant.save()
-
-            elif user_profile.is_graduate:
-                logger.debug("The user is a grad student")
-                # FIXME: ensure this is a safe operation
-                # Delete the user as it has an "unusable" password
-                # user.delete()
                 user.save()
                 reset_password(email)
-                raise PermissionDenied("Your account is currently disabled. Please contact us for more information.")
 
             else:
-                # FIXME: Creating Experimenter request if the new user is not undergrad or a grad student
-                experimenter_request = ExperimenterRequest.objects.create(user=user)
-                logger.debug("creating new experimenter request: %s", experimenter_request)
-
-            user.save()
-            reset_password(email)
-
+                logger.debug("The user is not an undergrad student")
+                # Delete the user as it has an "unusable" password
+                user.delete()
+                raise PermissionDenied("Your account is currently disabled. Please contact us for more information.")
         return user
 
 
