@@ -955,53 +955,66 @@ def get_participant_sessions(request):
 
 
 
-
-
-
-
-
-class UniversityProfile:
+class UniversityProfile(object):
     """
     A class that encapsulates the complexity of getting the user profile from the WEB Directory
     """
 
     def __init__(self, username):
-        self.profile_url = settings.WEB_DIRECTORY_URL + username
-        self.profile_data = None
-
-    def __get_profile(self):
+        self.username = username
         parsed = ET.parse(urllib2.urlopen(urllib2.Request(self.profile_url, headers={"Accept": "application/xml"})))
         root = parsed.getroot()
         self.profile_data = root.find('person')
 
-    def get_first_name(self):
-        if not self.profile_data:
-            self.__get_profile()
+    def __str__(self):
+        return "retrieved %s from %s" % (self.profile_data, self.profile_url)
+
+    @property
+    def profile_url(self):
+        return settings.WEB_DIRECTORY_URL + self.username
+
+    @property
+    def first_name(self):
         return self.profile_data.find('firstName').text
 
-    def get_last_name(self):
-        if not self.profile_data:
-            self.__get_profile()
+    @property
+    def last_name(self):
         return self.profile_data.find('lastName').text
 
-    def get_email(self):
-        if not self.profile_data:
-            self.__get_profile()
-        return self.profile_data.find('email').text
+    @property
+    def email(self):
+        return self.profile_data.find('email').text.lower()
 
-    def get_major(self):
-        if not self.profile_data:
-            self.__get_profile()
-        plans = self.profile_data.find('plans')
-        plan = plans.find('plan')
-        return plan.find('acadPlanDescr').text
+    @property
+    def plans(self):
+        if self.plans is None:
+            self.plans = self.profile_data.find('plans')
+        return self.plans
 
-    def get_class_status(self):
-        if not self.profile_data:
-            self.__get_profile()
-        plans = self.profile_data.find('plans')
-        plan = plans.find('plan')
-        return plan.find('acadCareerDescr').text
+    @property
+    def plan(self):
+        if self.plan is None:
+            self.plan = self.profile_data.find('plan')
+        return self.plan
+
+    @property
+    def major(self):
+        try:
+            return self.plan.find('acadPlanDescr').text
+        except:
+            return None
+
+    @property
+    def class_status(self):
+        try:
+            return self.plan.find('acadCareerDescr').text
+        except:
+            return None
+
+
+    @property
+    def is_undergraduate(self):
+        return self.class_status == "Undergraduate"
 
 
 class PopulatedCASBackend(CASBackend):
@@ -1017,20 +1030,20 @@ class PopulatedCASBackend(CASBackend):
     """
     def authenticate(self, ticket, service):
         """Authenticates CAS ticket and retrieves user data"""
-        user = super(PopulatedCASBackend, self).authenticate(
-            ticket, service)
+        user = super(PopulatedCASBackend, self).authenticate(ticket, service)
 
         # If user is not in the system then an user with empty fields will be created by the CAS.
         # Update the user details by fetching the data from the University Web Directory
         if not user.email:
             user_profile = UniversityProfile(user.username)
-            email = user_profile.get_email()
+            email = user_profile.email
+            logger.debug("%s (%s)", user_profile, email)
 
             # Create vcweb Participant only if the user is an undergrad student
-            if user_profile.get_class_status() == "Undergraduate":
-                user.first_name = user_profile.get_first_name()
-                user.last_name = user_profile.get_last_name()
-                user.email = user_profile.get_email()
+            if user_profile.is_undergraduate:
+                user.first_name = user_profile.first_name
+                user.last_name = user_profile.last_name
+                user.email = user_profile.email
 
                 password = User.objects.make_random_password()
                 user.set_password(password)
@@ -1043,16 +1056,19 @@ class PopulatedCASBackend(CASBackend):
                     institution.save()
 
                 participant = Participant(user=user)
-                participant.major = user_profile.get_major()
+                participant.major = user_profile.major
                 participant.institution = institution
                 participant.institution_username = user.username
                 participant.save()
                 user.save()
                 reset_password(email)
-            else:
+# FIXME: disabling this for now, this disallows experimenter login as well
+#            else:
+                # FIXME: ensure this is a safe operation
                 # Delete the user as it has an "unusable" password
-                user.delete()
-                raise PermissionDenied("We don't take Grad student registrations for the time being.")
+                # user.delete()
+                
+#                raise PermissionDenied("Your account is currently disabled. Please contact us for more information.")
         return user
 
 
@@ -1087,13 +1103,14 @@ def get_cas_user(tree):
         User.objects.get(username=username)
     except ObjectDoesNotExist:
         user_profile = UniversityProfile(username)
-        email = user_profile.get_email()
+        logger.debug("found user profile %s (%s)", user_profile, user_profile.email)
+        email = user_profile.email
         try:
             user = User.objects.get(username=email)
             user.username = username
             user.save()
         except ObjectDoesNotExist:
-            logger.debug("User Does not exist in System")
+            logger.debug("No user found with username %s", username)
 
 
 def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):
