@@ -1,5 +1,4 @@
 from django.conf.urls import url, patterns
-from django.views.generic.base import TemplateView
 
 urlpatterns = patterns('vcweb.subject_pool.views',
     url(r'^session$', 'session_list_view', name='index'),
@@ -9,5 +8,4 @@ urlpatterns = patterns('vcweb.subject_pool.views',
     url(r'^session/invite$', 'send_invitations', name='send_invites'),
     url(r'^session/attendance$', 'manage_participant_attendance', name='participant_attendance'),
     url(r'^session/email-preview$', 'invite_email_preview', name='invite_email_preview'),
-    url(r'^ostromlab/faq$', TemplateView.as_view(template_name='subject-pool/ostromlab-faq.html'), name='ostromlab_faq'),
     )
