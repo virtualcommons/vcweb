@@ -4,19 +4,21 @@
 <h2>Ostrom Lab Frequently Asked Questions</h2>
 
 <div class='panel-group' id='accordion'>
+    {% for faq_entry in faq_entries %}
     <div class='panel panel-default'>
-        <h4 class='panel-title'>
-            <a data-toggle='collapse' data-parent='#accordion' href='#q1'>
-                Where is the Ostrom Lab located?
-            </a>
-        </h4>
-    </div>
-    <div id='q1' class='panel-collapse collapse in'>
-        <div class='panel-body'>
-            We conduct experiments in human decision making at the 
-            <a href='http://www.asu.edu/map/interactive/?campus=tempe&building=COWDN'>Elinor Ostrom Multi-Methods Laboratory, Cowden 124</a>.
-            You will find Cowden 124 right next to the south entrance of Cowden Hall.
+        <div class='panel-heading'>
+            <h4 class='panel-title'>
+                <a data-toggle='collapse' data-parent='#accordion' href='#q{{forloop.counter}}'>
+                    {{ faq_entry.question }}
+                </a>
+            </h4>
+        </div>
+        <div id='q{{forloop.counter}}' class='panel-collapse collapse in'>
+            <div class='panel-body'>
+                {{ faq_entry.answer|safe }}
+            </div>
         </div>
     </div>
+    {% endfor %}
 </div>
 {% endblock %}
