@@ -176,10 +176,7 @@ def dashboard(request):
 
 def is_profile_complete(participant):
     if participant.can_receive_invitations:
-        if participant.class_status and participant.gender and participant.favorite_sport and participant.favorite_color and participant.favorite_food and participant.favorite_movie_genre:
-            return True
-        else:
-            return False
+        return participant.class_status and participant.gender and participant.favorite_sport and participant.favorite_color and participant.favorite_food and participant.favorite_movie_genre
     else:
         return False
 
@@ -1378,6 +1375,10 @@ def edit_experiment_configuration(request, pk):
         'experiment_config': ec
     })
 
+def ostromlab_faq(request):
+    return render(request, 'ostromlab/faq.html', {
+        'faq_entries': OstromlabFaqEntry.objects.all()
+        })
 
 @experimenter_required
 def clone_experiment_configuration(request):

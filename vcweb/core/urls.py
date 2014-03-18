@@ -1,6 +1,5 @@
 from django.conf.urls import patterns, url
 from django.contrib.auth.decorators import login_required
-from django.views.generic.base import TemplateView
 from vcweb import settings
 from vcweb.core.ajax import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, archive,
         )
@@ -9,7 +8,7 @@ from vcweb.core.views import (dashboard, LoginView, LogoutView, monitor, #Regist
         check_survey_completed, Participate, download_data, export_configuration, api_logger, participant_api_login,
         api_logout, participant_ready, check_ready_participants, get_dashboard_view_model, update_experiment,
         update_round_configuration, edit_experiment_configuration, clone_experiment_configuration,
-        update_round_param_value, update_experiment_param_value, update_experiment_configuration)
+        update_round_param_value, update_experiment_param_value, update_experiment_configuration, ostromlab_faq)
 import logging
 import urllib
 
@@ -26,7 +25,7 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^accounts/profile/$', 'account_profile', name='profile'),
     url(r'^accounts/profile/update$', 'update_account_profile', name='update_profile'),
     url(r'^accounts/check-email$', 'check_user_email', name='check_email'),
-    url(r'^ostromlab/faq$', TemplateView.as_view(template_name='ostromlab/faq.html'), name='ostromlab_faq'),
+    url(r'^ostromlab/faq$', ostromlab_faq, name='ostromlab_faq'),
     url(r'^participate/?$', Participate.as_view(), name='participate'),
     url(r'^participate/survey-completed', completed_survey, name='survey_completed'),
     url(r'^participate/(?P<pk>\d+)/check-survey-completed', check_survey_completed, name='check_survey_completed'),

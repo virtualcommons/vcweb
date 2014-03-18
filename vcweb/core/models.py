@@ -246,6 +246,17 @@ class ExperimentMetadata(models.Model):
         ordering = ['namespace', 'date_created']
 
 
+class OstromlabFaqEntry(models.Model):
+    question = models.TextField(help_text=_("FAQ Question"))
+    answer = models.TextField(help_text=_("FAQ Answer"))
+    date_created = models.DateTimeField(default=datetime.now)
+    last_modified = AutoDateTimeField(default=datetime.now)
+    contributor = models.ForeignKey(User)
+
+    def __unicode__(self):
+        return u"%s\n\t%s" % (self.question, self.answer)
+
+
 class Institution(models.Model):
     name = models.CharField(max_length=255, unique=True)
     acronym = models.CharField(max_length=16, blank=True)
