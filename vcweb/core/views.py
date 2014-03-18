@@ -26,7 +26,7 @@ from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperi
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment,
                                ExperimentMetadata,
                                Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation,
-                               ParticipantSignup,
+                               ParticipantSignup, OstromlabFaqEntry,
                                ExperimentSession, Experimenter, ExperimentParameterValue, RoundConfiguration,
                                RoundParameterValue, Parameter)
 from cas.backends import CASBackend

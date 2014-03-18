@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from vcweb.core.models import Participant, Institution, set_full_name
-from vcweb.subject_pool.models import OstromlabFaqEntry
+from vcweb.core.models import OstromlabFaqEntry
 import mysql.connector
 
 import logging
