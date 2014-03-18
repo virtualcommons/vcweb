@@ -7,13 +7,11 @@
     {% for faq_entry in faq_entries %}
     <div class='panel panel-default'>
         <div class='panel-heading'>
-            <h4 class='panel-title'>
-                <a data-toggle='collapse' data-parent='#accordion' href='#q{{forloop.counter}}'>
-                    {{ faq_entry.question }}
-                </a>
-            </h4>
+            <a class='panel-title' data-toggle='collapse' data-parent='#accordion' href='#q{{forloop.counter}}'>
+                {{ faq_entry.question }}
+            </a>
         </div>
-        <div id='q{{forloop.counter}}' class='panel-collapse collapse in'>
+        <div id='q{{forloop.counter}}' class='panel-collapse collapse'>
             <div class='panel-body'>
                 {{ faq_entry.answer|safe }}
             </div>
