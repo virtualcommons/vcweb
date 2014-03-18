@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from vcweb.core.models import Participant, Institution, set_full_name
+from vcweb.subject_pool.models import OstromlabFaqEntry
 import mysql.connector
 
 import logging
@@ -12,10 +13,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = 'Migrates the legacy subject pool data into the vcweb subject pool'
 
-    def handle(self, *args, **options):
-        # open db connection to subject pool
-        cnx = mysql.connector.connect(user='spool', password='spool.migration', host='127.0.0.1', database='spool')
-        self.stdout.write("opened connection %s to spool database" % cnx)
+    def migrate_participants(self, cnx):
         cursor = cnx.cursor()
         query = ("SELECT u.username, u.fullName, u.dateCreated, u.emailAddress, p.gender, p.classStatus, p.major, p.affiliation "
                 " FROM user u inner join participant p on u.id=p.id "
@@ -44,11 +42,13 @@ class Command(BaseCommand):
             try:
                 u = User.objects.get(email=email)
                 self.stdout.write(u"user already exists: {}".format(u))
+                set_full_name(u, full_name)
                 existing_users.append(u)
             except User.DoesNotExist:
                 u = User(username=username, email=email, password=User.objects.make_random_password())
                 new_users.append(u)
                 set_full_name(u, full_name)
+            u.save()
             try:
                 p = Participant.objects.get(user=u)
                 self.stdout.write(u"Participant %s already exists" % p)
@@ -69,9 +69,26 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(u"Creating participant {} major: {} gender: {} class_status {} institution {}".format(p, p.major, p.gender, p.class_status, asu_institution))
                 new_participants.append(p)
-        User.objects.bulk_create(new_users)
+            if p.user is None or not p.user.pk:
+                self.stdout.write(u"XXX: participant %s with user %s, %s" % (p, p.user, p.user.pk))
+        # User.objects.bulk_create(new_users)
         Participant.objects.bulk_create(new_participants)
-        self.stdout.write("new participants: {}, existing users: {}".format(len(new_participants), len(existing_users)))
         self.stdout.write("existing users: %s" % existing_users)
         self.stdout.write("skipped users: %s" % skipped_participants)
+
+    def migrate_faq(self, cnx):
+        cursor = cnx.cursor()
+        cursor.execute("SELECT question, answer FROM faq_entry")
+        contributor = User.objects.get(pk=1)
+        for (question, answer) in cursor:
+            faq_entry, created = OstromlabFaqEntry.objects.get_or_create(question=question, answer=answer, contributor=contributor)
+            self.stdout.write("faq entry %s (%s)" % (faq_entry, created))
+
+
+    def handle(self, *args, **options):
+        # open db connection to subject pool
+        cnx = mysql.connector.connect(user='spool', password='spool.migration', host='127.0.0.1', database='spool')
+        self.stdout.write("opened connection %s to spool database" % cnx)
+        self.migrate_participants(cnx)
+        self.migrate_faq(cnx)
         cnx.close()
