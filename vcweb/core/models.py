@@ -1078,7 +1078,7 @@ class Experiment(models.Model):
         return RoundConfiguration.objects.get(experiment_configuration__experiment=self, sequence_number=sequence_number)
 
     ALLOWED_ACTIONS = ('advance_to_next_round', 'end_round', 'start_round', 'move_to_previous_round', 'activate',
-                       'deactivate', 'complete', 'restart_round', 'restart', 'clone', 'clear_participants')
+                       'deactivate', 'complete', 'restart_round', 'restart', 'clone', 'clear_participants', 'archive')
 
     def invoke(self, action_name, experimenter=None):
         if action_name in Experiment.ALLOWED_ACTIONS and experimenter == self.experimenter:
@@ -1092,10 +1092,10 @@ class Experiment(models.Model):
         if self.is_round_in_progress:
             self.end_round()
         if self.should_repeat:
-            self.current_repeated_round_sequence_number += 1
+            self.current_repeated_round_sequence_number = models.F('current_repeated_round_sequence_number') + 1
         elif self.has_next_round:
 # advance sequence number and blank out repeated round sequence number if necessary
-            self.current_round_sequence_number += 1
+            self.current_round_sequence_number = models.F('current_round_sequence_number') + 1
             self.current_repeated_round_sequence_number = 0
         else:
             logger.warning("trying to advance past the last round - no-op")
@@ -1200,6 +1200,9 @@ class Experiment(models.Model):
     def restart_round(self):
         self.end_round()
         self.start_round()
+
+    def archive(self):
+        self.complete()
 
     def complete(self):
         if self.is_round_in_progress:
