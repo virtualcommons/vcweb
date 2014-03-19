@@ -1393,8 +1393,10 @@ def clone_experiment_configuration(request):
 
 @participant_required
 def unsubscribe_user_email(request):
-    user = request.user
-    user.participant.can_receive_invitations = False
-    user.participant.save()
-
-    return render(request, 'account/account_unsubscribe.html')
+    if request.method == "GET":
+        return render(request, 'account/account_unsubscribe.html', {'success_message': False})
+    elif request.method == "POST":
+        user = request.user
+        user.participant.can_receive_invitations = False
+        user.participant.save()
+    return render(request, 'account/account_unsubscribe.html', {'success_message': True})

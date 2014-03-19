@@ -4,6 +4,7 @@
 
 {% block page %}
     <div>
+    {% if success_message %}
         <h1>Unsubscribe Successful</h1>
         <p>
             We are sorry to see you go, but it's your decision and we respect that.
@@ -14,5 +15,12 @@
         <p>
             Did you unsubscribe from this email by accident? If so then Resubscribe by enabling can receive Invitations in your account settings page.
         </p>
+    {% else %}
+        <h1>Action Confirmation</h1>
+        <p>Do you really want to unsubscribe?</p>
+        <form action={% url 'core:unsubscribe_user_email' %} method="POST">
+            <button class="btn btn-primary" type="submit">Continue</button>
+        </form>
+    {% endif %}
     </div>
 {% endblock page %}
