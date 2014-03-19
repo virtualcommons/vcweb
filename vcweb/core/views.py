@@ -1375,6 +1375,7 @@ def edit_experiment_configuration(request, pk):
         'experiment_config': ec
     })
 
+
 def ostromlab_faq(request):
     return render(request, 'ostromlab/faq.html', {
         'faq_entries': OstromlabFaqEntry.objects.all()
@@ -1388,3 +1389,12 @@ def clone_experiment_configuration(request):
     experimenter = request.user.experimenter
     cloned_experiment_configuration = experiment_configuration.clone(creator=experimenter)
     return JsonResponse(dumps({'success': True, 'experiment_configuration': cloned_experiment_configuration.to_dict()}))
+
+
+@participant_required
+def unsubscribe_user_email(request):
+    user = request.user
+    user.participant.can_receive_invitations = False
+    user.participant.save()
+
+    return render(request, 'account/account_unsubscribe.html')
