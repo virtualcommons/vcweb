@@ -8,7 +8,9 @@ from vcweb.core.views import (dashboard, LoginView, LogoutView, monitor, #Regist
         check_survey_completed, Participate, download_data, export_configuration, api_logger, participant_api_login,
         api_logout, participant_ready, check_ready_participants, get_dashboard_view_model, update_experiment,
         update_round_configuration, edit_experiment_configuration, clone_experiment_configuration,
-        update_round_param_value, update_experiment_param_value, update_experiment_configuration, ostromlab_faq)
+        unsubscribe, update_round_param_value, update_experiment_param_value, update_experiment_configuration,
+        ostromlab_faq,
+        )
 import logging
 import urllib
 
@@ -25,8 +27,8 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^accounts/profile/$', 'account_profile', name='profile'),
     url(r'^accounts/profile/update$', 'update_account_profile', name='update_profile'),
     url(r'^accounts/check-email$', 'check_user_email', name='check_email'),
-    url(r'^accounts/unsubscribe$', 'unsubscribe_user_email', name='unsubscribe_user_email'),
     url(r'^ostromlab/faq$', ostromlab_faq, name='ostromlab_faq'),
+    url(r'^accounts/unsubscribe$', unsubscribe, name='unsubscribe'),
     url(r'^participate/?$', Participate.as_view(), name='participate'),
     url(r'^participate/survey-completed', completed_survey, name='survey_completed'),
     url(r'^participate/(?P<pk>\d+)/check-survey-completed', check_survey_completed, name='check_survey_completed'),

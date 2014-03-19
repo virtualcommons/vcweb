@@ -1391,12 +1391,17 @@ def clone_experiment_configuration(request):
     return JsonResponse(dumps({'success': True, 'experiment_configuration': cloned_experiment_configuration.to_dict()}))
 
 
-@participant_required
-def unsubscribe_user_email(request):
-    if request.method == "GET":
-        return render(request, 'account/account_unsubscribe.html', {'success_message': False})
-    elif request.method == "POST":
-        user = request.user
-        user.participant.can_receive_invitations = False
-        user.participant.save()
-    return render(request, 'account/account_unsubscribe.html', {'success_message': True})
+@login_required
+def unsubscribe(request):
+    user = request.user
+    if is_participant(user) and user.participant.can_receive_invitations:
+        successfully_unsubscribed = False
+        if request.method == "POST":
+            user = request.user
+            user.participant.can_receive_invitations = False
+            user.participant.save(update_fields=['can_receive_invitations'])
+            successfully_unsubscribed = True
+        return render(request, 'account/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
+    else:
+        return render(request, 'invalid_request.html', {'message': "You aren't currently subscribed to our experiment session mailing list."})
+

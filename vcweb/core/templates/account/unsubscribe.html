@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %} Experiment Invitation Unsubscription {% endblock %}
+
+{% block page %}
+    <div>
+    {% if successfully_unsubscribed %}
+        <h2>Unsubscribe Successful</h2>
+        <p>
+            You will no longer receive invitations for experiments. If you continue receiving invitations please
+            contact us at <a href='mailto:ostromlab@asu.edu'>ostromlab@asu.edu</a>.
+        </p>
+        <p>
+        If you'd like to resubscribe visit your <a href='//acounts/profile'>account profile</a> and check the <b>can receive invitations</b> checkbox.
+        </p>
+    {% else %}
+        <h2>Unsubscribe</h2>
+        <p>To stop receiving email invitations to our experiments please confirm by clicking on the button below.</p>
+        <form action={% url 'core:unsubscribe' %} method="POST">
+            <button class="btn btn-primary" type="submit">Unsubscribe</button>
+        </form>
+    {% endif %}
+    </div>
+{% endblock page %}
