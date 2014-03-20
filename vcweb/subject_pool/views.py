@@ -41,7 +41,9 @@ def session_list_view(request):
 
     form = SessionInviteForm()
 
-    return render(request, "subject-pool/experimenter-index.html", {"view_model_json": dumps(session_data), "form": form})
+    return render(request, "subject-pool/experimenter-index.html",
+                  {"view_model_json": dumps(session_data), "form": form})
+
 
 @experimenter_required
 def update_session(request):
@@ -156,6 +158,38 @@ def datetime_to_timestamp(date):
         return ""
 
 
+def get_invitations_count(request):
+    """
+    API endpoint that returns the potential participant count based on the selected experiment metadata and Institution
+    """
+
+    session_pk_list = request.POST.get('session_pk_list').split(",")
+    affiliated_university = request.POST.get('affiliated_university')
+
+    experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
+    experiment_metadata_pk_list = experiment_sessions.values_list('experiment_metadata__pk', flat=True)
+
+    if len(set(experiment_metadata_pk_list)) == 1:
+        # get the experiment metadata pk of any session,
+        # as all sessions selected by experimenter to send invitations belong to same experiment metadata
+        # (This is ensured as it is a constraint)
+        experiment_metadata_pk = experiment_metadata_pk_list[0]
+
+        only_undergrad = request.POST.get('only_undergrad')
+
+        potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_university,
+                                                            only_undergrad=only_undergrad)
+        return JsonResponse(dumps({
+            'success': True,
+            'invitesCount': len(potential_participants)
+        }))
+    else:
+        return JsonResponse(dumps({
+            'success': False,
+            'invitesCount': 0
+        }))
+
+
 @experimenter_required
 def send_invitations(request):
     """
@@ -184,7 +218,8 @@ def send_invitations(request):
             # belong to same experiment metadata(This is ensured as it is a constraint)
             experiment_metadata_pk = experiment_metadata_pk_list[0]
 
-            potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_university, only_undergrad=form.cleaned_data.get('only_undergrad'))
+            potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_university,
+                                                                only_undergrad=form.cleaned_data.get('only_undergrad'))
             potential_participants_count = len(potential_participants)
 
             final_participants = None
@@ -198,7 +233,8 @@ def send_invitations(request):
                     final_participants = potential_participants
                 else:
                     final_participants = random.sample(potential_participants, invitation_count)
-                message = "Your invitations were sent to %s / %s participants." % (potential_participants_count, invitation_count)
+                message = "Your invitations were sent to %s / %s participants." % (
+                    potential_participants_count, invitation_count)
 
                 today = datetime.now()
                 invitations = []
@@ -206,8 +242,9 @@ def send_invitations(request):
                 for participant in final_participants:
                     recipient_list.append(participant.email)
                     for es in experiment_sessions:
-                        invitations.append(Invitation(participant=participant, experiment_session=es, date_created=today,
-                                                      sender=user))
+                        invitations.append(
+                            Invitation(participant=participant, experiment_session=es, date_created=today,
+                                       sender=user))
                 Invitation.objects.bulk_create(invitations)
 
                 plaintext_template = get_template('email/invitation-email.txt')
@@ -294,7 +331,8 @@ def invite_email_preview(request):
         }))
 
 
-def get_potential_participants(experiment_metadata_pk, institution="Arizona S U", days_threshold=7, only_undergrad=True):
+def get_potential_participants(experiment_metadata_pk, institution="Arizona S U", days_threshold=7,
+                               only_undergrad=True):
     """
     Returns the pool of participants which match the required invitation criteria.
     """
@@ -308,15 +346,14 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona S U"
     if affiliated_institution:
         # Get unlikely participants for the given parameters
         unlikely_participants = get_unlikely_participants(days_threshold, experiment_metadata_pk)
-
         if only_undergrad:
             potential_participants = Participant.objects.filter(can_receive_invitations=True,
                                                                 institution=affiliated_institution,
-                                                                class_status__in=undergrad_choices)\
+                                                                class_status__in=undergrad_choices) \
                 .exclude(pk__in=unlikely_participants)
         else:
             potential_participants = Participant.objects.filter(can_receive_invitations=True,
-                                                                institution=affiliated_institution)\
+                                                                institution=affiliated_institution) \
                 .exclude(pk__in=unlikely_participants)
     else:
         potential_participants = []
@@ -330,7 +367,7 @@ def get_unlikely_participants(days_threshold, experiment_metadata_pk):
     last_week_date = datetime.now() - timedelta(days=days_threshold)
     # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
     # given Experiment metadata
-    invited_in_last_threshold_days = Invitation.objects\
+    invited_in_last_threshold_days = Invitation.objects \
         .filter(date_created__gt=last_week_date, experiment_session__experiment_metadata__pk=experiment_metadata_pk)
 
     # filtered_list is the list of participants who have received invitations for the given
@@ -354,7 +391,7 @@ def manage_participant_attendance(request, pk=None):
     If request is GET, then the function will return the attendance formset. If request is POST then
     the function will update the Participant Attendance and return the updated formset.
     """
-    AttendanceFormSet = modelformset_factory(ParticipantSignup, form=ParticipantAttendanceForm,
+    attendanceformset = modelformset_factory(ParticipantSignup, form=ParticipantAttendanceForm,
                                              exclude=('date_created',), extra=0)
     es = ExperimentSession.objects.get(pk=pk)
     invitations_sent = Invitation.objects.filter(experiment_session=es)
@@ -364,7 +401,7 @@ def manage_participant_attendance(request, pk=None):
                       'capacity': es.capacity}
 
     if request.method == "POST":
-        formset = AttendanceFormSet(request.POST,
+        formset = attendanceformset(request.POST,
                                     queryset=ParticipantSignup.objects.select_related('invitation__participant')
                                     .filter(invitation__in=invitations_sent))
         if formset.is_valid():
@@ -375,6 +412,6 @@ def manage_participant_attendance(request, pk=None):
             messages.add_message(request, messages.ERROR,
                                  'Something went wrong...Your changes were not saved. Please try again')
     else:
-        formset = AttendanceFormSet(queryset=ParticipantSignup.objects.filter(invitation__in=invitations_sent))
+        formset = attendanceformset(queryset=ParticipantSignup.objects.filter(invitation__in=invitations_sent))
 
     return render(request, 'subject-pool/session_detail.html', {'session_detail': session_detail, 'formset': formset})

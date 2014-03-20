@@ -6,6 +6,7 @@ urlpatterns = patterns('vcweb.subject_pool.views',
     url(r'^session/events$', 'get_session_events', name='session_events'),
     url(r'^session/detail/event/(\d+)$', 'manage_participant_attendance', name='session_event_detail'),
     url(r'^session/invite$', 'send_invitations', name='send_invites'),
+    url(r'^session/invite/count$', 'get_invitations_count', name='get_invitations_count'),
     url(r'^session/attendance$', 'manage_participant_attendance', name='participant_attendance'),
     url(r'^session/email-preview$', 'invite_email_preview', name='invite_email_preview'),
     )

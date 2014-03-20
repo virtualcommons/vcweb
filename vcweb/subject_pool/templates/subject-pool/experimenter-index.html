@@ -41,6 +41,13 @@ Experiment Session Management
                             <form class="form-horizontal col-md-5" role="form" data-bind="submit: $root.onInvite">
                                 {%  bootstrap_form form layout="horizontal" label_class="col-md-5" field_class="col-md-7" %}
                                 <div class="form-group">
+                                    <label class="col-md-5 control-label">Potential Participants</label>
+                                    <div class="col-md-7" id="participant-count">
+                                        <span class="label label-info pull-left" style="margin-top: 7px;">NA</span>
+                                        <button type="button" class="btn pull-right">Check</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
                                     <div class="col-md-offset-5 col-md-7">
                                         <button type="submit" class="btn">Invite</button>
                                         <button type="button" class="btn" data-bind="click: $root.emailPreview">Email Preview</button>
@@ -251,6 +258,22 @@ Experiment Session Management
                     calendar.view($this.data('calendar-view'));
                 });
             });
+
+            $("#participant-count button").click(function() {
+                var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
+                if(session_pk_list.length) {
+                    var formData = $("#invite-form form").serialize()  + '&session_pk_list='+ session_pk_list;
+                    $.ajax("/subject-pool/session/invite/count", {
+                        type : "POST",
+                        data : formData,
+                        success: function(result) {
+                            $("#participant-count span").html(result.invitesCount);
+                        }
+                    });
+                }
+            });
+
+
 
             function SessionModel(sessionData, options) {
                 var self = this;
