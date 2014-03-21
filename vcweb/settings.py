@@ -334,4 +334,4 @@ CAS_REDIRECT_URL = "/cas/asu"
 CAS_RESPONSE_CALLBACKS = (
     'vcweb.core.views.get_cas_user',
 )
-CAS_CUSTOM_FORBIDDEN = 'vcweb.core.views.cas_error'
+CAS_CUSTOM_FORBIDDEN = 'cas_error'

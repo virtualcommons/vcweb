@@ -18,6 +18,7 @@ class EmailAuthenticationBackend(ModelBackend):
 
     FIXME: should we check for and handle Participant experiment auth codes separately from actual login?
     """
+
     def authenticate(self, username=None, password=None, **kwargs):
         lowercase_username = username.lower()
         try:
@@ -72,14 +73,16 @@ class ParticipantCASBackend(CASBackend):
                 institution = Institution.objects.get(name='Arizona State University')
                 user.save()
                 participant = Participant.objects.create(user=user, major=directory_profile.major,
-                        institution=institution, institution_username=user.username, class_status=directory_profile.class_status)
+                                                         institution=institution, institution_username=user.username,
+                                                         class_status=directory_profile.class_status)
                 logger.debug("CAS backend created participant %s from web directory", participant)
                 reset_password(email)
             else:
                 logger.debug("XXX: CAS authenticated user %s is not an undergrad student, deleting", user)
                 # Delete the user as it has an "unusable" password
                 user.delete()
-                raise PermissionDenied("Registration is only available to ASU undergraduates. Please contact us for more information.")
+                raise PermissionDenied(
+                    "Registration is only available to ASU undergraduates. Please contact us for more information.")
         return user
 
 

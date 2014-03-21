@@ -163,15 +163,16 @@ def dashboard(request):
             return redirect('core:profile')
 
     dashboard_view_model = DashboardViewModel(user)
-    return render(request, dashboard_view_model.template_name, {'dashboardViewModelJson': dashboard_view_model.to_json()})
+    return render(request, dashboard_view_model.template_name,
+                  {'dashboardViewModelJson': dashboard_view_model.to_json()})
 
 
 def cas_asu_registration(request):
     user = request.user
     if is_participant(user) and not user.participant.is_profile_complete:
         return render(request, 'account/asu_registration.html',
-                { 'dashboardViewModelJson': DashboardViewModel(user).to_json(),
-                    'form': AsuRegistrationForm(instance=user.participant)})
+                      {'dashboardViewModelJson': DashboardViewModel(user).to_json(),
+                       'form': AsuRegistrationForm(instance=user.participant)})
     else:
         return redirect('core:dashboard')
 
@@ -1003,7 +1004,6 @@ class ASUWebDirectoryProfile(object):
         return self.class_status == "Graduate"
 
 
-
 def get_cas_user(tree):
     """
     Callback invoked by the CAS module that ensures that the user signing in via CAS has a valid Django User associated
@@ -1289,7 +1289,8 @@ def edit_experiment_configuration(request, pk):
 def ostromlab_faq(request):
     return render(request, 'ostromlab/faq.html', {
         'faq_entries': OstromlabFaqEntry.objects.all()
-        })
+    })
+
 
 @experimenter_required
 def clone_experiment_configuration(request):
@@ -1313,5 +1314,6 @@ def unsubscribe(request):
             successfully_unsubscribed = True
         return render(request, 'account/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
     else:
-        return render(request, 'invalid_request.html', {'message': "You aren't currently subscribed to our experiment session mailing list."})
+        return render(request, 'invalid_request.html',
+                      {'message': "You aren't currently subscribed to our experiment session mailing list."})
 
