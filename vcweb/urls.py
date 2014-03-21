@@ -39,9 +39,9 @@ urlpatterns = patterns('',
     url(r'', include('vcweb.core.urls', namespace='core', app_name='core')),
     url(r'^autocomplete/', include('autocomplete_light.urls')),
 
-    (r'^cas/login', 'cas.views.login'),
-    (r'^cas/logout', 'cas.views.logout'),
-    (r'cas/error', 'vcweb.core.views.cas_error'),
+    url(r'^cas/login', 'cas.views.login'),
+    url(r'^cas/logout', 'cas.views.logout'),
+    url(r'^cas/error', TemplateView.as_view(template_name='cas_access_forbidden.html'), name='cas_error'),
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),

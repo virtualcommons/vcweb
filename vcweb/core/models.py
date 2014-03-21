@@ -1092,10 +1092,11 @@ class Experiment(models.Model):
         if self.is_round_in_progress:
             self.end_round()
         if self.should_repeat:
-            self.current_repeated_round_sequence_number = models.F('current_repeated_round_sequence_number') + 1
+            self.current_repeated_round_sequence_number += 1
         elif self.has_next_round:
 # advance sequence number and blank out repeated round sequence number if necessary
-            self.current_round_sequence_number = models.F('current_round_sequence_number') + 1
+            # self.current_round_sequence_number = models.F('current_round_sequence_number') + 1
+            self.current_round_sequence_number += 1
             self.current_repeated_round_sequence_number = 0
         else:
             logger.warning("trying to advance past the last round - no-op")
@@ -2046,7 +2047,8 @@ class Participant(CommonsUser):
     FOOD_CHOICES = Choices('Fast food', 'Haute cuisine', 'Asian', 'Mexican', 'Other')
     MOVIE_GENRE_CHOICES = Choices('Family', 'Action', 'Comedy', 'Science Fiction', 'Documentary', 'Cult', 'Sport',
             'Musical', 'Horror', 'Foreign', 'Romance', 'Independent', 'Drama')
-    can_receive_invitations = models.BooleanField(default=False)
+    UNDERGRADUATE_CLASS_CHOICES = ('Freshman', 'Sophomore', 'Junior', 'Senior')
+    can_receive_invitations = models.BooleanField(default=False, help_text=_("Check this box if you'd like to opt-in and receive email invitations for upcoming experiments"))
     groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participant_set')
     experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participant_set')
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
@@ -2058,8 +2060,14 @@ class Participant(CommonsUser):
     favorite_color = models.CharField(max_length=32, choices=COLOR_CHOICES, blank=True)
     favorite_food = models.CharField(max_length=32, choices=FOOD_CHOICES, blank=True)
     favorite_movie_genre = models.CharField(max_length=64, choices=MOVIE_GENRE_CHOICES, blank=True)
-    
-    UNDERGRADUATE_CLASS_CHOICES = ('Freshman', 'Sophomore', 'Junior', 'Senior')
+
+    @property
+    def is_profile_complete(self):
+        if self.can_receive_invitations:
+            return self.class_status and self.gender and self.favorite_sport and self.favorite_color and self.favorite_food and self.favorite_movie_genre
+        else:
+            # incomplete profile doesn't matter if they're not set to receive experiment invitations
+            return True
 
     @property
     def undergraduate(self):
@@ -2075,6 +2083,8 @@ class Participant(CommonsUser):
             return date_created + delta > now
         return False
 
+    def __unicode__(self):
+        return u"(email: %s) (class: %s) (major: %s) (gender: %s) (username: %s)" % (self.user.email, self.class_status, self.major, self.gender, self.user.username)
 
     class Meta:
         ordering = ['user']

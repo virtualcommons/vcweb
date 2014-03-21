@@ -182,8 +182,8 @@ DEFAULT_FROM_EMAIL = 'commons@asu.edu'
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (
     # 'cas.backends.CASBackend',
-    'vcweb.core.views.PopulatedCASBackend',
-    "vcweb.core.auth.AuthenticationBackend",
+    'vcweb.core.backends.ParticipantCASBackend',
+    "vcweb.core.backends.EmailAuthenticationBackend",
     "django.contrib.auth.backends.ModelBackend",
 )
 
@@ -329,7 +329,7 @@ CAS_SERVER_URL = "https://weblogin.asu.edu/cas/"
 CAS_IGNORE_REFERER = True,
 # CAS_LOGOUT_COMPLETELY = True
 # CAS_PROVIDE_URL_TO_LOGOUT = True
-CAS_REDIRECT_URL = "/dashboard"
+CAS_REDIRECT_URL = "/cas/asu"
 
 CAS_RESPONSE_CALLBACKS = (
     'vcweb.core.views.get_cas_user',

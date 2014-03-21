@@ -1,6 +1,5 @@
 from collections import defaultdict
-import urllib2
-import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 # from django.contrib.auth.forms import PasswordResetForm
@@ -16,9 +15,9 @@ from vcweb import settings
 from vcweb.core import dumps
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
-                              UpdateExperimentForm,
+                              UpdateExperimentForm, AsuRegistrationForm,
                               ParticipantGroupIdForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
-                              RegisterExcelParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm,
+                              LogMessageForm, BookmarkExperimentMetadataForm,
                               ExperimentConfigurationForm,
                               ExperimentParameterValueForm, RoundConfigurationForm, RoundParameterValuesForm)
 from vcweb.core.http import JsonResponse
@@ -29,21 +28,17 @@ from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperi
                                ParticipantSignup, OstromlabFaqEntry,
                                ExperimentSession, Experimenter, ExperimentParameterValue, RoundConfiguration,
                                RoundParameterValue, Parameter)
-from cas.backends import CASBackend
-import unicodecsv
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
 import tempfile
-from datetime import datetime, timedelta
-
+import urllib2
+import xml.etree.ElementTree as ET
+import unicodecsv
+import logging
 import mimetypes
 
 mimetypes.init()
-
-import logging
-
 logger = logging.getLogger(__name__)
-
 SUCCESS_JSON = dumps({'success': True})
 FAILURE_JSON = dumps({'success': False})
 
@@ -164,21 +159,21 @@ def dashboard(request):
     """
     user = request.user
     if is_participant(user):
-        # first_login = (user.last_login - user.date_joined) <= timedelta(seconds=5)
-        profile_complete = is_profile_complete(user.participant)
-        if not profile_complete:
+        if not user.participant.is_profile_complete:
             return redirect('core:profile')
 
     dashboard_view_model = DashboardViewModel(user)
-    return render(request, dashboard_view_model.template_name,
-                  {'dashboardViewModelJson': dashboard_view_model.to_json()})
+    return render(request, dashboard_view_model.template_name, {'dashboardViewModelJson': dashboard_view_model.to_json()})
 
 
-def is_profile_complete(participant):
-    if participant.can_receive_invitations:
-        return participant.class_status and participant.gender and participant.favorite_sport and participant.favorite_color and participant.favorite_food and participant.favorite_movie_genre
+def cas_asu_registration(request):
+    user = request.user
+    if is_participant(user) and not user.participant.is_profile_complete:
+        return render(request, 'account/asu_registration.html',
+                { 'dashboardViewModelJson': DashboardViewModel(user).to_json(),
+                    'form': AsuRegistrationForm(instance=user.participant)})
     else:
-        return False
+        return redirect('core:dashboard')
 
 
 @login_required
@@ -527,23 +522,6 @@ def monitor(request, pk=None):
     else:
         logger.warning("unauthorized access to experiment %s by user %s", experiment, user)
         raise PermissionDenied("You do not have access to %s" % experiment)
-
-
-def upload_excel_participants_file(request):
-    if request.method == 'POST':
-        form = RegisterExcelParticipantsForm(request.POST, request.FILES)
-        if form.is_valid():
-            import xlrd
-
-            participant = request.user.participant
-            experiment_id = form.cleaned_data.get('experiment_pk')
-            experiment = get_object_or_404(Experiment, pk=experiment_id)
-            uploaded_file = request.FILES['file']
-            with tempfile.NamedTemporaryFile() as dst:
-                for chunk in uploaded_file.chunks():
-                    dst.write(chunk)
-                workbook = xlrd.open_workbook(filename=dst.name)
-                logger.debug("workbook: %s", workbook)
 
 
 class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView):
@@ -957,7 +935,7 @@ def get_participant_sessions(request):
     return render(request, "participant/participant-index.html", {"invitation_list": new_list, "success": success})
 
 
-class UniversityProfile(object):
+class ASUWebDirectoryProfile(object):
     """
     A class that encapsulates the complexity of getting the user profile from the WEB Directory
     """
@@ -1025,69 +1003,6 @@ class UniversityProfile(object):
         return self.class_status == "Graduate"
 
 
-def is_new_user(user):
-    return not user.email and not user.first_name and not user.last_name
-
-
-class PopulatedCASBackend(CASBackend):
-    """
-    CAS authentication backend with user data populated from University Web Directory.
-
-    Primary responsibility is to modify the Django user details and create vcweb Participant if the user was
-    created by the CAS (i.e user logging in is a new user)
-    1. Get details from the ASU web directory (FIXME: this is brittle and specific to ASU, will need to update if we
-        ever roll CAS login out for other institutions)
-        a. If the user is an undergrad student then populate the Django user / vcweb Participant with the details
-            fetched from the ASU web Directory.
-        b. If the user is not an undergrad student then don't create the vcweb participant for that user and
-            Redirect such users to error page. Moreover delete the newly created user.
-    """
-
-    def authenticate(self, ticket, service):
-        """Authenticates CAS ticket and retrieves user data"""
-        user = super(PopulatedCASBackend, self).authenticate(ticket, service)
-
-        # If user is not in the system then an user with empty fields will be created by the CAS.
-        # Update the user details by fetching the data from the University Web Directory
-
-        # A simple check to see if the user was created by the CAS or not
-        if is_new_user(user):
-            user_profile = UniversityProfile(user.username)
-            email = user_profile.email
-            logger.debug("%s (%s)", user_profile, email)
-
-            # Create vcweb Participant only if the user is an undergrad student
-            if user_profile.is_undergraduate:
-
-                user.first_name = user_profile.first_name
-                user.last_name = user_profile.last_name
-                user.email = user_profile.email
-
-                password = User.objects.make_random_password()
-                user.set_password(password)
-
-                institution, institution_created = Institution.objects.get_or_create(name=settings.CAS_UNIVERSITY_NAME)
-
-                if institution_created:
-                    institution.url = settings.CAS_UNIVERSITY_URL
-                    institution.cas_server_url = settings.CAS_SERVER_URL
-                    institution.save()
-
-                participant = Participant(user=user)
-                participant.major = user_profile.major
-                participant.institution = institution
-                participant.institution_username = user.username
-                participant.save()
-                user.save()
-                reset_password(email)
-
-            else:
-                logger.debug("The user is not an undergrad student")
-                # Delete the user as it has an "unusable" password
-                user.delete()
-                raise PermissionDenied("Your account is currently disabled. Please contact us for more information.")
-        return user
-
 
 def get_cas_user(tree):
     """
@@ -1119,9 +1034,8 @@ def get_cas_user(tree):
     try:
         User.objects.get(username=username)
     except ObjectDoesNotExist:
-        user_profile = UniversityProfile(username)
+        user_profile = ASUWebDirectoryProfile(username)
         logger.debug("found user profile %s (%s)", user_profile, user_profile.email)
-
         try:
             user = User.objects.get(username=user_profile.email)
             user.username = username
@@ -1138,10 +1052,6 @@ def reset_password(email, from_email='vcweb@asu.edu', template='registration/pas
         domain = "vcweb.asu.edu"
         return form.save(from_email=from_email, email_template_name=template, domain_override=domain)
     return None
-
-
-def cas_error(request):
-    return render(request, 'cas_access_forbidden.html')
 
 
 def handler500(request):

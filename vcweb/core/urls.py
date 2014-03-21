@@ -9,7 +9,7 @@ from vcweb.core.views import (dashboard, LoginView, LogoutView, monitor, #Regist
         api_logout, participant_ready, check_ready_participants, get_dashboard_view_model, update_experiment,
         update_round_configuration, edit_experiment_configuration, clone_experiment_configuration,
         unsubscribe, update_round_param_value, update_experiment_param_value, update_experiment_configuration,
-        ostromlab_faq,
+        ostromlab_faq, cas_asu_registration
         )
 import logging
 import urllib
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 URLs for the core vcweb app
 '''
 urlpatterns = patterns('vcweb.core.views',
+    url(r'^cas/asu$', cas_asu_registration, name='cas_asu_registration'),
     url(r'^dashboard/?$', dashboard, name='dashboard'),
     url(r'^participant/session/?$', 'get_participant_sessions', name='participant_sessions'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),

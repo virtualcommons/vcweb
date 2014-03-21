@@ -85,6 +85,17 @@ class LoginForm(forms.Form):
         return self.cleaned_data
 
 
+class AsuRegistrationForm(forms.ModelForm):
+    first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES),
+                             help_text=_('We will never share your email.'))
+
+    class Meta:
+        model = Participant
+        fields = ['major', 'class_status', 'gender', 'favorite_sport', 'favorite_color', 'favorite_food', 'favorite_movie_genre']
+
+
 class ParticipantAccountForm(forms.ModelForm):
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
@@ -101,6 +112,7 @@ class ParticipantAccountForm(forms.ModelForm):
                                     'major', 'class_status', 'gender', 'favorite_sport', 'favorite_color',
                                     'favorite_food', 'favorite_movie_genre']
             self.fields['class_status'].label = 'Class Status'
+            self.fields['can_receive_invitations'].label = 'Receive invitations for experiments?'
 
             for attr in ('first_name', 'last_name', 'email'):
                 self.fields[attr].initial = getattr(instance, attr)
