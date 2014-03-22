@@ -19,10 +19,10 @@ logger = logging.getLogger(__name__)
 URLs for the core vcweb app
 '''
 urlpatterns = patterns('vcweb.core.views',
-    url(r'^cas/asu$', cas_asu_registration, name='cas_asu_registration'),
-    url(r'^cas/asu/submit$', cas_asu_registration_submit, name='cas_asu_registration_submit'),
-    url(r'^dashboard/?$', dashboard, name='dashboard'),
-    url(r'^participant/session/?$', 'get_participant_sessions', name='participant_sessions'),
+    url(r'^cas/asu/$', cas_asu_registration, name='cas_asu_registration'),
+    url(r'^cas/asu/submit/$', cas_asu_registration_submit, name='cas_asu_registration_submit'),
+    url(r'^dashboard/$', dashboard, name='dashboard'),
+    url(r'^participant/session/$', 'get_participant_sessions', name='participant_sessions'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
     url(r'^accounts/logout/$', login_required(LogoutView.as_view()), name='logout'),
     #url(r'^accounts/add/$', RegistrationView.as_view(), name='register'),
