@@ -2064,7 +2064,7 @@ class Participant(CommonsUser):
     @property
     def is_profile_complete(self):
         if self.can_receive_invitations:
-            return self.class_status and self.gender and self.favorite_sport and self.favorite_color and self.favorite_food and self.favorite_movie_genre
+            return self.class_status and self.gender and self.favorite_sport and self.favorite_color and self.favorite_food and self.favorite_movie_genre and self.major
         else:
             # incomplete profile doesn't matter if they're not set to receive experiment invitations
             return False

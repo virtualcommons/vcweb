@@ -95,15 +95,18 @@ class AsuRegistrationForm(forms.ModelForm):
         instance = kwargs.get('instance')
         super(AsuRegistrationForm, self).__init__(*args, **kwargs)
         if instance is not None:
-            self.fields.keyOrder = ['first_name', 'last_name', 'email', 'gender', 'class_status',
+            self.fields.keyOrder = ['first_name', 'last_name', 'email', 'gender', 'class_status', 'major',
                     'favorite_sport', 'favorite_food', 'favorite_color', 'favorite_movie_genre']
-            for attr in ('first_name', 'last_name', 'email'):
+            for attr in ('first_name', 'last_name', 'email', 'major'):
                 self.fields[attr].initial = getattr(instance, attr)
 
 
     class Meta:
         model = Participant
-        fields = ['class_status', 'gender', 'favorite_sport', 'favorite_color', 'favorite_food', 'favorite_movie_genre']
+        fields = ['major', 'class_status', 'gender', 'favorite_sport', 'favorite_color', 'favorite_food', 'favorite_movie_genre']
+        widgets = {
+            'major': autocomplete_light.TextWidget(ParticipantMajorAutocomplete)
+        }
 
 
 class ParticipantAccountForm(forms.ModelForm):
