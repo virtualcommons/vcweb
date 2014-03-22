@@ -5,17 +5,26 @@ Participant Dashboard
 
 {% block page %}
 {{ block.super }}
-<div id='experiments'>
-    <div class='alert alert-info'>
-        Welcome back, {{request.user.participant}}.
+<div class='panel panel-default' id='experiments'>
+    <div class='panel-heading'>
+        <h3 class='panel-title'>Experiments</h3>
     </div>
-    <div data-bind='if: pendingExperiments().length > 0'>
-        <h3>Upcoming experiments</h3>
-        <div data-bind="template: { name: 'experimentTemplate', foreach: pendingExperiments }"></div>
-    </div>
-    <div data-bind='if: runningExperiments().length > 0'>
-        <h3>Running experiments</h3>
-        <div data-bind="template: { name: 'experimentTemplate', foreach: runningExperiments }"></div>
+    <div class='panel-body'>
+        <h4>Welcome back, {{request.user.participant}}</h4>
+        <div data-bind='if: pendingExperiments().length === 0 && runningExperiments().length === 0'>
+            <div class='alert alert-danger alert-block'>
+                You're not participating in any experiments at the moment. Please check again later or <a
+                    href='/contact'>contact us</a> if you have any questions.
+            </div>
+        </div>
+        <div data-bind='if: pendingExperiments().length > 0'>
+            <h3>Upcoming experiments</h3>
+            <div data-bind="template: { name: 'experimentTemplate', foreach: pendingExperiments }"></div>
+        </div>
+        <div data-bind='if: runningExperiments().length > 0'>
+            <h3>Running experiments</h3>
+            <div data-bind="template: { name: 'experimentTemplate', foreach: runningExperiments }"></div>
+        </div>
     </div>
 </div>
 {% endblock page %}

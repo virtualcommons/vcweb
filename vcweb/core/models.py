@@ -2084,7 +2084,7 @@ class Participant(CommonsUser):
         return False
 
     def __unicode__(self):
-        return unicode(self.user)
+        return unicode(self.user.get_full_name())
 
     def all_data_string(self):
         return u"(email: %s) (class: %s) (major: %s) (gender: %s) (username: %s)" % (self.user.email, self.class_status, self.major, self.gender, self.user.username)
