@@ -2067,7 +2067,7 @@ class Participant(CommonsUser):
             return self.class_status and self.gender and self.favorite_sport and self.favorite_color and self.favorite_food and self.favorite_movie_genre
         else:
             # incomplete profile doesn't matter if they're not set to receive experiment invitations
-            return True
+            return False
 
     @property
     def undergraduate(self):
@@ -2084,6 +2084,9 @@ class Participant(CommonsUser):
         return False
 
     def __unicode__(self):
+        return unicode(self.user)
+
+    def all_data_string(self):
         return u"(email: %s) (class: %s) (major: %s) (gender: %s) (username: %s)" % (self.user.email, self.class_status, self.major, self.gender, self.user.username)
 
     class Meta:

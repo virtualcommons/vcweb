@@ -9,6 +9,7 @@ from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
+from django.utils.translation import ugettext_lazy as _
 from django.views.generic import FormView, TemplateView
 from django.views.generic.detail import SingleObjectMixin
 from vcweb import settings
@@ -167,14 +168,38 @@ def dashboard(request):
                   {'dashboardViewModelJson': dashboard_view_model.to_json()})
 
 
+@login_required
 def cas_asu_registration(request):
     user = request.user
     if is_participant(user) and not user.participant.is_profile_complete:
+        directory_profile = ASUWebDirectoryProfile(user.username)
+        logger.debug("directory profile: %s", directory_profile)
+        # user.save()
         return render(request, 'account/asu_registration.html',
-                      {'dashboardViewModelJson': DashboardViewModel(user).to_json(),
-                       'form': AsuRegistrationForm(instance=user.participant)})
+                {'form': AsuRegistrationForm(instance=user.participant)})
     else:
         return redirect('core:dashboard')
+
+@participant_required
+def cas_asu_registration_submit(request):
+    form = AsuRegistrationForm(request.POST or None)
+    if form.is_valid():
+        user = request.user
+        participant = user.participant
+        user.email = form.cleaned_data['email'].lower()
+        participant.can_receive_invitations = True
+        for attr in ('gender', 'favorite_color', 'favorite_movie_genre', 'class_status', 'favorite_sport',
+                'favorite_food', 'class_status'):
+            setattr(participant, attr, form.cleaned_data.get(attr))
+        user.first_name = form.cleaned_data['first_name']
+        user.last_name = form.cleaned_data['last_name']
+        user.save()
+        participant.save()
+        messages.add_message(request, messages.INFO, _("You've been successfully registered with our mailing list. Thanks!"))
+        return redirect('core:dashboard')
+    else:
+        return redirect('core:cas_asu_registration')
+
 
 
 @login_required
@@ -942,14 +967,16 @@ class ASUWebDirectoryProfile(object):
     """
 
     def __init__(self, username):
-        logger.debug("The username provided was %s", username)
         self.username = username
+        logger.debug("checking %s", self.profile_url)
         parsed = ET.parse(urllib2.urlopen(urllib2.Request(self.profile_url, headers={"Accept": "application/xml"})))
         root = parsed.getroot()
         self.profile_data = root.find('person')
+        logger.debug("profile data %s", self.profile_data)
 
     def __str__(self):
-        return "retrieved %s from %s" % (self.profile_data, self.profile_url)
+        return "{} {} ({}) (email: {}) (major: {}) (class: {})".format(self.first_name, self.last_name, self.username, self.email, self.major,
+                self.class_status)
 
     @property
     def profile_url(self):

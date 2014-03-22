@@ -66,15 +66,12 @@ class ParticipantCASBackend(CASBackend):
                 user.first_name = directory_profile.first_name
                 user.last_name = directory_profile.last_name
                 user.email = directory_profile.email
-
                 password = User.objects.make_random_password()
                 user.set_password(password)
-
                 institution = Institution.objects.get(name='Arizona State University')
                 user.save()
                 participant = Participant.objects.create(user=user, major=directory_profile.major,
-                                                         institution=institution, institution_username=user.username,
-                                                         class_status=directory_profile.class_status)
+                        institution=institution, institution_username=user.username)
                 logger.debug("CAS backend created participant %s from web directory", participant)
                 reset_password(email)
             else:

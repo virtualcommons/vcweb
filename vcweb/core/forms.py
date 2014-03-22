@@ -91,9 +91,19 @@ class AsuRegistrationForm(forms.ModelForm):
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES),
                              help_text=_('We will never share your email.'))
 
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance')
+        super(AsuRegistrationForm, self).__init__(*args, **kwargs)
+        if instance is not None:
+            self.fields.keyOrder = ['first_name', 'last_name', 'email', 'gender', 'class_status',
+                    'favorite_sport', 'favorite_food', 'favorite_color', 'favorite_movie_genre']
+            for attr in ('first_name', 'last_name', 'email'):
+                self.fields[attr].initial = getattr(instance, attr)
+
+
     class Meta:
         model = Participant
-        fields = ['major', 'class_status', 'gender', 'favorite_sport', 'favorite_color', 'favorite_food', 'favorite_movie_genre']
+        fields = ['class_status', 'gender', 'favorite_sport', 'favorite_color', 'favorite_food', 'favorite_movie_genre']
 
 
 class ParticipantAccountForm(forms.ModelForm):
@@ -106,8 +116,8 @@ class ParticipantAccountForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
+        super(ParticipantAccountForm, self).__init__(*args, **kwargs)
         if instance is not None:
-            super(ParticipantAccountForm, self).__init__(*args, **kwargs)
             self.fields.keyOrder = ['first_name', 'last_name', 'email', 'institution', 'can_receive_invitations',
                                     'major', 'class_status', 'gender', 'favorite_sport', 'favorite_color',
                                     'favorite_food', 'favorite_movie_genre']
@@ -120,8 +130,6 @@ class ParticipantAccountForm(forms.ModelForm):
             institution = instance.institution
             if institution:
                 self.fields['institution'].initial = institution.name
-        else:
-            super(ParticipantAccountForm, self).__init__(*args, **kwargs)
 
     class Meta:
         model = Participant
