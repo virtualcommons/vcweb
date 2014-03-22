@@ -196,6 +196,7 @@ def cas_asu_registration_submit(request):
         user.save()
         participant.save()
         messages.add_message(request, messages.INFO, _("You've been successfully registered with our mailing list. Thanks!"))
+        logger.debug("created new participant from asurite registration: %s", participant)
         return redirect('core:dashboard')
     else:
         return redirect('core:cas_asu_registration')

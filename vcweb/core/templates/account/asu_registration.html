@@ -19,7 +19,7 @@
 {% endblock form-title %}
 
 
-<form id='vcweb-form' method='post' class='form-horizontal' action='/cas/asu/submit'>
+<form id='vcweb-form' method='post' class='form-horizontal' action='/cas/asu/submit/'>
 {% block form %}
 {% include "includes/bootstrap-form.html" %}
     <div class="form-group">
@@ -81,5 +81,4 @@
             });
         });
     </script>
-    {%  endblock javascript %}
-
+{%  endblock javascript %}
