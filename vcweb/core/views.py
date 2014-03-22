@@ -189,7 +189,7 @@ def cas_asu_registration_submit(request):
         user.email = form.cleaned_data['email'].lower()
         participant.can_receive_invitations = True
         for attr in ('gender', 'favorite_color', 'favorite_movie_genre', 'class_status', 'favorite_sport',
-                'favorite_food', 'class_status'):
+                'favorite_food', 'class_status', 'major',):
             setattr(participant, attr, form.cleaned_data.get(attr))
         user.first_name = form.cleaned_data['first_name']
         user.last_name = form.cleaned_data['last_name']
