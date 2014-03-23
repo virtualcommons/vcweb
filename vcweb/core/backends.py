@@ -38,47 +38,24 @@ class ParticipantCASBackend(CASBackend):
     """
     CAS authentication backend with some user data populated from ASU's Web Directory.
 
-    Primary responsibility is to modify the Django user details and create vcweb Participant if the user was
-    created by the CAS (i.e user logging in is a new user)
-    1. Get details from the ASU web directory (FIXME: this is brittle and specific to ASU, will need to update if we
-        ever roll CAS login out for other institutions)
-        a. If the user is an undergrad student then populate the Django user / vcweb Participant with the details
-            fetched from the ASU web Directory.
-        b. If the user is not an undergrad student then don't create the vcweb participant for that user and
-            Redirect such users to error page. Moreover delete the newly created user.
+    Primary responsibility is to check whether the user was created by the callback or CAS
+    1. If the User was created by the cas.
+        b. It means the user is not an undergrad student or ASU Web directory was down So Redirect such users to error
+        page. Moreover delete the newly created user.
     """
 
     def authenticate(self, ticket, service):
         """Authenticates CAS ticket and retrieves user data"""
         user = super(ParticipantCASBackend, self).authenticate(ticket, service)
 
-        # If user is not in the system then an user with empty fields will be created by the CAS.
-        # Update the user details by fetching the data from the University Web Directory
-
+        # If user is not in the system then an user with empty fields will be created by the CAS. So delete that user
+        # FIXME: Permission denied error is thrown if the ASU Web Directory is down
         if is_new_user(user):
-            directory_profile = ASUWebDirectoryProfile(user.username)
-            email = directory_profile.email
-            logger.debug("%s (%s)", directory_profile, email)
-
-            # Create vcweb Participant only if the user is an undergrad student
-            if directory_profile.is_undergraduate:
-
-                user.first_name = directory_profile.first_name
-                user.last_name = directory_profile.last_name
-                user.email = directory_profile.email
-                password = User.objects.make_random_password()
-                user.set_password(password)
-                institution = Institution.objects.get(name='Arizona State University')
-                user.save()
-                participant = Participant.objects.create(user=user, major=directory_profile.major,
-                        institution=institution, institution_username=user.username)
-                logger.debug("CAS backend created participant %s from web directory", participant)
-            else:
-                logger.debug("XXX: CAS authenticated user %s is not an undergrad student, deleting", user)
-                # Delete the user as it has an "unusable" password
-                user.delete()
-                raise PermissionDenied(
-                    "Registration is only available to ASU undergraduates. Please contact us for more information.")
+            logger.debug("XXX: CAS authenticated user %s is not an undergrad student, deleting", user)
+            # Delete the user as it has an "unusable" password
+            user.delete()
+            raise PermissionDenied(
+                "Registration is only available to ASU undergraduates. Please contact us for more information.")
         return user
 
 

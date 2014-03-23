@@ -14,7 +14,7 @@ from django.views.generic import FormView, TemplateView
 from django.views.generic.detail import SingleObjectMixin
 from vcweb import settings
 from vcweb.core import dumps
-from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required
+from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required, retry
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
                               UpdateExperimentForm, AsuRegistrationForm,
                               ParticipantGroupIdForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
@@ -176,9 +176,10 @@ def cas_asu_registration(request):
         logger.debug("directory profile: %s", directory_profile)
         # user.save()
         return render(request, 'account/asu_registration.html',
-                {'form': AsuRegistrationForm(instance=user.participant)})
+                      {'form': AsuRegistrationForm(instance=user.participant)})
     else:
         return redirect('core:dashboard')
+
 
 @participant_required
 def cas_asu_registration_submit(request):
@@ -189,18 +190,18 @@ def cas_asu_registration_submit(request):
         user.email = form.cleaned_data['email'].lower()
         participant.can_receive_invitations = True
         for attr in ('gender', 'favorite_color', 'favorite_movie_genre', 'class_status', 'favorite_sport',
-                'favorite_food', 'class_status', 'major',):
+                     'favorite_food', 'class_status', 'major',):
             setattr(participant, attr, form.cleaned_data.get(attr))
         user.first_name = form.cleaned_data['first_name']
         user.last_name = form.cleaned_data['last_name']
         user.save()
         participant.save()
-        messages.add_message(request, messages.INFO, _("You've been successfully registered with our mailing list. Thanks!"))
+        messages.add_message(request, messages.INFO,
+                             _("You've been successfully registered with our mailing list. Thanks!"))
         logger.debug("created new participant from asurite registration: %s", participant)
         return redirect('core:dashboard')
     else:
         return redirect('core:cas_asu_registration')
-
 
 
 @login_required
@@ -970,14 +971,21 @@ class ASUWebDirectoryProfile(object):
     def __init__(self, username):
         self.username = username
         logger.debug("checking %s", self.profile_url)
-        parsed = ET.parse(urllib2.urlopen(urllib2.Request(self.profile_url, headers={"Accept": "application/xml"})))
+        xml_data = self.urlopen_with_retry()
+        logger.debug(xml_data)
+        parsed = ET.parse(xml_data)
         root = parsed.getroot()
         self.profile_data = root.find('person')
         logger.debug("profile data %s", self.profile_data)
 
+    @retry(urllib2.URLError, tries=3, delay=3, backoff=2, logger=logger)
+    def urlopen_with_retry(self):
+        return urllib2.urlopen(urllib2.Request(self.profile_url, headers={"Accept": "application/xml"}))
+
     def __str__(self):
-        return "{} {} ({}) (email: {}) (major: {}) (class: {})".format(self.first_name, self.last_name, self.username, self.email, self.major,
-                self.class_status)
+        return "{} {} ({}) (email: {}) (major: {}) (class: {})".format(self.first_name, self.last_name, self.username,
+                                                                       self.email, self.major,
+                                                                       self.class_status)
 
     @property
     def profile_url(self):
@@ -985,15 +993,24 @@ class ASUWebDirectoryProfile(object):
 
     @property
     def first_name(self):
-        return self.profile_data.find('firstName').text
+        try:
+            return self.profile_data.find('firstName').text
+        except:
+            return None
 
     @property
     def last_name(self):
-        return self.profile_data.find('lastName').text
+        try:
+           return self.profile_data.find('lastName').text
+        except:
+            return None
 
     @property
     def email(self):
-        return self.profile_data.find('email').text.lower()
+        try:
+            return self.profile_data.find('email').text.lower()
+        except:
+            return None
 
     @property
     def plans(self):
@@ -1035,11 +1052,14 @@ class ASUWebDirectoryProfile(object):
 def get_cas_user(tree):
     """
     Callback invoked by the CAS module that ensures that the user signing in via CAS has a valid Django User associated
-    with them. Primary responsibility is to associate the CAS login id with the given User.
-    This needs to be done *before* the CAS module creates a User object so that we don't end up creating duplicate users
-    with a different username and the same email address.
+    with them. Primary responsibility is to create a Django User / Participant if none existed, or to associate the CAS
+    login id with the given User. This needs to be done *before* the CAS module creates a User object so that we don't
+    end up creating duplicate users with a different username and the same email address.
 
-    1. If a Django user does exist with the given institutional username (e.g., asurite) there are a few corner cases to
+    1. If no Django user exists with the given username (institutional username), get details from the ASU web directory
+    (FIXME: this is brittle and specific to ASU, will need to update if we ever roll CAS login out for other
+    institutions) and populate a Django user / vcweb Participant with those details
+    2. If a Django user does exist with the given institutional username (e.g., asurite) there are a few corner cases to
     consider:
     a. the account could have been created before CAS was implemented, so there is no institutional username set (or
     it's set to the email address instead of the ASURITE id). In this case we need to set the username to
@@ -1062,15 +1082,34 @@ def get_cas_user(tree):
     try:
         User.objects.get(username=username)
     except ObjectDoesNotExist:
-        user_profile = ASUWebDirectoryProfile(username)
-        logger.debug("found user profile %s (%s)", user_profile, user_profile.email)
         try:
-            user = User.objects.get(username=user_profile.email)
+            directory_profile = ASUWebDirectoryProfile(username)
+            logger.debug("found user profile %s (%s)", directory_profile, directory_profile.email)
+
+            user = User.objects.get(username=directory_profile.email)
             user.username = username
             user.save()
         except ObjectDoesNotExist:
-            # If this exception is throw it basically means that User Loggin in via CAS is a new user
+            # If this exception is throw it basically means that User Log in via CAS is a new user
             logger.debug("No user found with username %s", username)
+            # Create vcweb Participant only if the user is an undergrad student
+            if directory_profile.is_graduate:
+                user = User.objects.create_user(username=username)
+                user.first_name = directory_profile.first_name
+                user.last_name = directory_profile.last_name
+                user.email = directory_profile.email
+
+                logger.debug("%s (%s)", directory_profile, user.email)
+
+                password = User.objects.make_random_password()
+                user.set_password(password)
+                institution = Institution.objects.get(name='Arizona State University')
+                user.save()
+                participant = Participant.objects.create(user=user, major=directory_profile.major,
+                                                         institution=institution, institution_username=user.username)
+                logger.debug("CAS backend created participant %s from web directory", participant)
+        except:
+            logger.debug("Something went wrong. ASU Web Directory is down")
 
 
 def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):
