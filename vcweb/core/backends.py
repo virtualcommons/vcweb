@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.core.validators import validate_email
 from vcweb import settings
 from vcweb.core.models import Participant, Institution
-from vcweb.core.views import ASUWebDirectoryProfile, PermissionDenied, reset_password
+from vcweb.core.views import ASUWebDirectoryProfile, PermissionDenied
 import logging
 
 logger = logging.getLogger(__name__)
@@ -73,7 +73,6 @@ class ParticipantCASBackend(CASBackend):
                 participant = Participant.objects.create(user=user, major=directory_profile.major,
                         institution=institution, institution_username=user.username)
                 logger.debug("CAS backend created participant %s from web directory", participant)
-                reset_password(email)
             else:
                 logger.debug("XXX: CAS authenticated user %s is not an undergrad student, deleting", user)
                 # Delete the user as it has an "unusable" password
