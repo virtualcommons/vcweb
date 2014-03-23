@@ -1093,7 +1093,7 @@ def get_cas_user(tree):
             # If this exception is throw it basically means that User Log in via CAS is a new user
             logger.debug("No user found with username %s", username)
             # Create vcweb Participant only if the user is an undergrad student
-            if directory_profile.is_graduate:
+            if directory_profile.is_undergraduate:
                 user = User.objects.create_user(username=username)
                 user.first_name = directory_profile.first_name
                 user.last_name = directory_profile.last_name
