@@ -1,6 +1,6 @@
 {% extends "participant/base.html" %}
 {% block title %}
-Participant Session Invitation Management
+Signup for an Experiment Session
 {% endblock %}
 {% block logo %}
 <h1>Dashboard</h1>
@@ -11,10 +11,10 @@ Participant Session Invitation Management
         <div id="content" class="col-md-12">
             <h3>Pick Experiment Sessions</h3>
             <div id="error-messages">
-                {% if success == True %}
-                    <div class='alert alert-success'><strong>Well done,</strong> Your registration changes have been saved.</div>
-                {% elif success == False %}
-                    <div class='alert alert-danger'><strong>Sorry, </strong>You were NOT registered for the experiment session.</div>
+                {% if success %}
+                    <div class='alert alert-success'><strong>Thanks,</strong> you have successfully registered for this experiment session. Please remember to be on time!</div>
+                {% else %}
+                    <div class='alert alert-danger'><strong>Sorry,</strong> you were not able to register for the given experiment session. Signups are first-come first-serve, please try again next time as you will still be eligible to participate in future experiments.</div>
                 {% endif %}
             </div>
             {% for exp in grouped_invitations %}
@@ -102,8 +102,8 @@ Participant Session Invitation Management
             {% endfor %}
             {% if grouped_invitations|length  == 0 %}
                 <div class="callout callout-warning">
-                    <p>You are currently not invited to any experiments.</p>
-                    <p>Please make sure that you have opted to receive invitations in your account profiles settings.</p>
+                    <p>You are not currently invited to any experiments.</p>
+                    <p>Please make sure that you have opted to receive invitations in your <a href='/accounts/profile'>account profile</a>.</p>
                 </div>
             {% endif %}
         </div>

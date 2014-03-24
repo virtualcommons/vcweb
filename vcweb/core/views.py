@@ -867,7 +867,7 @@ def check_ready_participants(request, pk=None):
 
 
 @participant_required
-def get_participant_sessions(request):
+def experiment_session_signup(request):
     user = request.user
     success = None
     if request.method == 'POST':
@@ -882,25 +882,25 @@ def get_participant_sessions(request):
                 experiment_metadata_pk = int(data[key])
 
         if invitation_pk is not None:
-            inv = Invitation.objects.get(pk=invitation_pk)
+            invitation = Invitation.objects.select_related('experiment_session').get(pk=invitation_pk)
             # lock on the experiment session to prevent concurrent participant signups for an experiment session
             # exceeding its capacity
-            lock = ExperimentSession.objects.select_for_update().get(pk=inv.experiment_session.pk)
+            lock = ExperimentSession.objects.select_for_update().get(pk=invitation.experiment_session.pk)
             signup_count = ParticipantSignup.objects.filter(
-                invitation__experiment_session__pk=inv.experiment_session.pk).count()
+                invitation__experiment_session__pk=invitation.experiment_session.pk).count()
 
             ps = ParticipantSignup.objects.filter(
                 invitation__participant=user.participant,
                 invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk,
                 attendance=ParticipantSignup.ATTENDANCE.registered)
 
-            if signup_count < inv.experiment_session.capacity:
+            if signup_count < invitation.experiment_session.capacity:
                 if not ps:
                     ps = ParticipantSignup()
                 else:
                     ps = ps[0]
 
-                ps.invitation = inv
+                ps.invitation = invitation
                 ps.date_created = datetime.now()
                 ps.attendance = ParticipantSignup.ATTENDANCE.registered
                 ps.save()
@@ -960,7 +960,7 @@ def get_participant_sessions(request):
         invitation_list.append(invite.to_dict(signup_count))
 
     new_list = sorted(invitation_list, key=lambda key: key['invitation']['scheduled_date'])
-    return render(request, "participant/participant-index.html", {"invitation_list": new_list, "success": success})
+    return render(request, "participant/experiment-session-signup.html", {"invitation_list": new_list, "success": success})
 
 
 class ASUWebDirectoryProfile(object):

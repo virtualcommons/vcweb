@@ -9,7 +9,7 @@ from vcweb.core.views import (dashboard, LoginView, LogoutView, monitor, #Regist
         api_logout, participant_ready, check_ready_participants, get_dashboard_view_model, update_experiment,
         update_round_configuration, edit_experiment_configuration, clone_experiment_configuration,
         unsubscribe, update_round_param_value, update_experiment_param_value, update_experiment_configuration,
-        ostromlab_faq, cas_asu_registration, cas_asu_registration_submit
+        ostromlab_faq, cas_asu_registration, cas_asu_registration_submit, experiment_session_signup
         )
 import logging
 import urllib
@@ -22,7 +22,7 @@ urlpatterns = patterns('vcweb.core.views',
     url(r'^cas/asu/$', cas_asu_registration, name='cas_asu_registration'),
     url(r'^cas/asu/submit/$', cas_asu_registration_submit, name='cas_asu_registration_submit'),
     url(r'^dashboard/$', dashboard, name='dashboard'),
-    url(r'^participant/session/$', 'get_participant_sessions', name='participant_sessions'),
+    url(r'^participant/session/$', experiment_session_signup, name='experiment_session_signup'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
     url(r'^accounts/logout/$', login_required(LogoutView.as_view()), name='logout'),
     #url(r'^accounts/add/$', RegistrationView.as_view(), name='register'),

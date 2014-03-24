@@ -2465,12 +2465,19 @@ class ExperimentSession(models.Model):
         }
         return data
 
+    def __unicode__(self):
+        return u"{} {} {}".format(self.experiment_metadata, self.scheduled_date, self.scheduled_end_date)
+
 
 class Invitation(models.Model):
     participant = models.ForeignKey(Participant)
     experiment_session = models.ForeignKey(ExperimentSession)
     date_created = models.DateTimeField(default=datetime.now)
     sender = models.ForeignKey(User)
+
+
+    def __unicode__(self):
+        return u"[{}] [{}] ({})".format(self.participant, self.experiment_session, self.sender)
 
     def to_dict(self, signup_count):
         experiment_session = self.experiment_session
@@ -2521,6 +2528,9 @@ class ParticipantSignup(models.Model):
     attendance = models.PositiveIntegerField(max_length=1, choices=ATTENDANCE, default=ATTENDANCE.registered)
 
     objects = PassThroughManager.for_queryset_class(ParticipantSignupQuerySet)()
+
+    def __unicode__(self):
+        return u"{} {} {}".format(self.invitation, self.attendance, self.date_created)
 
     def to_dict(self, signup_count):
         experiment_session = self.invitation.experiment_session

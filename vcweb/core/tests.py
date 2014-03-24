@@ -536,29 +536,3 @@ class InvitationAlgorithmTest(BaseVcwebTest):
             Participant.objects.filter(can_receive_invitations=True, institution__name='Arizona State University',
                                        pk__in=pk_list).count(), len(x))
 
-    # def testSignupConcurrency(self):
-    #
-    #     self.set_up_participants()
-    #
-    #     self.set_up_experiment_sessions()
-    #
-    #     # First Iteration
-    #     x = self.get_final_participants()
-    #
-    #     self.set_up_inv(x)
-    #
-    #     url = reverse('core:participant_sessions')
-    #     @concurrency_test(10)
-    #     def toggle_registration(inv):
-    #         c = Client()
-    #         username = inv.participant.email
-    #         login = c.login(username=username, password="test")
-    #         logger.debug(login)
-    #         # response = c.post(url, {'experiment_metadata_pk': self.experiment_metadata.pk, 'BrokerExperiment': inv.pk})
-    #         # logger.debug(response.status_code)
-    #
-    #     inv = Invitation.objects.all().order_by('?')[:1][0]
-    #     logger.debug(inv.participant.email)
-    #     toggle_registration(inv)
-    #
-    #     self.assertEqual(inv.experiment_session.capacity, ParticipantSignup.objects.filter(invitation=inv).count())
