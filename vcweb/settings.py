@@ -326,7 +326,7 @@ WEB_DIRECTORY_URL = "https://webapp4.asu.edu/directory/ws/search?asuriteId="
 
 # Required settings for CAS Library
 CAS_SERVER_URL = "https://weblogin.asu.edu/cas/"
-CAS_IGNORE_REFERER = True,
+CAS_IGNORE_REFERER = True
 # CAS_LOGOUT_COMPLETELY = True
 # CAS_PROVIDE_URL_TO_LOGOUT = True
 CAS_REDIRECT_URL = "/cas/asu"

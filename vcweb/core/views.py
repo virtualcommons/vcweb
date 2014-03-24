@@ -162,6 +162,8 @@ def dashboard(request):
     if is_participant(user):
         if not user.participant.is_profile_complete:
             return redirect('core:profile')
+        elif user.participant.has_pending_invitations:
+            return redirect('core:experiment_session_signup')
 
     dashboard_view_model = DashboardViewModel(user)
     return render(request, dashboard_view_model.template_name,
@@ -933,7 +935,7 @@ def experiment_session_signup(request):
         new_list, flag = get_participant_invitations(user)
 
         if flag:
-            messages.error(request, _("Sorry, All the Experiment Sessions seems to be full. Please try again next time as you will still be eligible to participate in future experiments."))
+            messages.error(request, _("Sorry, all the experiment sessions are full. Signups are first-come, first-serve. Please try again next time, you will still be eligible to participate in future experiments."))
 
         return render(request, "participant/experiment-session-signup.html",
                       {"invitation_list": new_list})

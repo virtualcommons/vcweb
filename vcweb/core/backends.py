@@ -2,9 +2,7 @@ from cas.backends import CASBackend
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
-from vcweb import settings
-from vcweb.core.models import Participant, Institution
-from vcweb.core.views import ASUWebDirectoryProfile, PermissionDenied
+from vcweb.core.views import PermissionDenied
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,7 +49,7 @@ class ParticipantCASBackend(CASBackend):
         # If user is not in the system then an user with empty fields will be created by the CAS. So delete that user
         # FIXME: Permission denied error is thrown if the ASU Web Directory is down
         if is_new_user(user):
-            logger.debug("XXX: CAS authenticated user %s is not an undergrad student, deleting", user)
+            logger.error("XXX: CAS authenticated user %s is not an undergrad student, deleting", user)
             # Delete the user as it has an "unusable" password
             user.delete()
             raise PermissionDenied(

@@ -2070,6 +2070,10 @@ class Participant(CommonsUser):
             return False
 
     @property
+    def has_pending_invitations(self):
+        return self.invitation_set.filter(experiment_session__scheduled_date__gt=datetime.now()).exists()
+
+    @property
     def undergraduate(self):
         return Participant.is_undergraduate(self.class_status, self.date_created)
 
