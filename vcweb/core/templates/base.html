@@ -138,13 +138,13 @@
     </div>
     {% endblock footer %}
 </footer>
-    {% with jquery_version="2.0.3" %}
+    {% with jquery_version="2.1.0" %}
     <script src='//ajax.googleapis.com/ajax/libs/jquery/{{jquery_version}}/jquery.min.js'></script>
     {% endwith %}
     <script src='{{STATIC_URL}}bootstrap/js/bootstrap.min.js'></script>
     <!-- Latest compiled and minified JavaScript -->
     <script src='{{STATIC_URL}}js/jquery.cookie.js'></script>
-    <script src='//ajax.aspnetcdn.com/ajax/knockout/knockout-3.0.0.js'></script>
+    <script src='//cdnjs.cloudflare.com/ajax/libs/knockout/3.1.0/knockout-min.js'></script>
     <script src='{{STATIC_URL}}js/ko/knockout.mapping.min.js'></script>
     <script src='{{STATIC_URL}}js/common.js'></script>
     <script src="//cdn.ravenjs.com/1.1.11/jquery,native/raven.min.js"></script>
