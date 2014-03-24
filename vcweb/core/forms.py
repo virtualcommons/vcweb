@@ -7,7 +7,8 @@ from django.forms import widgets, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
 from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete, ParticipantMajorAutocomplete
-from vcweb.core.models import (Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration, Parameter, ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
+from vcweb.core.models import (Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration,
+       ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
 
 import autocomplete_light
 import email
@@ -50,14 +51,15 @@ class BaseRegistrationForm(forms.Form):
             User.objects.get(email=email_address)
         except User.DoesNotExist:
             return email_address
-        raise forms.ValidationError(_("This email address is already in our system."))
+        raise forms.ValidationError(_("This email address is already registered in our system."), code='already-registered')
 
-    def clean_confirm_password(self):
-        pw = self.cleaned_data['password']
-        confirm_pw = self.cleaned_data['confirm_password']
+    def clean(self):
+        cleaned_data = super(BaseRegistrationForm, self).clean()
+        pw = cleaned_data['password']
+        confirm_pw = cleaned_data['confirm_password']
         if pw == confirm_pw:
-            return confirm_pw
-        raise forms.ValidationError(_("Please make sure your passwords match."))
+            return cleaned_data
+        raise forms.ValidationError(_("Please make sure your passwords match."), code='invalid')
 
 
 class RegistrationForm(BaseRegistrationForm):
@@ -74,15 +76,16 @@ class LoginForm(forms.Form):
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
 
     def clean(self):
-        email_address = self.cleaned_data['email'].lower()
-        password = self.cleaned_data.get('password')
+        cleaned_data = super(LoginForm, self).clean()
+        email_address = cleaned_data.get('email').lower()
+        password = cleaned_data.get('password')
         if email_address and password:
             self.user_cache = authenticate(username=email_address, password=password)
             if self.user_cache is None:
-                raise forms.ValidationError(_("Your combination of email and password was incorrect."))
+                raise forms.ValidationError(_("Your combination of email and password was incorrect."), code='invalid')
             elif not self.user_cache.is_active:
                 raise forms.ValidationError(_("This user has been deactivated. Please contact us if this is in error."))
-        return self.cleaned_data
+        return cleaned_data
 
 
 class AsuRegistrationForm(forms.ModelForm):
