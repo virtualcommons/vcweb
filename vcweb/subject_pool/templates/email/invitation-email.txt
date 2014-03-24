@@ -2,16 +2,20 @@ Hi,
 
 {{invitation_text}}
 
-You can choose to attend one session from the following available sessions of the **{{ experiment.title }} Experiment**.
+Please select **one** of the following sessions:
 
 {% for session in session_list %}
 -  **Session {{forloop.counter}}** :- From: {{ session.scheduled_date }} To: {{ session.scheduled_end_date }}
 {% endfor %}
 
-To participate please click on link below or copy paste the url in your browser's address bar.
+To signup for a session please click on the link below or copy paste the url into your browser's address bar.
 
-<a href="http://vcweb.asu.edu/participant/session">http://vcweb.asu.edu/participant/session</a>
+<a href="https://vcweb.asu.edu/participant/session-signup">https://vcweb.asu.edu/participant/session-signup</a>
 
 Thanks,
 
 Team VCWEB
+
+
+You are receiving these invitations because you've opted in to our participant database. If you are no longer interested in receiving any experiment invitations you can 
+<a href='/accounts/unsubscribe'>unsubscribe here</a>.
