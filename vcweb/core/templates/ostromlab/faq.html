@@ -19,3 +19,16 @@
     {% endfor %}
 </div>
 {% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+
+<script>
+$(function() {
+    var anchor = window.location.hash;
+    if (anchor) {
+        $(anchor).collapse('show');
+    }
+});
+</script>
+{% endblock javascript %}
