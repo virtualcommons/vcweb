@@ -10,13 +10,6 @@ Signup for an Experiment Session
     <div class='row' id='page'>
         <div id="content" class="col-md-12">
             <h3>Pick Experiment Sessions</h3>
-            <div id="error-messages">
-                {% if success %}
-                    <div class='alert alert-success'><strong>Thanks,</strong> you have successfully registered for this experiment session. Please remember to be on time!</div>
-                {% else %}
-                    <div class='alert alert-danger'><strong>Sorry,</strong> you were not able to register for the given experiment session. Signups are first-come first-serve, please try again next time as you will still be eligible to participate in future experiments.</div>
-                {% endif %}
-            </div>
             {% for exp in grouped_invitations %}
             <div class="callout callout-info">
                 <form method="POST" action="">
@@ -74,7 +67,7 @@ Signup for an Experiment Session
                                 <td> {{ item.invitation.openings }}</td>
                             </tr>
                             {% else %}
-                            <tr class="error">
+                            <tr class="alert-danger">
                                 <td>
                                    {% if item.invitation.selected == True %}
                                         <input type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} checked />

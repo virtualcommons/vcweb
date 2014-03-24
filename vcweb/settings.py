@@ -203,11 +203,11 @@ MEDIA_ROOT = path.join(STATIC_ROOT, 'media')
 MEDIA_URL = '/static/media/'
 
 # set up jquery-ui css classes for django messages
-MESSAGE_TAGS = {
-    messages.constants.INFO: 'ui-state-highlight ui-corner-all',
-    messages.constants.WARNING: 'ui-state-error ui-corner-all',
-    messages.constants.ERROR: 'ui-state-error ui-corner-all'
-}
+# MESSAGE_TAGS = {
+#     messages.constants.INFO: 'ui-state-highlight ui-corner-all',
+#     messages.constants.WARNING: 'ui-state-error ui-corner-all',
+#     messages.constants.ERROR: 'ui-state-error ui-corner-all'
+# }
 
 LOG_DIRECTORY = '/opt/vcweb/logs'
 try:

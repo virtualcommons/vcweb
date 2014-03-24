@@ -869,15 +869,16 @@ def check_ready_participants(request, pk=None):
 @participant_required
 def experiment_session_signup(request):
     user = request.user
-    success = None
     if request.method == 'POST':
+        success = False
+
         data = dict(request.POST.iteritems())
         invitation_pk = None
         experiment_metadata_pk = None
 
         for key in data:
             if key != 'experiment_metadata_pk':
-                invitation_pk = int(data[key])
+                invitation_pk = int(data[key])  # the key is the experiment Metadata Name
             else:
                 experiment_metadata_pk = int(data[key])
 
@@ -918,7 +919,29 @@ def experiment_session_signup(request):
                         invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk).delete()
             success = True
 
-    # If the Experiment Session is being conducted tomorrow then don't show invitation to user
+        new_list, flag = get_participant_invitations(user)
+
+        if success:
+            messages.add_message(request, messages.SUCCESS,_("Thanks, you have successfully registered for this experiment session. Please remember to be on time!"))
+        else:
+            messages.add_message(request, messages.ERROR,_("Sorry, you were not able to register for the given experiment session. Signups are first-come first-serve, please try again next time as you will still be eligible to participate in future experiments."))
+
+        return render(request, "participant/experiment-session-signup.html",
+                      {"invitation_list": new_list})
+
+    elif request.method == "GET":
+        new_list, flag = get_participant_invitations(user)
+
+        if flag:
+            messages.error(request, _("Sorry, All the Experiment Sessions seems to be full. Please try again next time as you will still be eligible to participate in future experiments."))
+
+        return render(request, "participant/experiment-session-signup.html",
+                      {"invitation_list": new_list})
+
+
+def get_participant_invitations(user):
+    flag = True
+       # If the Experiment Session is being conducted tomorrow then don't show invitation to user
     tomorrow = datetime.now() + timedelta(days=1)
 
     active_experiment_sessions = ParticipantSignup.objects \
@@ -950,17 +973,25 @@ def experiment_session_signup(request):
     for ps in active_experiment_sessions:
         signup_count = ParticipantSignup.objects.filter(
             invitation__experiment_session__pk=ps.invitation.experiment_session.pk).count()
-
-        invitation_list.append(ps.to_dict(signup_count))
+        ps_dict = ps.to_dict(signup_count)
+        if ps_dict['invitation']['openings'] and flag:
+            flag = False
+        invitation_list.append(ps_dict)
 
     for invite in invitations:
         signup_count = ParticipantSignup.objects.filter(
             invitation__experiment_session__pk=invite.experiment_session.pk).count()
+        invite_dict = invite.to_dict(signup_count)
+        logger.debug(invite_dict)
+        logger.debug(invite_dict['invitation']['openings'])
+        if invite_dict['invitation']['openings'] and flag:
+            flag = False
+        invitation_list.append(invite_dict)
 
-        invitation_list.append(invite.to_dict(signup_count))
+    new_list = sorted(invitation_list, key=lambda use_key: use_key['invitation']['scheduled_date'])
 
-    new_list = sorted(invitation_list, key=lambda key: key['invitation']['scheduled_date'])
-    return render(request, "participant/experiment-session-signup.html", {"invitation_list": new_list, "success": success})
+    return new_list, flag
+
 
 
 class ASUWebDirectoryProfile(object):
@@ -1001,7 +1032,7 @@ class ASUWebDirectoryProfile(object):
     @property
     def last_name(self):
         try:
-           return self.profile_data.find('lastName').text
+            return self.profile_data.find('lastName').text
         except:
             return None
 
