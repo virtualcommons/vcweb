@@ -1,5 +1,6 @@
 Django
 fabric
+django-autocomplete-light
 django-localflavor
 django-extensions
 django-kronos
@@ -21,12 +22,17 @@ feedcache
 neo4j-embedded
 xlrd
 xlwt
-pillow
 django-bootstrap3
+markdown
 unicodecsv
-# FIXME: this will fail on Mac OS X, see http://lxml.de/installation.html#macos-x for workarounds.  
+pillow
+# FIXME: this will fail on Mac OS X, see http://lxml.de/installation.html#macos-x for workarounds.
 # easiest is to use MacPorts, sudo port install py27-lxml beforehand to set up the appropriate xml libraries
 lxml
+git+ssh://git@github.com/kstateome/django-cas.git@0.9.1#egg=cas
+# for migratespool task
+mysql-connector-python
+# XXX: not necessary for production
 django-debug-toolbar
 # XXX: disabled packages 
 #celery
@@ -42,7 +48,3 @@ django-debug-toolbar
 #pyyaml
 #pymongo
 #brabeion
-django-autocomplete-light
-git+ssh://git@github.com/kstateome/django-cas.git@0.9.1#egg=cas
-# for migratespool task
-mysql-connector-python
