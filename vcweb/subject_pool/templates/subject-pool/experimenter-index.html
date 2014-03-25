@@ -49,7 +49,7 @@ Experiment Session Management
                                 </div>
                                 <div class="form-group">
                                     <div class="col-md-offset-5 col-md-7">
-                                        <button type="submit" class="btn">Invite</button>
+                                        <button type="submit" class="btn" data-loading-text="sending..." id="invite-btn">Invite</button>
                                         <button type="button" class="btn" data-bind="click: $root.emailPreview">Email Preview</button>
                                     </div>
                                 </div>
@@ -228,6 +228,15 @@ Experiment Session Management
         var sessions_experiment_metadatas_object = $.parseJSON("{{ view_model_json | escapejs }}");
 
         $(function(){
+            var $loading = $('#loadingDiv').hide();
+
+            $(document)
+                .ajaxStart(function () {
+                    $loading.show();
+                })
+                .ajaxStop(function () {
+                    $loading.hide();
+                });
 
             $('#invite-form').hide();
 
@@ -434,6 +443,8 @@ Experiment Session Management
 
                 model.onInvite = function(formElement) {
                     var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
+                    var btn = $(formElement).find("#invite-btn");
+                    btn.button('loading')
                     if(session_pk_list.length) {
                         var formData = $(formElement).serialize()  + '&session_pk_list='+ session_pk_list;
                         $.ajax("/subject-pool/session/invite", {
@@ -458,7 +469,10 @@ Experiment Session Management
                                     $("#error-messages").html('<div class="alert alert-danger"><strong>' + result.message + '</strong></div>');
                                 }
                                 $(window).scrollTop($('#error-messages').offset().top - 100);
+
                             }
+                        }).always(function () {
+                            btn.button('reset')
                         });
                     }
                 };

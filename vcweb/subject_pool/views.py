@@ -234,7 +234,7 @@ def send_invitations(request):
                 else:
                     final_participants = random.sample(potential_participants, invitation_count)
                 message = "Your invitations were sent to %s / %s participants." % (
-                    potential_participants_count, invitation_count)
+                    len(final_participants), invitation_count)
 
                 today = datetime.now()
                 invitations = []
