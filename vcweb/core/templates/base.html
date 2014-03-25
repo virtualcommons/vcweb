@@ -97,13 +97,8 @@
     </div>
     {% endif %}
     {% if messages %}
-    <h3>Messages</h3>
-        {% for message in messages %}
-            <div class="alert{% if message.tags %} alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}{% endif %} alert-dismissable">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                {{ message|safe }}
-            </div>
-        {% endfor %}
+        <h3>Messages</h3>
+        {% bootstrap_messages %}
     {% endif %}
 
     {% block page %}

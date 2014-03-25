@@ -317,6 +317,11 @@ legend.scheduler-border {
     padding:0 10px;
     border-bottom:none;
 }
+
+.error-row {
+    color: red;
+}
+
 /* Calendar Event colors */
 .event-color-1 {
   background-color: #1f77b4 !important;

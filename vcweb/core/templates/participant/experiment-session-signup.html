@@ -67,7 +67,7 @@ Signup for an Experiment Session
                                 <td> {{ item.invitation.openings }}</td>
                             </tr>
                             {% else %}
-                            <tr class="alert-danger">
+                            <tr class="error-row">
                                 <td>
                                    {% if item.invitation.selected == True %}
                                         <input type="radio" value= {{ item.invitation.invitation_pk }} name={{ item.experiment_metadata_name|cut:" " }} checked />
