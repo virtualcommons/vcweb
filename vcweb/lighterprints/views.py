@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 @participant_required
 def perform_activity(request):
     form = ActivityForm(request.POST or None)
-    logger.debug("performing activity: %s", form)
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
         participant_group_id = form.cleaned_data['participant_group_id']

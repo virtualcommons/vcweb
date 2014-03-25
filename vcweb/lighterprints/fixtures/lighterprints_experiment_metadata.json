@@ -162,10 +162,24 @@
                "type": "enum",
                "date_created": "2012-11-01 15:13:07",
                "last_modified": "2012-11-07 15:13:03",
-               "scope": "round",
+               "scope": "experiment",
                "display_name": "Lighter Footprints Treatment Type (Spring 2013)"
         },
         "model": "core.parameter",
         "pk": 20
+    },
+    {
+        "fields": {
+               "name":"linear_public_good",
+               "experiment_metadata": [ "lighterprints" ],
+               "creator": 1,
+               "type": "boolean",
+               "date_created": "2014-03-01 15:13:07",
+               "last_modified": "2014-03-07 15:13:03",
+               "scope": "experiment",
+               "display_name": "Lighter Footprints Treatment Type (Spring 2013)"
+        },
+        "model": "core.parameter",
+        "pk": 47
     }
 ]
