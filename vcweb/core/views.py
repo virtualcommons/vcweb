@@ -1,5 +1,4 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 # from django.contrib.auth.forms import PasswordResetForm
@@ -24,10 +23,8 @@ from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountFor
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment,
-                               ExperimentMetadata,
-                               Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata, Invitation,
-                               ParticipantSignup, OstromlabFaqEntry,
-                               ExperimentSession, Experimenter, ExperimentParameterValue, RoundConfiguration,
+                               Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata,
+                               OstromlabFaqEntry, Experimenter, ExperimentParameterValue, RoundConfiguration,
                                RoundParameterValue, Parameter)
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
@@ -866,134 +863,6 @@ def _ready_participants_dict(experiment):
 def check_ready_participants(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     return JsonResponse(dumps(_ready_participants_dict(experiment)))
-
-
-@participant_required
-def experiment_session_signup(request):
-    user = request.user
-    if request.method == 'POST':
-        success = False
-
-        data = dict(request.POST.iteritems())
-        invitation_pk = None
-        experiment_metadata_pk = None
-
-        for key in data:
-            if key != 'experiment_metadata_pk':
-                invitation_pk = int(data[key])  # the key is the experiment Metadata Name
-            else:
-                experiment_metadata_pk = int(data[key])
-
-        if invitation_pk is not None:
-            invitation = Invitation.objects.select_related('experiment_session').get(pk=invitation_pk)
-            # lock on the experiment session to prevent concurrent participant signups for an experiment session
-            # exceeding its capacity
-            lock = ExperimentSession.objects.select_for_update().get(pk=invitation.experiment_session.pk)
-            signup_count = ParticipantSignup.objects.filter(
-                invitation__experiment_session__pk=invitation.experiment_session.pk).count()
-
-            ps = ParticipantSignup.objects.filter(
-                invitation__participant=user.participant,
-                invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk,
-                attendance=ParticipantSignup.ATTENDANCE.registered)
-
-            if signup_count < invitation.experiment_session.capacity:
-                if not ps:
-                    ps = ParticipantSignup()
-                else:
-                    ps = ps[0]
-
-                ps.invitation = invitation
-                ps.date_created = datetime.now()
-                ps.attendance = ParticipantSignup.ATTENDANCE.registered
-                ps.save()
-                success = True
-            else:
-                if ps:
-                    success = (ps[0].invitation.pk == invitation_pk)
-                else:
-                    success = False
-            lock.save()
-        else:
-            ParticipantSignup.objects \
-                .select_related('invitation', 'invitation__experiment_session__experiment_metadata') \
-                .filter(invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.registered,
-                        invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk).delete()
-            success = True
-
-        new_list, flag = get_participant_invitations(user)
-
-        if success:
-            messages.add_message(request, messages.SUCCESS,_("Thanks, you have successfully registered for this experiment session. Please remember to be on time!"))
-        else:
-            messages.add_message(request, messages.ERROR,_("Sorry, you were not able to register for the given experiment session. Signups are first-come first-serve, please try again next time as you will still be eligible to participate in future experiments."))
-
-        return render(request, "participant/experiment-session-signup.html",
-                      {"invitation_list": new_list})
-
-    elif request.method == "GET":
-        new_list, flag = get_participant_invitations(user)
-
-        if flag:
-            messages.error(request, _("Sorry, all the experiment sessions are full. Signups are first-come, first-serve. Please try again next time, you will still be eligible to participate in future experiments."))
-
-        return render(request, "participant/experiment-session-signup.html",
-                      {"invitation_list": new_list})
-
-
-def get_participant_invitations(user):
-    flag = True
-       # If the Experiment Session is being conducted tomorrow then don't show invitation to user
-    tomorrow = datetime.now() + timedelta(days=1)
-
-    active_experiment_sessions = ParticipantSignup.objects \
-        .select_related('invitation', 'invitation__experiment_session') \
-        .filter(invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.registered,
-                invitation__experiment_session__scheduled_date__gt=tomorrow)
-
-    # Making sure that user don't see invitations for a experiment for which he has already participated
-    # useful in cases when the experiment has lots of sessions spanning to lots of days. It avoids a user to participate
-    # in another experiment session after attending one of the experiment session of same experiment in last couple
-    # of days
-    participated_experiment_metadata = ParticipantSignup.objects \
-        .select_related('invitation', 'invitation__experiment_session',
-                        'invitation__experiment_session__experiment_metadata') \
-        .filter(invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.participated)
-
-    participated_experiment_metadata_pk_list = [ps.invitation.experiment_session.experiment_metadata.pk for ps in
-                                                participated_experiment_metadata]
-    # logger.debug(participated_experiment_metadata_pk_list)
-    active_invitation_pk_list = [ps.invitation.pk for ps in active_experiment_sessions]
-    # logger.debug(active_invitation_pk_list)
-    invitations = Invitation.objects.select_related('experiment_session', 'experiment_session__experiment_metadata__pk') \
-        .filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow) \
-        .exclude(experiment_session__experiment_metadata__pk__in=participated_experiment_metadata_pk_list) \
-        .exclude(pk__in=active_invitation_pk_list)
-
-    # logger.debug(invitations)
-    invitation_list = []
-    for ps in active_experiment_sessions:
-        signup_count = ParticipantSignup.objects.filter(
-            invitation__experiment_session__pk=ps.invitation.experiment_session.pk).count()
-        ps_dict = ps.to_dict(signup_count)
-        if ps_dict['invitation']['openings'] and flag:
-            flag = False
-        invitation_list.append(ps_dict)
-
-    for invite in invitations:
-        signup_count = ParticipantSignup.objects.filter(
-            invitation__experiment_session__pk=invite.experiment_session.pk).count()
-        invite_dict = invite.to_dict(signup_count)
-        logger.debug(invite_dict)
-        logger.debug(invite_dict['invitation']['openings'])
-        if invite_dict['invitation']['openings'] and flag:
-            flag = False
-        invitation_list.append(invite_dict)
-
-    new_list = sorted(invitation_list, key=lambda use_key: use_key['invitation']['scheduled_date'])
-
-    return new_list, flag
-
 
 
 class ASUWebDirectoryProfile(object):

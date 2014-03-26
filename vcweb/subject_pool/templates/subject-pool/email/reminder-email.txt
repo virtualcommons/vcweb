@@ -1,0 +1,14 @@
+Hi,
+
+This email is to remind you following upcoming experiment session that you have registered for. Please remember to be on time.
+
+-  **Session 1** {{ session.scheduled_date }} to {{ session.scheduled_end_date }}
+
+
+Thanks,
+
+Team VCWEB
+
+
+You are receiving these invitations because you've opted in to our participant database. If you are no longer interested in receiving any experiment invitations you can
+<a href='/accounts/unsubscribe'>unsubscribe here</a>.

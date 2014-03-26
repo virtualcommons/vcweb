@@ -44,7 +44,7 @@ Experiment Session Management
                                     <label class="col-md-5 control-label">Potential Participants</label>
                                     <div class="col-md-7" id="participant-count">
                                         <span class="label label-info pull-left" style="margin-top: 7px;">NA</span>
-                                        <button type="button" class="btn pull-right">Check</button>
+                                        <button type="button" class="btn pull-right" data-loading-text="Checking...">Check</button>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -228,16 +228,6 @@ Experiment Session Management
         var sessions_experiment_metadatas_object = $.parseJSON("{{ view_model_json | escapejs }}");
 
         $(function(){
-            var $loading = $('#loadingDiv').hide();
-
-            $(document)
-                .ajaxStart(function () {
-                    $loading.show();
-                })
-                .ajaxStop(function () {
-                    $loading.hide();
-                });
-
             $('#invite-form').hide();
 
             function createCalendar() {
@@ -269,6 +259,9 @@ Experiment Session Management
             });
 
             $("#participant-count button").click(function() {
+                var btn = $(this);
+                btn.button('loading');
+
                 var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
                 if(session_pk_list.length) {
                     var formData = $("#invite-form form").serialize()  + '&session_pk_list='+ session_pk_list;
@@ -278,6 +271,8 @@ Experiment Session Management
                         success: function(result) {
                             $("#participant-count span").html(result.invitesCount);
                         }
+                    }).always(function () {
+                        btn.button('reset')
                     });
                 }
             });
