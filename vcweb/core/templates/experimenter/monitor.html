@@ -29,27 +29,6 @@
                     <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment and disables participant logins.'><i class='fa fa-power-off'></i> deactivate</a>
                 </div>
             </div>
-            <br>
-            <div class='alert alert-warning alert-block'>
-                <h4><i class='fa fa-arrow-circle-o-down'></i> Download Data</h4>
-                <ul class='list-inline'>
-                    <li><a href='download/csv'><i class='fa fa-file-text'></i> csv</a></li>
-                    <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/> excel</a></li>
-                </ul>
-                {% comment %}
-                FIXME: disabled for the time being
-                <h4><i class='icon-download-alt'></i>Download Configuration Files</h4>
-                <ul class='inline'>
-                    <li><a href='export/configuration.xml'><i class='icon-cog'></i> xml</a></li>
-                    <li><a href='export/configuration.json'><i class='icon-pencil'></i> json</a></li>
-                </ul>
-                {% endcomment %}
-                <div style="padding-top: 5px;" data-bind='ifnot: isArchived'>
-                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='fa fa-floppy-o'></i>
-                        archive</a>
-                </div>
-            </div>
-
         </div>
         <div data-bind="ifnot: isActive() || isArchived()">
             <div data-bind="ifnot: hasParticipants">
@@ -88,15 +67,36 @@
                 </div>
                 <button id='submitExperimenterNotesButton' class='btn btn-success' type='submit' data-bind='click: saveExperimenterNotes'>Save</button>
             </form>
+            <br>
+            <div class='alert alert-warning alert-block'>
+                <h4><i class='fa fa-arrow-circle-o-down'></i> Download Data</h4>
+                <ul class='list-inline'>
+                    <li><a href='download/csv'><i class='fa fa-file-text'></i> csv</a></li>
+                    <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/> excel</a></li>
+                </ul>
+                {% comment %}
+                FIXME: disabled for the time being
+                <h4><i class='icon-download-alt'></i>Download Configuration Files</h4>
+                <ul class='inline'>
+                    <li><a href='export/configuration.xml'><i class='icon-cog'></i> xml</a></li>
+                    <li><a href='export/configuration.json'><i class='icon-pencil'></i> json</a></li>
+                </ul>
+                {% endcomment %}
+                <div style="padding-top: 5px;" data-bind='ifnot: isArchived'>
+                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='fa fa-floppy-o'></i>
+                        archive</a>
+                </div>
+            </div>
+
+
         </div>
         <div class='panel-group'>
             <div class="panel panel-default">
                 <div class='panel-heading'>
-                    <h5 class="panel-title">
-                        <a data-toggle='collapse' data-parent='#registeredParticipantsAccordion' href='#registeredParticipants'>
-                            Registered participants: <span id='participantCountId' data-bind='text:participantCount' class='badge badge-info'></span>
-                        </a>
-                    </h5>
+                    <a data-toggle='collapse' data-parent='#registeredParticipantsAccordion' href='#registeredParticipants'>
+                        <span id='participantCountId' data-bind='text:participantCount' class='badge badge-info'></span>
+                        registered participants
+                    </a>
                 </div>
                 <div id='registeredParticipants' class='panel-collapse collapse'>
                     <div class='panel-default panel-body' data-bind='foreach: groups'>
