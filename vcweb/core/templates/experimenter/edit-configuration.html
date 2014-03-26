@@ -253,9 +253,9 @@
             <label class="col-md-3 control-label">Boolean value</label>
             <div class="col-md-6">
                 <select class="form-control" id="id_boolean_value" name="boolean_value" data-bind="value: boolean_value">
-                    <option value>Choose...</option>
-                    <option value="1">Yes</option>
-                    <option value="0">No</option>
+                    <option value="1">Choose...</option>
+                    <option value="2">Yes</option>
+                    <option value="3">No</option>
                 </select>
             </div>
         </div>
@@ -728,6 +728,7 @@
 
             function ParamViewModel(data, parameterList) {
                 var self = this;
+                var map = {'null':1, 'true': 2, 'false':3};
 
                 self.parameter_list = ko.observableArray(parameterList);
                 self.display_name = ko.observable(data.display_name);
@@ -737,7 +738,7 @@
                 self.string_value = ko.observable(data.string_value);
                 self.int_value = ko.observable(data.int_value);
                 self.float_value = ko.observable(data.float_value);
-                self.boolean_value = ko.observable(data.boolean_value);
+                self.boolean_value = ko.observable(map[data.boolean_value]);
                 self.is_active = ko.observable(data.is_active);
 
                 self.parameter_type = ko.observable(data.parameter_type);
