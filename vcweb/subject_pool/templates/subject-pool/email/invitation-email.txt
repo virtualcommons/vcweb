@@ -5,7 +5,7 @@ Hi,
 Please select **one** of the following sessions:
 
 {% for session in session_list %}
--  **Session {{forloop.counter}}** :- From: {{ session.scheduled_date }} To: {{ session.scheduled_end_date }}
+-  **Session {{forloop.counter}}** {{ session.scheduled_date }} to {{ session.scheduled_end_date }}
 {% endfor %}
 
 To signup for a session please click on the link below or copy paste the url into your browser's address bar.
@@ -17,5 +17,5 @@ Thanks,
 Team VCWEB
 
 
-You are receiving these invitations because you've opted in to our participant database. If you are no longer interested in receiving any experiment invitations you can 
+You are receiving these invitations because you've opted in to our participant database. If you are no longer interested in receiving any experiment invitations you can
 <a href='/accounts/unsubscribe'>unsubscribe here</a>.
