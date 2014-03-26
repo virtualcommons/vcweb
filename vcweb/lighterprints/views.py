@@ -156,8 +156,8 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         # FIXME: extract this from groupData instead..
         'groupLevel': own_group_level,
         'linearPublicGood': linear_public_good,
-        'totalDailyEarnings': group_scores.average_points(own_group) * experiment_configuration.exchange_rate,
-        'averagePoints': group_scores.average_points(own_group),
+        'totalDailyEarnings': group_scores.average_daily_points(own_group) * experiment_configuration.exchange_rate,
+        'averagePoints': group_scores.average_daily_points(own_group),
         'pointsToNextLevel': group_scores.get_points_goal(own_group),
         'hasScheduledActivities': group_scores.has_scheduled_activities,
         'groupActivity': team_activity,

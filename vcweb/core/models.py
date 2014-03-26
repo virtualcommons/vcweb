@@ -2251,6 +2251,14 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
         ).filter(participant_group_relationship__group=group, is_active=True, **kwargs).order_by('-date_created')
 
 
+    def for_experiment(self, experiment=None, **kwargs):
+        if experiment is None:
+            raise ValueError("Must specify an experiment for this query")
+        return self.select_related('parameter',
+                'participant_group_relationship__group').filter(round_data__experiment=experiment, is_active=True,
+                        **kwargs)
+
+
 class ParticipantRoundDataValue(ParameterizedValue):
     """
     Represents a single data point for a given Participant in a given Round.

@@ -75,7 +75,7 @@ class UpdateLevelTest(BaseTest):
         for group in gs:
             logger.debug("all levels should be 2 now")
             self.assertEqual(get_footprint_level(group), 2)
-            self.assertEqual(group_scores.average_points(group), 177)
+            self.assertEqual(group_scores.average_daily_points(group), 177)
 
 
 class GroupActivityTest(BaseTest):
@@ -165,5 +165,5 @@ class GroupScoreTest(ActivityTest):
         # every participant in the group has performed them
         expected_avg_points_per_person = sum([activity.points for activity in performed_activities])
         for group in gs:
-            self.assertEqual(group_scores.average_points(group), expected_avg_points_per_person)
-            self.assertEqual(group_scores.total_points(group), expected_avg_points_per_person * group.size)
+            self.assertEqual(group_scores.average_daily_points(group), expected_avg_points_per_person)
+            self.assertEqual(group_scores.total_daily_points(group), expected_avg_points_per_person * group.size)

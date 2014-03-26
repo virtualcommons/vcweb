@@ -8,10 +8,14 @@ You are a member of {{ group_name }}. To participate in this experiment, visit <
 {% endif %}
 
 
-* You earned {{ individual_points }} points while the average in your group was {{ average_points }} point(s).
+* You earned {{ individual_points }} points while the average in your group was {{ average_daily_points }} point(s).
 * {{ number_of_chat_messages }} chat messages were posted by your group.
 {% if show_rankings %}
 * Your group was ranked {{ group_rank}} out of {{ number_of_groups }}
+{% endif %}
+{% if linear_public_good %}
+* You earned {{ daily_earnings }} today
+* Your total earnings are {{ total_earnings }}
 {% endif %}
 
 {% if completed %}
