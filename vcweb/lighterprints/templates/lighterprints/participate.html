@@ -76,8 +76,8 @@
                     <h5 id='third-box'><span data-bind='text: thirdBoxTitle' class='lighterprints-scoreboard-uppercase'></span></h5>
                     <table style='margin-top: -37px;' data-bind='if: hasScheduledActivities'>
                         <tr data-bind='if: linearPublicGood'>
-                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: totalDailyEarnings'></span></td>
-                            <td><i class='lighterprints-green fa fa-usd fa-2x'></i></td>
+                            <td><i class='lighterprints-green fa fa-usd fa-3x'></i></td>
+                            <td class='lighterprints-scoreboard-xlarge lighterprints-green'><span data-bind='text: totalDailyEarnings'></span></td>
                         </tr>
                         <tr data-bind='ifnot: linearPublicGood'>
                             <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: totalPoints'></span></td>
@@ -129,9 +129,14 @@
             <div class='alert alert-block alert-white'>
                 <h2>Complete challenges to earn green points.</h2>
                 <p data-bind='if: hasScheduledActivities'>
-                Different challenges are available at different times and days. In order to maximize your chances at
-                winning a prize, your group must earn enough points so that the <strong>average number of points</strong> per participant is greater than
-                <span data-bind='text:pointsToNextLevel' class='badge badge-lighterprints-green'></span>.
+                    Different challenges are available at different times and days. 
+                    <span data-bind='if: linearPublicGood'>You will earn <i class='fa fa-usd'></i>0.02 for each point in your group average score, so if your group average score is <b>150</b> by the end of today for instance you would earn 
+                        <i class='fa fa-usd'></i>3.00 for this day.
+                    </span>
+                    <span data-bind='ifnot: linearPublicGood'>In order to maximize your chances at
+                        winning a prize, your group must earn enough points so that the <strong>average number of points</strong> per participant is greater than
+                        <span data-bind='text:pointsToNextLevel' class='badge badge-lighterprints-green'></span>.
+                    </span>
                 </p>
                 <p data-bind='ifnot: hasScheduledActivities'>
                 Challenges are divided up into 3 levels.  In order to unlock the next level's challenges your group must earn
@@ -152,7 +157,7 @@
             activities.  Some of these activities are available all day, and others are only available at
             specific times.  You can learn more about them by clicking on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a> and selecting an activity.
             </p>
-            <h4>Challenges, Green Points, and Prizes</h4>
+            <h3>Challenges, Green Points, and Prizes</h3>
             <p>
             Each <strong class='text-gold'>challenge</strong> is worth a certain number of 
             <strong class='lighterprints-green'>green points <i class='fa fa-leaf'></i></strong>.
@@ -162,8 +167,14 @@
             select the challenge from the list below, and click the &quot;Perform&quot; button.
             </p>
             <p data-bind='if: hasScheduledActivities'>
-            In order to earn a prize your group score must reach <strong class='lighterprints-green'><span data-bind='text: pointsToNextLevel'></span>
-            <i class='fa fa-leaf'></i></strong>. In order to reach this target you and a majority of the members of your group will need to perform high point challenges when they are available.
+            <div data-bind='if: linearPublicGood'>
+                You will earn <b class='lighterprints-green'><i class='fa fa-usd'></i>0.02</b> for each point in your group average score, so if your group average score is <b>150</b> by the end of the day you would have earned 
+                <b class='lighterprints-green'><i class='fa fa-usd'></i>3.00</b> for that day.
+            </div>
+            <div data-bind='ifnot: linearPublicGood'>
+                In order to earn a prize your group score must reach <strong class='lighterprints-green'><span data-bind='text: pointsToNextLevel'></span>
+                <i class='fa fa-leaf'></i></strong>. In order to reach this target you and a majority of the members of your group will need to perform high point challenges when they are available.
+            </div>
             <b>Different challenges will be available on different days, so check back each day to see which challenges are available</b>
             </p>
             <p data-bind='ifnot: hasScheduledActivities'>
@@ -174,7 +185,7 @@
             In order to reach this target you and a majority of the members of your group must perform
             high point challenges when they are available.
             </p>
-            <h4>How to participate</h4>
+            <h3>How to participate</h3>
             <p>
             To participate, simply click on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a>, and select a challenge you'd like to perform.
             You can leave messages for the other members n your group via the <a href='#group' data-bind='click: activateGroupTab'>My Group tab</a> 
