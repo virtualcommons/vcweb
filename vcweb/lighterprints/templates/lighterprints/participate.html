@@ -73,9 +73,13 @@
                     </table>
                 </div>
                 <div class='col-md-3 left-divider'>
-                    <h5 id='current-level'><span data-bind='text: currentLevelText' class='lighterprints-scoreboard-uppercase'></span></h5>
+                    <h5 id='third-box'><span data-bind='text: thirdBoxTitle' class='lighterprints-scoreboard-uppercase'></span></h5>
                     <table style='margin-top: -37px;' data-bind='if: hasScheduledActivities'>
-                        <tr>
+                        <tr data-bind='if: linearPublicGood'>
+                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: totalDailyEarnings'></span></td>
+                            <td><i class='lighterprints-green fa fa-usd fa-2x'></i></td>
+                        </tr>
+                        <tr data-bind='ifnot: linearPublicGood'>
                             <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: totalPoints'></span></td>
                             <td><i class='lighterprints-green fa fa-leaf fa-2x'></i></td>
                         </tr>
@@ -343,8 +347,34 @@ $(function() {
     // custom view model methods, some of these may be lifted into the model itself
     viewModel.tutorialTour = new Tour({ name: "lfpTutorial", labels: { end: "End tutorial", next: 'Next »', prev: '« Back' }});
     viewModel.progressChart = ko.observable(new Chart(document.getElementById("progressChart").getContext("2d")));
-    viewModel.currentLevelText = ko.computed(function() {
-        return viewModel.hasScheduledActivities() ? "Your Score" : "Current Level";
+    {% comment %}
+    // FIXME: crappy special case logic to deal with scheduled activities vs level based activities and linear public
+    good parameter
+    {% endcomment %}
+    viewModel.thirdBoxTitle = ko.computed(function() {
+        if (viewModel.hasScheduledActivities()) {
+            if (viewModel.linearPublicGood()) {
+                return "Today's Earnings";
+            }
+            else {
+                return "Your Score";
+            }
+        }
+        else {
+            return "Current Level";
+        }
+    });
+    viewModel.thirdBoxTooltipContent = ko.computed(function() {
+        var thirdBoxContent = "This is your group's current level. Each new level unlocks 5 new challenges.";
+        if (viewModel.hasScheduledActivities()) {
+            if (viewModel.linearPublicGood()) {
+                thirdBoxContent = "This shows the number of points you have contributed to your group today and your total earnings for the day.";
+            }
+            else {
+                thirdBoxContent = "This shows the total number of points you have contributed to your group today.";
+            }
+        }
+        return thirdBoxContent;
     });
     viewModel.setup = function() {
         viewModel.initializeChart();
@@ -358,6 +388,8 @@ $(function() {
         console.debug("ending tour");
         tour.end();
     };
+
+
     viewModel.setupTour = function() {
         var tour = viewModel.tutorialTour;
         tour.addSteps([
@@ -374,13 +406,10 @@ $(function() {
             content: "This is your group score for the day. The group score is the average number of points each member of your group has earned, starting at midnight each day."
         },
         {
-            element: "#current-level",
-            {% comment %}
-            // FIXME: crappy special case logic to deal with scheduled activities vs level based activities
-            {% endcomment %}
-            title: viewModel.hasScheduledActivities() ? "Your Score" : "Current Level",
+            element: "#third-box",
+            title: viewModel.thirdBoxTitle(),
             placement: "top",
-            content: viewModel.hasScheduledActivities() ? "This shows the number of points you have contributed to your group today." : "This is your group's current level. Each new level unlocks 5 new challenges."
+            content: viewModel.thirdBoxTooltipContent()
         },
         {
             element: "#time-remaining",

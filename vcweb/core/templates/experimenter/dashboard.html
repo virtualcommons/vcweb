@@ -84,7 +84,7 @@
 </div>
 </script>
 {{ block.super }}
-<script type='text/javascript'>
+<script>
     var viewModelObject = $.parseJSON("{{ dashboardViewModelJson|escapejs }}");
     $(function() {
         function DashboardViewModel(viewModelObject) {

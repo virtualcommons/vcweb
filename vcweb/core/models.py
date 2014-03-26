@@ -415,6 +415,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
         ec = ExperimentConfiguration.objects.get(pk=self.pk)
         ec.pk = None
         ec.creator = creator
+        ec.date_created = datetime.now()
         ec.save()
         for epv in self.parameter_value_set.all():
             epv_clone = ExperimentParameterValue.objects.get(pk=epv.pk)
