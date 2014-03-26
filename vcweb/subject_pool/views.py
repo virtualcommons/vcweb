@@ -10,7 +10,7 @@ from datetime import datetime, time, timedelta
 from time import mktime
 from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
-from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives
 
 from forms import SessionForm, SessionInviteForm, ParticipantAttendanceForm
 
@@ -189,6 +189,17 @@ def get_invitations_count(request):
             'invitesCount': 0
         }))
 
+def get_invitation_email_content(custom_invitation_text, experiment_session_ids):
+    plaintext_template = get_template('subject-pool/email/invitation-email.txt')
+    c = Context({
+        'invitation_text': custom_invitation_text,
+        'session_list': ExperimentSession.objects.filter(pk__in=experiment_session_ids),
+    })
+    plaintext_content = plaintext_template.render(c)
+    html_content = markdown.markdown(plaintext_content)
+    logger.debug("plaintext_content %s, html_content %s", plaintext_content, html_content)
+    return (plaintext_content, html_content)
+
 
 @experimenter_required
 def send_invitations(request):
@@ -247,24 +258,13 @@ def send_invitations(request):
                                        sender=user))
                 Invitation.objects.bulk_create(invitations)
 
-                plaintext_template = get_template('email/invitation-email.txt')
+                plaintext_content, html_content = get_invitation_email_content(invitation_text, session_pk_list)
 
-                experiment = ExperimentMetadata.objects.get(pk=experiment_metadata_pk)
-                c = Context({
-                    'invitation_text': invitation_text,
-                    'experiment': experiment,
-                    'session_list': ExperimentSession.objects.filter(pk__in=session_pk_list),
-                })
-
-                plaintext_content = plaintext_template.render(c)
-
-                html_content = markdown.markdown(plaintext_content)
-
-                msg = EmailMultiAlternatives(invitation_subject,
-                                             plaintext_content,
-                                             from_email,
-                                             [from_email],
-                                             recipient_list,
+                msg = EmailMultiAlternatives(subject=invitation_subject,
+                                             body=plaintext_content,
+                                             from_email=from_email,
+                                             to=[from_email],
+                                             bcc=recipient_list,
                                              cc=['allen.lee@asu.edu'])
                 msg.attach_alternative(html_content, "text/html")
 
@@ -294,31 +294,11 @@ def invite_email_preview(request):
     Generates email Preview for the provided invitation details
     """
     form = SessionInviteForm(request.POST or None)
-    message = "Please fill in all the details of the invitation form to preview email"
-
+    message = "Please fill in all form fields to preview email"
     if form.is_valid():
         invitation_text = form.cleaned_data.get('invitation_text')
-
         session_pk_list = request.POST.get('session_pk_list').split(",")
-
-        experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
-        experiment_metadata_pk_list = experiment_sessions.values_list('experiment_metadata__pk', flat=True)
-
-        experiment_metadata_pk = experiment_metadata_pk_list[0]
-
-        plaintext_template = get_template('email/invitation-email.txt')
-
-        experiment = ExperimentMetadata.objects.get(pk=experiment_metadata_pk)
-        c = Context({
-            'invitation_text': invitation_text,
-            'experiment': experiment,
-            'session_list': ExperimentSession.objects.filter(pk__in=session_pk_list),
-        })
-
-        plaintext_content = plaintext_template.render(c)
-        logger.debug(plaintext_content)
-        html_content = markdown.markdown(plaintext_content)
-
+        plaintext_content, html_content = get_invitation_email_content(invitation_text, session_pk_list)
         return JsonResponse(dumps({
             'success': True,
             'content': html_content
@@ -331,12 +311,11 @@ def invite_email_preview(request):
         }))
 
 
-def get_potential_participants(experiment_metadata_pk, institution="Arizona S U", days_threshold=7,
+def get_potential_participants(experiment_metadata_pk, institution="Arizona State University", days_threshold=7,
                                only_undergrad=True):
     """
     Returns the pool of participants which match the required invitation criteria.
     """
-    undergrad_choices = ['Freshman', 'Sophomore', 'Junior', 'Senior']
 
     try:
         affiliated_institution = Institution.objects.get(name=institution)
@@ -345,22 +324,22 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona S U"
 
     if affiliated_institution:
         # Get unlikely participants for the given parameters
-        unlikely_participants = get_unlikely_participants(days_threshold, experiment_metadata_pk)
+        excluded_participants = get_excluded_participants(days_threshold, experiment_metadata_pk)
         if only_undergrad:
             potential_participants = Participant.objects.filter(can_receive_invitations=True,
                                                                 institution=affiliated_institution,
-                                                                class_status__in=undergrad_choices) \
-                .exclude(pk__in=unlikely_participants)
+                                                                class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES) \
+                .exclude(pk__in=excluded_participants)
         else:
             potential_participants = Participant.objects.filter(can_receive_invitations=True,
                                                                 institution=affiliated_institution) \
-                .exclude(pk__in=unlikely_participants)
+                .exclude(pk__in=excluded_participants)
     else:
         potential_participants = []
     return potential_participants
 
 
-def get_unlikely_participants(days_threshold, experiment_metadata_pk):
+def get_excluded_participants(days_threshold, experiment_metadata_pk):
     """
     Returns the pool of participants which do not match the required invitation criteria.
     """

@@ -67,57 +67,57 @@
                 </div>
                 <button id='submitExperimenterNotesButton' class='btn btn-success' type='submit' data-bind='click: saveExperimenterNotes'>Save</button>
             </form>
-        </div>
+            <br>
+            <div class='alert alert-warning alert-block'>
+                <h4><i class='fa fa-arrow-circle-o-down'></i> Download Data</h4>
+                <ul class='list-inline'>
+                    <li><a href='download/csv'><i class='fa fa-file-text'></i> csv</a></li>
+                    <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/> excel</a></li>
+                </ul>
+                {% comment %}
+                FIXME: disabled for the time being
+                <h4><i class='icon-download-alt'></i>Download Configuration Files</h4>
+                <ul class='inline'>
+                    <li><a href='export/configuration.xml'><i class='icon-cog'></i> xml</a></li>
+                    <li><a href='export/configuration.json'><i class='icon-pencil'></i> json</a></li>
+                </ul>
+                {% endcomment %}
+                <div style="padding-top: 5px;" data-bind='ifnot: isArchived'>
+                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='fa fa-floppy-o'></i>
+                        archive</a>
+                </div>
+            </div>
 
+
+        </div>
         <div class='panel-group'>
             <div class="panel panel-default">
                 <div class='panel-heading'>
-                    <h4 class="panel-title">
-                        <a data-toggle='collapse' data-parent='#registeredParticipantsAccordion' href='#registeredParticipants'>
-                            Registered participants: <span id='participantCountId' data-bind='text:participantCount' class='badge badge-info'></span>
-                        </a>
-                    </h4>
+                    <a data-toggle='collapse' data-parent='#registeredParticipantsAccordion' href='#registeredParticipants'>
+                        <span id='participantCountId' data-bind='text:participantCount' class='badge badge-info'></span>
+                        registered participants
+                    </a>
                 </div>
-            </div>
-            <div id='registeredParticipants' class='panel-collapse collapse'>
-                <div class='panel-default panel-body' data-bind='foreach: groups'>
-                    <table class='table table-compact table-striped table-bordered'>
-                        <caption class='text-info'><b><span data-bind='text: name'></span> (PK: <span data-bind='text: pk'></span>)</b></caption>
-                        <thead><tr><th>PGR PK</th><th>Participant</th><th>Email</th></tr></thead>
-                        <tbody data-bind='foreach: participant_group_relationships'>
+                <div id='registeredParticipants' class='panel-collapse collapse'>
+                    <div class='panel-default panel-body' data-bind='foreach: groups'>
+                        <table class='table table-compact table-striped table-bordered'>
+                            <caption class='text-info'><b><span data-bind='text: name'></span> (PK: <span data-bind='text: pk'></span>)</b></caption>
+                            <thead><tr><th>PGR PK</th><th>Participant</th><th>Email</th></tr></thead>
+                            <tbody data-bind='foreach: participant_group_relationships'>
                             <tr>
-                                <td data-bind='text: pk'>
-                                <td data-bind='text: participant_number'>
-                                <td data-bind='text: email'>
+                                <td data-bind='text: pk'></td>
+                                <td data-bind='text: participant_number'></td>
+                                <td data-bind='text: email'></td>
                             </tr>
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-        </div>
-
-        <div class='alert alert-warning alert-block'>
-            <h4><i class='fa fa-arrow-circle-o-down'></i> Download Data</h4>
-            <ul class='list-inline'>
-                <li><a href='download/csv'><i class='fa fa-file-text'></i> csv</a></li>
-                <li><a href='download/xls'><img src='{{STATIC_URL}}images/famfamfam/page_white_excel.png' alt='xls'/> excel</a></li>
-            </ul>
-            {% comment %}
-            FIXME: disabled for the time being
-            <h4><i class='icon-download-alt'></i>Download Configuration Files</h4>
-            <ul class='inline'>
-                <li><a href='export/configuration.xml'><i class='icon-cog'></i> xml</a></li>
-                <li><a href='export/configuration.json'><i class='icon-pencil'></i> json</a></li>
-            </ul>
-            {% endcomment %}
-            <div style="padding-top: 5px;" data-bind='ifnot: isArchived'>
-                <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='fa fa-floppy-o'></i>
-                    archive</a>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div style='padding-right: 8px;' class='alert alert-warning'>
+        <div class="col-md-6">
+            <div style='padding-right: 8px;' class='alert alert-warning'>
             <h4>EXPERIMENT LOG</h4>
             <div id='experiment-messages' data-bind='foreach: messages'>
                 <div>

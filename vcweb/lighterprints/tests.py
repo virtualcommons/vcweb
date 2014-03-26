@@ -9,8 +9,6 @@ import json
 
 logger = logging.getLogger(__name__)
 
-logging.disable(logging.WARNING)
-
 class BaseTest(BaseVcwebTest):
     fixtures = [ 'lighterprints_experiment_metadata', 'activities' ]
 

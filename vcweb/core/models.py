@@ -2456,8 +2456,8 @@ class ExperimentSession(models.Model):
     capacity = models.PositiveIntegerField(default=20)
     creator = models.ForeignKey(User, related_name='experiment_session_set')
     # wire up with autocomplete
-    location = models.CharField(max_length=128, blank=True, help_text=_('Location where this experiment session will be held.'))
-    # FIXME: consider placing this somewhere more re-usable, or allow use of ExperimentConfiguration.invitation_text as a fallback
+    location = models.CharField(max_length=128, blank=True, help_text=_('Where will this experiment session be held?'))
+    # FIXME: make this more re-usable or allow use of ExperimentConfiguration.invitation_text as a fallback
     invitation_text = models.TextField(blank=True)
 
     def to_dict(self, **kwargs):
@@ -2481,13 +2481,15 @@ class ExperimentSession(models.Model):
     def __unicode__(self):
         return u"{} {} {}".format(self.experiment_metadata, self.scheduled_date, self.scheduled_end_date)
 
+    class Meta:
+        ordering = ['scheduled_date']
+
 
 class Invitation(models.Model):
     participant = models.ForeignKey(Participant)
     experiment_session = models.ForeignKey(ExperimentSession)
     date_created = models.DateTimeField(default=datetime.now)
     sender = models.ForeignKey(User)
-
 
     def __unicode__(self):
         return u"[{}] [{}] ({})".format(self.participant, self.experiment_session, self.sender)
