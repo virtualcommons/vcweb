@@ -15,6 +15,7 @@ from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 from operator import itemgetter
 
+import itertools
 import locale
 import logging
 import markdown
@@ -207,6 +208,9 @@ class GroupScores(object):
             'pointsToNextLevel': self.get_points_goal(group),
         }
 
+    def create_all_email_messages(self):
+        return itertools.chain.from_iterable(self.create_email_messages(group) for group in self.groups)
+
     def create_email_messages(self, group):
         if self.has_scheduled_activities:
             return self.create_scheduled_activity_experiment_emails(group)
@@ -329,21 +333,21 @@ class GroupScores(object):
 
 @receiver(signals.pre_system_daily_tick)
 def send_lighterprints_summary_emails(sender, time=None, start_date=None, send_emails=True, **kwargs):
-    # this method should be invoked after midnight, so start_date should be set the previous day
+    # invoked after midnight, so start_date should be set to the previous day. 
     if start_date is None:
         start_date = date.today() - timedelta(1);
     active_experiments = get_active_experiments()
     logger.debug("sending summary emails to [%s] on %s", active_experiments, start_date)
     all_messages = []
     for experiment in active_experiments:
+        # we use the current round data because this tick occurs *before* the system_daily_tick that advances each
+        # experiment to the next round.
         round_data = experiment.current_round_data
         groups = list(experiment.groups)
         group_scores = GroupScores(experiment, round_data, groups, start_date=start_date)
-        for group in groups:
-            messages = group_scores.create_email_messages(group)
-            all_messages.extend(messages)
+        all_messages.extend(group_scores.create_all_email_messages())
+    logger.debug("lighterprints generated emails: %s", all_messages)
     if send_emails:
-        logger.debug("sending messages %s", all_messages)
         mail.get_connection().send_messages(all_messages)
 
 
