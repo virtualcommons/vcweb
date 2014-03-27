@@ -2551,11 +2551,21 @@ class ExperimentSession(models.Model):
         ordering = ['scheduled_date']
 
 
+class InvitationQuerySet(models.query.QuerySet):
+    def upcoming(self, participant=None):
+        criteria = dict(experiment_session__scheduled_date__gt=datetime.now())
+        if participant is not None:
+            criteria.update(participant=participant)
+        return self.select_related('experiment_session', 'participant').filter(**criteria)
+
+
 class Invitation(models.Model):
     participant = models.ForeignKey(Participant)
     experiment_session = models.ForeignKey(ExperimentSession)
     date_created = models.DateTimeField(default=datetime.now)
     sender = models.ForeignKey(User)
+
+    objects = PassThroughManager.for_queryset_class(InvitationQuerySet)()
 
     def __unicode__(self):
         return u"[{}] [{}] ({})".format(self.participant, self.experiment_session, self.sender)
@@ -2601,6 +2611,13 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
         criteria = self._experiment_metadata_criteria({'attendance': ParticipantSignup.ATTENDANCE.participated},
                                                       **kwargs)
         return self.filter(**criteria)
+
+    def upcoming(self, participant=None, **kwargs):
+        criteria = dict(attendance=ParticipantSignup.ATTENDANCE.registered,
+                invitation__experiment_session__scheduled_date__gt=datetime.now())
+        if participant is not None:
+            criteria.update(participant=participant)
+        return self.select_related('invitation__participant', 'invitation__experiment_session').filter(**criteria)
 
 
 class ParticipantSignup(models.Model):

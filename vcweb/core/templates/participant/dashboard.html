@@ -30,7 +30,8 @@ Participant Dashboard
 {% endblock page %}
 
 {%  block javascript %}
-<script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/moment.js/2.3.1/moment.min.js'></script>
+{{ block.super }}
+<script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/moment.js/2.5.1/moment.min.js'></script>
 <script type='text/html' id='experimentTemplate'>
 <div class='alert alert-warning alert-block'>
     <a data-bind='attr: { href: participant_url }'><i class='fa fa-play'></i> <span data-bind='text: name'></span>
@@ -40,18 +41,17 @@ Participant Dashboard
     </a>
 </div>
 </script>
-    {{ block.super }}
-    <script type='text/javascript'>
-    $(function() {
-        function DashboardViewModel(viewModelObject) {
-            var self = this;
-            var model = ko.mapping.fromJS(viewModelObject);
-            model.formatDate = function(dateString) { return moment(dateString).format("dddd MMM Do YYYY"); };
-            return model;
-        }
-        var model = new DashboardViewModel($.parseJSON("{{ dashboardViewModelJson|escapejs }}"));
-        ko.applyBindings(model);
-        globalModel = model;
-    });
-    </script>
+<script type='text/javascript'>
+$(function() {
+    function DashboardViewModel(viewModelObject) {
+        var self = this;
+        var model = ko.mapping.fromJS(viewModelObject);
+        model.formatDate = function(dateString) { return moment(dateString).format("dddd MMM Do YYYY"); };
+        return model;
+    }
+    var model = new DashboardViewModel($.parseJSON("{{ dashboardViewModelJson|escapejs }}"));
+    ko.applyBindings(model);
+    globalModel = model;
+});
+</script>
 {%  endblock javascript %}

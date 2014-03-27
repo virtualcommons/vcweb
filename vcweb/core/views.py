@@ -25,7 +25,7 @@ from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperi
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment,
                                Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata,
                                OstromlabFaqEntry, Experimenter, ExperimentParameterValue, RoundConfiguration,
-                               RoundParameterValue, Parameter)
+                               RoundParameterValue, Parameter, ParticipantSignup, Invitation)
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
 import logging
@@ -123,6 +123,8 @@ class DashboardViewModel(object):
                     e.to_dict(attrs=('participant_url', 'start_date'), name=e.experiment_metadata.title))
             self.pending_experiments = experiment_status_dict['INACTIVE']
             self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+            self.signups = [ps.to_dict() for ps in ParticipantSignup.objects.upcoming(self.participant)]
+            self.has_pending_invitations = Invitation.objects.upcoming(participant=self.participant).exists()
 
     @property
     def template_name(self):
@@ -140,12 +142,14 @@ class DashboardViewModel(object):
                 'experimentMetadataList': self.experiment_metadata_list,
                 'pendingExperiments': self.pending_experiments,
                 'runningExperiments': self.running_experiments,
-                'archivedExperiments': self.archived_experiments
+                'archivedExperiments': self.archived_experiments,
             }
         else:
             return {
                 'pendingExperiments': self.pending_experiments,
-                'runningExperiments': self.running_experiments
+                'runningExperiments': self.running_experiments,
+                'has_pending_invitations': self.has_pending_invitations,
+                'signups': self.signups,
             }
 
 
