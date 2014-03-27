@@ -107,6 +107,9 @@ h1.header {
 div.lighterprints-scoreboard {
     color: #A9A9A9;
 }
+table.lighterprints-scoreboard {
+    margin-top: -37px;
+}
 .lighterprints-scoreboard-large {
     font-size: 3em;
     font-family: 'TrumpGothicWestW01-Medi', sans-serif;

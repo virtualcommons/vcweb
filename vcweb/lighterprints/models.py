@@ -154,7 +154,9 @@ class GroupScores(object):
 
     def get_points_goal(self, group):
         if self.has_scheduled_activities:
-            return get_group_threshold(self.round_configuration)
+            # FIXME: hard coded limit for linear public good games, should be dependent on total number of scheduled
+            # activities available per day instead?
+            return 250 if self.is_linear_public_good_game else get_group_threshold(self.round_configuration)
         else:
             return get_points_to_next_level(self.get_group_level(group))
 

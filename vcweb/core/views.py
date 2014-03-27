@@ -28,15 +28,14 @@ from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperi
                                RoundParameterValue, Parameter)
 from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
 import itertools
-import tempfile
-import urllib2
-import xml.etree.ElementTree as ET
-import unicodecsv
 import logging
 import mimetypes
+import unicodecsv
+import urllib2
+import xml.etree.ElementTree as ET
 
-mimetypes.init()
 logger = logging.getLogger(__name__)
+mimetypes.init()
 SUCCESS_JSON = dumps({'success': True})
 FAILURE_JSON = dumps({'success': False})
 
