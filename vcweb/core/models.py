@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date, time
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.core import mail, serializers
@@ -2741,6 +2741,9 @@ def set_full_name(user, full_name):
 
 
 def send_email(template, context, subject, from_email, to_email, bcc=None):
+    """
+     Utility function to send out confirmation and reminder emails
+    """
     plaintext_template = get_template(template)
 
     c = Context(context)
@@ -2755,9 +2758,15 @@ def send_email(template, context, subject, from_email, to_email, bcc=None):
 
 
 @receiver(signals.system_daily_tick)
-def send_reminder_emails(sender, time=None, start=None, **kwargs):
-    tomorrow = datetime.now() + timedelta(days=1)
-    es_list = ExperimentSession.objects.filter(scheduled_date__contains=tomorrow)
+def send_reminder_emails(sender, tim=None, start=None, **kwargs):
+    """
+    signal handler to send out reminder emails to participants
+    """
+    tomorrow = date.today() + timedelta(days=1)
+    start_date_time = datetime.combine(tomorrow, time.min)
+    end_date_time = datetime.combine(tomorrow, time.max)
+
+    es_list = ExperimentSession.objects.filter(scheduled_date__range=(start_date_time, end_date_time))
 
     for es in es_list:
         ps_list = ParticipantSignup.objects.filter(invitation__experiment_session=es)
