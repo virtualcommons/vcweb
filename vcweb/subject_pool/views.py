@@ -402,10 +402,9 @@ def manage_participant_attendance(request, pk=None):
 @participant_required
 def experiment_session_signup(request):
     user = request.user
-    logger.debug(user)
+
     if request.method == 'POST':
         data = dict(request.POST.iteritems())
-        logger.debug(data)
         invitation_pk = None
         experiment_metadata_pk = None
 
@@ -423,17 +422,16 @@ def experiment_session_signup(request):
             signup_count = ParticipantSignup.objects.filter(
                 invitation__experiment_session__pk=invitation.experiment_session.pk).count()
 
-            try:
-                ps = ParticipantSignup.objects.get(
-                    invitation__participant=user.participant,
-                    invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk,
-                    attendance=ParticipantSignup.ATTENDANCE.registered)
-            except ParticipantSignup.DoesNotExist:
-                ps = ParticipantSignup()
-
-            success = False
             # verify that still there is vacancy for the selected experiment session
             if signup_count < invitation.experiment_session.capacity:
+                try:
+                    ps = ParticipantSignup.objects.get(
+                        invitation__participant=user.participant,
+                        invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk,
+                        attendance=ParticipantSignup.ATTENDANCE.registered)
+                except ParticipantSignup.DoesNotExist:
+                    ps = ParticipantSignup()
+
                 ps.invitation = invitation
                 ps.date_created = datetime.now()
                 ps.attendance = ParticipantSignup.ATTENDANCE.registered
@@ -441,9 +439,7 @@ def experiment_session_signup(request):
                 success = True
             else:
                 # No vacancy
-                # set success to true if the user is already registered for the same experiment session
-                # else set it to false
-                success = (ps.invitation.pk == invitation_pk)
+                success = False
 
             # release the lock
             lock.save()
@@ -465,11 +461,6 @@ def experiment_session_signup(request):
                           {"invitation_list": new_list})
 
         else:
-            # ParticipantSignup.objects \
-            #     .select_related('invitation', 'invitation__experiment_session__experiment_metadata') \
-            #     .filter(invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.registered,
-            #             invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk).delete()
-
             # unregister a user from the experiment_session
             try:
                 ParticipantSignup.objects.\
