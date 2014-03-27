@@ -500,7 +500,7 @@ def experiment_session_signup(request):
 
 
 def get_participant_invitations(user):
-    flag = True
+    flag = False
     # If the Experiment Session is being conducted tomorrow then don't show invitation to user
     tomorrow = datetime.now() + timedelta(days=1)
 
@@ -534,8 +534,6 @@ def get_participant_invitations(user):
         signup_count = ParticipantSignup.objects.filter(
             invitation__experiment_session__pk=ps.invitation.experiment_session.pk).count()
         ps_dict = ps.to_dict(signup_count)
-        if ps_dict['invitation']['openings'] and flag:
-            flag = False
         invitation_list.append(ps_dict)
 
     for invite in invitations:
