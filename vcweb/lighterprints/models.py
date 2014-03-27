@@ -97,7 +97,7 @@ class GroupScores(object):
         self.round_data = experiment.current_round_data if round_data is None else round_data
         self.groups = list(experiment.groups) if groups is None else groups
         experiment_configuration = experiment.experiment_configuration
-        self.exchange_rate = experiment_configuration.exchange_rate
+        self.exchange_rate = float(experiment_configuration.exchange_rate)
         self.has_scheduled_activities = is_scheduled_activity_experiment(experiment_configuration)
         self.is_linear_public_good_game = is_linear_public_good_game(experiment_configuration)
         self.number_of_groups = len(self.groups)
@@ -111,9 +111,7 @@ class GroupScores(object):
         self.round_configuration = self.round_data.round_configuration
         self.show_rankings = can_view_other_groups(self.round_configuration)
         activity_points_cache = get_activity_points_cache()
-        activities_performed_qs = ParticipantRoundDataValue.objects.for_experiment(experiment=self.experiment, parameter=get_activity_performed_parameter())
-        #logger.debug("activities performed qs: %s", activities_performed_qs)
-        activities_performed_qs = activities_performed_qs.filter(round_data=self.round_data, date_created__range=(self.start_date, self.end_date))
+        activities_performed_qs = ParticipantRoundDataValue.objects.for_round(parameter=get_activity_performed_parameter(), round_data=self.round_data, date_created__range=(self.start_date, self.end_date))
         for activity_performed_dv in activities_performed_qs:
             activity_points = activity_points_cache[activity_performed_dv.int_value]
             self.scores_dict[activity_performed_dv.participant_group_relationship.group]['total_daily_points'] += activity_points
@@ -135,10 +133,10 @@ class GroupScores(object):
         return self.scores_dict[group]['average_daily_points']
 
     def daily_earnings(self, group):
-        return locale.currency(self.scores_dict[group]['average_daily_points'] * self.exchange_rate, grouping=True)
+        return locale.currency(self.average_daily_points(group) * self.exchange_rate, grouping=True)
 
     def total_earnings(self, group):
-        return locale.currency(self.scores_dict[group]['total_average_points'] * self.exchange_rate, grouping=True)
+        return locale.currency(self.total_average_points(group) * self.exchange_rate, grouping=True)
 
     def total_average_points(self, group):
         return self.scores_dict[group]['total_average_points']
@@ -230,7 +228,6 @@ class GroupScores(object):
         plaintext_template = select_template(['lighterprints/email/scheduled-activity/group-summary-email.txt'])
         experiment = group.experiment
         experimenter_email = experiment.experimenter.email
-        experiment_configuration = experiment.experiment_configuration
         number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group,
                                                              date_created__gte=yesterday).count()
         messages = []
@@ -331,12 +328,12 @@ class GroupScores(object):
 
 
 @receiver(signals.pre_system_daily_tick)
-def update_active_experiments(sender, time=None, start_date=None, send_emails=True, **kwargs):
+def send_lighterprints_summary_emails(sender, time=None, start_date=None, send_emails=True, **kwargs):
     # this method should be invoked after midnight, so start_date should be set the previous day
     if start_date is None:
         start_date = date.today() - timedelta(1);
     active_experiments = get_active_experiments()
-    logger.debug("updating active based experiments [%s] for %s", active_experiments, start_date)
+    logger.debug("sending summary emails to [%s] on %s", active_experiments, start_date)
     all_messages = []
     for experiment in active_experiments:
         round_data = experiment.current_round_data
@@ -637,7 +634,7 @@ def get_active_experiments():
     """
     partition these into two tuples - level based and schedule based?
     """
-    return Experiment.objects.active(experiment_metadata=get_lighterprints_experiment_metadata())
+    return Experiment.objects.select_for_update().active(experiment_metadata=get_lighterprints_experiment_metadata())
 
 
 def _activity_status_sort_key(activity_dict):

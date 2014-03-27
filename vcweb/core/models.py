@@ -2702,7 +2702,7 @@ def update_daily_experiments(sender, time=None, start=None, **kwargs):
     """
     today = datetime.today().date()
     # first advance all active daily round experiments to the next round or complete them if they've hit completion
-    active_daily_experiments = Experiment.objects.active(experiment_configuration__has_daily_rounds=True)
+    active_daily_experiments = Experiment.objects.select_for_update().active(experiment_configuration__has_daily_rounds=True)
     for e in active_daily_experiments:
         # FIXME: check for none result and end the experiment?
         if e.has_next_round:

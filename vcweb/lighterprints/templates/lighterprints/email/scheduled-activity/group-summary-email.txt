@@ -14,8 +14,8 @@ You are a member of {{ group_name }}. To participate in this experiment, visit <
 * Your group was ranked {{ group_rank}} out of {{ number_of_groups }}
 {% endif %}
 {% if linear_public_good %}
-* You earned {{ daily_earnings }} today
-* Your total earnings are {{ total_earnings }}
+* Each member of your group earned {{ daily_earnings }}
+* Your total earnings over the entire experiment are: {{ total_earnings }}
 {% endif %}
 
 {% if completed %}
