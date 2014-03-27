@@ -1,6 +1,6 @@
 Hi,
 
-This email is to remind you following upcoming experiment session that you have registered for. Please remember to be on time.
+This email is to remind you of the following upcoming experiment session that you have registered for. Please remember to be on time.
 
 -  **Session 1** {{ session.scheduled_date }} to {{ session.scheduled_end_date }}
 

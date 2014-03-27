@@ -88,8 +88,7 @@ Signup for an Experiment Session
                         {% endfor %}
                     </tbody>
                 </table>
-                <input type="submit" class="btn btn-success" value="Submit" />
-                <input type="reset" class="btn clear" value="clear" />
+                <input type="submit" class="btn btn-success" value="Save" />
             </form>
             </div>
             {% endfor %}
@@ -102,13 +101,3 @@ Signup for an Experiment Session
         </div>
     </div>
 {% endblock page %}
-{% block javascript %}
-    {{ block.super }}
-    <script>
-        $(function(){
-           $(".clear").click( function() {
-               $(this).parent().find("input:radio").removeAttr("checked");
-           });
-        });
-    </script>
-{% endblock %}

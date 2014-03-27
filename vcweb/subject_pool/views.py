@@ -402,10 +402,10 @@ def manage_participant_attendance(request, pk=None):
 @participant_required
 def experiment_session_signup(request):
     user = request.user
+    logger.debug(user)
     if request.method == 'POST':
-        success = False
-
         data = dict(request.POST.iteritems())
+        logger.debug(data)
         invitation_pk = None
         experiment_metadata_pk = None
 
@@ -415,7 +415,7 @@ def experiment_session_signup(request):
             else:
                 experiment_metadata_pk = int(data[key])
 
-        if invitation_pk is not None:
+        if experiment_metadata_pk is not None:
             invitation = Invitation.objects.select_related('experiment_session').get(pk=invitation_pk)
             # lock on the experiment session to prevent concurrent participant signups for an experiment session
             # exceeding its capacity
@@ -423,49 +423,70 @@ def experiment_session_signup(request):
             signup_count = ParticipantSignup.objects.filter(
                 invitation__experiment_session__pk=invitation.experiment_session.pk).count()
 
-            ps = ParticipantSignup.objects.filter(
-                invitation__participant=user.participant,
-                invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk,
-                attendance=ParticipantSignup.ATTENDANCE.registered)
+            try:
+                ps = ParticipantSignup.objects.get(
+                    invitation__participant=user.participant,
+                    invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk,
+                    attendance=ParticipantSignup.ATTENDANCE.registered)
+            except ParticipantSignup.DoesNotExist:
+                ps = ParticipantSignup()
 
+            success = False
+            # verify that still there is vacancy for the selected experiment session
             if signup_count < invitation.experiment_session.capacity:
-                if not ps:
-                    ps = ParticipantSignup()
-                else:
-                    ps = ps[0]
-
                 ps.invitation = invitation
                 ps.date_created = datetime.now()
                 ps.attendance = ParticipantSignup.ATTENDANCE.registered
                 ps.save()
                 success = True
             else:
-                if ps:
-                    success = (ps[0].invitation.pk == invitation_pk)
-                else:
-                    success = False
+                # No vacancy
+                # set success to true if the user is already registered for the same experiment session
+                # else set it to false
+                success = (ps.invitation.pk == invitation_pk)
+
+            # release the lock
             lock.save()
+
+            new_list, flag = get_participant_invitations(user)
+
+            if success:
+                messages.add_message(request, messages.SUCCESS, _(
+                    "Thanks, you have successfully registered for this experiment session. A Confirmation email has been sent to you. Please remember to be on time!"))
+
+                send_email("subject-pool/email/confirmation-email.txt", {'session': lock}, "Confirmation Email",
+                           settings.SERVER_EMAIL,
+                           [user.email])
+            else:
+                messages.add_message(request, messages.ERROR, _(
+                    "Sorry, you were not able to register for the given experiment session. Signups are first-come first-serve, please try again next time as you will still be eligible to participate in future experiments."))
+
+            return render(request, "participant/experiment-session-signup.html",
+                          {"invitation_list": new_list})
+
         else:
-            ParticipantSignup.objects \
-                .select_related('invitation', 'invitation__experiment_session__experiment_metadata') \
-                .filter(invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.registered,
-                        invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk).delete()
-            success = True
+            # ParticipantSignup.objects \
+            #     .select_related('invitation', 'invitation__experiment_session__experiment_metadata') \
+            #     .filter(invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.registered,
+            #             invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk).delete()
 
-        new_list, flag = get_participant_invitations(user)
+            # unregister a user from the experiment_session
+            try:
+                ParticipantSignup.objects.\
+                    select_related('invitation', 'invitation__participant').\
+                    get(invitation__participant__user=user, invitation__pk=invitation_pk).delete()
+                messages.success(request, _(
+                    "Thanks, you have successfully unregistered yourself from the experiment session."))
 
-        if success:
-            messages.add_message(request, messages.SUCCESS, _(
-                "Thanks, you have successfully registered for this experiment session. A Confirmation email has been sent to you. Please remember to be on time!"))
+            except ParticipantSignup.DoesNotExist:
+                logger.debug("Could't unregister user as participant signup with invitation_pk = %s don't exist",
+                             invitation_pk)
+                messages.success(request, _(
+                    "Sorry, Something bad happened and we were not able to unregister you from the experiment session. Please try again. If the problem persists please file an issue"))
 
-            send_email("subject-pool/email/confirmation-email.txt", {'session': lock}, "Confirmation Email", settings.SERVER_EMAIL,
-                       [user.email])
-        else:
-            messages.add_message(request, messages.ERROR, _(
-                "Sorry, you were not able to register for the given experiment session. Signups are first-come first-serve, please try again next time as you will still be eligible to participate in future experiments."))
-
-        return render(request, "participant/experiment-session-signup.html",
-                      {"invitation_list": new_list})
+            return JsonResponse(dumps({
+                'success': True
+            }))
 
     elif request.method == "GET":
         new_list, flag = get_participant_invitations(user)
