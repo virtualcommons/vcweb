@@ -12,7 +12,7 @@ from vcweb.core.views import (dashboard, LoginView, LogoutView, monitor,  #Regis
                               update_round_configuration, edit_experiment_configuration, clone_experiment_configuration,
                               unsubscribe, update_round_param_value, update_experiment_param_value,
                               update_experiment_configuration,
-                              ostromlab_faq, cas_asu_registration, cas_asu_registration_submit)
+                              OstromlabFaqList, cas_asu_registration, cas_asu_registration_submit)
 from vcweb.subject_pool.views import experiment_session_signup
 
 import logging
@@ -36,7 +36,7 @@ urlpatterns = patterns('vcweb.core.views',
                        url(r'^accounts/profile/$', 'account_profile', name='profile'),
                        url(r'^accounts/profile/update$', 'update_account_profile', name='update_profile'),
                        url(r'^accounts/check-email$', 'check_user_email', name='check_email'),
-                       url(r'^ostromlab/faq$', ostromlab_faq, name='ostromlab_faq'),
+                       url(r'^ostromlab/faq$', OstromlabFaqList.as_view(), name='ostromlab_faq'),
                        url(r'^accounts/unsubscribe$', unsubscribe, name='unsubscribe'),
                        url(r'^participate/?$', Participate.as_view(), name='participate'),
                        url(r'^participate/survey-completed', completed_survey, name='survey_completed'),

@@ -6,7 +6,4 @@
 {% url 'core:logout' as logout %}
 {% url 'core:profile' as profile %}
 {% block title %}Virtual Commons Web Experimenter Interface{% endblock %}
-{% block javascript %}
-{{ block.super }}
-<script type='text/javascript' src='{{STATIC_URL}}/js/bootbox.min.js'></script>
-{% endblock %}
+

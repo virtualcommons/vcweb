@@ -7,11 +7,10 @@ Participant Dashboard
 {{ block.super }}
 <div class='panel panel-default' id='experiments'>
     <div class='panel-heading'>
-        <h3 class='panel-title'>Experiments</h3>
+        <h3 class='panel-title'>Welcome back, {{request.user.participant}}</h3>
     </div>
     <div class='panel-body'>
-        <h4>Welcome back, {{request.user.participant}}</h4>
-        <div data-bind='if: pendingExperiments().length === 0 && runningExperiments().length === 0'>
+        <div data-bind='ifnot: hasUpcomingEvents'>
             <div class='alert alert-danger alert-block'>
                 You're not participating in any experiments at the moment. Please check again later or <a
                     href='/contact'>contact us</a> if you have any questions.
@@ -25,6 +24,43 @@ Participant Dashboard
             <h3>Running experiments</h3>
             <div data-bind="template: { name: 'experimentTemplate', foreach: runningExperiments }"></div>
         </div>
+        <div data-bind='if: signups().length > 0'>
+            <h4>You're currently signed up for the following upcoming experiments:</h4>
+            <table class='table table-bordered table-striped'>
+                <thead>
+                    <tr>
+                        <th>Start Date</th>
+                        <th>Start Time</th>
+                        <!-- ko if: showEndDates -->
+                        <th>End Date</th>
+                        <!-- /ko -->
+                        <th>End Time</th>
+                        <th>Location</th>
+                        <th>Cancel</th>
+                    </tr>
+                </thead>
+                <tbody data-bind='foreach: signups'>
+                <tr>
+                    <td>
+                        <span data-bind='text: $root.formatDate(invitation.scheduled_date())'></span>
+                        <br>
+                        <a target='_blank' rel='nofollow'
+                            data-bind='attr: { href: $root.addToGoogleCalendarLink(invitation.iso_start_date(),  invitation.iso_end_date(), invitation.location()) }'>
+                            Add to Google Calendar
+                        </a>
+                    </td>
+                    <td data-bind='text: invitation.scheduled_time'></td>
+                    <!-- ko if: $root.showEndDates -->
+                    <td data-bind='text: invitation.scheduled_end_date'></td>
+                    <!-- /ko -->
+                    <td data-bind='text: invitation.scheduled_end_time'></td>
+                    <td data-bind='text: invitation.location'></td>
+                    <td>
+                        <button class='btn btn-primary' data-bind='click: $root.cancelSignup'>Cancel</button>
+                    </td>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock page %}
@@ -32,6 +68,7 @@ Participant Dashboard
 {%  block javascript %}
 {{ block.super }}
 <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/moment.js/2.5.1/moment.min.js'></script>
+<script type='text/javascript' src='{{STATIC_URL}}/js/bootbox.min.js'></script>
 <script type='text/html' id='experimentTemplate'>
 <div class='alert alert-warning alert-block'>
     <a data-bind='attr: { href: participant_url }'><i class='fa fa-play'></i> <span data-bind='text: name'></span>
@@ -46,7 +83,40 @@ $(function() {
     function DashboardViewModel(viewModelObject) {
         var self = this;
         var model = ko.mapping.fromJS(viewModelObject);
+        model.cancelSignup = function(data) {
+            bootbox.confirm("Cancel your signup for this session? You may lose your spot permanently if you do so.",
+            function (confirmed) {
+                if (confirmed) {
+                    $.post('/participant/session-signup', { 'invitation_pk': data.invitation.invitation_pk() })
+                    .done(function (data) {
+                        if (data.success) {
+                            console.debug("successfully canceled signup");
+                        }
+                    })
+                    .fail(function (data) {
+                        console.debug("failed to cancel signup");
+                        console.debug(data);
+                    });
+                    console.debug(data);
+                }
+            });
+        };
         model.formatDate = function(dateString) { return moment(dateString).format("dddd MMM Do YYYY"); };
+        model.addToGoogleCalendarLink = function(startDate, endDate, location) {
+            console.debug("start date: " + startDate);
+            console.debug("end date: " + endDate);
+            return "https://www.google.com/calendar/render?action=TEMPLATE&text=VCWEB+Experiment"
+            + "&dates=" + startDate.replace(/[-:.]/g, '') + '/' + endDate.replace(/[-:.]/g, '')
+            + "&details=For more details please visit https://vcweb.asu.edu or contact your experimenter"
+            + "&location=" + location
+            + "&ctz=America/Phoenix"
+            + "&sf=true"
+            + "&output=xml";
+        };
+        model.hasUpcomingEvents = ko.computed(function() {
+            return model.pendingExperiments().length > 0 || model.runningExperiments().length > 0
+                || model.signups().length > 0 || model.hasPendingInvitations;
+        });
         return model;
     }
     var model = new DashboardViewModel($.parseJSON("{{ dashboardViewModelJson|escapejs }}"));

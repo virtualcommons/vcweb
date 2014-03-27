@@ -2130,7 +2130,10 @@ class Participant(CommonsUser):
 
     @property
     def has_pending_invitations(self):
-        return self.invitation_set.filter(experiment_session__scheduled_date__gt=datetime.now()).exists()
+        if ParticipantSignup.objects.upcoming(self).exists():
+            return False
+        else:
+            return Invitation.objects.upcoming(self).exists()
 
     @property
     def undergraduate(self):
@@ -2526,6 +2529,10 @@ class ExperimentSession(models.Model):
     # FIXME: make this more re-usable or allow use of ExperimentConfiguration.invitation_text as a fallback
     invitation_text = models.TextField(blank=True)
 
+    @property
+    def is_same_day(self):
+        return self.scheduled_end_date and self.scheduled_date.date() == self.scheduled_end_date.date()
+
     def to_dict(self, **kwargs):
         scheduled_date = self.scheduled_date
         scheduled_end_date = self.scheduled_end_date
@@ -2592,6 +2599,9 @@ class Invitation(models.Model):
         }
         return data
 
+    class Meta:
+        ordering = [ 'experiment_session', 'date_created' ]
+
 
 class ParticipantSignupQuerySet(models.query.QuerySet):
     def _experiment_metadata_criteria(self, criteria, experiment_metadata=None, experiment_metadata_pk=None):
@@ -2616,7 +2626,7 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
         criteria = dict(attendance=ParticipantSignup.ATTENDANCE.registered,
                 invitation__experiment_session__scheduled_date__gt=datetime.now())
         if participant is not None:
-            criteria.update(participant=participant)
+            criteria.update(invitation__participant=participant)
         return self.select_related('invitation__participant', 'invitation__experiment_session').filter(**criteria)
 
 
@@ -2630,10 +2640,7 @@ class ParticipantSignup(models.Model):
 
     objects = PassThroughManager.for_queryset_class(ParticipantSignupQuerySet)()
 
-    def __unicode__(self):
-        return u"{} {} {}".format(self.invitation, self.attendance, self.date_created)
-
-    def to_dict(self, signup_count):
+    def to_dict(self, signup_count=0):
         experiment_session = self.invitation.experiment_session
         experiment_metadata = experiment_session.experiment_metadata
         scheduled_date = experiment_session.scheduled_date
@@ -2642,6 +2649,8 @@ class ParticipantSignup(models.Model):
         data = {
             'invitation': {
                 'invitation_pk': self.invitation.pk,
+                'iso_start_date': scheduled_date,
+                'iso_end_date': scheduled_end_date,
                 'scheduled_date': scheduled_date.date(),
                 'scheduled_time': scheduled_date.strftime('%I:%M %p'),
                 'scheduled_end_date': compare_dates(scheduled_date.date(),
@@ -2652,9 +2661,17 @@ class ParticipantSignup(models.Model):
                 'selected': True
             },
             'experiment_metadata_name': experiment_metadata.title,
-            'experiment_metadata_pk': experiment_metadata.pk
+            'experiment_metadata_pk': experiment_metadata.pk,
+            'pk': self.pk
         }
         return data
+
+    def __unicode__(self):
+        return u"{} {} {}".format(self.invitation, self.attendance, self.date_created)
+
+    class Meta:
+        ordering = ['invitation__experiment_session']
+
 
 
 def compare_dates(date1, date2):

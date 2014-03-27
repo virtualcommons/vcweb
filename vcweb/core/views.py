@@ -9,7 +9,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
-from django.views.generic import FormView, TemplateView
+from django.views.generic import FormView, TemplateView, ListView
 from django.views.generic.detail import SingleObjectMixin
 from vcweb import settings
 from vcweb.core import dumps
@@ -123,8 +123,14 @@ class DashboardViewModel(object):
                     e.to_dict(attrs=('participant_url', 'start_date'), name=e.experiment_metadata.title))
             self.pending_experiments = experiment_status_dict['INACTIVE']
             self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
-            self.signups = [ps.to_dict() for ps in ParticipantSignup.objects.upcoming(self.participant)]
-            self.has_pending_invitations = Invitation.objects.upcoming(participant=self.participant).exists()
+            upcoming_signups = ParticipantSignup.objects.upcoming(self.participant)
+            self.show_end_dates = False
+            self.signups = []
+            for signup in upcoming_signups:
+                if not signup.invitation.experiment_session.is_same_day:
+                    self.show_end_dates = True
+                self.signups.append(signup.to_dict())
+            self.has_pending_invitations = Invitation.objects.upcoming(self.participant).exists()
 
     @property
     def template_name(self):
@@ -148,8 +154,9 @@ class DashboardViewModel(object):
             return {
                 'pendingExperiments': self.pending_experiments,
                 'runningExperiments': self.running_experiments,
-                'has_pending_invitations': self.has_pending_invitations,
+                'hasPendingInvitations': self.has_pending_invitations,
                 'signups': self.signups,
+                'showEndDates': self.show_end_dates,
             }
 
 
@@ -1258,10 +1265,10 @@ def edit_experiment_configuration(request, pk):
     })
 
 
-def ostromlab_faq(request):
-    return render(request, 'ostromlab/faq.html', {
-        'faq_entries': OstromlabFaqEntry.objects.all()
-    })
+class OstromlabFaqList(ListView):
+    model = OstromlabFaqEntry
+    context_object_name = 'faq_entries'
+    template_name = 'ostromlab/faq.html'
 
 
 @experimenter_required
