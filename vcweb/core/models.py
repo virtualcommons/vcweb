@@ -2757,7 +2757,7 @@ def send_email(template, context, subject, from_email, to_email, bcc=None):
 @receiver(signals.system_daily_tick)
 def send_reminder_emails(sender, time=None, start=None, **kwargs):
     tomorrow = datetime.now() + timedelta(days=1)
-    es_list = ExperimentSession.objects.filter(scheduled_date__gt=tomorrow)
+    es_list = ExperimentSession.objects.filter(scheduled_date__contains=tomorrow)
 
     for es in es_list:
         ps_list = ParticipantSignup.objects.filter(invitation__experiment_session=es)
