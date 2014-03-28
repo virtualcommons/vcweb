@@ -130,7 +130,6 @@ class DashboardViewModel(object):
                 if not signup.invitation.experiment_session.is_same_day:
                     self.show_end_dates = True
                 self.signups.append(signup.to_dict())
-            self.has_pending_invitations = Invitation.objects.upcoming(self.participant).exists()
 
     @property
     def template_name(self):
@@ -154,7 +153,7 @@ class DashboardViewModel(object):
             return {
                 'pendingExperiments': self.pending_experiments,
                 'runningExperiments': self.running_experiments,
-                'hasPendingInvitations': self.has_pending_invitations,
+                'hasPendingInvitations': self.participant.has_pending_invitations,
                 'signups': self.signups,
                 'showEndDates': self.show_end_dates,
             }

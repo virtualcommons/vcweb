@@ -6,7 +6,7 @@ from django.core import mail, serializers
 from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
 from django.core.validators import RegexValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models.aggregates import Max
 from django.db.models.loading import get_model
 from django.dispatch import receiver
@@ -2533,6 +2533,10 @@ class ExperimentSession(models.Model):
     def is_same_day(self):
         return self.scheduled_end_date and self.scheduled_date.date() == self.scheduled_end_date.date()
 
+    @property
+    def is_online(self):
+        return self.location and self.location.lower() in ('online','internet','network','remote','virtual')
+
     def to_dict(self, **kwargs):
         scheduled_date = self.scheduled_date
         scheduled_end_date = self.scheduled_end_date
@@ -2730,6 +2734,7 @@ def is_participant(user):
 
 
 @receiver(signals.system_daily_tick)
+@transaction.atomic
 def update_daily_experiments(sender, time=None, start=None, **kwargs):
     """
     signal handler for activating daily experiments
@@ -2792,6 +2797,7 @@ def send_email(template, context, subject, from_email, to_email, bcc=None):
 
 
 @receiver(signals.system_daily_tick)
+@transaction.atomic
 def send_reminder_emails(sender, tim=None, start=None, **kwargs):
     """
     signal handler to send out reminder emails to participants

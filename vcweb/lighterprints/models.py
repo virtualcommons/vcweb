@@ -1,7 +1,7 @@
 from django.core import mail
 from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Sum
 from django.dispatch import receiver
 from django.template import Context
@@ -330,6 +330,7 @@ class GroupScores(object):
 
 
 @receiver(signals.pre_system_daily_tick)
+@transaction.atomic
 def send_lighterprints_summary_emails(sender, time=None, start_date=None, send_emails=True, **kwargs):
     # invoked after midnight, so start_date should be set to the previous day.
     if start_date is None:
@@ -350,6 +351,7 @@ def send_lighterprints_summary_emails(sender, time=None, start_date=None, send_e
 
 
 @receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
+@transaction.atomic
 def round_started_handler(sender, experiment=None, **kwargs):
     logger.debug("starting lighter footprints %s", experiment)
     round_data = experiment.current_round_data

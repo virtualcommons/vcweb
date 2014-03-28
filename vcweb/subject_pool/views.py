@@ -1,6 +1,7 @@
 from datetime import datetime, time, timedelta
 from django.contrib import messages
 from django.core.mail import EmailMultiAlternatives
+from django.db import transaction
 from django.forms.models import modelformset_factory
 from django.shortcuts import render, redirect
 from django.template import Context
@@ -45,6 +46,7 @@ def session_list_view(request):
 
 
 @experimenter_required
+@transaction.atomic
 def update_session(request):
     """
     Depending upon the type of request, this view method can be used to create, update or delete Experiment sessions.
@@ -83,6 +85,7 @@ def update_session(request):
             'session': es
         }))
 
+    # FIXME: presentation layer code doesn't belong here. push into the template consuming this response and pass form errors in as JSON
     message = '''<div class="alert alert-danger alert-dismissable alert-link">
                    <button class=close data-dismiss=alert aria-hidden=true>
                    &times;</button>{errors}</div>\n
@@ -415,6 +418,11 @@ def cancel_experiment_session_signup(request):
 
 @participant_required
 def experiment_session_signup(request):
+    """
+    FIXME: Needs more refactoring + documentation. create 2 separate POST/GET handlers as there is no data or common
+    code shared between them
+
+    """
     user = request.user
 
     if request.method == 'POST':
@@ -432,46 +440,44 @@ def experiment_session_signup(request):
             invitation = Invitation.objects.select_related('experiment_session').get(pk=invitation_pk)
             # lock on the experiment session to prevent concurrent participant signups for an experiment session
             # exceeding its capacity
-            lock = ExperimentSession.objects.select_for_update().get(pk=invitation.experiment_session.pk)
-            signup_count = ParticipantSignup.objects.filter(
-                invitation__experiment_session__pk=invitation.experiment_session.pk).count()
+            with transaction.atomic():
+                lock = ExperimentSession.objects.select_for_update().get(pk=invitation.experiment_session.pk)
+                signup_count = ParticipantSignup.objects.filter(
+                        invitation__experiment_session__pk=invitation.experiment_session.pk).count()
+                # verify that still there is vacancy for the selected experiment session
+                if signup_count < invitation.experiment_session.capacity:
+                    try:
+                        ps = ParticipantSignup.objects.get(
+                                invitation__participant=user.participant,
+                                invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk,
+                                attendance=ParticipantSignup.ATTENDANCE.registered)
+                    except ParticipantSignup.DoesNotExist:
+                        ps = ParticipantSignup()
+                    ps.invitation = invitation
+                    ps.date_created = datetime.now()
+                    ps.attendance = ParticipantSignup.ATTENDANCE.registered
+                    ps.save()
+                    success = True
+                else:
+                    # No vacancy
+                    success = False
+                # release the lock - shouldn't be necessary anymore with transaction.atomic - needs more testing
+                # lock.save()
 
-            # verify that still there is vacancy for the selected experiment session
-            if signup_count < invitation.experiment_session.capacity:
-                try:
-                    ps = ParticipantSignup.objects.get(
-                        invitation__participant=user.participant,
-                        invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk,
-                        attendance=ParticipantSignup.ATTENDANCE.registered)
-                except ParticipantSignup.DoesNotExist:
-                    ps = ParticipantSignup()
-
-                ps.invitation = invitation
-                ps.date_created = datetime.now()
-                ps.attendance = ParticipantSignup.ATTENDANCE.registered
-                ps.save()
-                success = True
-            else:
-                # No vacancy
-                success = False
-
-            # release the lock
-            lock.save()
-
+            # FIXME: better variable names
             new_list, flag = get_participant_invitations(user)
 
             if success:
                 messages.add_message(request, messages.SUCCESS, _(
-                    "Thanks, you have successfully registered for this experiment session. A Confirmation email has been sent to you. Please remember to be on time!"))
+                    "You are now registered for this experiment session. A confirmation and reminder email one day before the session will been sent."))
 
                 send_email("subject-pool/email/confirmation-email.txt", {'session': lock}, "Confirmation Email",
                            settings.SERVER_EMAIL,
                            [user.email])
+                return redirect('core:dashboard')
             else:
-                messages.add_message(request, messages.ERROR, _(
-                    "Sorry, you were not able to register for the given experiment session. Signups are first-come first-serve, please try again next time as you will still be eligible to participate in future experiments."))
-
-            return render(request, "subject-pool/experiment-session-signup.html", {"invitation_list": new_list})
+                messages.add_message(request, messages.ERROR, _("This session is currently full."))
+                return redirect('subject_pool:experiment_session_signup')
 
         else:
             # unregister a user from the experiment_session
@@ -480,14 +486,12 @@ def experiment_session_signup(request):
                     select_related('invitation', 'invitation__participant').\
                     get(invitation__participant__user=user, invitation__pk=invitation_pk).delete()
                 messages.success(request, _(
-                    "Thanks, you have successfully unregistered yourself from the experiment session."))
+                    "You have successfully unregistered yourself from the experiment session."))
 
             except ParticipantSignup.DoesNotExist:
-                logger.debug("Could't unregister user as participant signup with invitation_pk = %s don't exist",
-                             invitation_pk)
+                logger.warning("Could't unregister user as participant signup with invitation_pk = %s don't exist", invitation_pk)
                 messages.success(request, _(
-                    "Sorry, Something bad happened and we were not able to unregister you from the experiment session. Please try again. If the problem persists please file an issue"))
-
+                    "We were unable to remove you from the experiment session at this time. Please refresh your browser. If the problem persists please file an issue"))
             return JsonResponse(dumps({
                 'success': True
             }))
@@ -496,8 +500,7 @@ def experiment_session_signup(request):
         new_list, flag = get_participant_invitations(user)
 
         if flag:
-            messages.error(request, _(
-                "Sorry, all the experiment sessions are full. Signups are first-come, first-serve. Please try again next time, you will still be eligible to participate in future experiments."))
+            messages.error(request, _("All experiment sessions are full. Signups are first-come, first-serve. Please try again later, you are still eligible to participate in future experiments and may receive future invitations for this experiment."))
 
         return render(request, "subject-pool/experiment-session-signup.html", {"invitation_list": new_list})
 

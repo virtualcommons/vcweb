@@ -1,14 +1,13 @@
 Hi,
 
-This email confirms that you have been successfully enrolled in the following upcoming session. Please remember to be on time.
+You are currently signed up for an experiment session on **{{ session.scheduled_date }} - {{ session.scheduled_end_date }}**. 
 
--  **Session 1** {{ session.scheduled_date }} to {{ session.scheduled_end_date }}
+{% if session.is_online %}
+This is an online experiment. You should receive more instructions on how to participate from your experimenter.
+{% else %}
+Please remember to be on time.
+{% endif %}
 
-
-Thanks,
+Thanks for your participation!
 
 Team VCWEB
-
-
-You are receiving these invitations because you've opted in to our participant database. If you are no longer interested in receiving any experiment invitations you can
-<a href='https://vcweb.asu.edu/accounts/unsubscribe'>unsubscribe here</a>.
