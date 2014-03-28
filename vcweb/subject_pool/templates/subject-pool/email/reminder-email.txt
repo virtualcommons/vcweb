@@ -11,4 +11,4 @@ Team VCWEB
 
 
 You are receiving these invitations because you've opted in to our participant database. If you are no longer interested in receiving any experiment invitations you can
-<a href='/accounts/unsubscribe'>unsubscribe here</a>.
+<a href='https://vcweb.asu.edu/accounts/unsubscribe'>unsubscribe here</a>.
