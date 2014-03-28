@@ -13,7 +13,6 @@ from vcweb.core.views import (dashboard, LoginView, LogoutView, monitor,  #Regis
                               unsubscribe, update_round_param_value, update_experiment_param_value,
                               update_experiment_configuration,
                               OstromlabFaqList, cas_asu_registration, cas_asu_registration_submit)
-from vcweb.subject_pool.views import experiment_session_signup
 
 import logging
 import urllib
@@ -26,10 +25,6 @@ urlpatterns = patterns('vcweb.core.views',
                        url(r'^cas/asu/$', cas_asu_registration, name='cas_asu_registration'),
                        url(r'^cas/asu/submit/$', cas_asu_registration_submit, name='cas_asu_registration_submit'),
                        url(r'^dashboard/$', dashboard, name='dashboard'),
-                       url(r'^participant/session-signup/$', experiment_session_signup,
-                           name='experiment_session_signup'),
-                       url(r'^participant/session/$', experiment_session_signup, ),
-                       # FIXME: duplicate alias, remove soon
                        url(r'^accounts/login/$', LoginView.as_view(), name='login'),
                        url(r'^accounts/logout/$', login_required(LogoutView.as_view()), name='logout'),
                        #url(r'^accounts/add/$', RegistrationView.as_view(), name='register'),
