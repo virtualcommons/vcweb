@@ -251,7 +251,7 @@ class GroupScores(object):
             'total_earnings': self.total_earnings(group),
             })
         for pgr in group.participant_group_relationship_set.all():
-            c['individual_points'] = get_individual_points(pgr),
+            c['individual_points'] = get_individual_points(pgr)
             plaintext_content = plaintext_template.render(c)
             html_content = markdown.markdown(plaintext_content)
             subject = 'Lighter Footprints Summary for %s' % yesterday
