@@ -1,4 +1,4 @@
-from django.db.models import Sum
+from django.db import models, transaction
 from django.dispatch import receiver
 from vcweb.core import signals, simplecache
 from vcweb.core.models import (
@@ -16,8 +16,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# FIXME: hacky, should figure out a better way to bind this module with the ExperimentMetadata instance that it is
-# dependent on
+# FIXME: hacky, figure out a better way to bind module with its dependent ExperimentMetadata instance
 EXPERIMENT_METADATA_NAME = intern('bound')
 # constants that should live in configuration as well
 MAX_RESOURCE_LEVEL = 240
@@ -26,10 +25,8 @@ MAX_SHARED_RESOURCE_LEVEL = 480
 INITIAL_RESOURCES_PER_PARTICIPANT_PER_ROUND = 3
 
 '''
-Experiment Parameters and Metadata Accessors
+Experiment parameters and metadata accessors
 '''
-
-
 @simplecache
 def get_experiment_metadata():
     return ExperimentMetadata.objects.get(namespace=EXPERIMENT_METADATA_NAME)
@@ -180,17 +177,17 @@ def get_storage(participant_group_relationship, round_data=None, default=0):
 
 def get_final_session_storage_queryset(experiment, participant):
     """
-    Returns a QuerySet of the final storage ParticipantRoundDataValues for a given participant, e.g., storage
-    parameter data values in debriefing rounds
+    Returns a QuerySet of the final storage ParticipantRoundDataValues for a given participant. For any given session,
+    they can be found in the last round of the session, assumed to be the debriefing round.
 
-    The query must be done by participant as participant group relationships change when we re-randomize
-    groups.
+    Query must be executed by participant as participant group relationship ids change when we re-randomize groups.
     """
     debriefing_session_round_data = experiment.round_data_set.filter(round_configuration__round_type=RoundConfiguration.RoundType.DEBRIEFING).exclude(round_configuration__session_id__exact='')
     session_storages = ParticipantRoundDataValue.objects.filter(
         participant_group_relationship__participant=participant,
         parameter=get_storage_parameter(),
         round_data__in=debriefing_session_round_data).order_by('date_created')
+    # FIXME: assumes only 2 sessions
     if len(session_storages) == 2:
         return session_storages
     else:
@@ -204,14 +201,14 @@ def _zero_if_none(value):
 
 
 def get_total_group_harvest(group, round_data):
-    q = ParticipantRoundDataValue.objects.for_group(group=group, parameter=get_harvest_decision_parameter(), round_data=round_data).aggregate(total_harvest=Sum('int_value'))
+    q = ParticipantRoundDataValue.objects.for_group(group=group, parameter=get_harvest_decision_parameter(), round_data=round_data).aggregate(total_harvest=models.Sum('int_value'))
     return _zero_if_none(q['total_harvest'])
 
 
 def get_total_harvest(participant_group_relationship, session_id):
     q = ParticipantRoundDataValue.objects.for_participant(participant_group_relationship,
                                                           parameter=get_harvest_decision_parameter(),
-                                                          participant_group_relationship__group__session_id=session_id).aggregate(total_harvest=Sum('int_value'))
+                                                          participant_group_relationship__group__session_id=session_id).aggregate(total_harvest=models.Sum('int_value'))
     return _zero_if_none(q['total_harvest'])
 
 
@@ -219,7 +216,7 @@ def get_total_storage(group, round_data):
     """ returns the sum of all group member's storage for the given round """
     q = ParticipantRoundDataValue.objects.for_group(group=group,
                                                     parameter=get_storage_parameter(),
-                                                    round_data=round_data).aggregate(total_storage=Sum('int_value'))
+                                                    round_data=round_data).aggregate(total_storage=models.Sum('int_value'))
     return _zero_if_none(q['total_storage'])
 
 
@@ -285,6 +282,7 @@ def get_player_data(group, previous_round_data, current_round_data, self_pgr):
 
 
 @receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
+@transaction.atomic
 def round_started_handler(sender, experiment=None, **kwargs):
     if experiment is None:
         logger.error("Received round started signal with no experiment: %s", sender)
@@ -391,6 +389,7 @@ def adjust_harvest_decisions(current_resource_level, group, round_data, total_ha
     return total_adjusted_harvest
 
 
+@transaction.atomic
 def update_resource_level(experiment, group, round_data, regrowth_rate, max_resource_level=None):
     if max_resource_level is None:
         max_resource_level = get_max_resource_level(round_data.round_configuration)
@@ -433,6 +432,7 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
 
 
 # FIXME: reduce duplication between this and update_resource_level
+@transaction.atomic
 def update_shared_resource_level(experiment, group_cluster, round_data, regrowth_rate, max_resource_level=None):
     logger.debug("updating shared resource level")
     if max_resource_level is None:
@@ -470,6 +470,7 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
         group.log("Transferring shared resource level %s to next round" % shared_resource_level_dv.int_value)
         group_cluster.copy_to_next_round(shared_resource_level_dv, shared_regrowth_dv)
 
+@transaction.atomic
 def update_participants(experiment, round_data, round_configuration):
     logger.debug("updating participants")
     cost_of_living = get_cost_of_living(round_configuration)
@@ -490,6 +491,7 @@ def update_participants(experiment, round_data, round_configuration):
         pgr.copy_to_next_round(player_status_dv, storage_dv, next_round_data=next_round_data)
 
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
+@transaction.atomic
 def round_ended_handler(sender, experiment=None, **kwargs):
     '''
     calculates new resource levels for practice or regular rounds based on the group harvest and resultant regrowth.

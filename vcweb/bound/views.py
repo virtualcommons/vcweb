@@ -1,5 +1,6 @@
 from collections import Counter
 from operator import itemgetter
+from django.db import transaction
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404
 from vcweb.core import dumps
@@ -41,16 +42,17 @@ def submit_harvest_decision(request, experiment_id=None):
         harvest_decision = form.cleaned_data['integer_decision']
         submitted = form.cleaned_data['submitted']
         logger.debug("pgr %s harvested %s - final submission? %s", pgr, harvest_decision, submitted)
-        round_data = experiment.current_round_data
-        set_harvest_decision(pgr, harvest_decision, round_data, submitted=submitted)
-        message = "%s harvested %s trees"
-        experiment.log(message % (pgr.participant, harvest_decision))
-        response_dict = {
-                'success': True,
+        with transaction.atomic():
+            round_data = experiment.current_round_data
+            set_harvest_decision(pgr, harvest_decision, round_data, submitted=submitted)
+            message = "%s harvested %s trees"
+            experiment.log(message % (pgr.participant, harvest_decision))
+            response_dict = {
+                    'success': True,
 #                'experimentModelJson': get_view_model_json(experiment, pgr),
-                'message': message % (pgr.participant_handle, harvest_decision),
-                }
-        return JsonResponse(dumps(response_dict))
+                    'message': message % (pgr.participant_handle, harvest_decision),
+                    }
+            return JsonResponse(dumps(response_dict))
     else:
         logger.debug("form was invalid: %s", form)
     for field in form:

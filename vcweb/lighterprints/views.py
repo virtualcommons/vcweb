@@ -1,6 +1,7 @@
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
 
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 @csrf_exempt
 @participant_required
+@transaction.atomic
 def perform_activity(request):
     form = ActivityForm(request.POST or None)
     if form.is_valid():
@@ -53,6 +55,7 @@ def perform_activity(request):
 
 @csrf_exempt
 @login_required
+@transaction.atomic
 def post_chat_message(request):
     form = ChatForm(request.POST or None)
     if form.is_valid():
@@ -72,6 +75,7 @@ def post_chat_message(request):
 
 @csrf_exempt
 @login_required
+@transaction.atomic
 def like(request):
     form = LikeForm(request.POST or None)
     if form.is_valid():
@@ -97,6 +101,7 @@ def like(request):
 
 @csrf_exempt
 @login_required
+@transaction.atomic
 def post_comment(request):
     form = CommentForm(request.POST or None)
     if form.is_valid():
