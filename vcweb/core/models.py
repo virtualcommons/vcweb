@@ -2797,21 +2797,17 @@ def send_email(template, context, subject, from_email, to_email, bcc=None):
 
 
 @receiver(signals.system_daily_tick)
-@transaction.atomic
-def send_reminder_emails(sender, tim=None, start=None, **kwargs):
+def send_reminder_emails(sender, start=None, **kwargs):
     """
-    signal handler to send out reminder emails to participants
+    midnight check sending reminder emails to participants signed up for an ExperimentSession being run
+    on the following day
     """
     tomorrow = date.today() + timedelta(days=1)
     start_date_time = datetime.combine(tomorrow, time.min)
     end_date_time = datetime.combine(tomorrow, time.max)
-
     es_list = ExperimentSession.objects.filter(scheduled_date__range=(start_date_time, end_date_time))
-
     for es in es_list:
-        ps_list = ParticipantSignup.objects.filter(invitation__experiment_session=es)
-
-        participant_email_list = [ps.invitation.participant.email for ps in ps_list]
-
+        participant_emails = ParticipantSignup.objects.filter(invitation__experiment_session=es).values_list('invitation__participant__email', flat=True)
+        logger.debug("subject pool sending reminder emails to %s", participant_emails)
         send_email("subject-pool/email/reminder-email.txt", {"session": es}, "Reminder Email",
-                   settings.SERVER_EMAIL, participant_email_list)
+                   settings.SERVER_EMAIL, participant_emails)
