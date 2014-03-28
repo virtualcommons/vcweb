@@ -1,25 +1,22 @@
+from datetime import datetime, time, timedelta
 from django.contrib import messages
+from django.core.mail import EmailMultiAlternatives
 from django.forms.models import modelformset_factory
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.template import Context
 from django.template.loader import get_template
 from django.utils.translation import ugettext_lazy as _
-from vcweb import settings
-from vcweb.core.models import (ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation,
-                               Institution, send_email)
-from vcweb.core.decorators import experimenter_required, participant_required
-from datetime import datetime, time, timedelta
 from time import mktime
+from vcweb import settings
 from vcweb.core import dumps
+from vcweb.core.decorators import experimenter_required, participant_required
 from vcweb.core.http import JsonResponse
-from django.core.mail import EmailMultiAlternatives
-
-from forms import SessionForm, SessionInviteForm, ParticipantAttendanceForm
+from vcweb.core.models import (ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation, Institution, send_email)
+from vcweb.subject_pool.forms import (SessionForm, SessionInviteForm, ParticipantAttendanceForm, CancelSignupForm)
 
 import markdown
-
-import random
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -398,6 +395,23 @@ def manage_participant_attendance(request, pk=None):
 
     return render(request, 'subject-pool/session_detail.html', {'session_detail': session_detail, 'formset': formset})
 
+@participant_required
+def cancel_experiment_session_signup(request):
+    form = CancelSignupForm(request.POST or None)
+    if form.is_valid():
+        signup = form.signup
+        invitation = signup.invitation
+        es = invitation.experiment_session
+        if request.user.participant == invitation.participant:
+            signup.delete()
+            messages.add_message(request, messages.SUCCESS, _("You are no longer signed up for %s - thanks for letting us know!" % es))
+        else:
+            logger.error("Invalid request: Participant %s tried to cancel signup %s", request.user.participant, signup)
+            messages.add_message(request, messages.ERROR, _("You don't appear to be signed up for this session."))
+    else:
+        messages.add_message(request, messages.ERROR, _("Sorry, we couldn't process your request"))
+    return redirect('core:dashboard')
+
 
 @participant_required
 def experiment_session_signup(request):
@@ -457,8 +471,7 @@ def experiment_session_signup(request):
                 messages.add_message(request, messages.ERROR, _(
                     "Sorry, you were not able to register for the given experiment session. Signups are first-come first-serve, please try again next time as you will still be eligible to participate in future experiments."))
 
-            return render(request, "participant/experiment-session-signup.html",
-                          {"invitation_list": new_list})
+            return render(request, "subject-pool/experiment-session-signup.html", {"invitation_list": new_list})
 
         else:
             # unregister a user from the experiment_session
@@ -486,8 +499,7 @@ def experiment_session_signup(request):
             messages.error(request, _(
                 "Sorry, all the experiment sessions are full. Signups are first-come, first-serve. Please try again next time, you will still be eligible to participate in future experiments."))
 
-        return render(request, "participant/experiment-session-signup.html",
-                      {"invitation_list": new_list})
+        return render(request, "subject-pool/experiment-session-signup.html", {"invitation_list": new_list})
 
 
 def get_participant_invitations(user):

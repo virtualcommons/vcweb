@@ -170,7 +170,7 @@ def dashboard(request):
         if not user.participant.is_profile_complete:
             return redirect('core:profile')
         elif user.participant.has_pending_invitations:
-            return redirect('core:experiment_session_signup')
+            return redirect('subject_pool:experiment_session_signup')
 
     dashboard_view_model = DashboardViewModel(user)
     return render(request, dashboard_view_model.template_name,

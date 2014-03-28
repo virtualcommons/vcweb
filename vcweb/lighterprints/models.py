@@ -235,25 +235,23 @@ class GroupScores(object):
         number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group,
                                                              date_created__gte=yesterday).count()
         messages = []
-        experiment_completed = not experiment.has_next_round
+        c = Context({
+            'experiment': experiment,
+            'experiment_completed': not experiment.has_next_round,
+            'number_of_groups': self.number_of_groups,
+            'group_name': group.name,
+            'group_rank': self.get_group_rank(group),
+            'summary_date': yesterday,
+            'show_rankings': self.show_rankings,
+            'threshold': threshold,
+            'average_daily_points': average_group_points,
+            'number_of_chat_messages': number_of_chat_messages,
+            'linear_public_good': self.is_linear_public_good_game,
+            'daily_earnings': self.daily_earnings(group),
+            'total_earnings': self.total_earnings(group),
+            })
         for pgr in group.participant_group_relationship_set.all():
-            c = Context({
-                'experiment': experiment,
-                'experiment_completed': experiment_completed,
-                'number_of_groups': self.number_of_groups,
-                'group_name': group.name,
-                'group_rank': self.get_group_rank(group),
-                'summary_date': yesterday,
-                'show_rankings': self.show_rankings,
-                'threshold': threshold,
-                'average_daily_points': average_group_points,
-                'number_of_chat_messages': number_of_chat_messages,
-                'individual_points': get_individual_points(pgr),
-                'linear_public_good': self.is_linear_public_good_game,
-                'daily_earnings': self.daily_earnings(group),
-                'total_earnings': self.total_earnings(group),
-                })
-
+            c['individual_points'] = get_individual_points(pgr),
             plaintext_content = plaintext_template.render(c)
             html_content = markdown.markdown(plaintext_content)
             subject = 'Lighter Footprints Summary for %s' % yesterday
@@ -333,7 +331,7 @@ class GroupScores(object):
 
 @receiver(signals.pre_system_daily_tick)
 def send_lighterprints_summary_emails(sender, time=None, start_date=None, send_emails=True, **kwargs):
-    # invoked after midnight, so start_date should be set to the previous day. 
+    # invoked after midnight, so start_date should be set to the previous day.
     if start_date is None:
         start_date = date.today() - timedelta(1);
     active_experiments = get_active_experiments()

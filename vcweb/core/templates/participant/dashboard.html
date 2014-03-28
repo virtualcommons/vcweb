@@ -36,7 +36,7 @@ Participant Dashboard
                         <!-- /ko -->
                         <th>End Time</th>
                         <th>Location</th>
-                        <th>Cancel</th>
+                        <th>Update</th>
                     </tr>
                 </thead>
                 <tbody data-bind='foreach: signups'>
@@ -56,7 +56,11 @@ Participant Dashboard
                     <td data-bind='text: invitation.scheduled_end_time'></td>
                     <td data-bind='text: invitation.location'></td>
                     <td>
-                        <button class='btn btn-primary' data-bind='click: $root.cancelSignup'>Cancel</button>
+                        <a class='btn btn-primary' href='{% url "subject_pool:experiment_session_signup" %}'>Edit</a>
+                        <form method='POST' action='/subject-pool/signup/cancel/'>
+                            <input type='hidden' name='pk' id='id_pk' data-bind='value: pk'>
+                            <button type='submit' class='btn btn-primary'>Cancel</button>
+                        </form>
                     </td>
                 </tbody>
             </table>
@@ -83,28 +87,8 @@ $(function() {
     function DashboardViewModel(viewModelObject) {
         var self = this;
         var model = ko.mapping.fromJS(viewModelObject);
-        model.cancelSignup = function(data) {
-            bootbox.confirm("Cancel your signup for this session? You may lose your spot permanently if you do so.",
-            function (confirmed) {
-                if (confirmed) {
-                    $.post('/participant/session-signup', { 'invitation_pk': data.invitation.invitation_pk() })
-                    .done(function (data) {
-                        if (data.success) {
-                            console.debug("successfully canceled signup");
-                        }
-                    })
-                    .fail(function (data) {
-                        console.debug("failed to cancel signup");
-                        console.debug(data);
-                    });
-                    console.debug(data);
-                }
-            });
-        };
         model.formatDate = function(dateString) { return moment(dateString).format("dddd MMM Do YYYY"); };
         model.addToGoogleCalendarLink = function(startDate, endDate, location) {
-            console.debug("start date: " + startDate);
-            console.debug("end date: " + endDate);
             return "https://www.google.com/calendar/render?action=TEMPLATE&text=VCWEB+Experiment"
             + "&dates=" + startDate.replace(/[-:.]/g, '') + '/' + endDate.replace(/[-:.]/g, '')
             + "&details=For more details please visit https://vcweb.asu.edu or contact your experimenter"

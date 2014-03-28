@@ -14,6 +14,17 @@ logger = logging.getLogger(__name__)
 HOUR_CHOICES = (('0', '0'),('1', '1'),('2','2'),('3','3'),('4','4'),('5','5'),('6','6'),('7','7'),('8','8'),('9','9'),('10','10'),('11','11'),('12','12'),('13','13'),('14','14'),('15','15'),('16','16'),('17','17'),('18','18'),('19','19'),('20','20'),('21','21'),('22','22'),('23','23'))
 MIN_CHOICES = (('0','0'),('15','15'),('30','30'),('45','45'))
 
+class CancelSignupForm(forms.Form):
+    pk = forms.IntegerField()
+
+    def clean_pk(self):
+        data = self.cleaned_data['pk']
+        try:
+            self.signup = ParticipantSignup.objects.select_related('invitation__experiment_session', 'invitation__participant').get(pk=data)
+        except ParticipantSignup.DoesNotExist:
+            raise forms.ValidationError(_("No signup found with pk %s" % data))
+        return data
+
 
 class SessionForm(forms.Form):
     pk = forms.IntegerField(widgets.TextInput())
@@ -29,7 +40,7 @@ class SessionForm(forms.Form):
     request_type = forms.CharField(widget=widgets.TextInput())
 
     def clean(self):
-        data = super(forms.Form, self).clean()
+        data = super(SessionForm, self).clean()
         pk = data.get('pk')
         start_date = data.get('start_date')
         end_date = data.get('end_date')

@@ -9,12 +9,11 @@ Signup for an Experiment Session
     {% regroup invitation_list|dictsort:"experiment_metadata_name" by experiment_metadata_name as grouped_invitations %}
     <div class='row' id='page'>
         <div id="content" class="col-md-12">
-            <h3>Pick Experiment Sessions</h3>
             {% for exp in grouped_invitations %}
             <div class="callout callout-info">
                 <form method="POST" action="">
                 <input type="hidden" name="experiment_metadata_pk" value={{ exp.list.0.experiment_metadata_pk }}  />
-                <legend><span> {{ exp.grouper }}</span></legend>
+                <legend>Experiment Session Signup</legend>
                 <table class="table table-striped">
                     <thead>
                         <tr>
@@ -95,7 +94,7 @@ Signup for an Experiment Session
             {% if grouped_invitations|length  == 0 %}
                 <div class="callout callout-warning">
                     <p>You are not currently invited to any experiments.</p>
-                    <p>Please make sure that you have opted to receive invitations in your <a href='/accounts/profile'>account profile</a>.</p>
+                    <p>In order to receive invitations you must have checked the "Receive invitations for experiments?" box in your <a href='/accounts/profile'>account profile</a>.</p>
                 </div>
             {% endif %}
         </div>
