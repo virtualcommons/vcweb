@@ -129,6 +129,7 @@ class GroupScores(object):
             group_data_dict['average_daily_points'] = group_data_dict['total_daily_points'] / group_size
             group_data_dict['total_average_points'] = group_data_dict['total_points'] / group_size
             #logger.debug("group data dictionary: %s", group_data_dict)
+        logger.debug("successfully initialized group scores")
 
     def average_daily_points(self, group):
         return self.scores_dict[group]['average_daily_points']
@@ -209,6 +210,7 @@ class GroupScores(object):
         }
 
     def create_all_email_messages(self):
+        logger.debug("creating email messages for all groups")
         return itertools.chain.from_iterable(self.create_email_messages(group) for group in self.groups)
 
     def create_email_messages(self, group):
@@ -345,9 +347,11 @@ def send_lighterprints_summary_emails(sender, time=None, start_date=None, send_e
             round_data = experiment.current_round_data if round_configuration is None else experiment.get_round_data(round_configuration)
             groups = list(experiment.groups)
             group_scores = GroupScores(experiment, round_data, groups, start_date=start_date)
+            logger.debug("created group scores: %s", group_scores)
             all_messages.extend(group_scores.create_all_email_messages())
-    logger.debug("lighterprints generated emails: %s", all_messages)
+            logger.debug("added messages: %s for experiment %s", all_messages, experiment)
     if send_emails:
+        logger.debug("sending all lighterprints generated emails: %s", all_messages)
         mail.get_connection().send_messages(all_messages)
 
 
