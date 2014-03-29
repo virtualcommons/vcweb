@@ -669,6 +669,7 @@ def get_activity_availability_cache():
     return aac
 
 
+@transaction.atomic
 def do_activity(activity, participant_group_relationship):
     round_data = participant_group_relationship.current_round_data
     if activity.is_available_for(participant_group_relationship, round_data):
