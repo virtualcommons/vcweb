@@ -2802,6 +2802,9 @@ def send_reminder_emails(sender, start=None, **kwargs):
     midnight check sending reminder emails to participants signed up for an ExperimentSession being run
     on the following day
     """
+    if settings.DEBUG:
+        logger.debug("not sending reminder emails in debug mode")
+        return
     tomorrow = date.today() + timedelta(days=1)
     start_date_time = datetime.combine(tomorrow, time.min)
     end_date_time = datetime.combine(tomorrow, time.max)

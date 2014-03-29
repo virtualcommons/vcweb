@@ -331,6 +331,7 @@ class GroupScores(object):
 
 @receiver(signals.pre_system_daily_tick)
 def send_lighterprints_summary_emails(sender, time=None, start_date=None, send_emails=True, round_configuration=None, **kwargs):
+    """ FIXME: consider changing this into the round_ended handler and get rid of pre_system_daily_tick.. """
     # invoked after midnight, so start_date should be set to the previous day.
     if start_date is None:
         start_date = date.today() - timedelta(1);
@@ -622,6 +623,9 @@ def get_experiment_completed_dv(group, round_data=None):
 
 
 def get_treatment_type(round_configuration=None, default_treatment_type='COMPARE_OTHER_GROUP', **kwargs):
+    """
+    set possible treatment types to LEADERBOARD / NO_LEADERBOARD / HIGH_SCHOOLS
+    """
     # XXX: if there is no treatment type we default to the compare other group / leaderboard treatment
     treatment_type = round_configuration.get_parameter_value(parameter=get_treatment_type_parameter())
     if treatment_type.string_value is None:
