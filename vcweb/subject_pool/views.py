@@ -12,7 +12,8 @@ from vcweb import settings
 from vcweb.core import dumps
 from vcweb.core.decorators import experimenter_required, participant_required
 from vcweb.core.http import JsonResponse
-from vcweb.core.models import (ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation, Institution, send_email)
+from vcweb.core.models import (ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation,
+                               Institution, send_email)
 from vcweb.subject_pool.forms import (SessionForm, SessionInviteForm, ParticipantAttendanceForm, CancelSignupForm)
 
 import markdown
@@ -398,6 +399,7 @@ def manage_participant_attendance(request, pk=None):
 
     return render(request, 'subject-pool/session_detail.html', {'session_detail': session_detail, 'formset': formset})
 
+
 @participant_required
 def cancel_experiment_session_signup(request):
     form = CancelSignupForm(request.POST or None)
@@ -407,7 +409,8 @@ def cancel_experiment_session_signup(request):
         es = invitation.experiment_session
         if request.user.participant == invitation.participant:
             signup.delete()
-            messages.add_message(request, messages.SUCCESS, _("You are no longer signed up for %s - thanks for letting us know!" % es))
+            messages.add_message(request, messages.SUCCESS,
+                                 _("You are no longer signed up for %s - thanks for letting us know!" % es))
         else:
             logger.error("Invalid request: Participant %s tried to cancel signup %s", request.user.participant, signup)
             messages.add_message(request, messages.ERROR, _("You don't appear to be signed up for this session."))
@@ -417,96 +420,60 @@ def cancel_experiment_session_signup(request):
 
 
 @participant_required
-def experiment_session_signup(request):
+def submit_experiment_session_signup(request):
     """
-    FIXME: Needs more refactoring + documentation. create 2 separate POST/GET handlers as there is no data or common
-    code shared between them
-
+    Enrolls the currently logged in user in the selected experiment session.
     """
     user = request.user
+    invitation_pk = request.POST.get('invitation_pk')
+    experiment_metadata_pk = request.POST.get('experiment_metadata_pk')
+    invitation = Invitation.objects.select_related('experiment_session').get(pk=invitation_pk)
 
-    if request.method == 'POST':
-        data = dict(request.POST.iteritems())
-        invitation_pk = None
-        experiment_metadata_pk = None
-
-        for key in data:
-            if key != 'experiment_metadata_pk':
-                invitation_pk = int(data[key])  # the key is the experiment Metadata Name
-            else:
-                experiment_metadata_pk = int(data[key])
-
-        if experiment_metadata_pk is not None:
-            invitation = Invitation.objects.select_related('experiment_session').get(pk=invitation_pk)
-            # lock on the experiment session to prevent concurrent participant signups for an experiment session
-            # exceeding its capacity
-            with transaction.atomic():
-                lock = ExperimentSession.objects.select_for_update().get(pk=invitation.experiment_session.pk)
-                signup_count = ParticipantSignup.objects.filter(
-                        invitation__experiment_session__pk=invitation.experiment_session.pk).count()
-                # verify that still there is vacancy for the selected experiment session
-                if signup_count < invitation.experiment_session.capacity:
-                    try:
-                        ps = ParticipantSignup.objects.get(
-                                invitation__participant=user.participant,
-                                invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk,
-                                attendance=ParticipantSignup.ATTENDANCE.registered)
-                    except ParticipantSignup.DoesNotExist:
-                        ps = ParticipantSignup()
-                    ps.invitation = invitation
-                    ps.date_created = datetime.now()
-                    ps.attendance = ParticipantSignup.ATTENDANCE.registered
-                    ps.save()
-                    success = True
-                else:
-                    # No vacancy
-                    success = False
-                # release the lock - shouldn't be necessary anymore with transaction.atomic - needs more testing
-                # lock.save()
-
-            # FIXME: better variable names
-            new_list, flag = get_participant_invitations(user)
-
-            if success:
-                messages.add_message(request, messages.SUCCESS, _(
-                    "You are now registered for this experiment session. A confirmation and reminder email one day before the session will been sent."))
-
-                send_email("subject-pool/email/confirmation-email.txt", {'session': lock}, "Confirmation Email",
-                           settings.SERVER_EMAIL,
-                           [user.email])
-                return redirect('core:dashboard')
-            else:
-                messages.add_message(request, messages.ERROR, _("This session is currently full."))
-                return redirect('subject_pool:experiment_session_signup')
-
-        else:
-            # unregister a user from the experiment_session
+    # lock on the experiment session to prevent concurrent participant signups for an experiment session
+    # exceeding its capacity
+    with transaction.atomic():
+        signup_count = ParticipantSignup.objects.filter(
+            invitation__experiment_session__pk=invitation.experiment_session.pk).count()
+        # verify for the vacancy in the selected experiment session before creating participant signup entry
+        if signup_count < invitation.experiment_session.capacity:
             try:
-                ParticipantSignup.objects.\
-                    select_related('invitation', 'invitation__participant').\
-                    get(invitation__participant__user=user, invitation__pk=invitation_pk).delete()
-                messages.success(request, _(
-                    "You have successfully unregistered yourself from the experiment session."))
-
+                ps = ParticipantSignup.objects.get(
+                    invitation__participant=user.participant,
+                    invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk,
+                    attendance=ParticipantSignup.ATTENDANCE.registered)
             except ParticipantSignup.DoesNotExist:
-                logger.warning("Could't unregister user as participant signup with invitation_pk = %s don't exist", invitation_pk)
-                messages.success(request, _(
-                    "We were unable to remove you from the experiment session at this time. Please refresh your browser. If the problem persists please file an issue"))
-            return JsonResponse(dumps({
-                'success': True
-            }))
+                ps = ParticipantSignup()
 
-    elif request.method == "GET":
-        new_list, flag = get_participant_invitations(user)
+            ps.invitation = invitation
+            ps.date_created = datetime.now()
+            ps.attendance = ParticipantSignup.ATTENDANCE.registered
+            ps.save()
+            success = True
+        else:
+            # No vacancy
+            success = False
+            # release the lock - shouldn't be necessary anymore with transaction.atomic - needs more testing
+            # lock.save()
 
-        if flag:
-            messages.error(request, _("All experiment sessions are full. Signups are first-come, first-serve. Please try again later, you are still eligible to participate in future experiments and may receive future invitations for this experiment."))
+    if success:
+        messages.success(request, _(
+            "You are now registered for this experiment session. A confirmation and reminder email one day before the session will been sent."))
+        chosen_session = ExperimentSession.objects.get(pk=invitation.experiment_session.pk)
+        send_email("subject-pool/email/confirmation-email.txt", {'session': chosen_session}, "Confirmation Email",
+                   settings.SERVER_EMAIL, [user.email])
+        return redirect('core:dashboard')
+    else:
+        messages.error(request, _("This session is currently full."))
+        return redirect('subject_pool:experiment_session_signup')
 
-        return render(request, "subject-pool/experiment-session-signup.html", {"invitation_list": new_list})
+@participant_required
+def experiment_session_signup(request):
+    """
+    Returns and renders all the experiment session invitation that currently logged in participant has received
+    """
+    user = request.user
+    session_unavailable = False
 
-
-def get_participant_invitations(user):
-    flag = False
     # If the Experiment Session is being conducted tomorrow then don't show invitation to user
     tomorrow = datetime.now() + timedelta(days=1)
 
@@ -526,15 +493,14 @@ def get_participant_invitations(user):
 
     participated_experiment_metadata_pk_list = [ps.invitation.experiment_session.experiment_metadata.pk for ps in
                                                 participated_experiment_metadata]
-    # logger.debug(participated_experiment_metadata_pk_list)
+
     active_invitation_pk_list = [ps.invitation.pk for ps in active_experiment_sessions]
-    # logger.debug(active_invitation_pk_list)
+
     invitations = Invitation.objects.select_related('experiment_session', 'experiment_session__experiment_metadata__pk') \
         .filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow) \
         .exclude(experiment_session__experiment_metadata__pk__in=participated_experiment_metadata_pk_list) \
         .exclude(pk__in=active_invitation_pk_list)
 
-    # logger.debug(invitations)
     invitation_list = []
     for ps in active_experiment_sessions:
         signup_count = ParticipantSignup.objects.filter(
@@ -546,12 +512,15 @@ def get_participant_invitations(user):
         signup_count = ParticipantSignup.objects.filter(
             invitation__experiment_session__pk=invite.experiment_session.pk).count()
         invite_dict = invite.to_dict(signup_count)
-        logger.debug(invite_dict)
-        logger.debug(invite_dict['invitation']['openings'])
-        if invite_dict['invitation']['openings'] and flag:
-            flag = False
+
+        if invite_dict['invitation']['openings'] != 0 and session_unavailable:
+            session_unavailable = False
         invitation_list.append(invite_dict)
 
-    new_list = sorted(invitation_list, key=lambda use_key: use_key['invitation']['scheduled_date'])
+    invitation_list = sorted(invitation_list, key=lambda use_key: use_key['invitation']['scheduled_date'])
 
-    return new_list, flag
+    if session_unavailable:
+        messages.error(request, _(
+            "All experiment sessions are full. Signups are first-come, first-serve. Please try again later, you are still eligible to participate in future experiments and may receive future invitations for this experiment."))
+
+    return render(request, "subject-pool/experiment-session-signup.html", {"invitation_list": invitation_list})
