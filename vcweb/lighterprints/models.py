@@ -239,7 +239,7 @@ class GroupScores(object):
         messages = []
         c = Context({
             'experiment': experiment,
-            'experiment_completed': not experiment.has_next_round,
+            'experiment_completed': experiment.is_last_round,
             'number_of_groups': self.number_of_groups,
             'group_name': group.name,
             'group_rank': self.get_group_rank(group),
