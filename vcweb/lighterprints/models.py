@@ -296,7 +296,6 @@ class GroupScores(object):
         logger.debug("creating level based group summary email for group %s", group)
         yesterday = date.today() - timedelta(1)
         plaintext_template = select_template(['lighterprints/email/group-summary-email.txt'])
-        html_template = select_template(['lighterprints/email/group-summary-email.html'])
         experiment = group.experiment
         experimenter_email = experiment.experimenter.email
         number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group,
@@ -304,21 +303,21 @@ class GroupScores(object):
         messages = []
         average_group_points = self.average_daily_points(group)
         points_to_next_level = get_points_to_next_level(level)
+        c = Context(dict({'experiment': experiment,
+                            'number_of_groups': self.number_of_groups,
+                            'group_name': group.name,
+                            'group_level': level,
+                            'group_rank': self.get_group_rank(group),
+                            'summary_date': yesterday,
+                            'show_rankings': self.show_rankings,
+                            'points_to_next_level': points_to_next_level,
+                            'average_daily_points': average_group_points,
+                            'number_of_chat_messages': number_of_chat_messages,
+                            }, **kwargs))
         for pgr in group.participant_group_relationship_set.all():
-            c = Context(dict({'experiment': experiment,
-                              'number_of_groups': self.number_of_groups,
-                              'group_name': group.name,
-                              'group_level': level,
-                              'group_rank': self.get_group_rank(group),
-                              'summary_date': yesterday,
-                              'show_rankings': self.show_rankings,
-                              'points_to_next_level': points_to_next_level,
-                              'average_daily_points': average_group_points,
-                              'number_of_chat_messages': number_of_chat_messages,
-                              'individual_points': get_individual_points(pgr),
-                              }, **kwargs))
+            c['individual_points'] = get_individual_points(pgr)
             plaintext_content = plaintext_template.render(c)
-            html_content = html_template.render(c)
+            html_content = markdown.markdown(plaintext_content)
             subject = 'Lighter Footprints Summary for %s' % yesterday
             to_address = [ experimenter_email, pgr.participant.email ]
             msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)

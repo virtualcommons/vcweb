@@ -1,4 +1,4 @@
-Lighter Footprints Summary for {{ summary_date }}
+### Lighter Footprints Summary for {{ summary_date }}
 
 You are a member of {{ group_name }}.  To participate in this experiment, visit https://vcweb.asu.edu{{experiment.participant_url}}.
 

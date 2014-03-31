@@ -1,14 +1,10 @@
-Hi,
+Greetings,
 
-This email is to remind you of the following upcoming experiment session that you have registered for. Please remember to be on time.
+This is an automated email to remind you that an experiment session you have signed up for is coming up soon. Please remember to be on time.
 
--  **Session 1** {{ session.scheduled_date }} to {{ session.scheduled_end_date }}
+-  **{{ session.scheduled_date }} to {{ session.scheduled_end_date }}** at **{{ session.location }}**
 
 
-Thanks,
+Thanks in advance for participating!
 
 Team VCWEB
-
-
-You are receiving these invitations because you've opted in to our participant database. If you are no longer interested in receiving any experiment invitations you can
-<a href='https://vcweb.asu.edu/accounts/unsubscribe'>unsubscribe here</a>.

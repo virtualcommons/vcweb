@@ -1,10 +1,12 @@
-You've been registered with the {{ experiment.display_name }}.  You can access the experiment by logging in to our experiment website at https://vcweb.asu.edu using the following credentials:
+Greetings,
+
+You've been registered with a VCWEB experiment. You can access the experiment by logging in at https://vcweb.asu.edu using the following credentials:
 
     Email:    {{participant.email}}
     Password: {{password}}
 
-You can reset your password by visiting:
+If you'd like to reset your password, please visit 
 
-    https://vcweb.asu.edu/accounts/password/reset?email={{ participant.email }}
+    https://vcweb.asu.edu/accounts/password/reset
 
-
+Thanks in advance for participating!

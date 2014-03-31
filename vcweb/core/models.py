@@ -884,17 +884,15 @@ class Experiment(models.Model):
     def create_registration_email(self, participant_experiment_relationship, password='', sender=None, from_email=None,
                                   **kwargs):
         """
-        Creates a registration email, sets a password for the given participant_experiment_relationship, and sends it to
-        in plain text. Totally insecure but convenient for lowering barrier to participant registration.
+        Creates a registration email, sets a password for the given participant, and sends it to the participant in
+        plain text. Insecure at the expense of convenience, lowering barrier to participant registration.
 
-        Override the email template by creating <experiment-namespace>/email/experiment-registration.(txt|html) templates
+        Override the email template by creating <experiment-namespace>/email/experiment-registration.txt templates
         """
         participant = participant_experiment_relationship.participant
         logger.debug("creating email for %s", participant)
         plaintext_template = select_template(['%s/email/experiment-registration.txt' % self.namespace,
                                               'email/experiment-registration.txt'])
-        html_template = select_template(['%s/email/experiment-registration.html' % self.namespace,
-                                         'email/experiment-registration.html'])
         user = participant.user
         if password is None or not password.strip():
             password = User.objects.make_random_password()
@@ -909,7 +907,7 @@ class Experiment(models.Model):
             'sender': sender
         })
         plaintext_content = plaintext_template.render(c)
-        html_content = html_template.render(c)
+        html_content = markdown.markdown(plaintext_content)
         subject = self.get_registration_email_subject()
         experimenter_email = self.experimenter.email
         if from_email is None or not from_email.strip():
