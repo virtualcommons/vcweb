@@ -86,15 +86,11 @@ def update_session(request):
             'session': es
         }))
 
-    # FIXME: presentation layer code doesn't belong here. push into the template consuming this response and pass form errors in as JSON
-    message = '''<div class="alert alert-danger alert-dismissable alert-link">
-                   <button class=close data-dismiss=alert aria-hidden=true>
-                   &times;</button>{errors}</div>\n
-                '''.format(errors='\n'.join(['<p>{e}</p>'.format(e=e) for e in form.non_field_errors()]))
+    error_list = [e for e in form.non_field_errors()]
 
     return JsonResponse(dumps({
         'success': False,
-        'message': message
+        'errors': error_list
     }))
 
 
@@ -173,9 +169,8 @@ def get_invitations_count(request):
     experiment_metadata_pk_list = experiment_sessions.values_list('experiment_metadata__pk', flat=True)
 
     if len(set(experiment_metadata_pk_list)) == 1:
-        # get the experiment metadata pk of any session,
-        # as all sessions selected by experimenter to send invitations belong to same experiment metadata
-        # (This is ensured as it is a constraint)
+        # As all sessions selected by experimenter to send invitations belong to same experiment metadata
+        # get the experiment metadata pk of any session (This is ensured as it is a constraint)
         experiment_metadata_pk = experiment_metadata_pk_list[0]
 
         only_undergrad = request.POST.get('only_undergrad')
@@ -230,7 +225,7 @@ def send_invitations(request):
 
         if len(set(experiment_metadata_pk_list)) == 1:
             # get the experiment metadata pk of any session, as all sessions selected by experimenter to send invitations
-            # belong to same experiment metadata(This is ensured as it is a constraint)
+            # belong to same experiment metadata (This is ensured as it is a constraint)
             experiment_metadata_pk = experiment_metadata_pk_list[0]
 
             potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_university,
@@ -264,14 +259,9 @@ def send_invitations(request):
 
                 plaintext_content, html_content = get_invitation_email_content(invitation_text, session_pk_list)
 
-                msg = EmailMultiAlternatives(subject=invitation_subject,
-                                             body=plaintext_content,
-                                             from_email=from_email,
-                                             to=[from_email],
-                                             bcc=recipient_list,
-                                             cc=['allen.lee@asu.edu'])
+                msg = EmailMultiAlternatives(subject=invitation_subject, body=plaintext_content, from_email=from_email,
+                                             to=[from_email], bcc=recipient_list, cc=['allen.lee@asu.edu'])
                 msg.attach_alternative(html_content, "text/html")
-
                 msg.send()
 
             return JsonResponse(dumps({

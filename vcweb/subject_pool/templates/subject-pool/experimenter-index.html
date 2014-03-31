@@ -331,7 +331,8 @@ Experiment Session Management
                                 self.editable(false);
                                 calendar = createCalendar();
                             } else {
-                                $("#error-messages").html(result.message);
+                                $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.errors+'</div>');
+                                $(window).scrollTop($('#error-messages').offset().top - 100);
                             }
                         }
                     });
