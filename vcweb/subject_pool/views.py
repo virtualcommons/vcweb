@@ -325,21 +325,20 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona Stat
         affiliated_institution = Institution.objects.get(name=institution)
     except Institution.DoesNotExist:
         affiliated_institution = None
+        return []
 
-    if affiliated_institution:
-        # Get unlikely participants for the given parameters
-        excluded_participants = get_excluded_participants(days_threshold, experiment_metadata_pk)
-        if only_undergrad:
-            potential_participants = Participant.objects.filter(can_receive_invitations=True,
-                                                                institution=affiliated_institution,
-                                                                class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES) \
-                .exclude(pk__in=excluded_participants)
-        else:
-            potential_participants = Participant.objects.filter(can_receive_invitations=True,
-                                                                institution=affiliated_institution) \
-                .exclude(pk__in=excluded_participants)
+    # Get unlikely participants for the given parameters
+    excluded_participants = get_excluded_participants(days_threshold, experiment_metadata_pk)
+
+    if only_undergrad:
+        potential_participants = Participant.objects.filter(can_receive_invitations=True,
+                                                            institution=affiliated_institution,
+                                                            class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES) \
+            .exclude(pk__in=excluded_participants)
     else:
-        potential_participants = []
+        potential_participants = Participant.objects.filter(can_receive_invitations=True,
+                                                            institution=affiliated_institution) \
+            .exclude(pk__in=excluded_participants)
     return potential_participants
 
 
@@ -351,20 +350,17 @@ def get_excluded_participants(days_threshold, experiment_metadata_pk):
     # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
     # given Experiment metadata
     invited_in_last_threshold_days = Invitation.objects \
-        .filter(date_created__gt=last_week_date, experiment_session__experiment_metadata__pk=experiment_metadata_pk)
+        .filter(date_created__gt=last_week_date, experiment_session__experiment_metadata__pk=experiment_metadata_pk) \
+        .values_list('participant__pk', flat=True)
 
-    # filtered_list is the list of participants who have received invitations for the given
-    # experiment_metadata in last threshold days
-    filtered_list = [inv.participant.pk for inv in invited_in_last_threshold_days]
-
-    signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=experiment_metadata_pk)
-    # filtered_list1 is the list of participants who has already participated in the
+    # signup_participants is the list of participants who has already participated in the
     # given Experiment Metadata(in the past or currently participating)
-    filtered_list1 = [p.invitation.participant.pk for p in signup_participants]
+    signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=6).\
+        values_list('invitation__participant__pk', flat=True)
 
     # returned list the list of participants who have already received invitations in last threshold days or have already
     # participated in same experiment
-    return list(set(filtered_list) | set(filtered_list1))
+    return list(set(invited_in_last_threshold_days) | set(signup_participants))
 
 
 @experimenter_required
@@ -465,6 +461,7 @@ def submit_experiment_session_signup(request):
     else:
         messages.error(request, _("This session is currently full."))
         return redirect('subject_pool:experiment_session_signup')
+
 
 @participant_required
 def experiment_session_signup(request):
