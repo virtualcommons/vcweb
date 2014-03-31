@@ -499,7 +499,7 @@
                 }
 
                 model.showExpParamModel = function (data, event) {
-                    var temp = new ParamViewModel({}, model.expParameterList());
+                    var temp = new ParamViewModel({'is_active': true}, model.expParameterList());
                     model.modalData(temp);
                     model.template("exp-param-template");
                     model.activateModal(true);
@@ -525,7 +525,7 @@
                 }
 
                 model.addRoundParam = function(roundConfig) {
-                    var temp = new ParamViewModel({'parent_pk': roundConfig.pk()}, model.roundParameterList());
+                    var temp = new ParamViewModel({'parent_pk': roundConfig.pk(), 'is_active': true}, model.roundParameterList());
                     model.modalData(temp);
                     model.template("round-param-template");
                     model.activateModal(true);
@@ -570,7 +570,7 @@
                 }
 
                 model.showRoundConfigModal = function (data, event) {
-                    model.modalData(new NodeModel({'display_number': 0, 'duration': 0, repeat:'0'}));
+                    model.modalData(new NodeModel({'display_number': 0, 'duration': 0, repeat:'0', 'preserve_existing_groups': true}));
                     model.template("round-config-template");
                     model.activateModal(true);
                 }
