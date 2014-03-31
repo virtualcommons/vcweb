@@ -223,7 +223,7 @@ class GroupScores(object):
         # FIXME: remove code duplication / redundancy between this and create_level_experiment_email_messages
         round_data = self.round_data
         logger.debug("Calculating thresholds for scheduled activity experiment")
-        threshold = get_group_threshold(self.round_configuration)
+        threshold = self.get_points_goal(group)
         average_group_points = self.average_daily_points(group)
         logger.debug("threshold: %s vs average group points: %s", threshold, average_group_points)
         goal_reached = average_group_points >= threshold
