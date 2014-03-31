@@ -290,19 +290,19 @@
    	    <div class="form-group">
             <label class="col-md-4 control-label" for="sequence_number">Sequence Number</label>
             <div class="col-md-6">
-                <input type="text" id="sequence_number" name="sequence_number" class="form-control input-sm" data-bind="value: sequence_number">
+                <input type="number" min="0" id="sequence_number" name="sequence_number" class="form-control input-sm" data-bind="value: sequence_number">
             </div>
         </div>
         <div class="form-group">
             <label class="col-md-4 control-label" for="display_number">Display Number</label>
             <div class="col-md-6">
-                <input id="display_number" name="display_number" type="text" class="form-control input-sm" data-bind="value: display_number">
+                <input id="display_number" min="0" name="display_number" type="number" class="form-control input-sm" data-bind="value: display_number">
             </div>
         </div>
         <div class="form-group">
             <label class="col-md-4 control-label" for="duration">Duration</label>
             <div class="col-md-6">
-                <input id="duration" name="duration" type="text" class="form-control input-sm" data-bind="value: duration">
+                <input id="duration" name="duration" min="0" type="number" class="form-control input-sm" data-bind="value: duration">
             </div>
         </div>
         <div class="form-group">
@@ -326,7 +326,7 @@
         <div class="form-group">
             <label class="col-md-4 control-label" for="repeat">Repeat</label>
             <div class="col-md-6">
-                <input id="repeat" name="repeat" type="text" class="form-control input-sm" data-bind="value: repeat">
+                <input id="repeat" name="repeat" type="number" class="form-control input-sm" data-bind="value: repeat">
             </div>
         </div>
         <div class="form-group">
@@ -570,7 +570,7 @@
                 }
 
                 model.showRoundConfigModal = function (data, event) {
-                    model.modalData(new NodeModel({}));
+                    model.modalData(new NodeModel({'display_number': 0, 'duration': 0, repeat:'0'}));
                     model.template("round-config-template");
                     model.activateModal(true);
                 }
@@ -659,12 +659,17 @@
                             type: "POST",
                             success: function(result) {
                                 if(result.success){
+                                    var flag = false;
                                     var new_sequence_number = result.round_config.sequence_number;
                                         $.each(model.roundConfigList(), function() {
                                             var current_sequence_number = this.sequence_number();
-                                            if( current_sequence_number >= new_sequence_number){
+
+                                            if( current_sequence_number > new_sequence_number && flag){
                                                 this.sequence_number(current_sequence_number + 1);
                                                 this.sequence_number.commit();
+                                                if(new_sequence_number == current_sequence_number) {
+                                                    flag = true
+                                                }
                                             }
                                         });
                                     model.roundConfigList.push(new NodeModel(result.round_config));

@@ -1125,16 +1125,28 @@ def sort_round_configurations(old_sequence_number, new_sequence_number, exp_conf
     logger.debug('Sorting Round Configuration sequence numbers!!')
     round_configs = RoundConfiguration.objects.filter(experiment_configuration__pk=exp_config_pk)
     #logger.debug(round_configs)
-    for rc in round_configs:
-        current_sequence_number = rc.sequence_number
-        if old_sequence_number < current_sequence_number <= new_sequence_number:
-            rc.sequence_number = current_sequence_number - 1
-            logger.debug('sequence_number decreased by 1')
-            rc.save()
-        elif new_sequence_number <= current_sequence_number <= old_sequence_number:
-            rc.sequence_number = current_sequence_number + 1
-            logger.debug('sequence_number increased by 1')
-            rc.save()
+    logger.debug(old_sequence_number)
+    if old_sequence_number:
+        for rc in round_configs:
+            current_sequence_number = rc.sequence_number
+            if old_sequence_number < current_sequence_number <= new_sequence_number:
+                rc.sequence_number = current_sequence_number - 1
+                logger.debug('sequence_number decreased by 1')
+                rc.save()
+            elif new_sequence_number <= current_sequence_number <= old_sequence_number:
+                rc.sequence_number = current_sequence_number + 1
+                logger.debug('sequence_number increased by 1')
+                rc.save()
+    else:
+        flag = False
+        for rc in round_configs:
+            current_sequence_number = rc.sequence_number
+            if new_sequence_number <= current_sequence_number and flag:
+                rc.sequence_number = current_sequence_number + 1
+                logger.debug('sequence_number increased by 1')
+                rc.save()
+                if new_sequence_number == current_sequence_number:
+                    flag = True
 
 
 @experimenter_required
@@ -1158,7 +1170,7 @@ def update_round_configuration(request, pk):
         if form.cleaned_data.get('sequence_number') != rc.sequence_number:
             sort_round_configurations(rc.sequence_number, form.cleaned_data.get('sequence_number'),
                                       rc.experiment_configuration.pk)
-
+        print "I'm back"
         rc.round_type = form.cleaned_data.get('round_type')
         rc.sequence_number = form.cleaned_data.get('sequence_number')
         rc.display_number = form.cleaned_data.get('display_number')
