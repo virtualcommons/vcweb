@@ -6,23 +6,31 @@ WSGIPythonHome /opt/virtualenvs/vcweb
     ServerName vcweb.asu.edu
 
     Alias /static /var/www/vcweb/static
-    <FilesMatch "\.(html|js|png|jpg|gif|css)">
-    ExpiresDefault "access plus 1 days"
-    ExpiresActive On
-    </FilesMatch>
-
     Alias /favicon.ico /var/www/vcweb/static/favicon.ico
     Alias /robots.txt /var/www/vcweb/static/robots.txt
+    <Directory /var/www/vcweb/static>
+    Order deny,allow
+    Allow from all
+    </Directory>
 
-    WSGIDaemonProcess vcweb-production user=apache group=commons threads=25 python-path=/opt/virtualenvs/vcweb/lib/python2.6/site-packages
+    WSGIDaemonProcess vcweb-production user=apache group=commons threads=25 python-path=/opt/vcweb:/opt/virtualenvs/vcweb/lib/python2.7/site-packages
     WSGIProcessGroup vcweb-production
-    WSGIScriptAlias / /opt/webapps/virtualcommons/vcweb/vcweb.wsgi
-    <Directory /opt/webapps/virtualcommons/vcweb/vcweb/>
+    WSGIScriptAlias / /opt/vcweb/vcweb/wsgi.py
+    <Directory /opt/vcweb/vcweb>
+        <Files wsgi.py>
         Order deny,allow
         Allow from all
+        </Files>
     </Directory>
     ErrorLog /var/log/apache2/vcweb/error.log
-    LogLevel warn
+    LogLevel debug
     CustomLog /var/log/apache2/vcweb/access.log combined
+
+    Redirect permanent /sentry https://vcweb.asu.edu/sentry
+    Redirect permanent /participant/session https://vcweb.asu.edu/subject-pool/signup/
+# redirect all non https traffic to https
+#    RewriteEngine on
+#    RewriteCond %{HTTPS} !=on
+#    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </VirtualHost>
 
