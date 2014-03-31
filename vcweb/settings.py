@@ -1,10 +1,13 @@
-from django.contrib import messages
 from os import path, makedirs
+import locale
+
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 USE_TZ = False
+SITE_URL = 'vcweb.asu.edu'
 
 SERVER_EMAIL = 'vcweb@asu.edu'
 SERVER_NAME = 'vcweb.asu.edu'
@@ -202,7 +205,7 @@ MEDIA_ROOT = path.join(STATIC_ROOT, 'media')
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
 MEDIA_URL = '/static/media/'
 
-# set up jquery-ui css classes for django messages
+# css classes for django messages, disabled due to use of bootstrap_messages
 # MESSAGE_TAGS = {
 #     messages.constants.INFO: 'ui-state-highlight ui-corner-all',
 #     messages.constants.WARNING: 'ui-state-error ui-corner-all',
@@ -309,6 +312,7 @@ if has_local_settings:
         EMAIL_BACKEND = getattr(local_settings, 'EMAIL_BACKEND', EMAIL_BACKEND)
         DATABASES = getattr(local_settings, 'DATABASES', DATABASES)
         SECRET_KEY = getattr(local_settings, 'SECRET_KEY', SECRET_KEY)
+        SITE_URL = getattr(local_settings, 'SITE_URL', SITE_URL)
         add_settings_tuples('MIDDLEWARE_CLASSES', local_settings)
         add_settings_tuples('INSTALLED_APPS', local_settings)
         add_settings_tuples('ALLOWED_HOSTS', local_settings)

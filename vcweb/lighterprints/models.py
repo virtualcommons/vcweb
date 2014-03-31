@@ -1,3 +1,5 @@
+from collections import defaultdict
+from datetime import datetime, date, time, timedelta
 from django.core import mail
 from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
@@ -8,12 +10,10 @@ from django.template import Context
 from django.template.loader import select_template
 from django.utils.timesince import timesince
 from model_utils.managers import PassThroughManager
-from vcweb.core import signals, simplecache
-from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, RoundParameterValue, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
-from collections import defaultdict
-from datetime import datetime, date, time, timedelta
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 from operator import itemgetter
+from vcweb.core import signals, simplecache
+from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, RoundParameterValue, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
 
 import itertools
 import locale
@@ -21,7 +21,6 @@ import logging
 import markdown
 import re
 
-locale.setlocale(locale.LC_ALL, '')
 
 logger = logging.getLogger(__name__)
 
@@ -338,6 +337,8 @@ def send_lighterprints_summary_emails(sender, time=None, start_date=None, send_e
     if start_date is None:
         start_date = date.today() - timedelta(1);
     active_experiments = get_active_experiments()
+    if not active_experiments:
+        return
     logger.debug("sending summary emails to [%s] on %s", active_experiments, start_date)
     all_messages = []
     with transaction.atomic():
