@@ -345,7 +345,7 @@ def get_excluded_participants(days_threshold, experiment_metadata_pk):
 
     # signup_participants is the list of participants who has already participated in the
     # given Experiment Metadata(in the past or currently participating)
-    signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=6).\
+    signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=experiment_metadata_pk).\
         values_list('invitation__participant__pk', flat=True)
 
     # returned list the list of participants who have already received invitations in last threshold days or have already

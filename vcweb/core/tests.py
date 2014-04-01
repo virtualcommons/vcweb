@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from django.contrib.auth.models import User
 from django.core import serializers
@@ -248,7 +248,7 @@ class ExperimentTest(BaseVcwebTest):
             self.assertEqual(current_round_data.participant_data_value_set.count(), 0)
 
     def test_playable_round(self):
-    # advance_to_next_round automatically starts it
+        # advance_to_next_round automatically starts it
         e = self.advance_to_data_round()
         current_round_data = e.current_round_data
         for group in e.group_set.all():
@@ -434,15 +434,15 @@ class InvitationAlgorithmTest(BaseVcwebTest):
         for x in xrange(4):
             es = ExperimentSession()
             es.experiment_metadata = e.experiment_metadata
-            year = 2013
-            month = 12
-            day = random.choice(range(1, 28))
+            year = date.today().year
+            month = date.today().month
+            day = random.choice(range(1, 30))
             random_date = datetime(year, month, day)
             es.scheduled_date = random_date
             es.scheduled_end_date = random_date
             es.capacity = 1
             es.location = "Online"
-            es.creator = User.objects.get(pk=256) #creator is vcweb
+            es.creator = User.objects.get(pk=256)  # creator is vcweb
             es.date_created = datetime.now()
             es.save()
 
@@ -452,7 +452,7 @@ class InvitationAlgorithmTest(BaseVcwebTest):
         # logger.debug(potential_participants_count)
 
         final_participants = None
-        no_of_invitations = 50
+        no_of_invitations = 100
 
         if potential_participants_count == 0:
             # logger.debug("You Have already sent out invitations to all potential participants")
@@ -476,9 +476,9 @@ class InvitationAlgorithmTest(BaseVcwebTest):
             inv = Invitation.objects.filter(participant=person).order_by('?')[:1]
             ps = ParticipantSignup()
             ps.invitation = inv[0]
-            year = 2013
-            month = random.choice([10, 11])
-            day = random.choice(range(1, 21))
+            year = date.today().year
+            month = date.today().month - 1
+            day = random.choice(range(1, 30))
             random_date = datetime(year, month, day)
             ps.date_created = random_date
             # logger.debug(random_date)
@@ -492,11 +492,11 @@ class InvitationAlgorithmTest(BaseVcwebTest):
         user = User.objects.get(pk=256)
 
         for participant in participants:
-        # recipient_list.append(participant.email)
+            # recipient_list.append(participant.email)
             for es in experiment_sessions:
-                year = 2013
-                month = 11
-                day = random.choice(range(1, 22))
+                year = date.today().year
+                month = date.today().month - 1
+                day = random.choice(range(1, 30))
                 random_date = datetime(year, month, day)
                 invitations.append(Invitation(participant=participant, experiment_session=es, date_created=random_date,
                                               sender=user))
@@ -511,7 +511,7 @@ class InvitationAlgorithmTest(BaseVcwebTest):
 
         # First Iteration
         x = self.get_final_participants()
-
+        # logger.debug([y.pk for y in x])
         self.set_up_inv(x)
 
         self.set_up_participant_signup(x)
@@ -519,6 +519,7 @@ class InvitationAlgorithmTest(BaseVcwebTest):
         # Second Iteration
         x = self.get_final_participants()
 
+        # logger.debug([y.pk for y in x])
         self.set_up_inv(x)
 
         self.set_up_participant_signup(x)
@@ -526,12 +527,16 @@ class InvitationAlgorithmTest(BaseVcwebTest):
         # third Iteration
         x = self.get_final_participants()
 
+        # logger.debug([y.pk for y in x])
         pk_list = [p.pk for p in x]
 
         last_week_date = datetime.now() - timedelta(days=7)
-        self.assertEqual(ParticipantSignup.objects.filter(attendance__in=[0, 3], invitation__participant__in=x).count(),
-                         0)
+        # The chosen set of participants should not have participated in past for the same experiment
+        self.assertEqual(
+            ParticipantSignup.objects.filter(attendance__in=[0, 3], invitation__participant__in=x).count(), 0)
+        # The chosen set of participants should not have received invitations in last threshold days
         self.assertEqual(Invitation.objects.filter(participant__in=x, date_created__gt=last_week_date).count(), 0)
+        # The chosen set of participants should be from provided university and must have enabled can_receive invitations
         self.assertEqual(
             Participant.objects.filter(can_receive_invitations=True, institution__name='Arizona State University',
                                        pk__in=pk_list).count(), len(x))
