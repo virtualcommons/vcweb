@@ -36,12 +36,25 @@ def get_activity_points_cache():
         cache.set(cv, activity_points_cache, 86400)
     return activity_points_cache
 
+def get_activity_availability_cache():
+    aac = cache.get('activity_availability_cache')
+    if aac is None:
+        aac = defaultdict(list)
+        for aa in ActivityAvailability.objects.select_related('activity').all():
+            aac[aa.activity.pk].append(aa)
+        cache.set('activity_availability_cache', aac)
+    return aac
+
 
 def is_scheduled_activity_experiment(experiment_configuration):
     return experiment_configuration.has_daily_rounds
 
 
 class ActivityStatusList(object):
+    """
+    Partitions activities into available, completed, upcoming, and expired sets based on the participant group
+    relationship parameter and the type of experiment being run (scheduled activity, level based, high school)
+    """
 
     def __init__(self, participant_group_relationship, activities=None, round_configuration=None, group_level=1):
         self.activities = list(Activity.objects.all()) if activities is None else activities
@@ -92,14 +105,14 @@ class ActivityStatusList(object):
 
 class GroupScores(object):
 
-    def __init__(self, experiment, round_data=None, groups=None, participant_group_relationship=None, start_date=None, end_date=None):
+    def __init__(self, experiment, round_data=None, groups=None, participant_group_relationship=None, start_date=None, end_date=None, experiment_configuration=None):
         self.experiment = experiment
         self.round_data = experiment.current_round_data if round_data is None else round_data
         self.groups = list(experiment.groups) if groups is None else groups
-        experiment_configuration = experiment.experiment_configuration
-        self.exchange_rate = float(experiment_configuration.exchange_rate)
-        self.has_scheduled_activities = is_scheduled_activity_experiment(experiment_configuration)
-        self.is_linear_public_good_game = is_linear_public_good_game(experiment_configuration)
+        self.experiment_configuration = experiment.experiment_configuration if experiment_configuration is None else experiment_configuration
+        self.exchange_rate = float(self.experiment_configuration.exchange_rate)
+        self.has_scheduled_activities = is_scheduled_activity_experiment(self.experiment_configuration)
+        self.is_linear_public_good_game = is_linear_public_good_game(self.experiment_configuration)
         self.number_of_groups = len(self.groups)
         # { group : {average_daily_points, total_daily_points} }
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
@@ -109,7 +122,7 @@ class GroupScores(object):
         self.start_date = date.today() if start_date is None else start_date
         self.end_date = self.start_date + timedelta(1) if end_date is None else end_date
         self.round_configuration = self.round_data.round_configuration
-        self.show_rankings = can_view_other_groups(self.round_configuration)
+        self.show_rankings = has_leaderboard(self.round_configuration)
         activity_points_cache = get_activity_points_cache()
         activities_performed_qs = ParticipantRoundDataValue.objects.for_round(parameter=get_activity_performed_parameter(), round_data=self.round_data, date_created__range=(self.start_date, self.end_date))
         for activity_performed_dv in activities_performed_qs:
@@ -409,18 +422,12 @@ class ActivityQuerySet(models.query.QuerySet):
 
 class ActivityManager(TreeManager, PassThroughManager):
 
-    def scheduled(self, round_configuration, **kwargs):
-        available_activity_ids = RoundParameterValue.objects.filter(round_configuration=round_configuration,
-                parameter=get_available_activity_parameter()).values_list('int_value', flat=True)
-        return Activity.objects.filter(pk__in=available_activity_ids)
-        #return ActivityAvailability.objects.select_related('activity').filter(activity__id__in=(available_activity_ids), **kwargs).values_list('activity', flat=True)
-
     def already_performed(self, activity, participant_group_relationship, round_data):
         #today = datetime.combine(date.today(), time())
-        already_performed = participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(),
+        return participant_group_relationship.data_value_set.filter(
+                parameter=get_activity_performed_parameter(),
                 int_value=activity.pk,
-                round_data=round_data)
-        return already_performed.count() > 0
+                round_data=round_data).exists()
 
     def is_available_now(self, activity):
         current_time = datetime.now().time()
@@ -433,9 +440,10 @@ class ActivityManager(TreeManager, PassThroughManager):
         round_configuration = round_data.round_configuration
         unlocked_activities = []
         if is_scheduled_activity_experiment(round_configuration.experiment_configuration):
-            # first query for scheduled set
+            # find scheduled set of activities
             unlocked_activities = self.scheduled(round_configuration)
         else:
+            # otherwise, unlocked activities are based on the group's level
             unlocked_activities = Activity.objects.unlocked(level=get_footprint_level(participant_group_relationship.group, round_data))
         if activity in unlocked_activities:
             # next check if it is currently available
@@ -444,29 +452,6 @@ class ActivityManager(TreeManager, PassThroughManager):
                 # finally, if it is currently available, make sure they haven't already performed it
                 return not self.already_performed(activity, participant_group_relationship, round_data)
         return False
-
-    def upcoming(self, level=1, scheduled=False, round_configuration=None):
-        current_time = datetime.now().time()
-        if scheduled:
-# find all activities scheduled for today
-            return self.scheduled(round_configuration, start_time__gte=current_time)
-        else:
-            return self._filter_by_availability(level, start_time__gte=current_time)
-
-    def _filter_by_availability(self, level=1, **kwargs):
-        return ActivityAvailability.objects.select_related('activity').filter(models.Q(activity__level__lte=level, **kwargs)).values_list('activity', flat=True)
-
-    def currently_available(self, level=1, current_time=None, fetch_models=False, scheduled_activities=False, **kwargs):
-        ''' returns a list of available activity pks '''
-        if current_time is None:
-            current_time = datetime.now().time()
-        activity_ids = list(self._filter_by_availability(level, start_time__lte=current_time, end_time__gte=current_time))
-# add available all day activities
-        activity_ids.extend(Activity.objects.filter(available_all_day=True, level__lte=level).values_list('pk', flat=True))
-        if fetch_models:
-            return Activity.objects.filter(pk__in=activity_ids)
-        else:
-            return activity_ids
 
     def get_by_natural_key(self, name):
         return self.get(name=name)
@@ -626,21 +611,27 @@ def get_experiment_completed_dv(group, round_data=None):
     return group.get_data_value(parameter=get_experiment_completed_parameter(), round_data=round_data)
 
 
-def get_treatment_type(round_configuration=None, default_treatment_type='COMPARE_OTHER_GROUP', **kwargs):
+def get_treatment_type(round_configuration=None, default_treatment_type='LEADERBOARD', **kwargs):
     """
-    set possible treatment types to LEADERBOARD / NO_LEADERBOARD / HIGH_SCHOOLS
+    possible treatment types: LEADERBOARD / NO_LEADERBOARD / HIGH_SCHOOL / LEVEL_BASED
     """
     # XXX: if there is no treatment type we default to the compare other group / leaderboard treatment
     treatment_type = round_configuration.get_parameter_value(parameter=get_treatment_type_parameter())
     if treatment_type.string_value is None:
-        # try to see if it's been globally defined via this round configuration's experiment configuration experiment configuration
+        # check if it's been globally defined via this round configuration's experiment configuration
         treatment_type = round_configuration.experiment_configuration.get_parameter_value(parameter=get_treatment_type_parameter(), default=default_treatment_type)
     return treatment_type
 
 
-def can_view_other_groups(round_configuration=None, **kwargs):
-    treatment_type = get_treatment_type(round_configuration=round_configuration)
-    return 'COMPARE_OTHER_GROUP' in treatment_type.string_value
+def is_high_school_treatment(round_configuration=None, treatment_type=None):
+    if treatment_type is None:
+        treatment_type = get_treatment_type(round_configuration=round_configuration).string_value
+    return 'HIGH_SCHOOL' in treatment_type
+
+def has_leaderboard(round_configuration=None, treatment_type=None):
+    if treatment_type is None:
+        treatment_type = get_treatment_type(round_configuration=round_configuration).string_value
+    return 'LEADERBOARD' in treatment_type
 
 def get_active_experiments():
     """
@@ -661,16 +652,6 @@ def _activity_status_sort_key(activity_dict):
         return 4
     else:
         return 5
-
-
-def get_activity_availability_cache():
-    aac = cache.get('activity_availability_cache')
-    if aac is None:
-        aac = defaultdict(list)
-        for aa in ActivityAvailability.objects.select_related('activity').all():
-            aac[aa.activity.pk].append(aa)
-        cache.set('activity_availability_cache', aac)
-    return aac
 
 
 @transaction.atomic

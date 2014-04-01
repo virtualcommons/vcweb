@@ -1,6 +1,6 @@
+from django.conf import settings
 from django.conf.urls import patterns, url
 from django.contrib.auth.decorators import login_required
-from vcweb import settings
 from vcweb.core.ajax import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, archive)
 from vcweb.core.views import (dashboard, LoginView, LogoutView, monitor,  #RegistrationView,
                               RegisterEmailListView, RegisterTestParticipantsView, completed_survey,

@@ -7,7 +7,7 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 USE_TZ = False
-SITE_URL = 'vcweb.asu.edu'
+SITE_URL = 'https://vcweb.asu.edu'
 
 SERVER_EMAIL = 'vcweb@asu.edu'
 SERVER_NAME = 'vcweb.asu.edu'

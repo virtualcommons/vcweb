@@ -1,4 +1,5 @@
 from collections import defaultdict
+from django.conf import settings
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 # from django.contrib.auth.forms import PasswordResetForm
@@ -11,7 +12,6 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import FormView, TemplateView, ListView
 from django.views.generic.detail import SingleObjectMixin
-from vcweb import settings
 from vcweb.core import dumps
 from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required, retry
 from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,

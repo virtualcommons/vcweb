@@ -12,7 +12,7 @@ import tornadoredis
 
 sys.path.append( path.abspath(path.join(path.dirname(path.abspath(__file__)), '..')) )
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
-from vcweb import settings
+from django.conf import settings
 from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ParticipantExperimentRelationship, Participant, Experimenter, ChatMessage)
 
 # redefine logger

@@ -1,4 +1,5 @@
 from datetime import datetime, time, timedelta
+from django.conf import settings
 from django.contrib import messages
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
@@ -8,7 +9,6 @@ from django.template import Context
 from django.template.loader import get_template
 from django.utils.translation import ugettext_lazy as _
 from time import mktime
-from vcweb import settings
 from vcweb.core import dumps
 from vcweb.core.decorators import experimenter_required, participant_required
 from vcweb.core.http import JsonResponse

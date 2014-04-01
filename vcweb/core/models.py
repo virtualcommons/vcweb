@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta, date, time
+from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.core import mail, serializers
@@ -18,7 +19,6 @@ import markdown
 from model_utils import Choices
 from model_utils.managers import PassThroughManager
 from string import Template
-from vcweb import settings
 
 from vcweb.core import signals, simplecache, dumps
 
@@ -1109,8 +1109,7 @@ class Experiment(models.Model):
                 gc.add(group)
 
     def get_round_configuration(self, sequence_number):
-        return RoundConfiguration.objects.get(experiment_configuration__experiment=self,
-                                              sequence_number=sequence_number)
+        return RoundConfiguration.objects.select_related('experiment_configuration').get(experiment_configuration__experiment=self, sequence_number=sequence_number)
 
     ALLOWED_ACTIONS = ('advance_to_next_round', 'end_round', 'start_round', 'move_to_previous_round', 'activate',
                        'deactivate', 'complete', 'restart_round', 'restart', 'clone', 'clear_participants', 'archive')

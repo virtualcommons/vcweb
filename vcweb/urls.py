@@ -1,6 +1,7 @@
 import autocomplete_light
 # import every app/autocomplete_light_registry.py
 autocomplete_light.autodiscover()
+from django.conf import settings
 from django.conf.urls import patterns, url, include
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
@@ -8,7 +9,6 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.decorators.cache import cache_page
 from django.views.generic.base import TemplateView
 
-from vcweb import settings
 from django.contrib.auth.forms import PasswordResetForm
 
 # set up admin URLs

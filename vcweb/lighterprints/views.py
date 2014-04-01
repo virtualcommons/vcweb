@@ -11,8 +11,9 @@ from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGrou
 from vcweb.core.views import dumps, get_active_experiment, set_authentication_token
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (
-        Activity, GroupScores, ActivityStatusList, do_activity, get_group_activity, can_view_other_groups,
+        Activity, GroupScores, ActivityStatusList, do_activity, get_group_activity, has_leaderboard,
         get_lighterprints_experiment_metadata, get_time_remaining, is_linear_public_good_game,
+        is_high_school_treatment, get_treatment_type, get_activity_performed_parameter,
         )
 
 from datetime import datetime
@@ -120,7 +121,44 @@ def post_comment(request):
         return JsonResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
 
 
+class HighSchoolViewModel(object):
+
+    def __init__(self, participant_group_relationship, activities=None, experiment=None, round_configuration=None, round_data=None, **kwargs):
+        self.participant_group_relationship = participant_group_relationship
+        self.group = participant_group_relationship.group
+        self.experiment = self.group.experiment if experiment is None else experiment
+        self.round_data = self.experiment.current_round_data if round_data is None else round_data
+        self.round_configuration = self.experiment.current_round if round_configuration is None else round_configuration
+        self.treatment_type = get_treatment_type(self.round_configuration).string_value
+        self.experiment_configuration = self.experiment.experiment_configuration
+
+    def activities(self):
+        """
+        returns a list of 2-tuples (activity, 'completed'|'available')
+        """
+        completed_activity_pks = self.participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(), round_data=self.round_data).values_list('int_value', flat=True)
+        self.activity_statuses = []
+        for activity in Activity.objects.scheduled(self.round_configuration):
+            status = 'available'
+            if activity.pk in completed_activity_pks:
+                status = 'completed'
+            self.activity_statuses.append((activity, status))
+        return self.activity_statuses
+
+    def to_json(self):
+        return dumps({
+
+            })
+
+    def template_name(self):
+        return 'lighterprints/highschool.html'
+
+
 def get_view_model_json(participant_group_relationship, activities=None, experiment=None, round_configuration=None, round_data=None, **kwargs):
+    """
+    FIXME: replace with view model class that stitches together ActivityStatusList and GroupScores appropriately and
+    handles conditional switches between the different experiment types (scheduled activities, level based, high school)
+    """
     if activities is None:
         activities = Activity.objects.all()
     own_group = participant_group_relationship.group
@@ -130,7 +168,6 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         round_configuration = experiment.current_round
     if round_data is None:
         round_data = experiment.current_round_data
-    compare_other_group = can_view_other_groups(round_configuration=round_configuration)
     experiment_configuration = round_configuration.experiment_configuration
     linear_public_good = is_linear_public_good_game(experiment_configuration)
     group_scores = GroupScores(experiment, round_data, participant_group_relationship=participant_group_relationship)
@@ -148,7 +185,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     return dumps({
         'participantGroupId': participant_group_relationship.pk,
         'completed': group_scores.is_completed(own_group),
-        'compareOtherGroup': compare_other_group,
+        'hasLeaderboard': has_leaderboard(round_configuration=round_configuration),
         'groupData': group_data,
         'hoursLeft': hours_left,
         'minutesLeft': minutes_left,
@@ -156,7 +193,8 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         # FIXME: extract this from groupData instead..
         'groupLevel': own_group_level,
         'linearPublicGood': linear_public_good,
-        'totalDailyEarnings': group_scores.average_daily_points(own_group) * experiment_configuration.exchange_rate,
+        'totalDailyEarnings': group_scores.daily_earnings(own_group),
+        'totalEarnings': group_scores.total_earnings(own_group),
         'averagePoints': group_scores.average_daily_points(own_group),
         'pointsToNextLevel': group_scores.get_points_goal(own_group),
         'hasScheduledActivities': group_scores.has_scheduled_activities,
@@ -217,7 +255,14 @@ def participate(request, experiment_id=None):
     if experiment.is_active:
         round_configuration = experiment.current_round
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'), participant=participant, group__experiment=experiment)
-        compare_other_group = can_view_other_groups(round_configuration=round_configuration)
+        if is_high_school_treatment(round_configuration):
+            view_model = HighSchoolViewModel(pgr, experiment, round_configuration)
+            return render(request, view_model.template_name, {
+                'experiment': experiment,
+                'participant_group_relationship': pgr,
+                'view_model_json': view_model.to_json(),
+                })
+
         all_activities = Activity.objects.all()
         view_model_json = get_view_model_json(pgr, activities=all_activities, experiment=experiment, round_configuration=round_configuration)
 #    if request.mobile:
@@ -227,9 +272,8 @@ def participate(request, experiment_id=None):
         return render(request, 'lighterprints/participate.html', {
             'experiment': experiment,
             'participant_group_relationship': pgr,
-            'compare_other_group': compare_other_group,
+            'has_leaderboard': has_leaderboard(round_configuration=round_configuration),
             'view_model_json': view_model_json,
-            'all_activities': all_activities,
         })
     else:
         sd = experiment.start_date

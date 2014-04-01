@@ -67,7 +67,7 @@ class UpdateLevelTest(BaseTest):
                 )
                 activity_performed.int_value = activity.pk
                 activity_performed.save()
-        update_active_experiments(self, start_date=date.today())
+        send_lighterprints_summary_emails(self, start_date=date.today())
         gs = e.groups
         group_scores = GroupScores(e, current_round_data, gs)
         for group in gs:

@@ -3,7 +3,6 @@ from fabric.context_managers import settings as fab_settings
 from fabric.contrib import django
 from fabric.contrib.console import confirm
 from fabric.contrib.project import rsync_project
-
 import os, sys, shutil, logging
 
 logger = logging.getLogger(__name__)
@@ -33,6 +32,8 @@ env.apps = ' '.join(env.applist)
 
 # django integration for access to settings, etc.
 django.project(env.project_name)
+from django.conf import settings as vcweb_settings
+
 
 """
 this currently only works for sqlite3 development database.  do it by hand with
@@ -75,7 +76,6 @@ def shell():
 
 def syncdb(**kwargs):
     with cd(env.project_path):
-        from vcweb import settings as vcweb_settings
         if os.path.exists(vcweb_settings.DATA_DIR):
             shutil.rmtree(vcweb_settings.DATA_DIR)
         os.mkdir(vcweb_settings.DATA_DIR)
@@ -95,7 +95,6 @@ def clear_rabbitmq_db():
         sudo_chain(["rabbitmqctl %s" % cmd for cmd in ['stop_app', 'reset', 'start_app']])
 
 def setup_rabbitmq():
-    from vcweb import settings as vcweb_settings
     clear_rabbitmq_db()
     with fab_settings(warn_only=True):
         sudo("rabbitmqctl delete_user %s" % vcweb_settings.BROKER_USER, pty=True)
@@ -134,13 +133,11 @@ def test(name=None):
         _virtualenv(local, '%(python)s manage.py test %(apps)s' % env)
 
 def sockjs(ip="127.0.0.1", port=None):
-    from vcweb import settings as vcweb_settings
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
     _virtualenv(local, "{python} vcweb/vcweb-sockjs.py {port}".format(python=env.python, port=port), capture=False)
 
 def tornadio(ip="127.0.0.1", port=None):
-    from vcweb import settings as vcweb_settings
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
     _virtualenv(local, "{python} vcweb/vcwebio.py {port}".format(python=env.python, port=port), capture=False)
@@ -190,7 +187,6 @@ def sudo_chain(*commands, **kwargs):
     sudo(' && '.join(commands), **kwargs)
 
 def deploy():
-    from vcweb import settings as vcweb_settings
     """ deploys to an already setup environment """
     if confirm("Deploy to %(hosts)s ?" % env):
         with cd(env.project_path):
