@@ -40,7 +40,11 @@
                 <p>
                     <i class='lighterprints-green fa fa-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by
                     performing challenges.
-                    <span data-bind='if: hasScheduledActivities'>
+                    <span data-bind='if: linearPublicGood'>
+                        You will earn <b class='lighterprints-green'><i class='fa fa-usd'></i>0.02</b> for each point in
+                        your Group Score.
+                    </span>
+                    <span data-bind='if: hasScheduledActivities && ! linearPublicGood'>
                         Your goal is to have your <b>group's average points per person</b>, shown in the <b>Group Score
                         box</b>, reach <span data-bind='text: pointsToNextLevel'></span>.
                     </span>
@@ -52,6 +56,11 @@
                 </p>
                 <p>
                 <strong><i class='fa fa-warning text-error'></i> Your group score resets at midnight every day.</strong>
+                </p>
+                <p>
+                <i class='fa fa-info-circle'></i> Your group has earned <b class='lighterprints-green'><i class='fa fa-usd'></i><span
+                        data-bind='text: totalDailyEarnings'></span></b> so far today and <b class='lighterprints-green'>
+                    <i class='fa fa-usd'></i><span data-bind='text: totalEarnings'></span></b> over the entire experiment.
                 </p>
             </div>
             </div>
@@ -413,7 +422,7 @@ $(function() {
             element: "#progress",
             placement: "top",
             title: "Progress",
-            content: "This chart shows your current group score (green) and your group score goal (gray)."
+            content: "This chart shows your current group score (blue) and your group score goal (gray)."
         },
         {
             element: "#group-score",

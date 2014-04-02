@@ -148,10 +148,16 @@ class GroupScores(object):
         return self.scores_dict[group]['average_daily_points']
 
     def daily_earnings(self, group):
-        return locale.currency(self.average_daily_points(group) * self.exchange_rate, grouping=True)
+        return self.average_daily_points(group) * self.exchange_rate
 
     def total_earnings(self, group):
-        return locale.currency(self.total_average_points(group) * self.exchange_rate, grouping=True)
+        return self.total_average_points(group) * self.exchange_rate
+
+    def total_earnings_currency(self, group):
+        return locale.currency(self.total_earnings(group), grouping=True)
+
+    def daily_earnings_currency(self, group):
+        return locale.currency(self.daily_earnings(group), grouping=True)
 
     def total_average_points(self, group):
         return self.scores_dict[group]['total_average_points']
@@ -262,8 +268,8 @@ class GroupScores(object):
             'average_daily_points': average_group_points,
             'number_of_chat_messages': number_of_chat_messages,
             'linear_public_good': self.is_linear_public_good_game,
-            'daily_earnings': self.daily_earnings(group),
-            'total_earnings': self.total_earnings(group),
+            'daily_earnings': self.daily_earnings_currency(group),
+            'total_earnings': self.total_earnings_currency(group),
             })
         for pgr in group.participant_group_relationship_set.all():
             c['individual_points'] = get_individual_points(pgr)
