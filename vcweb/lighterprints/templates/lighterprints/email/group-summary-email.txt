@@ -1,6 +1,6 @@
 ### Lighter Footprints Summary for {{ summary_date }}
 
-You are a member of {{ group_name }}.  To participate in this experiment, visit https://vcweb.asu.edu{{experiment.participant_url}}.
+You are a member of {{ group_name }}.  To participate in this experiment, visit {{experiment.full_participant_url}}.
 
 
 * You earned {{ individual_points }} points.  The average number of points earned per person in your group was {{ average_points }} point(s).

@@ -684,6 +684,10 @@ class Experiment(models.Model):
         return "/%s/participate" % self.get_absolute_url()
 
     @property
+    def full_participant_url(self):
+        return "%s%s" % (settings.SITE_URL, self.participant_url)
+
+    @property
     def participant_emails(self):
         return self.participant_set.all().values_list('user__email', flat=True)
 
@@ -904,7 +908,8 @@ class Experiment(models.Model):
             'participant': participant,
             'experiment': self,
             'password': password,
-            'sender': sender
+            'sender': sender,
+            'SITE_URL': settings.SITE_URL,
         })
         plaintext_content = plaintext_template.render(c)
         html_content = markdown.markdown(plaintext_content)

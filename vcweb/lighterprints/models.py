@@ -13,7 +13,8 @@ from model_utils.managers import PassThroughManager
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 from operator import itemgetter
 from vcweb.core import signals, simplecache
-from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, RoundParameterValue, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
+from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, RoundParameterValue,
+        ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
 
 import itertools
 import locale
