@@ -2,7 +2,12 @@ Lighter Footprints Summary for {{ summary_date }}
 =================================================
 
 {% if experiment_completed %}
-The experiment is now over. Thank you for participating.
+**The experiment is now over.** Thank you for participating.
+{% if linear_public_good %}
+In order to receive payment you can visit Jen Fraser (Jen.Fraser@asu.edu) at Matthews Hall 102 on Monday, Wednesday, or
+Friday between the hours of 10 AM and 3 PM. You must pick up your payment by May 15. Be sure to bring your ASURITE Sun
+Card. 
+{% endif %}
 {% else %}
 You are a member of {{ group_name }}. To participate in this experiment, visit [{{experiment.full_participant_url}}]({{experiment.full_participant_url}}).
 {% endif %}
