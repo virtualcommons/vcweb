@@ -1,0 +1,660 @@
+{% extends "participant/base.html" %}
+{% load static from staticfiles %}
+{% block head %}
+{{ block.super }}
+<link rel='stylesheet' href='{% static "css/lighterprints/style.css" %}'/>
+<link rel="stylesheet" href="//fast.fonts.com/cssapi/e86344be-530a-495b-be28-7a22a9cda219.css"/>
+{% endblock %}
+{% block headerlinks %}
+<ul class='nav nav-tabs pull-left' style="border:none" id='lfp-navtabs'>
+    <li><a class='brand'><img alt='footprint logo' src='{% static "images/lighterprints/logo.png"%}' width="25" height="25"> lighter<strong class='lighterprints-green'>footprints</strong></a></li>
+    <li class='active'><a href='#dashboard' data-bind='click: activateDashboardTab'><i class='fa fa-tachometer'></i> Dashboard</a></li>
+    <li><a href='#challenges' data-bind='click:activateChallengesTab'><i class='fa fa-star-o'></i> Challenges</a></li>
+    <li><a href='#group' data-bind='click: activateGroupTab'><i class='fa fa-comment'></i> My Group</a></li>
+    <li><a href='#help' data-bind='click: activateHelpTab'><i class='fa fa-question-circle'></i> Help</a></li>
+</ul>
+{% endblock %}
+{% block logo %}
+{% endblock %}
+{% block content %}
+<div class='tabbable'>
+    <div class='tab-content'>
+        <div class='tab-pane active' id='dashboard'>
+            <h1 class='header'><i class='fa fa-tachometer'></i> Group Dashboard</h1>
+            <div style='display: none;' data-bind='visible: ! completed()'>
+            <div class='alert alert-block alert-white welcome-message'>
+                <button type="button" class="close" data-dismiss="alert"><i class='fa fa-times-circle'></i></button>
+                <h2 class='welcome-header lighterprints-dark-gray'>Welcome to Lighter Footprints, <i class='lighterprints-blue'><span data-bind='text: groupName'></span>!</i></h2>
+                <p>
+                    You have been randomly placed in a group of {{ participant_group_relationship.group.size }}
+                    participants. In this experiment you can perform virtual actions that represent green alternatives
+                    to some common daily activities.
+                </p>
+                <p>
+                    <i class='lighterprints-green fa fa-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by
+                    performing challenges.
+                    <span data-bind='if: linearPublicGood'>
+                        You will earn <b class='lighterprints-green'><i class='fa fa-usd'></i>0.02</b> for each point in
+                        your Group Score.
+                    </span>
+                    <span data-bind='if: hasScheduledActivities && ! linearPublicGood'>
+                        Your goal is to have your <b>group's average points per person</b>, shown in the <b>Group Score
+                        box</b>, reach <span data-bind='text: pointsToNextLevel'></span>.
+                    </span>
+                    <span data-bind='ifnot: hasScheduledActivities'>Rank up by <b>increasing your group's score, shown in the Group Score box.</b></span>
+                </p>
+                <p>
+                    <i class='fa fa-star text-gold'></i> Some challenges are unlocked all day, and others are only unlocked at specific times.
+                    <span data-bind='ifnot: hasScheduledActivities'>Discover new challenges by ranking up!</span>
+                </p>
+                <p>
+                <strong><i class='fa fa-warning text-error'></i> Your group score resets at midnight every day.</strong>
+                </p>
+                <p>
+                <i class='fa fa-info-circle'></i> Your group has earned <b class='lighterprints-green'><i class='fa fa-usd'></i><span
+                        data-bind='text: totalDailyEarnings'></span></b> so far today and <b class='lighterprints-green'>
+                    <i class='fa fa-usd'></i><span data-bind='text: totalEarnings'></span></b> over the entire experiment.
+                </p>
+            </div>
+            </div>
+            <div class='row lighterprints-scoreboard'>
+                <div class='col-md-3'>
+                    <h5 id='progress'><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span></h5>
+                    <div data-bind='popover: { content: "#progressChartPopoverContent", id: "progress-chart-popover"}' class='chart'>
+                        <canvas id='progressChart' width="74px" height="74px"></canvas>
+                    </div>
+                </div>
+                <div class='col-md-3 left-divider'>
+                    <h5 id='group-score'><span class='lighterprints-scoreboard-uppercase'>Group Score</span></h5>
+                    <table class='lighterprints-scoreboard'>
+                        <tr>
+                            <td class='lighterprints-scoreboard-xlarge'><span class='lighterprints-blue' data-bind='text: averagePoints'></span></td>
+                            <td class='lighterprints-scoreboard-large'> / </td>
+                            <td class='lighterprints-scoreboard-xlarge'><span class='muted' data-bind='text:pointsToNextLevel'></span></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class='col-md-3 left-divider'>
+                    <h5 id='third-box'><span data-bind='text: thirdBoxTitle' class='lighterprints-scoreboard-uppercase'></span></h5>
+                    <table style='margin-top: -37px;' data-bind='if: hasScheduledActivities'>
+                        <tr data-bind='if: linearPublicGood'>
+                            <td><i class='lighterprints-green fa fa-usd fa-3x'></i></td>
+                            <td class='lighterprints-scoreboard-xlarge lighterprints-green'><span data-bind='text: totalDailyEarnings'></span></td>
+                        </tr>
+                        <tr data-bind='ifnot: linearPublicGood'>
+                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: totalPoints'></span></td>
+                            <td><i class='lighterprints-green fa fa-leaf fa-2x'></i></td>
+                        </tr>
+                    </table>
+                    <div class='dashboard-content' data-bind='ifnot: hasScheduledActivities'>
+                        <div data-bind='if: completed'>
+                            <img alt='Experiment Completed' class='group-level' width='120' height='70' src='{% static "images/lighterprints/experiment-completed.png"%}'>
+                        </div>
+                        <div data-bind='ifnot: completed'>
+                            <img alt='Group Level' class='group-level' width="104" height="65" data-bind="attr: { src: '{% static "images/lighterprints/rank"%}' + groupLevel() + '.png' }">
+                        </div>
+                    </div>
+                </div>
+                <div class='col-md-3 left-divider'>
+                    <h5 id='time-remaining'><span class='lighterprints-scoreboard-uppercase'>Time Remaining</span></h5>
+                    <table class='lighterprints-scoreboard'>
+                        <tr>
+                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: hoursLeft'></span>h</td>
+                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: minutesLeft'></span>m</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <h3 class='underline'>Challenges</h3>
+            <div class='tabbable challenge-tabs'>
+                <ul class='nav nav-tabs'>
+                    <li id='unlocked-challenge-tab' class='active'><a href='#unlocked-challenges' data-toggle='tab'><span class='text-gold'><i class='fa fa-star'></i> Unlocked</span></a></li>
+                    <li><a href='#locked-challenges' data-toggle='tab'><i class='fa fa-lock'></i> Locked</a></li>
+                </ul>
+                <div class='tab-content challenges'>
+                    <div class='tab-pane active' id='unlocked-challenges'>
+                        <div data-bind="template: { name: 'challenges-template', data: { challenges: unlockedChallenges() } }"></div>
+                    </div>
+                    <div class='tab-pane' id='locked-challenges'>
+                        <div data-bind='if: lockedChallenges().length === 0'>
+                            <div style='padding: 10px;' class='alert-block'>
+                                <i class='text-gold fa fa-star'></i>Congratulations, your group has unlocked all of the challenges.
+                            </div>
+                        </div>
+                        <div data-bind="template: { name: 'challenges-template', data: { challenges: lockedChallenges() } }"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class='tab-pane' id='challenges'>
+            <h1 class='header'><i class='fa fa-star'></i> Challenges</h1>
+            <div class='alert alert-block alert-white'>
+                <h2>Complete challenges to earn green points.</h2>
+                <p data-bind='if: hasScheduledActivities'>
+                    Different challenges are available at different times and days. 
+                    <span data-bind='if: linearPublicGood'>You will earn <b><i class='fa fa-usd'></i>0.02</b> for each
+                        point in your group average score. For example, if your group average score is <b>123</b> by the
+                        end of today you would have earned <b><i class='fa fa-usd'></i>2.46</b>.
+                    </span>
+                    <span data-bind='ifnot: linearPublicGood'>In order to maximize your chances at
+                        winning a prize, your group must earn enough points so that the <strong>average number of points</strong> per participant is greater than
+                        <span data-bind='text:pointsToNextLevel' class='badge badge-lighterprints-green'></span>.
+                    </span>
+                </p>
+                <p data-bind='ifnot: hasScheduledActivities'>
+                Challenges are divided up into 3 levels.  In order to unlock the next level's challenges your group must earn
+                enough points so that the <strong>average number of points</strong> per participant is greater than
+                <span data-bind='text:pointsToNextLevel' class='badge badge-lighterprints-green'></span>.
+                </p>
+                <p>
+                <i class='fa fa-clock-o'></i> Some challenges are available all day, and others are only available at <strong>certain hours</strong>.
+                </p>
+            </div>
+            <div class='challenges' data-bind='template: { name: "challenges-template", data: { challenges: activities } }'></div>
+        </div>
+        <div class='tab-pane' id='help'>
+            <h1 class='header'><i class='fa fa-question-circle'></i> Instructions</h1>
+            <p>
+            You have been randomly placed in a group of <strong>{{ participant_group_relationship.group.size }} participants</strong>.
+            In this experiment you can perform virtual actions that represent green alternatives to some common daily
+            activities.  Some of these activities are available all day, and others are only available at
+            specific times.  You can learn more about them by clicking on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a> and selecting an activity.
+            </p>
+            <h3>Challenges, Green Points, and Prizes</h3>
+            <p>
+            Each <strong class='text-gold'>challenge</strong> is worth a certain number of 
+            <strong class='lighterprints-green'>green points <i class='fa fa-leaf'></i></strong>.
+            For example, <em>Eat locally grown food for lunch</em> (available from 12-2pm) is worth 
+            <span class='lighterprints-green'>15 <i class='fa fa-leaf'></i></span> green points.
+            In order to perform this challenge you must login to the application between 12pm and 2pm, 
+            select the challenge from the list below, and click the &quot;Perform&quot; button.
+            </p>
+            <p data-bind='if: hasScheduledActivities'>
+            <div data-bind='if: linearPublicGood'>
+                You will earn <b class='lighterprints-green'><i class='fa fa-usd'></i>0.02</b> for each point in your group average score, so if your group average score is <b>150</b> by the end of the day you would have earned 
+                <b class='lighterprints-green'><i class='fa fa-usd'></i>3.00</b> for that day.
+            </div>
+            <div data-bind='ifnot: linearPublicGood'>
+                In order to earn a prize your group score must reach <strong class='lighterprints-green'><span data-bind='text: pointsToNextLevel'></span>
+                <i class='fa fa-leaf'></i></strong>. In order to reach this target you and a majority of the members of your group will need to perform high point challenges when they are available.
+            </div>
+            <b>Different challenges will be available on different days, so check back each day to see which challenges are available</b>
+            </p>
+            <p data-bind='ifnot: hasScheduledActivities'>
+            Your group is currently <strong class='text-gold'>Level <span data-bind='text:groupLevel'></span></strong> and has an average score of 
+            <strong class='lighterprints-green'><span data-bind='text:averagePoints'></span> <i class='fa fa-leaf'></i></strong>.  In order to
+            advance in level and unlock more challenges the <em>average number of points contributed by each member of your group</em> must be equal to or greater than 
+            <strong class='lighterprints-green'><span data-bind='text: pointsToNextLevel'></span> <i class='fa fa-leaf'></i></strong>.
+            In order to reach this target you and a majority of the members of your group must perform
+            high point challenges when they are available.
+            </p>
+            <h3>How to participate</h3>
+            <p>
+            To participate, simply click on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a>, and select a challenge you'd like to perform.
+            You can leave messages for the other members n your group via the <a href='#group' data-bind='click: activateGroupTab'>My Group tab</a> 
+            or use the <a href='#dashboard' data-bind='click:activateDashboardTab'>Dashboard</a> to view your group's progress.
+            <br>
+            You can also <a href='#dashboard' data-bind='click: restartTour'>restart the tutorial</a>.
+            </p>
+            <h3 id='faq' class='underline'>Frequently Asked Questions</h3>
+            <div class='well alert-white'>
+                <h4>I performed an activity worth 15 points but only 3 points were added to my Group Score and Progress.  Why?</h4>
+                <p>
+                The numbers in the Group Score and Progress boxes represent your group's <b>average number of earned points</b>.  If there are 5
+                people in your group, performing a 15 point activity adds 3 points to the group average (15 / 5 = 3).
+                </p>
+            </div>
+            <div data-bind='ifnot: hasScheduledActivities'>
+            <div class='well alert-white'>
+                <h4>Why do the challenges performed in the previous day not count for today?</h4>
+                <p>
+                In order to advance in level and unlock more challenges you must reach an average level of points in your
+                group during one day, starting at 12:00 AM. Every day at midnight the server will check your group's
+                average number of points and determine whether or not you should move on to the next level. If your
+                group advances in level your group will once again start at 0 points with the additional unlocked
+                challenges for that level available to perform. If your group did not reach the next level, your group
+                will start with 0 points at the same level with the same challenges available as the previous day.
+                </p>
+            </div>
+        </div>
+            <div class='well alert-white'>
+                <h4>I don't have a car or anyone to carpool with, so how can I carpool?</h4>
+                <p>
+                You don't have to actually perform the activity in the real world to click on the "perform" button. At
+                the moment these are purely virtual challenges.
+                </p>
+            </div>
+        </div>
+        <div class='tab-pane' id='group'>
+            <h1 class='header'><i class='fa fa-comment'></i> My Group</h1>
+            <div class='alert alert-white alert-block'>
+                <i class='fa fa-info-circle'></i> Your group has earned <b data-bind='text: totalDailyEarnings'></b> so far today and <b data-bind='text: totalEarnings'></b>
+                over the entire experiment.
+            </div>
+            <h3 class='underline'>Group Chat</h3>
+            <form id='chat-form' data-bind='submit: submitChatMessage' role="form">
+                <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.id}}'/>
+                <div class='input-group'>
+                    <span class='input-group-addon'><i class='fa fa-comment'></i></span>
+                    <input type='text' id='chatText' class="form-control" name='message' placeholder='Send a message to your group' />
+                </div>
+            </form>
+            <div class='well alert-white scrollable-messages'>
+                <div data-bind='ifnot: hasChatMessages() '>
+                    No chat messages have been posted yet.
+                </div>
+                <div data-bind='if: hasChatMessages()'>
+                    <div data-bind='foreach: chatMessages'>
+                        <div class='row'>
+                            <div class='col-md-1'>
+                                <i class='lighterprints-gray fa fa-user fa-2x'></i>
+                            </div>
+                            <div class='col-md-10'>
+                                <strong>Participant <span data-bind='text: participant_number'></span></strong>
+                                <p>
+                                <span data-bind='text: value'></span>
+                                </p>
+                            </div>
+                            <div class='col-md-1'>
+                                <span class='pull-right'><span data-bind='text: date_created'></span> ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <h3>Group activity</h3>
+            <div data-bind='ifnot: hasGroupActivity() '>
+                <div data-bind='template: { name: "no-group-activity-template" }'></div>
+            </div>
+            <table class='table'>
+                <tbody data-bind='template: { name: groupActivityTemplate, foreach: teamActivity() }'>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div id='activityUnavailableModal' class='modal fade' tabindex='-1' role='dialog' aria-labelledby='activityUnavailableModalLabel' aria-hidden='true'>
+    <div class="modal-dialog">
+       <div class="modal-content">
+
+            <div class='modal-header'>
+                <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>x</button>
+                <h3 id='activityUnavailableModalLabel'>Unable to perform activity</h3>
+            </div>
+            <div class='modal-body'>
+                <div class='alert alert-error'>
+                    <span class='text-error' data-bind='text:errorMessage'></span>
+                </div>
+            </div>
+            <div class='modal-footer'>
+                <button class='btn btn-primary' data-dismiss='modal' aria-hidden='true'>Continue</button>
+            </div>
+       </div>
+    </div>
+</div>
+<div id='activityPerformedModal' class='modal fade' tabindex='-1' role='dialog' aria-labelledby='activityPerformedModalLabel' aria-hidden='true'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class='modal-header'>
+                <h3 id='activityPerformedModalLabel'>Performing Challenge...</h3>
+            </div>
+            <div class='modal-body'>
+                <div class="progress progress-striped active">
+                    <div class="progress-bar progress-bar-info" role="progressbar" style="width: 100%;"></div>
+                </div>
+                <div id='activityPerformedModalText' data-bind='with: lastPerformedActivity' class='hide'>
+                    <div class='row-fluid pagination-centered'>
+                        <img alt='Lighterprints Activity Badge' data-bind='attr: {src: "{% static 'images/lighterprints/badges/'%}" + name() + ".png" }'>
+                    </div>
+                    <h3>You completed a challenge!</h3>
+                    <p>
+                        <strong><em data-bind='text: display_name'></em></strong> for <span class='lighterprints-green' data-bind='text: points'></span><i class='fa fa-leaf lighterprints-green'></i>
+                    </p>
+                    <p data-bind='text: summary'></p>
+                </div>
+            </div>
+            <div class='modal-footer'>
+                <button class='btn btn-primary disabled' data-dismiss='modal' aria-hidden='true'>Continue</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block sidebar %}
+<div class='lighterprints-sidebar'>
+    {% if has_leaderboard %}
+    <h3 class='lighterprints-sidebar-header'><i class='text-gold fa fa-trophy'></i> Leaderboard</h3>
+    <ul class='nav' data-bind='foreach: groupData'>
+        <li class='leaderboard-group-name'><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-lighterprints-green' data-bind='text: averagePoints'></span></li>
+        <li class='divider'></li>
+    </ul>
+    {% endif %}
+    <h3 class='lighterprints-sidebar-header'><i class='lighterprints-blue fa fa-users'></i> Group Activity <span class='pull-right'><small><a href='#group' data-bind='click: activateGroupTab' data-toggle='tab'>View all</a></small></span></h3>
+    <div data-bind='ifnot: hasGroupActivity()'>
+        <div data-bind='template: { name: "no-group-activity-template" }'></div>
+    </div>
+    <table class='table group-activity'>
+        <tbody data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
+        </tbody>
+    </table>
+</div>
+{% endblock sidebar %}
+{% block footerlinks %}
+<ul class='nav-footer'>
+    <li><a href='#dashboard' data-bind='click: activateDashboardTab' data-toggle='tab'>Dashboard</a></li>
+    <li><a href='#challenges' data-bind='click: activateChallengesTab' data-toggle='tab'>Challenges</a></li>
+    <li><a href='#group' data-bind='click: activateGroupTab' data-toggle='tab'>My Group</a></li>
+    <li><a href='#help' data-bind='click: activateHelpTab' data-toggle='tab'>Help</a></li>
+    <li class='pull-right'><a>&copy; {% now "Y" %} Arizona Board of Regents</a></li>
+</ul>
+{% endblock footerlinks %}
+{% block footerlogo %}
+<div class='footer-logo'><img alt='footprint logo' src='{% static "images/lighterprints/logo.png"%}' width="25" height="25"> <span style='font-size: 1.5em;'>lighter<strong>footprints</strong></span></div>
+{% endblock footerlogo %}
+{% block javascript %}
+{{ block.super }}
+<script src="//fast.fonts.com/jsapi/e86344be-530a-495b-be28-7a22a9cda219.js"></script>
+<script src='{% static "js/lighterprints/model.js" %}'></script>
+<script src='{% static "js/Chart.min.js" %}'></script>
+{% include "includes/bootstrap-tour.html" %}
+<script>
+$(function() {
+    // set up KO binding, using one master view model
+    var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
+    var viewModel = new LighterFootprintsModel(viewModelData);
+    // custom view model methods, some of these may be lifted into the model itself
+    viewModel.tutorialTour = new Tour({ name: "lfpTutorial", labels: { end: "End tutorial", next: 'Next »', prev: '« Back' }});
+    viewModel.progressChart = ko.observable(new Chart(document.getElementById("progressChart").getContext("2d")));
+    {% comment %}
+    // FIXME: crappy special case logic to deal with scheduled activities vs level based activities and linear public
+    good parameter
+    {% endcomment %}
+    viewModel.thirdBoxTitle = ko.computed(function() {
+        if (viewModel.hasScheduledActivities()) {
+            if (viewModel.linearPublicGood()) {
+                return "Today's Earnings";
+            }
+            else {
+                return "Your Score";
+            }
+        }
+        else {
+            return "Current Level";
+        }
+    });
+    viewModel.thirdBoxTooltipContent = ko.computed(function() {
+        var thirdBoxContent = "This is your group's current level. Each new level unlocks 5 new challenges.";
+        if (viewModel.hasScheduledActivities()) {
+            if (viewModel.linearPublicGood()) {
+                thirdBoxContent = "This shows the number of points you have contributed to your group today and your total earnings for the day.";
+            }
+            else {
+                thirdBoxContent = "This shows the total number of points you have contributed to your group today.";
+            }
+        }
+        return thirdBoxContent;
+    });
+    viewModel.setup = function() {
+        viewModel.initializeChart();
+        viewModel.setupTour();
+    };
+    viewModel.endTour = function() {
+        var tour = viewModel.tutorialTour;
+        if (tour.ended()) {
+            return;
+        }
+        console.debug("ending tour");
+        tour.end();
+    };
+
+
+    viewModel.setupTour = function() {
+        var tour = viewModel.tutorialTour;
+        tour.addSteps([
+        {
+            element: "#progress",
+            placement: "top",
+            title: "Progress",
+            content: "This chart shows your current group score (blue) and your group score goal (gray)."
+        },
+        {
+            element: "#group-score",
+            title: "Group Score",
+            placement: "top",
+            content: "This is your group score for the day. The group score is the average number of points each member of your group has earned, starting at midnight each day."
+        },
+        {
+            element: "#third-box",
+            title: viewModel.thirdBoxTitle(),
+            placement: "top",
+            content: viewModel.thirdBoxTooltipContent()
+        },
+        {
+            element: "#time-remaining",
+            placement: "top",
+            title: "Time Remaining",
+            content: "The time remaining before your group progress resets at midnight."
+        },
+        {
+            element: "#unlocked-challenge-tab",
+            title: "Perform Challenges",
+            content: "Perform challenges by clicking on the green Perform button. The points each challenge is worth is listed on the right."
+        }]);
+        if (viewModel.firstVisit()) {
+            tour.start(true);
+        }
+    };
+    viewModel.restartTour = function() {
+        viewModel.activateDashboardTab();
+        viewModel.tutorialTour.restart();
+    };
+    viewModel.progressChartData = ko.computed(function() {
+        var avgPoints = Math.max(1, viewModel.averagePoints());
+        var pointsToNextLevel = viewModel.pointsToNextLevel();
+        var data = [ { value: avgPoints, color: "#13a5e6" } ];
+        var pointsNeeded = Math.max(0, pointsToNextLevel - avgPoints);
+        if (pointsNeeded > 0) {
+            data.push({ value: pointsNeeded, color: "#D0D0D0" });
+        }
+        return data;
+    });
+    viewModel.initializeChart = function() {
+        viewModel.progressChart().Doughnut(viewModel.progressChartData());
+    };
+    viewModel.activateChallengesTab = activateTabFunctor('#challenges', '#lfp-navtabs', viewModel.endTour);
+    viewModel.activateDashboardTab = activateTabFunctor('#dashboard', '#lfp-navtabs', viewModel.endTour);
+    viewModel.activateHelpTab = activateTabFunctor('#help', '#lfp-navtabs', viewModel.endTour);
+    viewModel.activateGroupTab = activateTabFunctor('#group', '#lfp-navtabs', viewModel.endTour);
+    // FIXME: manually manipulating DOM elements via JQuery feels a bit hacky mixed in with KO's data binding
+    viewModel.showActivityPerformedModal = function() {
+        $('#activityPerformedModal .progress').removeClass('hide');
+        $('#activityPerformedModalText').addClass('hide');
+        $('#activityPerformedModal .btn').addClass('disabled');
+        $('#activityPerformedModal').modal();
+    };
+    viewModel.hideActivityPerformedModal = function() {
+        $('#activityPerformedModal .progress').addClass('hide');
+        $('#activityPerformedModalText').removeClass('hide');
+        $('#activityPerformedModal .btn').removeClass('disabled');
+    };
+    viewModel.perform = function(challengeModel) {
+        if (! challengeModel.availableNow()) {
+            // FIXME: modal is slow, no feedback on this for now
+            // model.errorMessage("The activity " + activityModel.display_name() + " is not currently available.");
+            // $('#activityUnavailableModal').modal();
+            console.debug("tried to perform an activity that's not available right now");
+            console.debug(challengeModel);
+            return;
+        }
+        viewModel.showActivityPerformedModal();
+        var id = challengeModel.pk();
+        var formData = $('#challengeForm' + id).serialize();
+        // console.debug("form data: " + formData);
+        $.post('/lighterprints/api/do-activity', formData, function(data) {
+            console.debug(data);
+            if (data.success) {
+                ko.mapping.fromJSON(data.viewModel, viewModel);
+                viewModel.lastPerformedActivity(challengeModel);
+                viewModel.hideActivityPerformedModal();
+                viewModel.initializeChart();
+            }
+            else {
+                console.debug("ERROR: " + data.response);
+                $('#activityPerformedModal').modal('hide');
+                viewModel.errorMessage(data.response);
+                $('#activityUnavailableModal').modal();
+            }
+        });
+    };
+    ko.applyBindings(viewModel);
+    viewModel.setup();
+    // FIXME: more efficient way to select these?
+    $('[data-content]').popover();
+});
+</script>
+<!-- bootstrap popover templates -->
+<script type='text/html' id='progressChartPopoverContent'>
+   Your group progress: <span data-bind='text: averagePoints'></span> / <span data-bind='text:pointsToNextLevel'></span>
+</script>
+<script type='text/html' id='commentPopoverForm'>
+<form data-bind='attr: { id: "commentForm" + pk() }'>
+<textarea name='message' rows='3'></textarea>
+<input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
+<input type='hidden' name='target_id' data-bind='value: pk()' />
+<a class='btn btn-lighterprints-blue' data-bind='click: $root.postComment'>POST</a>
+<a style='position: relative; left: 8px; top: 5px;' href='javascript:void(0)' class='lighterprints-gray' data-bind='click: $root.closeCommentPopover' >Cancel</a>
+</form>
+</script>
+<!-- knockout templates -->
+<script type='text/html' id='likeCommentTemplate'>
+<div data-bind='if: $root.participantGroupId() != participant_group_id()'>
+<span data-bind='ifnot: commented'>
+<a class='comment comment-popover' href='javascript:void(0)' rel="popover" data-placement='left' data-title="Leave a comment" data-bind='popover: {  content: "#commentPopoverForm", id: pk()}'>
+<i class='comment lighterprints-gray fa fa-comment'></i>
+</a>
+</span>
+<span data-bind='if: commented'>
+<i class='commented fa fa-comment'></i>
+</span>
+<span data-bind='ifnot: liked'>
+<a href='#' data-bind='click: $root.like'>
+<i class='like lighterprints-gray fa fa-heart'></i>
+</a>
+</span>
+<span data-bind='if: liked'>
+<i class='liked fa fa-heart'></i>
+</span>
+</div>
+</script>
+<!-- group activity templates, keyed by parameter name -->
+<script type='text/html' id='comment'>
+    <tr data-bind='if: $root.participantGroupId() != participant_group_id()'>
+        <td class='group-activity-icon'><i class='fa fa-comment lighterprints-blue'></i></td>
+        <td class='group-activity'>
+            Participant <strong data-bind='text: participant_number'></strong>
+            <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+            <div>
+            <span data-bind='if: target_parameter_name() === "activity_performed"'>
+            commented on your completed challenge, <em data-bind='text: target_data_value'></em>
+            </span>
+            <span data-bind='if: target_parameter_name() === "chat_message" || target_parameter_name() === "comment"'>
+            replied to your message, &quot;<em data-bind='text: target_data_value'></em>&quot;
+            </span>
+            <div>
+            <small><i class='fa fa-quote-left'></i></small>
+            <span data-bind='text:value'></span>
+            <small><i class='fa fa-quote-right'></i></small>
+            </div>
+            </div>
+            <div data-bind='template: "likeCommentTemplate"'></div>
+        </td>
+    </tr>
+</script>
+<script type='text/html' id='like'>
+<tr data-bind='if: $root.participantGroupId() != participant_group_id()'>
+    <td class='group-activity-icon'><i class='fa fa-heart lighterprints-red'></i></td>
+    <td class='group-activity'>
+        Participant <strong data-bind='text: participant_number'></strong>
+        <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+        <div>liked your
+            <span data-bind='if: target_parameter_name() === "activity_performed"'>
+            completed challenge, <em data-bind='text: target_data_value'></em>
+            </span>
+            <span data-bind='if: target_parameter_name() === "chat_message" || target_parameter_name() === "comment"'>
+            message, &quot;<em data-bind='text: target_data_value'></em>&quot;
+            </span>
+        </div>
+    </td>
+</tr>
+</script>
+<script type='text/html' id='chat_message'>
+    <tr>
+        <td class='group-activity-icon'><i class='fa fa-comment lighterprints-blue'></i></td>
+        <td class='group-activity'>
+            <strong>Participant <span data-bind='text: participant_number'></span></strong>
+            <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+            <div>
+            <small><i class='fa fa-quote-left'></i></small>
+            <span data-bind='text:value'></span>
+            <small><i class='fa fa-quote-right'></i></small>
+            </div>
+            <div data-bind="template: 'likeCommentTemplate'"></div>
+        </td>
+    </tr>
+</script>
+<script type='text/html' id='activity_performed'>
+    <tr>
+        <td class='group-activity-icon'><i class='fa fa-star text-gold'></i></td>
+        <td class='group-activity'>
+            <strong>Participant <span data-bind='text: participant_number'></span></strong>
+            <small class='pull-right muted'><span data-bind='text: date_created'></span></small>
+            <div>earned <span class='lighterprints-green' data-bind='text:points'></span><i class='fa fa-leaf lighterprints-green'></i>
+                for <span data-bind='text: $root.groupName'></span> by completing <em><span data-bind='text: display_name'></span></em>.
+            </div>
+            <div data-bind="template: 'likeCommentTemplate'"></div>
+        </td>
+    </tr>
+</script>
+<script type='text/html' id='challenges-template'>
+<div data-bind='foreach: challenges'>
+<div class='row challenge-row'>
+    <div class='col-md-3'>
+        <img style='padding: 10px 0 0 20px;' data-bind='attr: {src: "{% static 'images/lighterprints/badges/' %}" + name() + ".png" }'>
+    </div>
+    <div class='col-md-6'>
+        <h4 class='challenge-name' data-bind='css: status, text:display_name'></h4>
+        <p>
+        <span class='challenge' data-bind='css: status, text: summary'></span>
+        </p>
+        <form data-bind='attr: { id: "challengeForm" + pk() }' class='form-horizontal' method='post'>
+            <input data-bind='value: pk' type='hidden' name='activity_id' />
+            <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
+            <button data-bind='disable: $root.isActivityDisabled($data), css: $root.activityStatusCss($data), click: $root.perform' class='btn challenge'>
+            <span data-bind='if: $root.isAvailable($data)'>Perform</span>
+            <span data-bind='if: $root.isCompleted($data)'>Completed <i class='fa fa-check-square-o'></i></span>
+            <span data-bind='if: $root.isExpired($data)'>Expired <i class='fa fa-warning'></i></span>
+            <span data-bind='if: $root.isUpcoming($data)'>Not yet available <i class='fa fa-clock-o'></i></span>
+            <span data-bind='if: $root.isLocked($data)'>Locked <i class='fa fa-lock'></i></span>
+            </button>
+            {% comment %} FIXME: enable once we have more info again
+            <small><a href='#'>Learn more</a></small>
+            {% endcomment %}
+        </form>
+    </div>
+    <div class='col-md-3'>
+        <table>
+            <tr>
+                <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: points'></span></td>
+                <td><i class='lighterprints-green fa fa-leaf fa-2x'></i></td>
+            </tr>
+        </table>
+        <div style='margin-top: 5px; padding: 5px 0;' data-bind='css: status'><i class='fa fa-clock-o'></i> <strong><span data-bind='text: time_slots'></span></strong></div>
+    </div>
+</div>
+</div>
+</script>
+<script type='text/html' id='no-group-activity-template'>
+Your group has not had any activity yet.  You can <a href='#dashboard' data-bind='click:activateDashboardTab'
+data-toggle='tab'>perform challenges in your dashboard</a> or post messages in the <a href='#group' data-bind='click:activateGroupTab'>the group wall</a> .
+</script>
+{% endblock %}
