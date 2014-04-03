@@ -23,24 +23,18 @@
             <h1 class='header'><i class='fa fa-tachometer'></i> Group Dashboard</h1>
             <div style='display: none;' data-bind='visible: ! completed()'>
             <div class='alert alert-block alert-white welcome-message'>
-                <button type="button" class="close" data-dismiss="alert"><i class='fa fa-times-circle'></i></button>
                 <h2 class='welcome-header lighterprints-dark-gray'>Welcome to Lighter Footprints, <i class='lighterprints-blue'><span data-bind='text: groupName'></span>!</i></h2>
                 <p>
                     You have been randomly placed in a group of {{ participant_group_relationship.group.size }}
                     participants. In this experiment you can perform virtual actions that represent green alternatives
-                    to some common daily activities.
+                    to some common daily activities. 
+                    <strong data-bind='ifnot: quizCompleted'>
+                        <i class='fa fa-info-circle fa-2x'></i>You must first <a href='{{survey_url|default:"https://qualtrics.com"}}'>take and pass a quick quiz</a> before continuing.
+                    </strong>
                 </p>
                 <p>
                     <i class='lighterprints-green fa fa-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by
-                    performing challenges.
-                    <span data-bind='if: linearPublicGood'>
-                        You will earn <b class='lighterprints-green'><i class='fa fa-usd'></i>0.02</b> for each point in
-                        your Group Score.
-                    </span>
-                    <span data-bind='if: hasScheduledActivities && ! linearPublicGood'>
-                        Your goal is to have your <b>group's average points per person</b>, shown in the <b>Group Score
-                        box</b>, reach <span data-bind='text: pointsToNextLevel'></span>.
-                    </span>
+                    performing challenges.                     </span>
                     <span data-bind='ifnot: hasScheduledActivities'>Rank up by <b>increasing your group's score, shown in the Group Score box.</b></span>
                 </p>
                 <p>

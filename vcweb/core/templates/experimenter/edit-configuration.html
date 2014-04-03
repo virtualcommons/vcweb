@@ -231,13 +231,13 @@
                 </select>
             </div>
         </div>
-        <div class="form-group" data-bind="visible: isVisible('string,enum,foreignkey') ">
+        <div class="form-group" data-bind="visible: isVisible('string,enum') ">
             <label class="col-md-3 control-label">String value</label>
             <div class="col-md-6">
                 <textarea class="form-control" id="id_string_value" name="string_value" placeholder="String value" rows="3" data-bind="value: string_value"></textarea>
             </div>
         </div>
-        <div class="form-group" data-bind="visible: isVisible('int')">
+        <div class="form-group" data-bind="visible: isVisible('int,foreignkey')">
             <label class="col-md-3 control-label">Int value</label>
             <div class="col-md-6">
                 <input class="form-control" id="id_int_value" name="int_value" placeholder="Int value" type="number" data-bind="value: int_value">
