@@ -123,7 +123,7 @@ def post_comment(request):
 
 class HighSchoolViewModel(object):
 
-    def __init__(self, participant_group_relationship, activities=None, experiment=None, round_configuration=None, round_data=None, **kwargs):
+    def __init__(self, participant_group_relationship, experiment=None, round_configuration=None, round_data=None, **kwargs):
         self.participant_group_relationship = participant_group_relationship
         self.group = participant_group_relationship.group
         self.experiment = self.group.experiment if experiment is None else experiment
@@ -131,6 +131,7 @@ class HighSchoolViewModel(object):
         self.round_configuration = self.experiment.current_round if round_configuration is None else round_configuration
         self.treatment_type = get_treatment_type(self.round_configuration).string_value
         self.experiment_configuration = self.experiment.experiment_configuration
+        self.group_scores = GroupScores(experiment, round_data, participant_group_relationship=participant_group_relationship)
 
     def activities(self):
         """
@@ -143,13 +144,32 @@ class HighSchoolViewModel(object):
             if activity.pk in completed_activity_pks:
                 status = 'completed'
             self.activity_statuses.append((activity, status))
+        logger.debug("activity statuses: %s", self.activity_statuses)
         return self.activity_statuses
 
     def to_json(self):
+        (hours_left, minutes_left) = get_time_remaining()
+        participant_group_relationship = self.participant_group_relationship
+        own_group = participant_group_relationship.group
+        group_scores = self.group_scores
+        (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
         return dumps({
-
+            'activities': self.activities(),
+            'participantGroupId': participant_group_relationship.pk,
+            'groupData': group_scores.get_group_data_list(),
+            'hoursLeft': hours_left,
+            'minutesLeft': minutes_left,
+            'firstVisit': participant_group_relationship.first_visit,
+            # FIXME: extract this from groupData instead..
+            'averagePoints': group_scores.average_daily_points(own_group),
+            'pointsToNextLevel': group_scores.get_points_goal(own_group),
+            'hasScheduledActivities': group_scores.has_scheduled_activities,
+            'groupActivity': team_activity,
+            'groupName': own_group.name,
+            'totalPoints': group_scores.total_participant_points,
             })
 
+    @property
     def template_name(self):
         return 'lighterprints/highschool.html'
 
@@ -256,7 +276,7 @@ def participate(request, experiment_id=None):
         round_configuration = experiment.current_round
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'), participant=participant, group__experiment=experiment)
         if is_high_school_treatment(round_configuration):
-            view_model = HighSchoolViewModel(pgr, experiment, round_configuration)
+            view_model = HighSchoolViewModel(pgr, experiment=experiment, round_configuration=round_configuration)
             return render(request, view_model.template_name, {
                 'experiment': experiment,
                 'participant_group_relationship': pgr,
