@@ -139,11 +139,22 @@ class HighSchoolViewModel(object):
         """
         completed_activity_pks = self.participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(), round_data=self.round_data).values_list('int_value', flat=True)
         self.activity_statuses = []
-        for activity in Activity.objects.scheduled(self.round_configuration):
+        scheduled_activities = Activity.objects.scheduled(self.round_configuration)
+        for activity in scheduled_activities:
+            activity_dict = activity.to_dict()
             status = 'available'
             if activity.pk in completed_activity_pks:
                 status = 'completed'
-            self.activity_statuses.append((activity, status))
+            activity_dict['status'] = status
+            activity_dict['availableNow'] = status == 'available'
+            activity_dict['availabilities'] = []
+            self.activity_statuses.append(activity_dict)
+        for activity in Activity.objects.all().exclude(pk__in=(scheduled_activities.values_list('pk', flat=True))):
+            activity_dict = activity.to_dict()
+            activity_dict['status'] = 'locked'
+            activity_dict['availableNow'] = False
+            activity_dict['availabilities'] = []
+            self.activity_statuses.append(activity_dict)
         logger.debug("activity statuses: %s", self.activity_statuses)
         return self.activity_statuses
 
@@ -155,6 +166,8 @@ class HighSchoolViewModel(object):
         (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
         return dumps({
             'activities': self.activities(),
+            'quizCompleted': False,
+            'completed': False,
             'participantGroupId': participant_group_relationship.pk,
             'groupData': group_scores.get_group_data_list(),
             'hoursLeft': hours_left,
@@ -281,6 +294,7 @@ def participate(request, experiment_id=None):
                 'experiment': experiment,
                 'participant_group_relationship': pgr,
                 'view_model_json': view_model.to_json(),
+                'has_leaderboard': True,
                 })
 
         all_activities = Activity.objects.all()

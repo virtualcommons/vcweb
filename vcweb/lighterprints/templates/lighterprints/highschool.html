@@ -27,27 +27,21 @@
                 <p>
                     You have been randomly placed in a group of {{ participant_group_relationship.group.size }}
                     participants. In this experiment you can perform virtual actions that represent green alternatives
-                    to some common daily activities. 
-                    <strong data-bind='ifnot: quizCompleted'>
-                        <i class='fa fa-info-circle fa-2x'></i>You must first <a href='{{survey_url|default:"https://qualtrics.com"}}'>take and pass a quick quiz</a> before continuing.
-                    </strong>
+                    to some common daily activities.
                 </p>
                 <p>
-                    <i class='lighterprints-green fa fa-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by
-                    performing challenges.                     </span>
-                    <span data-bind='ifnot: hasScheduledActivities'>Rank up by <b>increasing your group's score, shown in the Group Score box.</b></span>
+                <strong data-bind='ifnot: quizCompleted'>
+                    <i class='fa fa-info-circle'></i>You must first <a href='{{survey_url|default:"https://qualtrics.com"}}'>take and pass a quick quiz</a> before continuing.
+                </strong>
                 </p>
                 <p>
-                    <i class='fa fa-star text-gold'></i> Some challenges are unlocked all day, and others are only unlocked at specific times.
-                    <span data-bind='ifnot: hasScheduledActivities'>Discover new challenges by ranking up!</span>
+                    <i class='lighterprints-green fa fa-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by performing challenges.</span>
+                </p>
+                <p>
+                    <i class='fa fa-star text-gold'></i> Different challenges are unlocked each day.
                 </p>
                 <p>
                 <strong><i class='fa fa-warning text-error'></i> Your group score resets at midnight every day.</strong>
-                </p>
-                <p>
-                <i class='fa fa-info-circle'></i> Your group has earned <b class='lighterprints-green'><i class='fa fa-usd'></i><span
-                        data-bind='text: totalDailyEarnings'></span></b> so far today and <b class='lighterprints-green'>
-                    <i class='fa fa-usd'></i><span data-bind='text: totalEarnings'></span></b> over the entire experiment.
                 </p>
             </div>
             </div>
@@ -71,11 +65,7 @@
                 <div class='col-md-3 left-divider'>
                     <h5 id='third-box'><span data-bind='text: thirdBoxTitle' class='lighterprints-scoreboard-uppercase'></span></h5>
                     <table style='margin-top: -37px;' data-bind='if: hasScheduledActivities'>
-                        <tr data-bind='if: linearPublicGood'>
-                            <td><i class='lighterprints-green fa fa-usd fa-3x'></i></td>
-                            <td class='lighterprints-scoreboard-xlarge lighterprints-green'><span data-bind='text: totalDailyEarnings'></span></td>
-                        </tr>
-                        <tr data-bind='ifnot: linearPublicGood'>
+                        <tr>
                             <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: totalPoints'></span></td>
                             <td><i class='lighterprints-green fa fa-leaf fa-2x'></i></td>
                         </tr>
@@ -125,15 +115,7 @@
             <div class='alert alert-block alert-white'>
                 <h2>Complete challenges to earn green points.</h2>
                 <p data-bind='if: hasScheduledActivities'>
-                    Different challenges are available at different times and days. 
-                    <span data-bind='if: linearPublicGood'>You will earn <b><i class='fa fa-usd'></i>0.02</b> for each
-                        point in your group average score. For example, if your group average score is <b>123</b> by the
-                        end of today you would have earned <b><i class='fa fa-usd'></i>2.46</b>.
-                    </span>
-                    <span data-bind='ifnot: linearPublicGood'>In order to maximize your chances at
-                        winning a prize, your group must earn enough points so that the <strong>average number of points</strong> per participant is greater than
-                        <span data-bind='text:pointsToNextLevel' class='badge badge-lighterprints-green'></span>.
-                    </span>
+                    Different challenges are available at different times and days.
                 </p>
                 <p data-bind='ifnot: hasScheduledActivities'>
                 Challenges are divided up into 3 levels.  In order to unlock the next level's challenges your group must earn
@@ -164,14 +146,6 @@
             select the challenge from the list below, and click the &quot;Perform&quot; button.
             </p>
             <p data-bind='if: hasScheduledActivities'>
-            <div data-bind='if: linearPublicGood'>
-                You will earn <b class='lighterprints-green'><i class='fa fa-usd'></i>0.02</b> for each point in your group average score, so if your group average score is <b>150</b> by the end of the day you would have earned 
-                <b class='lighterprints-green'><i class='fa fa-usd'></i>3.00</b> for that day.
-            </div>
-            <div data-bind='ifnot: linearPublicGood'>
-                In order to earn a prize your group score must reach <strong class='lighterprints-green'><span data-bind='text: pointsToNextLevel'></span>
-                <i class='fa fa-leaf'></i></strong>. In order to reach this target you and a majority of the members of your group will need to perform high point challenges when they are available.
-            </div>
             <b>Different challenges will be available on different days, so check back each day to see which challenges are available</b>
             </p>
             <p data-bind='ifnot: hasScheduledActivities'>
@@ -221,10 +195,6 @@
         </div>
         <div class='tab-pane' id='group'>
             <h1 class='header'><i class='fa fa-comment'></i> My Group</h1>
-            <div class='alert alert-white alert-block'>
-                <i class='fa fa-info-circle'></i> Your group has earned <b data-bind='text: totalDailyEarnings'></b> so far today and <b data-bind='text: totalEarnings'></b>
-                over the entire experiment.
-            </div>
             <h3 class='underline'>Group Chat</h3>
             <form id='chat-form' data-bind='submit: submitChatMessage' role="form">
                 <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.id}}'/>
@@ -365,12 +335,7 @@ $(function() {
     {% endcomment %}
     viewModel.thirdBoxTitle = ko.computed(function() {
         if (viewModel.hasScheduledActivities()) {
-            if (viewModel.linearPublicGood()) {
-                return "Today's Earnings";
-            }
-            else {
-                return "Your Score";
-            }
+            return "Your Score";
         }
         else {
             return "Current Level";
@@ -379,12 +344,7 @@ $(function() {
     viewModel.thirdBoxTooltipContent = ko.computed(function() {
         var thirdBoxContent = "This is your group's current level. Each new level unlocks 5 new challenges.";
         if (viewModel.hasScheduledActivities()) {
-            if (viewModel.linearPublicGood()) {
-                thirdBoxContent = "This shows the number of points you have contributed to your group today and your total earnings for the day.";
-            }
-            else {
-                thirdBoxContent = "This shows the total number of points you have contributed to your group today.";
-            }
+            thirdBoxContent = "This shows the total number of points you have contributed to your group today.";
         }
         return thirdBoxContent;
     });
