@@ -2267,6 +2267,13 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
     def group_number(self):
         return self.group.number
 
+    def set_first_visit(self):
+        fv = self.first_visit
+        if fv:
+            self.first_visit = False
+            self.save()
+        return fv
+
     def set_participant_ready(self, round_data=None):
         if round_data is None:
             round_data = self.current_round_data

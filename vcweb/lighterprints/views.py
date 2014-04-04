@@ -40,6 +40,7 @@ def perform_activity(request):
 #                    categoryId=','.join(get_foursquare_category_ids()))
 #            logger.debug("Found venues: %s", venues)
             if performed_activity is not None:
+                participant_group_relationship.set_first_visit()
                 return JsonResponse(dumps({
                     'success': True,
                     'viewModel':get_view_model_json(participant_group_relationship)
@@ -206,10 +207,6 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
     #(chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
     (hours_left, minutes_left) = get_time_remaining()
-    first_visit = participant_group_relationship.first_visit
-    if first_visit:
-        participant_group_relationship.first_visit = False
-        participant_group_relationship.save()
     return dumps({
         'participantGroupId': participant_group_relationship.pk,
         'completed': group_scores.is_completed(own_group),
@@ -217,7 +214,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         'groupData': group_data,
         'hoursLeft': hours_left,
         'minutesLeft': minutes_left,
-        'firstVisit': first_visit,
+        'firstVisit': participant_group_relationship.set_first_visit(),
         # FIXME: extract this from groupData instead..
         'groupLevel': own_group_level,
         'linearPublicGood': linear_public_good,
@@ -289,7 +286,6 @@ def participate(request, experiment_id=None):
                 'experiment': experiment,
                 'participant_group_relationship': pgr,
                 'view_model_json': view_model.to_json(),
-                'has_leaderboard': True,
                 })
 
         all_activities = Activity.objects.all()

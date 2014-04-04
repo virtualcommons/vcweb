@@ -21,9 +21,7 @@
     <div class='tab-content'>
         <div class='tab-pane active' id='dashboard'>
             <div style='display:none;' data-bind='visible: ! quizCompleted()'>
-                <h1 class='header'>
-                    <i class='fa fa-pencil-square'></i> Quiz
-                </h1>
+                <h1 class='header'><i class='fa fa-pencil-square'></i> Quiz</h1>
                 <div class='alert alert-block alert-white welcome-message'>
                     <h2 class='welcome-header lighterprints-dark-gray'>Welcome to Lighter Footprints, <i class='lighterprints-blue'><span data-bind='text: groupName'></span>!</i></h2>
                     <p>
@@ -33,10 +31,7 @@
                     </p>
                     <br>
                     <div class='alert alert-danger alert-block'>
-                        <strong>
-                            <i class='fa fa-info-circle'></i>
-                            Please complete the following quiz before continuing.
-                        </strong>
+                        <strong><i class='fa fa-info-circle'></i> Please complete the following quiz before continuing.</strong>
                     </div>
                 </div>
                 <div class='qualtrics-survey'>
@@ -175,7 +170,7 @@
             <h1 class='header'><i class='fa fa-comment'></i> My Group</h1>
             <h3 class='underline'>Group Chat</h3>
             <form id='chat-form' data-bind='submit: submitChatMessage' role="form">
-                <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.id}}'/>
+                <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}'/>
                 <div class='input-group'>
                     <span class='input-group-addon'><i class='fa fa-comment'></i></span>
                     <input type='text' id='chatText' class="form-control" name='message' placeholder='Send a message to your group' />
@@ -321,11 +316,12 @@ $(function() {
         console.debug("checking quiz completion: ");
         console.debug(response);
         var completed = response.survey_completed
+        viewModel.quizCompleted(completed);
         if (completed) {
             $('#content').removeClass('col-md-12').addClass('col-md-9');
             viewModel.clearCurrentInterval();
+            viewModel.setupTour();
         }
-        viewModel.quizCompleted(completed);
     }
     viewModel.setup = function() {
         viewModel.initializeChart();
@@ -374,7 +370,7 @@ $(function() {
             content: "Perform challenges by clicking on the green Perform button. The points each challenge is worth is listed on the right."
         }]);
         if (viewModel.firstVisit() && viewModel.quizCompleted()) {
-            tour.start(true);
+            tour.restart();
         }
     };
     viewModel.restartTour = function() {
