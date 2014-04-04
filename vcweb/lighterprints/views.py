@@ -159,8 +159,8 @@ class HighSchoolViewModel(object):
         (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
         return dumps({
             'activities': self.activities,
-            'quizCompleted': False,
-            'completed': False,
+            'quizCompleted': participant_group_relationship.survey_completed,
+            'hasLeaderboard': True,
             'participantGroupId': participant_group_relationship.pk,
             'groupData': group_scores.get_group_data_list(),
             'hoursLeft': hours_left,
@@ -186,13 +186,15 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     FIXME: replace with view model class that stitches together ActivityStatusList and GroupScores appropriately and
     handles conditional switches between the different experiment types (scheduled activities, level based, high school)
     """
-    if activities is None:
-        activities = Activity.objects.all()
     own_group = participant_group_relationship.group
     if experiment is None:
         experiment = own_group.experiment
     if round_configuration is None:
         round_configuration = experiment.current_round
+    if is_high_school_treatment(round_configuration):
+        return HighSchoolViewModel(participant_group_relationship, experiment, round_configuration).to_json()
+    if activities is None:
+        activities = Activity.objects.all()
     if round_data is None:
         round_data = experiment.current_round_data
     experiment_configuration = round_configuration.experiment_configuration

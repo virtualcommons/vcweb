@@ -20,7 +20,7 @@
 <div class='tabbable'>
     <div class='tab-content'>
         <div class='tab-pane active' id='dashboard'>
-            <div data-bind='ifnot: quizCompleted'>
+            <div style='display:none;' data-bind='visible: ! quizCompleted()'>
                 <h1 class='header'>
                     <i class='fa fa-pencil-square'></i> Quiz
                 </h1>
@@ -39,7 +39,7 @@
                     </strong>
                 </div>
             </div>
-            <div data-bind='if: quizCompleted'>
+            <div style='display: none;' data-bind='visible: quizCompleted'>
                 <h1 class='header'><i class='fa fa-tachometer'></i> Group Dashboard</h1>
                 <div class='alert alert-block alert-white welcome-message'>
                     <h2 class='welcome-header lighterprints-dark-gray'>Welcome to Lighter Footprints, <i class='lighterprints-blue'><span data-bind='text: groupName'></span>!</i></h2>
@@ -79,14 +79,6 @@
                                 <td><i class='lighterprints-green fa fa-leaf fa-2x'></i></td>
                             </tr>
                         </table>
-                        <div class='dashboard-content' data-bind='ifnot: hasScheduledActivities'>
-                            <div data-bind='if: completed'>
-                                <img alt='Experiment Completed' class='group-level' width='120' height='70' src='{% static "images/lighterprints/experiment-completed.png"%}'>
-                            </div>
-                            <div data-bind='ifnot: completed'>
-                                <img alt='Group Level' class='group-level' width="104" height="65" data-bind="attr: { src: '{% static "images/lighterprints/rank"%}' + groupLevel() + '.png' }">
-                            </div>
-                        </div>
                     </div>
                     <div class='col-md-3 left-divider'>
                         <h5 id='time-remaining'><span class='lighterprints-scoreboard-uppercase'>Time Remaining</span></h5>
@@ -295,14 +287,12 @@
 </div>
 {% endblock content %}
 {% block sidebar %}
-<div class='lighterprints-sidebar'>
-    {% if has_leaderboard %}
+<div style='display:none;' class='lighterprints-sidebar' data-bind='visible: hasLeaderboard() && quizCompleted()'>
     <h3 class='lighterprints-sidebar-header'><i class='text-gold fa fa-trophy'></i> Leaderboard</h3>
     <ul class='nav' data-bind='foreach: groupData'>
         <li class='leaderboard-group-name'><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-lighterprints-green' data-bind='text: averagePoints'></span></li>
         <li class='divider'></li>
     </ul>
-    {% endif %}
     <h3 class='lighterprints-sidebar-header'><i class='lighterprints-blue fa fa-users'></i> Group Activity <span class='pull-right'><small><a href='#group' data-bind='click: activateGroupTab' data-toggle='tab'>View all</a></small></span></h3>
     <div data-bind='ifnot: hasGroupActivity()'>
         <div data-bind='template: { name: "no-group-activity-template" }'></div>
@@ -336,11 +326,6 @@ $(function() {
     // set up KO binding, using one master view model
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
-    if (! viewModel.quizCompleted()) {
-        // show modal dialog and embed qualtrics survey
-
-    }
-
     // custom view model methods, some of these may be lifted into the model itself
     viewModel.tutorialTour = new Tour({ name: "lfpTutorial", labels: { end: "End tutorial", next: 'Next »', prev: '« Back' }});
     viewModel.progressChart = ko.observable(new Chart(document.getElementById("progressChart").getContext("2d")));

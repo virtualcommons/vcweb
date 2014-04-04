@@ -123,6 +123,7 @@ class GroupScores(object):
         self.start_date = date.today() if start_date is None else start_date
         self.end_date = self.start_date + timedelta(1) if end_date is None else end_date
         self.round_configuration = self.round_data.round_configuration
+        self.is_high_school_treatment = is_high_school_treatment(self.round_configuration)
         self.show_rankings = has_leaderboard(self.round_configuration)
         activity_points_cache = get_activity_points_cache()
         activities_performed_qs = ParticipantRoundDataValue.objects.for_round(parameter=get_activity_performed_parameter(), round_data=self.round_data, date_created__range=(self.start_date, self.end_date))
@@ -453,8 +454,8 @@ class ActivityManager(TreeManager, PassThroughManager):
             # otherwise, unlocked activities are based on the group's level
             unlocked_activities = Activity.objects.unlocked(level=get_footprint_level(participant_group_relationship.group, round_data))
         if activity in unlocked_activities:
-            # next check if it is currently available
-            currently_available = self.is_available_now(activity)
+            # check for time availability but disable for high school treatment
+            currently_available = is_high_school_treatment(round_configuration) or self.is_available_now(activity)
             if currently_available:
                 # finally, if it is currently available, make sure they haven't already performed it
                 return not self.already_performed(activity, participant_group_relationship, round_data)
@@ -595,7 +596,7 @@ def get_treatment_type_parameter():
     return Parameter.objects.get(name='treatment_type')
 
 
-def is_linear_public_good_game(experiment_configuration, default=True):
+def is_linear_public_good_game(experiment_configuration, default=False):
     return experiment_configuration.get_parameter_value(parameter=get_linear_public_good_parameter(),
             default=default).boolean_value
 
@@ -664,7 +665,7 @@ def _activity_status_sort_key(activity_dict):
 @transaction.atomic
 def do_activity(activity, participant_group_relationship):
     round_data = participant_group_relationship.current_round_data
-    if activity.is_available_for(participant_group_relationship, round_data):
+    if Activity.objects.is_activity_available(activity, participant_group_relationship, round_data):
         logger.debug("pgr %d performing available activity %s", participant_group_relationship.pk, activity)
         return ParticipantRoundDataValue.objects.create(parameter=get_activity_performed_parameter(),
                                                         participant_group_relationship=participant_group_relationship,
