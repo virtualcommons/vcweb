@@ -169,7 +169,6 @@ class HighSchoolViewModel(object):
             # FIXME: extract this from groupData instead..
             'averagePoints': group_scores.average_daily_points(own_group),
             'pointsToNextLevel': group_scores.get_points_goal(own_group),
-            'hasScheduledActivities': group_scores.has_scheduled_activities,
             'groupActivity': team_activity,
             'groupName': own_group.name,
             'totalPoints': group_scores.total_participant_points,

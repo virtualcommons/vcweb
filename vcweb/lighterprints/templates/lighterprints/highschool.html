@@ -31,12 +31,16 @@
                     participants. In this experiment you can perform virtual actions that represent green alternatives
                     to some common daily activities.
                     </p>
+                    <br>
+                    <div class='alert alert-danger alert-block'>
+                        <strong>
+                            <i class='fa fa-info-circle'></i>
+                            Please complete the following quiz before continuing.
+                        </strong>
+                    </div>
                 </div>
-                <div class='alert alert-danger alert-block'>
-                    <strong>
-                        <i class='fa fa-info-circle'></i>
-                        You must <a data-bind='attr: { href: surveyUrl }'>click here and complete a quiz before you can continue</a>.
-                    </strong>
+                <div class='qualtrics-survey'>
+                    <iframe width="100%" height="1500" data-bind='attr: {src: surveyUrl }'></iframe>
                 </div>
             </div>
             <div style='display: none;' data-bind='visible: quizCompleted'>
@@ -72,8 +76,8 @@
                         </table>
                     </div>
                     <div class='col-md-3 left-divider'>
-                        <h5 id='third-box'><span data-bind='text: thirdBoxTitle' class='lighterprints-scoreboard-uppercase'></span></h5>
-                        <table style='margin-top: -37px;' data-bind='if: hasScheduledActivities'>
+                        <h5 id='third-box'><span class='lighterprints-scoreboard-uppercase'>Your Score</span></h5>
+                        <table style='margin-top: -37px;'>
                             <tr>
                                 <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: totalPoints'></span></td>
                                 <td><i class='lighterprints-green fa fa-leaf fa-2x'></i></td>
@@ -116,14 +120,7 @@
             <h1 class='header'><i class='fa fa-star'></i> Challenges</h1>
             <div class='alert alert-block alert-white'>
                 <h2>Complete challenges to earn green points.</h2>
-                <p data-bind='if: hasScheduledActivities'>
-                    Different challenges are available at different times and days.
-                </p>
-                <p data-bind='ifnot: hasScheduledActivities'>
-                Challenges are divided up into 3 levels.  In order to unlock the next level's challenges your group must earn
-                enough points so that the <strong>average number of points</strong> per participant is greater than
-                <span data-bind='text:pointsToNextLevel' class='badge badge-lighterprints-green'></span>.
-                </p>
+                Different challenges are available at different times and days.
                 <p>
                 <i class='fa fa-clock-o'></i> Some challenges are available all day, and others are only available at <strong>certain hours</strong>.
                 </p>
@@ -147,16 +144,8 @@
             In order to perform this challenge you must login to the application between 12pm and 2pm, 
             select the challenge from the list below, and click the &quot;Perform&quot; button.
             </p>
-            <p data-bind='if: hasScheduledActivities'>
+            <p>
             <b>Different challenges will be available on different days, so check back each day to see which challenges are available</b>
-            </p>
-            <p data-bind='ifnot: hasScheduledActivities'>
-            Your group is currently <strong class='text-gold'>Level <span data-bind='text:groupLevel'></span></strong> and has an average score of 
-            <strong class='lighterprints-green'><span data-bind='text:averagePoints'></span> <i class='fa fa-leaf'></i></strong>.  In order to
-            advance in level and unlock more challenges the <em>average number of points contributed by each member of your group</em> must be equal to or greater than 
-            <strong class='lighterprints-green'><span data-bind='text: pointsToNextLevel'></span> <i class='fa fa-leaf'></i></strong>.
-            In order to reach this target you and a majority of the members of your group must perform
-            high point challenges when they are available.
             </p>
             <h3>How to participate</h3>
             <p>
@@ -174,19 +163,6 @@
                 people in your group, performing a 15 point activity adds 3 points to the group average (15 / 5 = 3).
                 </p>
             </div>
-            <div data-bind='ifnot: hasScheduledActivities'>
-            <div class='well alert-white'>
-                <h4>Why do the challenges performed in the previous day not count for today?</h4>
-                <p>
-                In order to advance in level and unlock more challenges you must reach an average level of points in your
-                group during one day, starting at 12:00 AM. Every day at midnight the server will check your group's
-                average number of points and determine whether or not you should move on to the next level. If your
-                group advances in level your group will once again start at 0 points with the additional unlocked
-                challenges for that level available to perform. If your group did not reach the next level, your group
-                will start with 0 points at the same level with the same challenges available as the previous day.
-                </p>
-            </div>
-        </div>
             <div class='well alert-white'>
                 <h4>I don't have a car or anyone to carpool with, so how can I carpool?</h4>
                 <p>
@@ -326,28 +302,31 @@ $(function() {
     // set up KO binding, using one master view model
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
+    viewModel.currentInterval = ko.observable();
     // custom view model methods, some of these may be lifted into the model itself
     viewModel.tutorialTour = new Tour({ name: "lfpTutorial", labels: { end: "End tutorial", next: 'Next »', prev: '« Back' }});
     viewModel.progressChart = ko.observable(new Chart(document.getElementById("progressChart").getContext("2d")));
-    {% comment %}
-    // FIXME: crappy special case logic to deal with scheduled activities vs level based activities and linear public
-    good parameter
-    {% endcomment %}
-    viewModel.thirdBoxTitle = ko.computed(function() {
-        if (viewModel.hasScheduledActivities()) {
-            return "Your Score";
+    viewModel.setCurrentInterval = function(intervalId) {
+        viewModel.clearCurrentInterval();
+        viewModel.currentInterval(intervalId);
+    }
+    viewModel.clearCurrentInterval = function() {
+        var currentIntervalId = viewModel.currentInterval();
+        if (currentIntervalId) {
+            clearInterval(currentIntervalId);
+            viewModel.currentInterval(undefined);
         }
-        else {
-            return "Current Level";
+    }
+    viewModel.checkQuizCompleted = function(response) {
+        console.debug("checking quiz completion: ");
+        console.debug(response);
+        var completed = response.survey_completed
+        if (completed) {
+            $('#content').removeClass('col-md-12').addClass('col-md-9');
+            viewModel.clearCurrentInterval();
         }
-    });
-    viewModel.thirdBoxTooltipContent = ko.computed(function() {
-        var thirdBoxContent = "This is your group's current level. Each new level unlocks 5 new challenges.";
-        if (viewModel.hasScheduledActivities()) {
-            thirdBoxContent = "This shows the total number of points you have contributed to your group today.";
-        }
-        return thirdBoxContent;
-    });
+        viewModel.quizCompleted(completed);
+    }
     viewModel.setup = function() {
         viewModel.initializeChart();
         viewModel.setupTour();
@@ -379,9 +358,9 @@ $(function() {
         },
         {
             element: "#third-box",
-            title: viewModel.thirdBoxTitle(),
+            title: "Your Score",
             placement: "top",
-            content: viewModel.thirdBoxTooltipContent()
+            content: "This shows the total number of points you have contributed to your group today."
         },
         {
             element: "#time-remaining",
@@ -460,6 +439,14 @@ $(function() {
             }
         });
     };
+    // check for quiz completion
+    if (! viewModel.quizCompleted()) {
+        // if not completed, set up a timer and change css classes to hide the sidebar
+        $('#content').removeClass('col-md-9').addClass('col-md-12');
+        viewModel.setCurrentInterval(setInterval(function() {
+            $.get('/participate/{{experiment.pk}}/check-survey-completed', viewModel.checkQuizCompleted);
+        }, 6000));
+    }
     ko.applyBindings(viewModel);
     viewModel.setup();
     // FIXME: more efficient way to select these?
@@ -602,7 +589,6 @@ $(function() {
                 <td><i class='lighterprints-green fa fa-leaf fa-2x'></i></td>
             </tr>
         </table>
-        <div style='margin-top: 5px; padding: 5px 0;' data-bind='css: status'><i class='fa fa-clock-o'></i> <strong><span data-bind='text: time_slots'></span></strong></div>
     </div>
 </div>
 </div>
