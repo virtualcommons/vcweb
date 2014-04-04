@@ -180,6 +180,7 @@ class HighSchoolViewModel(object):
             'groupActivity': team_activity,
             'groupName': own_group.name,
             'totalPoints': group_scores.total_participant_points,
+            'surveyUrl': self.round_configuration.survey_url,
             })
 
     @property

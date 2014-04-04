@@ -9,9 +9,9 @@
 <ul class='nav nav-tabs pull-left' style="border:none" id='lfp-navtabs'>
     <li><a class='brand'><img alt='footprint logo' src='{% static "images/lighterprints/logo.png"%}' width="25" height="25"> lighter<strong class='lighterprints-green'>footprints</strong></a></li>
     <li class='active'><a href='#dashboard' data-bind='click: activateDashboardTab'><i class='fa fa-tachometer'></i> Dashboard</a></li>
-    <li><a href='#challenges' data-bind='click:activateChallengesTab'><i class='fa fa-star-o'></i> Challenges</a></li>
-    <li><a href='#group' data-bind='click: activateGroupTab'><i class='fa fa-comment'></i> My Group</a></li>
-    <li><a href='#help' data-bind='click: activateHelpTab'><i class='fa fa-question-circle'></i> Help</a></li>
+    <li data-bind='if: quizCompleted'><a href='#challenges' data-bind='click:activateChallengesTab'><i class='fa fa-star-o'></i> Challenges</a></li>
+    <li data-bind='if: quizCompleted'><a href='#group' data-bind='click: activateGroupTab'><i class='fa fa-comment'></i> My Group</a></li>
+    <li data-bind='if: quizCompleted'><a href='#help' data-bind='click: activateHelpTab'><i class='fa fa-question-circle'></i> Help</a></li>
 </ul>
 {% endblock %}
 {% block logo %}
@@ -20,92 +20,105 @@
 <div class='tabbable'>
     <div class='tab-content'>
         <div class='tab-pane active' id='dashboard'>
-            <h1 class='header'><i class='fa fa-tachometer'></i> Group Dashboard</h1>
-            <div style='display: none;' data-bind='visible: ! completed()'>
-            <div class='alert alert-block alert-white welcome-message'>
-                <h2 class='welcome-header lighterprints-dark-gray'>Welcome to Lighter Footprints, <i class='lighterprints-blue'><span data-bind='text: groupName'></span>!</i></h2>
-                <p>
+            <div data-bind='ifnot: quizCompleted'>
+                <h1 class='header'>
+                    <i class='fa fa-pencil-square'></i> Quiz
+                </h1>
+                <div class='alert alert-block alert-white welcome-message'>
+                    <h2 class='welcome-header lighterprints-dark-gray'>Welcome to Lighter Footprints, <i class='lighterprints-blue'><span data-bind='text: groupName'></span>!</i></h2>
+                    <p>
                     You have been randomly placed in a group of {{ participant_group_relationship.group.size }}
                     participants. In this experiment you can perform virtual actions that represent green alternatives
                     to some common daily activities.
-                </p>
-                <p>
-                <strong data-bind='ifnot: quizCompleted'>
-                    <i class='fa fa-info-circle'></i>You must first <a href='{{survey_url|default:"https://qualtrics.com"}}'>take and pass a quick quiz</a> before continuing.
-                </strong>
-                </p>
-                <p>
-                    <i class='lighterprints-green fa fa-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by performing challenges.</span>
-                </p>
-                <p>
-                    <i class='fa fa-star text-gold'></i> Different challenges are unlocked each day.
-                </p>
-                <p>
-                <strong><i class='fa fa-warning text-error'></i> Your group score resets at midnight every day.</strong>
-                </p>
-            </div>
-            </div>
-            <div class='row lighterprints-scoreboard'>
-                <div class='col-md-3'>
-                    <h5 id='progress'><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span></h5>
-                    <div data-bind='popover: { content: "#progressChartPopoverContent", id: "progress-chart-popover"}' class='chart'>
-                        <canvas id='progressChart' width="74px" height="74px"></canvas>
-                    </div>
+                    </p>
                 </div>
-                <div class='col-md-3 left-divider'>
-                    <h5 id='group-score'><span class='lighterprints-scoreboard-uppercase'>Group Score</span></h5>
-                    <table class='lighterprints-scoreboard'>
-                        <tr>
-                            <td class='lighterprints-scoreboard-xlarge'><span class='lighterprints-blue' data-bind='text: averagePoints'></span></td>
-                            <td class='lighterprints-scoreboard-large'> / </td>
-                            <td class='lighterprints-scoreboard-xlarge'><span class='muted' data-bind='text:pointsToNextLevel'></span></td>
-                        </tr>
-                    </table>
+                <div class='alert alert-danger alert-block'>
+                    <strong class='lighterprints-blue'>
+                        <i class='fa fa-info-circle'></i>
+                        Please take the following quiz before continuing.
+                    </strong>
                 </div>
-                <div class='col-md-3 left-divider'>
-                    <h5 id='third-box'><span data-bind='text: thirdBoxTitle' class='lighterprints-scoreboard-uppercase'></span></h5>
-                    <table style='margin-top: -37px;' data-bind='if: hasScheduledActivities'>
-                        <tr>
-                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: totalPoints'></span></td>
-                            <td><i class='lighterprints-green fa fa-leaf fa-2x'></i></td>
-                        </tr>
-                    </table>
-                    <div class='dashboard-content' data-bind='ifnot: hasScheduledActivities'>
-                        <div data-bind='if: completed'>
-                            <img alt='Experiment Completed' class='group-level' width='120' height='70' src='{% static "images/lighterprints/experiment-completed.png"%}'>
-                        </div>
-                        <div data-bind='ifnot: completed'>
-                            <img alt='Group Level' class='group-level' width="104" height="65" data-bind="attr: { src: '{% static "images/lighterprints/rank"%}' + groupLevel() + '.png' }">
+                <div class='qualtrics-survey well'>
+                    <iframe width='100%' height='800' data-bind='attr: { src: surveyUrl }'></iframe>
+                </div>
+            </div>
+            <div data-bind='if: quizCompleted'>
+                <h1 class='header'><i class='fa fa-tachometer'></i> Group Dashboard</h1>
+                <div class='alert alert-block alert-white welcome-message'>
+                    <h2 class='welcome-header lighterprints-dark-gray'>Welcome to Lighter Footprints, <i class='lighterprints-blue'><span data-bind='text: groupName'></span>!</i></h2>
+                    <p>
+                    You have been randomly placed in a group of {{ participant_group_relationship.group.size }}
+                    participants. In this experiment you can perform virtual actions that represent green alternatives
+                    to some common daily activities.
+                    </p>
+                    <p>
+                    <i class='lighterprints-green fa fa-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by performing challenges.
+                    </p>
+                    <p><i class='fa fa-star text-gold'></i> Different challenges are unlocked each day.</p>
+                    <p><strong><i class='fa fa-warning text-error'></i> Your group score resets at midnight every day.</strong></p>
+                </div>
+                <div class='row lighterprints-scoreboard'>
+                    <div class='col-md-3'>
+                        <h5 id='progress'><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span></h5>
+                        <div data-bind='popover: { content: "#progressChartPopoverContent", id: "progress-chart-popover"}' class='chart'>
+                            <canvas id='progressChart' width="74px" height="74px"></canvas>
                         </div>
                     </div>
-                </div>
-                <div class='col-md-3 left-divider'>
-                    <h5 id='time-remaining'><span class='lighterprints-scoreboard-uppercase'>Time Remaining</span></h5>
-                    <table class='lighterprints-scoreboard'>
-                        <tr>
-                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: hoursLeft'></span>h</td>
-                            <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: minutesLeft'></span>m</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-            <h3 class='underline'>Challenges</h3>
-            <div class='tabbable challenge-tabs'>
-                <ul class='nav nav-tabs'>
-                    <li id='unlocked-challenge-tab' class='active'><a href='#unlocked-challenges' data-toggle='tab'><span class='text-gold'><i class='fa fa-star'></i> Unlocked</span></a></li>
-                    <li><a href='#locked-challenges' data-toggle='tab'><i class='fa fa-lock'></i> Locked</a></li>
-                </ul>
-                <div class='tab-content challenges'>
-                    <div class='tab-pane active' id='unlocked-challenges'>
-                        <div data-bind="template: { name: 'challenges-template', data: { challenges: unlockedChallenges() } }"></div>
+                    <div class='col-md-3 left-divider'>
+                        <h5 id='group-score'><span class='lighterprints-scoreboard-uppercase'>Group Score</span></h5>
+                        <table class='lighterprints-scoreboard'>
+                            <tr>
+                                <td class='lighterprints-scoreboard-xlarge'><span class='lighterprints-blue' data-bind='text: averagePoints'></span></td>
+                                <td class='lighterprints-scoreboard-large'> / </td>
+                                <td class='lighterprints-scoreboard-xlarge'><span class='muted' data-bind='text:pointsToNextLevel'></span></td>
+                            </tr>
+                        </table>
                     </div>
-                    <div class='tab-pane' id='locked-challenges'>
-                        <div data-bind='if: lockedChallenges().length === 0'>
-                            <div style='padding: 10px;' class='alert-block'>
-                                <i class='text-gold fa fa-star'></i>Congratulations, your group has unlocked all of the challenges.
+                    <div class='col-md-3 left-divider'>
+                        <h5 id='third-box'><span data-bind='text: thirdBoxTitle' class='lighterprints-scoreboard-uppercase'></span></h5>
+                        <table style='margin-top: -37px;' data-bind='if: hasScheduledActivities'>
+                            <tr>
+                                <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: totalPoints'></span></td>
+                                <td><i class='lighterprints-green fa fa-leaf fa-2x'></i></td>
+                            </tr>
+                        </table>
+                        <div class='dashboard-content' data-bind='ifnot: hasScheduledActivities'>
+                            <div data-bind='if: completed'>
+                                <img alt='Experiment Completed' class='group-level' width='120' height='70' src='{% static "images/lighterprints/experiment-completed.png"%}'>
+                            </div>
+                            <div data-bind='ifnot: completed'>
+                                <img alt='Group Level' class='group-level' width="104" height="65" data-bind="attr: { src: '{% static "images/lighterprints/rank"%}' + groupLevel() + '.png' }">
                             </div>
                         </div>
-                        <div data-bind="template: { name: 'challenges-template', data: { challenges: lockedChallenges() } }"></div>
+                    </div>
+                    <div class='col-md-3 left-divider'>
+                        <h5 id='time-remaining'><span class='lighterprints-scoreboard-uppercase'>Time Remaining</span></h5>
+                        <table class='lighterprints-scoreboard'>
+                            <tr>
+                                <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: hoursLeft'></span>h</td>
+                                <td class='lighterprints-scoreboard-xlarge'><span data-bind='text: minutesLeft'></span>m</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <h3 class='underline'>Challenges</h3>
+                <div class='tabbable challenge-tabs'>
+                    <ul class='nav nav-tabs'>
+                        <li id='unlocked-challenge-tab' class='active'><a href='#unlocked-challenges' data-toggle='tab'><span class='text-gold'><i class='fa fa-star'></i> Unlocked</span></a></li>
+                        <li><a href='#locked-challenges' data-toggle='tab'><i class='fa fa-lock'></i> Locked</a></li>
+                    </ul>
+                    <div class='tab-content challenges'>
+                        <div class='tab-pane active' id='unlocked-challenges'>
+                            <div data-bind="template: { name: 'challenges-template', data: { challenges: unlockedChallenges() } }"></div>
+                        </div>
+                        <div class='tab-pane' id='locked-challenges'>
+                            <div data-bind='if: lockedChallenges().length === 0'>
+                                <div style='padding: 10px;' class='alert-block'>
+                                    <i class='text-gold fa fa-star'></i>Congratulations, your group has unlocked all of the challenges.
+                                </div>
+                            </div>
+                            <div data-bind="template: { name: 'challenges-template', data: { challenges: lockedChallenges() } }"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -326,6 +339,11 @@ $(function() {
     // set up KO binding, using one master view model
     var viewModelData = $.parseJSON("{{ view_model_json|escapejs }}");
     var viewModel = new LighterFootprintsModel(viewModelData);
+    if (! viewModel.quizCompleted()) {
+        // show modal dialog and embed qualtrics survey
+
+    }
+
     // custom view model methods, some of these may be lifted into the model itself
     viewModel.tutorialTour = new Tour({ name: "lfpTutorial", labels: { end: "End tutorial", next: 'Next »', prev: '« Back' }});
     viewModel.progressChart = ko.observable(new Chart(document.getElementById("progressChart").getContext("2d")));
@@ -394,7 +412,7 @@ $(function() {
             title: "Perform Challenges",
             content: "Perform challenges by clicking on the green Perform button. The points each challenge is worth is listed on the right."
         }]);
-        if (viewModel.firstVisit()) {
+        if (viewModel.firstVisit() && viewModel.quizCompleted()) {
             tour.start(true);
         }
     };
