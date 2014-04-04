@@ -132,31 +132,24 @@ class HighSchoolViewModel(object):
         self.treatment_type = get_treatment_type(self.round_configuration).string_value
         self.experiment_configuration = self.experiment.experiment_configuration
         self.group_scores = GroupScores(experiment, round_data, participant_group_relationship=participant_group_relationship)
+        self.initialize_activities()
 
-    def activities(self):
-        """
-        returns a list of 2-tuples (activity, 'completed'|'available')
-        """
+    def initialize_activities(self):
         completed_activity_pks = self.participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(), round_data=self.round_data).values_list('int_value', flat=True)
-        self.activity_statuses = []
-        scheduled_activities = Activity.objects.scheduled(self.round_configuration)
-        for activity in scheduled_activities:
+        self.activities = []
+        scheduled_activity_pks = Activity.objects.scheduled(self.round_configuration).values_list('pk', flat=True)
+        for activity in Activity.objects.all():
             activity_dict = activity.to_dict()
-            status = 'available'
+            status = 'locked'
             if activity.pk in completed_activity_pks:
                 status = 'completed'
+            elif activity.pk in scheduled_activity_pks:
+                status = 'available'
             activity_dict['status'] = status
             activity_dict['availableNow'] = status == 'available'
             activity_dict['availabilities'] = []
-            self.activity_statuses.append(activity_dict)
-        for activity in Activity.objects.all().exclude(pk__in=(scheduled_activities.values_list('pk', flat=True))):
-            activity_dict = activity.to_dict()
-            activity_dict['status'] = 'locked'
-            activity_dict['availableNow'] = False
-            activity_dict['availabilities'] = []
-            self.activity_statuses.append(activity_dict)
-        logger.debug("activity statuses: %s", self.activity_statuses)
-        return self.activity_statuses
+            self.activities.append(activity_dict)
+        return self.activities
 
     def to_json(self):
         (hours_left, minutes_left) = get_time_remaining()
@@ -165,7 +158,7 @@ class HighSchoolViewModel(object):
         group_scores = self.group_scores
         (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
         return dumps({
-            'activities': self.activities(),
+            'activities': self.activities,
             'quizCompleted': False,
             'completed': False,
             'participantGroupId': participant_group_relationship.pk,

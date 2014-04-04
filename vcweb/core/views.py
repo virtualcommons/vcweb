@@ -821,6 +821,8 @@ def api_logger(request, participant_group_id=None):
 @participant_required
 def completed_survey(request):
     pgr_id = request.GET.get('pid', None)
+# FIXME: prevent manual pinging (check referrer + threaded data sent to the quiz and passed back)
+    logger.debug("http referer: %s", request.META.HTTP_REFERER)
     success = False
     try:
         if pgr_id is None:
