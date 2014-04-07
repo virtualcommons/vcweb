@@ -179,7 +179,7 @@ def _restart_command():
 def clean():
     with cd(env.project_path):
         sudo('find . -name "*.pyc" -delete -print')
-        
+
 def restart():
     sudo(_restart_command(), pty=True)
 
@@ -192,6 +192,7 @@ def deploy():
         with cd(env.project_path):
             sudo_chain(
                     'hg pull && hg up -C',
+                    'hg id -n > build-id.txt',
                     'chmod g+s logs',
                     'chmod -R g+rw logs/',
                     user=env.deploy_user, pty=True)

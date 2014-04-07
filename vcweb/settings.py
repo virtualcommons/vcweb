@@ -9,6 +9,7 @@ TEMPLATE_DEBUG = DEBUG
 USE_TZ = False
 SITE_URL = 'https://vcweb.asu.edu'
 
+SITE_ROOT = path.abspath(path.dirname(__name__))
 SERVER_EMAIL = 'vcweb@asu.edu'
 SERVER_NAME = 'vcweb.asu.edu'
 EMAIL_HOST = 'smtp.asu.edu'
