@@ -30,12 +30,6 @@ def index(request):
         logger.warning("user %s isn't an experimenter or participant", request.user)
         return redirect('home')
 
-@experimenter_required
-def experimenter_index(request):
-    experimenter = request.user.experimenter
-    experiments = experimenter.experiment_set.filter(experiment_metadata=get_forestry_experiment_metadata())
-    return render_to_response('forestry/experimenter-index.html', locals(), context_instance=RequestContext(request))
-
 @participant_required
 def participant_index(request):
     participant = request.user.participant
@@ -50,17 +44,6 @@ def participant_index(request):
 @experimenter_required
 def configure(request, experiment_id=None):
     raise Http404()
-
-@experimenter_required
-def monitor_experiment(request, experiment_id=None):
-    try:
-        experiment = Experiment.objects.get(pk=experiment_id)
-        return render_to_response('forestry/manage-experiment.html',
-                { 'experiment': experiment },
-                context_instance=RequestContext(request))
-    except Experiment.DoesNotExist:
-        logger.warning("No experiment available with id [%s]", experiment_id)
-        return redirect('core:experimenter_index')
 
 class ParticipantRoundData(object):
     pass

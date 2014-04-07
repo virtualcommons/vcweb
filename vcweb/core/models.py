@@ -845,45 +845,50 @@ class Experiment(models.Model):
     def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None,
                               from_email=None):
         number_of_participants = self.participant_set.count()
-        if number_of_participants > 0:
-            logger.warning("This experiment %s already has %d participants - aborting", self, number_of_participants)
-            return
-        if users is None:
-            users = []
-            if emails is None:
-                logger.warning("No users or emails supplied, aborting.")
-                return
-            for email_line in emails:
-                if not email_line:
-                    logger.debug("invalid participant data: %s", email_line)
-                    continue
-                # FIXME: parsing logic was already performed once in EmailListField.clean, redundant
-                (full_name, email_address) = email.utils.parseaddr(email_line)
-                # lowercase all usernames/email addresses internally and strip all whitespace
-                email_address = email_address.lower().strip()
-                full_name = full_name.strip()
-                try:
-                    u = User.objects.get(username=email_address)
-                except User.DoesNotExist:
-                    u = User.objects.create_user(username=email_address, email=email_address, password=password)
-                updated = set_full_name(u, full_name)
-                if updated:
-                    u.save()
-                users.append(u)
         email_messages = []
-        for user in users:
-            # FIXME: unsafe for concurrent usage, but only one experimenter at a time should be invoking this
-            (p, created) = Participant.objects.get_or_create(user=user)
-            # FIXME: instead of asking for the email suffix, just append the institution URL to keep it simpler?
-            if institution and p.institution != institution:
-                p.institution = institution
-                p.save()
-            per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self,
-                                                                   created_by=self.experimenter.user)
-            email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created,
-                                                                 sender=sender, from_email=from_email))
+        registered_participants = []
+        with transaction.atomic():
+            if number_of_participants > 0:
+                logger.warning("This experiment %s already has %d participants - aborting", self, number_of_participants)
+                return
+            if users is None:
+                users = []
+                if emails is None:
+                    logger.warning("No users or emails supplied, aborting.")
+                    return
+                for email_line in emails:
+                    if not email_line:
+                        logger.debug("invalid participant data: %s", email_line)
+                        continue
+                    # FIXME: parsing logic was already performed once in EmailListField.clean, redundant
+                    (full_name, email_address) = email.utils.parseaddr(email_line)
+                    # lowercase all usernames/email addresses internally and strip all whitespace
+                    email_address = email_address.lower().strip()
+                    full_name = full_name.strip()
+                    try:
+                        u = User.objects.get(username=email_address)
+                    except User.DoesNotExist:
+                        u = User.objects.create_user(username=email_address, email=email_address, password=password)
+                    updated = set_full_name(u, full_name)
+                    if updated:
+                        u.save()
+                    users.append(u)
+            for user in users:
+                # FIXME: unsafe for concurrent usage, but only one experimenter at a time should be invoking this
+                (p, created) = Participant.objects.get_or_create(user=user)
+                # FIXME: instead of asking for the email suffix, just append the institution URL to keep it simpler?
+                if institution and p.institution != institution:
+                    p.institution = institution
+                    p.save()
+                per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self,
+                                                                    created_by=self.experimenter.user)
+                registered_participants.append((user, password))
+                email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created,
+                                                                    sender=sender, from_email=from_email))
         if email_messages:
             mail.get_connection().send_messages(email_messages)
+        return registered_participants
+
 
     def create_registration_email(self, participant_experiment_relationship, password='', sender=None, from_email=None,
                                   **kwargs):
@@ -942,19 +947,21 @@ class Experiment(models.Model):
             except User.DoesNotExist:
                 user = User.objects.create_user(username=email, email=email, password=password)
                 user.first_name = u'Student'
-                user.last_name = u"%d" % i
+                user.last_name = unicode(i)
                 user.save()
             users.append(user)
-        self.register_participants(users=users, institution=institution, password=password)
+        return self.register_participants(users=users, institution=institution, password=password)
 
+    @transaction.atomic
     def initialize_data_values(self, group_parameters=[], participant_parameters=[], group_cluster_parameters=[],
                                round_data=None, defaults={}):
         """
         FIXME: needs refactoring, replace get_or_create with creates and separate initialization of data values from copy_to_next_round semantics
         Issues:
-            Make it simple for experimenters/experiments to signal "I have these data values to initialize at the start of each round"
+            Make it simpler for experiment devs to signal "I have these data values to initialize at the start of each round"
             Overly complex logic, possible danger to use empty lists as initial keyword args but we only iterate over them (e.g., http://effbot.org/zone/default-values.htm)
-            get_or_create logic can create degenerate data (duplicate group round data values for instance)
+            get_or_create logic has the possibility for degenerate data (e.g., duplicate group round data values) that cause the rest
+            of the rounds to not run properly
         """
         if round_data is None:
             round_data = self.current_round_data

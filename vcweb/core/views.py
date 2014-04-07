@@ -2,7 +2,6 @@ from collections import defaultdict
 from django.conf import settings
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
-# from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.forms import PasswordResetForm
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
@@ -594,10 +593,10 @@ class RegisterTestParticipantsView(BaseExperimentRegistrationView):
             email_suffix = form.cleaned_data.get('email_suffix')
             institution = form.cleaned_data.get('institution')
             experiment = self.object
-            experiment.setup_test_participants(count=number_of_participants,
-                                            institution=institution,
-                                            email_suffix=email_suffix,
-                                            username_suffix=username_suffix)
+            registered_participants = experiment.setup_test_participants(count=number_of_participants,
+                    institution=institution,
+                    email_suffix=email_suffix,
+                    username_suffix=username_suffix)
         return valid
 
 
@@ -992,9 +991,7 @@ def get_cas_user(tree):
                 user.first_name = directory_profile.first_name
                 user.last_name = directory_profile.last_name
                 user.email = directory_profile.email
-
                 logger.debug("%s (%s)", directory_profile, user.email)
-
                 password = User.objects.make_random_password()
                 user.set_password(password)
                 institution = Institution.objects.get(name='Arizona State University')
