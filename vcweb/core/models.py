@@ -1499,7 +1499,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
             'sequence_number': self.sequence_number,
             'duration': self.duration,
             'template_id': self.template_id,
-            'survery_url': self.survey_url,
+            'survey_url': self.survey_url,
             'randomize_groups': self.randomize_groups,
             'preserve_existing_groups': self.preserve_existing_groups,
             'create_group_clusters': self.create_group_clusters,

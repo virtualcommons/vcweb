@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block page %}
-
+    <div id="error-messages"></div>
     <h2> Experiment Configuration</h2>
     <form method="post" class="form-horizontal" data-bind="submit: $root.saveExperimentConfig">
         {{ experiment_config_form.non_field_errors }}
@@ -519,6 +519,8 @@
                         success: function(result) {
                             if (result.success){
                                 model.expParamValuesList.remove(expParam);
+                            } else {
+{#                                $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.message+'</div>');#}
                             }
                         }
                     });
@@ -539,6 +541,8 @@
                         success: function(result) {
                             if(result.success){
                                  $.each(model.roundConfigList(), function() { this.children.remove(roundParam) })
+                            } else {
+{#                                 $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.message+'</div>');#}
                             }
                         }
                     });
@@ -552,6 +556,8 @@
                         success: function(result) {
                             if(result.success){
                                 model.roundConfigList.remove(roundConfig);
+                            } else {
+{#                                 $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.message+'</div>');#}
                             }
                         }
                     });
@@ -595,8 +601,10 @@
                                     });
                                     match.children.remove(function(item) { return item.pk == paramPk });
                                     match.children.push(result.round_param);
-                                    model.hideModal();
+                                } else {
+{#                                    $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.message+'</div>');#}
                                 }
+                                model.hideModal();
                             }
                         });
                     }
@@ -611,6 +619,8 @@
                                 if(result.success){
                                     match.children.push(result.round_param);
                                     model.hideModal();
+                                } else {
+{#                                    $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.message+'</div>');#}
                                 }
                             }
                         });
@@ -647,6 +657,13 @@
                                     match.update(result.round_config);
                                     model.roundConfigList(model.roundConfigList().sort(function(left, right) { return left.sequence_number() < right.sequence_number() ? -1 : 1 }));
                                     model.hideModal();
+                                } else {
+{#                                    var items = [];#}
+{#                                    $.each( result.message, function( val ) {#}
+{#                                        items.push( result.message[val] + "for "+ val );#}
+{#                                    });#}
+{#                                    error = items.join("");#}
+{#                                    $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+error+'</div>');#}
                                 }
                             }
                         });
@@ -675,6 +692,8 @@
                                     model.roundConfigList.push(new NodeModel(result.round_config));
                                     model.roundConfigList(model.roundConfigList().sort(function(left, right) { return left.sequence_number() < right.sequence_number() ? -1 : 1 }));
                                     model.hideModal();
+                                } else {
+{#                                    $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.message+'</div>');#}
                                 }
                             }
                         });
@@ -696,6 +715,8 @@
                                 if(result.success){
                                     match.display_name(result.experiment_param.display_name);
                                     model.hideModal();
+                                } else {
+{#                                    $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.message+'</div>');#}
                                 }
                             }
                         });
@@ -708,6 +729,8 @@
                                 if(result.success){
                                     model.expParamValuesList.push(new ParamViewModel(result.experiment_param, model.expParameterList()));
                                     model.hideModal();
+                                } else {
+{#                                    $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.message+'</div>');#}
                                 }
                             }
                         });
@@ -722,6 +745,8 @@
                         success: function(result) {
                             if(result.success){
 
+                            } else {
+{#                                $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.message+'</div>');#}
                             }
                         }
                     });

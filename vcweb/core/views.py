@@ -1050,11 +1050,11 @@ def update_experiment_param_value(request, pk):
             'experiment_param': epv.to_dict()
         }))
     else:
-        logger.debug(form._errors)
-        logger.debug(form.non_field_errors())
+        # logger.debug(form._errors)
+        # logger.debug(form.non_field_errors())
         return JsonResponse(dumps({
             'success': False,
-            'message': "error"
+            'message': form.errors
         }))
 
 
@@ -1062,8 +1062,9 @@ def update_experiment_param_value(request, pk):
 def update_round_param_value(request, pk):
     form = RoundParameterValuesForm(request.POST or None)
     request_type = request.POST['request_type']
+
     if request_type == 'delete':
-        rpv = RoundParameterValue.objects.get(pk=pk).delete()
+        RoundParameterValue.objects.get(pk=pk).delete()
         return JsonResponse(dumps({
             'success': True
         }))
@@ -1072,14 +1073,14 @@ def update_round_param_value(request, pk):
         if request_type == 'create':
             rpv = RoundParameterValue()
             round_config_pk = request.POST["round_configuration"]
-            logger.debug(round_config_pk)
+
             try:
                 round_config = RoundConfiguration.objects.get(pk=round_config_pk)
                 rpv.round_configuration = round_config
             except ObjectDoesNotExist:
                 return JsonResponse(dumps({
                     'success': False,
-                    'message': "Error Occured"
+                    'message': "Round Configuration with provided pk does not exist"
                 }))
         elif request_type == "update":
             rpv = RoundParameterValue.objects.get(pk=pk)
@@ -1096,11 +1097,11 @@ def update_round_param_value(request, pk):
             'round_param': rpv.to_dict()
         }))
     else:
-        logger.debug(form.errors)
-        logger.debug(form.non_field_errors())
+        # logger.debug(form.errors)
+        # logger.debug(form.non_field_errors())
         return JsonResponse(dumps({
             'success': False,
-            'message': "error"
+            'message': form.errors
         }))
 
 
@@ -1137,7 +1138,7 @@ def update_round_configuration(request, pk):
     form = RoundConfigurationForm(request.POST or None)
     request_type = request.POST['request_type']
     if request_type == 'delete':
-        rc = RoundConfiguration.objects.get(pk=pk).delete()
+        RoundConfiguration.objects.get(pk=pk).delete()
         return JsonResponse(dumps({
             'success': True
         }))
@@ -1179,7 +1180,7 @@ def update_round_configuration(request, pk):
     #     errors='\n'.join(['<p>{e}</p>'.format(e=e) for e in form.non_field_errors()]))
     return JsonResponse(dumps({
         'success': False,
-        'message': "error"
+        'message': form.errors
     }))
 
 
@@ -1214,7 +1215,7 @@ def update_experiment_configuration(request, pk):
 
     return JsonResponse(dumps({
         'success': False,
-        'message': "Something bad happened"
+        'message': form.errors
     }))
 
 
