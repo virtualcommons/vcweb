@@ -796,7 +796,7 @@ def api_logger(request, participant_group_id=None):
             logger.error("Couldn't locate a participant group relationship for request %s", request)
     else:
         logger.error("Failed to validate log message form %s (%s)", request, form)
-    return json_response(request, dumps({'success': success}))
+    return JsonResponse(dumps({'success': success}))
 
 
 @participant_required
