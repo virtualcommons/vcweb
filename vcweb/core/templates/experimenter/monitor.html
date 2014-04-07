@@ -59,7 +59,7 @@
             Round started on: <span data-bind='text:currentRoundStartTime'></span><br>
             Time remaining: <span data-bind='text:timeRemaining'></span><br>
             {% comment %}
-            FIXME: embed the form into each round data object instead?
+            FIXME: embed form in each round data object instead?
             {% endcomment %}
             <form id="experimenterNotesForm" role='form'>
                 <div class='form-group'>
@@ -83,12 +83,11 @@
                 </ul>
                 {% endcomment %}
                 <div style="padding-top: 5px;" data-bind='ifnot: isArchived'>
-                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'><i class='fa fa-floppy-o'></i>
-                        archive</a>
+                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'>
+                        <i class='fa fa-floppy-o'></i> archive
+                    </a>
                 </div>
             </div>
-
-
         </div>
         <div class='panel-group'>
             <div class="panel panel-default">
@@ -97,6 +96,7 @@
                         <span id='participantCountId' data-bind='text:participantCount' class='badge badge-info'></span>
                         registered participants
                     </a>
+                    <a href='download-registered-participants'><i class='fa fa-users'></i> download participant sheet</a>
                 </div>
                 <div id='registeredParticipants' class='panel-collapse collapse'>
                     <div class='panel-default panel-body' data-bind='foreach: groups'>

@@ -25,8 +25,7 @@ from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperi
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment,
                                Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata,
                                OstromlabFaqEntry, Experimenter, ExperimentParameterValue, RoundConfiguration,
-                               RoundParameterValue, Parameter, ParticipantSignup, Invitation)
-from vcweb.core.validate_jsonp import is_valid_jsonp_callback_value
+                               RoundParameterValue, Parameter, ParticipantSignup,)
 import itertools
 import logging
 import mimetypes
@@ -38,33 +37,6 @@ logger = logging.getLogger(__name__)
 mimetypes.init()
 SUCCESS_JSON = dumps({'success': True})
 FAILURE_JSON = dumps({'success': False})
-
-
-def json_response(request, content, **http_response_kwargs):
-    "Construct an `HttpResponse` object."
-    callback = request.GET.get('callback', '')
-    content_type = 'application/json'
-    if is_valid_jsonp_callback_value(callback):
-        content = '%s(%s)' % (callback, content)
-        content_type = 'application/javascript'
-    return HttpResponse(content, content_type=content_type, **http_response_kwargs)
-
-
-class JSONResponseMixin(object):
-    def render_to_response(self, context, **kwargs):
-        "Returns a JSON response containing 'context' as payload"
-        return self.get_json_response(self.convert_context_to_json(context, **kwargs))
-
-    def get_json_response(self, content, **httpresponse_kwargs):
-        return json_response(self.request, content, **httpresponse_kwargs)
-
-    def convert_context_to_json(self, context, context_key='object_list', **kwargs):
-        """
-        Converts the data object associated with context_key in the context dict
-        into a JSON object and returns it.  If context_key is None, converts the
-        entire context dict.
-        """
-        return dumps(context if context_key is None else context[context_key])
 
 
 class AnonymousMixin(object):
@@ -87,76 +59,82 @@ class Participate(TemplateView):
 
 
 class DashboardViewModel(object):
-    def __init__(self, user=None):
-        if user is None:
-            logger.error("no user given to dashboard view model")
-            raise ValueError("dashboard view model must have a valid user")
-        self.is_experimenter = is_experimenter(user)
-        if self.is_experimenter:
-            self.experimenter = user.experimenter
-            _configuration_cache = {}
-            self.experiment_metadata_dict = defaultdict(list)
-            for ec in ExperimentConfiguration.objects.select_related('experiment_metadata', 'creator'):
-                self.experiment_metadata_dict[ec.experiment_metadata].append(ec)
-                _configuration_cache[ec.pk] = ec
-            self.experiment_metadata_list = []
-            bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=self.experimenter).values_list(
-                'experiment_metadata', flat=True)
-            for em, ecs in self.experiment_metadata_dict.iteritems():
-                d = em.to_dict(include_configurations=True, configurations=ecs)
-                d['bookmarked'] = em.pk in bem_pks
-                self.experiment_metadata_list.append(d)
-
-            experiment_status_dict = defaultdict(list)
-            for e in Experiment.objects.for_experimenter(self.experimenter).order_by('-pk'):
-                e.experiment_configuration = _configuration_cache[e.experiment_configuration.pk]
-                experiment_status_dict[e.status].append(
-                    e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
-            self.pending_experiments = experiment_status_dict['INACTIVE']
-            self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
-            self.archived_experiments = experiment_status_dict['COMPLETED']
-        else:
-            self.participant = user.participant
-            experiment_status_dict = defaultdict(list)
-            for e in self.participant.experiments.select_related('experiment_configuration').all():
-                experiment_status_dict[e.status].append(
-                    e.to_dict(attrs=('participant_url', 'start_date'), name=e.experiment_metadata.title))
-            self.pending_experiments = experiment_status_dict['INACTIVE']
-            self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
-            upcoming_signups = ParticipantSignup.objects.upcoming(self.participant)
-            self.show_end_dates = False
-            self.signups = []
-            for signup in upcoming_signups:
-                if not signup.invitation.experiment_session.is_same_day:
-                    self.show_end_dates = True
-                self.signups.append(signup.to_dict())
-
-    @property
-    def template_name(self):
-        if self.is_experimenter:
-            return 'experimenter/dashboard.html'
-        else:
-            return 'participant/dashboard.html'
-
     def to_json(self):
         return dumps(self.to_dict())
 
+
+class ExperimenterDashboardViewModel(DashboardViewModel):
+    template_name = 'experimenter/dashboard.html'
+    def __init__(self, user):
+        self.experimenter = user.experimenter
+        _configuration_cache = {}
+        self.experiment_metadata_dict = defaultdict(list)
+        for ec in ExperimentConfiguration.objects.select_related('experiment_metadata', 'creator'):
+            self.experiment_metadata_dict[ec.experiment_metadata].append(ec)
+            _configuration_cache[ec.pk] = ec
+        self.experiment_metadata_list = []
+        bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=self.experimenter).values_list(
+            'experiment_metadata', flat=True)
+        for em, ecs in self.experiment_metadata_dict.iteritems():
+            d = em.to_dict(include_configurations=True, configurations=ecs)
+            d['bookmarked'] = em.pk in bem_pks
+            self.experiment_metadata_list.append(d)
+
+        experiment_status_dict = defaultdict(list)
+        for e in Experiment.objects.for_experimenter(self.experimenter).order_by('-pk'):
+            e.experiment_configuration = _configuration_cache[e.experiment_configuration.pk]
+            experiment_status_dict[e.status].append(
+                e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
+        self.pending_experiments = experiment_status_dict['INACTIVE']
+        self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+        self.archived_experiments = experiment_status_dict['COMPLETED']
+
     def to_dict(self):
-        if self.is_experimenter:
-            return {
+        return {
                 'experimentMetadataList': self.experiment_metadata_list,
                 'pendingExperiments': self.pending_experiments,
                 'runningExperiments': self.running_experiments,
                 'archivedExperiments': self.archived_experiments,
-            }
-        else:
-            return {
+                }
+
+class ParticipantDashboardViewModel(DashboardViewModel):
+    template_name = 'participant/dashboard.html'
+    def __init__(self, user):
+        self.participant = user.participant
+        experiment_status_dict = defaultdict(list)
+        for e in self.participant.experiments.select_related('experiment_configuration').all():
+            experiment_status_dict[e.status].append(
+                e.to_dict(attrs=('participant_url', 'start_date'), name=e.experiment_metadata.title))
+        self.pending_experiments = experiment_status_dict['INACTIVE']
+        self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+        upcoming_signups = ParticipantSignup.objects.upcoming(self.participant)
+        self.show_end_dates = False
+        self.signups = []
+        for signup in upcoming_signups:
+            if not signup.invitation.experiment_session.is_same_day:
+                self.show_end_dates = True
+            self.signups.append(signup.to_dict())
+
+    def to_dict(self):
+        return {
                 'pendingExperiments': self.pending_experiments,
                 'runningExperiments': self.running_experiments,
                 'hasPendingInvitations': self.participant.has_pending_invitations,
                 'signups': self.signups,
                 'showEndDates': self.show_end_dates,
-            }
+                }
+
+
+class DashboardViewModelFactory(object):
+    @staticmethod
+    def create(user):
+        if user is None:
+            logger.error("no user given to dashboard view model")
+            raise ValueError("dashboard view model must have a valid user")
+        if is_experimenter(user):
+            return ExperimenterDashboardViewModel(user)
+        else:
+            return ParticipantDashboardViewModel(user)
 
 
 @login_required
@@ -171,7 +149,7 @@ def dashboard(request):
         elif user.participant.has_pending_invitations:
             return redirect('subject_pool:experiment_session_signup')
 
-    dashboard_view_model = DashboardViewModel(user)
+    dashboard_view_model = DashboardViewModelFactory.create(user)
     return render(request, dashboard_view_model.template_name,
                   {'dashboardViewModelJson': dashboard_view_model.to_json()})
 
@@ -561,6 +539,7 @@ def monitor(request, pk=None):
 
 
 class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView):
+
     def get_initial(self):
         _initial = super(BaseExperimentRegistrationView, self).get_initial()
         experiment = self.object
@@ -609,15 +588,16 @@ class RegisterTestParticipantsView(BaseExperimentRegistrationView):
 
     def form_valid(self, form):
         valid = super(RegisterTestParticipantsView, self).form_valid(form)
-        number_of_participants = form.cleaned_data.get('number_of_participants')
-        username_suffix = form.cleaned_data.get('username_suffix')
-        email_suffix = form.cleaned_data.get('email_suffix')
-        institution = form.cleaned_data.get('institution')
-        experiment = self.object
-        experiment.setup_test_participants(count=number_of_participants,
-                                           institution=institution,
-                                           email_suffix=email_suffix,
-                                           username_suffix=username_suffix)
+        if valid:
+            number_of_participants = form.cleaned_data.get('number_of_participants')
+            username_suffix = form.cleaned_data.get('username_suffix')
+            email_suffix = form.cleaned_data.get('email_suffix')
+            institution = form.cleaned_data.get('institution')
+            experiment = self.object
+            experiment.setup_test_participants(count=number_of_participants,
+                                            institution=institution,
+                                            email_suffix=email_suffix,
+                                            username_suffix=username_suffix)
         return valid
 
 
@@ -638,6 +618,7 @@ class DataExportMixin(ExperimenterSingleExperimentMixin):
 
 
 class CsvDataExporter(DataExportMixin):
+
     def export_data(self, response, experiment):
         writer = unicodecsv.writer(response, encoding='utf-8')
         writer.writerow(['Group', 'Members'])
@@ -1124,7 +1105,7 @@ def update_round_param_value(request, pk):
 
 
 def sort_round_configurations(old_sequence_number, new_sequence_number, exp_config_pk):
-    logger.debug('Sorting Round Configuration sequence numbers!!')
+    logger.debug('sorting round configuration sequence numbers')
     round_configs = RoundConfiguration.objects.filter(experiment_configuration__pk=exp_config_pk)
     #logger.debug(round_configs)
     logger.debug(old_sequence_number)
@@ -1172,7 +1153,6 @@ def update_round_configuration(request, pk):
         if form.cleaned_data.get('sequence_number') != rc.sequence_number:
             sort_round_configurations(rc.sequence_number, form.cleaned_data.get('sequence_number'),
                                       rc.experiment_configuration.pk)
-        print "I'm back"
         rc.round_type = form.cleaned_data.get('round_type')
         rc.sequence_number = form.cleaned_data.get('sequence_number')
         rc.display_number = form.cleaned_data.get('display_number')
