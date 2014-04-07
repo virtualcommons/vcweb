@@ -655,6 +655,22 @@ def export_configuration(request, pk=None, file_extension='.xml'):
     return response
 
 
+@experimenter_required
+def download_participants(request, pk=None):
+    experiment = get_object_or_404(Experiment, pk=pk)
+    if experiment.experimenter != request.user.experimenter:
+        logger.error("unauthorized access to %s from %s", experiment, request.user.experimenter)
+        raise PermissionDenied("You don't have access to this experiment.")
+    response = HttpResponse(content_type=mimetypes.types_map['.csv'])
+    response['Content-Disposition'] = 'attachment; filename=participants.csv'
+    writer = unicodecsv.writer(response, encoding='utf-8')
+    writer.writerow(['Email', 'Password', 'URL'])
+    full_participant_url = experiment.full_participant_url
+    authentication_code = experiment.authentication_code
+    for participant in experiment.participant_set.all():
+        writer.writerow([participant.email, authentication_code, full_participant_url])
+    return response
+
 # FIXME: add data converter objects to write to csv, excel, etc.
 @experimenter_required
 def download_data(request, pk=None, file_type='csv'):
