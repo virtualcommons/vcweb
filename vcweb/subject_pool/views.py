@@ -193,6 +193,7 @@ def get_invitation_email_content(custom_invitation_text, experiment_session_ids)
     c = Context({
         'invitation_text': custom_invitation_text,
         'session_list': ExperimentSession.objects.filter(pk__in=experiment_session_ids),
+        'SITE_URL': settings.SITE_URL,
     })
     plaintext_content = plaintext_template.render(c)
     html_content = markdown.markdown(plaintext_content)
