@@ -1,21 +1,23 @@
+import logging
+import urllib
+
 from django.conf import settings
 from django.conf.urls import patterns, url
 from django.contrib.auth.decorators import login_required
+
 from vcweb.core.ajax import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, archive)
 from vcweb.core.views import (dashboard, LoginView, LogoutView, monitor,  #RegistrationView,
                               RegisterEmailListView, RegisterTestParticipantsView, completed_survey,
-                              toggle_bookmark_experiment_metadata,
-                              check_survey_completed, Participate, download_data, download_participants, export_configuration, api_logger,
-                              participant_api_login,
-                              api_logout, participant_ready, check_ready_participants, get_dashboard_view_model,
-                              update_experiment,
-                              update_round_configuration, edit_experiment_configuration, clone_experiment_configuration,
+                              toggle_bookmark_experiment_metadata, check_survey_completed, Participate, download_data,
+                              download_participants, export_configuration, api_logger,
+                              participant_api_login, api_logout, participant_ready, check_ready_participants,
+                              get_dashboard_view_model,
+                              update_experiment, update_round_configuration, edit_experiment_configuration,
+                              clone_experiment_configuration,
                               unsubscribe, update_round_param_value, update_experiment_param_value,
-                              update_experiment_configuration,
-                              OstromlabFaqList, cas_asu_registration, cas_asu_registration_submit)
+                              update_experiment_configuration, OstromlabFaqList, cas_asu_registration,
+                              cas_asu_registration_submit)
 
-import logging
-import urllib
 
 logger = logging.getLogger(__name__)
 '''

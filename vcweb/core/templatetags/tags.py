@@ -18,7 +18,6 @@ def active(request, pattern):
 
 @register.simple_tag
 def active_re(request, pattern):
-    logger.debug("looking for pattern %s", pattern)
     return 'active' if re.search(pattern, request.path) else 'inactive'
 
 @register.filter
