@@ -25,6 +25,9 @@ DATA_DIR = 'data'
 
 GRAPH_DATABASE_PATH = path.join(DATA_DIR, 'neo4j-store')
 
+BITBUCKET_API_USER = 'vcweb'
+BITBUCKET_API_PW = 'not quite the real password'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -290,35 +293,37 @@ INTERNAL_IPS = ('127.0.0.1', '68.99.87.185',)
 # FIXME: hacky, see
 # http://stackoverflow.com/questions/8219940/how-do-i-access-imported-local-settings-without-a-circular-import
 # for other solutions
+has_local_settings = False
 try:
-    import settings_local as local_settings
-
+    import settings_local
     has_local_settings = True
 except ImportError:
     has_local_settings = False
 
 
-def add_settings_tuples(varname, local_settings):
-    local_settings_tuple = getattr(local_settings, varname, None)
+def add_settings_tuples(varname, settings_local):
+    settings_local_tuple = getattr(settings_local, varname, None)
     original_settings_tuple = globals()[varname]
-    if local_settings_tuple is not None:
-        print "adding local setting %s to existing %s %s" % (local_settings_tuple, varname, original_settings_tuple)
-        globals()[varname] = original_settings_tuple + local_settings_tuple
+    if settings_local_tuple is not None:
+    #    print "adding local setting %s to existing %s %s" % (settings_local_tuple, varname, original_settings_tuple)
+        globals()[varname] = original_settings_tuple + settings_local_tuple
 
 
 if has_local_settings:
     try:
-        DEBUG = getattr(local_settings, 'DEBUG', DEBUG)
-        SENTRY_DSN = getattr(local_settings, 'SENTRY_DSN', None)
-        EMAIL_BACKEND = getattr(local_settings, 'EMAIL_BACKEND', EMAIL_BACKEND)
-        DATABASES = getattr(local_settings, 'DATABASES', DATABASES)
-        SECRET_KEY = getattr(local_settings, 'SECRET_KEY', SECRET_KEY)
-        SITE_URL = getattr(local_settings, 'SITE_URL', SITE_URL)
-        add_settings_tuples('MIDDLEWARE_CLASSES', local_settings)
-        add_settings_tuples('INSTALLED_APPS', local_settings)
-        add_settings_tuples('ALLOWED_HOSTS', local_settings)
+        DEBUG = getattr(settings_local, 'DEBUG', DEBUG)
+        SENTRY_DSN = getattr(settings_local, 'SENTRY_DSN', None)
+        EMAIL_BACKEND = getattr(settings_local, 'EMAIL_BACKEND', EMAIL_BACKEND)
+        DATABASES = getattr(settings_local, 'DATABASES', DATABASES)
+        SECRET_KEY = getattr(settings_local, 'SECRET_KEY', SECRET_KEY)
+        SITE_URL = getattr(settings_local, 'SITE_URL', SITE_URL)
+        BITBUCKET_API_USER = getattr(settings_local, 'BITBUCKET_API_USER', BITBUCKET_API_USER)
+        BITBUCKET_API_PW = getattr(settings_local, 'BITBUCKET_API_PW', BITBUCKET_API_PW)
+        add_settings_tuples('MIDDLEWARE_CLASSES', settings_local)
+        add_settings_tuples('INSTALLED_APPS', settings_local)
+        add_settings_tuples('ALLOWED_HOSTS', settings_local)
     except Exception as e:
-        print "error: %s" % e
+        print "unexpected error while importing local settings: %s" % e
         pass
 DEBUG_TOOLBAR_CONFIG = {
     'INTERCEPT_REDIRECTS': False,
