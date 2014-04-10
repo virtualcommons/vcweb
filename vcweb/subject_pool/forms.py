@@ -10,9 +10,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+HOUR_CHOICES = (
+    ('0', '0'), ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('6', '6'), ('7', '7'), ('8', '8'),
+    ('9', '9'), ('10', '10'), ('11', '11'), ('12', '12'), ('13', '13'), ('14', '14'), ('15', '15'), ('16', '16'),
+    ('17', '17'), ('18', '18'), ('19', '19'), ('20', '20'), ('21', '21'), ('22', '22'), ('23', '23'))
+MIN_CHOICES = (('0', '0'), ('15', '15'), ('30', '30'), ('45', '45'))
 
-HOUR_CHOICES = (('0', '0'),('1', '1'),('2','2'),('3','3'),('4','4'),('5','5'),('6','6'),('7','7'),('8','8'),('9','9'),('10','10'),('11','11'),('12','12'),('13','13'),('14','14'),('15','15'),('16','16'),('17','17'),('18','18'),('19','19'),('20','20'),('21','21'),('22','22'),('23','23'))
-MIN_CHOICES = (('0','0'),('15','15'),('30','30'),('45','45'))
 
 class CancelSignupForm(forms.Form):
     pk = forms.IntegerField()
@@ -20,7 +23,8 @@ class CancelSignupForm(forms.Form):
     def clean_pk(self):
         data = self.cleaned_data['pk']
         try:
-            self.signup = ParticipantSignup.objects.select_related('invitation__experiment_session', 'invitation__participant').get(pk=data)
+            self.signup = ParticipantSignup.objects.select_related('invitation__experiment_session',
+                                                                   'invitation__participant').get(pk=data)
         except ParticipantSignup.DoesNotExist:
             raise forms.ValidationError(_("No signup found with pk %s" % data))
         return data
@@ -61,9 +65,10 @@ class SessionForm(forms.Form):
 
 
 class SessionInviteForm(forms.Form):
-    no_of_people = forms.IntegerField(widget=NumberInput(attrs={'value': 50, 'class': 'input-mini'}))
+    number_of_people = forms.IntegerField(widget=NumberInput(attrs={'value': 0, 'class': 'input-mini'}))
     only_undergrad = forms.BooleanField(widget=CheckboxInput(attrs={'checked': True}))
-    affiliated_university = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete))
+    affiliated_university = forms.CharField(
+        widget=autocomplete_light.TextWidget(InstitutionAutocomplete, attrs={'value': 'Arizona State University'}))
     invitation_subject = forms.CharField(widget=widgets.TextInput())
     invitation_text = forms.CharField(widget=widgets.Textarea(attrs={'rows': '4'}))
 

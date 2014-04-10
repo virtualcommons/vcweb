@@ -362,8 +362,10 @@ Experiment Session Management
                         if($(event.target).is(':checked')){
                             model.invite_experiment_metadata_pk_list = data.selected_experiment_metadata_pk();
                             model.inviteCount(oldCount + 1);
+                            $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) + 3 * data.capacity());
                         } else {
                             model.inviteCount(oldCount - 1);
+                            $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) - 3 * data.capacity());
                             if(oldCount == 1) {
                                 model.invite_experiment_metadata_pk_list = -1;
                                 $('#invite-form').slideUp("slow");

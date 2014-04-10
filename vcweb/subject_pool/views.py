@@ -218,7 +218,7 @@ def send_invitations(request):
         from_email = user.email
 
         session_pk_list = request.POST.get('session_pk_list').split(",")
-        invitation_count = form.cleaned_data.get('no_of_people')
+        invitation_count = form.cleaned_data.get('number_of_people')
         affiliated_university = form.cleaned_data.get('affiliated_university')
 
         experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
