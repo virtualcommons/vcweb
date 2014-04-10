@@ -33,6 +33,18 @@ function activateTabFunctor(tabHref, parentId, callback) {
         }
     }
 }
+function preserveLastSelectedTab() {
+    // use HTML5 local storage to restore the last selected tab on refresh (or any return visit for that matter)
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        var lastTabId = $(e.target).attr('href')
+        localStorage.setItem('lastTabId', lastTabId);
+    });
+    var lastTabId = localStorage.getItem('lastTabId');
+    if (lastTabId) {
+        // activate tab by invoking show on its a data-toggle tag
+        $("a[data-toggle='tab'][href='" + lastTabId + "']").tab('show');
+    }
+}
 var csrftoken = $.cookie('csrftoken');
 $.ajaxSetup({
     crossDomain: false, // obviates need for sameOrigin test

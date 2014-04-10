@@ -87,6 +87,7 @@
 <script>
     var viewModelObject = $.parseJSON("{{ dashboardViewModelJson|escapejs }}");
     $(function() {
+        preserveLastSelectedTab();
         function DashboardViewModel(viewModelObject) {
             var self = this;
             var model = ko.mapping.fromJS(viewModelObject);
