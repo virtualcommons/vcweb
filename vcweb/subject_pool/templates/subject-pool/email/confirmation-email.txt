@@ -3,7 +3,7 @@ Hi,
 You are currently signed up for an experiment session on **{{ session.scheduled_date }} - {{ session.scheduled_end_date }}**. 
 
 {% if session.is_online %}
-This is an online experiment. You should receive more instructions on how to participate from your experimenter.
+This is an online experiment. You will receive further instructions on how to participate from your experimenter before the experiment begins.
 {% else %}
 Please remember to be on time.
 {% endif %}

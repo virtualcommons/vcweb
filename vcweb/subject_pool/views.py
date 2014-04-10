@@ -197,7 +197,7 @@ def get_invitation_email_content(custom_invitation_text, experiment_session_ids)
     })
     plaintext_content = plaintext_template.render(c)
     html_content = markdown.markdown(plaintext_content)
-    logger.debug("plaintext_content %s, html_content %s", plaintext_content, html_content)
+    #logger.debug("plaintext_content %s, html_content %s", plaintext_content, html_content)
     return plaintext_content, html_content
 
 
@@ -444,7 +444,7 @@ def submit_experiment_session_signup(request):
 
     if success:
         messages.success(request, _(
-            "You are now registered for this experiment session. A confirmation and reminder email one day before the session will been sent."))
+            "You are now registered for this experiment session. A confirmation email has been sent and you should also receive a reminder email one day before the session. Thanks in advance for participating!"))
         chosen_session = ExperimentSession.objects.get(pk=invitation.experiment_session.pk)
         send_email("subject-pool/email/confirmation-email.txt", {'session': chosen_session}, "Confirmation Email",
                    settings.SERVER_EMAIL, [user.email])
