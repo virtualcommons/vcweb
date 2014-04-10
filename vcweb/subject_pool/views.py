@@ -324,11 +324,13 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona Stat
     if only_undergrad:
         potential_participants = Participant.objects.filter(can_receive_invitations=True,
                                                             institution=affiliated_institution,
+                                                            user__is_active=True,
                                                             class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES) \
             .exclude(pk__in=excluded_participants)
     else:
         potential_participants = Participant.objects.filter(can_receive_invitations=True,
-                                                            institution=affiliated_institution) \
+                                                            institution=affiliated_institution,
+                                                            user__is_active=True) \
             .exclude(pk__in=excluded_participants)
     return potential_participants
 
