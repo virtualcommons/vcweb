@@ -324,6 +324,10 @@ class CommonsUser(models.Model):
     def is_active(self):
         return self.user.is_active
 
+    @is_active.setter
+    def is_active(self, active):
+        self.user.is_active = active
+
     def is_authenticated(self):
         return self.user.is_authenticated()
 
@@ -395,21 +399,17 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
         '''
         return self.max_group_size == 0
 
-    @is_open.setter
-    def is_open(self, value):
-        self.max_group_size = 0
-
     @property
     def total_number_of_rounds(self):
         number_of_rounds = self.round_configuration_set.count()
         repeating_rounds = self.round_configuration_set.filter(repeat__gt=0)
-        number_of_rounds = number_of_rounds - repeating_rounds.count() + sum(
-            repeating_rounds.values_list('repeat', flat=True))
+        number_of_rounds = number_of_rounds - repeating_rounds.count() + sum(repeating_rounds.values_list('repeat', flat=True))
         return number_of_rounds
 
     @property
     def final_sequence_number(self):
-        # FIXME brittle with degenerate round configurations where the sequence numbers are out of sync and > count
+        # FIXME brittle with degenerate round configurations where the sequence numbers are out of sync and > count and
+        # model will became stale if round configuration set is modified
         cfsn = self.cached_final_sequence_number
         if cfsn == 0:
             self.cached_final_sequence_number = cfsn = self.round_configuration_set.count()
