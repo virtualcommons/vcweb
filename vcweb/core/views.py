@@ -593,7 +593,7 @@ class RegisterTestParticipantsView(BaseExperimentRegistrationView):
             email_suffix = form.cleaned_data.get('email_suffix')
             institution = form.cleaned_data.get('institution')
             experiment = self.object
-            registered_participants = experiment.setup_test_participants(count=number_of_participants,
+            experiment.setup_test_participants(count=number_of_participants,
                     institution=institution,
                     email_suffix=email_suffix,
                     username_suffix=username_suffix)

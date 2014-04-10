@@ -2,15 +2,17 @@
 {% load url from future %}
 {% load static from staticfiles %}
 {% load bootstrap3 %}
-{% url 'home' as home %}
+{% comment %} FIXME: replace with bug report form later {% endcomment %}
 {% url 'about' as about %}
 {% url 'contact' as contact %}
+{% url 'home' as home %}
+{% url 'core:dashboard' as dashboard %}
 {% url 'core:login' as login %}
 {% url 'core:logout' as logout %}
-{% url 'core:register' as register %}
-{% url 'core:profile' as profile %}
-{% url 'core:dashboard' as dashboard %}
 {% url 'core:participate' as participate %}
+{% url 'core:profile' as profile %}
+{% url 'core:register' as register %}
+{% url 'core:report_issues' as issues_url %}
 {% url 'subject_pool:index' as subjectpool %}
 <!DOCTYPE html>
 <html lang="en">
@@ -52,7 +54,7 @@
                 {% endif %}
                 {% endif %}
                 <li class='{% active request contact %}'><a href='{{ contact }}'><i class='fa fa-bell-o'></i> Contact us</a></li>
-                <li><a target='_blank' href='https://bitbucket.org/virtualcommons/vcweb/issues/new'><i class='fa fa-bullhorn'></i> Report a Bug</a></li>
+                <li><a target='_blank' href='{{ issues_url }}'><i class='fa fa-bullhorn'></i> Report a bug</a></li>
             </ul>
             {% endblock headerlinks %}
             {% block login %}

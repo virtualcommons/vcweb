@@ -4,6 +4,7 @@ import urllib
 from django.conf import settings
 from django.conf.urls import patterns, url
 from django.contrib.auth.decorators import login_required
+from django.views.generic import RedirectView
 
 from vcweb.core.ajax import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, archive)
 from vcweb.core.views import (dashboard, LoginView, LogoutView, monitor,  #RegistrationView,
@@ -76,13 +77,15 @@ urlpatterns = patterns('vcweb.core.views',
                        url(r'^api/experiment/clone', clone_experiment, name='clone_experiment'),
                        url(r'^api/experiment/create', create_experiment, name='create_experiment'),
                        url(r'^api/experiment/update', update_experiment, name='update_experiment'),
-                       url(r'^api/experimenter/save-notes', save_experimenter_notes, name='save-experimenter-notes'),
-                       url(r'^api/experimenter/round-data', get_round_data, name='get-round-data'),
+                       url(r'^api/experimenter/save-notes', save_experimenter_notes, name='save_experimenter_notes'),
+                       url(r'^api/experimenter/round-data', get_round_data, name='get_round_data'),
                        # match arbitrary experiment URL prefix fragments for logging / login / logout / accessing the dashboard view model
-                       url(r'api/log/(?P<participant_group_id>\d+)$', api_logger, name='api-logger'),
+                       url(r'api/log/(?P<participant_group_id>\d+)$', api_logger, name='api_logger'),
                        url(r'api/login', participant_api_login, name='participant_api_login'),
                        url(r'api/logout', api_logout, name='api_logout'),
                        url(r'api/dashboard', get_dashboard_view_model, name='dashboard_view_model'),
+                       url(r'bug-report', RedirectView.as_view(url='https://bitbucket.org/virtualcommons/vcweb/issues/new'), name='report_issues'),
+
 )
 
 
