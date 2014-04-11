@@ -1791,18 +1791,19 @@ class RoundParameterValue(ParameterizedValue):
 
     def to_dict(self, **kwargs):
         rc = self.round_configuration
+        p = self.parameter
         return {
-            'display_name': u"{0}: {1}".format(self.parameter, self.value),
+            'display_name': u"{0}: {1}".format(p, self.value),
             'pk': self.pk,
             'parameter_pk': self.parameter.pk,
-            'parameter_name': self.parameter,
-            'parameter_type': self.parameter.type,
+            'parameter_name': p,
+            'parameter_type': p.type,
             'string_value': self.string_value,
             'int_value': self.int_value,
             'float_value': self.float_value,
             'boolean_value': self.boolean_value,
             'is_active': self.is_active,
-            'round_configuration_pk': self.round_configuration.pk
+            'round_configuration_pk': rc.pk
         }
 
     def __unicode__(self):
@@ -2158,6 +2159,14 @@ class Participant(CommonsUser):
             delta = class_status_offsets[class_status]
             return date_created + delta > now
         return False
+
+    @transaction.atomic
+    def deactivate(self):
+        self.user.is_active = False
+        self.user.save()
+        upcoming_signups = ParticipantSignup.objects.upcoming(participant=self)
+        logger.warn("deactivating user %s and deleting upcoming signups %s", self, upcoming_signups)
+        upcoming_signups.delete()
 
     def __unicode__(self):
         return unicode(self.user.get_full_name())

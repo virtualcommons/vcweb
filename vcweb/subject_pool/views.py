@@ -249,7 +249,7 @@ def send_invitations(request):
 
                 today = datetime.now()
                 invitations = []
-                recipient_list = []
+                recipient_list = [settings.SERVER_EMAIL]
                 for participant in final_participants:
                     recipient_list.append(participant.email)
                     for es in experiment_sessions:
@@ -261,7 +261,7 @@ def send_invitations(request):
                 plaintext_content, html_content = get_invitation_email_content(invitation_text, session_pk_list)
 
                 msg = EmailMultiAlternatives(subject=invitation_subject, body=plaintext_content, from_email=from_email,
-                                             to=[from_email], bcc=recipient_list, cc=['allen.lee@asu.edu'])
+                                             to=[from_email], bcc=recipient_list)
                 msg.attach_alternative(html_content, "text/html")
                 msg.send()
 
