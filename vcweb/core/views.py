@@ -127,9 +127,9 @@ class ParticipantDashboardViewModel(DashboardViewModel):
 class DashboardViewModelFactory(object):
     @staticmethod
     def create(user):
-        if user is None:
-            logger.error("no user given to dashboard view model")
-            raise ValueError("dashboard view model must have a valid user")
+        if user is None or not user.is_active:
+            logger.error("can't create dashboard view model from invalid user %s", user)
+            raise ValueError("invalid user")
         if is_experimenter(user):
             return ExperimenterDashboardViewModel(user)
         else:
@@ -191,7 +191,7 @@ def cas_asu_registration_submit(request):
 
 @login_required
 def get_dashboard_view_model(request):
-    return JsonResponse(dumps({'success': True, 'dashboardViewModelJson': DashboardViewModel(request.user).to_json()}))
+    return JsonResponse(dumps({'success': True, 'dashboardViewModelJson': DashboardViewModelFactory.create(request.user).to_json()}))
 
 
 def set_authentication_token(user, authentication_token=''):
