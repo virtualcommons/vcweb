@@ -1,7 +1,7 @@
 from django.conf.urls import url, patterns
 
 from vcweb.subject_pool.views import (experiment_session_signup, submit_experiment_session_signup,
-                                      cancel_experiment_session_signup,)
+                                      cancel_experiment_session_signup, download_experiment_session)
 
 urlpatterns = patterns('vcweb.subject_pool.views',
     url(r'^session$', 'session_list_view', name='index'),
@@ -15,6 +15,5 @@ urlpatterns = patterns('vcweb.subject_pool.views',
     url(r'^signup/$', experiment_session_signup, name='experiment_session_signup'),
     url(r'^signup/submit/$', submit_experiment_session_signup, name='submit_experiment_session_signup'),
     url(r'^signup/cancel/$', cancel_experiment_session_signup, name='cancel_experiment_session_signup'),
-    # FIXME: duplicate alias, remove soon
-    url(r'^/participant/session/$', experiment_session_signup, ),
+    url(r'^session/(?P<pk>\d+)/download/$', download_experiment_session, name='download_experiment_session'),
     )

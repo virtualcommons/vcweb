@@ -1,10 +1,12 @@
 from datetime import datetime, time, timedelta
 from django.conf import settings
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
 from django.forms.models import modelformset_factory
-from django.shortcuts import render, redirect
+from django.http import HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
 from django.template import Context
 from django.template.loader import get_template
 from django.utils.translation import ugettext_lazy as _
@@ -13,14 +15,17 @@ from vcweb.core import dumps
 from vcweb.core.decorators import experimenter_required, participant_required
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation,
-                               Institution, send_email)
+                               Institution, send_email,)
+from vcweb.core.views import mimetypes
 from vcweb.subject_pool.forms import (SessionForm, SessionInviteForm, ParticipantAttendanceForm, CancelSignupForm)
 
-import markdown
 import logging
+import markdown
 import random
+import unicodecsv
 
 logger = logging.getLogger(__name__)
+#mimetypes.init()
 
 
 @experimenter_required
@@ -318,7 +323,7 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona Stat
         affiliated_institution = None
         return []
 
-    # Get unlikely participants for the given parameters
+    # Get excluded participants for the given parameters
     excluded_participants = get_excluded_participants(days_threshold, experiment_metadata_pk)
 
     if only_undergrad:
@@ -454,6 +459,23 @@ def submit_experiment_session_signup(request):
     else:
         messages.error(request, _("This session is currently full."))
         return redirect('subject_pool:experiment_session_signup')
+
+@experimenter_required
+def download_experiment_session(request, pk=None):
+    user = request.user
+    experiment_session = get_object_or_404(ExperimentSession.objects.select_related('creator'), pk=pk)
+    if experiment_session.creator != user:
+        logger.error("unauthorized access to %s from %s", experiment_session, user)
+        raise PermissionDenied("You don't have access to this experiment.")
+    response = HttpResponse(content_type=mimetypes.types_map['.csv'])
+    response['Content-Disposition'] = 'attachment; filename=participants.csv'
+    writer = unicodecsv.writer(response, encoding='utf-8')
+    writer.writerow(["Participant list", experiment_session, experiment_session.location, experiment_session.capacity, experiment_session.creator])
+    writer.writerow(['Email', 'Name', 'Username', 'Class Status', 'Attendance'])
+    for ps in ParticipantSignup.objects.select_related('invitation__participant').filter(invitation__experiment_session=experiment_session):
+        participant = ps.invitation.participant
+        writer.writerow([participant.email, participant.full_name, participant.username, participant.class_status, ps.attendance])
+    return response
 
 
 @participant_required
