@@ -15,11 +15,10 @@ from django.template.defaultfilters import slugify
 from django.template import Context
 from django.template.loader import select_template, get_template
 from django.utils.translation import ugettext_lazy as _
-import markdown
 from model_utils import Choices
 from model_utils.managers import PassThroughManager
 from string import Template
-
+from urllib import urlencode
 from vcweb.core import signals, simplecache, dumps
 
 import base64
@@ -27,6 +26,7 @@ import email
 import hashlib
 import itertools
 import logging
+import markdown
 import random
 import re
 import string
@@ -1473,6 +1473,17 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     def is_survey_enabled(self):
         survey_url = getattr(self, 'survey_url', None)
         return survey_url is not None and survey_url
+
+    def make_survey_url(self, **kwargs):
+        if self.is_survey_enabled and kwargs:
+            query_parameters = urlencode(kwargs)
+            survey_url = self.survey_url
+            separator = '?'
+            if separator in survey_url:
+                separator = '&'
+            return "{0}{1}{2}".format(survey_url, separator, query_parameters)
+        return self.survey_url
+
 
     def get_debriefing(self, participant_id=None, **kwargs):
         return self.templatize(self.debriefing, participant_id, kwargs)

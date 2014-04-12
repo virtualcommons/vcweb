@@ -173,7 +173,7 @@ class HighSchoolViewModel(object):
             'groupActivity': team_activity,
             'groupName': own_group.name,
             'totalPoints': group_scores.total_participant_points,
-            'surveyUrl': self.round_configuration.survey_url,
+            'surveyUrl': self.round_configuration.make_survey_url(pid=participant_group_relationship.pk),
             })
 
     @property
