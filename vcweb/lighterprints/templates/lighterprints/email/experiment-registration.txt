@@ -1,7 +1,8 @@
 {{ experiment.registration_email_text }}
 
 The experiment will begin at 12:00 AM, {{experiment.start_date}} and run for {{experiment.number_of_rounds}} days, ending at 12:00 AM, {{experiment.end_date}}.
-To access the experiment please visit {{experiment.full_participant_url}} and login with the following credentials:
+To access the experiment please visit {{experiment.full_participant_url}} and login with your [ASURITE
+ID]({{SITE_URL}}/cas/login/) or using the following credentials:
 
     Email:          {{ participant.email }}
     Password:       {{ password }} 
