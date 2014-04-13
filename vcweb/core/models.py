@@ -923,8 +923,7 @@ class Experiment(models.Model):
         if from_email is None or not from_email.strip():
             from_email = experimenter_email
         to_address = [participant_experiment_relationship.participant.email]
-        bcc_address = [experimenter_email]
-        msg = EmailMultiAlternatives(subject, plaintext_content, from_email, to_address, bcc_address,
+        msg = EmailMultiAlternatives(subject, plaintext_content, from_email, to_address, 
                                      headers={'Reply-To': experimenter_email})
         msg.attach_alternative(html_content, "text/html")
         return msg
