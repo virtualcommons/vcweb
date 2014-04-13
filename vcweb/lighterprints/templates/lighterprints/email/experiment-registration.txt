@@ -8,9 +8,10 @@ To access the experiment please visit {{experiment.full_participant_url}} and lo
 
 You can reset your password at any time by entering your email at
 
-    {{SITE_URL}}/accounts/password/reset?email={{ participant.email }}
+    {{SITE_URL}}/accounts/password/reset?email={{ participant.email|urlencode }}
 
 NOTE: you will only be able to access the experiment after midnight on {{ experiment.start_date }}
 
 Thank you for participating,
+
 {{ sender }}
