@@ -866,9 +866,13 @@ class Experiment(models.Model):
                     email_address = email_address.lower().strip()
                     full_name = full_name.strip()
                     try:
-                        u = User.objects.get(username=email_address)
+                        u = User.objects.get(email=email_address)
                     except User.DoesNotExist:
-                        u = User.objects.create_user(username=email_address, email=email_address, password=password)
+                        # FIXME: replace nested try/except with Q(email=email_address) | Q(username=email_address)
+                        try:
+                            u = User.objects.get(username=email_address)
+                        except User.DoesNotExist:
+                            u = User.objects.create_user(username=email_address, email=email_address, password=password)
                     updated = set_full_name(u, full_name)
                     if updated:
                         u.save()
