@@ -49,9 +49,3 @@ class Command(BaseCommand):
 
         dupe_pks = [dupe.pk for dupe in itertools.chain(*duplicate_participants.values())]
         Participant.objects.filter(pk__in=dupe_pks).delete()
-        User.objects.filter(pk__in=dupe_pks).delete()
-
-
-
-
-
