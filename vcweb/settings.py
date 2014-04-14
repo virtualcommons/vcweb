@@ -220,8 +220,8 @@ LOG_DIRECTORY = '/opt/vcweb/logs'
 try:
     makedirs(LOG_DIRECTORY)
 except OSError:
-    print "Unable to create log directory at %s" % LOG_DIRECTORY
-    pass
+    print "Unable to create absolute log directory at %s, setting to relative path logs instead" % LOG_DIRECTORY
+    LOG_DIRECTORY = 'logs'
 
 # logging configuration
 VCWEB_LOG_FILENAME = 'vcweb.log'
