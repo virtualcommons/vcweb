@@ -57,17 +57,34 @@ class Migration(DataMigration):
                 default_value_string="22",
                 description="Group cluster bonus threshold for conservation hours contributed by the entire group cluster to receive a bonus",
                 creator=experimenter)
+        Parameter.objects.create(
+                name='payoff',
+                scope='participant',
+                type='float',
+                description='earning each participant gets at each round',
+                creator=experimenter)
+        Parameter.objects.create(
+                name='chat_within_group',
+                scope='participant',
+                type='boolean',
+                description='Does this participant want to chat within their own group?',
+                creator=experimenter)
+        Parameter.objects.create(
+                name='chat_between_group',
+                scope='participant',
+                type='foreignkey',
+                class_name='core.Group',
+                description='Does this participant want to chat with another group?',
+                creator=experimenter)
+
 
     def backwards(self, orm):
         "Write your backwards methods here."
         Parameter = orm['core.Parameter']
-        Parameter.objects.get(name='conservation_decision').delete()
-        Parameter.objects.get(name='max_hours').delete()
-        Parameter.objects.get(name='group_local_bonus').delete()
-        Parameter.objects.get(name='group_cluster_bonus').delete()
-        Parameter.objects.get(name='participant_link').delete()
-        Parameter.objects.get(name='group_local_bonus_threshold').delete()
-        Parameter.objects.get(name='group_cluster_bonus_threshold').delete()
+        Parameter.objects.filter(name__in=('conservation_decision', 'max_hours', 'group_local_bonus',
+            'group_cluster_bonus', 'participant_link', 'group_local_bonus_threshold'
+            'group_cluster_bonus_threshold', 'payoff', 'chat_within_group', 'chat_between_group')
+            ).delete()
 
     models = {
         u'auth.group': {
