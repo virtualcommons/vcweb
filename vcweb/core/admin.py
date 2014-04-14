@@ -8,7 +8,7 @@ from vcweb.core.models import (
     Parameter, RoundParameterValue, ExperimentParameterValue, ExperimentConfiguration, RoundConfiguration,
     Experimenter, Participant, Group, Experiment, ExperimentMetadata, Address, ParticipantExperimentRelationship,
     ParticipantGroupRelationship, GroupRoundDataValue, ParticipantRoundDataValue, GroupActivityLog, ChatMessage,
-    Comment, Like, OstromlabFaqEntry,
+    Comment, Like, OstromlabFaqEntry, ParticipantSignup, Invitation, ExperimentSession
     )
 
 
@@ -16,7 +16,7 @@ models = (
     Parameter, RoundParameterValue, ExperimentParameterValue, ExperimentConfiguration, RoundConfiguration,
     Experimenter, Participant, Group, Experiment, ExperimentMetadata, Address, ParticipantExperimentRelationship,
     ParticipantGroupRelationship, GroupRoundDataValue, ParticipantRoundDataValue, GroupActivityLog, ChatMessage,
-    Comment, Like, OstromlabFaqEntry,
+    Comment, Like, OstromlabFaqEntry, ParticipantSignup, Invitation, ExperimentSession
 )
 for model in models:
     admin.site.register(model)
