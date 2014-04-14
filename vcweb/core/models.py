@@ -1601,8 +1601,8 @@ class Parameter(models.Model):
     """
     scope = models.CharField(max_length=32, choices=Scope, default=Scope.ROUND)
     name = models.CharField(max_length=255, unique=True)
-    display_name = models.CharField(max_length=255, blank=True)
-    description = models.CharField(max_length=512, blank=True)
+    display_name = models.CharField(max_length=255, blank=True, default='')
+    description = models.CharField(max_length=512, blank=True, default='')
     type = models.CharField(max_length=32, choices=ParameterType)
     class_name = models.CharField(max_length=64, blank=True,
                                   help_text='Model classname in the form of appname.modelname, e.g., "core.Experiment".  Only applicable for foreign key parameters.')
