@@ -152,7 +152,7 @@ def get_experiment_model(request, pk):
 @experimenter_required
 def get_round_data(request):
     # FIXME: naively implemented performance wise, revisit if this turns into a hot spot..
-    pk = request.POST.get('pk')
+    pk = request.GET.get('pk')
     round_data = get_object_or_404(RoundData, pk=pk)
     group_data_values = [gdv.to_dict(cacheable=True) for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()]
     participant_data_values = [pdv.to_dict(include_email=True, cacheable=True) for pdv in round_data.participant_data_value_set.select_related('participant_group_relationship__participant__user', 'parameter').exclude(parameter=get_chat_message_parameter())]
