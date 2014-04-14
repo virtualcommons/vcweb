@@ -222,6 +222,10 @@ try:
 except OSError:
     print "Unable to create absolute log directory at %s, setting to relative path logs instead" % LOG_DIRECTORY
     LOG_DIRECTORY = 'logs'
+    try: 
+        makedirs(LOG_DIRECTORY)
+    except OSError:
+        print "Couldn't create log directory"
 
 # logging configuration
 VCWEB_LOG_FILENAME = 'vcweb.log'
