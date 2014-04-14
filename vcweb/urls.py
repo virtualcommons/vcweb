@@ -6,7 +6,6 @@ from django.conf.urls import patterns, url, include
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.views.decorators.cache import cache_page
 from django.views.generic.base import TemplateView
 
 from django.contrib.auth.forms import PasswordResetForm
@@ -17,7 +16,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^$', TemplateView.as_view(template_name='index.html'), name='home'),
     url(r'^about/$', TemplateView.as_view(template_name='about.html'), name='about'),
-    url(r'^contact/$', cache_page(60*15)(TemplateView.as_view(template_name='contact.html')), name='contact'),
+    url(r'^contact/$', TemplateView.as_view(template_name='contact.html'), name='contact'),
     url(r'^invalid-request$', TemplateView.as_view(template_name='invalid_request.html'), name='invalid_request'),
     # FIXME: customize password reset email and forms to not go through django admin?
     #url(r'^accounts/password_reset/$', 'django.contrib.auth.views.password_reset', {'template_name':'password_reset_form.html', 'email_template_name':'userpanel/password_reset_email.html'}),
