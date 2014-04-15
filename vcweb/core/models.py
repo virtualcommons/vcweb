@@ -1891,7 +1891,7 @@ class Group(models.Model, DataValueMixin):
     def to_dict(self):
         participant_group_relationships = [
             {'pk': pgr.pk, 'participant_number': pgr.participant_number, 'email': pgr.participant.email}
-            for pgr in self.participant_group_relationship_set.all()
+            for pgr in self.participant_group_relationship_set.select_related('participant__user').all()
         ]
         return {
             'name': self.name,
@@ -2764,6 +2764,9 @@ def is_experimenter(user, experimenter=None):
         return user.experimenter.approved and (experimenter is None or user.experimenter == experimenter)
     return False
 
+def find_duplicate_users(field='email'):
+    return User.objects.values(field).annotate(max_id=models.Max('id'),
+            count_id=models.Count('id')).filter(count_id__gt=1).order_by()
 
 def is_participant(user):
     """
