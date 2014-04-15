@@ -46,8 +46,11 @@ urlpatterns = patterns('',
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
 )
 
-handler500 = 'vcweb.core.views.handler500'
-
 if settings.DEBUG:
     urlpatterns += staticfiles_urlpatterns()
+    urlpatterns += patterns('',
+            (r'^500/$', TemplateView.as_view(template_name='500.html')),
+            (r'^404/$', TemplateView.as_view(template_name='404.html')),
+            (r'^403/$', TemplateView.as_view(template_name='403.html')),
+            )
 

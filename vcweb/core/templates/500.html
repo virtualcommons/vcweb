@@ -1,17 +1,21 @@
 {% extends "base.html" %}
+{% url 'core:report_issues' as issues_url %}
 
 {% block title %}
     HTTP 500 Server Error
 {% endblock %}
 
 {% block page %}
-    <h2>Unhandled server error</h2>
-    <div class='entry'>
-        We just encountered an unforeseen error that has been logged and emailed to
-        our development team.  If you'd like to report this error to us manually
-        as well, please feel free to <a href='/contact'>contact us</a> and let
-        us know what you were doing at the time of the error and any other
-        salient details (e.g., browser version, OS).
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+        <h2>Unhandled server error</h2>
     </div>
+    <div class='panel-body'>
+        We just encountered an unexpected error that has been logged and emailed to our development team.  If you'd like
+        to report this error to us manually as well, please <a href='{{issues_url}}'>let us know</a> what you were doing
+        at the time of the error and any other salient details and/or screenshots. Thanks, and sorry for the
+        inconvenience!
+    </div>
+</div>
 {% endblock page %}
 

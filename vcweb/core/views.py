@@ -1028,10 +1028,6 @@ def reset_password(email, from_email='vcweb@asu.edu', template='registration/pas
     return None
 
 
-def handler500(request):
-    return render(request, '500.html')
-
-
 @experimenter_required
 def update_experiment_param_value(request, pk):
     form = ExperimentParameterValueForm(request.POST or None)
