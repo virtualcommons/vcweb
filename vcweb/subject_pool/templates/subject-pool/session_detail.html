@@ -16,6 +16,11 @@
             <p><strong>Location: </strong> {{ session_detail.location }}</p>
             <p><strong>Capacity: </strong> {{ session_detail.capacity }}</p>
         </div>
+        <div>
+            {% if formset.forms|length > 0 %}
+                <a target="_blank" href="/subject-pool/session/{{ session_detail.pk }}/download/">Download Registered Participants</a>
+            {% endif %}
+        </div>
         <h3>Registered Participants</h3>
         <form method="POST" id="participant-info" class="form-inline">
         {{ formset.management_form }}
@@ -31,20 +36,22 @@
                     </tr>
                 </thead>
                 {% for form in formset.forms %}
+                {% with form.instance.invitation.participant as participant %}
                 <tr>
                     <td>
                         {% for hidden in form.hidden_fields %}
                             {{ hidden }}
                         {% endfor %}
-                        {{ form.instance.invitation.participant.first_name }}</td>
-                    <td>{{ form.instance.invitation.participant.last_name }}</td>
-                    <td>{{ form.instance.invitation.participant.email }}</td>
-                    <td>{{ form.instance.invitation.participant.major }}</td>
-                    <td>{{ form.instance.invitation.participant.class_status }}</td>
+                        {{ participant.first_name }}</td>
+                    <td>{{ participant.last_name }}</td>
+                    <td>{{ participant.email }}</td>
+                    <td>{{ participant.major }}</td>
+                    <td>{{ participant.class_status }}</td>
                     {% for field in form.visible_fields %}
                         <td>{{ field }}</td>
                     {% endfor %}
                 </tr>
+                    {% endwith %}
             {% endfor %}
             </table>
             {% if formset.forms|length > 0 %}
@@ -157,7 +164,7 @@
             } );
 
             $('#participant-table').dataTable( {
-                "sDom": "<<'pull-right'f>r>t<'col-md-6'i><'pull-right datatable-pager'p>",
+                "sDom": "<'pull-left'l><'pull-right'f><'clearfix'r>t<'col-md-6'i><'pull-right datatable-pager'p>",
                 "sWrapper": "dataTables_wrapper",
                 "sPaginationType": "bootstrap"
             });

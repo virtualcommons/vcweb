@@ -15,7 +15,7 @@ from vcweb.core import dumps
 from vcweb.core.decorators import experimenter_required, participant_required
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ExperimentSession, ExperimentMetadata, Participant, ParticipantSignup, Invitation,
-                               Institution, send_email,)
+                               Institution, send_email, )
 from vcweb.core.views import mimetypes
 from vcweb.subject_pool.forms import (SessionForm, SessionInviteForm, ParticipantAttendanceForm, CancelSignupForm)
 
@@ -353,7 +353,7 @@ def get_excluded_participants(days_threshold, experiment_metadata_pk):
 
     # signup_participants is the list of participants who has already participated in the
     # given Experiment Metadata(in the past or currently participating)
-    signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=experiment_metadata_pk).\
+    signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=experiment_metadata_pk). \
         values_list('invitation__participant__pk', flat=True)
 
     # returned list the list of participants who have already received invitations in last threshold days or have already
@@ -368,30 +368,39 @@ def manage_participant_attendance(request, pk=None):
     If request is GET, then the function will return the attendance formset. If request is POST then
     the function will update the Participant Attendance and return the updated formset.
     """
-    attendanceformset = modelformset_factory(ParticipantSignup, form=ParticipantAttendanceForm,
-                                             exclude=('date_created',), extra=0)
     es = ExperimentSession.objects.get(pk=pk)
-    invitations_sent = Invitation.objects.filter(experiment_session=es)
-    session_detail = {'experiment_metadata': es.experiment_metadata, 'start_date': es.scheduled_date.date(),
-                      'start_time': es.scheduled_date.strftime('%I:%M %p'), 'end_date': es.scheduled_end_date.date(),
-                      'end_time': es.scheduled_end_date.strftime('%I:%M %p'), 'location': es.location,
-                      'capacity': es.capacity}
 
-    if request.method == "POST":
-        formset = attendanceformset(request.POST,
-                                    queryset=ParticipantSignup.objects.select_related('invitation__participant')
-                                    .filter(invitation__in=invitations_sent))
-        if formset.is_valid():
-            messages.add_message(request, messages.SUCCESS, 'Well done...Your changes were successfully saved.')
-            if formset.has_changed():
-                formset.save()
+    if es.creator == request.user:
+        invitations_sent = Invitation.objects.filter(experiment_session=es)
+        session_detail = dict(pk=es.pk, experiment_metadata=es.experiment_metadata, start_date=es.scheduled_date.date(),
+                              start_time=es.scheduled_date.strftime('%I:%M %p'), end_date=es.scheduled_end_date.date(),
+                              end_time=es.scheduled_end_date.strftime('%I:%M %p'), location=es.location,
+                              capacity=es.capacity)
+
+        attendanceformset = modelformset_factory(ParticipantSignup, form=ParticipantAttendanceForm,
+                                                 exclude=('date_created',), extra=0)
+
+        if request.method == "POST":
+            formset = attendanceformset(request.POST,
+                                        queryset=ParticipantSignup.objects.select_related(
+                                            'invitation__participant__user').
+                                        filter(invitation__in=invitations_sent))
+            if formset.is_valid():
+                messages.add_message(request, messages.SUCCESS, 'Well done...Your changes were successfully saved.')
+                if formset.has_changed():
+                    formset.save()
+            else:
+                messages.add_message(request, messages.ERROR,
+                                     'Something went wrong...Your changes were not saved. Please try again')
         else:
-            messages.add_message(request, messages.ERROR,
-                                 'Something went wrong...Your changes were not saved. Please try again')
-    else:
-        formset = attendanceformset(queryset=ParticipantSignup.objects.filter(invitation__in=invitations_sent))
+            formset = attendanceformset(
+                queryset=ParticipantSignup.objects.select_related('invitation__participant__user').
+                filter(invitation__in=invitations_sent))
 
-    return render(request, 'subject-pool/session_detail.html', {'session_detail': session_detail, 'formset': formset})
+        return render(request, 'subject-pool/session_detail.html',
+                      {'session_detail': session_detail, 'formset': formset})
+    else:
+        raise PermissionDenied("You don't have access to this experiment.")
 
 
 @participant_required
@@ -460,6 +469,7 @@ def submit_experiment_session_signup(request):
         messages.error(request, _("This session is currently full."))
         return redirect('subject_pool:experiment_session_signup')
 
+
 @experimenter_required
 def download_experiment_session(request, pk=None):
     user = request.user
@@ -470,11 +480,14 @@ def download_experiment_session(request, pk=None):
     response = HttpResponse(content_type=mimetypes.types_map['.csv'])
     response['Content-Disposition'] = 'attachment; filename=participants.csv'
     writer = unicodecsv.writer(response, encoding='utf-8')
-    writer.writerow(["Participant list", experiment_session, experiment_session.location, experiment_session.capacity, experiment_session.creator])
+    writer.writerow(["Participant list", experiment_session, experiment_session.location, experiment_session.capacity,
+                     experiment_session.creator])
     writer.writerow(['Email', 'Name', 'Username', 'Class Status', 'Attendance'])
-    for ps in ParticipantSignup.objects.select_related('invitation__participant').filter(invitation__experiment_session=experiment_session):
+    for ps in ParticipantSignup.objects.select_related('invitation__participant').filter(
+            invitation__experiment_session=experiment_session):
         participant = ps.invitation.participant
-        writer.writerow([participant.email, participant.full_name, participant.username, participant.class_status, ps.attendance])
+        writer.writerow(
+            [participant.email, participant.full_name, participant.username, participant.class_status, ps.attendance])
     return response
 
 
