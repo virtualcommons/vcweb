@@ -1,4 +1,5 @@
-from os import path, makedirs
+import os
+from os import path
 import locale
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
@@ -216,16 +217,21 @@ MEDIA_URL = '/static/media/'
 #     messages.constants.ERROR: 'ui-state-error ui-corner-all'
 # }
 
+def is_accessible(directory_path):
+    return path.isdir(directory_path) and os.access(directory_path, os.W_OK | os.X_OK)
+
 LOG_DIRECTORY = '/opt/vcweb/logs'
-try:
-    makedirs(LOG_DIRECTORY)
-except OSError:
-    print "Unable to create absolute log directory at %s, setting to relative path logs instead" % LOG_DIRECTORY
-    LOG_DIRECTORY = 'logs'
-    try: 
-        makedirs(LOG_DIRECTORY)
+if not is_accessible(LOG_DIRECTORY):
+    try:
+        os.makedirs(LOG_DIRECTORY)
     except OSError:
-        print "Couldn't create log directory"
+        print "Unable to create absolute log directory at %s, setting to relative path logs instead" % LOG_DIRECTORY
+        LOG_DIRECTORY = 'logs'
+        if not is_accessible(LOG_DIRECTORY):
+            try: 
+                os.makedirs(LOG_DIRECTORY)
+            except OSError:
+                print "Couldn't create any log directory, startup will fail"
 
 # logging configuration
 VCWEB_LOG_FILENAME = 'vcweb.log'

@@ -19,8 +19,7 @@ from vcweb.core.models import (Experiment, ParticipantGroupRelationship, Partici
 import logging
 from logging.config import dictConfig
 TORNADO_LOG_FILENAME = "vcweb-tornado.log"
-LOG_DIRECTORY = '/opt/vcweb/logs'
-TORNADO_LOG = path.join(LOG_DIRECTORY, TORNADO_LOG_FILENAME)
+TORNADO_LOG = path.join(settings.LOG_DIRECTORY, TORNADO_LOG_FILENAME)
 DEFAULT_WEBSOCKET_PORT = 8882
 
 dictConfig({
