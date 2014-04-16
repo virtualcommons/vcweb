@@ -143,7 +143,6 @@ class GroupScores(object):
             group_data_dict['average_daily_points'] = group_data_dict['total_daily_points'] / group_size
             group_data_dict['total_average_points'] = group_data_dict['total_points'] / group_size
             #logger.debug("group data dictionary: %s", group_data_dict)
-        logger.debug("successfully initialized group scores")
 
     def average_daily_points(self, group):
         return self.scores_dict[group]['average_daily_points']
@@ -639,7 +638,7 @@ def is_high_school_treatment(round_configuration=None, treatment_type=None):
 def has_leaderboard(round_configuration=None, treatment_type=None):
     if treatment_type is None:
         treatment_type = get_treatment_type(round_configuration=round_configuration).string_value
-    return 'LEADERBOARD' in treatment_type
+    return 'LEADERBOARD' == treatment_type
 
 def get_active_experiments():
     """

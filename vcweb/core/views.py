@@ -1237,7 +1237,7 @@ def edit_experiment_configuration(request, pk):
     exp_param_values_list = [param.to_dict() for param in epv]
 
     exp_parameter_list = Parameter.objects.filter(scope='experiment').values('pk', 'name', 'type')
-    logger.debug(exp_param_values_list)
+    #logger.debug(exp_param_values_list)
 
     round_config = RoundConfiguration.objects.filter(experiment_configuration=ec)
     round_config_list = [round.to_dict() for round in round_config]
