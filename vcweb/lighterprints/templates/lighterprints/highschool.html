@@ -277,9 +277,9 @@
 {% block footerlinks %}
 <ul class='nav-footer'>
     <li><a href='#dashboard' data-bind='click: activateDashboardTab' data-toggle='tab'>Dashboard</a></li>
-    <li><a href='#challenges' data-bind='click: activateChallengesTab' data-toggle='tab'>Challenges</a></li>
-    <li><a href='#group' data-bind='click: activateGroupTab' data-toggle='tab'>My Group</a></li>
-    <li><a href='#help' data-bind='click: activateHelpTab' data-toggle='tab'>Help</a></li>
+    <li data-bind='if: quizCompleted'><a href='#challenges' data-bind='click: activateChallengesTab' data-toggle='tab'>Challenges</a></li>
+    <li data-bind='if: quizCompleted'><a href='#group' data-bind='click: activateGroupTab' data-toggle='tab'>My Group</a></li>
+    <li data-bind='if: quizCompleted'><a href='#help' data-bind='click: activateHelpTab' data-toggle='tab'>Help</a></li>
     <li class='pull-right'><a>&copy; {% now "Y" %} Arizona Board of Regents</a></li>
 </ul>
 {% endblock footerlinks %}
