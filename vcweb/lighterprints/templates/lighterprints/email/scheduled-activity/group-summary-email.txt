@@ -2,11 +2,14 @@ Lighter Footprints Summary for {{ summary_date }}
 =================================================
 
 {% if experiment_completed %}
-**The experiment is now over.** Thank you for participating.
+**The experiment is now over.** Thank you for participating. The experiment was a variation of a public good game 
+(http://en.wikipedia.org/wiki/Public_good) where there often exists a conflict between individual and collective interests. 
+{% if has_leaderboard %}
+This particular experiment tests the effect of information on the outcomes of other groups (e.g., leaderboards).
+{% endif %}
 {% if linear_public_good %}
 In order to receive payment please visit Jen Fraser (Jen.Fraser@asu.edu) at Matthews Hall 102 on Monday (2-4pm),
-Wednesday (10am-3pm), or Friday (10am-3pm). You must pick up your payment by May 15. Be sure to bring your ASURITE Sun
-Card. 
+Wednesday (10am-3pm), or Friday (10am-3pm). You must pick up your payment by May 15. Be sure to bring your ASURITE Sun Card. 
 {% endif %}
 {% else %}
 You are a member of {{ group_name }}. To participate in this experiment, visit [{{experiment.full_participant_url}}]({{experiment.full_participant_url}}).
@@ -15,7 +18,7 @@ You are a member of {{ group_name }}. To participate in this experiment, visit [
 
 * You earned {{ individual_points }} points while the average in your group was {{ average_daily_points }} point(s).
 * {{ number_of_chat_messages }} chat messages were posted by your group.
-{% if show_rankings %}
+{% if has_leaderboard %}
 * Your group was ranked {{ group_rank}} out of {{ number_of_groups }}
 {% endif %}
 {% if linear_public_good %}

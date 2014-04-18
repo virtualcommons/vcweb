@@ -125,7 +125,7 @@ class GroupScores(object):
         self.end_date = self.start_date + timedelta(1) if end_date is None else end_date
         self.round_configuration = self.round_data.round_configuration
         self.is_high_school_treatment = is_high_school_treatment(self.round_configuration)
-        self.show_rankings = has_leaderboard(self.round_configuration)
+        self.has_leaderboard = has_leaderboard(self.round_configuration)
         activity_points_cache = get_activity_points_cache()
         activities_performed_qs = ParticipantRoundDataValue.objects.for_round(parameter=get_activity_performed_parameter(), round_data=self.round_data, date_created__range=(self.start_date, self.end_date))
         for activity_performed_dv in activities_performed_qs:
@@ -265,13 +265,13 @@ class GroupScores(object):
             'group_name': group.name,
             'group_rank': self.get_group_rank(group),
             'summary_date': yesterday,
-            'show_rankings': self.show_rankings,
             'threshold': threshold,
             'average_daily_points': average_group_points,
             'number_of_chat_messages': number_of_chat_messages,
             'linear_public_good': self.is_linear_public_good_game,
             'daily_earnings': self.daily_earnings_currency(group),
             'total_earnings': self.total_earnings_currency(group),
+            'has_leaderboard': self.has_leaderboard
             })
         for pgr in group.participant_group_relationship_set.all():
             c['individual_points'] = get_individual_points(pgr)
