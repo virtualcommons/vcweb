@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordResetForm
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
@@ -24,7 +25,7 @@ from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperi
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment,
                                Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata,
                                OstromlabFaqEntry, Experimenter, ExperimentParameterValue, RoundConfiguration,
-                               RoundParameterValue, Parameter, ParticipantSignup,)
+                               RoundParameterValue, Parameter, ParticipantSignup, get_model_fields)
 import itertools
 import logging
 import mimetypes
@@ -692,12 +693,14 @@ def download_data(request, pk=None, file_type='csv'):
     writer.writerow(
         ['Round', 'Participant ID', 'Participant Number', 'Group ID', 'Parameter', 'Value',
          'Creation Date', 'Creation Time', 'Last Modified Date', 'Last Modified Time'])
+    lookup_table_parameters = set()
     for round_data in experiment.round_data_set.select_related('round_configuration').all():
         round_number = round_data.round_number
         # emit all participant data values
-        for data_value in round_data.participant_data_value_set.select_related(
-                'participant_group_relationship__group').all():
+        for data_value in round_data.participant_data_value_set.select_related('participant_group_relationship__group', 'parameter').all():
             pgr = data_value.participant_group_relationship
+            if data_value.parameter.is_foreign_key:
+                lookup_table_parameters.add(data_value.parameter)
             dc = data_value.date_created
             lm = data_value.last_modified
             writer.writerow(
@@ -719,8 +722,18 @@ def download_data(request, pk=None, file_type='csv'):
             lm = data_value.last_modified
             writer.writerow([round_number, '', '', data_value.group.pk, data_value.parameter.label,
                              data_value.value, dc.date(), dc.time(), lm.date(), lm.time()])
+    logger.debug("lookup table parameters: %s", lookup_table_parameters)
+    if lookup_table_parameters:
+        writer.writerow(['Lookup Tables'])
+        for ltp in lookup_table_parameters:
+            model = ltp.get_model_class()
+# introspect on the model and emit all of its relevant fields
+            data_fields = get_model_fields(model)
+            data_field_names = itertools.chain(['Type', 'ID'], [f.verbose_name for f in data_fields])
+            writer.writerow(data_field_names)
+            for obj in model.objects.order_by('pk').all():
+                writer.writerow(itertools.chain([model.__name__, obj.pk], [getattr(obj, f.name) for f in data_fields]))
     return response
-
 
 @experimenter_required
 def download_data_excel(request, pk=None):

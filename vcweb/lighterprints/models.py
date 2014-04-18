@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, date, time, timedelta
+from django.conf import settings
 from django.core import mail
 from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
@@ -252,7 +253,8 @@ class GroupScores(object):
         yesterday = date.today() - timedelta(1)
         plaintext_template = select_template(['lighterprints/email/scheduled-activity/group-summary-email.txt'])
         experiment = group.experiment
-        experimenter_email = experiment.experimenter.email
+        #experimenter_email = experiment.experimenter.email
+        experimenter_email = settings.SERVER_EMAIL
         number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group,
                                                              date_created__gte=yesterday).count()
         messages = []
@@ -489,6 +491,7 @@ class Activity(MPTTModel):
     is_public = models.BooleanField(default=False)
 
     objects = ActivityManager.for_queryset_class(ActivityQuerySet)()
+    data_fields = [name, display_name, points]
 
     @property
     def label(self):
@@ -528,7 +531,8 @@ class Activity(MPTTModel):
         return cv
 
     def __unicode__(self):
-        return u'%s: %s' % (self.label, self.points)
+        return unicode(self.pk)
+        #return u'%s : %s' % (self.label, self.points)
 
     class Meta:
         ordering = ['level', 'name']

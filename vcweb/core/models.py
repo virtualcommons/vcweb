@@ -2764,6 +2764,16 @@ def is_experimenter(user, experimenter=None):
         return user.experimenter.approved and (experimenter is None or user.experimenter == experimenter)
     return False
 
+
+SCALAR_DATA_FIELDS = (models.CharField, models.TextField, models.IntegerField, models.PositiveIntegerField, models.PositiveSmallIntegerField)
+def get_model_fields(model):
+# return only direct scalar fields
+    if hasattr(model, 'data_fields'):
+        return getattr(model, 'data_fields')
+    else:
+        return filter(lambda f: f.__class__ in SCALAR_DATA_FIELDS, model._meta.fields)
+
+
 def find_duplicate_users(field='email'):
     return User.objects.values(field).annotate(max_id=models.Max('id'),
             count_id=models.Count('id')).filter(count_id__gt=1).order_by()
