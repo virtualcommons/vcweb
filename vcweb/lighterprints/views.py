@@ -1,14 +1,14 @@
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
-
-from vcweb.core.decorators import participant_required
+from vcweb.core.decorators import participant_required, experimenter_required
 from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
-from vcweb.core.views import dumps, get_active_experiment, set_authentication_token
+from vcweb.core.views import dumps, get_active_experiment, set_authentication_token, mimetypes
 from vcweb.lighterprints.forms import ActivityForm
 from vcweb.lighterprints.models import (
         Activity, GroupScores, ActivityStatusList, do_activity, get_group_activity, has_leaderboard,
@@ -18,6 +18,7 @@ from vcweb.lighterprints.models import (
 
 from datetime import datetime
 import logging
+import unicodecsv
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
@@ -179,6 +180,23 @@ class HighSchoolViewModel(object):
     @property
     def template_name(self):
         return 'lighterprints/highschool.html'
+
+@experimenter_required
+def download_payment_data(request, pk=None):
+    experiment = get_object_or_404(Experiment, pk=pk)
+    user = request.user
+    if user.is_superuser or experiment.experimenter == user.experimenter:
+        response = HttpResponse(content_type=mimetypes.types_map['.csv'])
+        response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
+        writer = unicodecsv.writer(response, encoding='utf-8')
+        group_scores = GroupScores(experiment)
+        writer.writerow(['Group', 'Participant', 'Total Earnings'])
+        for pgr in experiment.participant_group_relationships:
+            group = pgr.group
+            writer.writerow([group, pgr.participant.email, group_scores.total_earnings(group)])
+        return response
+    else:
+        raise PermissionDenied("You aren't authorized to access this experiment.")
 
 
 def get_view_model_json(participant_group_relationship, activities=None, experiment=None, round_configuration=None, round_data=None, **kwargs):
