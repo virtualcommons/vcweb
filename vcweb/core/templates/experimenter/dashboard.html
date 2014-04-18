@@ -20,8 +20,13 @@
                         </h3>
                         <div data-bind='foreach: configurations'>
                             <div class='alert alert-warning'>
-                                <h4><span data-bind='text: name'>configuration name</span> (treatment id: <span data-bind='text: treatment_id() || "None"'></span>) <span class='pull-right' data-bind='text: date_created'></span></h4>
-                                <span data-bind='text: number_of_rounds'></span> rounds, groups of <span data-bind='text: max_group_size'></span>
+                                <h4><span data-bind='text: name'>configuration name</span>
+                                    <span data-bind='if: treatment_id()'>
+                                        (treatment id: <span data-bind='text: treatment_id()'></span>)
+                                    </span>
+                                    <span class='pull-right' data-bind='text: date_created'></span>
+                                </h4>
+                                <span data-bind='text: number_of_rounds'></span> rounds, group size <span data-bind='text: max_group_size'></span>
                                 <br>
                                 <div class='btn-group'>
                                     <a class='btn btn-default' data-bind='click: $root.createNewExperiment.bind($data)'><i class='fa fa-plus-circle'></i> start new experiment</a>
