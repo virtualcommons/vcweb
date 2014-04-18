@@ -696,6 +696,9 @@ def download_data(request, pk=None, file_type='csv'):
     lookup_table_parameters = set()
     for round_data in experiment.round_data_set.select_related('round_configuration').all():
         round_number = round_data.round_number
+        # emit experimenter notes
+        if round_data.experimenter_notes:
+            writer.writerow([round_number, 'Experimenter Notes', '', '', 'Experimenter Notes', round_data.experimenter_notes, '', '', '', ''])
         # emit all participant data values
         for data_value in round_data.participant_data_value_set.select_related('participant_group_relationship__group', 'parameter').all():
             pgr = data_value.participant_group_relationship
