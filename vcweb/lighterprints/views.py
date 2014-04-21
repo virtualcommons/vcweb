@@ -187,13 +187,14 @@ def download_payment_data(request, pk=None):
     user = request.user
     if user.is_superuser or experiment.experimenter == user.experimenter:
         response = HttpResponse(content_type=mimetypes.types_map['.csv'])
-        response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
+        response['Content-Disposition'] = 'attachment; filename=payment-%s' % experiment.data_file_name()
         writer = unicodecsv.writer(response, encoding='utf-8')
         group_scores = GroupScores(experiment)
-        writer.writerow(['Group', 'Participant', 'Total Earnings'])
+        writer.writerow(['Group', 'Participant', 'Username', 'Total Earnings'])
         for pgr in experiment.participant_group_relationships:
+            participant = pgr.participant
             group = pgr.group
-            writer.writerow([group, pgr.participant.email, group_scores.total_earnings(group)])
+            writer.writerow([group, participant.email, participant.username, group_scores.total_earnings(group)])
         return response
     else:
         raise PermissionDenied("You aren't authorized to access this experiment.")
