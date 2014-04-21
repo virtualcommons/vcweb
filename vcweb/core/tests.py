@@ -404,12 +404,8 @@ class InvitationAlgorithmTest(BaseVcwebTest):
     def set_up_participants(self):
         password = "test"
         participants = []
-        now = datetime.now()
         for x in xrange(500):
             email = "student" + str(x) + "asu@asu.edu"
-            # user = User.objects.create(first_name='xyz', last_name='%d' % x, username=email, email=email,
-            #                             password=password, is_staff=False, is_active=True, is_superuser=False,
-            #                             last_login=now, date_joined=now)
             user = User.objects.create_user(first_name='xyz', last_name='%d' % x, username=email, email=email,
                                             password=password)
             user.save()
@@ -430,7 +426,7 @@ class InvitationAlgorithmTest(BaseVcwebTest):
 
     def set_up_experiment_sessions(self):
         e = self.experiment
-
+        es_pk = []
         for x in xrange(4):
             es = ExperimentSession()
             es.experiment_metadata = e.experiment_metadata
@@ -445,35 +441,49 @@ class InvitationAlgorithmTest(BaseVcwebTest):
             es.creator = User.objects.get(pk=256)  # creator is vcweb
             es.date_created = datetime.now()
             es.save()
+            es_pk.append(es.pk)
+        return es_pk
 
     def get_final_participants(self):
         potential_participants = get_potential_participants(self.experiment_metadata.pk, "Arizona State University")
         potential_participants_count = len(potential_participants)
-        # logger.debug(potential_participants_count)
-
-        final_participants = None
-        no_of_invitations = 100
+        # logger.debug(potential_participants)
+        no_of_invitations = 50
 
         if potential_participants_count == 0:
-            # logger.debug("You Have already sent out invitations to all potential participants")
-            message = "You Have already sent out invitations to all potential participants"
+            final_participants = []
         else:
             if potential_participants_count < no_of_invitations:
-                final_participants = random.sample(potential_participants, potential_participants_count)
-                # logger.debug("Invitations were sent to only %s participants", potential_participants_count)
-                message = "Your invitations were sent to only " + str(potential_participants_count) + " participants"
+                final_participants = potential_participants
             else:
-                final_participants = random.sample(potential_participants, no_of_invitations)
-                # logger.debug("Invitations were sent to %s participants", no_of_invitations)
-                message = "Your invitations were sent to " + str(no_of_invitations) + " participants"
-
+                priority_list = ParticipantSignup.objects \
+                    .filter(invitation__participant__in=potential_participants,
+                            attendance=ParticipantSignup.ATTENDANCE.discharged) \
+                    .values_list('invitation__participant__pk', flat=True)
+                priority_list = Participant.objects.filter(pk__in=priority_list)
+                logger.debug("Priority Participants")
+                logger.debug(priority_list)
+                if len(priority_list) >= no_of_invitations:
+                    final_participants = random.sample(priority_list, no_of_invitations)
+                else:
+                    final_participants = list(priority_list)
+                    # logger.debug(final_participants)
+                    new_potential_participants = list(set(potential_participants) - set(priority_list))
+                    # logger.debug("New Potential Participants")
+                    # logger.debug(new_potential_participants)
+                    x = random.sample(new_potential_participants, no_of_invitations - len(priority_list))
+                    # logger.debug("Random Sample")
+                    # logger.debug(x)
+                    final_participants += x
+                    # logger.debug("Final Participants")
+                    # logger.debug(final_participants)
         return final_participants
 
-    def set_up_participant_signup(self, participant_list):
+    def set_up_participant_signup(self, participant_list, es_pk_list):
         participant_list = participant_list[:25]
 
         for person in participant_list:
-            inv = Invitation.objects.filter(participant=person).order_by('?')[:1]
+            inv = Invitation.objects.filter(participant=person, experiment_session__pk__in=es_pk_list).order_by('?')[:1]
             ps = ParticipantSignup()
             ps.invitation = inv[0]
             year = date.today().year
@@ -486,9 +496,9 @@ class InvitationAlgorithmTest(BaseVcwebTest):
             # logger.debug(ps.attendance)
             ps.save()
 
-    def set_up_inv(self, participants):
+    def set_up_inv(self, participants, es_pk_list):
         invitations = []
-        experiment_sessions = ExperimentSession.objects.all()
+        experiment_sessions = ExperimentSession.objects.filter(pk__in=es_pk_list)
         user = User.objects.get(pk=256)
 
         for participant in participants:
@@ -503,41 +513,36 @@ class InvitationAlgorithmTest(BaseVcwebTest):
 
         Invitation.objects.bulk_create(invitations)
 
-    def testInvitations(self):
+    def test_invitations(self):
 
         self.set_up_participants()
 
-        self.set_up_experiment_sessions()
-
-        # First Iteration
-        x = self.get_final_participants()
-        # logger.debug([y.pk for y in x])
-        self.set_up_inv(x)
-
-        self.set_up_participant_signup(x)
-
-        # Second Iteration
-        x = self.get_final_participants()
-
-        # logger.debug([y.pk for y in x])
-        self.set_up_inv(x)
-
-        self.set_up_participant_signup(x)
-
-        # third Iteration
-        x = self.get_final_participants()
-
-        # logger.debug([y.pk for y in x])
-        pk_list = [p.pk for p in x]
-
         last_week_date = datetime.now() - timedelta(days=7)
-        # The chosen set of participants should not have participated in past for the same experiment
-        self.assertEqual(
-            ParticipantSignup.objects.filter(attendance__in=[0, 3], invitation__participant__in=x).count(), 0)
-        # The chosen set of participants should not have received invitations in last threshold days
-        self.assertEqual(Invitation.objects.filter(participant__in=x, date_created__gt=last_week_date).count(), 0)
-        # The chosen set of participants should be from provided university and must have enabled can_receive invitations
-        self.assertEqual(
-            Participant.objects.filter(can_receive_invitations=True, institution__name='Arizona State University',
-                                       pk__in=pk_list).count(), len(x))
 
+        for index in range(3):
+            # First Iteration
+            logger.debug("Iteration %d", index+1)
+
+            es_pk_list = self.set_up_experiment_sessions()
+
+            x = self.get_final_participants()
+
+            if x:
+                pk_list = [p.pk for p in x]
+
+                # The chosen set of participants should not have participated in past for the same experiment
+                self.assertEqual(
+                    ParticipantSignup.objects.filter(attendance__in=[0, 3], invitation__participant__in=x).count(), 0)
+
+                # The chosen set of participants should not have received invitations in last threshold days
+                self.assertEqual(Invitation.objects.filter(participant__in=x, date_created__gt=last_week_date).count(), 0)
+                # The chosen set of participants should be from provided university and must have enabled can_receive invitations
+                self.assertEqual(
+                    Participant.objects.filter(can_receive_invitations=True, institution__name='Arizona State University',
+                                               pk__in=pk_list).count(), len(x))
+
+                self.set_up_inv(x, es_pk_list)
+
+                self.set_up_participant_signup(x, es_pk_list)
+            else:
+                break

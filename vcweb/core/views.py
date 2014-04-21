@@ -1147,16 +1147,17 @@ def sort_round_configurations(old_sequence_number, new_sequence_number, exp_conf
                 logger.debug('sequence_number increased by 1')
                 rc.save()
     else:
-        flag = False
+        flag = True
         for rc in round_configs:
             current_sequence_number = rc.sequence_number
             if new_sequence_number <= current_sequence_number and flag:
-                rc.sequence_number = current_sequence_number + 1
-                logger.debug('sequence_number increased by 1')
-                rc.save()
                 if new_sequence_number == current_sequence_number:
-                    flag = True
-
+                    rc.sequence_number = current_sequence_number + 1
+                    logger.debug('sequence_number increased by 1')
+                    rc.save()
+                    new_sequence_number += 1
+                else:
+                    flag = False
 
 @experimenter_required
 def update_round_configuration(request, pk):

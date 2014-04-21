@@ -2,33 +2,46 @@
 {% load static %}
 {% block head %}
 {{ block.super }}
-<link rel='stylesheet' href='{% static "css/forestry/style.css" %}'/>
-{% endblock head %}
+<link rel='stylesheet' href='{% static "css/forestry/style.css" %}'>
+{% endblock %}
 {% block page %}
 <div class='row' id='page'>
-    <div id='content' class='span8'>
-        <div data-bind='template: { name: templateId() }'>
+    <div id='content' class='col-md-8'>
+        <div data-bind='template: { name: templateId(), afterRender: afterRenderTemplate}'></div>
+        <div id="progress-modal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                         <h3>Updating experiment data</h3>
+                    </div>
+                    <div class="modal-body">
+                        <div class="progress progress-striped active">
+                            <div id="progress-bar" class="progress-bar progress-bar-info" role="progressbar" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <div id='sidebar' class='span4 filler sidebar'>
+    <div id='sidebar' class='col-md-4 filler sidebar'>
         <div data-bind='ifnot: isInstructionsRound'>
             <h3>Chat</h3>
             <div data-bind='ifnot: chatEnabled'>
-                <div class='alert alert-error'>
-                    <i class='icon-warning-sign'></i> Chat is currently disabled.
+                <div class='alert alert-danger'>
+                    <i class='fa-warning'></i> Chat is currently disabled.
                 </div>
             </div>
             <form id="chat-form" class='form-inline' data-bind='submit: submitChatMessage' >
-                <div class='input-prepend input-block-level'>
-                    <span class='add-on'><i class='text-info icon-comment'></i></span>
-                    <input id='chatMessage' type="text" placeholder="Chat with your group">
+                <div class='input-group'>
+                    <span class='input-group-addon'><i id='chat-icon' class='text-info fa fa-comment'></i></span>
+                    <input id='chatMessage' class="form-control" type="text" placeholder="Chat with your group">
                 </div>
             </form>
             <div class='chat-sidebar'>
                 <div id='chat-div'>
                     <div class='chat-messages' data-bind='foreach: chatMessages'>
-                        <i class='icon-user muted'></i> <strong data-bind='text: participant_number'></strong>
-                        <small><i class='icon-double-angle-right'></i></small> <span data-bind='text: value'></span>
+                        <i class='fa fa-user muted'></i> <strong data-bind='text: participant_number'></strong>
+                        <small><i class='fa fa-angle-double-right'></i></small> <span data-bind='text: value'></span>
                         <br>
                     </div>
                 </div>
@@ -36,111 +49,587 @@
         </div>
     </div>
 </div>
-
-<h3>Forestry round number {{ experiment.current_round.round_number }}</h3>
-{% if max_harvest_decision > 0 %}
-<div style="background: url('{{STATIC_URL}}images/forestry/{{tree.name}}.png'); width:{{max_width}}px; height: {{max_height}}px;">
-    &nbsp;
-</div>
-{% if resource_width > 0 %}
-<div style="background: url('{{STATIC_URL}}images/forestry/pine-tree.png') repeat-x; width:{{resource_width}}px; height: {{tree.height}}px;">
-    &nbsp;
-</div>
-{% endif %}
-
-{% else %}
-<div style='padding: 8px; margin: auto; border: solid 1px; background: #E8E8E8 url({{STATIC_URL}}images/forestry/deforestation.jpg) no-repeat center; height: 282px; width:425px;'>
-    &nbsp;
-</div>
-{% endif %}
-
-<div style='padding: 5px; margin: 8px 0px;' class='ui-state-highlight'>
-    <span class='icon-left ui-icon ui-icon-info'>&nbsp;</span>
-    There are <b>{{ resource_level.value }}</b> trees left.
-</div>
-
-{% if harvest_decision.submitted %}
-<div class='alert alert-error'>
-    <i class='icon-warning-sign'></i> You have already made a harvest decision of <b>{{ harvest_decision.value }}</b>.  You may change your decision until
-    the experimenter ends the round.
-</div>
-{% endif %}
-
-{% if max_harvest_decision > 0 %}
-<form id='forestry-form' action='' method='post'>
-    {% csrf_token %}
-    <div class='field'>
-        <label for='harvest-decision-id'>How many trees will you harvest this round? <br/>
-            <span>Enter a number between 0 and {{ max_harvest_decision }}</span>:
-        </label>
-        <input id='harvest-decision-id' style='width: 2em; text-align: right;' type="text" name='harvest_decision' class='required digits' maxlength='1'/>
-    </div>
-    <div>
-        <button id='submit-harvest' type='submit'>Harvest</button>
-    </div>
-</form>
-{% else %}
-<div class='alert ui-corner-all'>
-    <span class='ui-icon ui-icon-alert icon-left'></span>
-    There are no longer enough trees to harvest. Please wait until the next round begins.
-</div>
-{% endif %}
 {% endblock page %}
 {% block javascript %}
 {{ block.super }}
+
+{# ko templates #}
+
+<script type='text/html' id='WAITING_ROOM'>
+<h3>Waiting for other participants</h3>
+<div>
+    Please wait.  The experiment will continue shortly once all the participants are ready.
+    <p>
+        <span class='badge' data-bind='css: { "badge-important": readyParticipants() < (participantCount() / 2), "badge-success": readyParticipants() > (participantCount() / 2)}, text: readyParticipants'></span> of <span class='badge badge-success' data-bind='text: participantCount'></span> participants are ready.
+    </p>
+</div>
+<div class='progress progress-striped active'>
+    <div class='progress-bar progress-bar-success ' role="progressbar" data-bind='style: { width: readyParticipantsPercentage() + "%" }'></div>
+</div>
+</script>
+<script type='text/html' id='WELCOME'>
+<h3>Welcome</h3>
+<p class='lead'>
+    The experiment will begin shortly after everyone has been assigned a station and has had time to log in.
+</p>
+<div class='well'>
+    <div class='alert alert-info'>
+    <i class='text-success fa fa-info-circle'></i> Please <strong>wait quietly and do not close this window, open any other applications, or communicate with any of
+    the other participants</strong>.
+    </div>
+    <div class='alert alert-info'>
+    <i class='text-success fa fa-info-circle'></i>
+    Please also make sure to turn off, silence, and disable vibration alerts on your cell phones and any mobile devices before the experiment begins.
+    </div>
+    <div>
+    Thank you for your cooperation.
+    </div>
+</div>
+</script>
+<script type='text/html' id='GENERAL_INSTRUCTIONS'>
+<div id='instructions1'>
+    <h4>Forestry</h4>
+    <p>
+        Welcome.  Thank you for participating in this experiment. The following
+        exercise is a way to actively participate in a project about individual
+        decisions and natural resources. Imagine that you or your family must make
+        decisions about the use of a forest.  You and four other randomly selected
+        participants have been placed into a group with access to this shared forest.
+    </p>
+    <p>
+        You will play several rounds equivalent to years or wood harvest seasons.
+        Initially your group has an area of forest with 100 initial resource units.
+        Each round you and every other participant in your group will have to make a
+        decision about how many resource units you want to harvest.  At the start you
+        can harvest a maximum of 5 units and a minimum of 0 units from the resource.
+    </p>
+    <ul class='pager'>
+        <li class='next'>
+            <a href='javascript: void(0);' data-bind='click: activateTemplate.bind($data, "PRACTICE_ROUND_INSTRUCTIONS")'>OK, Continue to practice rounds</a>
+        </li>
+    </ul>
+</div>
+</script>
+<script type='text/html' id='PRACTICE_ROUND_INSTRUCTIONS'>
+<h3>No Payment</h3>
+<p>
+There will be no payment for this practice session.
+</p>
+<h3>Group and Individual Status</h3>
+<p>
+You will be able to observe the status of the members of your group each round. Likewise, group members will see your
+status, and those of your group.  You will be able to text chat with your group members.
+</p>
+<h3>Time</h3>
+<p>
+In each actual experiment round you will have a maximum of 60 seconds to make a harvest decision. In order to help you acquaint
+yourself with the experimental environment, the you will have 3 minutes to make a harvest decision in the first practice
+round, 2 minutes to make a harvest in the next two practice rounds, and then one minute as usual in the subsequent
+practice rounds.
+</p>
+<h3>Harvest Decision</h3>
+<p>
+There are two ways to submit a harvest
+decision:
+</p>
+<ol>
+<li>Select a harvest amount and click "Ok, I'm ready"</li>
+<li>Select a harvest amount and wait for the end of the session</li>
+</ol>
+<p>
+At the end of each round a countdown will alert you when there are 10 seconds remaining to make a harvest choice.  When
+the countdown reaches zero, any value you have selected will be auto-submitted.  If you do not select a harvest value,
+the default value of 0 will automatically be selected.  You may change your harvest decision multiple times before
+clicking "Ok, I'm Ready" until the 1-minute time limit is up.
+</p>
+<ul class='pager'>
+<li class='previous'>
+<a href='javascript:void(0);' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS")'>Back</a>
+</li>
+<li class='next'>
+<a href='javascript: void(0);' data-bind='click: participantReady.bind($data, participantGroupId() + " finished practice round instructions")'>I have fully read and understand these instructions</a>
+</li>
+</ul>
+</script>
+<script type='text/html' id='PRACTICE_ROUND_RESULTS'>
+    <h3>Practice Round Results</h3>
+    <p>
+        If this had been been a paid session, you would have earned <strong class='text-success' data-bind='text: totalEarnings'></strong>.
+    </p>
+    <p>
+    We will now move on to the <strong>paid rounds.</strong>
+    </p>
+    <ul class='pager'>
+        <li class='next'>
+           <a href="javascript: void(0)" data-bind='click: activateTemplate.bind($data, "PAID_EXPERIMENT_INSTRUCTIONS")'>Ok, continue</a>
+        </li>
+    </ul>
+</script>
+<script type='text/html' id='PAID_EXPERIMENT_INSTRUCTIONS'>
+    <h2>Paid Experiment Instructions</h2>
+    <h3>Two Sessions</h3>
+    <p>
+    This experiment is composed of two different, unconnected sessions.  Your group will be randomly selected for each
+    session, so you will be playing with a different group each time.  We will pay you for one of these two sessions,
+    chosen at random.  You have exactly 50% chance of being paid for your earnings in each session.
+    </p>
+    <h3>Group and Individual Status</h3>
+    <p>
+    You will be able to observe the status of the members of your group each round.  Likewise group members will see
+    your status, and those of the group.
+    </p>
+    <h3>Group Chat</h3>
+    <p>
+    You will be able to text chat with the other members of your group.  Once you have made a harvest decision, you will
+    no longer be able to contribute to the chat for that round.
+    </p>
+    <h3>Harvest Choice</h3>
+    <p>
+    You will have a maximum of <i class='fa fa-clock-o'></i><span data-bind='text: roundDuration'></span> seconds to make a
+    harvest decision each round.  A countdown will alert you when there are
+    <span data-bind='text: warningCountdownTime'></span> seconds remaining to make a harvest choice.  When the countdown
+    reaches zero, any value you have selected will be submitted.  <strong>The default harvest is zero.</strong>
+    </p>
+
+    <ul class='pager'>
+        <li class='previous'>
+        <a href='javascript: void(0)' data-bind='click: activateTemplate.bind($data, "PRACTICE_ROUND_RESULTS")'>Back</a>
+        </li>
+        <li class='next'>
+        <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished paid experiment instructions") '>Ok, I understand</a>
+        </li>
+    </ul>
+</script>
+<script type='text/html' id='REGULAR'>
+<div class='row'>
+    <div class='col-md-7'>
+        <div class='row'>
+        <h3>My Status</h3>
+            <div class='alert alert-warning forestry-status-dashboard col-md-2'>
+                <h4 id="dashboard-last-harvest">Last Harvest <i class='fa fa-info-circle' data-content="The number of trees you harvested last round."></i> </h4>
+                <p>
+                <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span></strong>
+                </p>
+            </div>
+            <div class='alert alert-warning forestry-status-dashboard col-md-2'>
+                <h4 id='dashboard-time'><i class='fa fa-clock-o'></i> Time</h4>
+                <p>
+                <strong data-bind='css: { "text-error": secondsLeft() < warningCountdownTime(), "text-info": secondsLeft() > warningCountdownTime()}'>
+                    <span data-bind='text: secondsLeft'></span>
+                </strong>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class='col-md-5'>
+        <h3>Group Status</h3>
+        <table class='table table-bordered table-condensed group-status'>
+            <colgroup>
+                <col>
+                <!-- ko foreach: playerData -->
+                <col data-bind='css: { "current-player": id() === $root.participantGroupId() }'>
+                <!-- /ko -->
+            </colgroup>
+            <thead>
+                <tr><th>Player</th>
+                    <!-- ko foreach: playerData -->
+                    <th data-bind='css: { "current-player": id() === $root.participantGroupId() }, text: number'></th>
+                    <!-- /ko -->
+                </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Last harvest</td>
+                <!-- ko foreach: playerData -->
+                <td data-bind='text: lastHarvestDecision, css: { "current-player": id() === $root.participantGroupId() }'></td>
+                <!-- /ko -->
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% comment %} resource visualization section {% endcomment %}
+<div class='row'>
+    <div class='col-md-12' data-bind='template: { name: "resource-visualization-template" }'></div>
+</div>
+{% comment %} resource harvest decision section {% endcomment %}
+<div data-bind='ifnot: isResourceEmpty'>
+    <div class='row'>
+        <h3>Harvest</h3>
+        <div data-bind='if: canHarvestResource'>
+            <form id='vcweb-form' method='post' class='form-horizontal' >
+                {% csrf_token %}
+                <div id='harvestDecisionDiv' class='control-group'>
+                    <div data-bind='template: { name: "harvest-decision-multiselect-template" }'></div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</script>
+<script type='text/html' id='resource-visualization-template'>
+<div class='row' data-bind='if: isPracticeRound'>
+    <div class='alert alert-danger alert-block'>
+        <h4>PRACTICE ROUND</h4>
+        This is a practice round.  The decisions you make in this round will <b>NOT</b> contribute to your earnings.
+    </div>
+</div>
+<div class='row'>
+    <div>
+        <h3 class='compact'>My Group</h3>
+        <div data-bind='template: { name: "tree-template", data: myGroup }'></div>
+    </div>
+</div>
+</script>
+<script type='text/html' id='FINAL_DEBRIEFING'>
+    <h2>Payment</h2>
+    <table class='table table-bordered table-condensed'>
+        <thead>
+            <tr><th>Session 1</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class='text-success' data-bind='text: totalEarnings'></span></td>
+            </tr>
+        </tbody>
+    </table>
+    <h2>Experiment Results</h2>
+    <p>
+        Thank you for participating. Here are your results and the results of your group.
+    </p>
+</script>
+<script type='text/html' id='tree-template'>
+<div data-bind="visible: $data.isResourceEmpty">
+    <div class='well'>
+        <center>
+            <img alt='depleted trees' src="{% static 'images/forestry/depleted-trees.jpg' %}" class="img-polaroid" width="425" height="282">
+        </center>
+    </div>
+    <div class='alert alert-danger'><i class='fa fa-warning'></i> There are no more trees to harvest. Please wait quietly until the next round begins.</div>
+</div>
+<div data-bind='ifnot: isResourceEmpty'>
+    {% comment %} resource level visualization pre-regrowth {% endcomment %}
+    <div data-bind='style: { width: $root.blockResourceVisualizationImageWidth(originalResourceLevel), height: $root.blockResourceVisualizationImageHeight(originalResourceLevel), background: $root.resourceImageBackgroundUrl }'></div>
+        <div data-bind='style: { width: $root.remainderResourceImageWidth(originalResourceLevel), height: $root.resourceImageHeightPx, background: $root.resourceImageBackgroundUrl }'></div>
+        {% comment %} regrowth resource visualization {% endcomment %}
+        <div data-bind='style: { width: $root.regrowthResourceImageWidth(regrowth), height: $root.resourceImageHeightPx, background: $root.regrowthResourceImageBackgroundUrl }'></div>
+    </div>
+    <br>
+    <table class='group-status table table-bordered table-condensed table-striped'>
+        <tbody>
+            <tr><td>forest</td><td><strong class='badge badge-success' data-bind='text:resourceLevel'></strong> trees</td></tr>
+            <tr><td>average harvest</td><td data-bind='text:averageHarvest().toFixed(1)'></td></tr>
+        </tbody>
+    </table>
+</div>
+</script>
+<script type='text/html' id='harvest-decision-multiselect-template'>
+    <table>
+        <tr class='harvest-decision-resources'>
+            <!-- ko foreach: harvestDecisionOptions -->
+            <td class='harvest-decision-tree-td' data-bind='attr: { id: "harvest-decision-td-" + $data }'>
+                <form data-bind='attr: { id: $root.harvestDecisionFormId($data) }'>
+                    <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: $root.participantGroupId'/>
+                    <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: $data'>
+                    <div class='harvest-decision-tree-div' data-bind='click: $root.selectDecision.bind($root, $data)'>
+                        <div data-bind='css: { selected: $root.isSelectedHarvestDecision($data), "harvest-decision-tree": $data > 0, "zero-harvest-decision": $data === 0}'></div>
+                        <span style='margin-left: 2px;' class='badge badge-info' data-bind='text: $data'></span>
+                    </div>
+                </form>
+            </td>
+            <!-- /ko -->
+            <td>
+                <button id='submitDecisionButton' data-bind='enable: submitHarvestDecisionEnabled, click: $root.submitDecision' type='submit' class='btn btn-primary submit-decision-button'>Ok, I'm ready</button>
+            </td>
+        </tr>
+    </table>
+</script>
+{#<script type='text/html' id='harvest-decision-select-template'>#}
+{#    <div class='input-prepend'>#}
+{#        <span class='add-on'></span>#}
+{#        <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>#}
+{#        <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: harvestDecision'>#}
+{#        <select id='harvestDecisionSelect' name='harvest_decision' required="required" form="vcweb-form" data-bind='options: harvestDecisionOptions, value: harvestDecision'>#}
+{#        </select>#}
+{#    </div>#}
+{#</script>#}
+
+{% include "includes/bootstrap-tour.html" %}
 <script type="text/javascript">
     $(function() {
-        $("#forestry-form").validate({
-                rules: {
-                    harvest_decision: {
-                        required: true,
-                        range: [0, {{max_harvest_decision}}]
-                    }
+        function ExperimentModel(experimentModelJson) {
+            var self = this;
+            var model = ko.mapping.fromJS(experimentModelJson);
+
+            model.tour = ko.observable();
+
+            model.harvestDecisionOptions = ko.computed(function() {
+                return ko.utils.range(0, model.maxHarvestDecision());
+            });
+
+            model.harvestDecisionFormId = function(numberOfTrees) {
+                numberOfTrees = numberOfTrees || model.harvestDecision();
+                return "harvest-decision-form" + numberOfTrees;
+            }
+            model.secondsLeft = ko.observable(0);
+
+            // Remove currentInterval
+            model.currentInterval = ko.observable();
+
+            model.selectedHarvestDecision = ko.observable(false);
+
+            model.templateId = ko.computed(function() {
+                switch ( model.templateName() ) {
+                    case 'PRACTICE':
+                        return 'REGULAR';
+                    default:
+                        return model.templateName();
+                }
+            });
+
+            model.setupTour = function() {
+                if (! model.showTour()) {
+                    return;
+                }
+                model.tour(new Tour());
+                model.tour().addSteps([{
+                    element: "#dashboard-last-harvest", title: "Last harvest",  placement: "right",
+                    content: "Your last round's harvest decision will be displayed here.  Since this is the first practice round this is currently 0."
                 },
-                messages: {
-                    harvest_decision: {
-                        required: "Please enter a harvest decision",
-                        range: "Please enter a number between 0 and {{ max_harvest_decision }}"
-                    }
+                {
+                    element: "#dashboard-time", title: "Time Left", placement: "right",
+                    content: "The time remaining in this round is displayed here.  It will turn red when " + model.warningCountdownTime() + " seconds are left."
                 },
-        });
-        $('#harvest-decision-id').focus(function() {
-            this.select();
-        });
-        $('#harvest-decision-id').focus();
+                {
+                    element: "#harvest-decision-td-5", title: "Harvest Decision", placement: "bottom",
+                    content: "Click on the number of trees you'd like to harvest here.  For the purposes of this practice round, please select 5 now and click the 'Ok, I'm ready' button."
+                },
+                {
+                    element: "#chatMessage", title: "Text Chat", placement: "left",
+                    content: "When chat is enabled, you can communicate with your group by typing messages into this box and hitting the enter key."
+                }]);
+                model.tour().restart();
+            }
+            model.endTour = function() {
+                var tour = model.tour();
+                if (tour) {
+                    tour.end();
+                }
+            }
+
+            model.setCurrentInterval = function(intervalId) {
+                model.clearCurrentInterval();
+                model.currentInterval(intervalId);
+            }
+            model.clearCurrentInterval = function() {
+                var currentIntervalId = model.currentInterval();
+                if (currentIntervalId) {
+                    clearInterval(currentIntervalId);
+                    model.currentInterval(undefined);
+                }
+            }
+            model.tick = function() {
+                model.secondsLeft(model.secondsLeft() - 1);
+            }
+            model.isTimerRunning = ko.computed(function() {
+                return model.secondsLeft() > 0;
+            });
+            // activate instructions click bindings
+            model.activateTemplate = function(name) {
+                model.templateName(name);
+            };
+            model.readyParticipantsPercentage = ko.computed(function() {
+                return (model.readyParticipants() / model.participantCount()) * 100;
+            });
+            model.participantReady = function(message) {
+                $.post('/experiment/participant-ready', { participant_group_id: model.participantGroupId() }, function(response) {
+                    model.readyParticipants(response.number_of_ready_participants);
+                    getWebSocket().send(createReadyEvent(message));
+                    model.activateTemplate("WAITING_ROOM");
+                });
+                scrollToTop();
+            }
+            // Remove numberOfTreesPerRow as I can't find any use of it
+            model.numberOfTreesPerRow = ko.observable(10);
+
+            model.isResourceEmpty = ko.computed(function() {
+                return model.resourceLevel() == 0;
+            })
+            model.canHarvestResource = ko.computed(function() {
+                return !model.isResourceEmpty();
+            });
+            model.resourcesPerRow = ko.observable(77);
+            model.resourceImageWidth = ko.observable(10);
+            model.resourceImageHeight = ko.observable(20);
+            model.resourceImageHeightPx = ko.computed(function() {
+                return model.resourceImageHeight() + "px";
+            });
+
+            model.rowsToDisplay = function(resourceLevel) {
+                return Math.floor(resourceLevel() / model.resourcesPerRow());
+            };
+            model.individualResourcesToDisplay = ko.computed(function() {
+                return model.resourceLevel() % model.resourcesPerRow();
+            });
+            model.resourcesToDisplay = ko.computed(function() {
+                if (model.resourceLevel() > 0) {
+                    return Math.min(model.resourceLevel(), model.maximumResourcesToDisplay());
+                }
+                return 0;
+            });
+            model.inactiveResourceImageUrl = ko.observable("{{STATIC_URL}}images/forestry/tree-inactive.png");
+            model.resourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/tree-resource-old-growth.png')");
+            model.regrowthResourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/tree-resource-new-growth.png')");
+            model.regrowthResourceImageWidth = function(regrowth) {
+                return (model.regrowth() * model.resourceImageWidth()) + "px";
+            }
+            model.blockResourceVisualizationImageWidth = function(resourceLevel) {
+                return (model.resourcesPerRow() * model.resourceImageWidth()) + "px";
+            };
+            model.blockResourceVisualizationImageHeight = function(resourceLevel) {
+                var rowsToDisplay = model.rowsToDisplay(resourceLevel);
+                return (rowsToDisplay * model.resourceImageHeight()) + "px";
+            };
+            model.remainderResourceImageWidth = function(resourceLevel) {
+                var remainder = resourceLevel() % model.resourcesPerRow();
+                return (remainder * model.resourceImageWidth()) + "px";
+            };
+            model.startRound = function() {
+                model.initializeChat();
+                if (model.templateId() != "REGULAR") {
+                    return;
+                }
+                model.setupTour();
+                console.debug("starting round, checking time remaining: " + model.timeRemaining());
+                if (model.timeRemaining() > 0) {
+                    console.debug("setting seconds left to: " + model.timeRemaining());
+                    model.secondsLeft(model.timeRemaining());
+                    model.setCurrentInterval(
+                        setInterval(function() {
+                            model.tick();
+                            if (! model.isTimerRunning()) {
+                                // FIXME: need to verify that this invocation will work properly
+                                model.submitDecision();
+                            }
+                        },
+                        1000));
+                }
+            };
+            model.submitHarvestDecisionEnabled = ko.computed(function() {
+                return model.submitted() || model.selectedHarvestDecision();
+            });
+            model.isSelectedHarvestDecision = function(numberOfTrees) {
+                return model.submitHarvestDecisionEnabled() && (model.harvestDecision() >= numberOfTrees);
+            }
+            model.submitDecision = function() {
+                model.endTour();
+                $.post('submit-harvest-decision', {participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true },
+                function(response) {
+                    // hide selection, disable chat, show waiting room
+                    model.participantReady(response.message);
+                    model.clearCurrentInterval();
+                    model.submitted(true);
+                    model.secondsLeft(0);
+                    model.disableChatForm();
+                    scrollToTop();
+                });
+            }
+            model.selectDecision = function(numberOfTrees) {
+                if (model.submitted()) {
+                    alert("You've already submitted a harvest decision this round.");
+                    return false;
+                }
+                var formId = "#" + model.harvestDecisionFormId(numberOfTrees)
+                var form = $(formId);
+                var formData = form.serialize();
+                $.post('submit-harvest-decision', formData, function(response) {
+                    model.selectedHarvestDecision(true);
+                    model.harvestDecision(numberOfTrees);
+                });
+                return false;
+            }
+            model.submitChatMessage = function(data, evt) {
+                console.log("submitting chat message");
+                var message = $('#chatMessage').val();
+                if (message) {
+                    $('#chatMessage').val('');
+                    getWebSocket().send(createMessageEvent(message));
+                    $('#chatMessage').focus();
+                }
+                return false;
+            }
+            model.update = function() {
+                $.get('view-model', { participant_group_id: model.participantGroupId() }, function(data) {
+                    ko.mapping.fromJS(data, model);
+                    $('#progress-modal').modal('hide');
+                    model.startRound();
+                });
+            }
+            model.setFormDisabled = function(formId, disabled) {
+                // disable all form inputs
+                if (formId.indexOf("#") != 0) {
+                    formId = "#" + formId;
+                }
+                $(formId + " :input").prop("disabled", disabled);
+            }
+            model.enableHarvestForm = function() {
+                $('#harvestDecisionDiv').show();
+            }
+            model.disableHarvestForm = function() {
+                $('#harvestDecisionDiv').hide();
+            }
+            model.enableChatForm = function() {
+                model.setFormDisabled("#chat-form", false);
+            }
+            model.disableChatForm = function() {
+                model.setFormDisabled("#chat-form", true);
+            }
+            model.initializeChat = function() {
+                var chatEnabled = model.chatEnabled();
+                // FIXME: get rid of form disabling?
+                model.setFormDisabled("#chat-form", ! chatEnabled);
+                model.chatEnabled(chatEnabled);
+                if (chatEnabled) {
+                    console.debug("chat was enabled, showing sidebar explicitly");
+                    $('#sidebar').show();
+                    $('#content').removeClass('col-md-12').addClass('col-md-8');
+                }
+                else {
+                    $('#sidebar').hide();
+                    $('#content').removeClass('col-md-8').addClass('col-md-12');
+                }
+            }
+            model.afterRenderTemplate = function(elements) {
+                $('[data-content]').popover({placement: 'top', trigger: 'hover'});
+            }
+            return model;
+        }
+
+        var experimentModel = new ExperimentModel($.parseJSON("{{ experimentModelJson|escapejs }}"));
+
         var s = connect();
-        s.onmessage = function(json_string) {
-            var json = jQuery.parseJSON(json_string);
-            switch (json.message_type) {
-            case 'goto':
-                console.log("going to " + json.url);
-                window.location.href = json.url;
-                break;
+        s.onmessage = function(message) {
+            var data = $.parseJSON(message.data);
+            switch (data.event_type) {
+                case 'chat':
+                    experimentModel.chatMessages.unshift(data);
+                    break;
+                case 'update':
+                    $('#progress-modal').modal('show');
+                    experimentModel.update();
+                    break;
+                case 'participant_ready':
+                    $.get('/api/experiment/{{experiment.pk}}/check-ready-participants', function(response) {
+                        experimentModel.readyParticipants(response.number_of_ready_participants);
+                    });
+                    break;
+                default:
+                    console.debug("unhandled message:" + message);
+                    break;
             }
         };
-        /*
-        $('#forestry-form').submit(function() {
-            var harvestDecisionValue = $('#harvest-decision-id').val();
-            // FIXME: this isn't getting sent through properly before the submit occurs.  
-            // Should work out communicating directly from Django to the tornadio process.
-            // $('#submit-harvest').attr('disabled', true);
-            if (harvestDecisionValue) {
-                s.send(createSubmitEvent(harvestDecisionValue));
-            }
-            return true;
-        });
-        */
-        $('#submit-harvest').click(function() {
-            var harvestDecisionValue = $('#harvest-decision-id').val();
-            if (harvestDecisionValue) {
-                s.send(createSubmitEvent(harvestDecisionValue));
-            }
-            setTimeout(function() {
-                $('#forestry-form').submit();
-                }, 800);
-            return false;
-        });
+        experimentModel.startRound();
+        ko.applyBindings(experimentModel);
     });
 </script>
 {% endblock %}
-

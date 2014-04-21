@@ -1,217 +1,176 @@
-from django import forms
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.http import Http404
-from django.shortcuts import render_to_response, redirect, get_object_or_404
-from django.template.context import RequestContext
-from django.views.generic import View
-from django.views.generic.detail import SingleObjectTemplateResponseMixin
-from vcweb.core.decorators import participant_required, experimenter_required
-from vcweb.core.forms import QuizForm
-from vcweb.core.models import is_participant, is_experimenter, Experiment
-from vcweb.core.views import ParticipantSingleExperimentMixin
-from vcweb.forestry.models import get_resource_level, get_max_harvest_decision, get_forestry_experiment_metadata, set_harvest_decision, get_harvest_decision, get_group_harvest, get_regrowth
-from vcweb.forestry.forms import HarvestDecisionForm
+from django.db import transaction
+
+from django.shortcuts import render, get_object_or_404
+from django.template.defaulttags import regroup
+from vcweb.core import dumps
+
+from vcweb.core.decorators import participant_required
+from vcweb.core.http import JsonResponse
+from vcweb.core.forms import SingleIntegerDecisionForm
+from vcweb.core.models import (Experiment, ChatMessage, ParticipantGroupRelationship)
+from vcweb.forestry.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
+                                   get_resource_level, get_initial_resource_level,
+                                   get_harvest_decision_dv, get_player_data,
+                                   get_regrowth_dv, set_harvest_decision, get_average_harvest, get_total_group_harvest,
+                                   get_total_experiment_harvest)
+
 import logging
-from collections import deque
 
 logger = logging.getLogger(__name__)
 
-@login_required
-def index(request):
-    if is_participant(request.user):
-        return redirect('forestry:participant_index')
-        #return render_to_response('forestry/participant-index.html', RequestContext(request))
-    elif is_experimenter(request.user):
-        ''' FIXME: should redirect to forestry-specific experimenter dashboard instead '''
-        #return render_to_response('forestry/experimenter-index.html')
-        return redirect('forestry:experimenter_index')
-    else:
-        logger.warning("user %s isn't an experimenter or participant", request.user)
-        return redirect('home')
 
-@participant_required
-def participant_index(request):
-    participant = request.user.participant
-    experiment_dict = {}
-    for experiment in participant.experiments.filter(experiment_metadata=get_forestry_experiment_metadata()):
-        status = experiment.get_status_display()
-        if not status in experiment_dict:
-            experiment_dict[status] = list()
-        experiment_dict[status].append(experiment)
-    return render_to_response('forestry/participant-index.html', locals(), context_instance=RequestContext(request))
-
-@experimenter_required
-def configure(request, experiment_id=None):
-    raise Http404()
-
-class ParticipantRoundData(object):
-    pass
-
-def generate_participant_history(participant_group_relationship):
-    group = participant_group_relationship.group
-    experiment = group.experiment
-    participant_history = deque()
-    for round_data in experiment.playable_round_data:
-        logger.debug("generating participant history for %s, current round %s",
-                participant_group_relationship.participant, round_data)
-        data = ParticipantRoundData()
-# FIXME: laborious and error-prone data binding, refactor if possible
-        data.round_configuration = round_data.round_configuration
-        data.individual_harvest = get_harvest_decision(participant_group_relationship, round_data=round_data)
-        data.group_harvest = get_group_harvest(group, round_data=round_data)
-        data.group_regrowth = get_regrowth(group, round_data=round_data)
-        resource_level = get_resource_level(group, round_data=round_data)
-        try:
-            # FIXME: make sure this is accurate
-            if resource_level.value == 100:
-                data.original_number_of_trees = 100
-            else:
-                data.original_number_of_trees = min(resource_level.value + data.group_harvest.value - data.group_regrowth.value, 100)
-        except AttributeError as e:
-            logger.error("Caught attribute error while trying to calculate original number of trees %s", e)
-            pass
-        data.final_number_of_trees = resource_level.value
-        participant_history.appendleft(data)
-    if experiment.is_round_in_progress:
-        last_round_data = participant_history[0]
-        last_round_data.round_in_progress = (experiment.current_round == last_round_data.round_configuration)
-    return participant_history
-
-@participant_required
-def wait(request, experiment_id=None):
-    try:
-        experiment = Experiment.objects.get(pk=experiment_id)
-        participant = request.user.participant
-        participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
-        participant_group_relationship = participant.get_participant_group_relationship(experiment)
-        participant_history = generate_participant_history(participant_group_relationship)
-        return render_to_response('forestry/wait.html', {
-            'participant_experiment_relationship': participant_experiment_relationship,
-            'participant_group_relationship':participant_group_relationship,
-            'participant_history': participant_history,
-            },
-            context_instance=RequestContext(request))
-    except Experiment.DoesNotExist:
-        logger.warning("No experiment found with id %s", experiment_id)
-        return redirect('forestry:participant_index')
-
-
-class ParticipateView(SingleObjectTemplateResponseMixin, ParticipantSingleExperimentMixin, View):
-    template_name_field = 'current_round_template'
-
-# FIXME: refactor, replace conditional logic here with embedded KO templates
 @participant_required
 def participate(request, experiment_id=None):
     participant = request.user.participant
+    # logger.debug(experiment_id)
     logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
-    try:
-        experiment = get_object_or_404(Experiment.objects.select_related(), pk=experiment_id)
-        if experiment.experiment_metadata != get_forestry_experiment_metadata():
-            raise Http404
-        current_round = experiment.current_round
-        participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
-        if current_round.is_instructions_round:
-            return render_to_response(experiment.current_round_template, {
-                'participant_experiment_relationship': participant_experiment_relationship,
-                },
-                context_instance=RequestContext(request))
-
-        if experiment.is_round_in_progress:
-            if current_round.is_playable_round:
-                return play(request, experiment, participant)
-            elif current_round.is_chat_round:
-                return chat(request, experiment, participant)
-            elif current_round.is_quiz_round:
-                return quiz(request, experiment, participant)
-        else:
-# round is not currently active, redirect to waiting page.
-            return redirect('forestry:wait', experiment_id=experiment.pk)
-    except Experiment.DoesNotExist:
-        error_message = "No experiment with id %s" % experiment_id
-        logger.warning(error_message)
-        messages.warning(request, error_message)
-        return redirect('forestry:index')
-
-import re
-quiz_question_re = re.compile(r'^quiz_question_(\d+)$')
-def quiz(request, experiment, participant):
-    incorrect_answers = []
-    if request.method == 'POST':
-        form = QuizForm(request.POST)
-        if form.is_valid():
-# check against quiz answers (should be stored as data parameters)
-            current_round = experiment.current_round
-            for name, answer in form.cleaned_data.items():
-                match_object = quiz_question_re.match(name)
-                if match_object:
-                    quiz_question_id = match_object.group
-                    quiz_question = current_round.quiz_questions.get(pk=quiz_question_id)
-                    if not quiz_question.is_correct(answer):
-# add to wrong answers list
-                        incorrect_answers.append("Your answer %s was incorrect.  The correct answer is %s. %s"
-                                % (answer, quiz_question.answer,
-                                    quiz_question.explanation))
-    else:
-        form = QuizForm(quiz_questions=experiment.quiz_questions)
-
-    participant_group_rel = participant.get_participant_group_relationship(experiment)
-    return render_to_response(experiment.current_round_template, {
-        'participant_group_relationship': participant_group_rel,
-        'form': form,
-        'incorrect_answers': incorrect_answers
-        },
-        context_instance=RequestContext(request))
-
-
-def chat(request, experiment, participant):
-    participant_group_rel = participant.get_participant_group_relationship(experiment)
-    participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
-    chat_messages = experiment.get_round_data().chat_message_set.filter(participant_group_relationship__group=participant_group_rel.group)
-    return render_to_response(experiment.current_round_template, {
-        'participant_group_relationship': participant_group_rel,
-        'participant_experiment_relationship': participant_experiment_relationship,
-        'group': participant_group_rel.group,
-        'participant': participant,
+    experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
+                                   pk=experiment_id)
+    pgr = experiment.get_participant_group_relationship(participant)
+    if experiment.experiment_metadata != get_experiment_metadata() or pgr.participant != request.user.participant:
+        raise Http404
+    return render(request, experiment.participant_template, {
         'experiment': experiment,
-        'chat_messages': chat_messages,
-        },
-        context_instance=RequestContext(request))
+        'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
+        'participant_group_relationship': pgr,
+        'experimentModelJson': get_view_model_json(experiment, pgr),
+    })
 
 
-# FIXME: figure out the appropriate place for this
-trees = {
-        'deciduous': { 'name': 'deciduous-tree', 'height': 32 },
-        'pine': {'name': 'pine-tree', 'height': 79 },
-        }
-def play(request, experiment, participant):
-    logger.debug("handling play request for participant %s and experiment %s", participant, experiment)
-    form = HarvestDecisionForm(request.POST or None)
-    participant_group_relationship = participant.get_participant_group_relationship(experiment)
-    participant_experiment_relationship = participant.get_participant_experiment_relationship(experiment)
-    harvest_decision = get_harvest_decision(participant_group_relationship)
+@participant_required
+def submit_harvest_decision(request, experiment_id=None):
+    form = SingleIntegerDecisionForm(request.POST or None)
+    experiment = get_object_or_404(Experiment, pk=experiment_id)
     if form.is_valid():
-        resources_harvested = form.cleaned_data['harvest_decision']
-        resource_level = get_resource_level(participant_group_relationship.group)
-        max_harvest_decision = get_max_harvest_decision(resource_level.value)
-        if resources_harvested <= max_harvest_decision:
-            set_harvest_decision(participant_group_relationship=participant_group_relationship, value=resources_harvested)
-            return redirect('forestry:wait', experiment_id=experiment.pk)
-        else:
-            raise forms.ValidationError("invalid harvest decision %s > max %s" % (harvest_decision, max_harvest_decision))
+        participant_group_id = form.cleaned_data['participant_group_id']
+        pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
+        harvest_decision = form.cleaned_data['integer_decision']
+        submitted = form.cleaned_data['submitted']
+        logger.debug("pgr %s harvested %s - final submission? %s", pgr, harvest_decision, submitted)
+        with transaction.atomic():
+            round_data = experiment.current_round_data
+            set_harvest_decision(pgr, harvest_decision, round_data, submitted=submitted)
+            message = "%s harvested %s trees"
+            experiment.log(message % (pgr.participant, harvest_decision))
+            response_dict = {
+                'success': True,
+                'message': message % (pgr.participant_handle, harvest_decision),
+            }
+            return JsonResponse(dumps(response_dict))
     else:
-        group = participant_group_relationship.group
-        resource_level = get_resource_level(group)
-        max_harvest_decision = get_max_harvest_decision(resource_level.value)
-# FIXME: UI crap logic in view to determine how wide to make the tree div
-        number_of_trees_per_row = 20
-        max_width = number_of_trees_per_row * 30
-        tree = trees['pine']
-        max_height = (resource_level.value / number_of_trees_per_row) * tree['height']
+        logger.debug("form was invalid: %s", form)
+    for field in form:
+        if field.errors:
+            logger.debug("field %s had errors %s", field, field.errors)
+    return JsonResponse(dumps({'success': False}))
 
-        number_of_resource_divs = range(0, resource_level.value / number_of_trees_per_row)
-        resource_width = (resource_level.value % number_of_trees_per_row) * 30
-        return render_to_response(experiment.current_round_template,
-                locals(),
-                context_instance=RequestContext(request))
 
+@participant_required
+def get_view_model(request, experiment_id=None):
+    experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
+                                   pk=experiment_id)
+    pgr = experiment.get_participant_group_relationship(request.user.participant)
+    return JsonResponse(get_view_model_json(experiment, pgr))
+
+
+experiment_model_defaults = {
+    'submitted': False,
+    'chatEnabled': False,
+    'resourceLevel': 0,
+    'totalEarnings': 0,
+    'maximumResourcesToDisplay': 20,
+    'warningCountdownTime': 10,
+    'harvestDecision': 0,
+    'roundDuration': 60,
+    'chatMessages': [],
+    'myGroup': {
+        'resourceLevel': 0,
+        'regrowth': 0,
+        'originalResourceLevel': 0,
+        'averageHarvest': 0,
+        'isResourceEmpty': 0,
+    },
+    'selectedHarvestDecision': False,
+    'isInstructionsRound': False,
+    'lastHarvestDecision': 0,
+    'playerData': [],
+    'regrowth': 0,
+}
+
+
+# FIXME: bloated method with too many special cases, try to refactor
+def get_view_model_json(experiment, participant_group_relationship, **kwargs):
+    ec = experiment.experiment_configuration
+    current_round = experiment.current_round
+    current_round_data = experiment.current_round_data
+    previous_round = experiment.previous_round
+    previous_round_data = experiment.get_round_data(round_configuration=previous_round, previous_round=True)
+
+    experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
+
+    experiment_model_dict['timeRemaining'] = experiment.time_remaining
+    experiment_model_dict['sessionId'] = current_round.session_id
+    experiment_model_dict['maxHarvestDecision'] = get_max_allowed_harvest_decision(participant_group_relationship,
+                                                                                   current_round_data, ec)
+    experiment_model_dict['templateName'] = current_round.template_name
+    experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
+    experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
+    experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
+
+    # instructions round parameters
+    if current_round.is_instructions_round:
+        experiment_model_dict['isInstructionsRound'] = True
+        # experiment_model_dict['participantsPerGroup'] = ec.max_group_size
+        # experiment_model_dict['regrowthRate'] = regrowth_rate
+        # experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
+
+    if current_round.is_playable_round or current_round.is_debriefing_round:
+
+        experiment_model_dict['chatEnabled'] = current_round.chat_enabled
+
+        # instructions rounds to practice rounds.
+        own_group = participant_group_relationship.group
+        # logger.debug("My group is %s", own_group)
+
+        own_resource_level = get_resource_level(own_group)
+
+        player_data, own_data = get_player_data(previous_round_data, current_round_data, participant_group_relationship)
+
+        experiment_model_dict.update(own_data)
+        # All the Players Data
+        experiment_model_dict['playerData'] = player_data
+
+        # experiment_model_dict['averageHarvest'] = get_average_harvest(own_group, previous_round_data)
+        regrowth = experiment_model_dict['regrowth'] = get_regrowth_dv(own_group, current_round_data).int_value
+
+        experiment_model_dict['myGroup'] = {
+            'resourceLevel': own_resource_level,
+            'regrowth': regrowth,
+            'originalResourceLevel': own_resource_level - regrowth,
+            'averageHarvest': get_average_harvest(own_group, previous_round_data),
+            'isResourceEmpty': own_resource_level == 0,
+        }
+        if current_round.is_debriefing_round and previous_round.is_practice_round:
+            experiment_model_dict['totalEarnings'] = get_total_experiment_harvest(experiment,
+                                                                                  practice=True) * ec.exchange_rate
+        elif current_round.is_debriefing_round and not previous_round.is_practice_round:
+            experiment_model_dict['totalEarnings'] = get_total_experiment_harvest(experiment) * ec.exchange_rate
+
+        experiment_model_dict['resourceLevel'] = own_resource_level
+
+    # participant group data parameters are only needed if this round is a data round
+    # or the previous round was a data round
+    if previous_round.is_playable_round or current_round.is_playable_round:
+
+        harvest_decision = get_harvest_decision_dv(participant_group_relationship, current_round_data)
+        experiment_model_dict['submitted'] = harvest_decision.submitted
+
+        if harvest_decision.submitted:
+            # user has already submit a harvest decision for this round
+            experiment_model_dict['harvestDecision'] = harvest_decision.int_value
+            logger.debug("already submitted, setting harvest decision to %s", experiment_model_dict['harvestDecision'])
+
+        experiment_model_dict['chatMessages'] = [cm.to_dict() for cm in ChatMessage.objects.for_group(own_group)]
+
+    return dumps(experiment_model_dict)

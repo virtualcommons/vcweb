@@ -676,16 +676,18 @@
                             type: "POST",
                             success: function(result) {
                                 if(result.success){
-                                    var flag = false;
+                                    var flag = true;
                                     var new_sequence_number = result.round_config.sequence_number;
                                         $.each(model.roundConfigList(), function() {
                                             var current_sequence_number = this.sequence_number();
 
-                                            if( current_sequence_number > new_sequence_number && flag){
-                                                this.sequence_number(current_sequence_number + 1);
-                                                this.sequence_number.commit();
+                                            if( current_sequence_number >= new_sequence_number && flag){
                                                 if(new_sequence_number == current_sequence_number) {
-                                                    flag = true
+                                                    this.sequence_number(current_sequence_number + 1);
+                                                    this.sequence_number.commit();
+                                                    new_sequence_number++;
+                                                } else {
+                                                    flag = false;
                                                 }
                                             }
                                         });

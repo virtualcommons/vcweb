@@ -9,19 +9,25 @@ from vcweb.core.http import JsonResponse
 from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage)
 from vcweb.bound.forms import SingleIntegerDecisionForm
 from vcweb.bound.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
-        get_cost_of_living, get_resource_level, get_initial_resource_level, get_final_session_storage_queryset,
-        get_harvest_decision_dv, set_harvest_decision, can_observe_other_group, get_average_harvest,
-        get_average_storage, get_total_harvest, get_number_alive, get_player_data, get_regrowth_dv)
+                                get_cost_of_living, get_resource_level, get_initial_resource_level,
+                                get_final_session_storage_queryset,
+                                get_harvest_decision_dv, set_harvest_decision, can_observe_other_group,
+                                get_average_harvest,
+                                get_average_storage, get_total_harvest, get_number_alive, get_player_data,
+                                get_regrowth_dv)
 
 from urllib import urlencode
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 @participant_required
 def participate(request, experiment_id=None):
     participant = request.user.participant
     logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
-    experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'), pk=experiment_id)
+    experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
+                                   pk=experiment_id)
     pgr = experiment.get_participant_group_relationship(participant)
     if experiment.experiment_metadata != get_experiment_metadata() or pgr.participant != request.user.participant:
         raise Http404
@@ -30,7 +36,8 @@ def participate(request, experiment_id=None):
         'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
         'participant_group_relationship': pgr,
         'experimentModelJson': get_view_model_json(experiment, pgr),
-        })
+    })
+
 
 @participant_required
 def submit_harvest_decision(request, experiment_id=None):
@@ -48,71 +55,74 @@ def submit_harvest_decision(request, experiment_id=None):
             message = "%s harvested %s trees"
             experiment.log(message % (pgr.participant, harvest_decision))
             response_dict = {
-                    'success': True,
-#                'experimentModelJson': get_view_model_json(experiment, pgr),
-                    'message': message % (pgr.participant_handle, harvest_decision),
-                    }
+                'success': True,
+                #                'experimentModelJson': get_view_model_json(experiment, pgr),
+                'message': message % (pgr.participant_handle, harvest_decision),
+            }
             return JsonResponse(dumps(response_dict))
     else:
         logger.debug("form was invalid: %s", form)
     for field in form:
         if field.errors:
             logger.debug("field %s had errors %s", field, field.errors)
-    return JsonResponse(dumps({'success': False }))
+    return JsonResponse(dumps({'success': False}))
+
 
 @participant_required
 def get_view_model(request, experiment_id=None):
-    experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'), pk=experiment_id)
+    experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
+                                   pk=experiment_id)
     pgr = experiment.get_participant_group_relationship(request.user.participant)
     return JsonResponse(get_view_model_json(experiment, pgr))
 
+
 experiment_model_defaults = {
-        'submitted': False,
-        'chatEnabled': False,
-        'alive': True,
+    'submitted': False,
+    'chatEnabled': False,
+    'alive': True,
+    'resourceLevel': 0,
+    'maxEarnings': 20.00,
+    'maximumResourcesToDisplay': 20,
+    'warningCountdownTime': 10,
+    'harvestDecision': 0,
+    'storage': 0,
+    'roundDuration': 60,
+    'chatMessages': [],
+    'canObserveOtherGroup': False,
+    'myGroup': {
         'resourceLevel': 0,
-        'maxEarnings': 20.00,
-        'maximumResourcesToDisplay': 20,
-        'warningCountdownTime': 10,
-        'harvestDecision': 0,
-        'storage': 0,
-        'roundDuration': 60,
-        'chatMessages': [],
-        'canObserveOtherGroup': False,
-        'myGroup': {
-            'resourceLevel': 0,
-            'regrowth': 0,
-            'originalResourceLevel': 0,
-            'averageHarvest': 0,
-            'averageStorage': 0,
-            'numberAlive': 0,
-            'isResourceEmpty': 0,
-            },
-        'otherGroup': {
-            'resourceLevel': 0,
-            'regrowth': 0,
-            'originalResourceLevel': 0,
-            'averageHarvest': 0,
-            'averageStorage': 0,
-            'numberAlive': 0,
-            'isResourceEmpty': 0,
-            },
-        'selectedHarvestDecision': False,
-        'isInstructionsRound': False,
-        'waitThirtySeconds': False,
-        'totalHarvest': 0,
-        'sessionOneStorage': 0,
-        'sessionTwoStorage': 0,
-        'lastHarvestDecision': 0,
-        'playerData': [],
+        'regrowth': 0,
+        'originalResourceLevel': 0,
         'averageHarvest': 0,
         'averageStorage': 0,
-        'numberAlive': '4 out of 4',
-        'isSurveyEnabled': False,
-        'surveyCompleted': False,
+        'numberAlive': 0,
+        'isResourceEmpty': 0,
+    },
+    'otherGroup': {
+        'resourceLevel': 0,
         'regrowth': 0,
-        'surveyUrl': 'http://survey.qualtrics.com/SE/?SID=SV_0vzmIj5UsOgjoTX',
-        }
+        'originalResourceLevel': 0,
+        'averageHarvest': 0,
+        'averageStorage': 0,
+        'numberAlive': 0,
+        'isResourceEmpty': 0,
+    },
+    'selectedHarvestDecision': False,
+    'isInstructionsRound': False,
+    'waitThirtySeconds': False,
+    'totalHarvest': 0,
+    'sessionOneStorage': 0,
+    'sessionTwoStorage': 0,
+    'lastHarvestDecision': 0,
+    'playerData': [],
+    'averageHarvest': 0,
+    'averageStorage': 0,
+    'numberAlive': '4 out of 4',
+    'isSurveyEnabled': False,
+    'surveyCompleted': False,
+    'regrowth': 0,
+    'surveyUrl': 'http://survey.qualtrics.com/SE/?SID=SV_0vzmIj5UsOgjoTX',
+}
 # FIXME: bloated method with too many special cases, try to refactor
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
@@ -122,19 +132,20 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     previous_round_data = experiment.get_round_data(round_configuration=previous_round, previous_round=True)
     experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
 
-# round / experiment configuration data
+    # round / experiment configuration data
     experiment_model_dict['timeRemaining'] = experiment.time_remaining
     experiment_model_dict['sessionId'] = current_round.session_id
     regrowth_rate = get_regrowth_rate(current_round)
     cost_of_living = get_cost_of_living(current_round)
     experiment_model_dict['costOfLiving'] = cost_of_living
-    experiment_model_dict['maxHarvestDecision'] = get_max_allowed_harvest_decision(participant_group_relationship, current_round_data, ec)
+    experiment_model_dict['maxHarvestDecision'] = get_max_allowed_harvest_decision(participant_group_relationship,
+                                                                                   current_round_data, ec)
     experiment_model_dict['templateName'] = current_round.template_name
     experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
     # FIXME: only show the tour on the first practice round, this is a bit brittle.  better setup might be to have a
     # dedicated boolean flag on RoundConfiguration?
     experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
-# instructions round parameters
+    # instructions round parameters
     if current_round.is_instructions_round:
         experiment_model_dict['isInstructionsRound'] = True
         experiment_model_dict['participantsPerGroup'] = ec.max_group_size
@@ -144,9 +155,11 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['chatEnabled'] = current_round.chat_enabled
 
     if current_round.is_debriefing_round:
-        experiment_model_dict['totalHarvest'] = get_total_harvest(participant_group_relationship, current_round.session_id)
+        experiment_model_dict['totalHarvest'] = get_total_harvest(participant_group_relationship,
+                                                                  current_round.session_id)
         if experiment.is_last_round:
-            (session_one_storage, session_two_storage) = get_final_session_storage_queryset(experiment, participant_group_relationship.participant)
+            (session_one_storage, session_two_storage) = get_final_session_storage_queryset(experiment,
+                                                                                            participant_group_relationship.participant)
             experiment_model_dict['sessionOneStorage'] = session_one_storage.int_value
             experiment_model_dict['sessionTwoStorage'] = session_two_storage.int_value
 
@@ -155,7 +168,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             'pid': participant_group_relationship.pk,
             'eid': experiment.pk,
             'tid': experiment.experiment_configuration.treatment_id,
-            })
+        })
         survey_url = current_round.survey_url
         separator = '?'
         if separator in survey_url:
@@ -166,7 +179,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         logger.debug("survey was enabled, setting survey url to %s", experiment_model_dict['surveyUrl'])
 
 
-# participant data
+    # participant data
     experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     # FIXME: these should only need to be added for playable rounds but KO gets unhappy when we switch templates from
@@ -174,7 +187,8 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     own_group = participant_group_relationship.group
     own_resource_level = get_resource_level(own_group)
     if current_round.is_playable_round or current_round.is_debriefing_round:
-        player_data, own_data = get_player_data(own_group, previous_round_data, current_round_data, participant_group_relationship)
+        player_data, own_data = get_player_data(own_group, previous_round_data, current_round_data,
+                                                participant_group_relationship)
         experiment_model_dict.update(own_data)
         experiment_model_dict['playerData'] = player_data
         experiment_model_dict['averageHarvest'] = get_average_harvest(own_group, previous_round_data)
@@ -182,16 +196,16 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         regrowth = experiment_model_dict['regrowth'] = get_regrowth_dv(own_group, current_round_data).value
         c = Counter(map(itemgetter('alive'), experiment_model_dict['playerData']))
         experiment_model_dict['numberAlive'] = "%s out of %s" % (c[True], sum(c.values()))
-# FIXME: refactor duplication between myGroup and otherGroup data loading
+        # FIXME: refactor duplication between myGroup and otherGroup data loading
         experiment_model_dict['myGroup'] = {
-                'resourceLevel': own_resource_level,
-                'regrowth': regrowth,
-                'originalResourceLevel': own_resource_level - regrowth,
-                'averageHarvest': experiment_model_dict['averageHarvest'],
-                'averageStorage': experiment_model_dict['averageStorage'],
-                'numberAlive': experiment_model_dict['numberAlive'],
-                'isResourceEmpty': own_resource_level == 0,
-                }
+            'resourceLevel': own_resource_level,
+            'regrowth': regrowth,
+            'originalResourceLevel': own_resource_level - regrowth,
+            'averageHarvest': experiment_model_dict['averageHarvest'],
+            'averageStorage': experiment_model_dict['averageStorage'],
+            'numberAlive': experiment_model_dict['numberAlive'],
+            'isResourceEmpty': own_resource_level == 0,
+        }
 
     experiment_model_dict['resourceLevel'] = own_resource_level
 
@@ -212,13 +226,13 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             resource_level = get_resource_level(other_group, current_round_data)
             regrowth = get_regrowth_dv(other_group, current_round_data).value
             experiment_model_dict['otherGroup'] = {
-                    'regrowth': regrowth,
-                    'resourceLevel': resource_level,
-                    'originalResourceLevel': resource_level - regrowth,
-                    'averageHarvest': get_average_harvest(other_group, previous_round_data),
-                    'averageStorage': get_average_storage(other_group, current_round_data),
-                    'numberAlive': "%s out of %s" % (number_alive, other_group.size),
-                    'isResourceEmpty': resource_level == 0,
-                    }
+                'regrowth': regrowth,
+                'resourceLevel': resource_level,
+                'originalResourceLevel': resource_level - regrowth,
+                'averageHarvest': get_average_harvest(other_group, previous_round_data),
+                'averageStorage': get_average_storage(other_group, current_round_data),
+                'numberAlive': "%s out of %s" % (number_alive, other_group.size),
+                'isResourceEmpty': resource_level == 0,
+            }
 
     return dumps(experiment_model_dict)
