@@ -134,6 +134,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         # logger.debug("My group is %s", own_group)
 
         own_resource_level = get_resource_level(own_group)
+        experiment_model_dict['resourceLevel'] = own_resource_level
 
         player_data, own_data = get_player_data(previous_round_data, current_round_data, participant_group_relationship)
 
@@ -143,6 +144,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 
         # experiment_model_dict['averageHarvest'] = get_average_harvest(own_group, previous_round_data)
         regrowth = experiment_model_dict['regrowth'] = get_regrowth_dv(own_group, current_round_data).int_value
+        logger.debug("The regrowth is %s", regrowth)
 
         experiment_model_dict['myGroup'] = {
             'resourceLevel': own_resource_level,
@@ -151,13 +153,14 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             'averageHarvest': get_average_harvest(own_group, previous_round_data),
             'isResourceEmpty': own_resource_level == 0,
         }
+
         if current_round.is_debriefing_round and previous_round.is_practice_round:
             experiment_model_dict['totalEarnings'] = get_total_experiment_harvest(experiment,
+                                                                                  participant_group_relationship,
                                                                                   practice=True) * ec.exchange_rate
         elif current_round.is_debriefing_round and not previous_round.is_practice_round:
-            experiment_model_dict['totalEarnings'] = get_total_experiment_harvest(experiment) * ec.exchange_rate
-
-        experiment_model_dict['resourceLevel'] = own_resource_level
+            experiment_model_dict['totalEarnings'] = get_total_experiment_harvest(experiment,
+                                                                                  participant_group_relationship) * ec.exchange_rate
 
     # participant group data parameters are only needed if this round is a data round
     # or the previous round was a data round

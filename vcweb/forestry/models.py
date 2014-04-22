@@ -118,7 +118,7 @@ def _zero_if_none(value):
     return 0 if value is None else value
 
 
-def get_total_experiment_harvest(experiment, practice=False):
+def get_total_experiment_harvest(experiment, pgr, practice=False):
 
     if practice:
         debriefing_session_round_data = experiment.round_data_set.filter(
@@ -127,9 +127,9 @@ def get_total_experiment_harvest(experiment, practice=False):
         debriefing_session_round_data = experiment.round_data_set.filter(
             round_configuration__round_type=RoundConfiguration.RoundType.REGULAR)
 
-    q = ParticipantRoundDataValue.objects.for_experiment(experiment=experiment,
-                                                         parameter=get_harvest_decision_parameter(),
-                                                         round_data__in=debriefing_session_round_data)\
+    q = ParticipantRoundDataValue.objects.for_participant(participant_group_relationship=pgr,
+                                                          parameter=get_harvest_decision_parameter(),
+                                                          round_data__in=debriefing_session_round_data)\
         .aggregate(total_harvest=models.Sum('int_value'))
     return _zero_if_none(q['total_harvest'])
 
