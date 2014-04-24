@@ -194,6 +194,7 @@ def get_player_data(previous_round_data, current_round_data, self_pgr):
     )
 
 
+@transaction.atomic
 def set_harvest_decision(participant_group_relationship=None, value=None, round_data=None, submitted=False):
     if round_data is None:
         round_data = participant_group_relationship.current_round_data
@@ -201,10 +202,11 @@ def set_harvest_decision(participant_group_relationship=None, value=None, round_
     ParticipantRoundDataValue.objects.for_participant(participant_group_relationship,
                                                       parameter=get_harvest_decision_parameter(),
                                                       round_data=round_data).update(is_active=False)
-    return ParticipantRoundDataValue.objects.create(participant_group_relationship=participant_group_relationship,
+    prdv = ParticipantRoundDataValue.objects.create(participant_group_relationship=participant_group_relationship,
                                                     parameter=get_harvest_decision_parameter(), round_data=round_data,
                                                     int_value=value,
                                                     submitted=submitted)
+    return prdv
 
 
 # def set_resource_level(group, value, round_data=None):
