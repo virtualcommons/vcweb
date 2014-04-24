@@ -90,19 +90,35 @@
 <div id='instructions1'>
     <h4>Forestry</h4>
     <p>
-        Welcome.  Thank you for participating in this experiment. The following
-        exercise is a way to actively participate in a project about individual
-        decisions and natural resources. Imagine that you or your family must make
-        decisions about the use of a forest.  You and four other randomly selected
-        participants have been placed into a group with access to this shared forest.
+        Welcome.  Thank you for participating in this experiment. The following exercise is a way to actively
+        participate in a project about individual decisions and natural resources. Imagine that you or your
+        family must make decisions about the use of a forest. You and <span data-bind="text: participantsPerGroup()-1"></span>
+        other randomly selected participants have been placed into a group with access to this shared forest.
     </p>
     <p>
         You will play several rounds equivalent to years or wood harvest seasons.
-        Initially your group has an area of forest with 100 initial resource units.
-        Each round you and every other participant in your group will have to make a
+        Initially your group has an area of forest with <span data-bind='text:initialResourceLevel'></span>
+        initial resource units. Each round you and every other participant in your group will have to make a
         decision about how many resource units you want to harvest.  At the start you
-        can harvest a maximum of 5 units and a minimum of 0 units from the resource.
+        can harvest a maximum of <span data-bind='text:maxHarvestDecision'></span> units and a minimum of 0 units from the resource.
     </p>
+    <h3>Maximum harvest table</h3>
+    <table class='table table-bordered table-condensed'>
+        <thead>
+          <tr>
+            <th>Resource level</th>
+            <th>Maximum individual harvest</th>
+          </tr>
+        </thead>
+        <tbody>
+            <tr class='harvest-5'><td>25-100</td><td>5</td></tr>
+            <tr class='harvest-4'><td>20-24</td><td>4</td></tr>
+            <tr class='harvest-3'><td>15-19</td><td>3</td></tr>
+            <tr class='harvest-2'><td>10-14</td><td>2</td></tr>
+            <tr class='harvest-1'><td>5-9</td><td>1</td></tr>
+            <tr class='harvest-0'><td>0-4</td><td>0</td></tr>
+        </tbody>
+    </table>
     <ul class='pager'>
         <li class='next'>
             <a href='javascript: void(0);' data-bind='click: activateTemplate.bind($data, "PRACTICE_ROUND_INSTRUCTIONS")'>OK, Continue to practice rounds</a>
@@ -123,9 +139,7 @@ status, and those of your group.  You will be able to text chat with your group 
 <h3>Time</h3>
 <p>
 In each actual experiment round you will have a maximum of 60 seconds to make a harvest decision. In order to help you acquaint
-yourself with the experimental environment, the you will have 3 minutes to make a harvest decision in the first practice
-round, 2 minutes to make a harvest in the next two practice rounds, and then one minute as usual in the subsequent
-practice rounds.
+yourself with the experimental environment, you will have unlimited time to make a harvest decision the practice rounds.
 </p>
 <h3>Harvest Decision</h3>
 <p>
@@ -154,10 +168,25 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 <script type='text/html' id='PRACTICE_ROUND_RESULTS'>
     <h3>Practice Round Results</h3>
     <p>
-        If this had been been a paid session, you would have earned <strong class='text-success' data-bind='text: totalEarnings'></strong>.
+        If this had been been a paid session, you would have earned <strong class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></strong>.
     </p>
     <p>
-    We will now move on to the <strong>paid rounds.</strong>
+        Here are the results of other participants of your group.
+        </p>
+        <table class='table table-bordered table-condensed'>
+            <thead>
+                <tr><th>Participant</th><th>Total Earnings</th</tr>
+            </thead>
+            <tbody data-bind='foreach: groupEarnings'>
+                <tr>
+                    <td><span class='text-success' data-bind='text: number'></span></td>
+                    <td><span class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></span></td>
+                </tr>
+            </tbody>
+        </table>
+    </p>
+    <p>
+        We will now move on to the <strong>paid rounds.</strong>
     </p>
     <ul class='pager'>
         <li class='next'>
@@ -256,14 +285,12 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 <div data-bind='ifnot: isResourceEmpty'>
     <div class='row'>
         <h3>Harvest</h3>
-        <div data-bind='if: canHarvestResource'>
-            <form id='vcweb-form' method='post' class='form-horizontal' >
-                {% csrf_token %}
-                <div id='harvestDecisionDiv' class='control-group'>
-                    <div data-bind='template: { name: "harvest-decision-multiselect-template" }'></div>
-                </div>
-            </form>
-        </div>
+        <form id='vcweb-form' method='post' class='form-horizontal' >
+            {% csrf_token %}
+            <div id='harvestDecisionDiv' class='control-group'>
+                <div data-bind='template: { name: "harvest-decision-multiselect-template" }'></div>
+            </div>
+        </form>
     </div>
 </div>
 </script>
@@ -282,20 +309,28 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
 </div>
 </script>
 <script type='text/html' id='FINAL_DEBRIEFING'>
-    <h2>Payment</h2>
-    <table class='table table-bordered table-condensed'>
-        <thead>
-            <tr><th>Session 1</th></tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><span class='text-success' data-bind='text: totalEarnings'></span></td>
-            </tr>
-        </tbody>
-    </table>
     <h2>Experiment Results</h2>
     <p>
         Thank you for participating. Here are your results and the results of your group.
+    </p>
+    <h2>Payment</h2>
+    <p>
+        You would have earned <strong class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></strong> in this Experiment Session.
+    </p>
+    <p>
+        Here are the results of other participants of your group.
+        </p>
+        <table class='table table-bordered table-condensed'>
+            <thead>
+                <tr><th>Participant</th><th>Total Earnings</th</tr>
+            </thead>
+            <tbody data-bind='foreach: groupEarnings'>
+                <tr>
+                    <td><span class='text-success' data-bind='text: number'></span></td>
+                    <td><span class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></span></td>
+                </tr>
+            </tbody>
+        </table>
     </p>
 </script>
 <script type='text/html' id='tree-template'>
@@ -344,21 +379,21 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
         </tr>
     </table>
 </script>
-{#<script type='text/html' id='harvest-decision-select-template'>#}
-{#    <div class='input-prepend'>#}
-{#        <span class='add-on'></span>#}
-{#        <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>#}
-{#        <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: harvestDecision'>#}
-{#        <select id='harvestDecisionSelect' name='harvest_decision' required="required" form="vcweb-form" data-bind='options: harvestDecisionOptions, value: harvestDecision'>#}
-{#        </select>#}
-{#    </div>#}
-{#</script>#}
+
+<script type='text/html' id='harvest-decision-select-template'>
+    <div class='input-prepend'>
+        <span class='add-on'></span>
+        <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
+        <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: harvestDecision'>
+        <select id='harvestDecisionSelect' name='harvest_decision' required="required" form="vcweb-form" data-bind='options: harvestDecisionOptions, value: harvestDecision'>
+        </select>
+    </div>
+</script>
 
 {% include "includes/bootstrap-tour.html" %}
 <script type="text/javascript">
     $(function() {
         function ExperimentModel(experimentModelJson) {
-            var self = this;
             var model = ko.mapping.fromJS(experimentModelJson);
 
             model.tour = ko.observable();
@@ -373,7 +408,6 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             }
             model.secondsLeft = ko.observable(0);
 
-            // Remove currentInterval
             model.currentInterval = ko.observable();
 
             model.selectedHarvestDecision = ko.observable(false);
@@ -392,6 +426,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                     return;
                 }
                 model.tour(new Tour());
+
                 model.tour().addSteps([{
                     element: "#dashboard-last-harvest", title: "Last harvest",  placement: "right",
                     content: "Your last round's harvest decision will be displayed here.  Since this is the first practice round this is currently 0."
@@ -431,33 +466,34 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             model.tick = function() {
                 model.secondsLeft(model.secondsLeft() - 1);
             }
+
             model.isTimerRunning = ko.computed(function() {
                 return model.secondsLeft() > 0;
             });
-            // activate instructions click bindings
+
             model.activateTemplate = function(name) {
                 model.templateName(name);
             };
+
             model.readyParticipantsPercentage = ko.computed(function() {
                 return (model.readyParticipants() / model.participantCount()) * 100;
             });
+
             model.participantReady = function(message) {
-                $.post('/experiment/participant-ready', { participant_group_id: model.participantGroupId() }, function(response) {
+                $.post('/experiment/participant-ready', {
+                    participant_group_id: model.participantGroupId()
+                }, function(response) {
                     model.readyParticipants(response.number_of_ready_participants);
                     getWebSocket().send(createReadyEvent(message));
                     model.activateTemplate("WAITING_ROOM");
                 });
                 scrollToTop();
             }
-            // Remove numberOfTreesPerRow as I can't find any use of it
-            model.numberOfTreesPerRow = ko.observable(10);
 
             model.isResourceEmpty = ko.computed(function() {
                 return model.resourceLevel() == 0;
             })
-            model.canHarvestResource = ko.computed(function() {
-                return !model.isResourceEmpty();
-            });
+
             model.resourcesPerRow = ko.observable(77);
             model.resourceImageWidth = ko.observable(10);
             model.resourceImageHeight = ko.observable(20);
@@ -480,6 +516,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             model.inactiveResourceImageUrl = ko.observable("{{STATIC_URL}}images/forestry/tree-inactive.png");
             model.resourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/tree-resource-old-growth.png')");
             model.regrowthResourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/tree-resource-new-growth.png')");
+
             model.regrowthResourceImageWidth = function(regrowth) {
                 return (model.regrowth() * model.resourceImageWidth()) + "px";
             }
@@ -500,15 +537,17 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
                     return;
                 }
                 model.setupTour();
+
                 console.debug("starting round, checking time remaining: " + model.timeRemaining());
+
                 if (model.timeRemaining() > 0) {
                     console.debug("setting seconds left to: " + model.timeRemaining());
+
                     model.secondsLeft(model.timeRemaining());
                     model.setCurrentInterval(
                         setInterval(function() {
                             model.tick();
                             if (! model.isTimerRunning()) {
-                                // FIXME: need to verify that this invocation will work properly
                                 model.submitDecision();
                             }
                         },

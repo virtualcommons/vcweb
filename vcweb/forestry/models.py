@@ -1,9 +1,10 @@
 from django.db import models, transaction
 from collections import defaultdict
 from django.dispatch import receiver
-from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, DefaultValue,
-                               RoundConfiguration)
 from vcweb.core import signals, simplecache
+from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, RoundConfiguration,
+                               ParticipantGroupRelationship)
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -123,7 +124,6 @@ def _zero_if_none(value):
 
 
 def get_total_experiment_harvest(experiment, pgr, practice=False):
-
     if practice:
         debriefing_session_round_data = experiment.round_data_set.filter(
             round_configuration__round_type=RoundConfiguration.RoundType.PRACTICE)
@@ -133,7 +133,7 @@ def get_total_experiment_harvest(experiment, pgr, practice=False):
 
     q = ParticipantRoundDataValue.objects.for_participant(participant_group_relationship=pgr,
                                                           parameter=get_harvest_decision_parameter(),
-                                                          round_data__in=debriefing_session_round_data)\
+                                                          round_data__in=debriefing_session_round_data) \
         .aggregate(total_harvest=models.Sum('int_value'))
     return _zero_if_none(q['total_harvest'])
 
@@ -153,49 +153,44 @@ def get_total_group_harvest(group, round_data):
 #     return _zero_if_none(q['total_harvest'])
 
 
+class GroupData(object):
+    def __init__(self, group, previous_round_data, current_round_data):
+        prdvs = ParticipantRoundDataValue.objects.for_group(group=group,
+                                                            parameter=get_harvest_decision_parameter(),
+                                                            round_data__in=[previous_round_data, current_round_data])
+
+        # Convert the Django ORM object to Dictionary so that it can be indexed easily to get parameter values
+        self.player_dict = defaultdict(lambda: defaultdict(lambda: None))
+        for prdv in prdvs:
+            self.player_dict[prdv.participant_group_relationship][prdv.parameter] = prdv
+
+    def get_last_harvest_decision(self, pgr):
+        try:
+            return self.player_dict[pgr][get_harvest_decision_parameter()].int_value
+        except:
+            return 0
+
+
 def get_player_data(previous_round_data, current_round_data, self_pgr):
     """ Returns a tuple ([list of player data dictionaries], { dictionary of this player's data })"""
-    # FIXME: refactor this into its own class as opposed to an arcane data structure
-    prdvs = ParticipantRoundDataValue.objects.for_group(group=self_pgr.group,
-                                                        parameter=get_harvest_decision_parameter(),
-                                                        round_data__in=[previous_round_data, current_round_data])
-    # nested dict mapping participant group relationship -> dict(parameter -> participant round data value)
-    logger.debug(prdvs)
-    if prdvs:
-        player_dict = defaultdict(lambda: defaultdict(lambda: None))
 
-        for prdv in prdvs:
-            player_dict[prdv.participant_group_relationship][prdv.parameter] = prdv
+    group = self_pgr.group
+    # Create an instance of GroupData to get group data
+    gd = GroupData(group, previous_round_data, current_round_data)
 
-        player_data = []
+    pgr_list = ParticipantGroupRelationship.objects.filter(group=group)
+    group_data = []
 
-        for pgr, pgrdv_dict in player_dict.iteritems():
-            # FIXME: figure out a way to handle default values elegantly in this case since we aren't using the accessor
-            # methods
-            for int_parameter in (get_harvest_decision_parameter(), get_storage_parameter()):
-                if pgrdv_dict[int_parameter] is None:
-                    pgrdv_dict[int_parameter] = DefaultValue(0)
+    for pgr in pgr_list:
+        group_data.append({
+            'id': pgr.pk,
+            'number': pgr.participant_number,
+            'lastHarvestDecision': gd.get_last_harvest_decision(pgr)
+        })
 
-            logger.debug(pgr.pk)
-            player_data.append({
-                'id': pgr.pk,
-                'number': pgr.participant_number,
-                'lastHarvestDecision': pgrdv_dict[get_harvest_decision_parameter()].int_value
-            })
-        own_player = player_dict[self_pgr]
-
-        if own_player[get_harvest_decision_parameter()]:
-            return (player_data, {
-                'lastHarvestDecision': own_player[get_harvest_decision_parameter()].int_value
-            })
-        else:
-            return (player_data, {
-                'lastHarvestDecision': 0
-            })
-
-    return (
-        [], {'lastHarvestDecision': 0}
-    )
+    return (group_data, {
+        'lastHarvestDecision': gd.get_last_harvest_decision(self_pgr)
+    })
 
 
 @transaction.atomic
@@ -287,7 +282,9 @@ def round_started_handler(sender, experiment=None, **kwargs):
     # initialize group, group cluster, and participant data values
     experiment.initialize_data_values(
         group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
-        defaults={get_regrowth_parameter(): 0}
+        defaults={
+            get_regrowth_parameter(): 0
+        }
     )
 
     if should_reset_resource_level(round_configuration, experiment):
@@ -295,7 +292,7 @@ def round_started_handler(sender, experiment=None, **kwargs):
         logger.debug("Resetting resource level for all groups in %s to %d", round_configuration, initial_resource_level)
 
         for group in experiment.groups:
-            # set resource level to initial default
+            # set resource level to initial default values
             existing_resource_level = get_resource_level_dv(group, round_data, round_configuration)
             group.log("Resetting resource level (%s) to initial value [%s]" %
                       (existing_resource_level, initial_resource_level))
@@ -310,10 +307,9 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
     current_resource_level_dv = get_resource_level_dv(group, round_data)
     current_resource_level = current_resource_level_dv.int_value
     group_harvest_dv = get_group_harvest_dv(group, round_data)
-
     logger.debug("The group harvest is %s", group_harvest_dv)
-    regrowth_dv = get_regrowth_dv(group, round_data)
 
+    regrowth_dv = get_regrowth_dv(group, round_data)
     total_harvest = get_total_group_harvest(group, round_data)
     logger.debug("Harvest: total group harvest for playable round: %s", total_harvest)
 
@@ -326,6 +322,7 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
         regrowth_dv.update_int(resource_regrowth)
         # clamp resource
         current_resource_level_dv.update_int(min(current_resource_level + resource_regrowth, max_resource_level))
+
     ''' XXX: transfer resource levels across chat and quiz rounds if they exist '''
     if experiment.has_next_round:
         ''' set group round data resource_level for each group + regrowth '''
@@ -351,17 +348,15 @@ def round_ended_handler(sender, experiment=None, **kwargs):
         # zero out not submitted harvest decisions
         for pgr in experiment.participant_group_relationships:
             prdvs = ParticipantRoundDataValue.objects.filter(
-                round_data=round_data,
-                participant_group_relationship=pgr,
-                parameter=harvest_decision_parameter,
-                is_active=True)
+                round_data=round_data, participant_group_relationship=pgr,
+                parameter=harvest_decision_parameter, is_active=True
+            )
+            # If no harvest decision was submitted by the participant then create one with default value
             if prdvs.count() == 0:
                 prdv = ParticipantRoundDataValue.objects.create(
-                    round_data=round_data,
-                    participant_group_relationship=pgr,
-                    parameter=harvest_decision_parameter,
-                    is_active=True,
-                    int_value=0)
+                    round_data=round_data, participant_group_relationship=pgr,
+                    parameter=harvest_decision_parameter, is_active=True, int_value=0
+                )
                 logger.debug("created new harvest decision prdv %s for participant %s", prdv, pgr)
 
         for group in experiment.groups:
