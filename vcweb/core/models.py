@@ -64,7 +64,7 @@ class ParameterValueMixin(object):
 
     """
 
-    def get_parameter_value(self, parameter=None, name=None, default=None):
+    def get_parameter_value(self, parameter=None, name=None, default=None, inheritable=False):
         if parameter is None and name is None:
             logger.error("Can't lookup parameter values with no name or parameter, returning default %s", default)
             return DefaultValue(default)
@@ -75,7 +75,10 @@ class ParameterValueMixin(object):
             elif name:
                 return parameter_value_set.get(parameter__name=name)
         except parameter_value_set.model.DoesNotExist:
-            return DefaultValue(default)
+            if inheritable:
+                return self.parent.get_parameter_value(parameter=parameter, name=name, default=default)
+            else:
+                return DefaultValue(default)
 
     def set_parameter_value(self, parameter=None, name=None, value=None, **kwargs):
         if parameter is None and name is None:
@@ -1430,6 +1433,10 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
         'If set to a positive integer n, this round will repeat itself n times with the same configuration and parameter values.'))
     initialize_data_values = models.BooleanField(default=False, help_text=_(
         "Re-initialize all group and participant parameters at the start of this round.  "))
+
+    @property
+    def parent(self):
+        return self.experiment_configuration
 
     @property
     def template_name(self):

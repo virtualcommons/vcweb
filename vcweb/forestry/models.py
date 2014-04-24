@@ -69,6 +69,10 @@ def set_group_harvest(group, value, round_data=None):
     group.set_data_value(parameter=get_group_harvest_parameter(), value=value, round_data=round_data)
 
 
+def can_view_group_results(round_configuration, default=True):
+    return round_configuration.get_parameter_value(name='view_group_results', default=default, inheritable=True)
+
+
 # FIXME: Boundry Effects Experiment also uses this and has a duplicate version in bound/models.py
 def should_reset_resource_level(round_configuration, experiment):
     if round_configuration.is_repeating_round and experiment.current_repeated_round_sequence_number > 0:
