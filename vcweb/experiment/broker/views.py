@@ -1,24 +1,20 @@
 from collections import defaultdict
-from django.db.models import Q
-from django.shortcuts import get_object_or_404, render, redirect
-from vcweb.core.models import Experiment, ParticipantGroupRelationship
+import random
+import logging
+
+from django.shortcuts import get_object_or_404, render
+
 from vcweb.core.decorators import participant_required
 from vcweb.core import dumps
-from vcweb.core.forms import ParticipantGroupIdForm, SingleIntegerDecisionForm
+from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.http import JsonResponse
-from vcweb.core.models import (is_participant, is_experimenter, Experiment, ParticipantGroupRelationship,
-        GroupRelationship, GroupCluster,
-        ParticipantExperimentRelationship, RoundConfiguration, ChatMessage, ParticipantRoundDataValue, Parameter)
-
-from vcweb.broker.models import (get_max_harvest_hours, get_harvest_decision_parameter,
-        get_conservation_decision_parameter, set_harvest_decision, set_conservation_decision, get_harvest_decision,
+from vcweb.core.models import (Experiment, ParticipantGroupRelationship,
+                               RoundConfiguration, ParticipantRoundDataValue)
+from vcweb.experiment.broker.models import (get_max_harvest_hours, set_harvest_decision, set_conservation_decision, get_harvest_decision,
         get_conservation_decision, get_payoff, get_chat_within_group_parameter, get_chat_between_group_parameter,
         get_participant_link_parameter)
+from vcweb.experiment.broker.forms import ChatPreferenceForm
 
-import random
-
-import logging
-from vcweb.broker.forms import ChatPreferenceForm
 
 logger = logging.getLogger(__name__)
 

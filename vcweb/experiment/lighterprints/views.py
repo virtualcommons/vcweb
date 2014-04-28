@@ -1,24 +1,26 @@
+from datetime import datetime
+import logging
+
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
+import unicodecsv
+
 from vcweb.core.decorators import participant_required, experimenter_required
 from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
 from vcweb.core.views import dumps, get_active_experiment, set_authentication_token, mimetypes
-from vcweb.lighterprints.forms import ActivityForm
-from vcweb.lighterprints.models import (
+from vcweb.experiment.lighterprints.forms import ActivityForm
+from vcweb.experiment.lighterprints.models import (
         Activity, GroupScores, ActivityStatusList, do_activity, get_group_activity, has_leaderboard,
         get_lighterprints_experiment_metadata, get_time_remaining, is_linear_public_good_game,
         is_high_school_treatment, get_treatment_type, get_activity_performed_parameter,
         )
 
-from datetime import datetime
-import logging
-import unicodecsv
 logger = logging.getLogger(__name__)
 
 @csrf_exempt

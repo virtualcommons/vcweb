@@ -28,10 +28,10 @@ urlpatterns = patterns('',
     # FIXME: ideally this should be set up dynamically by iterating through each
     # ExperimentMetadata instance and using their namespace (e.g., replace all
     # instances of forestry with ExperimentMetadata.namespace)
-    url(r'^forestry/', include('vcweb.forestry.urls', namespace='forestry', app_name='forestry')),
-    url(r'^bound/', include('vcweb.bound.urls', namespace='bound', app_name='bound')),
-    url(r'^lighterprints/', include('vcweb.lighterprints.urls', namespace='lighterprints', app_name='lighterprints')),
-    url(r'^broker/', include('vcweb.broker.urls', namespace='broker', app_name='broker')),
+    url(r'^forestry/', include('vcweb.experiment.forestry.urls', namespace='forestry', app_name='forestry')),
+    url(r'^bound/', include('vcweb.experiment.bound.urls', namespace='bound', app_name='bound')),
+    url(r'^lighterprints/', include('vcweb.experiment.lighterprints.urls', namespace='lighterprints', app_name='lighterprints')),
+    url(r'^broker/', include('vcweb.experiment.broker.urls', namespace='broker', app_name='broker')),
     url(r'^subject-pool/', include('vcweb.subject_pool.urls', namespace='subject_pool', app_name='subject_pool')),
     url(r'^admin/', include(admin.site.urls)),
     # core catches everything else

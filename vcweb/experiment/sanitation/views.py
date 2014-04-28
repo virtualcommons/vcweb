@@ -1,12 +1,14 @@
 # importing external methods and classes
 #from vcweb.core.models import Experiment
-from vcweb.core.models import Experiment
-from vcweb.core.models import ParticipantExperimentRelationship
-from vcweb.sanitation.models import pollutify
-from django.shortcuts import render_to_response, redirect
-from django.template.context import RequestContext
 import logging
 import random
+
+from django.shortcuts import render_to_response
+from django.template.context import RequestContext
+
+from vcweb.core.models import Experiment
+from vcweb.core.models import ParticipantExperimentRelationship
+
 
 #FIXME come from database(user)
 treatment = "In-group"

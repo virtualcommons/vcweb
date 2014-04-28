@@ -1,11 +1,10 @@
-from vcweb.core.tests import BaseVcwebTest
-from vcweb.core.models import ParticipantGroupRelationship
-from vcweb.lighterprints.views import *
-from vcweb.lighterprints.models import *
-
-
 import logging
 import json
+
+from vcweb.core.tests import BaseVcwebTest
+from vcweb.experiment.lighterprints.views import *
+from vcweb.lighterprints.models import *
+
 
 logger = logging.getLogger(__name__)
 

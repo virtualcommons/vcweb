@@ -1,11 +1,11 @@
 """
 Tests for boundary effects experiment
 """
-from vcweb.core.tests import BaseVcwebTest
-from vcweb.core.models import Parameter
-from vcweb.bound.models import *
-
 import logging
+
+from vcweb.core.tests import BaseVcwebTest
+from vcweb.experiment.bound.models import *
+
 logger = logging.getLogger(__name__)
 
 

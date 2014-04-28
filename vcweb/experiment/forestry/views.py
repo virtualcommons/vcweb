@@ -1,17 +1,19 @@
+import logging
+
 from django.http import Http404
 from django.db import transaction
 from django.shortcuts import render, get_object_or_404
+
 from vcweb.core import dumps
 from vcweb.core.decorators import participant_required
 from vcweb.core.http import JsonResponse
 from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.models import (Experiment, ChatMessage, ParticipantGroupRelationship, RoundConfiguration)
-from vcweb.forestry.models import (get_experiment_metadata, get_max_allowed_harvest_decision, get_resource_level,
+from vcweb.experiment.forestry.models import (get_experiment_metadata, get_max_allowed_harvest_decision, get_resource_level,
                                    get_initial_resource_level, get_harvest_decision_dv, get_player_data,
                                    get_regrowth_dv, set_harvest_decision, get_average_harvest,
                                    get_total_experiment_harvest, can_view_group_results, get_group_data)
 
-import logging
 
 logger = logging.getLogger(__name__)
 

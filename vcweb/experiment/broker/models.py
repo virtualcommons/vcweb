@@ -1,10 +1,12 @@
-from django.db import models
+import logging
+
 from django.dispatch import receiver
+
 from vcweb.core import signals, simplecache
 from vcweb.core.models import (Parameter, ParticipantRoundDataValue, GroupCluster)
-from vcweb.forestry.models import get_harvest_decision_parameter, set_harvest_decision, get_harvest_decision
+from vcweb.experiment.forestry.models import (get_harvest_decision_parameter, get_harvest_decision,
+        set_harvest_decision)
 
-import logging
 logger = logging.getLogger(__name__)
 
 EXPERIMENT_METADATA_NAME = 'broker'
