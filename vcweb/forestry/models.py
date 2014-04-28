@@ -2,8 +2,7 @@ from django.db import models, transaction
 from collections import defaultdict
 from django.dispatch import receiver
 from vcweb.core import signals, simplecache
-from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, RoundConfiguration,
-                               ParticipantGroupRelationship)
+from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, ParticipantGroupRelationship)
 
 import logging
 
@@ -123,14 +122,19 @@ def _zero_if_none(value):
     return 0 if value is None else value
 
 
-def get_total_experiment_harvest(experiment, pgr, practice=False):
-    if practice:
-        debriefing_session_round_data = experiment.round_data_set.filter(
-            round_configuration__round_type=RoundConfiguration.RoundType.PRACTICE)
-    else:
-        debriefing_session_round_data = experiment.round_data_set.filter(
-            round_configuration__round_type=RoundConfiguration.RoundType.REGULAR)
+def get_group_data(participant_group_relationship, exchange_rate, round_list):
+    pgr_list = ParticipantGroupRelationship.objects.filter(group=participant_group_relationship.group)
+    group_data = []
+    for pgr in pgr_list:
+        if pgr != participant_group_relationship:
+            group_data.append({
+                'number': pgr.participant_number,
+                'totalEarnings': get_total_experiment_harvest(pgr, round_list) * exchange_rate
+            })
+    return group_data
 
+
+def get_total_experiment_harvest(pgr, debriefing_session_round_data):
     q = ParticipantRoundDataValue.objects.for_participant(participant_group_relationship=pgr,
                                                           parameter=get_harvest_decision_parameter(),
                                                           round_data__in=debriefing_session_round_data) \
@@ -148,7 +152,7 @@ def get_total_group_harvest(group, round_data):
 # def get_total_harvest(participant_group_relationship, session_id):
 #     q = ParticipantRoundDataValue.objects.for_participant(participant_group_relationship,
 #                                                           parameter=get_harvest_decision_parameter(),
-#                                                           participant_group_relationship__group__session_id=session_id) \
+#                                                           participant_group_relationship__group__session_id=session_id)\
 #         .aggregate(total_harvest=models.Sum('int_value'))
 #     return _zero_if_none(q['total_harvest'])
 
@@ -159,7 +163,7 @@ class GroupData(object):
                                                             parameter=get_harvest_decision_parameter(),
                                                             round_data__in=[previous_round_data, current_round_data])
 
-        # Convert the Django ORM object to Dictionary so that it can be indexed easily to get parameter values
+        # Converting django ORM object to dictionary so that it can be indexed easily to get parameter values
         self.player_dict = defaultdict(lambda: defaultdict(lambda: None))
         for prdv in prdvs:
             self.player_dict[prdv.participant_group_relationship][prdv.parameter] = prdv
@@ -307,8 +311,6 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
     current_resource_level_dv = get_resource_level_dv(group, round_data)
     current_resource_level = current_resource_level_dv.int_value
     group_harvest_dv = get_group_harvest_dv(group, round_data)
-    logger.debug("The group harvest is %s", group_harvest_dv)
-
     regrowth_dv = get_regrowth_dv(group, round_data)
     total_harvest = get_total_group_harvest(group, round_data)
     logger.debug("Harvest: total group harvest for playable round: %s", total_harvest)
@@ -327,7 +329,6 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
     if experiment.has_next_round:
         ''' set group round data resource_level for each group + regrowth '''
         group.log("Transferring resource level %s to next round" % current_resource_level_dv.int_value)
-        logger.debug("The regrowth_dv is: %s or %s", regrowth_dv.int_value, regrowth_dv.value)
         group.copy_to_next_round(current_resource_level_dv, group_harvest_dv, regrowth_dv)
 
 

@@ -5,11 +5,11 @@ from vcweb.core import dumps
 from vcweb.core.decorators import participant_required
 from vcweb.core.http import JsonResponse
 from vcweb.core.forms import SingleIntegerDecisionForm
-from vcweb.core.models import (Experiment, ChatMessage, ParticipantGroupRelationship)
+from vcweb.core.models import (Experiment, ChatMessage, ParticipantGroupRelationship, RoundConfiguration)
 from vcweb.forestry.models import (get_experiment_metadata, get_max_allowed_harvest_decision, get_resource_level,
                                    get_initial_resource_level, get_harvest_decision_dv, get_player_data,
                                    get_regrowth_dv, set_harvest_decision, get_average_harvest,
-                                   get_total_experiment_harvest, can_view_group_results)
+                                   get_total_experiment_harvest, can_view_group_results, get_group_data)
 
 import logging
 
@@ -98,6 +98,7 @@ experiment_model_defaults = {
     'regrowth': 0,
 }
 
+
 def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
@@ -137,10 +138,9 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         player_data, own_data = get_player_data(previous_round_data, current_round_data, participant_group_relationship)
 
         experiment_model_dict.update(own_data)
-        # All the Players Data
+        # Data of all the players in the same group of current logged in participant
         experiment_model_dict['playerData'] = player_data
 
-        # experiment_model_dict['averageHarvest'] = get_average_harvest(own_group, previous_round_data)
         regrowth = experiment_model_dict['regrowth'] = get_regrowth_dv(own_group, current_round_data).int_value
 
         logger.debug("The regrowth is %s", regrowth)
@@ -152,27 +152,23 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             'averageHarvest': get_average_harvest(own_group, previous_round_data),
             'isResourceEmpty': own_resource_level == 0,
         }
+        # If current round is debriefing round get the earnings of the participant depending upon the
+        # type of round user completed
+        if current_round.is_debriefing_round:
+            if previous_round.is_practice_round:
+                rounds = experiment.round_data_set.filter(
+                    round_configuration__round_type=RoundConfiguration.RoundType.PRACTICE)
+            else:
+                rounds = experiment.round_data_set.filter(
+                    round_configuration__round_type=RoundConfiguration.RoundType.REGULAR)
 
-        if current_round.is_debriefing_round and previous_round.is_practice_round:
-            experiment_model_dict['totalEarnings'] = get_total_experiment_harvest(experiment,
-                                                                                  participant_group_relationship,
-                                                                                  practice=True) * ec.exchange_rate
-        elif current_round.is_debriefing_round and not previous_round.is_practice_round:
-            experiment_model_dict['totalEarnings'] = get_total_experiment_harvest(experiment,
-                                                                                  participant_group_relationship) * ec.exchange_rate
+            experiment_model_dict['totalEarnings'] = get_total_experiment_harvest(participant_group_relationship,
+                                                                                  rounds) * ec.exchange_rate
+            if can_view_group_results(current_round):
+                experiment_model_dict['groupEarnings'] = get_group_data(participant_group_relationship, ec.exchange_rate
+                                                                        , rounds)
 
-        if can_view_group_results(current_round):
-            pgr_list = ParticipantGroupRelationship.objects.filter(group=participant_group_relationship.group)
-            group_data = []
-            for pgr in pgr_list:
-                if pgr != participant_group_relationship:
-                    group_data.append({
-                        'number': pgr.participant_number,
-                        'totalEarnings': get_total_experiment_harvest(experiment, pgr, practice=True) * ec.exchange_rate
-                    })
-            experiment_model_dict['groupEarnings'] = group_data
-
-    # participant group data parameters are only needed if this round is a data round
+    # Participant group data parameters are only needed if this round is a data round
     # or the previous round was a data round
     if previous_round.is_playable_round or current_round.is_playable_round:
 
@@ -182,7 +178,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         if harvest_decision.submitted:
             # user has already submit a harvest decision for this round
             experiment_model_dict['harvestDecision'] = harvest_decision.int_value
-            logger.debug("already submitted, setting harvest decision to %s", experiment_model_dict['harvestDecision'])
+            logger.debug("Already submitted, setting harvest decision to %s", experiment_model_dict['harvestDecision'])
 
         experiment_model_dict['chatMessages'] = [cm.to_dict() for cm in ChatMessage.objects.for_group(own_group)]
 
