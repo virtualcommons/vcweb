@@ -20,6 +20,7 @@ from model_utils.managers import PassThroughManager
 from string import Template
 from urllib import urlencode
 from vcweb.core import signals, simplecache, dumps
+from vcweb.core.decorators import log_signal_errors
 
 import base64
 import email
@@ -1189,6 +1190,7 @@ class Experiment(models.Model):
             logger.debug("round data already created: %s", round_data)
         return round_data, created
 
+    @log_signal_errors
     def start_round(self, sender=None):
         logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
         self.status = Experiment.Status.ROUND_IN_PROGRESS
@@ -1207,20 +1209,13 @@ class Experiment(models.Model):
         # notify registered game handlers
         if sender is None:
             sender = intern(self.experiment_metadata.namespace.encode('utf8'))
-        signal_tuple = signals.round_started.send_robust(sender, experiment=self, time=datetime.now(),
-                                                         round_configuration=current_round_configuration)
-        self._check_signal_result(signal_tuple)
-        return signal_tuple
+        return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(), round_configuration=current_round_configuration)
 
-    def _check_signal_result(self, signal_tuple_list):
-        logger.debug("checking signal tuple list: %s", signal_tuple_list)
-        for signal_tuple in signal_tuple_list:
-            if signal_tuple[1] is not None:
-                logger.error("%s resulted in an error condition: %s", signal_tuple[0], signal_tuple[1])
 
     def stop_round(self, sender=None, **kwargs):
         return self.end_round()
 
+    @log_signal_errors
     def end_round(self, sender=None):
         self.status = Experiment.Status.ACTIVE
         self.save()
@@ -1230,9 +1225,7 @@ class Experiment(models.Model):
         sender = intern(self.experiment_metadata.namespace.encode('utf8')) if sender is None else sender
         #sender = self.namespace.encode('utf-8')
         logger.debug("about to send round ended signal with sender %s", sender)
-        signal_tuple = signals.round_ended.send_robust(sender, experiment=self, round_configuration=self.current_round)
-        self._check_signal_result(signal_tuple)
-        return signal_tuple
+        return signals.round_ended.send_robust(sender, experiment=self, round_configuration=self.current_round)
 
     def activate(self):
         if self.is_archived:

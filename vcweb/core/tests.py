@@ -189,7 +189,7 @@ class ExperimentTest(BaseVcwebTest):
         self.assertTrue(time, "time should be set")
         logger.debug("done with assertions, about to raise")
         # this ValueError shouldn't bubble up since we're using send_robust now
-        raise ValueError
+        raise ValueError("Contrived value error from round started handler")
 
     def test_start_round(self):
         signals.round_started.connect(self.round_started_test_handler, sender=self)

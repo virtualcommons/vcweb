@@ -3,13 +3,21 @@ from django.shortcuts import redirect
 
 from django.contrib.auth.decorators import user_passes_test
 
-from vcweb.core.models import is_experimenter, is_participant
 
 import time
 import logging
 
 logger = logging.getLogger(__name__)
 
+
+def log_signal_errors(signal_sender):
+    @wraps(signal_sender)
+    def error_checker(*args, **kwargs):
+        results = signal_sender(*args, **kwargs)
+        for receiver, response in results:
+            if response is not None:
+                logger.error("errors while dispatching to %s: %s", receiver, response)
+    return error_checker
 
 def is_anonymous(user):
     return user is None or not user.is_authenticated()
@@ -21,10 +29,12 @@ def anonymous_required(view_function=None, redirect_to='core:dashboard'):
 
 
 def experimenter_required(view_function=None):
+    from vcweb.core.models import is_experimenter
     return create_decorator(view_function, is_experimenter)
 
 
 def participant_required(view_function=None):
+    from vcweb.core.models import is_participant
     return create_decorator(view_function, is_participant)
 
 

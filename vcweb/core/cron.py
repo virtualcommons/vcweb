@@ -1,21 +1,13 @@
 from datetime import datetime
-from functools import wraps
 from kronos import register
 from vcweb.core import signals
+from vcweb.core.decorators import log_signal_errors
 
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def log_signal_errors(signal_sender):
-    @wraps(signal_sender)
-    def error_checker():
-        results = signal_sender()
-        for receiver, response in results:
-            if response is not None:
-                logger.error("errors while dispatching to %s: %s", receiver, response)
-    return error_checker
 
 @register('0 0 * * *')
 @log_signal_errors
