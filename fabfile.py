@@ -114,8 +114,9 @@ def _virtualenv(executor, *commands, **kwargs):
         return executor(env.command, **kwargs)
 
 def pip():
+    print "This does not work on initial bootstrap, Django must be installed first."
     ''' looks for requirements.pip in the django project directory '''
-    _virtualenv(local, 'pip install -U -r %(project_path)s/vcweb/requirements.pip' % env)
+    _virtualenv(local, 'pip install -U -r %(project_path)s/vcweb/requirements.txt' % env)
     #with cd(env.virtualenv_path):
     #    sudo_chain('chgrp -R %(deploy_group)s .' % env, 'chmod -R g+rw' % env, pty=True)
 
