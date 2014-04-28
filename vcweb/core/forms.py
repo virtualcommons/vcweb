@@ -3,12 +3,12 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
-from django.forms import widgets, ValidationError
+from django.forms import widgets, ValidationError, CheckboxInput, ModelForm
 from django.utils.translation import ugettext_lazy as _
 
 from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete, ParticipantMajorAutocomplete
 from vcweb.core.models import (Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration,
-       ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
+                               ExperimentParameterValue, RoundConfiguration, RoundParameterValue, ParticipantSignup)
 
 import autocomplete_light
 import email
@@ -17,8 +17,13 @@ import re
 
 logger = logging.getLogger(__name__)
 
-REQUIRED_EMAIL_ATTRIBUTES = { 'class' : 'required email' }
-REQUIRED_ATTRIBUTES = { 'class' : 'required' }
+REQUIRED_EMAIL_ATTRIBUTES = {'class': 'required email'}
+REQUIRED_ATTRIBUTES = {'class': 'required'}
+HOUR_CHOICES = (
+    ('0', '0'), ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('6', '6'), ('7', '7'), ('8', '8'),
+    ('9', '9'), ('10', '10'), ('11', '11'), ('12', '12'), ('13', '13'), ('14', '14'), ('15', '15'), ('16', '16'),
+    ('17', '17'), ('18', '18'), ('19', '19'), ('20', '20'), ('21', '21'), ('22', '22'), ('23', '23'))
+MIN_CHOICES = (('0', '0'), ('15', '15'), ('30', '30'), ('45', '45'))
 
 
 class NumberInput(widgets.Input):
@@ -40,10 +45,12 @@ class URLInput(widgets.Input):
 class BaseRegistrationForm(forms.Form):
     first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    email = forms.EmailField(widget=EmailInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
+    email = forms.EmailField(widget=EmailInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_(
+        'Please enter a valid email.  We will never share your email in any way, shape, or form.'))
     password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     confirm_password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
-    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete),required=True, help_text=_('The primary institution, if any, you are affiliated with.'))
+    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=True,
+                                  help_text=_('The primary institution, if any, you are affiliated with.'))
 
     def clean_email(self):
         email_address = self.cleaned_data['email'].lower()
@@ -51,7 +58,8 @@ class BaseRegistrationForm(forms.Form):
             User.objects.get(email=email_address)
         except User.DoesNotExist:
             return email_address
-        raise forms.ValidationError(_("This email address is already registered in our system."), code='already-registered')
+        raise forms.ValidationError(_("This email address is already registered in our system."),
+                                    code='already-registered')
 
     def clean(self):
         cleaned_data = super(BaseRegistrationForm, self).clean()
@@ -63,7 +71,8 @@ class BaseRegistrationForm(forms.Form):
 
 
 class RegistrationForm(BaseRegistrationForm):
-    experimenter = forms.BooleanField(required=False, help_text=_('Check this box if you would like to request experimenter access.'))
+    experimenter = forms.BooleanField(required=False,
+                                      help_text=_('Check this box if you would like to request experimenter access.'))
 
 
 class VcwebPasswordResetForm(PasswordResetForm):
@@ -99,14 +108,15 @@ class AsuRegistrationForm(forms.ModelForm):
         super(AsuRegistrationForm, self).__init__(*args, **kwargs)
         if instance is not None:
             self.fields.keyOrder = ['first_name', 'last_name', 'email', 'gender', 'class_status', 'major',
-                    'favorite_sport', 'favorite_food', 'favorite_color', 'favorite_movie_genre']
+                                    'favorite_sport', 'favorite_food', 'favorite_color', 'favorite_movie_genre']
             for attr in ('first_name', 'last_name', 'email', 'major'):
                 self.fields[attr].initial = getattr(instance, attr)
 
 
     class Meta:
         model = Participant
-        fields = ['major', 'class_status', 'gender', 'favorite_sport', 'favorite_color', 'favorite_food', 'favorite_movie_genre']
+        fields = ['major', 'class_status', 'gender', 'favorite_sport', 'favorite_color', 'favorite_food',
+                  'favorite_movie_genre']
         widgets = {
             'major': autocomplete_light.TextWidget(ParticipantMajorAutocomplete)
         }
@@ -198,36 +208,35 @@ class ExperimenterAccountForm(forms.ModelForm):
         model = Experimenter
         exclude = ('approved', 'institution', 'failed_password_attempts', 'authentication_token', 'user')
 
+
 email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
 
 
 class ExperimentConfigurationForm(forms.ModelForm):
-
     class Meta:
         model = ExperimentConfiguration
         exclude = ('creator', 'last_modified', 'date_created', 'cached_final_sequence_number', 'invitation_text')
         widgets = {
             'registration_email_subject': forms.Textarea(attrs={'class': 'form-control', 'cols': 40, 'rows': 2}),
-            }
+        }
 
 
 class ExperimentParameterValueForm(forms.ModelForm):
-
     class Meta:
         model = ExperimentParameterValue
-        exclude = ('experiment_configuration','last_modified', 'date_created')
+        exclude = ('experiment_configuration', 'last_modified', 'date_created')
         widgets = {
             'string_value': forms.Textarea(attrs={'cols': 40, 'rows': 3}),
         }
 
+
 class RoundConfigurationForm(forms.ModelForm):
     class Meta:
         model = RoundConfiguration
-        exclude = ('experiment_configuration','last_modified', 'date_created', 'template_filename')
+        exclude = ('experiment_configuration', 'last_modified', 'date_created', 'template_filename')
 
 
 class RoundParameterValuesForm(forms.ModelForm):
-
     class Meta:
         model = RoundParameterValue
         exclude = ('round_configuration', 'last_modified', 'date_created')
@@ -271,7 +280,8 @@ class RegisterParticipantsForm(forms.Form):
                                   widget=autocomplete_light.TextWidget(InstitutionAutocomplete),
                                   help_text=_('Institution to associate with these participants'))
     registration_email_from_address = forms.EmailField(widget=EmailInput(), label=_('Sender email'),
-                                                       help_text=_("Email address to use in the from field of the registration email"))
+                                                       help_text=_(
+                                                           "Email address to use in the from field of the registration email"))
     registration_email_subject = forms.CharField(min_length=3, label="Email subject",
                                                  help_text=_('Subject line for the registration email'))
     registration_email_text = forms.CharField(required=False, widget=forms.Textarea, label="Email body")
@@ -290,7 +300,8 @@ class RegisterParticipantsForm(forms.Form):
 
 class RegisterTestParticipantsForm(RegisterParticipantsForm):
     username_suffix = forms.CharField(min_length=1, initial='asu',
-                                      help_text=_('''Appended to every generated username before the "@" symbol, e.g., s1asu@foo.com'''))
+                                      help_text=_(
+                                          '''Appended to every generated username before the "@" symbol, e.g., s1asu@foo.com'''))
     email_suffix = forms.CharField(min_length=3, initial='mailinator.com',
                                    help_text=_('''An email suffix without the "@" symbol.  Generated participants will
                                     receive usernames of s1<username_suffix>@<email_suffix>..sn<username_suffix>@<email_suffix>.
@@ -303,7 +314,8 @@ class RegisterTestParticipantsForm(RegisterParticipantsForm):
 
 class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
     participant_emails = EmailListField(label="Participant emails",
-                                        help_text=_('A newline delimited list of participant emails to register for this experiment.'))
+                                        help_text=_(
+                                            'A newline delimited list of participant emails to register for this experiment.'))
 
 
 class RegisterExcelParticipantsForm(RegisterParticipantsForm):
@@ -372,7 +384,8 @@ class CommentForm(forms.Form):
 
 
 class LogMessageForm(forms.Form):
-    log_levels = [(getattr(logging, levelName), levelName) for levelName in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')]
+    log_levels = [(getattr(logging, levelName), levelName) for levelName in
+                  ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')]
     level = forms.ChoiceField(choices=log_levels)
     message = forms.CharField()
 
@@ -391,6 +404,7 @@ class SingleIntegerDecisionForm(forms.Form):
 
 class QuizForm(forms.Form):
     name_question = forms.CharField(max_length=64, label=_("What is your name?"))
+
     def __init__(self, *args, **kwargs):
         quiz_questions = []
         try:
@@ -404,3 +418,75 @@ class QuizForm(forms.Form):
         for name, value in self.cleaned_data.items():
             if name.startswith('quiz_question_'):
                 yield (self.fields[name].label, value)
+
+
+"""
+SUBJECT POOL FORMS
+"""
+
+
+class CancelSignupForm(forms.Form):
+    pk = forms.IntegerField()
+
+    def clean_pk(self):
+        data = self.cleaned_data['pk']
+        try:
+            self.signup = ParticipantSignup.objects.select_related('invitation__experiment_session',
+                                                                   'invitation__participant').get(pk=data)
+        except ParticipantSignup.DoesNotExist:
+            raise forms.ValidationError(_("No signup found with pk %s" % data))
+        return data
+
+
+class SessionForm(forms.Form):
+    pk = forms.IntegerField(widgets.TextInput())
+    experiment_metadata_pk = forms.IntegerField(widgets.TextInput(), required=False)
+    start_date = forms.CharField(widget=widgets.TextInput(), required=False)
+    start_hour = forms.ChoiceField(choices=HOUR_CHOICES, required=False)
+    start_min = forms.ChoiceField(choices=MIN_CHOICES, required=False)
+    end_date = forms.CharField(widget=widgets.TextInput(), required=False)
+    end_hour = forms.ChoiceField(choices=HOUR_CHOICES, required=False)
+    end_min = forms.ChoiceField(choices=MIN_CHOICES, required=False)
+    capacity = forms.IntegerField(widget=widgets.TextInput(), required=False)
+    location = forms.CharField(widget=widgets.TextInput(), required=False)
+    request_type = forms.CharField(widget=widgets.TextInput())
+
+    def clean(self):
+        data = super(SessionForm, self).clean()
+        pk = data.get('pk')
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        location = data.get('location')
+        request_type = data.get('request_type')
+
+        if not pk:
+            logger.error("No experiment session pk found: %s", data)
+            raise forms.ValidationError(_("No experiment session pk was found"))
+        else:
+            # logger.debug(data)
+            if request_type != 'delete':
+                if not start_date or not end_date:
+                    raise forms.ValidationError(_("Please enter a start and end date"))
+                if not location:
+                    raise forms.ValidationError(_("Please enter a location for the experiment session"))
+        return data
+
+
+class SessionInviteForm(forms.Form):
+    number_of_people = forms.IntegerField(widget=NumberInput(attrs={'value': 0, 'class': 'input-mini'}))
+    only_undergrad = forms.BooleanField(widget=CheckboxInput(attrs={'checked': True}))
+    affiliated_university = forms.CharField(
+        widget=autocomplete_light.TextWidget(InstitutionAutocomplete, attrs={'value': 'Arizona State University'}))
+    invitation_subject = forms.CharField(widget=widgets.TextInput())
+    invitation_text = forms.CharField(widget=widgets.Textarea(attrs={'rows': '4'}))
+
+
+class ParticipantAttendanceForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(ParticipantAttendanceForm, self).__init__(*args, **kwargs)
+        self.fields['attendance'].widget.attrs['class'] = 'form-control input-sm'
+
+    class Meta:
+        model = ParticipantSignup
+        fields = ['attendance']
+

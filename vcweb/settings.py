@@ -114,7 +114,6 @@ INSTALLED_APPS = (
     'vcweb.experiment.lighterprints',
     'vcweb.experiment.bound',
     'vcweb.experiment.broker',
-    'vcweb.subject_pool',
     #        'vcweb.sanitation',
     'raven.contrib.django',
     'kronos',
