@@ -212,8 +212,8 @@ def set_harvest_decision(participant_group_relationship=None, value=None, round_
     return prdv
 
 
-# def set_resource_level(group, value, round_data=None):
-#     return group.set_data_value(parameter=get_resource_level_parameter(), round_data=round_data, value=value)
+def set_resource_level(group, value, round_data=None):
+    return group.set_data_value(parameter=get_resource_level_parameter(), round_data=round_data, value=value)
 
 
 @simplecache

@@ -1,8 +1,9 @@
 import logging
+import re
 import urllib
 
 from django.conf import settings
-from django.conf.urls import patterns, url
+from django.conf.urls import url, include
 from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 
@@ -15,26 +16,26 @@ from vcweb.core.views import (
     clone_experiment_configuration, unsubscribe, update_round_param_value, update_experiment_param_value,
     update_experiment_configuration, OstromlabFaqList, cas_asu_registration, cas_asu_registration_submit,
     experiment_session_signup, submit_experiment_session_signup, cancel_experiment_session_signup,
-    download_experiment_session)
+    download_experiment_session, account_profile, update_account_profile, check_user_email, session_list_view,
+    update_session, get_session_events, manage_participant_attendance, send_invitations, get_invitations_count,
+    invite_email_preview, )
 
 
 logger = logging.getLogger(__name__)
 
-
 '''
 URLs for the core vcweb app
 '''
-urlpatterns = patterns(
-    'vcweb.core.views',
+urlpatterns = [
     url(r'^cas/asu/$', cas_asu_registration, name='cas_asu_registration'),
     url(r'^cas/asu/submit/$', cas_asu_registration_submit, name='cas_asu_registration_submit'),
     url(r'^dashboard/$', dashboard, name='dashboard'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
     url(r'^accounts/logout/$', login_required(LogoutView.as_view()), name='logout'),
     #url(r'^accounts/add/$', RegistrationView.as_view(), name='register'),
-    url(r'^accounts/profile/$', 'account_profile', name='profile'),
-    url(r'^accounts/profile/update$', 'update_account_profile', name='update_profile'),
-    url(r'^accounts/check-email$', 'check_user_email', name='check_email'),
+    url(r'^accounts/profile/$', account_profile, name='profile'),
+    url(r'^accounts/profile/update$', update_account_profile, name='update_profile'),
+    url(r'^accounts/check-email$', check_user_email, name='check_email'),
     url(r'^ostromlab/faq$', OstromlabFaqList.as_view(), name='ostromlab_faq'),
     url(r'^accounts/unsubscribe$', unsubscribe, name='unsubscribe'),
     url(r'^participate/?$', Participate.as_view(), name='participate'),
@@ -78,23 +79,34 @@ urlpatterns = patterns(
     url(r'api/login', participant_api_login, name='participant_api_login'),
     url(r'api/logout', api_logout, name='api_logout'),
     url(r'api/dashboard', get_dashboard_view_model, name='dashboard_view_model'),
-    url(r'bug-report', RedirectView.as_view(url='https://bitbucket.org/virtualcommons/vcweb/issues/new'),
-        name='report_issues'),
+    url(r'bug-report', RedirectView.as_view(url='https://bitbucket.org/virtualcommons/vcweb/issues/new'), name='report_issues'),
     # subject pool urls
-    url(r'^subject-pool/session$', 'session_list_view', name='subject_pool_index'),
-    url(r'^subject-pool/session/update$', 'update_session', name='update_session'),
-    url(r'^subject-pool/session/events$', 'get_session_events', name='session_events'),
-    url(r'^subject-pool/session/detail/event/(\d+)$', 'manage_participant_attendance', name='session_event_detail'),
-    url(r'^subject-pool/session/invite$', 'send_invitations', name='send_invites'),
-    url(r'^subject-pool/session/invite/count$', 'get_invitations_count', name='get_invitations_count'),
-    url(r'^subject-pool/session/attendance$', 'manage_participant_attendance', name='participant_attendance'),
-    url(r'^subject-pool/session/email-preview$', 'invite_email_preview', name='invite_email_preview'),
+    url(r'^subject-pool/session$', session_list_view, name='subject_pool_index'),
+    url(r'^subject-pool/session/update$', update_session, name='update_session'),
+    url(r'^subject-pool/session/events$', get_session_events, name='session_events'),
+    url(r'^subject-pool/session/detail/event/(\d+)$', manage_participant_attendance, name='session_event_detail'),
+    url(r'^subject-pool/session/invite$', send_invitations, name='send_invites'),
+    url(r'^subject-pool/session/invite/count$', get_invitations_count, name='get_invitations_count'),
+    url(r'^subject-pool/session/attendance$', manage_participant_attendance, name='participant_attendance'),
+    url(r'^subject-pool/session/email-preview$', invite_email_preview, name='invite_email_preview'),
     url(r'^subject-pool/signup/$', experiment_session_signup, name='experiment_session_signup'),
     url(r'^subject-pool/signup/submit/$', submit_experiment_session_signup, name='submit_experiment_session_signup'),
     url(r'^subject-pool/signup/cancel/$', cancel_experiment_session_signup, name='cancel_experiment_session_signup'),
     url(r'^subject-pool/session/(?P<pk>\d+)/download/$', download_experiment_session,
         name='download_experiment_session'),
-)
+]
+
+
+
+def experiment_urls():
+    # crude filter, if experiment is in the app_name, include it
+    experiments = [app_name for app_name in settings.INSTALLED_APPS if 'experiment' in app_name]
+    for experiment in experiments:
+        experiment_name = experiment.rpartition('.')[2]
+        yield url(r'^' + experiment_name + '/', include(experiment + '.urls', namespace=experiment_name, app_name=experiment_name))
+
+urlpatterns += experiment_urls()
+
 
 
 def foursquare_auth_dict(**kwargs):

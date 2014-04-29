@@ -76,8 +76,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.static',
     'django.contrib.auth.context_processors.auth',
     'django.contrib.messages.context_processors.messages',
-    'vcweb.core.context_processors.websocket',
-    'vcweb.core.context_processors.debug_mode',
+    'vcweb.core.context_processors.common',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -110,11 +109,12 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'autocomplete_light',
     'vcweb.core',
+    # TODO: make these dynamically discoverable?
     'vcweb.experiment.forestry',
     'vcweb.experiment.lighterprints',
     'vcweb.experiment.bound',
     'vcweb.experiment.broker',
-    #        'vcweb.sanitation',
+    'vcweb.experiment.irrigation',
     'raven.contrib.django',
     'kronos',
     'south',
