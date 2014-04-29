@@ -298,7 +298,10 @@ class CommonsUser(models.Model):
     institution_username = NullCharField(max_length=64, unique=True, help_text=_(
         'Unique institution-specific username, e.g., ASURITE, IU Network ID'))
     authentication_token = models.CharField(max_length=64, blank=True)
-    date_created = models.DateTimeField(default=datetime.now)
+
+    @property
+    def date_created(self):
+        return self.user.date_joined
 
     @property
     def full_name(self):
