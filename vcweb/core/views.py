@@ -1415,14 +1415,11 @@ def update_session(request):
 def get_session_events(request):
     """
     Returns the list of Experiment sessions that fall within the given range,
-    Used by calendar on he subject recruitment page to display experiment sessions falling in that period.
+    Used by the subject pool calendar to display experiment sessions falling within the date range shown
     """
     from_date = request.GET.get('from', None)
     to_date = request.GET.get('to', None)
-
-    queryset = ExperimentSession.objects.filter()
-    logger.debug("getting events from %s to %s", from_date, to_date)
-
+    queryset = ExperimentSession.objects.select_related('experiment_metadata').filter()
     if to_date:
         queryset = queryset.filter(
             scheduled_end_date__gte=timestamp_to_datetime(from_date)

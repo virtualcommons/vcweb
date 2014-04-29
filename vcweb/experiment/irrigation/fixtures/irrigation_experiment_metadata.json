@@ -1,0 +1,29 @@
+[
+{
+    "pk": 9,
+    "model": "core.experimentmetadata",
+    "fields": {
+        "description": "A web-based version of the irrigation experiment.",
+        "short_name": "irrigation",
+        "title": "Irrigation Experiment",
+        "namespace": "irrigation",
+        "default_configuration": null,
+        "logo_url": null,
+        "about_url": "http://commons.asu.edu"
+    }
+},
+{
+    "fields": {
+        "creator": 1,
+        "experiment_metadata": [
+            "irrigation"
+            ],
+        "is_public": true,
+        "max_group_size": 5,
+        "name": "Default Irrigation",
+        "is_experimenter_driven": true
+    },
+    "model": "core.experimentconfiguration",
+    "pk": 20
+}
+]

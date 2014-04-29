@@ -1,5 +1,5 @@
-# Production Django settings for vcweb
-DEBUG = False
+# Local Development Django settings for vcweb
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -22,7 +22,7 @@ DATABASES = {
             'PASSWORD': 'CUSTOMIZE_ME',
             }
         }
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
@@ -50,3 +50,11 @@ FACEBOOK_API_SECRET          = ''
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'CUSTOMIZE_ME'
+
+# use debug_toolbar and sslserver in dev mode
+INSTALLED_APPS = ('debug_toolbar','sslserver',)
+MIDDLEWARE_CLASSES = (
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+        )
+
+

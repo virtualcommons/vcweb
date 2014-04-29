@@ -95,9 +95,9 @@ class ForestryParametersTest(BaseTest):
     '''
     def test_initialize_parameters_at_round_start(self):
         e = self.advance_to_data_round()
-        round_data = e.get_round_data()
+        round_data = e.current_round_data
         group_parameters = (get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter())
-        for group in e.group_set.select_related(depth=1).all():
+        for group in e.group_set.all():
             for parameter in group_parameters:
                 gdv = group.get_data_value(round_data=round_data, parameter=parameter)
                 logger.debug("inspecting group data value: %s", gdv)

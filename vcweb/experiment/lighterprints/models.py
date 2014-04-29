@@ -331,7 +331,7 @@ class GroupScores(object):
                             'group_level': level,
                             'group_rank': self.get_group_rank(group),
                             'summary_date': yesterday,
-                            'show_rankings': self.show_rankings,
+                            'has_leaderboard': self.has_leaderboard,
                             'points_to_next_level': points_to_next_level,
                             'average_daily_points': average_group_points,
                             'number_of_chat_messages': number_of_chat_messages,

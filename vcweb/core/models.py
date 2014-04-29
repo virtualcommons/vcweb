@@ -385,6 +385,10 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     max_group_size = models.PositiveIntegerField(default=5)
     exchange_rate = models.DecimalField(null=True, blank=True, default=0.2, max_digits=6, decimal_places=2, help_text=_(
         'The exchange rate of currency per in-game token, e.g., dollars per token'))
+    show_up_payment = models.DecimalField(null=True, blank=True, default=5.0, max_digits=6, decimal_places=2, 
+            help_text=_("The show up fee to be paid to an in-lab experiment participant just for showing up"))
+    maximum_payment = models.DecimalField(null=True, blank=True, default=40.0, max_digits=6, decimal_places=2,
+            help_text=_("The maximum amount a participant can expect to be paid for this experiment"))
     treatment_id = models.CharField(blank=True, max_length=32, help_text=_(
         'An alphanumeric ID that should be unique to the set of ExperimentConfigurations for a given ExperimentMetadata'))
     is_experimenter_driven = models.BooleanField(default=True)

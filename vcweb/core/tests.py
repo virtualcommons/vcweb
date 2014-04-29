@@ -83,7 +83,6 @@ class BaseVcwebTest(TestCase):
     def advance_to_data_round(self):
         e = self.experiment
         e.activate()
-        e.start_round()
         while e.has_next_round:
             if e.current_round.is_playable_round:
                 return e
