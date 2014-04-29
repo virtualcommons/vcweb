@@ -20,7 +20,7 @@
             ],
         "is_public": true,
         "max_group_size": 5,
-        "name": "Default Irrigation",
+        "name": "ASU 2011 Limited Vision",
         "is_experimenter_driven": true
     },
     "model": "core.experimentconfiguration",

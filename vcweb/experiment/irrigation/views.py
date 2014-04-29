@@ -1,5 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
+from vcweb.core import dumps
 from vcweb.core.decorators import participant_required
+from vcweb.core.http import JsonResponse
+from vcweb.core.models import Experiment
+
+from vcweb.experiment.irrigation.services import get_experiment_metadata
 
 import logging
 
@@ -7,15 +12,27 @@ logger = logging.getLogger(__name__)
 
 class ViewModel(object):
 
-    def __init__(self, participant_group_relationship, experiment=None, round_data=None, **kwargs):
+    experiment_model_defaults = {
+            'submitted': False,
+            'chatEnabled': False,
+            'storage': 0,
+            }
+
+    def __init__(self, participant_group_relationship, experiment=None, **kwargs):
         self.participant_group_relationship = participant_group_relationship
         self.group = participant_group_relationship.group
+        self.experiment = group.experiment if experiment is None else experiment
+        self.current_round_data = self.experiment.current_round_data
+        self.current_round = self.current_round_data.round_configuration
+        self.experiment_model = self.experiment.to_dict(include_round_data=False, default_value_dict=ViewModel.experiment_model_defaults)
 
     def to_json(self):
-        return dumps({
-            'pid': self.participant_group_relationship.pk
-
-            })
+        current_round = self.experiment.current_round
+        self.experiment_model.update(
+                pid=self.participant_group_relationship.pk,
+                templateName=self.current_round.template_name,
+                )
+        return dumps(self.experiment_model)
 
 
 @participant_required
@@ -26,8 +43,7 @@ def participate(request, experiment_id=None):
     if experiment.experiment_metadata != get_experiment_metadata():
         raise Http404
     return render(request, experiment.participant_template,
-            experiment.template_context(participant_group_relationship=pgr, 
-                experimentModelJson=ViewModel(pgr, experiment=experiment).to_json()))
+            experiment.template_context(pgr, experimentModelJson=ViewModel(pgr, experiment=experiment).to_json()))
 
 
 @participant_required

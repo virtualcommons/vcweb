@@ -255,8 +255,7 @@ def to_event(message):
 def verify_auth_token(event):
     try:
         auth_token = event.auth_token
-        per = ParticipantExperimentRelationship.objects.select_related('participant').get(
-            pk=event.participant_experiment_relationship_id)
+        per = ParticipantExperimentRelationship.objects.select_related('participant').get(pk=event.participant_experiment_relationship_id)
         participant = per.participant
         return per, participant.authentication_token == auth_token
     except ParticipantExperimentRelationship.DoesNotExist:

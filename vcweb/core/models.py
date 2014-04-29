@@ -1351,10 +1351,11 @@ class Experiment(models.Model):
                                          duration=self.duration,
                                          status=Experiment.Status.INACTIVE)
 
-    def template_context(self, **kwargs):
+    def template_context(self, participant_group_relationship, **kwargs):
         return dict(
                 experiment=self,
-                participant_experiment_relationship=self.get_participant_experiment_relationship(participant),
+                participant_group_relationship=participant_group_relationship,
+                participant_experiment_relationship=self.get_participant_experiment_relationship(participant_group_relationship.participant),
                 **kwargs)
 
     def __unicode__(self):

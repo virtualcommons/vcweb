@@ -7,7 +7,7 @@
 {% block page %}
 <div class='row' id='page'>
     <div id='content' class='col-md-12'>
-        <div data-bind='template: { name: templateId(), afterRender: afterRenderTemplate}'></div>
+        <div data-bind='template: { name: templateId() }'></div>
         <div id="progress-modal" class="modal fade" role="dialog">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -42,9 +42,8 @@
 </div>
 </script>
 <script type='text/html' id='WELCOME'>
-<h3>Welcome</h3>
 <p class='lead'>
-    The experiment will begin shortly after everyone has been assigned a station and has had time to log in.
+    The experiment will begin shortly after everyone has been assigned a station.
 </p>
 <div class='well'>
     <div class='alert alert-info'>
@@ -75,8 +74,8 @@
     <p>
         You will be participating in this exercise as a part of a group of
         <span data-bind="text: participantsPerGroup()"></span> participants. 
-        Your group has been formed by randomly selecting you and <span data-bind='text: participantPerGroup() -
-        1'></span> other participants in the room. 
+        Your group has been formed by randomly selecting you and 
+        <span data-bind='text: participantsPerGroup() - 1'></span> other participants in the room. 
     </p>
     <h3>How to participate</h3>
     <p>
@@ -387,23 +386,9 @@
     $(function() {
         function ExperimentModel(experimentModelJson) {
             var model = ko.mapping.fromJS(experimentModelJson);
-
             model.tour = ko.observable();
-
-            model.harvestDecisionOptions = ko.computed(function() {
-                return ko.utils.range(0, model.maxHarvestDecision());
-            });
-
-            model.harvestDecisionFormId = function(numberOfTrees) {
-                numberOfTrees = numberOfTrees || model.harvestDecision();
-                return "harvest-decision-form" + numberOfTrees;
-            }
             model.secondsLeft = ko.observable(0);
-
             model.currentInterval = ko.observable();
-
-            model.selectedHarvestDecision = ko.observable(false);
-
             model.templateId = ko.computed(function() {
                 switch ( model.templateName() ) {
                     case 'PRACTICE':
@@ -412,13 +397,11 @@
                         return model.templateName();
                 }
             });
-
             model.setupTour = function() {
                 if (! model.showTour()) {
                     return;
                 }
                 model.tour(new Tour());
-
                 model.tour().addSteps([{
                     element: "#dashboard-last-harvest", title: "Last harvest",  placement: "right",
                     content: "Your last round's harvest decision will be displayed here.  Since this is the first practice round this is currently 0."
@@ -443,7 +426,6 @@
                     tour.end();
                 }
             }
-
             model.setCurrentInterval = function(intervalId) {
                 model.clearCurrentInterval();
                 model.currentInterval(intervalId);
@@ -458,19 +440,15 @@
             model.tick = function() {
                 model.secondsLeft(model.secondsLeft() - 1);
             }
-
             model.isTimerRunning = ko.computed(function() {
                 return model.secondsLeft() > 0;
             });
-
             model.activateTemplate = function(name) {
                 model.templateName(name);
             };
-
             model.readyParticipantsPercentage = ko.computed(function() {
                 return (model.readyParticipants() / model.participantCount()) * 100;
             });
-
             model.participantReady = function(message) {
                 $.post('/experiment/participant-ready', {
                     participant_group_id: model.participantGroupId()
@@ -481,60 +459,15 @@
                 });
                 scrollToTop();
             }
-
-            model.isResourceEmpty = ko.computed(function() {
-                return model.resourceLevel() == 0;
-            })
-
-            model.resourcesPerRow = ko.observable(77);
-            model.resourceImageWidth = ko.observable(10);
-            model.resourceImageHeight = ko.observable(20);
-            model.resourceImageHeightPx = ko.computed(function() {
-                return model.resourceImageHeight() + "px";
-            });
-
-            model.rowsToDisplay = function(resourceLevel) {
-                return Math.floor(resourceLevel() / model.resourcesPerRow());
-            };
-            model.individualResourcesToDisplay = ko.computed(function() {
-                return model.resourceLevel() % model.resourcesPerRow();
-            });
-            model.resourcesToDisplay = ko.computed(function() {
-                if (model.resourceLevel() > 0) {
-                    return Math.min(model.resourceLevel(), model.maximumResourcesToDisplay());
-                }
-                return 0;
-            });
-            model.inactiveResourceImageUrl = ko.observable("{{STATIC_URL}}images/forestry/tree-inactive.png");
-            model.resourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/tree-resource-old-growth.png')");
-            model.regrowthResourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/tree-resource-new-growth.png')");
-
-            model.regrowthResourceImageWidth = function(regrowth) {
-                return (model.regrowth() * model.resourceImageWidth()) + "px";
-            }
-            model.blockResourceVisualizationImageWidth = function(resourceLevel) {
-                return (model.resourcesPerRow() * model.resourceImageWidth()) + "px";
-            };
-            model.blockResourceVisualizationImageHeight = function(resourceLevel) {
-                var rowsToDisplay = model.rowsToDisplay(resourceLevel);
-                return (rowsToDisplay * model.resourceImageHeight()) + "px";
-            };
-            model.remainderResourceImageWidth = function(resourceLevel) {
-                var remainder = resourceLevel() % model.resourcesPerRow();
-                return (remainder * model.resourceImageWidth()) + "px";
-            };
             model.startRound = function() {
                 model.initializeChat();
                 if (model.templateId() != "REGULAR") {
                     return;
                 }
                 model.setupTour();
-
                 console.debug("starting round, checking time remaining: " + model.timeRemaining());
-
                 if (model.timeRemaining() > 0) {
                     console.debug("setting seconds left to: " + model.timeRemaining());
-
                     model.secondsLeft(model.timeRemaining());
                     model.setCurrentInterval(
                         setInterval(function() {
@@ -546,39 +479,6 @@
                         1000));
                 }
             };
-            model.submitHarvestDecisionEnabled = ko.computed(function() {
-                return model.submitted() || model.selectedHarvestDecision();
-            });
-            model.isSelectedHarvestDecision = function(numberOfTrees) {
-                return model.submitHarvestDecisionEnabled() && (model.harvestDecision() >= numberOfTrees);
-            }
-            model.submitDecision = function() {
-                model.endTour();
-                $.post('submit-harvest-decision', {participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true },
-                function(response) {
-                    // hide selection, disable chat, show waiting room
-                    model.participantReady(response.message);
-                    model.clearCurrentInterval();
-                    model.submitted(true);
-                    model.secondsLeft(0);
-                    model.disableChatForm();
-                    scrollToTop();
-                });
-            }
-            model.selectDecision = function(numberOfTrees) {
-                if (model.submitted()) {
-                    alert("You've already submitted a harvest decision this round.");
-                    return false;
-                }
-                var formId = "#" + model.harvestDecisionFormId(numberOfTrees)
-                var form = $(formId);
-                var formData = form.serialize();
-                $.post('submit-harvest-decision', formData, function(response) {
-                    model.selectedHarvestDecision(true);
-                    model.harvestDecision(numberOfTrees);
-                });
-                return false;
-            }
             model.submitChatMessage = function(data, evt) {
                 console.log("submitting chat message");
                 var message = $('#chatMessage').val();
@@ -596,48 +496,12 @@
                     model.startRound();
                 });
             }
-            model.setFormDisabled = function(formId, disabled) {
-                // disable all form inputs
-                if (formId.indexOf("#") != 0) {
-                    formId = "#" + formId;
-                }
-                $(formId + " :input").prop("disabled", disabled);
-            }
-            model.enableHarvestForm = function() {
-                $('#harvestDecisionDiv').show();
-            }
-            model.disableHarvestForm = function() {
-                $('#harvestDecisionDiv').hide();
-            }
-            model.enableChatForm = function() {
-                model.setFormDisabled("#chat-form", false);
-            }
-            model.disableChatForm = function() {
-                model.setFormDisabled("#chat-form", true);
-            }
             model.initializeChat = function() {
-                var chatEnabled = model.chatEnabled();
-                // FIXME: get rid of form disabling?
-                model.setFormDisabled("#chat-form", ! chatEnabled);
-                model.chatEnabled(chatEnabled);
-                if (chatEnabled) {
-                    console.debug("chat was enabled, showing sidebar explicitly");
-                    $('#sidebar').show();
-                    $('#content').removeClass('col-md-12').addClass('col-md-8');
-                }
-                else {
-                    $('#sidebar').hide();
-                    $('#content').removeClass('col-md-8').addClass('col-md-12');
-                }
-            }
-            model.afterRenderTemplate = function(elements) {
-                $('[data-content]').popover({placement: 'top', trigger: 'hover'});
             }
             return model;
         }
 
         var experimentModel = new ExperimentModel($.parseJSON("{{ experimentModelJson|escapejs }}"));
-
         var s = connect();
         s.onmessage = function(message) {
             var data = $.parseJSON(message.data);
