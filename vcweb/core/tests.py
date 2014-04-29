@@ -9,7 +9,7 @@ from vcweb.core.models import (Experiment, Experimenter, ExperimentConfiguration
                                Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
                                ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue, Institution,
                                GroupActivityLog, ExperimentSession, Invitation, ParticipantSignup)
-from vcweb.subject_pool.views import get_potential_participants
+from vcweb.core.views import get_potential_participants
 
 import random
 import logging

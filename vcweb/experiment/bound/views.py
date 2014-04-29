@@ -31,7 +31,7 @@ def participate(request, experiment_id=None):
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
                                    pk=experiment_id)
     pgr = experiment.get_participant_group_relationship(participant)
-    if experiment.experiment_metadata != get_experiment_metadata() or pgr.participant != request.user.participant:
+    if experiment.experiment_metadata != get_experiment_metadata():
         raise Http404
     return render(request, experiment.participant_template, {
         'experiment': experiment,

@@ -1220,7 +1220,7 @@ class Experiment(models.Model):
         self.status = Experiment.Status.ACTIVE
         self.save()
         # reset all survey completed flags on participant group relationships within this experiment
-        self._reset_survey_completed_flags()
+        ParticipantGroupRelationship.objects.for_experiment(self).update(survey_completed=False)
         self.log('Ending round with elapsed time %s' % self.current_round_elapsed_time)
         sender = intern(self.experiment_metadata.namespace.encode('utf8')) if sender is None else sender
         #sender = self.namespace.encode('utf-8')
@@ -1237,6 +1237,7 @@ class Experiment(models.Model):
             self.start_round()
         return self
 
+    @transaction.atomic
     def restart(self):
         self.log("Restarting experiment entirely from the first round and clearing out all existing data.")
         self.deactivate()
@@ -1250,6 +1251,7 @@ class Experiment(models.Model):
     def archive(self):
         self.complete()
 
+    @transaction.atomic
     def complete(self):
         if self.is_round_in_progress:
             self.end_round()
@@ -1257,6 +1259,7 @@ class Experiment(models.Model):
         self.status = Experiment.Status.COMPLETED
         self.save()
 
+    @transaction.atomic
     def deactivate(self):
         self.log("Deactivating experiment, deleting all data and flagging as inactive.")
         self.status = Experiment.Status.INACTIVE
@@ -1265,6 +1268,7 @@ class Experiment(models.Model):
         self.current_repeated_round_sequence_number = 0
         self.save()
 
+    @transaction.atomic
     def clear_participants(self):
         logger.debug("clearing all participants for experiment %s", self)
         ParticipantExperimentRelationship.objects.filter(experiment=self).delete()
@@ -1340,8 +1344,11 @@ class Experiment(models.Model):
                                          duration=self.duration,
                                          status=Experiment.Status.INACTIVE)
 
-    def _reset_survey_completed_flags(self):
-        ParticipantGroupRelationship.objects.for_experiment(self).update(survey_completed=False)
+    def template_context(self, **kwargs):
+        return dict(
+                experiment=self,
+                participant_experiment_relationship=self.get_participant_experiment_relationship(participant),
+                **kwargs)
 
     def __unicode__(self):
         return u"%s #%s | %s" % (self.experiment_configuration, self.pk, self.experimenter)

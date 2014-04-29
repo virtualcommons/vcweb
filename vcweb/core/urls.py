@@ -16,7 +16,7 @@ from vcweb.core.views import (
     clone_experiment_configuration, unsubscribe, update_round_param_value, update_experiment_param_value,
     update_experiment_configuration, OstromlabFaqList, cas_asu_registration, cas_asu_registration_submit,
     experiment_session_signup, submit_experiment_session_signup, cancel_experiment_session_signup,
-    download_experiment_session, account_profile, update_account_profile, check_user_email, session_list_view,
+    download_experiment_session, account_profile, update_account_profile, check_user_email, subject_pool_index,
     update_session, get_session_events, manage_participant_attendance, send_invitations, get_invitations_count,
     invite_email_preview, )
 
@@ -81,20 +81,27 @@ urlpatterns = [
     url(r'api/dashboard', get_dashboard_view_model, name='dashboard_view_model'),
     url(r'bug-report', RedirectView.as_view(url='https://bitbucket.org/virtualcommons/vcweb/issues/new'), name='report_issues'),
     # subject pool urls
-    url(r'^subject-pool/session$', session_list_view, name='subject_pool_index'),
-    url(r'^subject-pool/session/update$', update_session, name='update_session'),
-    url(r'^subject-pool/session/events$', get_session_events, name='session_events'),
-    url(r'^subject-pool/session/detail/event/(\d+)$', manage_participant_attendance, name='session_event_detail'),
-    url(r'^subject-pool/session/invite$', send_invitations, name='send_invites'),
-    url(r'^subject-pool/session/invite/count$', get_invitations_count, name='get_invitations_count'),
-    url(r'^subject-pool/session/attendance$', manage_participant_attendance, name='participant_attendance'),
-    url(r'^subject-pool/session/email-preview$', invite_email_preview, name='invite_email_preview'),
-    url(r'^subject-pool/signup/$', experiment_session_signup, name='experiment_session_signup'),
-    url(r'^subject-pool/signup/submit/$', submit_experiment_session_signup, name='submit_experiment_session_signup'),
-    url(r'^subject-pool/signup/cancel/$', cancel_experiment_session_signup, name='cancel_experiment_session_signup'),
-    url(r'^subject-pool/session/(?P<pk>\d+)/download/$', download_experiment_session,
-        name='download_experiment_session'),
-]
+    url(r'^subject-pool/session', subject_pool_index, name='subject_pool_index'),
+    url(r'^subject-pool/', 
+            include((
+                [
+                    url(r'^session/update$', update_session, name='update_session'),
+                    url(r'^session/events$', get_session_events, name='session_events'),
+                    url(r'^session/detail/event/(\d+)$', manage_participant_attendance, name='session_event_detail'),
+                    url(r'^session/invite$', send_invitations, name='send_invites'),
+                    url(r'^session/invite/count$', get_invitations_count, name='get_invitations_count'),
+                    url(r'^session/attendance$', manage_participant_attendance, name='participant_attendance'),
+                    url(r'^session/email-preview$', invite_email_preview, name='invite_email_preview'),
+                    url(r'^signup/$', experiment_session_signup, name='experiment_session_signup'),
+                    url(r'^signup/submit/$', submit_experiment_session_signup, name='submit_experiment_session_signup'),
+                    url(r'^signup/cancel/$', cancel_experiment_session_signup, name='cancel_experiment_session_signup'),
+                    url(r'^session/(?P<pk>\d+)/download/$', download_experiment_session, name='download_experiment_session'),
+                    ], 
+                'subject_pool', 
+                'subject_pool')
+                )
+            ),
+    ]
 
 
 

@@ -1340,7 +1340,7 @@ SUBJECT POOL VIEWS
 
 
 @experimenter_required
-def session_list_view(request):
+def subject_pool_index(request):
     """
     Returns by rendering the Subject Recruitment page with all the active experiment sessions and past experiment
     sessions.
@@ -1358,7 +1358,7 @@ def session_list_view(request):
 
     form = SessionInviteForm()
 
-    return render(request, "experimenter/experimenter-index.html",
+    return render(request, "experimenter/subject-pool-index.html",
                   {"view_model_json": dumps(session_data), "form": form})
 
 
