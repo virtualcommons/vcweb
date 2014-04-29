@@ -1421,6 +1421,7 @@ def get_session_events(request):
     to_date = request.GET.get('to', None)
 
     queryset = ExperimentSession.objects.filter()
+    logger.debug("getting events from %s to %s", from_date, to_date)
 
     if to_date:
         queryset = queryset.filter(

@@ -3,7 +3,7 @@ import json
 
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.experiment.lighterprints.views import *
-from vcweb.lighterprints.models import *
+from vcweb.experiment.lighterprints.models import *
 
 
 logger = logging.getLogger(__name__)
