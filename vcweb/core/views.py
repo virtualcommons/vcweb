@@ -853,12 +853,13 @@ def completed_survey(request):
     logger.debug("http referer: %s", request.META.get('HTTP_REFERER'))
     success = False
     try:
-        if pgr_id is None:
-            participant = request.user.participant
-            experiment = get_active_experiment(participant)
-            pgr = experiment.get_participant_group_relationship(participant)
-        else:
+        if pgr_id and pgr_id.isdigit():
             pgr = get_object_or_404(ParticipantGroupRelationship, pk=pgr_id)
+        else:
+            # no incoming pid, try to look it up for the given logged in user
+            participant = request.user.participant
+            # FIXME: create a ParticipantGroupRelationship.objects.active QuerySet method?
+            pgr = ParticipantGroupRelationship.objects.get(group__experiment=get_active_experiment(participant), participant=participant)
         pgr.survey_completed = True
         pgr.save()
         success = True
