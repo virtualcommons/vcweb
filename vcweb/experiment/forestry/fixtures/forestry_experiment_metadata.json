@@ -64,139 +64,186 @@
     }
 },
 {
-    "fields": {
-        "date_created": "2010-09-07 15:13:03",
+     "fields": {
+        "randomize_groups": false,
+        "create_group_clusters": false,
+        "round_type": "WELCOME",
+        "debriefing": "",
+        "survey_url": "",
+        "template_filename": "",
+        "initialize_data_values": false,
         "duration": 0,
+        "last_modified": "2013-07-22T13:53:00.944",
+        "group_cluster_size": 2,
+        "session_id": "",
+        "repeat": 0,
+        "display_number": 0,
+        "date_created": "2011-03-14T10:13:28",
         "experiment_configuration": 1,
-        "instructions": "Welcome to the forestry experiment.",
-        "last_modified": "2010-09-07 15:13:03",
-        "round_type": "INSTRUCTIONS",
-        "sequence_number": 1
+        "preserve_existing_groups": true,
+        "chat_enabled": false,
+        "template_id": "",
+        "sequence_number": 1,
+        "instructions": "Welcome to the forestry experiment."
     },
     "model": "core.roundconfiguration",
     "pk": 1
 },
 {
     "fields": {
-        "date_created": "2010-09-07 15:13:03",
+        "randomize_groups": false,
+        "create_group_clusters": false,
+        "round_type": "GENERAL_INSTRUCTIONS",
+        "debriefing": "",
+        "survey_url": "",
+        "template_filename": "",
+        "initialize_data_values": false,
         "duration": 0,
+        "last_modified": "2014-04-30T14:48:55.701",
+        "group_cluster_size": 2,
+        "session_id": "",
+        "repeat": 0,
+        "display_number": 0,
+        "date_created": "2011-03-14T10:13:28",
         "experiment_configuration": 1,
-        "instructions": "First practice round.",
-        "last_modified": "2010-09-07 15:13:03",
-        "round_type": "PRACTICE",
+        "preserve_existing_groups": true,
+        "chat_enabled": false,
+        "template_id": "",
         "sequence_number": 2,
-        "initialize_data_values": true
+        "instructions": ""
     },
     "model": "core.roundconfiguration",
     "pk": 2
 },
 {
     "fields": {
-        "date_created": "2010-09-07 15:13:03",
-        "duration": 60,
-        "experiment_configuration": 1,
-        "instructions": "This is a practice round.",
-        "last_modified": "2010-09-07 15:13:03",
+        "randomize_groups": false,
+        "create_group_clusters": false,
         "round_type": "PRACTICE",
-        "sequence_number": 3
+        "debriefing": "",
+        "survey_url": "",
+        "template_filename": "",
+        "initialize_data_values": true,
+        "duration": 0,
+        "last_modified": "2014-04-28T12:05:46.286",
+        "group_cluster_size": 2,
+        "session_id": "",
+        "repeat": 3,
+        "display_number": 0,
+        "date_created": "2011-03-14T10:13:28",
+        "experiment_configuration": 1,
+        "preserve_existing_groups": true,
+        "chat_enabled": true,
+        "template_id": "",
+        "sequence_number": 3,
+        "instructions": "This is a practice round."
     },
     "model": "core.roundconfiguration",
     "pk": 3
 },
 {
     "fields": {
-        "date_created": "2010-09-07 15:13:03",
-        "duration": 60,
+        "randomize_groups": false,
+        "create_group_clusters": false,
+        "round_type": "DEBRIEFING",
+        "debriefing": "",
+        "survey_url": "",
+        "template_filename": "",
+        "initialize_data_values": false,
+        "duration": 0,
+        "last_modified": "2014-04-21T12:27:13.278",
+        "group_cluster_size": 2,
+        "session_id": "",
+        "repeat": 0,
+        "display_number": 0,
+        "date_created": "2014-04-21T12:27:13.262",
         "experiment_configuration": 1,
-        "instructions": "Chat round.",
-        "last_modified": "2010-09-07 15:13:03",
-        "round_type": "CHAT",
-        "sequence_number": 4
+        "preserve_existing_groups": true,
+        "chat_enabled": false,
+        "template_id": "PRACTICE_ROUND_RESULTS",
+        "sequence_number": 4,
+        "instructions": ""
     },
     "model": "core.roundconfiguration",
     "pk": 4
 },
 {
     "fields": {
-        "date_created": "2010-09-07 15:13:03",
+        "randomize_groups": false,
+        "create_group_clusters": false,
+        "round_type": "REGULAR",
+        "debriefing": "",
+        "survey_url": "",
+        "template_filename": "",
+        "initialize_data_values": true,
         "duration": 60,
+        "last_modified": "2014-04-28T14:06:44.788",
+        "group_cluster_size": 2,
+        "session_id": "",
+        "repeat": 10,
+        "display_number": 0,
+        "date_created": "2011-03-20T21:52:11",
         "experiment_configuration": 1,
-        "instructions": "This is a practice round.",
-        "last_modified": "2010-09-07 15:13:03",
-        "round_type": "PRACTICE",
-        "sequence_number": 5
+        "preserve_existing_groups": true,
+        "chat_enabled": false,
+        "template_id": "",
+        "sequence_number": 5,
+        "instructions": "The next 10 rounds will have chat rounds in between each round where you can communicate for 60 seconds."
     },
     "model": "core.roundconfiguration",
     "pk": 5
 },
 {
     "fields": {
-        "date_created": "2010-09-07 15:13:03",
-        "duration": 60,
-        "experiment_configuration": 1,
-        "instructions": "An actual forestry round.",
-        "last_modified": "2010-09-07 15:13:03",
+        "randomize_groups": false,
+        "create_group_clusters": false,
         "round_type": "REGULAR",
-        "display_number": 1,
+        "debriefing": "",
+        "survey_url": "",
+        "template_filename": "",
+        "initialize_data_values": true,
+        "duration": 60,
+        "last_modified": "2014-04-28T14:06:38.410",
+        "group_cluster_size": 2,
+        "session_id": "",
+        "repeat": 10,
+        "display_number": 0,
+        "date_created": "2011-03-14T10:13:28",
+        "experiment_configuration": 1,
+        "preserve_existing_groups": true,
+        "chat_enabled": true,
+        "template_id": "",
         "sequence_number": 6,
-        "initialize_data_values": true
+        "instructions": "This is the first actual round of this experiment.  Your decisions in this round will affect your total earnings."
     },
     "model": "core.roundconfiguration",
     "pk": 6
 },
 {
     "fields": {
-        "date_created": "2010-09-07 15:13:03",
-        "duration": 60,
+        "randomize_groups": false,
+        "create_group_clusters": false,
+        "round_type": "DEBRIEFING",
+        "debriefing": "",
+        "survey_url": "",
+        "template_filename": "",
+        "initialize_data_values": false,
+        "duration": 0,
+        "last_modified": "2014-04-22T11:58:59.031",
+        "group_cluster_size": 2,
+        "session_id": "",
+        "repeat": 0,
+        "display_number": 0,
+        "date_created": "2014-04-21T12:53:37.711",
         "experiment_configuration": 1,
-        "instructions": "Chat round.",
-        "last_modified": "2010-09-07 15:13:03",
-        "round_type": "CHAT",
-        "sequence_number": 7
+        "preserve_existing_groups": true,
+        "chat_enabled": false,
+        "template_id": "FINAL_DEBRIEFING",
+        "sequence_number": 7,
+        "instructions": ""
     },
     "model": "core.roundconfiguration",
     "pk": 7
-},
-{
-    "fields": {
-        "date_created": "2010-09-07 15:13:03",
-        "duration": 60,
-        "experiment_configuration": 1,
-        "instructions": "Forestry round",
-        "last_modified": "2010-09-07 15:13:03",
-        "round_type": "REGULAR",
-        "display_number": 2,
-        "sequence_number": 8
-    },
-    "model": "core.roundconfiguration",
-    "pk": 8
-},
-{
-    "fields": {
-        "date_created": "2010-09-07 15:13:03",
-        "duration": 60,
-        "experiment_configuration": 1,
-        "instructions": "Chat round.",
-        "last_modified": "2010-09-07 15:13:03",
-        "round_type": "CHAT",
-        "sequence_number": 9
-    },
-    "model": "core.roundconfiguration",
-    "pk": 9
-},
-{
-    "fields": {
-        "date_created": "2010-09-07 15:13:03",
-        "duration": 60,
-        "experiment_configuration": 1,
-        "instructions": "Forestry round",
-        "last_modified": "2010-09-07 15:13:03",
-        "round_type": "REGULAR",
-        "display_number": 3,
-        "sequence_number": 10
-    },
-    "model": "core.roundconfiguration",
-    "pk": 10
 },
 {
     "fields": {
@@ -355,9 +402,42 @@
         "date_created": "2011-03-15 17:04:24",
         "last_modified": "2011-03-15 17:04:24",
         "parameter": [ "reset_resource_level" ],
-        "boolean_value": "False"
+        "boolean_value": "True"
     },
     "model": "core.roundparametervalue",
     "pk": 3
+},
+{
+    "fields": {
+        "round_configuration": 5,
+        "date_created": "2011-03-15 17:04:24",
+        "last_modified": "2011-03-15 17:04:24",
+        "parameter": [ "initial_resource_level" ],
+        "int_value": 100
+    },
+    "model": "core.roundparametervalue",
+    "pk": 4
+},
+{
+    "fields": {
+        "round_configuration": 6,
+        "date_created": "2011-03-15 17:04:24",
+        "last_modified": "2011-03-15 17:04:24",
+        "parameter": [ "reset_resource_level" ],
+        "boolean_value": "True"
+    },
+    "model": "core.roundparametervalue",
+    "pk": 5
+},
+{
+    "fields": {
+        "round_configuration": 6,
+        "date_created": "2011-03-15 17:04:24",
+        "last_modified": "2011-03-15 17:04:24",
+        "parameter": [ "initial_resource_level" ],
+        "int_value": 100
+    },
+    "model": "core.roundparametervalue",
+    "pk": 6
 }
 ]

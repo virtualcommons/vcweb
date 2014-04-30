@@ -217,16 +217,16 @@ class ExperimentTest(BaseVcwebTest):
         experiment = self.experiment
         self.client.login(username=experiment.experimenter.email, password='test')
 
-
     def test_next_round(self):
         experiment = self.experiment
         round_number = experiment.current_round_sequence_number
         self.assertTrue(round_number >= 0)
         self.assertTrue(experiment.has_next_round)
-        while (experiment.has_next_round):
-            round_number += 1
+        while experiment.has_next_round:
             experiment.advance_to_next_round()
-            self.assertTrue(experiment.current_round_sequence_number == round_number)
+            if not experiment.should_repeat:
+                round_number += 1
+                self.assertTrue(experiment.current_round_sequence_number == round_number)
 
     def test_elapsed_time(self):
         experiment = self.experiment
@@ -250,6 +250,7 @@ class ExperimentTest(BaseVcwebTest):
         # advance_to_next_round automatically starts it
         e = self.advance_to_data_round()
         current_round_data = e.current_round_data
+        logger.debug("The current round data is %s", current_round_data)
         for group in e.group_set.all():
             for parameter in group.data_parameters.all():
                 group_data_value, created = current_round_data.group_data_value_set.get_or_create(group=group,
@@ -259,7 +260,7 @@ class ExperimentTest(BaseVcwebTest):
                 for parameter in e.parameters(scope=Parameter.Scope.PARTICIPANT):
                     participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(
                         round_data=current_round_data, participant_group_relationship=pgr, parameter=parameter)
-                    self.assertFalse(created)
+                    self.assertTrue(created)
 
 
 class GroupClusterTest(BaseVcwebTest):
@@ -520,7 +521,7 @@ class InvitationAlgorithmTest(BaseVcwebTest):
 
         for index in range(3):
             # First Iteration
-            logger.debug("Iteration %d", index+1)
+            logger.debug("Iteration %d", index + 1)
 
             es_pk_list = self.set_up_experiment_sessions()
 
@@ -534,10 +535,12 @@ class InvitationAlgorithmTest(BaseVcwebTest):
                     ParticipantSignup.objects.filter(attendance__in=[0, 3], invitation__participant__in=x).count(), 0)
 
                 # The chosen set of participants should not have received invitations in last threshold days
-                self.assertEqual(Invitation.objects.filter(participant__in=x, date_created__gt=last_week_date).count(), 0)
+                self.assertEqual(Invitation.objects.filter(participant__in=x, date_created__gt=last_week_date).count(),
+                                 0)
                 # The chosen set of participants should be from provided university and must have enabled can_receive invitations
                 self.assertEqual(
-                    Participant.objects.filter(can_receive_invitations=True, institution__name='Arizona State University',
+                    Participant.objects.filter(can_receive_invitations=True,
+                                               institution__name='Arizona State University',
                                                pk__in=pk_list).count(), len(x))
 
                 self.set_up_inv(x, es_pk_list)
