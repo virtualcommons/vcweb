@@ -82,7 +82,6 @@
     {
         "fields": {
                "name":"participant_level",
-               "experiment_metadata": [ "lighterprints" ],
                "creator": 1,
                "type": "int",
                "date_created": "2011-01-01 15:13:03",
@@ -97,7 +96,6 @@
     {
         "fields": {
                "name":"activity_performed",
-               "experiment_metadata": [ "lighterprints" ],
                "creator": 1,
                "class_name": "lighterprints.Activity",
                "type": "foreignkey",
@@ -113,7 +111,6 @@
         "pk": 15,
         "model": "core.parameter",
         "fields": {
-            "experiment_metadata": [ "lighterprints" ],
             "display_name": "Unlocked Activity",
             "name": "activity_unlocked",
             "creator": 1,
@@ -131,7 +128,6 @@
     {
         "fields": {
                "name":"footprint_level",
-               "experiment_metadata": [ "lighterprints" ],
                "creator": 1,
                "type": "int",
                "date_created": "2011-01-01 15:13:07",
@@ -144,7 +140,6 @@
     {
         "fields": {
                "name":"experiment_completed",
-               "experiment_metadata": [ "lighterprints" ],
                "creator": 1,
                "type": "boolean",
                "date_created": "2011-01-01 15:13:07",
@@ -157,7 +152,6 @@
     {
         "fields": {
                "name":"treatment_type",
-               "experiment_metadata": [ "lighterprints" ],
                "creator": 1,
                "type": "enum",
                "date_created": "2012-11-01 15:13:07",
@@ -171,7 +165,6 @@
     {
         "fields": {
                "name":"linear_public_good",
-               "experiment_metadata": [ "lighterprints" ],
                "creator": 1,
                "type": "boolean",
                "date_created": "2014-03-01 15:13:07",

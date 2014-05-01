@@ -231,6 +231,7 @@ class ExperimentMetadata(models.Model):
     about_url = models.URLField(null=True, blank=True)
     logo_url = models.URLField(null=True, blank=True)
     default_configuration = models.ForeignKey('ExperimentConfiguration', null=True, blank=True)
+    parameters = models.ManyToManyField('Parameter')
 
     objects = ExperimentMetadataManager()
 
@@ -1041,7 +1042,7 @@ class Experiment(models.Model):
             slugify(self.experiment_metadata.title), self.pk, datetime.now().strftime("%m-%d-%Y-%H%M"), file_ext)
 
     def parameters(self, scope=None):
-        parameter_set = self.experiment_metadata.parameter_set
+        parameter_set = self.experiment_metadata.parameters
         return parameter_set.filter(scope=scope) if scope else parameter_set
 
     def add_participant(self, participant, current_group=None, max_group_size=None, session_id=None):
@@ -1625,7 +1626,6 @@ class Parameter(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
     creator = models.ForeignKey(Experimenter)
-    experiment_metadata = models.ForeignKey(ExperimentMetadata, null=True, blank=True)
     enum_choices = models.TextField(blank=True)
     is_required = models.BooleanField(default=False)
 
@@ -1702,7 +1702,6 @@ class Parameter(models.Model):
 
     class Meta:
         ordering = ['name']
-        unique_together = ('name', 'experiment_metadata', 'scope')
 
 
 class ParameterizedValue(models.Model):
@@ -1884,8 +1883,7 @@ class Group(models.Model, DataValueMixin):
 
     @property
     def data_parameters(self):
-        return Parameter.objects.filter(experiment_metadata=self.experiment.experiment_metadata,
-                                        scope=Parameter.Scope.GROUP)
+        return self.experiment.experiment_metadata.parameters
 
     @property
     def current_round_data(self):

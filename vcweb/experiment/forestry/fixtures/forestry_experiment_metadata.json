@@ -248,7 +248,6 @@
 {
     "fields": {
         "name":"harvest_decision",
-        "experiment_metadata": 1,
         "creator": 1,
         "type": "int",
         "date_created": "2011-01-01 15:13:03",
@@ -261,7 +260,6 @@
 {
     "fields": {
         "name":"resource_level",
-        "experiment_metadata": 1,
         "creator": 1,
         "type": "int",
         "date_created": "2011-01-01 15:13:07",
@@ -274,7 +272,6 @@
 {
     "fields": {
         "name":"reset_resource_level",
-        "experiment_metadata": 1,
         "creator": 1,
         "type": "boolean",
         "scope": "round",
@@ -288,7 +285,6 @@
 {
     "fields": {
         "name":"initial_resource_level",
-        "experiment_metadata": 1,
         "creator": 1,
         "type": "int",
         "scope": "round",
@@ -303,7 +299,6 @@
     "pk": 5,
     "model": "core.parameter",
     "fields": {
-        "experiment_metadata": 1,
         "description": "Number of regrown trees for a given group in a given round.",
         "display_name": "Group regrowth",
         "name": "group_regrowth",
@@ -321,7 +316,6 @@
     "pk": 6,
     "model": "core.parameter",
     "fields": {
-        "experiment_metadata": 1,
         "display_name": "Group harvest",
         "description": "The number of trees harvested by this group in this round.",
         "name": "group_harvest",

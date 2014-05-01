@@ -105,10 +105,8 @@ class BaseVcwebTest(TestCase):
                                                  template_filename=template_filename
         )
 
-    def create_new_parameter(self, name='vcweb.test.parameter', scope=Parameter.Scope.EXPERIMENT,
-                             parameter_type='string'):
-        return Parameter.objects.create(experiment_metadata=self.experiment_metadata, creator=self.experimenter,
-                                        name=name, scope=scope, type=parameter_type)
+    def create_new_parameter(self, name='vcweb.test.parameter', scope=Parameter.Scope.EXPERIMENT, parameter_type='string'):
+        return Parameter.objects.create(creator=self.experimenter, name=name, scope=scope, type=parameter_type)
 
     def create_new_group(self, max_size=10, experiment=None):
         if not experiment:

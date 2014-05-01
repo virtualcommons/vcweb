@@ -90,7 +90,6 @@
         "pk": 13,
         "model": "core.parameter",
         "fields": {
-            "experiment_metadata": null,
             "display_name": "Like",
             "name": "like",
             "creator": 1,
@@ -108,7 +107,6 @@
         "pk": 22,
         "model": "core.parameter",
         "fields": {
-            "experiment_metadata": null,
             "display_name": "Participant is ready",
             "name": "participant_ready",
             "creator": 1,
@@ -126,7 +124,6 @@
         "pk": 12,
         "model": "core.parameter",
         "fields": {
-            "experiment_metadata": null,
             "display_name": "Chat Message",
             "name": "chat_message",
             "creator": 1,
@@ -144,7 +141,6 @@
         "pk": 11,
         "model": "core.parameter",
         "fields": {
-            "experiment_metadata": null,
             "display_name": "Comment",
             "name": "comment",
             "creator": 1,
