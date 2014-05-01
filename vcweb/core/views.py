@@ -740,7 +740,6 @@ def download_data(request, pk=None, file_type='csv'):
             lm = data_value.last_modified
             writer.writerow([round_number, '', '', data_value.group.pk, data_value.parameter.label,
                              data_value.value, dc.date(), dc.time(), lm.date(), lm.time()])
-    logger.debug("lookup table parameters: %s", lookup_table_parameters)
     if lookup_table_parameters:
         writer.writerow(['Lookup Tables'])
         for ltp in lookup_table_parameters:

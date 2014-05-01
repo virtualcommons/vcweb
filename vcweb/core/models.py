@@ -274,6 +274,9 @@ class OstromlabFaqEntry(models.Model):
     def __unicode__(self):
         return u"%s\n\t%s" % (self.question, self.answer)
 
+    class Meta:
+        ordering = ['question', '-date_created']
+
 
 class Institution(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -389,10 +392,12 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     max_group_size = models.PositiveIntegerField(default=5)
     exchange_rate = models.DecimalField(null=True, blank=True, default=0.2, max_digits=6, decimal_places=2, help_text=_(
         'The exchange rate of currency per in-game token, e.g., dollars per token'))
-    show_up_payment = models.DecimalField(null=True, blank=True, default=5.0, max_digits=6, decimal_places=2, 
-            help_text=_("The show up fee to be paid to an in-lab experiment participant just for showing up"))
+    show_up_payment = models.DecimalField(null=True, blank=True, default=5.0, max_digits=6, decimal_places=2,
+                                          help_text=_(
+                                              "The show up fee to be paid to an in-lab experiment participant just for showing up"))
     maximum_payment = models.DecimalField(null=True, blank=True, default=40.0, max_digits=6, decimal_places=2,
-            help_text=_("The maximum amount a participant can expect to be paid for this experiment"))
+                                          help_text=_(
+                                              "The maximum amount a participant can expect to be paid for this experiment"))
     treatment_id = models.CharField(blank=True, max_length=32, help_text=_(
         'An alphanumeric ID that should be unique to the set of ExperimentConfigurations for a given ExperimentMetadata'))
     is_experimenter_driven = models.BooleanField(default=True)
@@ -415,7 +420,8 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     def total_number_of_rounds(self):
         number_of_rounds = self.round_configuration_set.count()
         repeating_rounds = self.round_configuration_set.filter(repeat__gt=0)
-        number_of_rounds = number_of_rounds - repeating_rounds.count() + sum(repeating_rounds.values_list('repeat', flat=True))
+        number_of_rounds = number_of_rounds - repeating_rounds.count() + sum(
+            repeating_rounds.values_list('repeat', flat=True))
         return number_of_rounds
 
     @property
@@ -861,7 +867,8 @@ class Experiment(models.Model):
         registered_participants = []
         with transaction.atomic():
             if number_of_participants > 0:
-                logger.warning("This experiment %s already has %d participants - aborting", self, number_of_participants)
+                logger.warning("This experiment %s already has %d participants - aborting", self,
+                               number_of_participants)
                 return
             if users is None:
                 users = []
@@ -897,10 +904,10 @@ class Experiment(models.Model):
                     p.institution = institution
                     p.save()
                 per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self,
-                                                                    created_by=self.experimenter.user)
+                                                                       created_by=self.experimenter.user)
                 registered_participants.append((user, password))
                 email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created,
-                                                                    sender=sender, from_email=from_email))
+                                                                     sender=sender, from_email=from_email))
         if email_messages:
             mail.get_connection().send_messages(email_messages)
         return registered_participants
@@ -997,7 +1004,8 @@ class Experiment(models.Model):
         for parameter in itertools.chain(participant_parameters, group_parameters, group_cluster_parameters):
             if parameter in defaults:
                 parameter_defaults[parameter] = {parameter.value_field_name: defaults[parameter]}
-        logger.debug("parameter default values: %s", parameter_defaults)
+        if parameter_defaults:
+            logger.debug("setting default values for parameters: %s", parameter_defaults)
         # create group cluster parameter data values
         if group_cluster_parameters:
             for group_cluster in self.active_group_clusters:
@@ -1025,9 +1033,9 @@ class Experiment(models.Model):
 
     def log(self, log_message, *args, **kwargs):
         if log_message:
-            log_message = "%s: %s" % (self, log_message)
-            logger.debug(log_message, *args)
-            self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message)
+            message = "%s: %s" % (self, message)
+            logger.debug(message, *args)
+            self.activity_log_set.create(round_configuration=self.current_round, log_message=message)
 
     def configuration_file_name(self, file_ext='.xml'):
         if not file_ext.startswith('.'):
@@ -1136,7 +1144,8 @@ class Experiment(models.Model):
                 gc.add(group)
 
     def get_round_configuration(self, sequence_number):
-        return RoundConfiguration.objects.select_related('experiment_configuration').get(experiment_configuration__experiment=self, sequence_number=sequence_number)
+        return RoundConfiguration.objects.select_related('experiment_configuration').get(
+            experiment_configuration__experiment=self, sequence_number=sequence_number)
 
     ALLOWED_ACTIONS = ('advance_to_next_round', 'end_round', 'start_round', 'move_to_previous_round', 'activate',
                        'deactivate', 'complete', 'restart_round', 'restart', 'clone', 'clear_participants', 'archive')
@@ -1217,7 +1226,8 @@ class Experiment(models.Model):
         # notify registered game handlers
         if sender is None:
             sender = intern(self.experiment_metadata.namespace.encode('utf8'))
-        return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(), round_configuration=current_round_configuration)
+        return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(),
+                                                 round_configuration=current_round_configuration)
 
 
     def stop_round(self, sender=None, **kwargs):
@@ -1354,10 +1364,11 @@ class Experiment(models.Model):
 
     def template_context(self, participant_group_relationship, **kwargs):
         return dict(
-                experiment=self,
-                participant_group_relationship=participant_group_relationship,
-                participant_experiment_relationship=self.get_participant_experiment_relationship(participant_group_relationship.participant),
-                **kwargs)
+            experiment=self,
+            participant_group_relationship=participant_group_relationship,
+            participant_experiment_relationship=self.get_participant_experiment_relationship(
+                participant_group_relationship.participant),
+            **kwargs)
 
     def __unicode__(self):
         return u"%s #%s | %s" % (self.experiment_configuration, self.pk, self.experimenter)
@@ -1922,9 +1933,6 @@ class Group(models.Model, DataValueMixin):
         if log_message:
             logger.debug(log_message)
             self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message)
-
-    def subtract(self, parameter=None, amount=0):
-        self.add(parameter, -amount)
 
     def add(self, parameter=None, amount=0):
         # could be a float or an int..
@@ -2586,7 +2594,7 @@ class ExperimentSession(models.Model):
 
     @property
     def is_online(self):
-        return self.location and self.location.lower() in ('online','internet','network','remote','virtual')
+        return self.location and self.location.lower() in ('online', 'internet', 'network', 'remote', 'virtual')
 
     def to_dict(self, **kwargs):
         scheduled_date = self.scheduled_date
@@ -2655,7 +2663,7 @@ class Invitation(models.Model):
         return data
 
     class Meta:
-        ordering = [ 'experiment_session', 'date_created' ]
+        ordering = ['experiment_session', 'date_created']
 
 
 class ParticipantSignupQuerySet(models.query.QuerySet):
@@ -2679,7 +2687,7 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
 
     def upcoming(self, participant=None, **kwargs):
         criteria = dict(attendance=ParticipantSignup.ATTENDANCE.registered,
-                invitation__experiment_session__scheduled_date__gt=datetime.now())
+                        invitation__experiment_session__scheduled_date__gt=datetime.now())
         if participant is not None:
             criteria.update(invitation__participant=participant)
         return self.select_related('invitation__participant', 'invitation__experiment_session').filter(**criteria)
@@ -2726,7 +2734,6 @@ class ParticipantSignup(models.Model):
 
     class Meta:
         ordering = ['invitation__experiment_session']
-
 
 
 def compare_dates(date1, date2):
@@ -2777,9 +2784,12 @@ def is_experimenter(user, experimenter=None):
     return False
 
 
-SCALAR_DATA_FIELDS = (models.CharField, models.TextField, models.IntegerField, models.PositiveIntegerField, models.PositiveSmallIntegerField)
+SCALAR_DATA_FIELDS = (
+models.CharField, models.TextField, models.IntegerField, models.PositiveIntegerField, models.PositiveSmallIntegerField)
+
+
 def get_model_fields(model):
-# return only direct scalar fields
+    # return only direct scalar fields
     if hasattr(model, 'data_fields'):
         return getattr(model, 'data_fields')
     else:
@@ -2788,7 +2798,8 @@ def get_model_fields(model):
 
 def find_duplicate_users(field='email'):
     return User.objects.values(field).annotate(max_id=models.Max('id'),
-            count_id=models.Count('id')).filter(count_id__gt=1).order_by()
+                                               count_id=models.Count('id')).filter(count_id__gt=1).order_by()
+
 
 def is_participant(user):
     """
@@ -2805,7 +2816,8 @@ def update_daily_experiments(sender, time=None, start=None, **kwargs):
     """
     today = datetime.today().date()
     # first advance all active daily round experiments to the next round or complete them if they've hit completion
-    active_daily_experiments = Experiment.objects.select_for_update().active(experiment_configuration__has_daily_rounds=True)
+    active_daily_experiments = Experiment.objects.select_for_update().active(
+        experiment_configuration__has_daily_rounds=True)
     for e in active_daily_experiments:
         # FIXME: check for none result and end the experiment?
         if e.has_next_round:
@@ -2814,7 +2826,8 @@ def update_daily_experiments(sender, time=None, start=None, **kwargs):
             e.complete()
     # next activate inactive daily experiments that need to be activated, this MUST happen after advancing the inactive
     # experiments, otherwise we'll advance the just-activated experiments.
-    inactive_daily_experiments = Experiment.objects.select_for_update().inactive(experiment_configuration__has_daily_rounds=True)
+    inactive_daily_experiments = Experiment.objects.select_for_update().inactive(
+        experiment_configuration__has_daily_rounds=True)
     for e in inactive_daily_experiments:
         if e.start_date == today:
             logger.debug("activating experiment %s with start date of %s", e, e.start_date)
@@ -2874,7 +2887,8 @@ def send_reminder_emails(sender, start=None, **kwargs):
     end_date_time = datetime.combine(tomorrow, time.max)
     es_list = ExperimentSession.objects.filter(scheduled_date__range=(start_date_time, end_date_time))
     for es in es_list:
-        participant_emails = ParticipantSignup.objects.filter(invitation__experiment_session=es).values_list('invitation__participant__email', flat=True)
+        participant_emails = ParticipantSignup.objects.filter(invitation__experiment_session=es).values_list(
+            'invitation__participant__email', flat=True)
         logger.debug("subject pool sending reminder emails to %s", participant_emails)
         send_email("subject-pool/email/reminder-email.txt", {"session": es}, "Reminder Email",
                    settings.SERVER_EMAIL, participant_emails)
