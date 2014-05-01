@@ -2815,7 +2815,7 @@ def update_daily_experiments(sender, time=None, start=None, **kwargs):
             e.complete()
     # next activate inactive daily experiments that need to be activated, this MUST happen after advancing the inactive
     # experiments, otherwise we'll advance the just-activated experiments.
-    inactive_daily_experiments = Experiment.objects.inactive(experiment_configuration__has_daily_rounds=True)
+    inactive_daily_experiments = Experiment.objects.select_for_update().inactive(experiment_configuration__has_daily_rounds=True)
     for e in inactive_daily_experiments:
         if e.start_date == today:
             logger.debug("activating experiment %s with start date of %s", e, e.start_date)
