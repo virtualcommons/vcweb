@@ -1033,7 +1033,7 @@ class Experiment(models.Model):
 
     def log(self, log_message, *args, **kwargs):
         if log_message:
-            message = "%s: %s" % (self, message)
+            message = "%s: %s" % (self, log_message)
             logger.debug(message, *args)
             self.activity_log_set.create(round_configuration=self.current_round, log_message=message)
 

@@ -1664,12 +1664,12 @@ def get_excluded_participants(days_threshold, experiment_metadata_pk):
 
     # signup_participants is the list of participants who has already participated in the
     # given Experiment Metadata(in the past or currently participating)
-    signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=experiment_metadata_pk). \
-        values_list('invitation__participant__pk', flat=True)
+    signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=experiment_metadata_pk).values_list('invitation__participant__pk', flat=True)
 
-    # returned list the list of participants who have already received invitations in last threshold days or have already
-    # participated in same experiment
-    return list(set(invited_in_last_threshold_days) | set(signup_participants))
+    mailinator_participants = Participant.objects.filter(user__email__contains='mailinator.com').values_list('pk', flat=True)
+    # returns a list of participant pks who have already received invitations in last threshold days, have already
+    # participated in the same experiment, or have 'mailinator.com' in their name
+    return list(set(itertools.chain(invited_in_last_threshold_days, signup_participants, mailinator_participants)))
 
 
 @experimenter_required
