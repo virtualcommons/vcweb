@@ -68,7 +68,6 @@ class BaseVcwebTest(TestCase):
         logger.debug("creating new experiment configuration: %s", experiment_configuration)
         for index in xrange(1, 10):
             rc = experiment_configuration.round_configuration_set.create(sequence_number=index)
-            rc.parameter
             if index == 1:
                 rc.initialize_data_values = True
                 rc.save()
@@ -251,16 +250,17 @@ class ExperimentTest(BaseVcwebTest):
         e = self.advance_to_data_round()
         current_round_data = e.current_round_data
         logger.debug("The current round data is %s", current_round_data)
+        e.end_round()
         for group in e.group_set.all():
-            for parameter in group.data_parameters.all():
-                group_data_value, created = current_round_data.group_data_value_set.get_or_create(group=group,
-                                                                                                  parameter=parameter)
-                self.assertFalse(created)
+            for parameter in group.parameters.all():
+                gdvs = current_round_data.group_data_value_set.filter(parameter=parameter)
+                self.assertEquals(1, gdvs.count(), "Should only be a single group data value set %s for parameter %s" % (gdvs.all(), parameter))
             for pgr in group.participant_group_relationship_set.all():
                 for parameter in e.parameters(scope=Parameter.Scope.PARTICIPANT):
+                    # every participant parameter should be set..
                     participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(
                         round_data=current_round_data, participant_group_relationship=pgr, parameter=parameter)
-                    self.assertTrue(created)
+                    self.assertFalse(created)
 
 
 class GroupClusterTest(BaseVcwebTest):

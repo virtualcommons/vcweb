@@ -67,34 +67,22 @@ class TransferParametersTest(BaseTest):
 
         e = self.advance_to_data_round()
         expected_resource_level = 100
-        while True:
+        while e.has_next_round:
             current_round_configuration = e.current_round
             if should_reset_resource_level(current_round_configuration, e):
-                logger.debug("resetting resource level for round %s, %d", current_round_configuration,
-                             e.current_round_sequence_number)
                 expected_resource_level = get_initial_resource_level(current_round_configuration)
 
             if current_round_configuration.is_playable_round:
                 max_harvest_decision = get_max_harvest_decision(expected_resource_level)
                 for pgr in e.participant_group_relationships:
-                    logger.debug("The resource level obtained was %s", get_resource_level(pgr.group))
                     self.assertEquals(get_resource_level(pgr.group), expected_resource_level)
                     set_harvest_decision(pgr, max_harvest_decision)
-                    logger.debug("The harvest decision recorded was %s ", get_harvest_decision(pgr))
-                expected_resource_level = calculate_expected_resource_level(expected_resource_level,
-                                                                            max_harvest_decision * 5)
+                expected_resource_level = calculate_expected_resource_level(expected_resource_level, max_harvest_decision * 5)
 
             e.end_round()
-            for group in e.group_set.all():
-                logger.debug("checking group: %s", group)
-                logger.debug("The resource level obatained was %s along with %s expected resource level",
-                             get_resource_level(group), expected_resource_level)
-                self.assertEquals(get_resource_level(group), expected_resource_level)
-
-            if e.has_next_round:
-                e.advance_to_next_round()
-            else:
-                break
+            for group in e.groups:
+                self.assertEquals(get_resource_level(group), expected_resource_level, "Group resource levels were not equal")
+            e.advance_to_next_round()
 
 
 class ForestryParametersTest(BaseTest):
@@ -105,10 +93,9 @@ class ForestryParametersTest(BaseTest):
         group_parameters = (get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter())
         # Ending the round to see if the round values are set or not
         e.end_round()
-        for group in e.group_set.all():
+        for group in e.groups:
             for parameter in group_parameters:
                 gdv = group.get_data_value(round_data=round_data, parameter=parameter)
-                logger.debug("inspecting group data value: %s", gdv)
                 self.assertTrue(gdv.parameter in group_parameters)
                 self.assertTrue(gdv)
             # single participant data parameter, harvest decisions

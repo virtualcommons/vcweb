@@ -1882,8 +1882,8 @@ class Group(models.Model, DataValueMixin):
         return ', '.join([participant.email for participant in self.participant_set.all()])
 
     @property
-    def data_parameters(self):
-        return self.experiment.experiment_metadata.parameters
+    def parameters(self):
+        return self.experiment.experiment_metadata.parameters.filter(scope=Parameter.Scope.GROUP)
 
     @property
     def current_round_data(self):
