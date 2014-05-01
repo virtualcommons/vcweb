@@ -357,22 +357,17 @@ def send_lighterprints_summary_emails(sender, time=None, start_date=None, send_e
     # invoked after midnight, so start_date should be set to the previous day.
     if start_date is None:
         start_date = date.today() - timedelta(1);
-    active_experiments = get_active_experiments()
-    if not active_experiments:
-        return
-    logger.debug("sending summary emails to [%s] on %s", active_experiments, start_date)
     all_messages = []
     with transaction.atomic():
+        active_experiments = Experiment.objects.select_for_update().active(experiment_metadata=get_lighterprints_experiment_metadata())
+        logger.debug("sending summary emails to [%s] on %s", active_experiments, start_date)
         for experiment in active_experiments:
             # we use the current round data because this tick occurs *before* the system_daily_tick that advances each
             # experiment to the next round.
             round_data = experiment.current_round_data if round_configuration is None else experiment.get_round_data(round_configuration)
-            groups = list(experiment.groups)
-            group_scores = GroupScores(experiment, round_data, groups, start_date=start_date)
-            logger.debug("created group scores: %s", group_scores)
+            group_scores = GroupScores(experiment, round_data, list(experiment.groups), start_date=start_date)
             all_messages.extend(group_scores.create_all_email_messages())
-            logger.debug("added messages: %s for experiment %s", all_messages, experiment)
-    if send_emails:
+    if send_emails and all_messages:
         logger.debug("sending all lighterprints generated emails: %s", all_messages)
         mail.get_connection().send_messages(all_messages)
 
@@ -643,12 +638,6 @@ def has_leaderboard(round_configuration=None, treatment_type=None):
     if treatment_type is None:
         treatment_type = get_treatment_type(round_configuration=round_configuration).string_value
     return 'LEADERBOARD' == treatment_type
-
-def get_active_experiments():
-    """
-    partition these into two tuples - level based and schedule based?
-    """
-    return Experiment.objects.select_for_update().active(experiment_metadata=get_lighterprints_experiment_metadata())
 
 
 def _activity_status_sort_key(activity_dict):
