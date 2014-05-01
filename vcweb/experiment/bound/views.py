@@ -58,7 +58,6 @@ def submit_harvest_decision(request, experiment_id=None):
             experiment.log(message % (pgr.participant, harvest_decision))
             response_dict = {
                 'success': True,
-                #                'experimentModelJson': get_view_model_json(experiment, pgr),
                 'message': message % (pgr.participant_handle, harvest_decision),
             }
             return JsonResponse(dumps(response_dict))

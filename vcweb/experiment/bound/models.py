@@ -224,9 +224,9 @@ def _zero_if_none(value):
 
 
 def get_total_group_harvest(group, round_data):
-    q = ParticipantRoundDataValue.objects.for_group(group=group, parameter=get_harvest_decision_parameter(),
-                                                    round_data=round_data).aggregate(
-        total_harvest=models.Sum('int_value'))
+    q = ParticipantRoundDataValue.objects.for_group(group=group,
+                                                    parameter=get_harvest_decision_parameter(),
+                                                    round_data=round_data).aggregate(total_harvest=models.Sum('int_value'))
     return _zero_if_none(q['total_harvest'])
 
 
@@ -534,7 +534,6 @@ def round_ended_handler(sender, experiment=None, **kwargs):
     if round_configuration.is_playable_round:
         regrowth_rate = get_regrowth_rate(round_configuration)
         harvest_decision_parameter = get_harvest_decision_parameter()
-        # zero out unsubmitted harvest decisions
         for pgr in experiment.participant_group_relationships:
             # FIXME: not thread-safe but this *should* only be invoked once per experiment.  If we start getting
             # spurious data values, revisit this section
@@ -543,13 +542,19 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                 participant_group_relationship=pgr,
                 parameter=harvest_decision_parameter,
                 is_active=True)
+            # create zero harvest decisions for any unsubmitted harvest decisions
             if prdvs.count() == 0:
                 prdv = ParticipantRoundDataValue.objects.create(round_data=round_data,
                                                                 participant_group_relationship=pgr,
                                                                 parameter=harvest_decision_parameter,
                                                                 is_active=True,
                                                                 int_value=0)
-                logger.debug("created new harvest decision prdv %s for participant %s", prdv, pgr)
+                logger.debug("autozero harvest decision for participant %s", pgr)
+            elif prdvs.count() > 1:
+                # another degenerate data condition, deactivate all prior
+                logger.debug("multiple harvest decisions found for %s, deactivating all but the latest", pgr)
+                prdv = prdvs.latest('id')
+                prdvs.exclude(pk=prdv.pk).update(is_active=False)
 
         # FIXME: generify and merge update_shared_resource_level and update_resource_level to operate on "group-like" objects if possible
         if is_shared_resource_enabled(round_configuration):

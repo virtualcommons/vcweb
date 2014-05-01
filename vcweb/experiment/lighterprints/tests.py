@@ -19,9 +19,7 @@ class BaseTest(BaseVcwebTest):
             participant = participant_group_relationship.participant
             self.assertTrue(self.client.login(username=participant.email, password='test'), "%s failed to login" % participant)
             for activity in activities:
-                logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
                 expected_success = activity.is_available_for(participant_group_relationship, rd)
-                logger.debug("expected success: %s", expected_success)
                 if expected_success:
                     performed_activities.add(activity)
                 response = self.client.post('/lighterprints/api/do-activity', {

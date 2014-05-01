@@ -53,7 +53,7 @@ def perform_activity(request):
         else:
             message = "You're not authorized to perform this activity as this person %s" % participant_group_relationship
             logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id, participant_group_relationship)
-    logger.warning("Invalid form, did not perform activity %s", message)
+    logger.warning(message)
     return JsonResponse(dumps({'success': False, 'response': message}))
 
 @csrf_exempt
@@ -69,7 +69,7 @@ def post_chat_message(request):
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
         chat_message = ChatMessage.objects.create(value=message, participant_group_relationship=pgr)
         logger.debug("%s: %s", pgr.participant, chat_message)
-# FIXME: just get the chat messages
+        # TODO: refactor get_group_activity, chat_messages are unneeded
         (team_activity, chat_messages) = get_group_activity(pgr)
         return JsonResponse(dumps({'success': True, 'viewModel': { 'groupActivity': team_activity } }))
     return JsonResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
@@ -86,9 +86,7 @@ def like(request):
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to like target_id %s as %s", request.user, target_id, participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
-        logger.debug("pgr: %s", participant_group_relationship)
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
-        logger.debug("target: %s", target)
         # FIXME: either needs a uniqueness constraint to ensure that duplicates don't get created or add guards when we
         # retrieve them to only send back the latest one (feels hacky).  See
         # https://bitbucket.org/virtualcommons/vcweb/issue/59/get_or_create-issues-for-likes

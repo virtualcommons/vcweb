@@ -915,7 +915,6 @@ class Experiment(models.Model):
         Override the email template by creating <experiment-namespace>/email/experiment-registration.txt templates
         """
         participant = participant_experiment_relationship.participant
-        logger.debug("creating email for %s", participant)
         plaintext_template = select_template(['%s/email/experiment-registration.txt' % self.namespace,
                                               'email/experiment-registration.txt'])
         user = participant.user
@@ -1074,6 +1073,7 @@ class Experiment(models.Model):
                     return pgr
         return current_group.add_participant(participant)
 
+    @transaction.atomic
     def allocate_groups(self, randomize=True, preserve_existing_groups=False, session_id=''):
         logger.debug("allocating groups for %s with session_id %s (randomize? %s)" % (self, session_id, randomize))
         # clear out all existing groups
@@ -1099,7 +1099,7 @@ class Experiment(models.Model):
                         raise ValueError(
                             "Cannot allocate new groups and preserve existing groups without an appropriate session id set on this round configuration %s" % round_configuration)
             else:
-                logger.debug("deleting old groups")
+                logger.debug("deleting existing groups")
                 # FIXME: fairly expensive operation to log all group members
                 gqs = gs.all()
                 for g in gqs:
@@ -2001,7 +2001,6 @@ class Group(models.Model, DataValueMixin):
             return None
         # add the participant to this group if there is room, otherwise create and add to a fresh group
         group = self if self.is_open else self.create_next_group()
-        logger.debug("adding participant %s to group %s", participant, group)
         pgr = ParticipantGroupRelationship.objects.create(participant=participant,
                                                           group=group,
                                                           round_joined=self.experiment.current_round,
