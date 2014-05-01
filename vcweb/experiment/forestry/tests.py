@@ -75,13 +75,13 @@ class TransferParametersTest(BaseTest):
             if current_round_configuration.is_playable_round:
                 max_harvest_decision = get_max_harvest_decision(expected_resource_level)
                 for pgr in e.participant_group_relationships:
-                    self.assertEquals(get_resource_level(pgr.group), expected_resource_level)
+                    self.assertEqual(get_resource_level(pgr.group), expected_resource_level)
                     set_harvest_decision(pgr, max_harvest_decision)
                 expected_resource_level = calculate_expected_resource_level(expected_resource_level, max_harvest_decision * 5)
 
             e.end_round()
             for group in e.groups:
-                self.assertEquals(get_resource_level(group), expected_resource_level, "Group resource levels were not equal")
+                self.assertEqual(get_resource_level(group), expected_resource_level, "Group resource levels were not equal")
             e.advance_to_next_round()
 
 
@@ -102,7 +102,7 @@ class ForestryParametersTest(BaseTest):
             for pgr in group.participant_group_relationship_set.all():
                 prdv = ParticipantRoundDataValue.objects.get(participant_group_relationship=pgr, round_data=round_data, parameter=get_harvest_decision_parameter())
                 self.assertTrue(prdv)
-                self.assertEquals(prdv.parameter, get_harvest_decision_parameter())
+                self.assertEqual(prdv.parameter, get_harvest_decision_parameter())
 
     def test_get_set_harvest_decisions(self):
         e = self.advance_to_data_round()
@@ -112,7 +112,7 @@ class ForestryParametersTest(BaseTest):
         harvest_decision_parameter = get_harvest_decision_parameter()
         for group in e.groups:
             ds = get_harvest_decisions(group)
-            self.assertEquals(len(ds), group.participant_set.count())
+            self.assertEqual(len(ds), group.participant_set.count())
             for p in group.participant_set.all():
                 pgr = ParticipantGroupRelationship.objects.get(participant=p, group=group)
                 pdv, created = ParticipantRoundDataValue.objects.get_or_create(

@@ -230,7 +230,7 @@ class ExperimentTest(BaseVcwebTest):
     def test_elapsed_time(self):
         experiment = self.experiment
         experiment.activate()
-        self.assertTrue(experiment.current_round_elapsed_time.seconds == 0)
+        self.assertEqual(0, experiment.current_round_elapsed_time.seconds)
         # FIXME: exercise current_round_elapsed_time and total_elapsed_time
 
     def test_instructions_round_parameters(self):
@@ -249,22 +249,22 @@ class ExperimentTest(BaseVcwebTest):
         # advance_to_next_round automatically starts it
         e = self.advance_to_data_round()
         current_round_data = e.current_round_data
-        logger.debug("The current round data is %s", current_round_data)
+        logger.debug("current round data: %s", current_round_data)
         e.end_round()
-        for group in e.group_set.all():
+        for group in e.groups:
             for parameter in group.parameters.all():
-                gdvs = current_round_data.group_data_value_set.filter(parameter=parameter)
-                self.assertEquals(1, gdvs.count(), "Should only be a single group data value set %s for parameter %s" % (gdvs.all(), parameter))
-            for pgr in group.participant_group_relationship_set.all():
-                for parameter in e.parameters(scope=Parameter.Scope.PARTICIPANT):
-                    # every participant parameter should be set..
-                    participant_data_value, created = ParticipantRoundDataValue.objects.get_or_create(
-                        round_data=current_round_data, participant_group_relationship=pgr, parameter=parameter)
-                    self.assertFalse(created)
-
+                gdvs = current_round_data.group_data_value_set.filter(parameter=parameter, group=group)
+                self.assertEqual(1, gdvs.count(), "Should only be a single group data value")
+            for parameter in e.parameters(Parameter.Scope.PARTICIPANT):
+                expected_size = group.size if parameter.name in ('harvest_decision', 'participant_ready') else 0
+                logger.debug("checking parameter %s, expecting size %s", parameter, expected_size)
+                self.assertEqual(expected_size,
+                        ParticipantRoundDataValue.objects.filter(round_data=current_round_data,
+                            participant_group_relationship__group=group, parameter=parameter).count(),
+                        "unexpected participant data values for parameter %s, only harvest_decision and participant_ready should be auto-created" % parameter.name)
 
 class GroupClusterTest(BaseVcwebTest):
-    def test_group_cluster(self):
+    def test_group_clustering(self):
         pass
 
 
@@ -353,18 +353,18 @@ class RoundConfigurationTest(BaseVcwebTest):
         sn = e.current_round_sequence_number
         csn = e.current_repeated_round_sequence_number
         rd0 = e.current_round_data
-        self.assertEquals(csn, 0)
+        self.assertEqual(csn, 0)
         for i in range(1, 5):
             e.advance_to_next_round()
-            self.assertEquals(e.current_round_sequence_number, sn)
+            self.assertEqual(e.current_round_sequence_number, sn)
             logger.debug("current repeating round: %s", e.current_repeated_round_sequence_number)
-            self.assertEquals(e.current_repeated_round_sequence_number, i)
+            self.assertEqual(e.current_repeated_round_sequence_number, i)
             self.assertNotEqual(rd0, e.current_round_data)
         ''' FIXME: doesn't currently work with round configuration setup
         e.advance_to_next_round()
         logger.debug("current repeating round: %s", e.current_repeated_round_sequence_number)
-        self.assertEquals(e.current_round_sequence_number, sn + 1)
-        self.assertEquals(e.current_repeated_round_sequence_number, 0)
+        self.assertEqual(e.current_round_sequence_number, sn + 1)
+        self.assertEqual(e.current_repeated_round_sequence_number, 0)
         '''
 
     def test_round_parameters(self):
