@@ -98,7 +98,6 @@ class TransferParametersTest(BaseTest):
 
 
 class ForestryParametersTest(BaseTest):
-    # FIXME: several of these can and should be lifted to core/tests.py
 
     def test_parameters_set_at_round_end(self):
         e = self.advance_to_data_round()
@@ -124,7 +123,7 @@ class ForestryParametersTest(BaseTest):
         e.end_round()
         round_data = e.get_round_data()
         harvest_decision_parameter = get_harvest_decision_parameter()
-        for group in e.group_set.all():
+        for group in e.groups:
             ds = get_harvest_decisions(group)
             self.assertEquals(len(ds), group.participant_set.count())
             for p in group.participant_set.all():
@@ -211,12 +210,8 @@ class ForestryParametersTest(BaseTest):
 
     def test_data_parameters(self):
         e = self.experiment
-        # FIXME: horrible tests, improve
-        self.assertEqual(6, e.parameters().count())
-        for data_param in e.parameters(scope=Parameter.Scope.GROUP).all():
-            logger.debug("inspecting data param %s" % data_param)
-            self.assertEqual(data_param.type, 'int',
-                             'Currently all group data parameters for the forestry experiment are ints.')
+        self.assertEqual(Parameter.objects.count(), e.parameters().count(),
+                "Should have added all %s parameters to Experiment %s" % (Parameter.objects.count(), e))
 
     def create_participant_data_values(self):
         e = self.experiment
@@ -227,23 +222,12 @@ class ForestryParametersTest(BaseTest):
             for p in self.participants:
                 per = ParticipantExperimentRelationship.objects.get(participant=p, experiment=e)
                 pgr = ParticipantGroupRelationship.objects.get(group__experiment=e, participant=p)
-                # all data parameters should be ints?
-                prdv, created = ParticipantRoundDataValue.objects.get_or_create(round_data=round_data,
-                                                                                participant_group_relationship=pgr,
-                                                                                parameter=data_param)
-                prdv.value = per.sequential_participant_identifier * 2
-                prdv.save()
+                prdv = ParticipantRoundDataValue.objects.create(round_data=round_data, participant_group_relationship=pgr, parameter=data_param)
+                if data_param.type == 'int':
+                    prdv.update_int(per.sequential_participant_identifier)
+
         return e
 
-    def test_data_values(self):
-        e = self.create_participant_data_values()
-        num_participant_parameters = e.parameters(scope=Parameter.Scope.PARTICIPANT).count()
-        self.assertEqual(e.participant_set.count() * num_participant_parameters,
-                         ParticipantRoundDataValue.objects.filter(round_data__experiment=e,
-                                                                  parameter__type='int').count(),
-                         'There should be %s participants * %s total data parameters = %s' % (
-                             e.participant_set.count(), num_participant_parameters,
-                             e.participant_set.count() * num_participant_parameters))
 
     def test_data_value_conversion(self):
         e = self.create_participant_data_values()
@@ -251,15 +235,13 @@ class ForestryParametersTest(BaseTest):
         for p in self.participants:
             participant_data_values = round_data.participant_data_value_set.filter(
                 participant_group_relationship__participant=p)
-            logger.debug("XXX: participant data values: %s", participant_data_values)
             self.assertEqual(participant_data_values.count(), 2)
             pexpr = e.get_participant_experiment_relationship(p)
-            logger.debug("relationship %s" % pexpr)
             for dv in participant_data_values.filter(parameter__type='int'):
-                logger.debug("verifying data value %s" % dv)
                 self.assertEqual(pexpr.sequential_participant_identifier * 2, dv.value)
                 self.assertTrue(dv.value)
                 self.assertEqual(dv.int_value, pexpr.sequential_participant_identifier * 2)
+                self.assertEqual(dv.int_value, dv.value, "int_value should be == value")
                 self.assertFalse(dv.string_value)
                 self.assertFalse(dv.boolean_value)
                 self.assertFalse(dv.float_value)

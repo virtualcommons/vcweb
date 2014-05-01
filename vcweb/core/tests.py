@@ -27,10 +27,12 @@ class BaseVcwebTest(TestCase):
 
     def load_experiment(self, experiment_metadata=None, **kwargs):
         if experiment_metadata is None:
-            experiment = Experiment.objects.all()[0].clone()
+            experiment = Experiment.objects.first().clone()
         else:
             experiment = self.create_new_experiment(experiment_metadata, **kwargs)
         self.experiment = experiment
+        # associate all parameters to this ExperimentMetadata
+        experiment.experiment_metadata.parameters.add(*Parameter.objects.values_list('pk', flat=True))
         if experiment.participant_set.count() == 0:
             experiment.setup_test_participants(email_suffix='asu.edu', count=10, password='test')
         experiment.save()
@@ -66,6 +68,7 @@ class BaseVcwebTest(TestCase):
         logger.debug("creating new experiment configuration: %s", experiment_configuration)
         for index in xrange(1, 10):
             rc = experiment_configuration.round_configuration_set.create(sequence_number=index)
+            rc.parameter
             if index == 1:
                 rc.initialize_data_values = True
                 rc.save()
@@ -97,13 +100,12 @@ class BaseVcwebTest(TestCase):
                 yield self.experiment
             e.advance_to_next_round()
 
-    def create_new_round_configuration(self, round_type='REGULAR', template_filename=''):
+    def create_new_round_configuration(self, round_type='REGULAR', template_filename='', template_id=''):
         return RoundConfiguration.objects.create(experiment_configuration=self.experiment_configuration,
-                                                 sequence_number=(
-                                                     self.experiment_configuration.last_round_sequence_number + 1),
+                                                 sequence_number=(self.experiment_configuration.last_round_sequence_number + 1),
                                                  round_type=round_type,
-                                                 template_filename=template_filename
-        )
+                                                 template_filename=template_filename,
+                                                 template_id=template_id)
 
     def create_new_parameter(self, name='vcweb.test.parameter', scope=Parameter.Scope.EXPERIMENT, parameter_type='string'):
         return Parameter.objects.create(creator=self.experimenter, name=name, scope=scope, type=parameter_type)
