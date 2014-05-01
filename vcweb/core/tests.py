@@ -365,17 +365,9 @@ class RoundConfigurationTest(BaseVcwebTest):
         self.assertEquals(e.current_repeated_round_sequence_number, 0)
         '''
 
-    def test_parameterized_value(self):
-        e = self.experiment
-        p = Parameter.objects.create(scope='round', name='test_round_parameter', type='int', creator=e.experimenter,
-                                     experiment_metadata=e.experiment_metadata)
-        rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round, value='14')
-        self.assertEqual(14, rp.int_value)
-
     def test_round_parameters(self):
         e = self.experiment
-        p = Parameter.objects.create(scope='round', name='test_round_parameter', type='int', creator=e.experimenter,
-                                     experiment_metadata=e.experiment_metadata)
+        p = Parameter.objects.create(scope='round', name='test_round_parameter', type='int', creator=e.experimenter)
         self.assertTrue(p.pk > 0)
         self.assertEqual(p.value_field_name, 'int_value')
 
@@ -383,14 +375,14 @@ class RoundConfigurationTest(BaseVcwebTest):
             rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round, value=val)
             self.assertTrue(rp.pk > 0)
             self.assertEqual(rp.value, 14)
+            self.assertEqual(rp.int_value, 14)
 
         '''
         The type field in Parameter generates the value_field_name property by concatenating the name of the type with _value.
         '''
-        sample_values_for_type = {'int': 3, 'float': 3.0, 'string': 'ich bin ein mublumubla', 'boolean': True}
+        sample_values_for_type = {'int': 3, 'float': 3.0, 'string': 'ich bin ein ooga booga', 'boolean': True}
         for type in ('int', 'float', 'string', 'boolean'):
-            p = Parameter.objects.create(scope='round', name="test_nonunique_round_parameter_%s" % type, type=type,
-                                         creator=e.experimenter, experiment_metadata=e.experiment_metadata)
+            p = Parameter.objects.create(scope='round', name="test_nonunique_round_parameter_%s" % type, type=type, creator=e.experimenter)
             self.assertTrue(p.pk > 0)
             self.assertEqual(p.value_field_name, '%s_value' % type)
             rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round,
