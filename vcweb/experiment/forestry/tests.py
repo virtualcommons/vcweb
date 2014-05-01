@@ -213,29 +213,24 @@ class ForestryParametersTest(BaseTest):
         self.assertEqual(Parameter.objects.count(), e.parameters().count(),
                 "Should have added all %s parameters to Experiment %s" % (Parameter.objects.count(), e))
 
-    def create_participant_data_values(self):
+
+    def test_data_value_conversion(self):
         e = self.experiment
         e.activate()
         e.start_round()
         round_data = e.get_round_data()
-        for data_param in e.parameters(scope=Parameter.Scope.PARTICIPANT).all():
+        for data_param in e.parameters(scope=Parameter.Scope.PARTICIPANT):
             for p in self.participants:
                 per = ParticipantExperimentRelationship.objects.get(participant=p, experiment=e)
                 pgr = ParticipantGroupRelationship.objects.get(group__experiment=e, participant=p)
                 prdv = ParticipantRoundDataValue.objects.create(round_data=round_data, participant_group_relationship=pgr, parameter=data_param)
                 if data_param.type == 'int':
-                    prdv.update_int(per.sequential_participant_identifier)
-
-        return e
-
-
-    def test_data_value_conversion(self):
-        e = self.create_participant_data_values()
+                    prdv.update_int(per.sequential_participant_identifier * 2)
         round_data = e.get_round_data()
         for p in self.participants:
             participant_data_values = round_data.participant_data_value_set.filter(
                 participant_group_relationship__participant=p)
-            self.assertEqual(participant_data_values.count(), 2)
+            self.assertEqual(participant_data_values.count(), 6)
             pexpr = e.get_participant_experiment_relationship(p)
             for dv in participant_data_values.filter(parameter__type='int'):
                 self.assertEqual(pexpr.sequential_participant_identifier * 2, dv.value)
