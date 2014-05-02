@@ -359,6 +359,11 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                     parameter=harvest_decision_parameter, is_active=True, int_value=0
                 )
                 logger.debug("created new harvest decision prdv %s for participant %s", prdv, pgr)
+            elif prdvs.count() > 1:
+                # multiple active harvest decisions, only allow the latest one to be active
+                latest_prdv = prdvs.latest()
+                prdvs.exclude(pk=latest_prdv.pk).update(is_active=False)
+
 
         for group in experiment.groups:
             logger.debug("group %s has resource level", group)

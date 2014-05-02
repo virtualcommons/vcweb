@@ -1212,7 +1212,7 @@ class Experiment(models.Model):
         with transaction.atomic():
             if self.status == Experiment.Status.ROUND_IN_PROGRESS:
                 logger.warning("round already started, ignoring")
-                return 
+                return
             logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
             self.status = Experiment.Status.ROUND_IN_PROGRESS
             current_round_configuration = self.current_round
@@ -1386,11 +1386,11 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     # maps round type name to (description, default_template_filename)
     ROUND_TYPES_DICT = dict(
         WELCOME=(_('Initial welcome page'), 'welcome.html'),
-        GENERAL_INSTRUCTIONS=(_('General introduction to the experiment'), 'general-instructions.html'),
+        GENERAL_INSTRUCTIONS=(_('General introduction'), 'general-instructions.html'),
         REGULAR=(_('Regular experiment round'), 'participate.html'),
         CHAT=(_('Chat round'), 'chat.html'),
-        DEBRIEFING=(_('Debriefing round'), 'debriefing.html'),
-        INSTRUCTIONS=(_('Instructions round'), 'instructions.html'),
+        DEBRIEFING=(_('Debriefing'), 'debriefing.html'),
+        INSTRUCTIONS=(_('Instructions'), 'instructions.html'),
         PRACTICE=(_('Practice round'), 'practice.html'),
         QUIZ=(_('Quiz round'), 'quiz.html'))
     ROUND_TYPES = (CHAT, DEBRIEFING, GENERAL_INSTRUCTIONS, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR, WELCOME) = sorted(

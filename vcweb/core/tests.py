@@ -31,12 +31,12 @@ class BaseVcwebTest(TestCase):
         else:
             experiment = self.create_new_experiment(experiment_metadata, **kwargs)
         self.experiment = experiment
-        # associate all parameters to this ExperimentMetadata
-        experiment.experiment_metadata.parameters.add(*Parameter.objects.values_list('pk', flat=True))
+        # currently associating all available Parameters with this ExperimentMetadata
+        if not experiment.experiment_metadata.parameters.exists():
+            experiment.experiment_metadata.parameters.add(*Parameter.objects.values_list('pk', flat=True))
         if experiment.participant_set.count() == 0:
             experiment.setup_test_participants(email_suffix='asu.edu', count=10, password='test')
         experiment.save()
-        logger.debug("loaded experiment: %s with participants %s", experiment, experiment.participant_set.all())
         return experiment
 
     @property
@@ -65,13 +65,8 @@ class BaseVcwebTest(TestCase):
         experiment_configuration = ExperimentConfiguration.objects.create(experiment_metadata=experiment_metadata,
                                                                           name='Test Experiment Configuration',
                                                                           creator=experimenter)
-        logger.debug("creating new experiment configuration: %s", experiment_configuration)
         for index in xrange(1, 10):
-            rc = experiment_configuration.round_configuration_set.create(sequence_number=index)
-            if index == 1:
-                rc.initialize_data_values = True
-                rc.save()
-        logger.debug("created round configurations: %s", experiment_configuration.round_configuration_set.all())
+            experiment_configuration.round_configuration_set.create(sequence_number=index, initialize_data_values=(index==1))
         return Experiment.objects.create(experimenter=experimenter,
                                          experiment_metadata=experiment_metadata,
                                          experiment_configuration=experiment_configuration)
@@ -176,20 +171,25 @@ class ExperimentConfigurationTest(BaseVcwebTest):
 
 
 class ExperimentTest(BaseVcwebTest):
+
     def round_started_test_handler(self, experiment=None, time=None, round_configuration=None, **kwargs):
         logger.debug("invoking round started test handler with args experiment:%s time:%s round configuration:%s",
                      experiment, time, round_configuration)
+        if getattr(self, 'round_started_invoked', None):
+            self.fail("Round started test handler invoked twice somehow")
+        else:
+            self.round_started_invoked = True
         self.assertEqual(experiment, self.experiment)
         self.assertEqual(round_configuration, self.experiment.current_round)
         self.assertTrue(time, "time should be set")
-        logger.debug("done with assertions, about to raise")
         # this ValueError shouldn't bubble up since we're using send_robust now
-        raise ValueError("Contrived value error from round started handler")
+        raise ValueError("Contrived ValueError from test round started handler")
 
     def test_start_round(self):
         signals.round_started.connect(self.round_started_test_handler, sender=self)
         self.experiment.start_round(sender=self)
         self.assertTrue(self.experiment.is_active)
+        self.assertFalse(self.experiment.start_round(sender=self), "subsequent start rounds should be no-ops and return false")
 
     def test_group_allocation(self):
         experiment = self.experiment
