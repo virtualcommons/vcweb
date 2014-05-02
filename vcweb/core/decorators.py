@@ -14,9 +14,10 @@ def log_signal_errors(signal_sender):
     @wraps(signal_sender)
     def error_checker(*args, **kwargs):
         results = signal_sender(*args, **kwargs)
-        for receiver, response in results:
-            if response is not None:
-                logger.error("errors while dispatching to %s: %s", receiver, response)
+        if results:
+            for receiver, response in results:
+                if response is not None:
+                    logger.error("errors while dispatching to %s: %s", receiver, response)
     return error_checker
 
 def is_anonymous(user):

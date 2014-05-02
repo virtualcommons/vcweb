@@ -93,7 +93,6 @@ class BaseVcwebTest(TestCase):
     def all_data_rounds(self):
         e = self.experiment
         e.activate()
-        e.start_round()
         while e.has_next_round:
             if e.current_round.is_playable_round:
                 yield self.experiment
@@ -166,13 +165,11 @@ class ExperimentConfigurationTest(BaseVcwebTest):
         e = self.experiment
         ec = e.experiment_configuration
         data = ec.serialize()
-        logger.debug("serialized form: %s", data)
         self.assertIsNotNone(data)
         found = False
         for obj in serializers.deserialize("xml", data):
             self.assertIsNotNone(obj)
             entity = obj.object
-            logger.debug("deserialized object: %s, actual object: %s", obj, entity)
             if obj.object.pk == ec.pk:
                 found = True
         self.assertTrue(found)
@@ -236,7 +233,6 @@ class ExperimentTest(BaseVcwebTest):
     def test_instructions_round_parameters(self):
         e = self.experiment
         e.activate()
-        e.start_round()
         # instructions round
         current_round_data = e.current_round_data
         self.assertEqual(current_round_data.group_data_value_set.count(), 0)
@@ -246,7 +242,7 @@ class ExperimentTest(BaseVcwebTest):
             self.assertEqual(current_round_data.participant_data_value_set.count(), 0)
 
     def test_playable_round(self):
-        # advance_to_next_round automatically starts it
+        # advance_to_next_round automatically starts the round
         e = self.advance_to_data_round()
         current_round_data = e.current_round_data
         logger.debug("current round data: %s", current_round_data)
@@ -264,7 +260,8 @@ class ExperimentTest(BaseVcwebTest):
                         "unexpected participant data values for parameter %s, only harvest_decision and participant_ready should be auto-created" % parameter.name)
 
 class GroupClusterTest(BaseVcwebTest):
-    def test_group_clustering(self):
+    def test_group_cluster_data_values(self):
+        # FIXME: needs test coverage
         pass
 
 

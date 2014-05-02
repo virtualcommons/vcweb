@@ -1209,20 +1209,24 @@ class Experiment(models.Model):
 
     @log_signal_errors
     def start_round(self, sender=None):
-        logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
-        self.status = Experiment.Status.ROUND_IN_PROGRESS
-        current_round_configuration = self.current_round
-        if current_round_configuration.randomize_groups:
-            self.allocate_groups(
-                preserve_existing_groups=current_round_configuration.preserve_existing_groups,
-                session_id=current_round_configuration.session_id)
-        # XXX: must create round data AFTER group allocation so that any participant round data values
-        # (participant ready parameters for instance) are associated with the correct participant group
-        # relationships.
-        self.get_or_create_round_data()
-        self.current_round_start_time = datetime.now()
-        self.log('Starting round')
-        self.save()
+        with transaction.atomic():
+            if self.status == Experiment.Status.ROUND_IN_PROGRESS:
+                logger.warning("round already started, ignoring")
+                return 
+            logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
+            self.status = Experiment.Status.ROUND_IN_PROGRESS
+            current_round_configuration = self.current_round
+            if current_round_configuration.randomize_groups:
+                self.allocate_groups(
+                    preserve_existing_groups=current_round_configuration.preserve_existing_groups,
+                    session_id=current_round_configuration.session_id)
+            # XXX: must create round data AFTER group allocation so that any participant round data values
+            # (participant ready parameters for instance) are associated with the correct participant group
+            # relationships.
+            self.get_or_create_round_data()
+            self.current_round_start_time = datetime.now()
+            self.log('Starting round')
+            self.save()
         # notify registered game handlers
         if sender is None:
             sender = intern(self.experiment_metadata.namespace.encode('utf8'))

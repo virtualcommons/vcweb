@@ -60,7 +60,6 @@ class AdjustHarvestDecisionsTest(BaseTest):
         e = self.experiment
         e.activate()
         for rl in range(30, 40):
-            e.start_round()
             self.create_harvest_decisions()
             for g in e.groups:
                 set_resource_level(g, rl)
@@ -69,6 +68,7 @@ class AdjustHarvestDecisionsTest(BaseTest):
                 self.assertEqual(get_resource_level(g), 0)
             for pgr in self.participant_group_relationships:
                 self.assertTrue(get_harvest_decision(pgr) <= 8)
+            e.advance_to_next_round()
 
 
 class MaxResourceLevelTest(BaseTest):

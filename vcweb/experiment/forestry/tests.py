@@ -204,7 +204,6 @@ class ForestryParametersTest(BaseTest):
     def test_data_value_conversion(self):
         e = self.experiment
         e.activate()
-        e.start_round()
         round_data = e.get_round_data()
         for data_param in e.parameters(scope=Parameter.Scope.PARTICIPANT):
             for p in self.participants:
