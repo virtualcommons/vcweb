@@ -6,7 +6,6 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
-from django.views.decorators.csrf import csrf_exempt
 import unicodecsv
 
 from vcweb.core.decorators import participant_required, experimenter_required
@@ -23,7 +22,6 @@ from vcweb.experiment.lighterprints.models import (
 
 logger = logging.getLogger(__name__)
 
-@csrf_exempt
 @participant_required
 def perform_activity(request):
     form = ActivityForm(request.POST or None)
@@ -56,7 +54,6 @@ def perform_activity(request):
     logger.warning(message)
     return JsonResponse(dumps({'success': False, 'response': message}))
 
-@csrf_exempt
 @login_required
 def post_chat_message(request):
     form = ChatForm(request.POST or None)
@@ -75,7 +72,6 @@ def post_chat_message(request):
     return JsonResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
 
 
-@csrf_exempt
 @login_required
 def like(request):
     form = LikeForm(request.POST or None)
@@ -98,7 +94,6 @@ def like(request):
         logger.debug("invalid form: %s from request: %s", form, request)
         return JsonResponse(dumps({'success': False, 'message': 'Invalid like post'}))
 
-@csrf_exempt
 @login_required
 def post_comment(request):
     form = CommentForm(request.POST or None)

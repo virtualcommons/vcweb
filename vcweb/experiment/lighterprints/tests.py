@@ -1,15 +1,20 @@
-import logging
-import json
-
+from datetime import date, timedelta
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.experiment.lighterprints.views import *
 from vcweb.experiment.lighterprints.models import *
+import json
+import logging
 
 
 logger = logging.getLogger(__name__)
 
 class BaseTest(BaseVcwebTest):
     fixtures = [ 'lighterprints_experiment_metadata', 'activities' ]
+
+    """
+    FIXME: only works on level based experiments without has_daily_rounds, fix to operate on scheduled activity rounds
+    as well by adding available_activity parameters and scheduled activities
+    """
 
     def perform_activities(self, activities=None):
         rd = self.experiment.current_round_data
@@ -33,6 +38,7 @@ class BaseTest(BaseVcwebTest):
 
     def setUp(self, **kwargs):
         super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
+
 
 class ActivityViewTest(BaseTest):
     def test_list(self):

@@ -605,8 +605,7 @@ class Experiment(models.Model):
     def end_date(self):
         if self.experiment_configuration.has_daily_rounds:
             return self.start_date + timedelta(self.number_of_rounds)
-        logger.warn("Asking for end_date for non daily rounds experiment %s, returning start date %s instead", self,
-                    self.start_date)
+        logger.warn("Asking for end_date for non daily rounds experiment %s, returning start date %s instead", self, self.start_date)
         return self.start_date
 
     @property
@@ -1192,10 +1191,11 @@ class Experiment(models.Model):
                     rrsn += 1
             ps['repeating_round_sequence_number'] = rrsn
         round_data, created = self.round_data_set.get_or_create(**ps)
-        logger.debug("generated round data %s with criteria %s", round_data, ps)
+        if created:
+            logger.debug("created round data %s with criteria %s", round_data, ps)
         if self.experiment_configuration.is_experimenter_driven:
             # create participant ready data values for every round in experimenter driven experiments
-            logger.debug("creating participant ready participant round data values for experimenter driven experiment")
+            logger.debug("creating participant ready participant values for experimenter driven experiment")
             # FIXME: use bulk_create for this?
             # see https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk-create
             for pgr in self.participant_group_relationships:
@@ -1246,18 +1246,18 @@ class Experiment(models.Model):
         self.log('Ending round with elapsed time %s' % self.current_round_elapsed_time)
         sender = intern(self.experiment_metadata.namespace.encode('utf8')) if sender is None else sender
         #sender = self.namespace.encode('utf-8')
-        logger.debug("about to send round ended signal with sender %s", sender)
+        logger.debug("sending round ended signal with sender %s", sender)
         return signals.round_ended.send_robust(sender, experiment=self, round_configuration=self.current_round)
 
     def activate(self):
         if self.is_archived:
             logger.debug("ignoring request to activate archived experiment, it would wipe existing data.")
-        elif not self.is_active:
-            self.allocate_groups()
-            self.status = Experiment.Status.ACTIVE
-            self.date_activated = datetime.now()
-            self.start_round()
-        return self
+        with transaction.atomic():
+            if not self.is_active:
+                self.allocate_groups()
+                self.status = Experiment.Status.ACTIVE
+                self.date_activated = datetime.now()
+                self.start_round()
 
     @transaction.atomic
     def restart(self):

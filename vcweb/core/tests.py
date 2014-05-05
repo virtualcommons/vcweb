@@ -253,7 +253,6 @@ class ExperimentTest(BaseVcwebTest):
                 self.assertEqual(1, gdvs.count(), "Should only be a single group data value")
             for parameter in e.parameters(Parameter.Scope.PARTICIPANT):
                 expected_size = group.size if parameter.name in ('harvest_decision', 'participant_ready') else 0
-                logger.debug("checking parameter %s, expecting size %s", parameter, expected_size)
                 self.assertEqual(expected_size,
                         ParticipantRoundDataValue.objects.filter(round_data=current_round_data,
                             participant_group_relationship__group=group, parameter=parameter).count(),

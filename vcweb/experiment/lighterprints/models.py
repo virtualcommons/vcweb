@@ -368,7 +368,7 @@ def send_lighterprints_summary_emails(sender, time=None, start_date=None, send_e
             group_scores = GroupScores(experiment, round_data, list(experiment.groups), start_date=start_date)
             all_messages.extend(group_scores.create_all_email_messages())
     if send_emails and all_messages:
-        logger.debug("sending all lighterprints generated emails: %s", all_messages)
+        logger.debug("sending %s lighterprints generated emails", len(all_messages))
         mail.get_connection().send_messages(all_messages)
 
 
