@@ -56,7 +56,7 @@ Participant Dashboard
                     <td data-bind='text: invitation.scheduled_end_time'></td>
                     <td data-bind='text: invitation.location'></td>
                     <td>
-                        <a class='btn btn-primary' href='{% url "subject_pool:experiment_session_signup" %}'>Edit</a>
+                        <a class='btn btn-primary' href='{% url "subjectpool:experiment_session_signup" %}'>Edit</a>
                         <form method='POST' action='/subject-pool/signup/cancel/'>
                             <input type='hidden' name='pk' id='id_pk' data-bind='value: pk'>
                             <button type='submit' class='btn btn-primary'>Cancel</button>

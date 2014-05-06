@@ -1,11 +1,10 @@
 {% extends "experimenter/base.html" %}
-{% url 'core:subject_pool_index' as subjectpool %}
 {% block title %}
     Experiment Session Detail
 {% endblock %}
 {% block page %}
     <div id='page'>
-        <a class="btn btn-default" href={{ subjectpool }}><i class="fa fa-arrow-left"></i> Back</a>
+        <a class="btn btn-default" href="{% url 'subjectpool:experimenter_index' %}"><i class="fa fa-arrow-left"></i> Back</a>
         <div id="session-detail" class="callout callout-info">
             <p><strong>Experiment: </strong>
             {{ session_detail.experiment_metadata.title }}

@@ -41,12 +41,25 @@ urlpatterns = [
     url(r'^cas/login', 'cas.views.login'),
     url(r'^cas/logout', 'cas.views.logout'),
     url(r'^cas/error', TemplateView.as_view(template_name='cas_access_forbidden.html'), name='cas_error'), # core catches everything else
-    url(r'', include('vcweb.core.urls', namespace='core', app_name='core')),
+    # subject pool urls
+    url(r'^subject-pool/', include('vcweb.core.subjectpool.urls', app_name='subjectpool', namespace='subjectpool')),
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
 ]
 
+def experiment_urls():
+    # crude filter, if 'experiment' is in the app_name, include it
+    experiments = [app_name for app_name in settings.INSTALLED_APPS if 'experiment' in app_name]
+    for experiment in experiments:
+        experiment_name = experiment.rpartition('.')[2]
+# include all experiment urls.py under the experiment name's namespace
+        yield url(r'^' + experiment_name + '/',
+                  include(experiment + '.urls', namespace=experiment_name, app_name=experiment_name))
+
+urlpatterns += experiment_urls()
+# core urls catches everything else
+urlpatterns.append(url(r'', include('vcweb.core.urls', namespace='core', app_name='core')))
 
 
 if settings.DEBUG:

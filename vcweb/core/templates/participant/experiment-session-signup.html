@@ -11,7 +11,7 @@ Signup for an Experiment Session
         <div id="content" class="col-md-12">
             {% for exp in grouped_invitations %}
             <div class="callout callout-info">
-                <form method="POST" action='{% url "subject_pool:submit_experiment_session_signup" %}'>
+                <form method="POST" action='{% url "subjectpool:submit_experiment_session_signup" %}'>
                 <input type="hidden" name="experiment_metadata_pk" value={{ exp.list.0.experiment_metadata_pk }}  />
                 <legend>Experiment Session Signup</legend>
                 <table class="table table-striped">

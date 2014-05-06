@@ -24,6 +24,7 @@ env.deploy_path = '/opt/'
 env.hosts = ['localhost']
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
 env.apache = 'httpd'
+# FIXME: use django conf INSTALLED_APPS to introspect instead, similar to experiment_urls
 env.applist = ['vcweb.core', 'vcweb.experiment.forestry', 'vcweb.experiment.bound', 'vcweb.experiment.lighterprints', 'vcweb.experiment.broker']
 env.docs_path = os.path.join(env.project_path, 'docs')
 env.remote_docs_path = '/home/csid/public_html/api/vcweb'

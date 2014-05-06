@@ -14,10 +14,8 @@ from vcweb.core.views import (
     get_dashboard_view_model, update_experiment, update_round_configuration, edit_experiment_configuration,
     clone_experiment_configuration, unsubscribe, update_round_param_value, update_experiment_param_value,
     update_experiment_configuration, OstromlabFaqList, cas_asu_registration, cas_asu_registration_submit,
-    experiment_session_signup, submit_experiment_session_signup, cancel_experiment_session_signup,
-    download_experiment_session, account_profile, update_account_profile, check_user_email, subject_pool_index,
-    update_session, get_session_events, manage_participant_attendance, send_invitations, get_invitations_count,
-    invite_email_preview, )
+    account_profile, update_account_profile, check_user_email
+)
 
 
 logger = logging.getLogger(__name__)
@@ -45,11 +43,6 @@ urlpatterns = [
     url(r'^experiment/(?P<pk>\d+)/register-email-list$', RegisterEmailListView.as_view(), name='register_email_list'),
     url(r'^experiment/(?P<pk>\d+)/register-test-participants$',
         RegisterTestParticipantsView.as_view(), name='register_test_participants'),
-    # FIXME: refactor these into POSTs using the ExperimentActionForm
-    #    url(r'^experiment/(?P<pk>\d+)/deactivate$', deactivate, name='deactivate'),
-    #    url(r'^experiment/(?P<pk>\d+)/clone$', CloneExperimentView.as_view(), name='clone'),
-    #    url(r'^experiment/(?P<pk>\d+)/clear-participants', ClearParticipantsExperimentView.as_view(), name='clear_participants'),
-    #    url(r'^experiment/(?P<pk>\d+)/add-participants/(?P<count>[\d]+)$', 'add_participants', name='add_participants'),
     url(r'^experiment/(?P<pk>\d+)/download/(?P<file_type>[\w]+)$', download_data, name='download_data'),
     url(r'^experiment/(?P<pk>\d+)/download-participants/$', download_participants, name='download_participants'),
     url(r'^experiment/(?P<pk>\d+)/export/configuration(?P<file_extension>.[\w]+)$',
@@ -73,46 +66,14 @@ urlpatterns = [
     url(r'^api/experimenter/save-notes', save_experimenter_notes, name='save_experimenter_notes'),
     url(r'^api/experimenter/round-data', get_round_data, name='get_round_data'),
     # match arbitrary experiment URL prefix fragments for logging / login / logout / accessing the dashboard view model
-
     url(r'api/log/(?P<participant_group_id>\d+)$', api_logger, name='api_logger'),
     url(r'api/login', participant_api_login, name='participant_api_login'),
     url(r'api/logout', api_logout, name='api_logout'),
     url(r'api/dashboard', get_dashboard_view_model, name='dashboard_view_model'),
     url(r'bug-report', RedirectView.as_view(url='https://bitbucket.org/virtualcommons/vcweb/issues/new'),
         name='report_issues'),
-    # subject pool urls
-    url(r'^subject-pool/$', subject_pool_index, name='subject_pool_index'),
-    url(r'^subject-pool/',
-        include((
-            [
-                url(r'^session/update$', update_session, name='update_session'),
-                url(r'^session/events$', get_session_events, name='session_events'),
-                url(r'^session/detail/event/(\d+)$', manage_participant_attendance, name='session_event_detail'),
-                url(r'^session/invite$', send_invitations, name='send_invites'),
-                url(r'^session/invite/count$', get_invitations_count, name='get_invitations_count'),
-                url(r'^session/attendance$', manage_participant_attendance, name='participant_attendance'),
-                url(r'^session/email-preview$', invite_email_preview, name='invite_email_preview'),
-                url(r'^signup/$', experiment_session_signup, name='experiment_session_signup'),
-                url(r'^signup/submit/$', submit_experiment_session_signup, name='submit_experiment_session_signup'),
-                url(r'^signup/cancel/$', cancel_experiment_session_signup, name='cancel_experiment_session_signup'),
-                url(r'^session/(?P<pk>\d+)/download/$', download_experiment_session,
-                    name='download_experiment_session'),
-                ],
-            'subject_pool',
-            'subject_pool'))),
 ]
 
-
-def experiment_urls():
-    # crude filter, if experiment is in the app_name, include it
-    experiments = [app_name for app_name in settings.INSTALLED_APPS if 'experiment' in app_name]
-    for experiment in experiments:
-        experiment_name = experiment.rpartition('.')[2]
-        yield url(r'^' + experiment_name + '/',
-                  include(experiment + '.urls', namespace=experiment_name, app_name=experiment_name))
-
-
-urlpatterns += experiment_urls()
 
 
 def foursquare_auth_dict(**kwargs):
