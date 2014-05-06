@@ -173,9 +173,9 @@ class ForestryParametersTest(BaseTest):
             self.assertEqual(resource_level, 100)
 
         random_sequence = [random.randint(1, 100) for _ in xrange(0, 8)]
-        for i in random_sequence:
-            set_resource_level(group, i)
-            for group in e.groups:
+        for group in e.groups:
+            for i in random_sequence:
+                set_resource_level(group, i)
                 self.assertEqual(get_resource_level(group), i)
 
 
