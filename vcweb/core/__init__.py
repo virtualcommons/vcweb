@@ -1,11 +1,12 @@
-from django.conf import settings
+import json
+import logging
+
 from django.core.serializers import serialize
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Model
 from django.db.models.query import QuerySet
 from django.utils.functional import curry
-import json
-import logging
+
 
 logger = logging.getLogger(__name__)
 

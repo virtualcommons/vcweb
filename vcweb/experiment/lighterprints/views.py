@@ -20,6 +20,7 @@ from vcweb.experiment.lighterprints.models import (
         is_high_school_treatment, get_treatment_type, get_activity_performed_parameter,
         )
 
+
 logger = logging.getLogger(__name__)
 
 @participant_required

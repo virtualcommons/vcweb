@@ -1,18 +1,18 @@
 from datetime import datetime, timedelta, date
+import random
+import logging
 
 from django.contrib.auth.models import User
 from django.core import serializers
 from django.test import TestCase
 from django.test.client import RequestFactory, Client
+
 from vcweb.core import signals
 from vcweb.core.models import (Experiment, Experimenter, ExperimentConfiguration, ParticipantRoundDataValue,
                                Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
                                ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue, Institution,
                                GroupActivityLog, ExperimentSession, Invitation, ParticipantSignup)
 from vcweb.core.subjectpool.views import get_potential_participants
-
-import random
-import logging
 
 logger = logging.getLogger(__name__)
 

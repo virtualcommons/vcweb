@@ -1,9 +1,11 @@
 from datetime import datetime
+import logging
+
 from kronos import register
+
 from vcweb.core import signals
 from vcweb.core.decorators import log_signal_errors
 
-import logging
 
 logger = logging.getLogger(__name__)
 

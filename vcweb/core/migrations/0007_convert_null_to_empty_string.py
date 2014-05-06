@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-import datetime
-from south.db import db
 from south.v2 import DataMigration
-from django.db import models
-from django.db.models import Q
+
 
 def convert_to_empty_string(model_class, *attributes):
     for attribute in attributes:

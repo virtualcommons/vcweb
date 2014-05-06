@@ -10,6 +10,7 @@ from vcweb.core.models import Experiment
 from vcweb.core.models import ParticipantExperimentRelationship
 
 
+
 #FIXME come from database(user)
 treatment = "In-group"
 

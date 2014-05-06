@@ -1,11 +1,10 @@
 from functools import wraps
-from django.shortcuts import redirect
-
-from django.contrib.auth.decorators import user_passes_test
-
-
 import time
 import logging
+
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import user_passes_test
+
 
 logger = logging.getLogger(__name__)
 

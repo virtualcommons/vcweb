@@ -1,5 +1,16 @@
 from collections import defaultdict
 from datetime import datetime, timedelta, date, time
+from string import Template
+from urllib import urlencode
+import base64
+import email
+import hashlib
+import itertools
+import logging
+import random
+import re
+import string
+
 from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
@@ -17,20 +28,11 @@ from django.template.loader import select_template, get_template
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
 from model_utils.managers import PassThroughManager
-from string import Template
-from urllib import urlencode
+import markdown
+
 from vcweb.core import signals, simplecache, dumps
 from vcweb.core.decorators import log_signal_errors
 
-import base64
-import email
-import hashlib
-import itertools
-import logging
-import markdown
-import random
-import re
-import string
 
 logger = logging.getLogger(__name__)
 

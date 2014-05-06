@@ -1,10 +1,11 @@
+import traceback
+import sys
+import logging
+
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.shortcuts import redirect
-import traceback
-import sys
 
-import logging
 
 logger = logging.getLogger(__name__)
 

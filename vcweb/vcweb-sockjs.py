@@ -3,17 +3,17 @@ import os
 from os import path
 import sys
 import json
-from django.utils.timesince import timesince
 from itertools import chain
+
 from raven.contrib.tornado import AsyncSentryClient
 from sockjs.tornado import SockJSRouter, SockJSConnection
 from tornado import web, ioloop
-import tornadoredis
+
 
 sys.path.append( path.abspath(path.join(path.dirname(path.abspath(__file__)), '..')) )
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 from django.conf import settings
-from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ParticipantExperimentRelationship, Participant, Experimenter, ChatMessage)
+from vcweb.core.models import (Experiment, ParticipantExperimentRelationship, Experimenter, ChatMessage)
 
 # redefine logger
 import logging

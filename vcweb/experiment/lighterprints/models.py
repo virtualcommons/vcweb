@@ -1,5 +1,11 @@
 from collections import defaultdict
 from datetime import datetime, date, time, timedelta
+from operator import itemgetter
+import itertools
+import locale
+import logging
+import re
+
 from django.conf import settings
 from django.core import mail
 from django.core.cache import cache
@@ -12,16 +18,10 @@ from django.template.loader import select_template
 from django.utils.timesince import timesince
 from model_utils.managers import PassThroughManager
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
-from operator import itemgetter
-from vcweb.core import signals, simplecache
-from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, RoundParameterValue,
-        ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
-
-import itertools
-import locale
-import logging
 import markdown
-import re
+
+from vcweb.core import signals, simplecache
+from vcweb.core.models import (Experiment, ExperimentMetadata, GroupRoundDataValue, ParticipantRoundDataValue, Parameter, User, Comment, Like, ChatMessage)
 
 
 logger = logging.getLogger(__name__)

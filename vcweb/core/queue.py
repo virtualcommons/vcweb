@@ -1,11 +1,12 @@
+import logging
+
 from django.core import serializers
+
 from kombu.connection import BrokerConnection
 from kombu.messaging import Exchange, Queue, Consumer, Producer
-
 from vcweb import settings
 from vcweb.core.models import ChatMessage
 
-import logging
 logger = logging.getLogger(__name__)
 
 message_exchange = Exchange("vcweb.messages", "direct", durable=True, auto_declare=True)

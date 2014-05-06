@@ -1,13 +1,11 @@
 import logging
 
 from django import forms
-
 from django.forms import widgets, CheckboxInput, ModelForm
 from django.utils.translation import ugettext_lazy as _
 import autocomplete_light
 
 from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete
-
 from vcweb.core.forms import NumberInput
 from vcweb.core.models import (ParticipantSignup)
 

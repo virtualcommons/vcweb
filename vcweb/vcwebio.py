@@ -1,12 +1,15 @@
 #!/usr/bin/env python
-import tornado.web
-import tornadio2
-from tornado.escape import xhtml_escape
 from itertools import chain
 import os
 import sys
 import logging
 import json
+
+import tornado.web
+from tornado.escape import xhtml_escape
+
+import tornadio2
+
 
 sys.path.append(os.path.abspath('.'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'

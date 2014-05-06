@@ -1,11 +1,10 @@
-from datetime import date
-from django.contrib.auth.models import User
-from django.core.management.base import BaseCommand, CommandError
-from vcweb.core.models import ParticipantExperimentRelationship, ParticipantGroupRelationship, Participant
 from collections import defaultdict
-
 import logging
 import itertools
+
+from django.contrib.auth.models import User
+from django.core.management.base import BaseCommand
+
 
 logger = logging.getLogger(__name__)
 

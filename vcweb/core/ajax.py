@@ -1,3 +1,5 @@
+import logging
+
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader_tags import BlockNode, ExtendsNode
@@ -5,12 +7,9 @@ from django.template import loader, Context, RequestContext
 
 from vcweb.core import dumps
 from vcweb.core.decorators import experimenter_required
-from vcweb.core.forms import BookmarkExperimentMetadataForm
 from vcweb.core.http import JsonResponse
-from vcweb.core.models import (Experiment, RoundData, BookmarkedExperimentMetadata,
-        get_chat_message_parameter, ExperimentConfiguration)
+from vcweb.core.models import (Experiment, RoundData, get_chat_message_parameter, ExperimentConfiguration)
 
-import logging
 logger = logging.getLogger(__name__)
 
 def get_template(template):

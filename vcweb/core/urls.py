@@ -2,7 +2,7 @@ import logging
 import urllib
 
 from django.conf import settings
-from django.conf.urls import url, include
+from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 

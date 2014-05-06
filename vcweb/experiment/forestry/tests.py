@@ -1,8 +1,9 @@
+import logging
+
 from vcweb.core.models import (GroupRoundDataValue, ParticipantExperimentRelationship)
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.experiment.forestry.models import *
 
-import logging
 
 logger = logging.getLogger(__name__)
 

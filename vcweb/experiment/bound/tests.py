@@ -2,10 +2,11 @@
 boundary effects experiment unit tests
 """
 
+import logging
+
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.experiment.bound.models import *
 
-import logging
 
 logger = logging.getLogger(__name__)
 

@@ -2,10 +2,12 @@
 ### custom template tags
 ### active tag taken from http://gnuvince.wordpress.com/2007/09/14/a-django-template-tag-for-the-current-active-page/
 
-from django import template
-from django.conf import settings
 import os
 import re
+
+from django import template
+from django.conf import settings
+
 register = template.Library()
 
 import logging

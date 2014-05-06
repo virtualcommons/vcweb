@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta
-from django.core.management.base import BaseCommand, CommandError
+import logging
+
+from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from vcweb.core.models import Participant, Institution, set_full_name
-from vcweb.core.models import OstromlabFaqEntry
 import mysql.connector
 
-import logging
+from vcweb.core.models import Participant, Institution, set_full_name
+from vcweb.core.models import OstromlabFaqEntry
+
 
 logger = logging.getLogger(__name__)
 

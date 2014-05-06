@@ -1,9 +1,12 @@
+import logging
+
 from cas.backends import CASBackend
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
+
 from vcweb.core.views import PermissionDenied
-import logging
+
 
 logger = logging.getLogger(__name__)
 

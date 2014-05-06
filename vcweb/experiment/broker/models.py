@@ -4,8 +4,7 @@ from django.dispatch import receiver
 
 from vcweb.core import signals, simplecache
 from vcweb.core.models import (Parameter, ParticipantRoundDataValue, GroupCluster)
-from vcweb.experiment.forestry.models import (get_harvest_decision_parameter, get_harvest_decision,
-        set_harvest_decision)
+from vcweb.experiment.forestry.models import (get_harvest_decision_parameter, get_harvest_decision, set_harvest_decision, )
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,7 @@
-from vcweb.core.models import *
 import random
+
+from vcweb.core.models import *
+
 
 def pollutify(experiment, pollution_amount, resource_string_length):
     for group in experiment.group_set.all():
