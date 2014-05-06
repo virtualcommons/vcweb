@@ -84,7 +84,6 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'vcweb.core.middleware.ExceptionHandlingMiddleware',
     'cas.middleware.CASMiddleware',
 )
 
