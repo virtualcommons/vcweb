@@ -406,8 +406,8 @@ def main(argv=None):
     app = web.Application(urls)
     logger.info("starting sockjs server on port %s", port)
     app.listen(port)
-    if hasattr(settings, 'RAVEN_CONFIG'):
-        app.sentry_client = AsyncSentryClient(settings.RAVEN_CONFIG)
+    if getattr(settings, 'RAVEN_CONFIG', None):
+        app.sentry_client = AsyncSentryClient(settings.RAVEN_CONFIG['dsn'])
     ioloop.IOLoop.instance().start()
 
 if __name__ == '__main__':
