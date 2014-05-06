@@ -39,8 +39,9 @@ class ForestryRoundSignalTest(BaseTest):
         round_data = e.get_round_data()
         e.end_round()
         harvest_decision_parameter = get_harvest_decision_parameter()
-        for group in e.group_set.all():
-            ds = get_harvest_decisions(group)
+        rd = e.current_round_data
+        for group in e.groups:
+            ds = group.get_participant_data_values(parameter_name='harvest_decision', round_data=rd)
             self.verify_resource_level(group)
             self.assertEqual(len(ds), group.participant_set.count())
             for pgr in group.participant_group_relationship_set.all():
@@ -51,8 +52,7 @@ class ForestryRoundSignalTest(BaseTest):
                 )
                 self.assertTrue(pdv.pk > 0)
                 self.assertFalse(pdv.value)
-                pdv.value = 5
-                pdv.save()
+                pdv.update_int(5)
         end_round_func(e)
 
     def test_round_ended(self):

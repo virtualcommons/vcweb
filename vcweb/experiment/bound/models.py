@@ -14,7 +14,7 @@ from vcweb.experiment.forestry.models import (
     get_reset_resource_level_parameter, get_regrowth_parameter,
     get_initial_resource_level_parameter, get_resource_level_parameter,
     get_resource_level_dv as get_unshared_resource_level_dv, get_group_harvest_dv, get_regrowth_dv,
-    get_harvest_decision_dv, set_harvest_decision,)
+    get_harvest_decision_dv, set_harvest_decision, set_resource_level,)
 
 
 logger = logging.getLogger(__name__)

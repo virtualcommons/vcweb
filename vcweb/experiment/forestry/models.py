@@ -59,10 +59,6 @@ def get_harvest_decision(participant_group_relationship, round_data=None, defaul
     return get_harvest_decision_dv(participant_group_relationship, round_data, default).int_value
 
 
-def get_harvest_decisions(group=None):
-    return group.get_participant_data_values(parameter__name='harvest_decision') if group else []
-
-
 def set_regrowth(group, value, round_data=None):
     group.set_data_value(parameter=get_regrowth_parameter(), value=value, round_data=round_data)
 
@@ -149,14 +145,6 @@ def get_total_group_harvest(group, round_data):
                                                     round_data=round_data) \
         .aggregate(total_harvest=models.Sum('int_value'))
     return _zero_if_none(q['total_harvest'])
-
-
-# def get_total_harvest(participant_group_relationship, session_id):
-#     q = ParticipantRoundDataValue.objects.for_participant(participant_group_relationship,
-#                                                           parameter=get_harvest_decision_parameter(),
-#                                                           participant_group_relationship__group__session_id=session_id)\
-#         .aggregate(total_harvest=models.Sum('int_value'))
-#     return _zero_if_none(q['total_harvest'])
 
 
 class GroupData(object):
@@ -327,9 +315,9 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
         # clamp resource
         current_resource_level_dv.update_int(min(current_resource_level + resource_regrowth, max_resource_level))
 
-    ''' XXX: transfer resource levels across chat and quiz rounds if they exist '''
+    # XXX: transfer resource levels across chat and quiz rounds if they exist
     if experiment.has_next_round:
-        ''' set group round data resource_level for each group + regrowth '''
+        # set group round data resource_level for each group + regrowth
         group.log("Transferring resource level %s to next round" % current_resource_level_dv.int_value)
         group.copy_to_next_round(current_resource_level_dv, group_harvest_dv, regrowth_dv)
 
@@ -365,7 +353,6 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                 # multiple active harvest decisions, only allow the latest one to be active
                 latest_prdv = prdvs.latest()
                 prdvs.exclude(pk=latest_prdv.pk).update(is_active=False)
-
 
         for group in experiment.groups:
             logger.debug("group %s has resource level", group)

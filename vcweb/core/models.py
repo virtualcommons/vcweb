@@ -1,9 +1,9 @@
 from collections import defaultdict
 from datetime import datetime, timedelta, date, time
+from email.utils import parseaddr
 from string import Template
 from urllib import urlencode
 import base64
-import email
 import hashlib
 import itertools
 import logging
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 """
 Contains all data models used in the core as well as a number of helper functions.
-FIXME: getting a bit monolithically unwieldy.  Consider splitting into models subdirectory
+FIXME: getting a bit monolithically unwieldy, break up
 """
 
 
@@ -105,7 +105,7 @@ class ParameterValueMixin(object):
                 setattr(pv, k, v)
             else:
                 raise ValueError(
-                    "Can only specify a single value accessor when setting parameter values, received %s instead" % kwargs)
+                    "Can only specify a single value when setting parameter values, received %s instead" % kwargs)
             pv.save()
             return pv
         logger.error("Unable to set parameter %s to %s", parameter if parameter else name, value)
@@ -396,7 +396,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
         'The exchange rate of currency per in-game token, e.g., dollars per token'))
     show_up_payment = models.DecimalField(null=True, blank=True, default=5.0, max_digits=6, decimal_places=2,
                                           help_text=_(
-                                              "The show up fee to be paid to an in-lab experiment participant just for showing up"))
+                                              "The show up fee to be paid to an in-lab experiment participant for showing up"))
     maximum_payment = models.DecimalField(null=True, blank=True, default=40.0, max_digits=6, decimal_places=2,
                                           help_text=_(
                                               "The maximum amount a participant can expect to be paid for this experiment"))
@@ -413,9 +413,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
 
     @property
     def is_open(self):
-        '''
-        using max_group_size of 0 to signify an open experiment, add a dedicated boolean field later if necessary
-        '''
+        # TODO: using max_group_size of 0 to signify an open experiment, add a dedicated boolean field later if necessary
         return self.max_group_size == 0
 
     @property
@@ -607,7 +605,8 @@ class Experiment(models.Model):
     def end_date(self):
         if self.experiment_configuration.has_daily_rounds:
             return self.start_date + timedelta(self.number_of_rounds)
-        logger.warn("Asking for end_date for non daily rounds experiment %s, returning start date %s instead", self, self.start_date)
+        logger.warn("Asking for end_date for non daily rounds experiment %s, returning start date %s instead", self,
+                    self.start_date)
         return self.start_date
 
     @property
@@ -881,7 +880,7 @@ class Experiment(models.Model):
                         logger.debug("invalid participant data: %s", email_line)
                         continue
                     # FIXME: parsing logic was already performed once in EmailListField.clean, redundant
-                    (full_name, email_address) = email.utils.parseaddr(email_line)
+                    (full_name, email_address) = parseaddr(email_line)
                     # lowercase all usernames/email addresses internally and strip all whitespace
                     email_address = email_address.lower().strip()
                     full_name = full_name.strip()
@@ -963,11 +962,11 @@ class Experiment(models.Model):
             return
         users = []
         for i in xrange(1, count + 1):
-            email = u's%d%s@%s' % (i, username_suffix, email_suffix)
+            email_address = u's%d%s@%s' % (i, username_suffix, email_suffix)
             try:
-                user = User.objects.get(username=email)
+                user = User.objects.get(username=email_address)
             except User.DoesNotExist:
-                user = User.objects.create_user(username=email, email=email, password=password)
+                user = User.objects.create_user(username=email_address, email=email_address, password=password)
                 user.first_name = u'Student'
                 user.last_name = unicode(i)
                 user.save()
@@ -1083,7 +1082,7 @@ class Experiment(models.Model):
         return current_group.add_participant(participant)
 
     @transaction.atomic
-    def allocate_groups(self, randomize=True, preserve_existing_groups=False, session_id=''):
+    def allocate_groups(self, randomize=True, preserve_existing_groups=False, session_id=u''):
         logger.debug("allocating groups for %s with session_id %s (randomize? %s)" % (self, session_id, randomize))
         # clear out all existing groups
         # FIXME: record previous mappings in activity log.
@@ -1655,7 +1654,7 @@ class Parameter(models.Model):
             return 'int_value'
         elif t == 'enum':
             return 'string_value'
-        return '%s_value' % (t)
+        return '%s_value' % t
 
     @property
     def none_value(self):
@@ -1986,16 +1985,6 @@ class Group(models.Model, DataValueMixin):
         criteria.update(kwargs)
         return criteria
 
-    def get_group_data_values(self, name=None, *names):
-        round_data = self.current_round_data
-        if names:
-            if name: names.append(name)
-            return self.data_value_set.filter(round_data=round_data, parameter__name__in=names)
-        elif name:
-            return self.data_value_set.get(round_data=round_data, parameter__name=name)
-        else:
-            logger.warning("Trying to retrieve data value by name with no args")
-        return None
 
     def get_participant_data_values(self, **kwargs):
         criteria = self._criteria(participant_group_relationship__group=self, **kwargs)
@@ -2539,8 +2528,8 @@ class Comment(ParticipantRoundDataValue):
     def message(self):
         return self.string_value
 
-    def to_dict(self):
-        data = super(Comment, self).to_dict(cacheable=True)
+    def to_dict(self, cacheable=True, include_email=False):
+        data = super(Comment, self).to_dict(cacheable=cacheable)
         data['message'] = self.message
         return data
 
@@ -2553,8 +2542,8 @@ class Like(ParticipantRoundDataValue):
         kwargs['parameter'] = get_like_parameter()
         super(Like, self).__init__(*args, **kwargs)
 
-    def to_dict(self):
-        data = super(Like, self).to_dict(cacheable=True)
+    def to_dict(self, cacheable=True, include_email=False):
+        data = super(Like, self).to_dict(cacheable=cacheable)
         return data
 
 
@@ -2757,9 +2746,6 @@ class SpoolParticipantStatistics(models.Model):
     invitations = models.PositiveIntegerField(default=0)
 
 
-''' parameter accessors '''
-
-
 @simplecache
 def get_chat_message_parameter():
     return Parameter.objects.get(name='chat_message', scope=Parameter.Scope.PARTICIPANT)
@@ -2790,8 +2776,8 @@ def is_experimenter(user, experimenter=None):
     return False
 
 
-SCALAR_DATA_FIELDS = (
-models.CharField, models.TextField, models.IntegerField, models.PositiveIntegerField, models.PositiveSmallIntegerField)
+SCALAR_DATA_FIELDS = (models.CharField, models.TextField, models.IntegerField, models.PositiveIntegerField,
+                      models.PositiveSmallIntegerField)
 
 
 def get_model_fields(model):
@@ -2816,7 +2802,7 @@ def is_participant(user):
 
 @receiver(signals.system_daily_tick)
 @transaction.atomic
-def update_daily_experiments(sender, time=None, start=None, **kwargs):
+def update_daily_experiments(sender, timestamp=None, start=None, **kwargs):
     """
     signal handler for activating daily experiments
     """
@@ -2840,11 +2826,11 @@ def update_daily_experiments(sender, time=None, start=None, **kwargs):
             e.activate()
 
 
-def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):
+def reset_password(email_address, from_email=settings.SERVER_EMAIL, template='registration/password_reset_email.html'):
     """
     Reset the password for all (active) users with given E-Mail address
     """
-    form = PasswordResetForm({'email': email, })
+    form = PasswordResetForm({'email': email_address, })
     return form.save(from_email=from_email, email_template_name=template)
 
 

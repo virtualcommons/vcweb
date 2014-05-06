@@ -167,8 +167,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
             experiment_model_dict['totalEarnings'] = get_total_experiment_harvest(participant_group_relationship,
                                                                                   rounds) * ec.exchange_rate
             if can_view_group_results(current_round):
-                experiment_model_dict['groupEarnings'] = get_group_data(participant_group_relationship, ec.exchange_rate
-                                                                        , rounds)
+                experiment_model_dict['groupEarnings'] = get_group_data(participant_group_relationship, ec.exchange_rate, rounds)
 
     # Participant group data parameters are only needed if this round is a data round
     # or the previous round was a data round
