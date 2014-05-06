@@ -50,3 +50,7 @@ FACEBOOK_API_SECRET          = ''
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'CUSTOMIZE_ME'
+
+RAVEN_CONFIG = {
+        'dsn': 'https://public:secret@vcweb.asu.edu/1',
+        }

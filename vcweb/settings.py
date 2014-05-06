@@ -114,7 +114,7 @@ INSTALLED_APPS = (
     'vcweb.experiment.bound',
     'vcweb.experiment.broker',
     'vcweb.experiment.irrigation',
-    'raven.contrib.django',
+    'raven.contrib.django.raven_compat',
     'kronos',
     'south',
     'django_extensions',
@@ -320,7 +320,7 @@ def add_settings_tuples(varname, settings_local):
 if has_local_settings:
     try:
         DEBUG = getattr(settings_local, 'DEBUG', DEBUG)
-        SENTRY_DSN = getattr(settings_local, 'SENTRY_DSN', None)
+        RAVEN_CONFIG = getattr(settings_local, 'RAVEN_CONFIG', None)
         EMAIL_BACKEND = getattr(settings_local, 'EMAIL_BACKEND', EMAIL_BACKEND)
         DATABASES = getattr(settings_local, 'DATABASES', DATABASES)
         SECRET_KEY = getattr(settings_local, 'SECRET_KEY', SECRET_KEY)
