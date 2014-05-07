@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
-from django.forms import widgets, ValidationError
+from django.forms import widgets, ValidationError, CheckboxInput
 from django.utils.translation import ugettext_lazy as _
 import autocomplete_light
 
@@ -218,6 +218,16 @@ class ExperimentConfigurationForm(forms.ModelForm):
 
 
 class ExperimentParameterValueForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(ExperimentParameterValueForm, self).__init__(*args, **kwargs)
+        self.fields['parameter'].queryset = self.fields['parameter'].queryset.filter(scope='experiment')
+
+        for name, field in self.fields.items():
+            if field.widget.__class__ == CheckboxInput:
+                field.widget.attrs['data-bind'] = 'checked: %s' % name
+            else:
+                field.widget.attrs['data-bind'] = 'value: %s' % name
+
     class Meta:
         model = ExperimentParameterValue
         exclude = ('experiment_configuration', 'last_modified', 'date_created')
@@ -227,16 +237,44 @@ class ExperimentParameterValueForm(forms.ModelForm):
 
 
 class RoundConfigurationForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(RoundConfigurationForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.__class__ == CheckboxInput:
+                field.widget.attrs['data-bind'] = 'checked: %s' % name
+            else:
+                field.widget.attrs['data-bind'] = 'value: %s' % name
+
+            help_text = field.help_text
+            field.help_text = None
+            if help_text != '':
+                field.widget.attrs.update(
+                    {'class': 'has-popover', 'data-content': help_text, 'data-placement': 'right',
+                     'data-container': 'body'})
+
     class Meta:
         model = RoundConfiguration
-        exclude = ('experiment_configuration', 'last_modified', 'date_created', 'template_filename')
+        exclude = ('experiment_configuration', 'last_modified', 'date_created', 'template_filename', 'instructions',
+                   'debriefing', 'group_cluster_size')
 
 
-class RoundParameterValuesForm(forms.ModelForm):
+class RoundParameterValueForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(RoundParameterValueForm, self).__init__(*args, **kwargs)
+        self.fields['parameter'].queryset = self.fields['parameter'].queryset.filter(scope='round')
+
+        for name, field in self.fields.items():
+            if field.widget.__class__ == CheckboxInput:
+                field.widget.attrs['data-bind'] = 'checked: %s' % name
+            else:
+                field.widget.attrs['data-bind'] = 'value: %s' % name
+
     class Meta:
         model = RoundParameterValue
         exclude = ('round_configuration', 'last_modified', 'date_created')
-
+        widgets = {
+            'string_value': forms.Textarea(attrs={'cols': 40, 'rows': 3}),
+        }
 
 class EmailListField(forms.CharField):
     widget = forms.Textarea

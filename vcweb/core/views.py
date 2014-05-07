@@ -26,7 +26,7 @@ from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountFor
                               UpdateExperimentForm, AsuRegistrationForm, ParticipantGroupIdForm,
                               RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
                               LogMessageForm, BookmarkExperimentMetadataForm, ExperimentConfigurationForm,
-                              ExperimentParameterValueForm, RoundConfigurationForm, RoundParameterValuesForm,)
+                              ExperimentParameterValueForm, RoundConfigurationForm, RoundParameterValueForm)
 from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment,
                                Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata,
@@ -1094,7 +1094,7 @@ def update_experiment_param_value(request, pk):
 
 @experimenter_required
 def update_round_param_value(request, pk):
-    form = RoundParameterValuesForm(request.POST or None)
+    form = RoundParameterValueForm(request.POST or None)
     request_type = request.POST['request_type']
 
     if request_type == 'delete':
@@ -1143,17 +1143,17 @@ def sort_round_configurations(old_sequence_number, new_sequence_number, exp_conf
     logger.debug('sorting round configuration sequence numbers')
     round_configs = RoundConfiguration.objects.filter(experiment_configuration__pk=exp_config_pk)
     #logger.debug(round_configs)
-    logger.debug(old_sequence_number)
+    # logger.debug(old_sequence_number)
     if old_sequence_number:
         for rc in round_configs:
             current_sequence_number = rc.sequence_number
             if old_sequence_number < current_sequence_number <= new_sequence_number:
                 rc.sequence_number = current_sequence_number - 1
-                logger.debug('sequence_number decreased by 1')
+                # logger.debug('sequence_number decreased by 1')
                 rc.save()
             elif new_sequence_number <= current_sequence_number <= old_sequence_number:
                 rc.sequence_number = current_sequence_number + 1
-                logger.debug('sequence_number increased by 1')
+                # logger.debug('sequence_number increased by 1')
                 rc.save()
     else:
         flag = True
@@ -1162,7 +1162,7 @@ def sort_round_configurations(old_sequence_number, new_sequence_number, exp_conf
             if new_sequence_number <= current_sequence_number and flag:
                 if new_sequence_number == current_sequence_number:
                     rc.sequence_number = current_sequence_number + 1
-                    logger.debug('sequence_number increased by 1')
+                    # logger.debug('sequence_number increased by 1')
                     rc.save()
                     new_sequence_number += 1
                 else:
@@ -1171,53 +1171,58 @@ def sort_round_configurations(old_sequence_number, new_sequence_number, exp_conf
 
 @experimenter_required
 def update_round_configuration(request, pk):
-    form = RoundConfigurationForm(request.POST or None)
-    request_type = request.POST['request_type']
-    if request_type == 'delete':
-        RoundConfiguration.objects.get(pk=pk).delete()
-        return JsonResponse(dumps({
-            'success': True
-        }))
+    success = True
 
-    if form.is_valid():
-        if request_type == 'create':
-            rc = RoundConfiguration()
+    request_type = request.POST['request_type']
+
+    # delete Request
+    if request_type == 'delete':
+        if pk:
+            RoundConfiguration.objects.get(pk=pk).delete()
+        else:
+            success = False
+
+    # Create Request
+    elif request_type == 'create':
+        # rc = RoundConfiguration()
+        form = RoundConfigurationForm(request.POST or None)
+        if form.is_valid():
+            rc = form.save(commit=False)
             exp_config_pk = request.POST['experiment_config_pk']
             ec = ExperimentConfiguration.objects.get(pk=exp_config_pk)
             rc.experiment_configuration = ec
-        elif request_type == "update":
-            rc = RoundConfiguration.objects.get(pk=pk)
-        if form.cleaned_data.get('sequence_number') != rc.sequence_number:
-            sort_round_configurations(rc.sequence_number, form.cleaned_data.get('sequence_number'),
-                                      rc.experiment_configuration.pk)
-        rc.round_type = form.cleaned_data.get('round_type')
-        rc.sequence_number = form.cleaned_data.get('sequence_number')
-        rc.display_number = form.cleaned_data.get('display_number')
-        rc.duration = form.cleaned_data.get('duration')
-        rc.template_id = form.cleaned_data.get('template_id')
-        rc.survey_url = form.cleaned_data.get('survey_url')
-        rc.session_id = form.cleaned_data.get('session_id')
-        rc.repeat = form.cleaned_data.get('repeat')
-        rc.randomize_groups = form.cleaned_data.get('randomize_groups')
-        rc.preserve_existing_groups = form.cleaned_data.get('preserve_existing_groups')
-        rc.create_group_clusters = form.cleaned_data.get('create_group_clusters')
-        rc.initialize_data_values = form.cleaned_data.get('initialize_data_values')
-        rc.chat_enabled = form.cleaned_data.get('chat_enabled')
-        rc.save()
 
+            if form.cleaned_data.get('sequence_number') != rc.sequence_number:
+                sort_round_configurations(rc.sequence_number, form.cleaned_data.get('sequence_number'),
+                                          rc.experiment_configuration.pk)
+
+            rc.save()
+        else:
+            success = False
+    # Update request
+    elif request_type == "update":
+        rc = RoundConfiguration.objects.get(pk=pk)
+        form = RoundConfigurationForm(request.POST or None, instance=rc)
+        if form.is_valid():
+            form.save(commit=False)
+
+            if form.cleaned_data.get('sequence_number') != rc.sequence_number:
+                sort_round_configurations(rc.sequence_number, form.cleaned_data.get('sequence_number'),
+                                          rc.experiment_configuration.pk)
+            rc.save()
+        else:
+            success = False
+
+    if success:
         return JsonResponse(dumps({
             'success': True,
             'round_config': rc.to_dict()
         }))
-    #
-    # logger.debug(form.errors)
-    # logger.debug(form.non_field_errors())
-    # message = '''<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>{errors}</div>\n'''.format(
-    #     errors='\n'.join(['<p>{e}</p>'.format(e=e) for e in form.non_field_errors()]))
-    return JsonResponse(dumps({
-        'success': False,
-        'message': form.errors
-    }))
+    else:
+        return JsonResponse(dumps({
+            'success': False,
+            'message': form.errors
+        }))
 
 
 @experimenter_required
@@ -1263,16 +1268,12 @@ def edit_experiment_configuration(request, pk):
     epv = ExperimentParameterValue.objects.filter(experiment_configuration=ec)
     exp_param_values_list = [param.to_dict() for param in epv]
 
-    exp_parameter_list = Parameter.objects.filter(scope='experiment').values('pk', 'name', 'type')
-    #logger.debug(exp_param_values_list)
-
     round_config = RoundConfiguration.objects.filter(experiment_configuration=ec)
     round_config_list = [round.to_dict() for round in round_config]
 
-    round_param_values = RoundParameterValue.objects.filter(round_configuration__in=round_config)
+    round_param_values = RoundParameterValue.objects.select_related('round_configuration', 'parameter') \
+        .filter(round_configuration__in=round_config)
     round_param_values_list = [round_param.to_dict() for round_param in round_param_values]
-
-    round_parameter_list = Parameter.objects.filter(scope='round').values('pk', 'name', 'type')
 
     # Get the round parameter values for each round
     for round in round_config_list:
@@ -1283,15 +1284,16 @@ def edit_experiment_configuration(request, pk):
 
     json_data = {
         'expParamValuesList': exp_param_values_list,
-        'expParameterList': [parameter for parameter in exp_parameter_list],
         'roundConfigList': round_config_list,
-        'roundParameterList': [parameter for parameter in round_parameter_list]
     }
 
     return render(request, 'experimenter/edit-configuration.html', {
         'json_data': dumps(json_data),
         'experiment_config_form': ecf,
-        'experiment_config': ec
+        'experiment_config': ec,
+        'round_config_form': RoundConfigurationForm(),
+        'round_param_form': RoundParameterValueForm(),
+        'exp_param_form': ExperimentParameterValueForm(),
     })
 
 
