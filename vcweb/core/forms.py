@@ -250,7 +250,7 @@ class RoundConfigurationForm(forms.ModelForm):
             if help_text != '':
                 field.widget.attrs.update(
                     {'class': 'has-popover', 'data-content': help_text, 'data-placement': 'right',
-                     'data-container': 'body'})
+                     'data-container': 'div.modal-dialog'})
 
     class Meta:
         model = RoundConfiguration

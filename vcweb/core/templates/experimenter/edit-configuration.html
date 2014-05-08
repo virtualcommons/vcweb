@@ -408,7 +408,6 @@
                 }
 
                 model.removeRoundParam = function(roundParam) {
-                    console.log(roundParam);
                     $.ajax("/api/configuration/round/param/"+ roundParam.pk, {
                         data: 'request_type=delete',
                         type: "POST",

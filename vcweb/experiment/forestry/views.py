@@ -9,10 +9,10 @@ from vcweb.core.decorators import participant_required
 from vcweb.core.http import JsonResponse
 from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.models import (Experiment, ChatMessage, ParticipantGroupRelationship, RoundConfiguration)
-from vcweb.experiment.forestry.models import (get_experiment_metadata, get_max_allowed_harvest_decision, get_resource_level,
-                                   get_initial_resource_level, get_harvest_decision_dv, get_player_data,
-                                   get_regrowth_dv, set_harvest_decision, get_average_harvest,
-                                   get_total_experiment_harvest, can_view_group_results, get_group_data)
+from vcweb.experiment.forestry.models import (get_experiment_metadata, get_max_allowed_harvest_decision,
+                                              get_resource_level, get_initial_resource_level, get_harvest_decision_dv,
+                                              get_regrowth_dv, set_harvest_decision, get_average_harvest, GroupData,
+                                              can_view_group_results)
 
 
 logger = logging.getLogger(__name__)
@@ -96,7 +96,7 @@ experiment_model_defaults = {
     'selectedHarvestDecision': False,
     'isInstructionsRound': False,
     'lastHarvestDecision': 0,
-    'playerData': [],
+    'groupData': [],
     'regrowth': 0,
 }
 
@@ -130,21 +130,18 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
 
         experiment_model_dict['chatEnabled'] = current_round.chat_enabled
 
-        # instructions rounds to practice rounds.
         own_group = participant_group_relationship.group
-        # logger.debug("My group is %s", own_group)
-
         own_resource_level = get_resource_level(own_group)
         experiment_model_dict['resourceLevel'] = own_resource_level
 
-        player_data, own_data = get_player_data(previous_round_data, current_round_data, participant_group_relationship)
+        # Create GroupData object to access group members data
+        gd = GroupData(participant_group_relationship, previous_round_data, current_round_data)
 
-        experiment_model_dict.update(own_data)
+        experiment_model_dict.update(gd.get_own_data())
         # Data of all the players in the same group of current logged in participant
-        experiment_model_dict['playerData'] = player_data
+        experiment_model_dict['groupData'] = gd.get_group_data()
 
         regrowth = experiment_model_dict['regrowth'] = get_regrowth_dv(own_group, current_round_data).int_value
-
         logger.debug("The regrowth is %s", regrowth)
 
         experiment_model_dict['myGroup'] = {
@@ -164,10 +161,10 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
                 rounds = experiment.round_data_set.filter(
                     round_configuration__round_type=RoundConfiguration.RoundType.REGULAR)
 
-            experiment_model_dict['totalEarnings'] = get_total_experiment_harvest(participant_group_relationship,
-                                                                                  rounds) * ec.exchange_rate
+            experiment_model_dict['totalEarnings'] = gd.get_own_earnings(rounds, ec.exchange_rate)
+
             if can_view_group_results(current_round):
-                experiment_model_dict['groupEarnings'] = get_group_data(participant_group_relationship, ec.exchange_rate, rounds)
+                experiment_model_dict['groupEarnings'] = gd.get_group_earnings(rounds, ec.exchange_rate)
 
     # Participant group data parameters are only needed if this round is a data round
     # or the previous round was a data round

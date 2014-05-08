@@ -120,18 +120,6 @@ def _zero_if_none(value):
     return 0 if value is None else value
 
 
-def get_group_data(participant_group_relationship, exchange_rate, round_list):
-    pgr_list = ParticipantGroupRelationship.objects.filter(group=participant_group_relationship.group)
-    group_data = []
-    for pgr in pgr_list:
-        if pgr != participant_group_relationship:
-            group_data.append({
-                'number': pgr.participant_number,
-                'totalEarnings': get_total_experiment_harvest(pgr, round_list) * exchange_rate
-            })
-    return group_data
-
-
 def get_total_experiment_harvest(pgr, debriefing_session_round_data):
     q = ParticipantRoundDataValue.objects.for_participant(participant_group_relationship=pgr,
                                                           parameter=get_harvest_decision_parameter(),
@@ -148,13 +136,17 @@ def get_total_group_harvest(group, round_data):
 
 
 class GroupData(object):
-    def __init__(self, group, previous_round_data, current_round_data):
-        prdvs = ParticipantRoundDataValue.objects.for_group(group=group,
+    def __init__(self, self_pgr, previous_round_data, current_round_data):
+        self.pgr = self_pgr
+        self.group = self_pgr.group
+        self.pgr_list = ParticipantGroupRelationship.objects.filter(group=self.group)
+        self.player_dict = defaultdict(lambda: defaultdict(lambda: None))
+
+        prdvs = ParticipantRoundDataValue.objects.for_group(group=self.group,
                                                             parameter=get_harvest_decision_parameter(),
                                                             round_data__in=[previous_round_data, current_round_data])
 
         # Converting django ORM object to dictionary so that it can be indexed easily to get parameter values
-        self.player_dict = defaultdict(lambda: defaultdict(lambda: None))
         for prdv in prdvs:
             self.player_dict[prdv.participant_group_relationship][prdv.parameter] = prdv
 
@@ -164,27 +156,32 @@ class GroupData(object):
         except:
             return 0
 
+    def get_group_data(self):
+        group_data = []
+        for pgr in self.pgr_list:
+            group_data.append({
+                'id': pgr.pk,
+                'number': pgr.participant_number,
+                'lastHarvestDecision': self.get_last_harvest_decision(pgr)
+            })
+        return group_data
 
-def get_player_data(previous_round_data, current_round_data, self_pgr):
-    """ Returns a tuple ([list of player data dictionaries], { dictionary of this player's data })"""
+    def get_own_data(self):
+        own_data = {'lastHarvestDecision': self.get_last_harvest_decision(self.pgr)}
+        return own_data
 
-    group = self_pgr.group
-    # Create an instance of GroupData to get group data
-    gd = GroupData(group, previous_round_data, current_round_data)
+    def get_group_earnings(self, round_list, exchange_rate):
+        group_data = []
+        for pgr in self.pgr_list:
+            if pgr != self.pgr:
+                group_data.append({
+                    'number': pgr.participant_number,
+                    'totalEarnings': get_total_experiment_harvest(pgr, round_list) * exchange_rate
+                })
+        return group_data
 
-    pgr_list = ParticipantGroupRelationship.objects.filter(group=group)
-    group_data = []
-
-    for pgr in pgr_list:
-        group_data.append({
-            'id': pgr.pk,
-            'number': pgr.participant_number,
-            'lastHarvestDecision': gd.get_last_harvest_decision(pgr)
-        })
-
-    return (group_data, {
-        'lastHarvestDecision': gd.get_last_harvest_decision(self_pgr)
-    })
+    def get_own_earnings(self, round_list, exchange_rate):
+        return get_total_experiment_harvest(self.pgr, round_list)* exchange_rate
 
 
 @transaction.atomic

@@ -322,10 +322,6 @@ legend.scheduler-border {
     color: red;
 }
 
-.popover {
-    z-index: 2000 !important;
-}
-
 /* Calendar Event colors */
 .event-color-1 {
   background-color: #1f77b4 !important;
