@@ -1055,37 +1055,43 @@ def reset_password(email, from_email='vcweb@asu.edu', template='registration/pas
 
 @experimenter_required
 def update_experiment_param_value(request, pk):
-    form = ExperimentParameterValueForm(request.POST or None)
+    success = True
     request_type = request.POST['request_type']
 
+    # delete Request
     if request_type == 'delete':
-        epv = ExperimentParameterValue.objects.get(pk=pk).delete()
-        return JsonResponse(dumps({
-            'success': True
-        }))
-    if form.is_valid():
-        if request_type == 'create':
-            epv = ExperimentParameterValue()
+        if pk:
+            ExperimentParameterValue.objects.get(pk=pk).delete()
+            return JsonResponse(dumps({
+                'success': True
+            }))
+        else:
+            success= False
+    # create Request
+    elif request_type == 'create':
+        form = ExperimentParameterValueForm(request.POST or None)
+        if form.is_valid():
+            epv = form.save(commit=False)
             exp_config_pk = request.POST['experiment_configuration']
             epv.experiment_configuration = ExperimentConfiguration.objects.get(pk=exp_config_pk)
-        elif request_type == 'update':
-            epv = ExperimentParameterValue.objects.get(pk=pk)
+            epv.save()
+        else:
+            success = False
+    # update Request
+    elif request_type == 'update':
+        epv = ExperimentParameterValue.objects.get(pk=pk)
+        form = ExperimentParameterValueForm(request.POST or None, instance=epv)
+        if form.is_valid():
+            form.save()
+        else:
+            success = False
 
-        epv.parameter = form.cleaned_data.get('parameter')
-        epv.boolean_value = form.cleaned_data.get('boolean_value')
-        epv.float_value = form.cleaned_data.get('float_value')
-        epv.int_value = form.cleaned_data.get('int_value')
-        epv.string_value = form.cleaned_data.get('string_value')
-        epv.is_active = form.cleaned_data.get('is_active')
-
-        epv.save()
+    if success:
         return JsonResponse(dumps({
             'success': True,
             'experiment_param': epv.to_dict()
         }))
     else:
-        # logger.debug(form._errors)
-        # logger.debug(form.non_field_errors())
         return JsonResponse(dumps({
             'success': False,
             'message': form.errors
@@ -1094,45 +1100,47 @@ def update_experiment_param_value(request, pk):
 
 @experimenter_required
 def update_round_param_value(request, pk):
-    form = RoundParameterValueForm(request.POST or None)
+    success = True
     request_type = request.POST['request_type']
-
+    # delete Request
     if request_type == 'delete':
-        RoundParameterValue.objects.get(pk=pk).delete()
-        return JsonResponse(dumps({
-            'success': True
-        }))
-
-    if form.is_valid():
-        if request_type == 'create':
-            rpv = RoundParameterValue()
+        if pk:
+            RoundParameterValue.objects.get(pk=pk).delete()
+            return JsonResponse(dumps({
+                'success': True,
+            }))
+        else:
+            success = False
+    # Create Request
+    elif request_type == 'create':
+        form = RoundParameterValueForm(request.POST or None)
+        if form.is_valid():
+            rpv = form.save(commit=False)
             round_config_pk = request.POST["round_configuration"]
-
             try:
                 round_config = RoundConfiguration.objects.get(pk=round_config_pk)
                 rpv.round_configuration = round_config
+                rpv.save()
             except ObjectDoesNotExist:
-                return JsonResponse(dumps({
-                    'success': False,
-                    'message': "Round Configuration with provided pk does not exist"
-                }))
-        elif request_type == "update":
-            rpv = RoundParameterValue.objects.get(pk=pk)
+                success = False
+                logger.debug("Round Configuration with provided pk does not exist")
+        else:
+            success = False
+    # Update Request
+    elif request_type == "update":
+        rpv = RoundParameterValue.objects.get(pk=pk)
+        form = RoundParameterValueForm(request.POST or None, instance=rpv)
+        if success:
+            form.save()
+        else:
+            success = False
 
-        rpv.parameter = form.cleaned_data.get('parameter')
-        rpv.boolean_value = form.cleaned_data.get('boolean_value')
-        rpv.float_value = form.cleaned_data.get('float_value')
-        rpv.int_value = form.cleaned_data.get('int_value')
-        rpv.string_value = form.cleaned_data.get('string_value')
-        rpv.is_active = form.cleaned_data.get('is_active')
-        rpv.save()
+    if success:
         return JsonResponse(dumps({
             'success': True,
             'round_param': rpv.to_dict()
         }))
     else:
-        # logger.debug(form.errors)
-        # logger.debug(form.non_field_errors())
         return JsonResponse(dumps({
             'success': False,
             'message': form.errors
@@ -1179,6 +1187,10 @@ def update_round_configuration(request, pk):
     if request_type == 'delete':
         if pk:
             RoundConfiguration.objects.get(pk=pk).delete()
+
+            return JsonResponse(dumps({
+                'success': True
+            }))
         else:
             success = False
 
@@ -1227,29 +1239,19 @@ def update_round_configuration(request, pk):
 
 @experimenter_required
 def update_experiment_configuration(request, pk):
-    form = ExperimentConfigurationForm(request.POST or None)
+
+    try:
+        ec = ExperimentConfiguration.objects.get(pk=pk)
+    except ObjectDoesNotExist:
+        return JsonResponse(dumps({
+            'success': False,
+            'message': "Experiment Configuration with provided pk does not exist"
+        }))
+
+    form = ExperimentConfigurationForm(request.POST or None, instance=ec)
 
     if form.is_valid():
-        try:
-            ec = ExperimentConfiguration.objects.get(pk=pk)
-        except ObjectDoesNotExist:
-            return JsonResponse(dumps({
-                'success': False,
-                'message': "Experiment Configuration with provided pk does not exist"
-            }))
-
-        ec.experiment_metadata = form.cleaned_data.get('experiment_metadata')
-        ec.name = form.cleaned_data.get('name')
-        ec.treatment_id = form.cleaned_data.get('treatment_id')
-        ec.registration_email_subject = form.cleaned_data.get('registration_email_subject')
-        ec.max_number_of_participants = form.cleaned_data.get('max_number_of_participants')
-        ec.max_group_size = form.cleaned_data.get('max_group_size')
-        ec.exchange_rate = form.cleaned_data.get('exchange_rate')
-        ec.is_public = form.cleaned_data.get('is_public')
-        ec.is_experimenter_driven = form.cleaned_data.get('is_experimenter_driven')
-        ec.has_daily_rounds = form.cleaned_data.get('has_daily_rounds')
-
-        ec.save()
+        form.save()
         return JsonResponse(dumps({
             'success': True,
         }))
