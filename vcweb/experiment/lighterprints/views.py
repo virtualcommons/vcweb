@@ -11,17 +11,20 @@ import unicodecsv
 from vcweb.core.decorators import participant_required, experimenter_required
 from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
 from vcweb.core.http import JsonResponse
-from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship, ParticipantRoundDataValue, Like)
+from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship,
+                               ParticipantRoundDataValue, Like)
 from vcweb.core.views import dumps, get_active_experiment, set_authentication_token, mimetypes
 from vcweb.experiment.lighterprints.forms import ActivityForm
-from vcweb.experiment.lighterprints.models import (
-        Activity, GroupScores, ActivityStatusList, do_activity, get_group_activity, has_leaderboard,
-        get_lighterprints_experiment_metadata, get_time_remaining, is_linear_public_good_game,
-        is_high_school_treatment, get_treatment_type, get_activity_performed_parameter,
-        )
+from vcweb.experiment.lighterprints.models import (Activity, has_leaderboard, get_lighterprints_experiment_metadata,
+                                                   is_linear_public_good_game,
+                                                   is_high_school_treatment, get_treatment_type,
+                                                   get_activity_performed_parameter, )
+from vcweb.experiment.lighterprints.services import (ActivityStatusList, GroupScores, do_activity, get_time_remaining,
+                                                     get_group_activity)
 
 
 logger = logging.getLogger(__name__)
+
 
 @participant_required
 def perform_activity(request):
@@ -30,30 +33,35 @@ def perform_activity(request):
         activity_id = form.cleaned_data['activity_id']
         participant_group_id = form.cleaned_data['participant_group_id']
         logger.debug("%s performing activity %s", participant_group_id, activity_id)
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'), pk=participant_group_id)
-#        latitude = form.cleaned_data['latitude']
-#        longitude = form.cleaned_data['longitude']
+        participant_group_relationship = get_object_or_404(
+            ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'),
+            pk=participant_group_id)
+        #        latitude = form.cleaned_data['latitude']
+        #        longitude = form.cleaned_data['longitude']
         if participant_group_relationship.participant == request.user.participant:
             activity = get_object_or_404(Activity, pk=activity_id)
-            performed_activity = do_activity(activity=activity, participant_group_relationship=participant_group_relationship)
-# perform checkin logic here, query foursquare API for nearest "green" venu
-#            logger.debug("searching venues at %s,%s", latitude, longitude)
-#            venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
-#                    categoryId=','.join(get_foursquare_category_ids()))
-#            logger.debug("Found venues: %s", venues)
+            performed_activity = do_activity(activity=activity,
+                                             participant_group_relationship=participant_group_relationship)
+            # perform checkin logic here, query foursquare API for nearest "green" venu
+            #            logger.debug("searching venues at %s,%s", latitude, longitude)
+            #            venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
+            #                    categoryId=','.join(get_foursquare_category_ids()))
+            #            logger.debug("Found venues: %s", venues)
             if performed_activity is not None:
                 participant_group_relationship.set_first_visit()
                 return JsonResponse(dumps({
                     'success': True,
-                    'viewModel':get_view_model_json(participant_group_relationship)
-                    }))
+                    'viewModel': get_view_model_json(participant_group_relationship)
+                }))
             else:
                 message = "Activity was not available at this time"
         else:
             message = "You're not authorized to perform this activity as this person %s" % participant_group_relationship
-            logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id, participant_group_relationship)
+            logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id,
+                           participant_group_relationship)
     logger.warning(message)
     return JsonResponse(dumps({'success': False, 'response': message}))
+
 
 @login_required
 def post_chat_message(request):
@@ -61,7 +69,8 @@ def post_chat_message(request):
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
         message = form.cleaned_data['message']
-        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'), pk=participant_group_id)
+        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'),
+                                pk=participant_group_id)
         if pgr.participant != request.user.participant:
             logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, pgr)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
@@ -69,7 +78,7 @@ def post_chat_message(request):
         logger.debug("%s: %s", pgr.participant, chat_message)
         # TODO: refactor get_group_activity, chat_messages are unneeded
         (team_activity, chat_messages) = get_group_activity(pgr)
-        return JsonResponse(dumps({'success': True, 'viewModel': { 'groupActivity': team_activity } }))
+        return JsonResponse(dumps({'success': True, 'viewModel': {'groupActivity': team_activity}}))
     return JsonResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
 
 
@@ -79,21 +88,26 @@ def like(request):
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
         target_id = form.cleaned_data['target_id']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'), pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(
+            ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'),
+            pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
-            logger.warning("authenticated user %s tried to like target_id %s as %s", request.user, target_id, participant_group_relationship)
+            logger.warning("authenticated user %s tried to like target_id %s as %s", request.user, target_id,
+                           participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         # FIXME: either needs a uniqueness constraint to ensure that duplicates don't get created or add guards when we
         # retrieve them to only send back the latest one (feels hacky).  See
         # https://bitbucket.org/virtualcommons/vcweb/issue/59/get_or_create-issues-for-likes
         round_data = participant_group_relationship.current_round_data
-        Like.objects.create(round_data=round_data, participant_group_relationship=participant_group_relationship, target_data_value=target)
+        Like.objects.create(round_data=round_data, participant_group_relationship=participant_group_relationship,
+                            target_data_value=target)
         logger.debug("Participant %s liked %s", participant_group_relationship, target)
         return JsonResponse(dumps({'success': True, 'viewModel': get_view_model_json(participant_group_relationship)}))
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
         return JsonResponse(dumps({'success': False, 'message': 'Invalid like post'}))
+
 
 @login_required
 def post_comment(request):
@@ -102,26 +116,29 @@ def post_comment(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         target_id = form.cleaned_data['target_id']
         message = form.cleaned_data['message']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'), pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(
+            ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'),
+            pk=participant_group_id)
         if participant_group_relationship.participant != request.user.participant:
-            logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message, target_id, participant_group_relationship)
+            logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message,
+                           target_id, participant_group_relationship)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         Comment.objects.create(
-                string_value=message,
-                round_data=participant_group_relationship.current_round_data,
-                participant_group_relationship=participant_group_relationship,
-                target_data_value=target)
+            string_value=message,
+            round_data=participant_group_relationship.current_round_data,
+            participant_group_relationship=participant_group_relationship,
+            target_data_value=target)
         logger.debug("Participant %s commented '%s' on %s", participant_group_relationship.participant, message, target)
-        return JsonResponse(dumps({'success': True, 'viewModel' : get_view_model_json(participant_group_relationship)}))
+        return JsonResponse(dumps({'success': True, 'viewModel': get_view_model_json(participant_group_relationship)}))
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
         return JsonResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
 
 
 class HighSchoolViewModel(object):
-
-    def __init__(self, participant_group_relationship, experiment=None, round_configuration=None, round_data=None, **kwargs):
+    def __init__(self, participant_group_relationship, experiment=None, round_configuration=None, round_data=None,
+                 **kwargs):
         self.participant_group_relationship = participant_group_relationship
         self.group = participant_group_relationship.group
         self.experiment = self.group.experiment if experiment is None else experiment
@@ -129,11 +146,14 @@ class HighSchoolViewModel(object):
         self.round_configuration = self.experiment.current_round if round_configuration is None else round_configuration
         self.treatment_type = get_treatment_type(self.round_configuration).string_value
         self.experiment_configuration = self.experiment.experiment_configuration
-        self.group_scores = GroupScores(experiment, round_data, participant_group_relationship=participant_group_relationship)
+        self.group_scores = GroupScores(experiment, round_data,
+                                        participant_group_relationship=participant_group_relationship)
         self.initialize_activities()
 
     def initialize_activities(self):
-        completed_activity_pks = self.participant_group_relationship.data_value_set.filter(parameter=get_activity_performed_parameter(), round_data=self.round_data).values_list('int_value', flat=True)
+        completed_activity_pks = self.participant_group_relationship.data_value_set.filter(
+            parameter=get_activity_performed_parameter(), round_data=self.round_data).values_list('int_value',
+                                                                                                  flat=True)
         self.activities = []
         scheduled_activity_pks = Activity.objects.scheduled(self.round_configuration).values_list('pk', flat=True)
         for activity in Activity.objects.all():
@@ -171,11 +191,12 @@ class HighSchoolViewModel(object):
             'groupName': own_group.name,
             'totalPoints': group_scores.total_participant_points,
             'surveyUrl': self.round_configuration.make_survey_url(pid=participant_group_relationship.pk),
-            })
+        })
 
     @property
     def template_name(self):
         return 'lighterprints/highschool.html'
+
 
 @experimenter_required
 def download_payment_data(request, pk=None):
@@ -196,7 +217,8 @@ def download_payment_data(request, pk=None):
         raise PermissionDenied("You aren't authorized to access this experiment.")
 
 
-def get_view_model_json(participant_group_relationship, activities=None, experiment=None, round_configuration=None, round_data=None, **kwargs):
+def get_view_model_json(participant_group_relationship, activities=None, experiment=None, round_configuration=None,
+                        round_data=None, **kwargs):
     """
     FIXME: replace with view model class that stitches together ActivityStatusList and GroupScores appropriately and
     handles conditional switches between the different experiment types (scheduled activities, level based, high school)
@@ -218,7 +240,8 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     total_participant_points = group_scores.total_participant_points
     group_data = group_scores.get_group_data_list()
     own_group_level = group_scores.get_group_level(own_group)
-    activity_status_list = ActivityStatusList(participant_group_relationship, activities, round_configuration, group_level=own_group_level)
+    activity_status_list = ActivityStatusList(participant_group_relationship, activities, round_configuration,
+                                              group_level=own_group_level)
     (team_activity, chat_messages) = get_group_activity(participant_group_relationship)
     #(chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
     (hours_left, minutes_left) = get_time_remaining()
@@ -242,15 +265,18 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         'groupName': own_group.name,
         'activities': activity_status_list.activity_dict_list,
         'totalPoints': total_participant_points,
-        })
+    })
+
 
 @participant_required
 def get_view_model(request, participant_group_id=None):
     if participant_group_id is None:
         # check in the request query parameters as well
         participant_group_id = request.GET.get('participant_group_id')
-# FIXME: replace with ParticipantGroupRelationship.objects.fetch(pk=participant_group_id)
-    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'), pk=participant_group_id)
+    # FIXME: replace with ParticipantGroupRelationship.objects.fetch(pk=participant_group_id)
+    pgr = get_object_or_404(
+        ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'),
+        pk=participant_group_id)
     if pgr.participant != request.user.participant:
         # security check to ensure that the authenticated participant is the same as the participant whose data is
         # being requested
@@ -258,6 +284,7 @@ def get_view_model(request, participant_group_id=None):
         raise PermissionDenied("Access denied.")
     view_model_json = get_view_model_json(pgr, experiment=pgr.group.experiment)
     return JsonResponse(dumps({'success': True, 'view_model_json': view_model_json}))
+
 
 #FIXME: push this into core api/login if possible
 def mobile_login(request):
@@ -286,28 +313,32 @@ def mobile_participate(request, experiment_id=None):
         'participant_group_relationship': pgr,
         'view_model_json': view_model_json,
         'all_activities': all_activities,
-        })
+    })
+
 
 @participant_required
 def participate(request, experiment_id=None):
     participant = request.user.participant
-    experiment = get_object_or_404(Experiment, pk=experiment_id, experiment_metadata=get_lighterprints_experiment_metadata())
+    experiment = get_object_or_404(Experiment, pk=experiment_id,
+                                   experiment_metadata=get_lighterprints_experiment_metadata())
     if experiment.is_active:
         round_configuration = experiment.current_round
-        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'), participant=participant, group__experiment=experiment)
+        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'),
+                                participant=participant, group__experiment=experiment)
         if is_high_school_treatment(round_configuration):
             view_model = HighSchoolViewModel(pgr, experiment=experiment, round_configuration=round_configuration)
             return render(request, view_model.template_name, {
                 'experiment': experiment,
                 'participant_group_relationship': pgr,
                 'view_model_json': view_model.to_json(),
-                })
+            })
 
         all_activities = Activity.objects.all()
-        view_model_json = get_view_model_json(pgr, activities=all_activities, experiment=experiment, round_configuration=round_configuration)
-#    if request.mobile:
+        view_model_json = get_view_model_json(pgr, activities=all_activities, experiment=experiment,
+                                              round_configuration=round_configuration)
+        #    if request.mobile:
         # FIXME: change this to look up templates in a mobile templates directory?
-#        logger.warning("mobile request detected by %s, but we're not ready for mobile apps", participant)
+        #        logger.warning("mobile request detected by %s, but we're not ready for mobile apps", participant)
         #return redirect('https://vcweb.asu.edu/devfoot')
         return render(request, 'lighterprints/participate.html', {
             'experiment': experiment,
@@ -318,7 +349,8 @@ def participate(request, experiment_id=None):
     else:
         sd = experiment.start_date
         upcoming = sd > datetime.now().date() if sd is not None else False
-        return render(request, 'lighterprints/inactive.html', { 'experiment': experiment, 'upcoming': upcoming })
+        return render(request, 'lighterprints/inactive.html', {'experiment': experiment, 'upcoming': upcoming})
+
 
 @participant_required
 def checkin(request):
@@ -327,14 +359,16 @@ def checkin(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         latitude = form.cleaned_data['latitude']
         longitude = form.cleaned_data['longitude']
-        participant_group_relationship = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group', 'participant__user'), pk=participant_group_id)
+        participant_group_relationship = get_object_or_404(
+            ParticipantGroupRelationship.objects.select_related('group', 'participant__user'), pk=participant_group_id)
         logger.debug("%s checking at at (%s, %s)", participant_group_relationship, latitude, longitude)
         if request.user.participant == participant_group_relationship.participant:
-# perform checkin logic here, query foursquare API for nearest "green" venu
-#            venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
-#                    categoryId=','.join(get_foursquare_category_ids()))
-#            logger.debug("Found venues: %s", venues)
-            return JsonResponse(dumps({'success':True}))
+            # perform checkin logic here, query foursquare API for nearest "green" venu
+            #            venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
+            #                    categoryId=','.join(get_foursquare_category_ids()))
+            #            logger.debug("Found venues: %s", venues)
+            return JsonResponse(dumps({'success': True}))
         else:
-            logger.warning("authenticated user %s tried to checkin at (%s, %s) for %s", request.user, latitude, longitude, participant_group_relationship)
-    return JsonResponse(dumps({'success':False, 'message': 'Invalid request'}))
+            logger.warning("authenticated user %s tried to checkin at (%s, %s) for %s", request.user, latitude,
+                           longitude, participant_group_relationship)
+    return JsonResponse(dumps({'success': False, 'message': 'Invalid request'}))

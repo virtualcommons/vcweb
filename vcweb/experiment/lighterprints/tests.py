@@ -1,15 +1,20 @@
 import json
 import logging
+from datetime import date, timedelta
 
 from vcweb.core.tests import BaseVcwebTest
-from vcweb.experiment.lighterprints.views import *
-from vcweb.experiment.lighterprints.models import *
+from vcweb.core.models import (ParticipantGroupRelationship, ParticipantRoundDataValue)
+from vcweb.experiment.lighterprints.models import (Activity, get_lighterprints_experiment_metadata,
+                                                   get_activity_performed_parameter, get_footprint_level,
+                                                   get_individual_points, get_performed_activity_ids)
+from vcweb.experiment.lighterprints.services import (send_summary_emails, GroupScores, get_group_activity)
 
 
 logger = logging.getLogger(__name__)
 
+
 class BaseTest(BaseVcwebTest):
-    fixtures = [ 'lighterprints_experiment_metadata', 'activities' ]
+    fixtures = ['lighterprints_experiment_metadata', 'activities']
 
     """
     FIXME: only works on level based experiments without has_daily_rounds, fix to operate on scheduled activity rounds
@@ -20,9 +25,11 @@ class BaseTest(BaseVcwebTest):
         rd = self.experiment.current_round_data
         activities = Activity.objects.at_level(1)
         performed_activities = set()
-        for participant_group_relationship in ParticipantGroupRelationship.objects.filter(group__experiment=self.experiment):
+        for participant_group_relationship in ParticipantGroupRelationship.objects.filter(
+                group__experiment=self.experiment):
             participant = participant_group_relationship.participant
-            self.assertTrue(self.client.login(username=participant.email, password='test'), "%s failed to login" % participant)
+            self.assertTrue(self.client.login(username=participant.email, password='test'),
+                            "%s failed to login" % participant)
             for activity in activities:
                 expected_success = activity.is_available_for(participant_group_relationship, rd)
                 if expected_success:
@@ -30,7 +37,7 @@ class BaseTest(BaseVcwebTest):
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
-                    }, follow=True)
+                }, follow=True)
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
                 self.assertEqual(expected_success, json_object['success'])
@@ -44,13 +51,15 @@ class ActivityViewTest(BaseTest):
     def test_list(self):
         for pgr in self.experiment.participant_group_relationships:
             participant = pgr.participant
-            response = self.client.get('/lighterprints/activity/list', {'format':'json'})
+            response = self.client.get('/lighterprints/activity/list', {'format': 'json'})
             self.assertEqual(response.status_code, 403)
             self.client.login(username=participant.email, password='test')
-            response = self.client.get('/lighterprints/activity/list', {'format':'json', 'participant_group_id': pgr.id})
+            response = self.client.get('/lighterprints/activity/list',
+                                       {'format': 'json', 'participant_group_id': pgr.id})
             self.assertEqual(response.status_code, 200)
             self.client.logout()
-            response = self.client.get('/lighterprints/activity/list', {'format':'json', 'participant_group_id': pgr.id})
+            response = self.client.get('/lighterprints/activity/list',
+                                       {'format': 'json', 'participant_group_id': pgr.id})
             self.assertEqual(response.status_code, 403)
 
 
@@ -59,7 +68,7 @@ class UpdateLevelTest(BaseTest):
         e = self.experiment
         e.activate()
         current_round_data = e.current_round_data
-# initialize participant carbon savings
+        # initialize participant carbon savings
         level_one_activities = Activity.objects.filter(level=1)
         for pgr in e.participant_group_relationships:
             for activity in level_one_activities:
@@ -70,7 +79,7 @@ class UpdateLevelTest(BaseTest):
                 )
                 activity_performed.int_value = activity.pk
                 activity_performed.save()
-        send_lighterprints_summary_emails(self, start_date=date.today())
+        send_summary_emails(self, start_date=date.today())
         gs = e.groups
         group_scores = GroupScores(e, current_round_data, gs)
         for group in gs:
@@ -100,12 +109,11 @@ class GroupActivityTest(BaseTest):
 
 
 class ActivityTest(BaseTest):
-
     def test_view(self):
         logger.debug("testing do activity view")
         e = self.experiment
         e.activate()
-# gets all activities with no params
+        # gets all activities with no params
         activities = Activity.objects.all()
         rd = e.current_round_data
         for participant_group_relationship in e.participant_group_relationships:
@@ -113,7 +121,8 @@ class ActivityTest(BaseTest):
             participant = participant_group_relationship.participant
             self.client.login(username=participant.email, password='test')
             for activity in activities:
-                logger.debug("participant %s performing activity %s", participant_group_relationship.participant, activity)
+                logger.debug("participant %s performing activity %s", participant_group_relationship.participant,
+                             activity)
                 expected_success = activity.is_available_for(participant_group_relationship, rd)
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
@@ -122,11 +131,11 @@ class ActivityTest(BaseTest):
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
                 self.assertEqual(expected_success, json_object['success'])
-# trying to do the same activity again should result in an error response
+                # trying to do the same activity again should result in an error response
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
-                    })
+                })
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
                 self.assertFalse(json_object['success'])
@@ -139,7 +148,7 @@ class ActivityTest(BaseTest):
                     'participant_group_id': participant_group_relationship.pk,
                     'message': text,
                     'target_id': activity_id
-                    })
+                })
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
                 self.assertTrue(json_object)
