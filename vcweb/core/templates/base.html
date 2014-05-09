@@ -1,6 +1,7 @@
 {% load tags %}
 {% load static from staticfiles %}
 {% load bootstrap3 %}
+{% load raven %}
 {% url 'about' as about %}
 {% url 'contact' as contact %}
 {% url 'home' as home %}
@@ -117,29 +118,25 @@
 <footer id="footer">
     {% block footer %}
     <div class='container'>
-        <div class='row'>
-            <div class='col-md-9'>
-                {% block footerlinks %}
-                <ul class='nav-footer'>
-                    <li><a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a></li>
-                    <li><a href='http://shesc.asu.edu'>School of Human Evolution and Social Change</a></li>
-                    <li><a href='http://www.azregents.edu/'>&copy; 2011-{% now "Y" %} Arizona Board of Regents</a></li>
-                    <li>build: {% build_id %}
-                </ul>
-                {% endblock footerlinks %}
-            </div>
-            <div class='col-md-3'>
-                {% block footerlogo %}
-                <ul class='nav-footer'>
-                    <li><a class='pull-right brand {% active request home %}' href='{{home}}'><img class='logo' src='{{STATIC_URL}}images/vcweb-logo.png' width='30' height='23' alt='vcweb logo'/>virtual commons</a></li>
-                </ul>
-                {% endblock footerlogo %}
-            </div>
-        </div>
+        {% block footerlinks %}
+        <ul class='nav-footer hidden-xs'>
+            <li><a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a></li>
+            <li><a href='http://shesc.asu.edu'>School of Human Evolution &amp; Social Change</a></li>
+            <li><a href='http://www.azregents.edu/'>&copy; 2011-{% now "Y" %} Arizona Board of Regents</a></li>
+            <li>build: {% build_id %}</li>
+        </ul>
+        <a style='margin-top: 15px;' class='visible-xs pull-right' href='{{home}}'><img class='logo' src='{{STATIC_URL}}images/vcweb-logo.png' width='30' height='23' alt='vcweb logo'/></a>
+        <ul style='margin-top: 5px;' class='list-unstyled visible-xs'>
+            <li><a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a>
+            <li><a href='http://shesc.asu.edu'>School of Human Evolution &amp; Social Change</a>
+            <li><a href='http://www.azregents.edu/'>&copy; 2011-{% now "Y" %} Arizona Board of Regents</a>
+        </ul>
+        {% endblock footerlinks %}
+
     </div>
     {% endblock footer %}
 </footer>
-    {% with jquery_version="2.1.0" %}
+    {% with jquery_version="2.1.1" %}
     <script src='//ajax.googleapis.com/ajax/libs/jquery/{{jquery_version}}/jquery.min.js'></script>
     {% endwith %}
     <!-- Latest compiled and minified JavaScript -->
@@ -149,12 +146,8 @@
     <script src='//cdnjs.cloudflare.com/ajax/libs/knockout/3.1.0/knockout-min.js'></script>
     <script src='{{STATIC_URL}}js/ko/knockout.mapping.min.js'></script>
     <script src='{{STATIC_URL}}js/common.js'></script>
-    <script src="//cdn.ravenjs.com/1.1.11/jquery,native/raven.min.js"></script>
-    <script>
-        Raven.config('https://d266113006054187b70e3af60d9561f3@vcweb.asu.edu/sentry/1', {
-            whitelistUrls: [/vcweb\.asu\.edu/]
-        }).install();
-    </script>
+    <script src="//cdn.ravenjs.com/1.1.15/jquery,native/raven.min.js"></script>
+    <script>Raven.config('{% sentry_public_dsn %}').install();</script>
     {% block javascript %}
     {% endblock %}
 </body>
