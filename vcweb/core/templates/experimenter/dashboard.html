@@ -198,7 +198,7 @@
                  .done(modifyExperimentCallback(experimentModel));
             };
             model.deactivate = function(experimentModel, event) {
-                $.post("/api/experiment/update", { experiment_id: experimentModel.pk(), action: "update" })
+                $.post("/api/experiment/update", { experiment_id: experimentModel.pk(), action: "deactivate" })
                  .done(modifyExperimentCallback(experimentModel));
             };
             model.cloneExperimentConfiguration = function(configurationModel, Event) {
