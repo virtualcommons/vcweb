@@ -19,7 +19,6 @@ env.deploy_user = 'apache'
 env.deploy_group = 'commons'
 env.virtualenv_path = "%s/.virtualenvs/%s" % (os.getenv("HOME"), env['project_name'])
 env.database = 'default'
-#env.virtualenv_path = '/opt/virtualenvs/%(project_name)s' % env
 env.deploy_path = '/opt/'
 env.hosts = ['localhost']
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
@@ -91,20 +90,6 @@ def setup_virtualenv():
         pass
     local('virtualenv -p %(python)s --no-site-packages %(virtualenv_path)s' % env)
 
-def clear_rabbitmq_db():
-    with fab_settings(warn_only=True):
-        sudo_chain(["rabbitmqctl %s" % cmd for cmd in ['stop_app', 'reset', 'start_app']])
-
-def setup_rabbitmq():
-    clear_rabbitmq_db()
-    with fab_settings(warn_only=True):
-        sudo("rabbitmqctl delete_user %s" % vcweb_settings.BROKER_USER, pty=True)
-    sudo("rabbitmqctl add_user %s %s" % (vcweb_settings.BROKER_USER, vcweb_settings.BROKER_PASSWORD), pty=True)
-    with fab_settings(warn_only=True):
-        sudo("rabbitmqctl delete_vhost %s" % vcweb_settings.BROKER_VHOST, pty=True)
-    sudo("rabbitmqctl add_vhost %s" % vcweb_settings.BROKER_VHOST, pty=True)
-# figure out what the appropriate rabbitmq perms are here.
-    sudo('rabbitmqctl set_permissions -p %s %s ".*" ".*" ".*"' % (vcweb_settings.BROKER_VHOST, vcweb_settings.BROKER_USER), pty=True)
 
 def _virtualenv(executor, *commands, **kwargs):
     """ source the virtualenv before executing this command """
@@ -114,15 +99,10 @@ def _virtualenv(executor, *commands, **kwargs):
     else:
         return executor(env.command, **kwargs)
 
-def pip():
+def upgradepip():
     print "This does not work on initial bootstrap, Django must be installed first."
     ''' looks for requirements.pip in the django project directory '''
-    _virtualenv(local, 'pip install -U -r %(project_path)s/vcweb/requirements.txt' % env)
-    #with cd(env.virtualenv_path):
-    #    sudo_chain('chgrp -R %(deploy_group)s .' % env, 'chmod -R g+rw' % env, pty=True)
-
-def host_type():
-    run('uname -a')
+    _virtualenv(local, 'pip install -Ur %(project_path)s/vcweb/requirements.txt' % env)
 
 def test(name=None):
     '''
@@ -152,14 +132,13 @@ def server(ip="127.0.0.1", port=8000):
 
 def dev():
     env.project_path = env.deploy_path + env.project_name
-    env.hosts =['sod51.asu.edu']
+    env.hosts =['staging.host']
 
 def prod():
     env.project_path = env.deploy_path + env.project_name
-    env.hosts = ['vcweb.asu.edu']
+    env.hosts = ['production.host']
 
 def loc():
-    env.deploy_user = 'alllee'
     env.apache = 'apache2'
     env.hosts = ['localhost']
 
