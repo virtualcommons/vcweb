@@ -3,7 +3,10 @@ vcweb is a Python/Django framework that purportedly helps developers build inter
 We maintain a managed instance of vcweb at https://vcweb.asu.edu but you are welcome to host your own server.
 
 ### features
-* web based experiment and round parameterization of experiments that can be cloned, exported, and modified
+* Web based parameterization of experiments that can be cloned, exported as JSON/XML, and modified. Experiment parameters
+  can apply to the entire experiment, or a single round. Standard parameters include show up fees, an exchange rate for
+  tokens to currency, round durations, and group size. Round parameterizations can be specified to repeat for N rounds,
+  where N is also configurable parameter.
 * support for controlled experiments, timed rounds with parameterizable duration, and round transitions manually
   managed by an experiment facilitator (with active development to implement automated round transitions)
 * subject pool management and randomized invitation / recruitment with custom invitation emails
