@@ -1,10 +1,12 @@
 ### vcweb 
-vcweb is a Python/Django framework that purportedly helps when building interactive web-based experiments for collective action researchers interested in social ecological systems.
+vcweb is a Python/Django framework that purportedly helps developers build interactive web-based experiments for collective action researchers interested in social ecological systems. 
+We maintain a managed instance of vcweb at https://vcweb.asu.edu but you are welcome to host your own server.
 
 ### features
 * web based experiment and round parameterization of experiments that can be cloned, exported, and modified
 * support for controlled experiments, timed rounds with parameterizable duration, and round transitions manually
   managed by an experiment facilitator (with active development to implement automated round transitions)
+* subject pool management and randomized invitation / recruitment with custom invitation emails
 * support for extended experiments spanning multiple days or weeks with cron-based scheduled custom experiment
   logic (e.g., at midnight perform some calculations, determine current state of a resource and payments and send a
   summary email to the registered participants)
