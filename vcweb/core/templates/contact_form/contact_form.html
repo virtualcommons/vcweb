@@ -1,50 +1,38 @@
 {% extends "base.html" %}
 {% url "report_issues" as issues_url %}
 {% load bootstrap3 %}
-
 {% block title %}Contact Us{% endblock %}
-
 {% block page %}
-<div id='post'>
-	<h2 class='title'>Contact Us</h2>
-    <div class='panel panel-info'>
-        <div class='panel-heading'><a name='bugs'>how to report bugs effectively</a></div>
-        <div class='panel-body'>
-            Encountered a bug in the application? 
-            <a href='{{issues_url}}'>Let us know here.</a>
-            Please include relevant detail on <strong>what actions led to the bug</strong>, including
-            the <strong>URL in your browser bar</strong> {% comment %} [<a href='#footnote-1'>1</a>] {% endcomment %} and any <strong>relevant screenshots</strong>. Thanks for helping us make
-            vcweb better!
-        </div>
+<h2 class='title'>Contact Us</h2>
+<div class='panel panel-info'>
+    <div class='panel-heading'><a name='bugs'>how to report bugs effectively</a></div>
+    <div class='panel-body'>
+        Encountered a bug in the application? 
+        <a href='{{issues_url}}'>Let us know here.</a>
+        Please include relevant detail on <strong>what actions led to the bug</strong>, including
+        the <strong>URL in your browser bar</strong> {% comment %} [<a href='#footnote-1'>1</a>] {% endcomment %} and any <strong>relevant screenshots</strong>. Thanks for helping us make
+        vcweb better!
     </div>
-    <div class='panel panel-warning'>
-        <div class='panel-heading'>closed beta</div>
-        <div class='panel-body'>
-            The virtual commons web environment is currently in a closed beta. If you'd like to request an experimenter
-            account or have any feedback for our development team please let us know by filling out the following form.
-            Thanks for your interest!
-            <hr>
-            <form action="/contact/" method="post" class='form-horizontal'>
-                {% csrf_token %}
-                {% bootstrap_form form layout='horizontal'%}
-                <div class='form-group'>
-                    <div class='col-sm-offset-2 col-sm-10'>
-                        <button type="submit" class="btn btn-primary">
-                            <i class='fa fa-envelope-square'></i> Send
-                        </button>
-                    </div>
+</div>
+<div class='panel panel-warning'>
+    <div class='panel-heading'>closed beta</div>
+    <div class='panel-body'>
+        The virtual commons web environment is currently in a closed beta. If you'd like to request an experimenter
+        account or have any feedback for our development team please let us know by filling out the following form.
+        Thanks for your interest!
+        <hr>
+        <form action="/contact/" method="post" class='form-horizontal'>
+            {% csrf_token %}
+            {% bootstrap_form form layout='horizontal'%}
+            <div class='form-group'>
+                <div class='col-sm-offset-2 col-sm-10'>
+                    <button type="submit" class="btn btn-primary">
+                        <i class='fa fa-envelope-square'></i> Send
+                    </button>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
-
-    {% comment %}
-    <div class='footnotes'>
-        <a name='footnote-1'>[1]</a> Right now BitBucket doesn't support anonymous prefilled issue creation, vote for <a
-            href='https://bitbucket.org/site/master/issue/5073'>https://bitbucket.org/site/master/issue/5073</a> if
-        you'd like better bug reports with less manual data entry.
-    </div>
-    {% endcomment %}
 </div>
 {% endblock page %}
 
