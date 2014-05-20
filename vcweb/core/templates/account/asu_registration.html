@@ -1,45 +1,37 @@
-{% extends "forms/base.html" %}
-
+{% extends "base.html" %}
+{% load bootstrap3 %}
 {% block title %}ASU Experiment Registration{% endblock %}
-
 {% block page %}
-
-{% block form-title %}
-    <div id="error-messages"></div>
-    <div class='panel panel-default'>
-        <div class='panel-heading'>
-            <h3 class='panel-title'>Experiment Mailing List Registration for {{ request.user.get_full_name }}</h3>
-        </div>
-        <div class='panel-body'>
-            Please fill out all of the following fields to be registered with our experiment mailing list. In order to
-            participate in our experiments you must be an <b>undergraduate student currently enrolled at ASU and at
-            least 18 years of age</b>. If you have any further questions, please see <a href='/ostromlab/faq'>our
-        FAQ</a> or feel free to <a href='/contact'>contact us</a>.
-        </div>
+<div id="error-messages"></div>
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+        <h3 class='panel-title'>vcweb email distribution list signup for {{ request.user.get_full_name }}</h3>
     </div>
-
-{% endblock form-title %}
-
-
+    <div class='panel-body'>
+        Please fill out all of the following fields to be registered with our experiment mailing list. In order to
+        participate in our experiments you <b>must be an undergraduate student currently enrolled at ASU and at
+        least 18 years of age</b>. If you have any further questions, please see <a href='/ostromlab/faq'>our FAQ</a> or feel free to <a href='/contact'>contact us</a>.
+    </div>
+</div>
 <form id='vcweb-form' method='post' class='form-horizontal' action='/cas/asu/submit/'>
-{% block form %}
-{% include "includes/bootstrap-form.html" %}
+    {% csrf_token %}
+    {%  bootstrap_form form layout="horizontal" %}
     <div class="form-group">
-    <div class="col-md-offset-2 col-md-10">
-      <button type='submit' id='submitForm' class='btn btn-primary'>Save</button>
+        <div class="col-md-offset-2 col-md-10">
+            <button type='submit' id='submitForm' class='btn btn-primary'>Save</button>
+        </div>
     </div>
-  </div>
-{% endblock form %}
 </form>
 {% endblock page %}
 
 {% block javascript %}
     {{  block.super }}
-        <script type='text/javascript'>
-        $(document).ready(function() {
-            $("#vcweb-form :input:visible:enabled:first").focus();
-
-            $('#vcweb-form').validate({
+    {% include "includes/jquery.validate.html" %}
+    {% include 'autocomplete_light/static.html' %}
+<script type='text/javascript'>
+    $(document).ready(function() {
+        $("#vcweb-form :input:visible:enabled:first").focus();
+        $('#vcweb-form').validate({
                 rules: {
                     gender: {
                         required: true
@@ -81,6 +73,6 @@
                     }
                 },
             });
-        });
-    </script>
+    });
+</script>
 {%  endblock javascript %}

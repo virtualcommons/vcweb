@@ -62,6 +62,7 @@
             FIXME: embed form in each round data object instead?
             {% endcomment %}
             <form id="experimenterNotesForm" role='form'>
+                {% csrf_token %}
                 <div class='form-group'>
                     <textarea style='resize: vertical' class='input-block-level form-control' id='experimenterNotesText' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
                 </div>

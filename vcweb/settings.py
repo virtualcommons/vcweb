@@ -10,6 +10,7 @@ TEMPLATE_DEBUG = DEBUG
 USE_TZ = False
 SITE_URL = 'https://vcweb.asu.edu'
 
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SETTINGS_PATH = path.abspath(path.dirname(__file__))
 SERVER_EMAIL = 'vcweb@asu.edu'
 SERVER_NAME = 'vcweb.asu.edu'
@@ -64,26 +65,27 @@ USE_I18N = False
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '2km^iq&48&6uv*x$ew@56d0#w9zqth@)_4tby(85+ac2wf4r-u'
 
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-    'django.template.loaders.eggs.Loader',
-)
+
+CSRF_FAILURE_VIEW = 'vcweb.core.views.csrf_failure'
+
 
 TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.contrib.auth.context_processors.auth',
+    "django.core.context_processors.debug",
     'django.core.context_processors.request',
     'django.core.context_processors.static',
-    'django.contrib.auth.context_processors.auth',
+    "django.core.context_processors.tz",
     'django.contrib.messages.context_processors.messages',
     'vcweb.core.context_processors.common',
 )
 
 MIDDLEWARE_CLASSES = (
-    'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'cas.middleware.CASMiddleware',
 )
 

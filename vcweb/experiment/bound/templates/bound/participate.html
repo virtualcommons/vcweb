@@ -481,7 +481,6 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
         </div>
         <div data-bind='if: canHarvestResource'>
             <form id='vcweb-form' method='post' class='form-horizontal' >
-                {% csrf_token %}
                 <div id='harvestDecisionDiv' class='control-group'>
                     <div data-bind='template: { name: "harvest-decision-multiselect-template" }'></div>
                 </div>
@@ -542,6 +541,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
             <!-- ko foreach: harvestDecisionOptions -->
             <td class='harvest-decision-tree-td' data-bind='attr: { id: "harvest-decision-td-" + $data }'>
                 <form data-bind='attr: { id: $root.harvestDecisionFormId($data) }'>
+                    {% csrf_token %}
                     <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: $root.participantGroupId'/>
                     <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: $data'>
                     <div class='harvest-decision-tree-div' data-bind='click: $root.selectDecision.bind($root, $data)'>
@@ -796,7 +796,7 @@ function onYouTubeIframeAPIReady() {
             }
             model.submitDecision = function() {
                 model.endTour();
-                $.post('submit-harvest-decision', {participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true }, 
+                $.post('submit-harvest-decision', { participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true }, 
                 function(response) {
                     // hide selection, disable chat, show waiting room
                     model.participantReady(response.message);

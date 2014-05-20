@@ -17,6 +17,7 @@
         <h2>Unsubscribe</h2>
         <p>To stop receiving email invitations to our experiments please confirm by clicking on the button below.</p>
         <form action={% url 'core:unsubscribe' %} method="POST">
+            {% csrf_token %}
             <button class="btn btn-primary" type="submit">Unsubscribe</button>
         </form>
     {% endif %}
