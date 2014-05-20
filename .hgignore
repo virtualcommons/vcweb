@@ -17,3 +17,4 @@ resource/
 .pydevproject
 *.sql
 .project
+fabfile.py

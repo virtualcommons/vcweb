@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% load url from future %}
 {% url "report_issues" as issues_url %}
+{% load bootstrap3 %}
 
 {% block title %}Contact Us{% endblock %}
 
@@ -12,16 +12,26 @@
         <div class='panel-body'>
             The virtual commons web environment is currently in a closed beta. If you'd like to request an experimenter
             account or have any <a href='#bugs'>bug reports</a> or feedback for our development team please feel free to
-            <a class='external' href='http://commons.asu.edu/contact'>email us via our contact form</a> or
-            <a class='external' href='https://bitbucket.org/virtualcommons/vcweb/issues'>create issues on our BitBucket issue tracker</a>.
+            fill out the following form or
+            <a class='external' href='https://bitbucket.org/virtualcommons/vcweb/issues'>submit an issue to our BitBucket issue tracker</a>.
             Thanks for your interest!
+            <hr>
+            <form action="/contact/" method="post" class='form'>
+                {% csrf_token %}
+                {% bootstrap_form form %}
+                {% buttons %}
+                <button type="submit" class="btn btn-primary">
+                    <i class='fa fa-envelope-square'></i> Send
+                </button>
+                {% endbuttons %}
+            </form>
         </div>
     </div>
     <div class='panel panel-info'>
-        <div class='panel-heading'><a name='bugs'>How to report bugs effectively</a></div>
+        <div class='panel-heading'><a name='bugs'>how to report bugs effectively</a></div>
         <div class='panel-body'>
             Encountered a bug in the application? 
-            <a href='{{ issues_url }}'>Let us know here.</a>
+            <a href='{{issues_url}}'>Let us know here.</a>
             Please include relevant detail on <strong>what actions led to the bug</strong>, including
             the <strong>URL in your browser bar</strong> {% comment %} [<a href='#footnote-1'>1</a>] {% endcomment %} and any <strong>relevant screenshots</strong>. Thanks for helping us make
             vcweb better!

@@ -3,7 +3,6 @@
 {% load bootstrap3 %}
 {% load raven %}
 {% url 'about' as about %}
-{% url 'contact' as contact %}
 {% url 'home' as home %}
 {% url 'core:dashboard' as dashboard %}
 {% url 'core:login' as login %}
@@ -22,7 +21,7 @@
 <meta name='viewport' content='width=device-width, initial-scale=1'>
 <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
-<link rel='stylesheet' href="{% static 'bootstrap/css/font-awesome.min.css' %}">
+<link rel='stylesheet' href='//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css'>
 <link rel="stylesheet" href="{% static 'css/style.css' %}" media="screen" />
 <link href='//fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
 {% endblock %}
@@ -52,7 +51,7 @@
                 <li class='{% active_re request subjectpool %}'><a href='{{ subjectpool }}'><i class='fa fa-users'></i> Subject recruitment</a></li>
                 {% endif %}
                 {% endif %}
-                <li class='{% active request contact %}'><a href='{{ contact }}'><i class='fa fa-bell-o'></i> Contact us</a></li>
+                <li class='{% active_re request "contact" %}'><a href='/contact'><i class='fa fa-bell-o'></i> Contact us</a></li>
                 <li><a target='_blank' href='{{ issues_url }}'><i class='fa fa-bullhorn'></i> Report a bug</a></li>
             </ul>
             {% endblock headerlinks %}

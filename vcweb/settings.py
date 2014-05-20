@@ -17,7 +17,7 @@ EMAIL_HOST = 'smtp.asu.edu'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ALLOWED_HOSTS = ('.asu.edu', 'localhost',)
 ADMINS = (
-    ('Allen Lee', 'allen.lee@asu.edu')
+    ('Allen Lee', 'allen.lee@asu.edu'),
 )
 
 MANAGERS = ADMINS
@@ -115,6 +115,7 @@ INSTALLED_APPS = (
     'vcweb.experiment.broker',
     'vcweb.experiment.irrigation',
     'raven.contrib.django.raven_compat',
+    'contact_form',
     'kronos',
     'south',
     'django_extensions',
@@ -183,7 +184,7 @@ CELERYBEAT_LOG_LEVEL = 'ERROR'
 # activation window
 ACCOUNT_ACTIVATION_DAYS = 30
 
-DEFAULT_FROM_EMAIL = 'commons@asu.edu'
+DEFAULT_FROM_EMAIL = 'vcweb@asu.edu'
 
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (

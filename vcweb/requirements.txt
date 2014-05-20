@@ -23,6 +23,7 @@ neo4j-embedded
 xlrd
 xlwt
 django-bootstrap3
+django-contact-form
 markdown
 unicodecsv
 pillow

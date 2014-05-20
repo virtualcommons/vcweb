@@ -15,7 +15,7 @@ admin.autodiscover()
 urlpatterns = [
     url(r'^$', TemplateView.as_view(template_name='index.html'), name='home'),
     url(r'^about/$', TemplateView.as_view(template_name='about.html'), name='about'),
-    url(r'^contact/$', TemplateView.as_view(template_name='contact.html'), name='contact'),
+    url(r'^contact/', include('contact_form.urls')),
     url(r'^invalid-request$', TemplateView.as_view(template_name='invalid_request.html'),
         name='invalid_request'),
     url(r'^accounts/password/reset/$', auth_views.password_reset,
