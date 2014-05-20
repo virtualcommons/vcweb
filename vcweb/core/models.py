@@ -202,14 +202,18 @@ add_introspection_rules([], ["^vcweb\.core\.models\.AutoDateTimeField"])
 add_introspection_rules([], ["^vcweb\.core\.models\.NullCharField"])
 
 
-class ExperimentMetadataManager(models.Manager):
-    def bookmarked(self, experimenter=None, **kwargs):
-        bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).values_list(
-            'experiment_metadata', flat=True)
-        for em in self.all():
-            em.bookmarked = em.pk in bem_pks
-            yield em
+class ExperimentMetadataQuerySet(models.query.QuerySet):
 
+    def bookmarked(self, experimenter=None, **kwargs):
+        if experimenter is None:
+            return self.extra(select={'bookmarked': False})
+        bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).values_list('experiment_metadata', flat=True)
+        bem_pks_str = ','.join([str(x) for x in bem_pks])
+        return self.extra(select={'bookmarked': "id in (%s)" % bem_pks_str})
+        #return self.filter(**kwargs).annotate(bookmarked=models.Q(pk__in=bem_pks))
+
+
+class ExperimentMetadataManager(PassThroughManager):
     def get_by_natural_key(self, key):
         return self.get(namespace=key)
 
@@ -224,8 +228,7 @@ class ExperimentMetadata(models.Model):
     define and add a single ExperimentMetadata record for the experiment type that it represents.
     """
     title = models.CharField(max_length=255)
-    namespace_regex = re.compile(r'^(?:[/]?[a-z0-9_]+\/?)+$')
-    namespace = models.CharField(max_length=255, unique=True, validators=[RegexValidator(regex=namespace_regex)])
+    namespace = models.CharField(max_length=255, unique=True, null=True, blank=True, validators=[RegexValidator(r'^[\w]*$')])
     short_name = models.SlugField(max_length=32, unique=True, null=True, blank=True)
     description = models.TextField(blank=True)
     date_created = models.DateTimeField(default=datetime.now)
@@ -235,7 +238,11 @@ class ExperimentMetadata(models.Model):
     default_configuration = models.ForeignKey('ExperimentConfiguration', null=True, blank=True)
     parameters = models.ManyToManyField('Parameter')
 
-    objects = ExperimentMetadataManager()
+    objects = ExperimentMetadataManager.for_queryset_class(ExperimentMetadataQuerySet)()
+
+    @property
+    def hosted(self):
+        return self.namespace is not None and self.namespace
 
     def to_dict(self, include_configurations=False, configurations=None, experimenter=None, **kwargs):
         data = {
@@ -260,10 +267,13 @@ class ExperimentMetadata(models.Model):
         return [self.namespace]
 
     def __unicode__(self):
-        return u"%s /%s" % (self.title, self.namespace)
+        if self.namespace:
+            return u"%s /%s" % (self.title, self.namespace)
+        else:
+            return u"%s (subject recruitment shell experiment with no namespace)"
 
     class Meta:
-        ordering = ['namespace', 'date_created']
+        ordering = ['title', 'namespace']
 
 
 class OstromlabFaqEntry(models.Model):
@@ -301,8 +311,6 @@ class CommonsUser(models.Model):
     user = models.OneToOneField(User, related_name='%(class)s', verbose_name=u'Django User', unique=True)
     failed_password_attempts = models.PositiveIntegerField(default=0)
     institution = models.ForeignKey(Institution, null=True, blank=True)
-    institution_username = NullCharField(max_length=64, unique=True, help_text=_(
-        'Unique institution-specific username, e.g., ASURITE, IU Network ID'))
     authentication_token = models.CharField(max_length=64, blank=True)
 
     @property
@@ -1354,7 +1362,7 @@ class Experiment(models.Model):
         return self.to_dict(*args, **kwargs)
 
     def to_json(self, include_round_data=False, *args, **kwargs):
-        return dumps(self.to_dict(include_round_data, *args, **kwargs))
+        return dumps(self.to_dict(include_round_data=include_round_data, *args, **kwargs))
 
     def clone(self, experimenter=None):
         """ returns a fresh copy of this experiment with an optional new experimenter """

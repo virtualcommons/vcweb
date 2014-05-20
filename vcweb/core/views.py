@@ -549,13 +549,16 @@ def monitor(request, pk=None):
 
 class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView):
     def get_initial(self):
+        # sets initial values for several form fields in the register participants form
+        # based on the experiment
         _initial = super(BaseExperimentRegistrationView, self).get_initial()
         experiment = self.object
         _initial.update(
             registration_email_from_address=experiment.experimenter.email,
             experiment_password=experiment.authentication_code,
             registration_email_subject=experiment.registration_email_subject,
-            registration_email_text=experiment.registration_email_text
+            registration_email_text=experiment.registration_email_text,
+            sender=experiment.experimenter.full_name,
         )
         return _initial
 
@@ -1042,7 +1045,7 @@ def get_cas_user(tree):
                 institution = Institution.objects.get(name='Arizona State University')
                 user.save()
                 participant = Participant.objects.create(user=user, major=directory_profile.major,
-                                                         institution=institution, institution_username=user.username)
+                                                         institution=institution)
                 logger.debug("CAS backend created participant %s from web directory", participant)
         except:
             logger.debug("Something went wrong. ASU Web Directory is down")

@@ -45,9 +45,8 @@
                         There are <span data-bind='text:participantCount' class='badge badge-info'></span> registered participants.
                         Activate the experiment whenever you are ready to collect data.
                     </p>
-                    <p class='text-error'>NOTE: activating an experiment <b>deletes all existing data</b>
-                    </p>
-                    <a data-content='Starts this experiment, assigns participants to groups, etc.'
+                    <p data-bind='if: allRoundData.length > 0' class='text-danger'>NOTE: this experiment has <b>existing experiment data that will be deleted upon activation</b>.</p>
+                    <a data-content='Activates and starts this experiment, assigning participants to groups.'
                         class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='activate'><i class='fa fa-power-off'></i> activate</a>
                 </div>
             </div>

@@ -4,7 +4,7 @@
     {% block form-title %}
     {% endblock form-title %}
     <form id='vcweb-form' method='post' class='form-horizontal'>
-    {% csrf_token %}
+        {% csrf_token %}
         {% block form %}
         {% endblock form %}
     </form>
