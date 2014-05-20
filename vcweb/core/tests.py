@@ -113,17 +113,15 @@ class BaseVcwebTest(TestCase):
 
 
 class ExperimentMetadataTest(BaseVcwebTest):
-    namespace_regex = ExperimentMetadata.namespace_regex
 
     def create_experiment_metadata(self, namespace=None):
         return ExperimentMetadata(title="test title: %s" % namespace, namespace=namespace)
 
     def test_valid_namespaces(self):
-        valid_namespaces = ('forestry/hooha', 'furestry', 'f', 'hallo/h', '/f',
-                            'abcdefghijklmnopqrstuvwxyz1234567890/abcdefghijklmnopqrstuvwxyz1234567890',
-        )
+        valid_namespaces = ('forestry_', 'furestry', 'f', 'oyo_yoy', 'f-s', '123_abc', 'abc_123',
+                            'abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqrstuvwxyz1234567890',
+                            )
         for namespace in valid_namespaces:
-            self.assertTrue(self.namespace_regex.match(namespace))
             em = self.create_experiment_metadata(namespace)
             em.save()
 
@@ -131,12 +129,18 @@ class ExperimentMetadataTest(BaseVcwebTest):
         from django.core.exceptions import ValidationError
 
         invalid_namespaces = ('#$what the!',
-                              "$$!it's a trap!",
-                              '/!@')
+                              "$!it's a trap!",
+                              '/!@',
+                              '123!',
+                              'abc!',
+                              '%123',
+                              '%abc',
+                              'abc%',
+                              'abc/def',
+                              )
         for namespace in invalid_namespaces:
             em = self.create_experiment_metadata(namespace)
             self.assertRaises(ValidationError, em.full_clean)
-            self.assertFalse(self.namespace_regex.match(namespace))
 
     def test_unicode(self):
         em = self.create_experiment_metadata('test_unicode_namespace')
