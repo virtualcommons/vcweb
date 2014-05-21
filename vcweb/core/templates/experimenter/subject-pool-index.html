@@ -119,6 +119,7 @@ Experiment Session Management
     <script type='text/html' id='session-template'>
         <div class="well-large well">
             <form data-bind="submit: onSave" role="form" class="form-inline" style="margin-bottom:0">
+                {% csrf_token %}
                 <fieldset>
                     <span class="hide">
                         <input type="hidden" name="pk" data-bind="value: pk" />
@@ -307,12 +308,13 @@ Experiment Session Management
                     var end_date = new Date(formElement.elements["end_date"].value);
 
                     if(start_date > end_date){
-                        bootbox.alert("ERROR: End date cannot be earlier than the Start date. Please choose a later end date.", function() {});
+                        bootbox.alert("ERROR: End date cannot be earlier than the start date. Please choose a later end date.", function() {});
                         return;
                     } else if(+start_date == +end_date && start_time >= end_time) {
-                        bootbox.alert("ERROR: Scheduled End Time cannot be earlier than the Start Time. Please choose a later end Time.", function() {});
+                        bootbox.alert("ERROR: Scheduled end time cannot be earlier than the Start Time. Please choose a later end time.", function() {});
                         return;
                     }
+                    // FIXME: push this logic server-side instead
                     if(formElement.elements["pk"].value == -1){
                         formData = $(formElement).serialize()  + '&request_type=create';
                     } else {

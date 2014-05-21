@@ -143,7 +143,7 @@ class DashboardViewModelFactory(object):
 
 def csrf_failure(request, reason=""):
     logger.error("csrf failure on %s due to %s", request, reason)
-    return render(request, 'invalid_request.html', { message: 'Sorry, we were unable to process your request.' })
+    return render(request, 'invalid_request.html', { "message": 'Sorry, we were unable to process your request.' })
 
 @login_required
 def dashboard(request):
