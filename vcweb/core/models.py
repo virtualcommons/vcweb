@@ -2141,6 +2141,11 @@ class Address(models.Model):
     zipcode = models.CharField(_('Zip code'), max_length=8, blank=True)
 
 
+class ParticipantQuerySet(models.query.QuerySet):
+
+    def active(self, *args, **kwargs):
+        return self.filter(user__is_active=True, *args, **kwargs).exclude(user__email__contains=('mailinator.com'))
+
 class Participant(CommonsUser):
     GENDER_CHOICES = (('M', 'Male'), ('F', 'Female'),)
     CLASS_CHOICES = Choices('Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate', 'Other')
@@ -2164,6 +2169,8 @@ class Participant(CommonsUser):
     favorite_color = models.CharField(max_length=32, choices=COLOR_CHOICES, blank=True)
     favorite_food = models.CharField(max_length=32, choices=FOOD_CHOICES, blank=True)
     favorite_movie_genre = models.CharField(max_length=64, choices=MOVIE_GENRE_CHOICES, blank=True)
+
+    objects = PassThroughManager.for_queryset_class(ParticipantQuerySet)()
 
     @property
     def is_profile_complete(self):

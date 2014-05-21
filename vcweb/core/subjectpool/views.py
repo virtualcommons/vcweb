@@ -43,10 +43,12 @@ def experimenter_index(request):
     experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.bookmarked(experimenter)]
 
     session_list = [session.to_dict() for session in data]
-
+    potential_participants_count = Participant.objects.active().count()
     session_data = {
         "session_list": session_list,
-        "experiment_metadata_list": experiment_metadata_list
+        "experiment_metadata_list": experiment_metadata_list,
+        'allEligibleParticipants': potential_participants_count,
+        'potentialParticipantsCount': potential_participants_count,
     }
 
     form = SessionInviteForm()
@@ -171,7 +173,7 @@ def get_invitations_count(request):
     """
 
     session_pk_list = request.POST.get('session_pk_list').split(",")
-    affiliated_university = request.POST.get('affiliated_university')
+    affiliated_institution = request.POST.get('affiliated_institution')
 
     experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
     experiment_metadata_pk_list = experiment_sessions.values_list('experiment_metadata__pk', flat=True)
@@ -183,7 +185,7 @@ def get_invitations_count(request):
 
         only_undergrad = request.POST.get('only_undergrad')
 
-        potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_university,
+        potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_institution,
                                                             only_undergrad=only_undergrad)
         return JsonResponse(dumps({
             'success': True,
@@ -228,7 +230,7 @@ def send_invitations(request):
 
         session_pk_list = request.POST.get('session_pk_list').split(",")
         invitation_count = form.cleaned_data.get('number_of_people')
-        affiliated_university = form.cleaned_data.get('affiliated_university')
+        affiliated_institution = form.cleaned_data.get('affiliated_institution')
 
         experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
         experiment_metadata_pk_list = experiment_sessions.values_list('experiment_metadata__pk', flat=True)
@@ -238,7 +240,7 @@ def send_invitations(request):
             # belong to same experiment metadata (This is ensured as it is a constraint)
             experiment_metadata_pk = experiment_metadata_pk_list[0]
 
-            potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_university,
+            potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_institution,
                                                                 only_undergrad=form.cleaned_data.get('only_undergrad'))
             potential_participants_count = len(potential_participants)
 
@@ -298,7 +300,7 @@ def invite_email_preview(request):
     Generates email Preview for the provided invitation details
     """
     form = SessionInviteForm(request.POST or None)
-    message = "Please fill in all form fields to preview email"
+    message = "Please fill in all the form fields to preview the invitation email."
     if form.is_valid():
         invitation_text = form.cleaned_data.get('invitation_text')
         session_pk_list = request.POST.get('session_pk_list').split(",")
@@ -325,23 +327,16 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona Stat
         affiliated_institution = Institution.objects.get(name=institution)
     except Institution.DoesNotExist:
         affiliated_institution = None
-        return []
 
     # Get excluded participants for the given parameters
     excluded_participants = get_excluded_participants(days_threshold, experiment_metadata_pk)
 
+    criteria = dict(can_receive_invitations=True, user__is_active=True)
+    if affiliated_institution:
+        criteria.update(institution=affiliated_institution)
     if only_undergrad:
-        potential_participants = Participant.objects.filter(can_receive_invitations=True,
-                                                            institution=affiliated_institution,
-                                                            user__is_active=True,
-                                                            class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES) \
-            .exclude(pk__in=excluded_participants)
-    else:
-        potential_participants = Participant.objects.filter(can_receive_invitations=True,
-                                                            institution=affiliated_institution,
-                                                            user__is_active=True) \
-            .exclude(pk__in=excluded_participants)
-    return potential_participants
+        criteria.update(class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES)
+    return Participant.objects.filter(**criteria).exclude(pk__in=excluded_participants)
 
 
 def get_excluded_participants(days_threshold, experiment_metadata_pk):

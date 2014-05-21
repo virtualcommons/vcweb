@@ -4,11 +4,25 @@
 Experiment Session Management
 {% endblock %}
 {% block page %}
-    <div id='page' class="row">
+    <div class="row" id='page'>
         <div id="content" class="span12">
+            <h2>Subject recruitment</h2>
+            {% bootstrap_messages %}
             <div class="callout callout-info">
-                Welcome back, {{ request.user.get_full_name}}.
+                There are <span class='badge badge-info' data-bind='text: allEligibleParticipants'></span> eligible participants in vcweb. To recruit subjects for experiment sessions:
+                <ol>
+                    <li>Create the experiment sessions on your desired dates by clicking the "Add Session" button.
+                    <li>Check the experiment sessions and then click the &quot;Invite&quot; button.
+                    <li>Choose the number of participants you'd like to invite (defaults to 3 * the total experiment session capacity)
+                    <li>Pick an affiliated institution (leave blank if it doesn't matter) for your participants. This lets you select all students at Arizona State University, as an example.
+                    <li>Enter an invitation subject and invitation text.
+                    <li>Click on the &quot;Preview&quot; button to preview your invitation email and check how many participants it could potentially be sent to.
+                    <li>Click on the &quot;Invite&quot; button to send the invitations out - this step may take a while
+                    to complete depending on how many invitations you send out. Please don't click the button more than
+                    once! 
+                </ol>
             </div>
+            If you need to create a new experiment type so that you can exclude past participants please <a href='/contact'>contact us</a>.
             <div id="error-messages"></div>
             <div class="tabbable">
                 <ul class='nav nav-tabs'>
@@ -19,8 +33,7 @@ Experiment Session Management
                     <div class='tab-pane active' id="active">
                         <div data-bind='if: activeSessions().length > 0'>
                             <div class='alert alert-info'>
-                                Invite participants by selecting the checkboxes next to the experiment sessions and
-                                clicking the "Invite" button.
+                                <i class='fa fa-info-circle'></i> Select the experiment sessions you'd like to invite participants to and then click the &quot;Invite&quot; button.
                             </div>
                             <div id="active-sessions" data-bind='template: { name: "session-template", foreach: activeSessions }'></div>
                         </div>
@@ -41,16 +54,17 @@ Experiment Session Management
                             <form class="form-horizontal col-md-5" role="form" data-bind="submit: $root.onInvite">
                                 {%  bootstrap_form form layout="horizontal" label_class="col-md-5" field_class="col-md-7" %}
                                 <div class="form-group">
-                                    <label class="col-md-5 control-label">Potential Participants</label>
+                                    <label class="col-md-5 control-label"># Potential Invitees</label>
                                     <div class="col-md-7" id="participant-count">
-                                        <span class="label label-info pull-left" style="margin-top: 7px;">NA</span>
-                                        <button type="button" class="btn pull-right" data-loading-text="Checking...">Check</button>
+                                        <span data-bind='text: potentialParticipantsCount' class="label label-info pull-left" style="margin-top: 7px;">NA</span>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <div class="col-md-offset-5 col-md-7">
-                                        <button type="submit" class="btn" data-loading-text="sending..." id="invite-btn">Invite</button>
-                                        <button type="button" class="btn" data-bind="click: $root.emailPreview">Email Preview</button>
+                                        <div class='btn-group'>
+                                            <button type="button" class="btn btn-warning" data-bind="click: $root.emailPreview">Preview</button>
+                                            <button type="submit" class="btn btn-danger" data-loading-text="sending..." id="invite-btn">Invite</button>
+                                        </div>
                                     </div>
                                 </div>
                             </form>
@@ -258,24 +272,6 @@ Experiment Session Management
                 });
             });
 
-            $("#participant-count button").click(function() {
-                var btn = $(this);
-                btn.button('loading');
-
-                var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
-                if(session_pk_list.length) {
-                    var formData = $("#invite-form form").serialize()  + '&session_pk_list='+ session_pk_list;
-                    $.ajax("/subject-pool/session/invite/count", {
-                        type : "POST",
-                        data : formData,
-                        success: function(result) {
-                            $("#participant-count span").html(result.invitesCount);
-                        }
-                    }).always(function () {
-                        btn.button('reset')
-                    });
-                }
-            });
 
 
 
@@ -474,11 +470,17 @@ Experiment Session Management
                         });
                     }
                 };
-
                 model.emailPreview = function(data, event) {
                     var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
                     if(session_pk_list.length) {
                         var formData = $("#invite-form form").serialize()  + '&session_pk_list='+ session_pk_list;
+                        $.ajax("/subject-pool/session/invite/count", {
+                            type : "POST",
+                            data : formData,
+                            success: function(result) {
+                                model.potentialParticipantsCount(result.invitesCount);
+                            }
+                        });
 
                         $.ajax("/subject-pool/session/email-preview", {
                             type : "POST",
