@@ -12,14 +12,14 @@ Experiment Session Management
                 There are <span class='badge badge-info' data-bind='text: allEligibleParticipants'></span> eligible participants in vcweb. To recruit subjects for experiment sessions:
                 <ol>
                     <li>Create experiment sessions on your desired dates by clicking the "Add Session" button and .
-                    <li>Select experiment sessions and click the <button class='btn btn-xs btn-primary'><i class='fa fa-envelope'></i> Invite</button> button.
+                    <li>Select experiment sessions and click the <button class='btn btn-xs btn-primary'><i class='fa fa-envelope'></i> Create Invitations</button> button.
                     <li>Enter the number of participants to invite (defaults to 3 * the total experiment session capacity)
                     <li>Pick an affiliated institution or leave it blank to further filter the potential participant
                     pool. For example, if set to Arizona State University only participants with a self-reported
                     affiliation with Arizona State University would be invited.  
                     <li>Enter an invitation subject and invitation text.
-                    <li>Click <button class='btn btn-xs btn-warning'><i class='fa fa-eye'></i> Preview</button> to see what the final invitation email will look like and <b>verify the number of potential participants</b>.
-                    <li>Click <button class='btn btn-xs btn-danger'><i class='fa fa-plus-circle'></i> Invite</button> to send the invitations out - this step may take time to complete depending on how many invitations you send out.
+                    <li>Click <button class='btn btn-xs btn-warning'><i class='fa fa-eye'></i> Preview Invitation Email</button> to see what the final invitation email will look like and <b>verify the number of potential participants</b>.
+                    <li>Click <button class='btn btn-xs btn-danger'><i class='fa fa-plus-circle'></i> Send Invitations</button> to send the invitations out - this step may take time to complete depending on how many invitations you send out.
                 </ol>
             </div>
             If you need to create a new experiment type so that you can exclude past participants please <a href='/contact'>contact us</a>.
@@ -48,7 +48,7 @@ Experiment Session Management
                         </button>
                         <button data-bind="click: function() { $('#invite-form').toggle('fast'); }, enable: ifSelectedSessions" class="btn btn-primary">
                             <i class="fa fa-envelope"></i>
-                            Invite
+                            Create Invitations
                         </button>
                         <div id="invite-form" class="clearfix">
                             <form class="form-horizontal col-md-5" role="form" data-bind="submit: $root.onInvite">
@@ -61,9 +61,9 @@ Experiment Session Management
                                 </div>
                                 <div class="form-group">
                                     <div class="col-md-offset-5 col-md-7">
-                                        <div class='btn-group'>
-                                            <button type="button" class="btn btn-warning" data-bind="click: $root.emailPreview"><i class='fa fa-eye'></i> Preview</button>
-                                            <button type="submit" class="btn btn-danger" data-loading-text="sending..." id="invite-btn"><i class='fa fa-plus-circle'></i> Invite</button>
+                                        <div class='btn-group-vertical'>
+                                            <button style='text-align: left;' type="button" class="btn btn-warning" data-bind="click: $root.emailPreview"><i class='fa fa-eye'></i> Preview Invitation Email</button>
+                                            <button style='text-align: left;' type="submit" class="btn btn-danger" data-loading-text="sending..." id="invite-btn"><i class='fa fa-plus-circle'></i> Send Invitations</button>
                                         </div>
                                     </div>
                                 </div>

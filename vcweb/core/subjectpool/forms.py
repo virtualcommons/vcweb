@@ -63,8 +63,8 @@ class SessionForm(forms.Form):
 
 
 class SessionInviteForm(forms.Form):
-    number_of_people = forms.IntegerField(widget=NumberInput(attrs={'value': 0, 'class': 'input-mini'}))
-    only_undergrad = forms.BooleanField(widget=CheckboxInput(attrs={'checked': True}))
+    number_of_people = forms.IntegerField(help_text=_("Number of participants to invite to the selected experiment session(s)"), widget=NumberInput(attrs={'value': 0, 'class': 'input-mini'}))
+    only_undergrad = forms.BooleanField(help_text=_("Limit to self-reported undergraduate students"), widget=CheckboxInput(attrs={'checked': True}))
     affiliated_institution = forms.CharField(required=False, widget=autocomplete_light.TextWidget(InstitutionAutocomplete, attrs={'value': 'Arizona State University'}))
     invitation_subject = forms.CharField(widget=widgets.TextInput())
     invitation_text = forms.CharField(widget=widgets.Textarea(attrs={'rows': '4'}))
