@@ -9,9 +9,11 @@ Experiment Session Management
             <h2>Subject recruitment</h2>
             {% bootstrap_messages %}
             <div class="callout callout-info">
-                There are <span class='badge badge-info' data-bind='text: allEligibleParticipants'></span> eligible participants in vcweb. To recruit subjects for experiment sessions:
+                <span class='badge badge-info' data-bind='text: allEligibleParticipants'></span> eligible participants 
                 <ol>
-                    <li>Create experiment sessions on your desired dates by clicking the "Add Session" button and .
+                    <li>Create experiment sessions on your desired dates by clicking <button class='btn btn-xs btn-primary'><i class='fa fa-plus'></i> Add Session</button>,
+                    entering the experiment session's associated experiment, start date, end date, and capacity, and
+                    then clicking <button class='btn btn-xs btn-success'><i class='fa fa-save'></i></button> save.
                     <li>Select experiment sessions and click the <button class='btn btn-xs btn-primary'><i class='fa fa-envelope'></i> Create Invitations</button> button.
                     <li>Enter the number of participants to invite (defaults to 3 * the total experiment session capacity)
                     <li>Pick an affiliated institution or leave it blank to further filter the potential participant
@@ -22,7 +24,9 @@ Experiment Session Management
                     <li>Click <button class='btn btn-xs btn-danger'><i class='fa fa-plus-circle'></i> Send Invitations</button> to send the invitations out - this step may take time to complete depending on how many invitations you send out.
                 </ol>
             </div>
-            If you need to create a new experiment type so that you can exclude past participants please <a href='/contact'>contact us</a>.
+            <div class='alert alert-info'>
+                <i class='fa fa-info-circle'></i> If you need to create a new experiment type to manage exclusion of past participants please <a href='/contact'>contact us</a>.
+            </div>
             <div id="error-messages"></div>
             <div class="tabbable">
                 <ul class='nav nav-tabs'>
@@ -32,9 +36,6 @@ Experiment Session Management
                 <div class='tab-content'>
                     <div class='tab-pane active' id="active">
                         <div data-bind='if: activeSessions().length > 0'>
-                            <div class='alert alert-info'>
-                                <i class='fa fa-info-circle'></i> Select checkboxes for the experiment sessions you'd like to invite participants to and then click the &quot;Invite&quot; button.
-                            </div>
                             <div id="active-sessions" data-bind='template: { name: "session-template", foreach: activeSessions }'></div>
                         </div>
                         <div data-bind='if: activeSessions().length == 0'>
@@ -124,7 +125,7 @@ Experiment Session Management
                     <span class="hide">
                         <input type="hidden" name="pk" data-bind="value: pk" />
                     </span>
-                    <table class="session-table">
+                    <table class="session-table table-condensed">
                         <tbody>
                             <tr>
                                 <td rowspan="2" data-bind="if: active">
