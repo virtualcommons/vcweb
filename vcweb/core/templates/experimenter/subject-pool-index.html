@@ -11,15 +11,15 @@ Experiment Session Management
             <div class="callout callout-info">
                 There are <span class='badge badge-info' data-bind='text: allEligibleParticipants'></span> eligible participants in vcweb. To recruit subjects for experiment sessions:
                 <ol>
-                    <li>Create the experiment sessions on your desired dates by clicking the "Add Session" button.
-                    <li>Check the experiment sessions and then click the &quot;Invite&quot; button.
-                    <li>Choose the number of participants you'd like to invite (defaults to 3 * the total experiment session capacity)
-                    <li>Pick an affiliated institution (leave blank if it doesn't matter) for your participants. This lets you select all students at Arizona State University, as an example.
+                    <li>Create experiment sessions on your desired dates by clicking the "Add Session" button and .
+                    <li>Select experiment sessions and click the <button class='btn btn-xs btn-primary'><i class='fa fa-envelope'></i> Invite</button> button.
+                    <li>Enter the number of participants to invite (defaults to 3 * the total experiment session capacity)
+                    <li>Pick an affiliated institution or leave it blank to further filter the potential participant
+                    pool. For example, if set to Arizona State University only participants with a self-reported
+                    affiliation with Arizona State University would be invited.  
                     <li>Enter an invitation subject and invitation text.
-                    <li>Click on the &quot;Preview&quot; button to preview your invitation email and check how many participants it could potentially be sent to.
-                    <li>Click on the &quot;Invite&quot; button to send the invitations out - this step may take a while
-                    to complete depending on how many invitations you send out. Please don't click the button more than
-                    once! 
+                    <li>Click <button class='btn btn-xs btn-warning'><i class='fa fa-eye'></i> Preview</button> to see what the final invitation email will look like and <b>verify the number of potential participants</b>.
+                    <li>Click <button class='btn btn-xs btn-danger'><i class='fa fa-plus-circle'></i> Invite</button> to send the invitations out - this step may take time to complete depending on how many invitations you send out.
                 </ol>
             </div>
             If you need to create a new experiment type so that you can exclude past participants please <a href='/contact'>contact us</a>.
@@ -33,7 +33,7 @@ Experiment Session Management
                     <div class='tab-pane active' id="active">
                         <div data-bind='if: activeSessions().length > 0'>
                             <div class='alert alert-info'>
-                                <i class='fa fa-info-circle'></i> Select the experiment sessions you'd like to invite participants to and then click the &quot;Invite&quot; button.
+                                <i class='fa fa-info-circle'></i> Select checkboxes for the experiment sessions you'd like to invite participants to and then click the &quot;Invite&quot; button.
                             </div>
                             <div id="active-sessions" data-bind='template: { name: "session-template", foreach: activeSessions }'></div>
                         </div>
@@ -46,7 +46,7 @@ Experiment Session Management
                             <i class="fa fa-plus"></i>
                             Add Session
                         </button>
-                        <button data-bind="click: function() { $('#invite-form').slideDown('slow'); }, enable: ifSelectedSessions" class="btn btn-primary">
+                        <button data-bind="click: function() { $('#invite-form').toggle('fast'); }, enable: ifSelectedSessions" class="btn btn-primary">
                             <i class="fa fa-envelope"></i>
                             Invite
                         </button>
@@ -54,7 +54,7 @@ Experiment Session Management
                             <form class="form-horizontal col-md-5" role="form" data-bind="submit: $root.onInvite">
                                 {%  bootstrap_form form layout="horizontal" label_class="col-md-5" field_class="col-md-7" %}
                                 <div class="form-group">
-                                    <label class="col-md-5 control-label"># Potential Invitees</label>
+                                    <label class="col-md-5 control-label">&#35; Potential Participants</label>
                                     <div class="col-md-7" id="participant-count">
                                         <span data-bind='text: potentialParticipantsCount' class="label label-info pull-left" style="margin-top: 7px;">NA</span>
                                     </div>
@@ -62,8 +62,8 @@ Experiment Session Management
                                 <div class="form-group">
                                     <div class="col-md-offset-5 col-md-7">
                                         <div class='btn-group'>
-                                            <button type="button" class="btn btn-warning" data-bind="click: $root.emailPreview">Preview</button>
-                                            <button type="submit" class="btn btn-danger" data-loading-text="sending..." id="invite-btn">Invite</button>
+                                            <button type="button" class="btn btn-warning" data-bind="click: $root.emailPreview"><i class='fa fa-eye'></i> Preview</button>
+                                            <button type="submit" class="btn btn-danger" data-loading-text="sending..." id="invite-btn"><i class='fa fa-plus-circle'></i> Invite</button>
                                         </div>
                                     </div>
                                 </div>
@@ -169,7 +169,7 @@ Experiment Session Management
                                     <input style="width: 70px;" class="form-control input-sm" name="capacity" type="number" min="2" data-bind ="value : capacity, enable: editable" />
 				                </td>
                                 <td data-bind="if: active" rowspan="2">
-                                    <div class="btn-group" data-bind = "visible: editable">
+                                    <div class="btn-group-vertical" data-bind = "visible: editable">
                                         <button type="submit" class="btn btn-success">
                                             <i class="fa fa-floppy-o"></i>
                                         </button>
@@ -177,7 +177,7 @@ Experiment Session Management
                                             <i class="fa fa-trash-o"></i>
                                         </button>
                                     </div>
-                                    <div class="btn-group" data-bind = "visible: !editable()">
+                                    <div class="btn-group-vertical" data-bind = "visible: !editable()">
                                         <a class="btn btn-primary" data-bind="attr: {href: 'session/detail/event/'+ pk()} ">
                                             <i class="fa fa-eye"></i>
                                         </a>
