@@ -7,7 +7,7 @@
             {% comment %} FIXME: UI refinement needed as the list of experiments grows {% endcomment %}
 
             <ul class='nav nav-tabs'>
-                <li class='active'><a href='#running' data-toggle='tab'><i class='fa fa-spin fa-cog'></i> Running experiments</a></li>
+                <li class='active'><a href='#running' data-toggle='tab'><i class='fa fa-cogs'></i> Running experiments</a></li>
                 <li><a href='#pending' data-toggle='tab'><i class='fa fa-wrench'></i> Pending experiments</a></li>
                 <li><a href='#archived' data-toggle='tab'><i class='fa fa-archive'></i> Archived experiments</a></li>
                 <li><a href='#start' data-toggle='tab'><i class='fa fa-flask'></i> Start a new experiment</a></li>
@@ -16,7 +16,7 @@
                 <div class='tab-pane' id='start'>
                     <div data-bind='foreach: sortedExperimentMetadataList'>
                         <h3><span data-bind='text: title'></span>
-                            <i style='cursor: pointer;' class="fa" data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data), css: { "fa-bookmark-o": ! bookmarked(), "fa-bookmark text-gold": bookmarked}'></i>
+                            <i style='cursor: pointer;' class="fa" data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data), css: { "fa-star-o": ! bookmarked(), "fa-star text-gold": bookmarked}'></i>
                         </h3>
                         <div data-bind='foreach: configurations'>
                             <div class='alert alert-warning'>

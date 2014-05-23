@@ -14,14 +14,14 @@
 {% url 'subjectpool:experimenter_index' as subjectpool %}
 <!DOCTYPE html>
 <html lang="en">
+{% with jquery_version="2.1.1" bootstrap_version="3.1.1" %}
 <head>
 {% block head %}
 <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name='viewport' content='width=device-width, initial-scale=1'>
-<!-- Latest compiled and minified CSS -->
-<link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
-<link rel='stylesheet' href='//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css'>
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/{{bootstrap_version}}/css/bootstrap.min.css">
+<link rel='stylesheet' href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css">
 <link rel="stylesheet" href="{% static 'css/style.css' %}" media="screen" />
 <link href='//fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
 {% endblock %}
@@ -59,10 +59,10 @@
             <ul class='nav navbar-nav navbar-right'>
                 {% if request.user.is_authenticated %}
                 <li class='{% active request login %} dropdown'>
-                <a class='dropdown-toggle' data-toggle='dropdown' href='#'>{{request.user.email}} <i class='fa fa-cog'></i><b class='caret'></b></a>
+                <a class='dropdown-toggle' data-toggle='dropdown' href='#'>{{request.user.email}} <i class='fa fa-chevron-down'></i></a>
                     <ul class='dropdown-menu'>
-                        <li><a href='{{ profile }}'>Account</a></li>
-                        <li><a href='{{ logout }}'>Sign out</a></li>
+                        <li><a href='{{ profile }}'><i class='fa fa-user'></i> Account</a></li>
+                        <li><a href='{{ logout }}'><i class='fa fa-sign-out'></i> Sign out</a></li>
                     </ul>
                 </li>
                 {% else %}
@@ -72,7 +72,7 @@
                     {% else %}
                     <a href='https://{{request.get_host}}{{ login }}'>
                     {% endif %}
-                    <i class='fa fa-cog'></i> Sign In</a>
+                    <i class='fa fa-sign-in'></i> Sign In</a>
                 </li>
                 {% endif %}
             </ul>
@@ -134,11 +134,9 @@
     </div>
     {% endblock footer %}
 </footer>
-    {% with jquery_version="2.1.1" %}
     <script src='//cdnjs.cloudflare.com/ajax/libs/jquery/{{jquery_version}}/jquery.min.js'></script>
-    {% endwith %}
     <!-- Latest compiled and minified JavaScript -->
-    <script src='{{STATIC_URL}}bootstrap/js/bootstrap.min.js'></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/{{bootstrap_version}}/js/bootstrap.min.js"></script>
     <script src='{{STATIC_URL}}/js/bootbox.min.js'></script>
     <script src='{{STATIC_URL}}js/jquery.cookie.js'></script>
     <script src='//cdnjs.cloudflare.com/ajax/libs/knockout/3.1.0/knockout-min.js'></script>
@@ -149,4 +147,5 @@
     {% block javascript %}
     {% endblock %}
 </body>
+{% endwith %}
 </html>
