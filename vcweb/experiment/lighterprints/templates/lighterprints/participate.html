@@ -525,12 +525,16 @@ $(function() {
    Your group progress: <span data-bind='text: averagePoints'></span> / <span data-bind='text:pointsToNextLevel'></span>
 </script>
 <script type='text/html' id='commentPopoverForm'>
-<form data-bind='attr: { id: "commentForm" + pk() }'>
-<textarea name='message' rows='3'></textarea>
+<form role='form' data-bind='attr: { id: "commentForm" + pk() }'>
+<div class='form-group'>
 <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.pk}}' />
 <input type='hidden' name='target_id' data-bind='value: pk()' />
-<a class='btn btn-lighterprints-blue' data-bind='click: $root.postComment'>POST</a>
-<a style='position: relative; left: 8px; top: 5px;' href='javascript:void(0)' class='lighterprints-gray' data-bind='click: $root.closeCommentPopover' >Cancel</a>
+<textarea name='message' rows='3' autofocus></textarea>
+</div>
+<div class='form-group'>
+<a class='btn btn-lighterprints-blue' data-bind='click: $root.postComment'><i class='fa fa-comment'></i> post</a>
+<a class='btn btn-warning' data-bind='click: $root.closeCommentPopover' >Cancel</a>
+</div>
 </form>
 </script>
 <!-- knockout templates -->
