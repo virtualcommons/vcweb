@@ -41,6 +41,7 @@ FAILURE_JSON = dumps({'success': False})
 
 
 class AnonymousMixin(object):
+
     """ provides the anonymous_required decorator """
 
     @method_decorator(anonymous_required)
@@ -49,6 +50,7 @@ class AnonymousMixin(object):
 
 
 class Participate(TemplateView):
+
     @method_decorator(participant_required)
     def dispatch(self, *args, **kwargs):
         participant = self.request.user.participant
@@ -60,6 +62,7 @@ class Participate(TemplateView):
 
 
 class DashboardViewModel(object):
+
     def to_json(self):
         return dumps(self.to_dict())
 
@@ -84,11 +87,13 @@ class ExperimenterDashboardViewModel(DashboardViewModel):
 
         experiment_status_dict = defaultdict(list)
         for e in Experiment.objects.for_experimenter(self.experimenter).order_by('-pk'):
-            e.experiment_configuration = _configuration_cache[e.experiment_configuration.pk]
+            e.experiment_configuration = _configuration_cache[
+                e.experiment_configuration.pk]
             experiment_status_dict[e.status].append(
                 e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
         self.pending_experiments = experiment_status_dict['INACTIVE']
-        self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+        self.running_experiments = experiment_status_dict[
+            'ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
         self.archived_experiments = experiment_status_dict['COMPLETED']
 
     def to_dict(self):
@@ -110,7 +115,8 @@ class ParticipantDashboardViewModel(DashboardViewModel):
             experiment_status_dict[e.status].append(
                 e.to_dict(attrs=('participant_url', 'start_date'), name=e.experiment_metadata.title))
         self.pending_experiments = experiment_status_dict['INACTIVE']
-        self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+        self.running_experiments = experiment_status_dict[
+            'ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
         upcoming_signups = ParticipantSignup.objects.upcoming(self.participant)
         self.show_end_dates = False
         self.signups = []
@@ -130,10 +136,12 @@ class ParticipantDashboardViewModel(DashboardViewModel):
 
 
 class DashboardViewModelFactory(object):
+
     @staticmethod
     def create(user):
         if user is None or not user.is_active:
-            logger.error("can't create dashboard view model from invalid user %s", user)
+            logger.error(
+                "can't create dashboard view model from invalid user %s", user)
             raise ValueError("invalid user")
         if is_experimenter(user):
             return ExperimenterDashboardViewModel(user)
@@ -143,7 +151,8 @@ class DashboardViewModelFactory(object):
 
 def csrf_failure(request, reason=""):
     logger.error("csrf failure on %s due to %s", request, reason)
-    return render(request, 'invalid_request.html', { "message": 'Sorry, we were unable to process your request.' })
+    return render(request, 'invalid_request.html', {"message": 'Sorry, we were unable to process your request.'})
+
 
 @login_required
 def dashboard(request):
@@ -192,7 +201,8 @@ def cas_asu_registration_submit(request):
         participant.save()
         messages.add_message(request, messages.INFO,
                              _("You've been successfully registered with our mailing list. Thanks!"))
-        logger.debug("created new participant from asurite registration: %s", participant)
+        logger.debug(
+            "created new participant from asurite registration: %s", participant)
         return redirect('core:dashboard')
     else:
         return redirect('core:cas_asu_registration')
@@ -213,7 +223,8 @@ def set_authentication_token(user, authentication_token=''):
     else:
         logger.error("Invalid user: %s", user)
         return
-    logger.debug("%s authentication_token=%s", commons_user, authentication_token)
+    logger.debug(
+        "%s authentication_token=%s", commons_user, authentication_token)
     commons_user.authentication_token = authentication_token
     commons_user.save()
 
@@ -225,9 +236,11 @@ def get_active_experiment(participant, experiment_metadata=None, **kwargs):
                                                                 experiment__experiment_metadata=experiment_metadata,
                                                                 **kwargs)
     else:
-        pers = ParticipantExperimentRelationship.objects.active(participant=participant, **kwargs)
+        pers = ParticipantExperimentRelationship.objects.active(
+            participant=participant, **kwargs)
     if pers:
-        logger.debug("using first active experiment %s for participant %s", pers[0], participant)
+        logger.debug(
+            "using first active experiment %s for participant %s", pers[0], participant)
         return pers[0].experiment
     return None
 
@@ -255,13 +268,16 @@ def participant_api_login(request):
     try:
         if form.is_valid():
             user = form.user_cache
-            logger.debug("user was authenticated as %s, attempting to login", user)
+            logger.debug(
+                "user was authenticated as %s, attempting to login", user)
             auth.login(request, user)
             set_authentication_token(user, request.session.session_key)
             participant = user.participant
-            # FIXME: defaulting to first active experiment... need to revisit this.
+            # FIXME: defaulting to first active experiment... need to revisit
+            # this.
             active_experiment = get_active_experiment(participant)
-            participant_group_relationship = active_experiment.get_participant_group_relationship(participant)
+            participant_group_relationship = active_experiment.get_participant_group_relationship(
+                participant)
             return JsonResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.pk}))
         else:
             logger.debug("invalid form %s", form)
@@ -294,6 +310,7 @@ class LoginView(FormView, AnonymousMixin):
 
 
 class LogoutView(TemplateView):
+
     def get(self, request, *args, **kwargs):
         user = request.user
         set_authentication_token(user)
@@ -312,18 +329,23 @@ class RegistrationView(FormView, AnonymousMixin):
         last_name = form.cleaned_data['last_name']
         institution_string = form.cleaned_data['institution']
         experimenter_requested = form.cleaned_data['experimenter']
-        institution, created = Institution.objects.get_or_create(name=institution_string)
+        institution, created = Institution.objects.get_or_create(
+            name=institution_string)
         user = User.objects.create_user(email, email, password)
         user.first_name = first_name
         user.last_name = last_name
         user.save()
         if experimenter_requested:
-            experimenter_request = ExperimenterRequest.objects.create(user=user)
-            logger.debug("creating new experimenter request: %s", experimenter_request)
-        participant = Participant.objects.create(user=user, institution=institution)
+            experimenter_request = ExperimenterRequest.objects.create(
+                user=user)
+            logger.debug(
+                "creating new experimenter request: %s", experimenter_request)
+        participant = Participant.objects.create(
+            user=user, institution=institution)
         logger.debug("Creating new participant: %s", participant)
         request = self.request
-        auth.login(request, auth.authenticate(username=email, password=password))
+        auth.login(
+            request, auth.authenticate(username=email, password=password))
         set_authentication_token(user, request.session.session_key)
         # FIXME: disabling auto registration, experiment configuration flags are not being set properly
         #        for experiment in Experiment.objects.public():
@@ -350,7 +372,8 @@ def update_account_profile(request):
             e = Experimenter.objects.get(pk=user.experimenter.pk)
 
             if institution:
-                ins, created = Institution.objects.get_or_create(name=institution)
+                ins, created = Institution.objects.get_or_create(
+                    name=institution)
                 e.institution = ins
             else:
                 e.institution = None
@@ -387,7 +410,8 @@ def update_account_profile(request):
             p = Participant.objects.get(pk=user.participant.pk)
 
             if institution:
-                ins, created = Institution.objects.get_or_create(name=institution)
+                ins, created = Institution.objects.get_or_create(
+                    name=institution)
                 p.institution = ins
             else:
                 p.institution = None
@@ -451,6 +475,7 @@ def account_profile(request):
 
 
 class ParticipantMixin(object):
+
     @method_decorator(participant_required)
     def dispatch(self, *args, **kwargs):
         return super(ParticipantMixin, self).dispatch(*args, **kwargs)
@@ -464,6 +489,7 @@ these.
 
 
 class ExperimenterMixin(object):
+
     @method_decorator(experimenter_required)
     def dispatch(self, *args, **kwargs):
         return super(ExperimenterMixin, self).dispatch(*args, **kwargs)
@@ -473,7 +499,8 @@ class SingleExperimentMixin(SingleObjectMixin):
     model = Experiment
     context_object_name = 'experiment'
 
-    # FIXME: is this the right place for this?  Useful when a form mixes this class in.
+    # FIXME: is this the right place for this?  Useful when a form mixes this
+    # class in.
     def get_initial(self):
         self.object = self.get_object()
         return {"experiment_pk": self.object.pk}
@@ -492,21 +519,25 @@ class SingleExperimentMixin(SingleObjectMixin):
         if self.can_access_experiment(user, experiment):
             return experiment
         else:
-            logger.warning("unauthorized access by user %s to experiment %s", user, experiment)
+            logger.warning(
+                "unauthorized access by user %s to experiment %s", user, experiment)
             raise PermissionDenied("You do not have access to %s" % experiment)
 
 
 class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
+
     def can_access_experiment(self, user, experiment):
         return experiment.participant_set.filter(participant__user=user).count() == 1
 
 
 class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin):
+
     def can_access_experiment(self, user, experiment):
         return is_experimenter(user, experiment.experimenter)
 
 
 class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, TemplateView):
+
     def get(self, request, **kwargs):
         self.experiment = self.object = self.get_object()
         self.process()
@@ -529,13 +560,15 @@ def toggle_bookmark_experiment_metadata(request):
                 bem.delete()
             return JsonResponse(SUCCESS_JSON)
         else:
-            logger.warn("Invalid toggle bookmark experiment metadata request: %s", request)
+            logger.warn(
+                "Invalid toggle bookmark experiment metadata request: %s", request)
     return JsonResponse(FAILURE_JSON)
 
 
 @experimenter_required
 def monitor(request, pk=None):
-    experiment = get_object_or_404(Experiment.objects.select_related('experiment_configuration', 'experimenter'), pk=pk)
+    experiment = get_object_or_404(Experiment.objects.select_related(
+        'experiment_configuration', 'experimenter'), pk=pk)
     user = request.user
     if is_experimenter(user, experiment.experimenter):
         return render(request, 'experimenter/monitor.html', {
@@ -543,11 +576,13 @@ def monitor(request, pk=None):
             'experimentModelJson': experiment.to_json(include_round_data=True),
         })
     else:
-        logger.warning("unauthorized access to experiment %s by user %s", experiment, user)
+        logger.warning(
+            "unauthorized access to experiment %s by user %s", experiment, user)
         raise PermissionDenied("You do not have access to %s" % experiment)
 
 
 class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView):
+
     def get_initial(self):
         # sets initial values for several form fields in the register participants form
         # based on the experiment
@@ -564,7 +599,8 @@ class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView
 
     def form_valid(self, form):
         experiment = self.object
-        experiment.authentication_code = form.cleaned_data.get('experiment_password')
+        experiment.authentication_code = form.cleaned_data.get(
+            'experiment_password')
         for field in ('start_date', 'registration_email_subject', 'registration_email_text'):
             setattr(experiment, field, form.cleaned_data.get(field))
         experiment.save()
@@ -600,7 +636,8 @@ class RegisterTestParticipantsView(BaseExperimentRegistrationView):
     def form_valid(self, form):
         valid = super(RegisterTestParticipantsView, self).form_valid(form)
         if valid:
-            number_of_participants = form.cleaned_data.get('number_of_participants')
+            number_of_participants = form.cleaned_data.get(
+                'number_of_participants')
             username_suffix = form.cleaned_data.get('username_suffix')
             email_suffix = form.cleaned_data.get('email_suffix')
             institution = form.cleaned_data.get('institution')
@@ -623,21 +660,25 @@ class DataExportMixin(ExperimenterSingleExperimentMixin):
         else:
             content_type = 'application/octet-stream'
         response = HttpResponse(content_type=content_type)
-        response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name(file_ext=file_ext)
+        response[
+            'Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name(file_ext=file_ext)
         self.export_data(response, experiment)
         return response
 
 
 class CsvDataExporter(DataExportMixin):
+
     def export_data(self, response, experiment):
         writer = unicodecsv.writer(response, encoding='utf-8')
         writer.writerow(['Group', 'Members'])
         for group in experiment.group_set.all():
-            writer.writerow(itertools.chain.from_iterable([[group], group.participant_set.all()]))
+            writer.writerow(
+                itertools.chain.from_iterable([[group], group.participant_set.all()]))
         for round_data in experiment.round_data_set.all():
             round_configuration = round_data.round_configuration
             # write out group-wide and participant data values
-            writer.writerow(['Owner', 'Round', 'Data Parameter', 'Data Parameter Value', 'Created On', 'Last Modified'])
+            writer.writerow(['Owner', 'Round', 'Data Parameter',
+                             'Data Parameter Value', 'Created On', 'Last Modified'])
             for data_value in itertools.chain(round_data.group_data_value_set.all(),
                                               round_data.participant_data_value_set.all()):
                 writer.writerow([data_value.owner, round_configuration, data_value.parameter.label,
@@ -647,7 +688,8 @@ class CsvDataExporter(DataExportMixin):
             if chat_messages.count() > 0:
                 # sort by group first, then time
                 writer.writerow(['Chat Messages'])
-                writer.writerow(['Group', 'Participant', 'Message', 'Time', 'Round'])
+                writer.writerow(
+                    ['Group', 'Participant', 'Message', 'Time', 'Round'])
                 for chat_message in chat_messages.order_by('participant_group_relationship__group', 'date_created'):
                     writer.writerow([chat_message.group, chat_message.participant, chat_message.message,
                                      chat_message.date_created, round_configuration])
@@ -657,11 +699,14 @@ class CsvDataExporter(DataExportMixin):
 def export_configuration(request, pk=None, file_extension='.xml'):
     experiment = get_object_or_404(Experiment, pk=pk)
     if experiment.experimenter != request.user.experimenter:
-        logger.warning("unauthorized access to %s by %s", experiment, request.user.experimenter)
-        raise PermissionDenied("You don't appear to have access to this experiment.")
+        logger.warning(
+            "unauthorized access to %s by %s", experiment, request.user.experimenter)
+        raise PermissionDenied(
+            "You don't appear to have access to this experiment.")
     content_type = mimetypes.types_map[file_extension]
     response = HttpResponse(content_type=content_type)
-    response['Content-Disposition'] = 'attachment; filename=%s' % experiment.configuration_file_name(file_extension)
+    response[
+        'Content-Disposition'] = 'attachment; filename=%s' % experiment.configuration_file_name(file_extension)
     experiment.experiment_configuration.serialize(stream=response)
     return response
 
@@ -670,7 +715,8 @@ def export_configuration(request, pk=None, file_extension='.xml'):
 def download_participants(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     if experiment.experimenter != request.user.experimenter:
-        logger.error("unauthorized access to %s from %s", experiment, request.user.experimenter)
+        logger.error(
+            "unauthorized access to %s from %s", experiment, request.user.experimenter)
         raise PermissionDenied("You don't have access to this experiment.")
     response = HttpResponse(content_type=mimetypes.types_map['.csv'])
     response['Content-Disposition'] = 'attachment; filename=participants.csv'
@@ -679,7 +725,8 @@ def download_participants(request, pk=None):
     full_participant_url = experiment.full_participant_url
     authentication_code = experiment.authentication_code
     for participant in experiment.participant_set.all():
-        writer.writerow([participant.email, authentication_code, full_participant_url])
+        writer.writerow(
+            [participant.email, authentication_code, full_participant_url])
     return response
 
 
@@ -688,18 +735,22 @@ def download_participants(request, pk=None):
 def download_data(request, pk=None, file_type='csv'):
     experiment = get_object_or_404(Experiment, pk=pk)
     if experiment.experimenter != request.user.experimenter:
-        logger.warning("unauthorized access to %s from %s", experiment, request.user.experimenter)
+        logger.warning(
+            "unauthorized access to %s from %s", experiment, request.user.experimenter)
         raise PermissionDenied("You don't have access to this experiment")
     content_type = mimetypes.types_map['.%s' % file_type]
     logger.debug("Downloading data as %s", content_type)
     response = HttpResponse(content_type=content_type)
-    response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
+    response[
+        'Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
     writer = unicodecsv.writer(response, encoding='utf-8')
     """ header for group membership, session id, and base participant data """
-    writer.writerow(['Group ID', 'Group Number', 'Session ID', 'Participant ID', 'Participant Email'])
+    writer.writerow(
+        ['Group ID', 'Group Number', 'Session ID', 'Participant ID', 'Participant Email'])
     for group in experiment.group_set.order_by('pk').all():
         for pgr in group.participant_group_relationship_set.select_related('participant__user').all():
-            writer.writerow([group.pk, group.number, group.session_id, pgr.pk, pgr.participant.email])
+            writer.writerow(
+                [group.pk, group.number, group.session_id, pgr.pk, pgr.participant.email])
     """ header for participant data values, chat messages, and per-group data ordered per-round"""
     writer.writerow(
         ['Round', 'Participant ID', 'Participant Number', 'Group ID', 'Parameter', 'Value',
@@ -723,7 +774,7 @@ def download_data(request, pk=None, file_type='csv'):
             writer.writerow(
                 [round_number, pgr.pk, pgr.participant_number, pgr.group.pk, data_value.parameter.label,
                  data_value.value, dc.date(), dc.time(), lm.date(), lm.time()
-                ])
+                 ])
             # emit all chat messages
         chat_messages = ChatMessage.objects.filter(round_data=round_data)
         if chat_messages.count() > 0:
@@ -745,10 +796,12 @@ def download_data(request, pk=None, file_type='csv'):
             model = ltp.get_model_class()
             # introspect on the model and emit all of its relevant fields
             data_fields = get_model_fields(model)
-            data_field_names = itertools.chain(['Type', 'ID'], [f.verbose_name for f in data_fields])
+            data_field_names = itertools.chain(
+                ['Type', 'ID'], [f.verbose_name for f in data_fields])
             writer.writerow(data_field_names)
             for obj in model.objects.order_by('pk').all():
-                writer.writerow(itertools.chain([model.__name__, obj.pk], [getattr(obj, f.name) for f in data_fields]))
+                writer.writerow(itertools.chain(
+                    [model.__name__, obj.pk], [getattr(obj, f.name) for f in data_fields]))
     return response
 
 
@@ -759,7 +812,8 @@ def download_data_excel(request, pk=None):
     try:
         experiment = Experiment.objects.get(pk=pk)
         response = HttpResponse(mimetype='application/vnd.ms-excel')
-        response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name(file_ext='xls')
+        response[
+            'Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name(file_ext='xls')
         workbook = xlwt.Workbook()
         group_sheet = workbook.add_sheet('Group Data')
         current_row = 0
@@ -777,7 +831,8 @@ def download_data_excel(request, pk=None):
         for group in experiment.group_set.all():
             for data_value in group.data_value_set.all():
                 group_sheet.write(current_row, 0, group)
-                group_sheet.write(current_row, 1, data_value.round_configuration)
+                group_sheet.write(
+                    current_row, 1, data_value.round_configuration)
                 group_sheet.write(current_row, 2, data_value.parameter.label)
                 group_sheet.write(current_row, 3, data_value.value)
             current_row += 1
@@ -799,7 +854,8 @@ def deactivate(request, pk=None):
     if experimenter == experiment.experimenter:
         experiment.deactivate()
         return redirect('core:monitor_experiment', pk=pk)
-    logger.warning("Invalid experiment deactivation request for %s by %s", experiment, experimenter)
+    logger.warning(
+        "Invalid experiment deactivation request for %s by %s", experiment, experimenter)
     return redirect('core:dashboard')
 
 
@@ -807,19 +863,23 @@ def deactivate(request, pk=None):
 def update_experiment(request):
     form = UpdateExperimentForm(request.POST or None)
     if form.is_valid():
-        experiment = get_object_or_404(Experiment, pk=form.cleaned_data['experiment_id'])
+        experiment = get_object_or_404(
+            Experiment, pk=form.cleaned_data['experiment_id'])
         action = form.cleaned_data['action']
         experimenter = request.user.experimenter
-        logger.debug("experimenter %s invoking %s on %s", experimenter, action, experiment)
+        logger.debug(
+            "experimenter %s invoking %s on %s", experimenter, action, experiment)
         try:
             response_tuples = experiment.invoke(action, experimenter)
-            logger.debug("invoking action %s: %s", action, str(response_tuples))
+            logger.debug(
+                "invoking action %s: %s", action, str(response_tuples))
             return JsonResponse(dumps({
                 'success': True,
                 'experiment': experiment.to_dict()
             }))
         except AttributeError as e:
-            logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
+            logger.warning(
+                "no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
     return JsonResponse(dumps({
         'success': False,
         'message': 'Invalid update experiment request: %s' % form
@@ -832,22 +892,27 @@ def api_logger(request, participant_group_id=None):
     success = False
     if form.is_valid():
         try:
-            participant_group_relationship = ParticipantGroupRelationship.objects.get(pk=participant_group_id)
+            participant_group_relationship = ParticipantGroupRelationship.objects.get(
+                pk=participant_group_id)
             level = form.cleaned_data['level']
             message = form.cleaned_data['message']
-            logger.log(level, "%s: %s", participant_group_relationship, message)
+            logger.log(
+                level, "%s: %s", participant_group_relationship, message)
             success = True
         except ParticipantGroupRelationship.DoesNotExist:
-            logger.error("Couldn't locate a participant group relationship for request %s", request)
+            logger.error(
+                "Couldn't locate a participant group relationship for request %s", request)
     else:
-        logger.error("Failed to validate log message form %s (%s)", request, form)
+        logger.error(
+            "Failed to validate log message form %s (%s)", request, form)
     return JsonResponse(dumps({'success': success}))
 
 
 @participant_required
 def completed_survey(request):
     pgr_id = request.GET.get('pid', None)
-    # FIXME: prevent manual pinging (check referrer + threaded data sent to the quiz and passed back)
+    # FIXME: prevent manual pinging (check referrer + threaded data sent to
+    # the quiz and passed back)
     logger.debug("http referer: %s", request.META.get('HTTP_REFERER'))
     success = False
     try:
@@ -856,14 +921,16 @@ def completed_survey(request):
         else:
             # no incoming pid, try to look it up for the given logged in user
             participant = request.user.participant
-            # FIXME: create a ParticipantGroupRelationship.objects.active QuerySet method?
+            # FIXME: create a ParticipantGroupRelationship.objects.active
+            # QuerySet method?
             pgr = ParticipantGroupRelationship.objects.get(group__experiment=get_active_experiment(participant),
                                                            participant=participant)
         pgr.survey_completed = True
         pgr.save()
         success = True
     except ParticipantGroupRelationship.DoesNotExist as e:
-        logger.debug("No ParticipantGroupRelationship found with id %s", pgr_id)
+        logger.debug(
+            "No ParticipantGroupRelationship found with id %s", pgr_id)
     return JsonResponse(dumps({'success': success}))
 
 
@@ -893,7 +960,8 @@ def participant_ready(request):
 
 def _ready_participants_dict(experiment):
     number_of_ready_participants = experiment.number_of_ready_participants
-    all_participants_ready = (number_of_ready_participants == experiment.number_of_participants)
+    all_participants_ready = (
+        number_of_ready_participants == experiment.number_of_participants)
     return {'success': True, 'number_of_ready_participants': number_of_ready_participants,
             'all_participants_ready': all_participants_ready}
 
@@ -905,6 +973,7 @@ def check_ready_participants(request, pk=None):
 
 
 class ASUWebDirectoryProfile(object):
+
     """
     A class that encapsulates the complexity of getting the user profile from the WEB Directory
     """
@@ -1025,13 +1094,15 @@ def get_cas_user(tree):
     except ObjectDoesNotExist:
         try:
             directory_profile = ASUWebDirectoryProfile(username)
-            logger.debug("found user profile %s (%s)", directory_profile, directory_profile.email)
+            logger.debug(
+                "found user profile %s (%s)", directory_profile, directory_profile.email)
 
             user = User.objects.get(username=directory_profile.email)
             user.username = username
             user.save()
         except ObjectDoesNotExist:
-            # If this exception is throw it basically means that User Log in via CAS is a new user
+            # If this exception is throw it basically means that User Log in
+            # via CAS is a new user
             logger.debug("No user found with username %s", username)
             # Create vcweb Participant only if the user is an undergrad student
             if directory_profile.is_undergraduate:
@@ -1042,11 +1113,13 @@ def get_cas_user(tree):
                 logger.debug("%s (%s)", directory_profile, user.email)
                 password = User.objects.make_random_password()
                 user.set_password(password)
-                institution = Institution.objects.get(name='Arizona State University')
+                institution = Institution.objects.get(
+                    name='Arizona State University')
                 user.save()
                 participant = Participant.objects.create(user=user, major=directory_profile.major,
                                                          institution=institution)
-                logger.debug("CAS backend created participant %s from web directory", participant)
+                logger.debug(
+                    "CAS backend created participant %s from web directory", participant)
         except:
             logger.debug("Something went wrong. ASU Web Directory is down")
 
@@ -1073,14 +1146,15 @@ def update_experiment_param_value(request, pk):
                 'success': True
             }))
         else:
-            success= False
+            success = False
     # create Request
     elif request_type == 'create':
         form = ExperimentParameterValueForm(request.POST or None)
         if form.is_valid():
             epv = form.save(commit=False)
             exp_config_pk = request.POST['experiment_configuration']
-            epv.experiment_configuration = ExperimentConfiguration.objects.get(pk=exp_config_pk)
+            epv.experiment_configuration = ExperimentConfiguration.objects.get(
+                pk=exp_config_pk)
             epv.save()
         else:
             success = False
@@ -1125,12 +1199,14 @@ def update_round_param_value(request, pk):
             rpv = form.save(commit=False)
             round_config_pk = request.POST["round_configuration"]
             try:
-                round_config = RoundConfiguration.objects.get(pk=round_config_pk)
+                round_config = RoundConfiguration.objects.get(
+                    pk=round_config_pk)
                 rpv.round_configuration = round_config
                 rpv.save()
             except ObjectDoesNotExist:
                 success = False
-                logger.debug("Round Configuration with provided pk does not exist")
+                logger.debug(
+                    "Round Configuration with provided pk does not exist")
         else:
             success = False
     # Update Request
@@ -1156,8 +1232,9 @@ def update_round_param_value(request, pk):
 
 def sort_round_configurations(old_sequence_number, new_sequence_number, exp_config_pk):
     logger.debug('sorting round configuration sequence numbers')
-    round_configs = RoundConfiguration.objects.filter(experiment_configuration__pk=exp_config_pk)
-    #logger.debug(round_configs)
+    round_configs = RoundConfiguration.objects.filter(
+        experiment_configuration__pk=exp_config_pk)
+    # logger.debug(round_configs)
     # logger.debug(old_sequence_number)
     if old_sequence_number:
         for rc in round_configs:
@@ -1277,19 +1354,22 @@ def edit_experiment_configuration(request, pk):
     epv = ExperimentParameterValue.objects.filter(experiment_configuration=ec)
     exp_param_values_list = [param.to_dict() for param in epv]
 
-    round_config = RoundConfiguration.objects.filter(experiment_configuration=ec)
+    round_config = RoundConfiguration.objects.filter(
+        experiment_configuration=ec)
     round_config_list = [round.to_dict() for round in round_config]
 
     round_param_values = RoundParameterValue.objects.select_related('round_configuration', 'parameter') \
         .filter(round_configuration__in=round_config)
-    round_param_values_list = [round_param.to_dict() for round_param in round_param_values]
+    round_param_values_list = [round_param.to_dict()
+                               for round_param in round_param_values]
 
     # Get the round parameter values for each round
     for round in round_config_list:
         round["children"] = []
         for param in round_param_values_list:
             if round['pk'] == param['round_configuration_pk']:
-                round["children"].append(param)  # set the round params list as this round's children
+                # set the round params list as this round's children
+                round["children"].append(param)
 
     json_data = {
         'expParamValuesList': exp_param_values_list,
@@ -1314,11 +1394,15 @@ class OstromlabFaqList(ListView):
 
 @experimenter_required
 def clone_experiment_configuration(request):
-    experiment_configuration_id = request.POST.get('experiment_configuration_id')
-    logger.debug("cloning experiment configuration %s", experiment_configuration_id)
-    experiment_configuration = get_object_or_404(ExperimentConfiguration, pk=experiment_configuration_id)
+    experiment_configuration_id = request.POST.get(
+        'experiment_configuration_id')
+    logger.debug(
+        "cloning experiment configuration %s", experiment_configuration_id)
+    experiment_configuration = get_object_or_404(
+        ExperimentConfiguration, pk=experiment_configuration_id)
     experimenter = request.user.experimenter
-    cloned_experiment_configuration = experiment_configuration.clone(creator=experimenter)
+    cloned_experiment_configuration = experiment_configuration.clone(
+        creator=experimenter)
     return JsonResponse(dumps({'success': True, 'experiment_configuration': cloned_experiment_configuration.to_dict()}))
 
 
@@ -1336,5 +1420,3 @@ def unsubscribe(request):
     else:
         return render(request, 'invalid_request.html',
                       {'message': "You aren't currently subscribed to our experiment session mailing list."})
-
-

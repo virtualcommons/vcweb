@@ -10,7 +10,7 @@ from vcweb.core.models import (
     Experimenter, Participant, Group, Experiment, ExperimentMetadata, Address, ParticipantExperimentRelationship,
     ParticipantGroupRelationship, GroupRoundDataValue, ParticipantRoundDataValue, GroupActivityLog, ChatMessage,
     Comment, Like, OstromlabFaqEntry, ParticipantSignup, Invitation, ExperimentSession
-    )
+)
 
 
 models = (

@@ -10,7 +10,8 @@ from model_utils.managers import PassThroughManager
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 
 from vcweb.core import signals, simplecache
-from vcweb.core.models import (ExperimentMetadata, GroupRoundDataValue, ParticipantRoundDataValue, Parameter, User)
+from vcweb.core.models import (
+    ExperimentMetadata, GroupRoundDataValue, ParticipantRoundDataValue, Parameter, User)
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,8 @@ def get_activity_points_cache():
     cv = 'activity_points_cache'
     activity_points_cache = cache.get(cv)
     if activity_points_cache is None:
-        activity_points_cache = dict([(a.pk, a.points) for a in Activity.objects.all()])
+        activity_points_cache = dict(
+            [(a.pk, a.points) for a in Activity.objects.all()])
         #cache.set(cv, activity_points_cache, timedelta(days=1).total_seconds())
         cache.set(cv, activity_points_cache, 86400)
     return activity_points_cache
@@ -47,11 +49,13 @@ def is_scheduled_activity_experiment(experiment_configuration):
 def round_started_handler(sender, experiment=None, **kwargs):
     logger.debug("starting lighter footprints %s", experiment)
     round_data = experiment.current_round_data
-    # FIXME: experiment.initialize_parameters could do some of this except for setting the default values properly
+    # FIXME: experiment.initialize_parameters could do some of this except for
+    # setting the default values properly
     footprint_level_parameter = get_footprint_level_parameter()
     experiment_completed_parameter = get_experiment_completed_parameter()
     experiment.initialize_data_values(
-        group_parameters=(footprint_level_parameter, experiment_completed_parameter,),
+        group_parameters=(
+            footprint_level_parameter, experiment_completed_parameter,),
         round_data=round_data,
         defaults={
             footprint_level_parameter: 1,
@@ -60,6 +64,7 @@ def round_started_handler(sender, experiment=None, **kwargs):
 
 
 class ActivityQuerySet(models.query.QuerySet):
+
     """
     Provides query set methods for finding all unlocked activities, scheduled activities
 
@@ -77,7 +82,8 @@ class ActivityQuerySet(models.query.QuerySet):
 
     def scheduled(self, round_configuration=None):
         if round_configuration is None:
-            logger.warn("No round configuration specified, cannot report scheduled activities.")
+            logger.warn(
+                "No round configuration specified, cannot report scheduled activities.")
             return []
         available_activity_ids = round_configuration.parameter_value_set.filter(
             parameter=get_available_activity_parameter()).values_list('int_value', flat=True)
@@ -97,6 +103,7 @@ class ActivityQuerySet(models.query.QuerySet):
 
 
 class ActivityManager(TreeManager, PassThroughManager):
+
     def already_performed(self, activity, participant_group_relationship, round_data):
         #today = datetime.combine(date.today(), time())
         return participant_group_relationship.data_value_set.filter(
@@ -108,7 +115,8 @@ class ActivityManager(TreeManager, PassThroughManager):
         current_time = datetime.now().time()
         if activity.available_all_day:
             return True
-        availabilities = activity.availability_set.filter(start_time__lte=current_time, end_time__gte=current_time)
+        availabilities = activity.availability_set.filter(
+            start_time__lte=current_time, end_time__gte=current_time)
         return availabilities.count() > 0
 
     def is_activity_available(self, activity, participant_group_relationship, round_data):
@@ -123,9 +131,11 @@ class ActivityManager(TreeManager, PassThroughManager):
                 level=get_footprint_level(participant_group_relationship.group, round_data))
         if activity in unlocked_activities:
             # check for time availability but disable for high school treatment
-            currently_available = is_high_school_treatment(round_configuration) or self.is_available_now(activity)
+            currently_available = is_high_school_treatment(
+                round_configuration) or self.is_available_now(activity)
             if currently_available:
-                # finally, if it is currently available, make sure they haven't already performed it
+                # finally, if it is currently available, make sure they haven't
+                # already performed it
                 return not self.already_performed(activity, participant_group_relationship, round_data)
         return False
 
@@ -155,8 +165,10 @@ class Activity(MPTTModel):
     creator = models.ForeignKey(User, null=True, blank=True)
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = models.DateTimeField(default=datetime.now)
-    # for the "in-the-wild" app, activities unlock other sets of activities in a tree-like fashion
-    parent = TreeForeignKey('self', null=True, blank=True, related_name='children_set')
+    # for the "in-the-wild" app, activities unlock other sets of activities in
+    # a tree-like fashion
+    parent = TreeForeignKey(
+        'self', null=True, blank=True, related_name='children_set')
     is_public = models.BooleanField(default=False)
 
     objects = ActivityManager.for_queryset_class(ActivityQuerySet)()
@@ -182,7 +194,8 @@ class Activity(MPTTModel):
             if self.available_all_day:
                 cv = 'all day'
             else:
-                cv = ','.join([availability.time_slot for availability in self.availability_set.all()])
+                cv = ','.join(
+                    [availability.time_slot for availability in self.availability_set.all()])
             cache.set(ck, cv)
         return cv
 
@@ -190,8 +203,8 @@ class Activity(MPTTModel):
         return Activity.objects.is_activity_available(self, participant_group_relationship, round_data)
 
     def to_dict(self, attrs=(
-    'pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'icon_url',
-    'icon_name', 'personal_benefits', 'points', 'time_slots')):
+            'pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'icon_url',
+            'icon_name', 'personal_benefits', 'points', 'time_slots')):
         ck = 'activity.%s' % self.pk
         cv = cache.get(ck)
         if cv is None:
@@ -203,7 +216,7 @@ class Activity(MPTTModel):
 
     def __unicode__(self):
         return unicode(self.pk)
-        #return u'%s : %s' % (self.label, self.points)
+        # return u'%s : %s' % (self.label, self.points)
 
     class Meta:
         ordering = ['level', 'name']
@@ -298,10 +311,13 @@ def get_treatment_type(round_configuration=None, default_treatment_type='LEADERB
     """
     possible treatment types: LEADERBOARD / NO_LEADERBOARD / HIGH_SCHOOL / LEVEL_BASED
     """
-    # XXX: if there is no treatment type we default to the compare other group / leaderboard treatment
-    treatment_type = round_configuration.get_parameter_value(parameter=get_treatment_type_parameter())
+    # XXX: if there is no treatment type we default to the compare other group
+    # / leaderboard treatment
+    treatment_type = round_configuration.get_parameter_value(
+        parameter=get_treatment_type_parameter())
     if treatment_type.string_value is None:
-        # check if it's been globally defined via this round configuration's experiment configuration
+        # check if it's been globally defined via this round configuration's
+        # experiment configuration
         treatment_type = round_configuration.experiment_configuration.get_parameter_value(
             parameter=get_treatment_type_parameter(), default=default_treatment_type)
     return treatment_type
@@ -309,13 +325,15 @@ def get_treatment_type(round_configuration=None, default_treatment_type='LEADERB
 
 def is_high_school_treatment(round_configuration=None, treatment_type=None):
     if treatment_type is None:
-        treatment_type = get_treatment_type(round_configuration=round_configuration).string_value
+        treatment_type = get_treatment_type(
+            round_configuration=round_configuration).string_value
     return 'HIGH_SCHOOL' in treatment_type
 
 
 def has_leaderboard(round_configuration=None, treatment_type=None):
     if treatment_type is None:
-        treatment_type = get_treatment_type(round_configuration=round_configuration).string_value
+        treatment_type = get_treatment_type(
+            round_configuration=round_configuration).string_value
     return 'LEADERBOARD' == treatment_type
 
 
@@ -353,11 +371,9 @@ def get_individual_points(participant_group_relationship, end_date=None):
         end_date = date.today()
     start_date = end_date - timedelta(1)
     pks = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship,
-                                                   date_created__range=(start_date, end_date),
+                                                   date_created__range=(
+                                                       start_date, end_date),
                                                    parameter=get_activity_performed_parameter()).values_list(
         'int_value', flat=True)
     # XXX: assumes that an Activity can only be performed once per round (day)
     return Activity.objects.total(pks=pks)
-
-
-

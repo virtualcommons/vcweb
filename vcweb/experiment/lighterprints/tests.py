@@ -3,11 +3,13 @@ import logging
 from datetime import date, timedelta
 
 from vcweb.core.tests import BaseVcwebTest
-from vcweb.core.models import (ParticipantGroupRelationship, ParticipantRoundDataValue)
+from vcweb.core.models import (
+    ParticipantGroupRelationship, ParticipantRoundDataValue)
 from vcweb.experiment.lighterprints.models import (Activity, get_lighterprints_experiment_metadata,
                                                    get_activity_performed_parameter, get_footprint_level,
                                                    get_individual_points, get_performed_activity_ids)
-from vcweb.experiment.lighterprints.services import (send_summary_emails, GroupScores, get_group_activity)
+from vcweb.experiment.lighterprints.services import (
+    send_summary_emails, GroupScores, get_group_activity)
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +33,8 @@ class BaseTest(BaseVcwebTest):
             self.assertTrue(self.client.login(username=participant.email, password='test'),
                             "%s failed to login" % participant)
             for activity in activities:
-                expected_success = activity.is_available_for(participant_group_relationship, rd)
+                expected_success = activity.is_available_for(
+                    participant_group_relationship, rd)
                 if expected_success:
                     performed_activities.add(activity)
                 response = self.client.post('/lighterprints/api/do-activity', {
@@ -44,14 +47,17 @@ class BaseTest(BaseVcwebTest):
         return performed_activities
 
     def setUp(self, **kwargs):
-        super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
+        super(BaseTest, self).setUp(
+            experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
 
 
 class ActivityViewTest(BaseTest):
+
     def test_list(self):
         for pgr in self.experiment.participant_group_relationships:
             participant = pgr.participant
-            response = self.client.get('/lighterprints/activity/list', {'format': 'json'})
+            response = self.client.get(
+                '/lighterprints/activity/list', {'format': 'json'})
             self.assertEqual(response.status_code, 403)
             self.client.login(username=participant.email, password='test')
             response = self.client.get('/lighterprints/activity/list',
@@ -64,6 +70,7 @@ class ActivityViewTest(BaseTest):
 
 
 class UpdateLevelTest(BaseTest):
+
     def test_daily_points(self):
         e = self.experiment
         e.activate()
@@ -89,6 +96,7 @@ class UpdateLevelTest(BaseTest):
 
 
 class GroupActivityTest(BaseTest):
+
     def test_group_activity(self):
         e = self.experiment
         e.activate()
@@ -96,7 +104,8 @@ class GroupActivityTest(BaseTest):
         for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
             (group_activity, chat_messages) = get_group_activity(pgr)
             logger.debug("group activity is %s", len(group_activity))
-            self.assertEqual(len(group_activity), len(performed_activities) * pgr.group.size)
+            self.assertEqual(
+                len(group_activity), len(performed_activities) * pgr.group.size)
 
     def test_group_activity_email(self):
         e = self.experiment
@@ -104,11 +113,13 @@ class GroupActivityTest(BaseTest):
         self.perform_activities()
         group_scores = GroupScores(e, e.current_round_data)
         for group in e.groups:
-            messages = group_scores.create_level_based_group_summary_emails(group, level=2)
+            messages = group_scores.create_level_based_group_summary_emails(
+                group, level=2)
             self.assertEqual(len(messages), group.size)
 
 
 class ActivityTest(BaseTest):
+
     def test_view(self):
         logger.debug("testing do activity view")
         e = self.experiment
@@ -123,7 +134,8 @@ class ActivityTest(BaseTest):
             for activity in activities:
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant,
                              activity)
-                expected_success = activity.is_available_for(participant_group_relationship, rd)
+                expected_success = activity.is_available_for(
+                    participant_group_relationship, rd)
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
@@ -131,7 +143,8 @@ class ActivityTest(BaseTest):
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
                 self.assertEqual(expected_success, json_object['success'])
-                # trying to do the same activity again should result in an error response
+                # trying to do the same activity again should result in an
+                # error response
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
@@ -140,7 +153,8 @@ class ActivityTest(BaseTest):
                 json_object = json.loads(response.content)
                 self.assertFalse(json_object['success'])
 
-            performed_activity_ids = get_performed_activity_ids(participant_group_relationship)
+            performed_activity_ids = get_performed_activity_ids(
+                participant_group_relationship)
             text = "This is a harrowing comment"
             for activity_id in performed_activity_ids:
                 logger.debug("posting comment on id %s", activity_id)
@@ -152,10 +166,11 @@ class ActivityTest(BaseTest):
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
                 self.assertTrue(json_object)
-                self.assertIsNotNone(json_object['viewModel']);
+                self.assertIsNotNone(json_object['viewModel'])
 
 
 class GroupScoreTest(ActivityTest):
+
     def test_individual_points(self):
         e = self.experiment
         e.activate()
@@ -163,7 +178,8 @@ class GroupScoreTest(ActivityTest):
         logger.debug("performed activities: %s", performed_activities)
         for pgr in e.participant_group_relationships:
             self.assertEqual(get_individual_points(pgr), 0)
-            self.assertTrue(get_individual_points(pgr, end_date=date.today() + timedelta(1)) > 0)
+            self.assertTrue(
+                get_individual_points(pgr, end_date=date.today() + timedelta(1)) > 0)
 
     def test_group_score(self):
         e = self.experiment
@@ -173,7 +189,10 @@ class GroupScoreTest(ActivityTest):
         group_scores = GroupScores(e, groups=gs)
         # expected average points per person is the straight sum of all activities in the performed activities because
         # every participant in the group has performed them
-        expected_avg_points_per_person = sum([activity.points for activity in performed_activities])
+        expected_avg_points_per_person = sum(
+            [activity.points for activity in performed_activities])
         for group in gs:
-            self.assertEqual(group_scores.average_daily_points(group), expected_avg_points_per_person)
-            self.assertEqual(group_scores.total_daily_points(group), expected_avg_points_per_person * group.size)
+            self.assertEqual(
+                group_scores.average_daily_points(group), expected_avg_points_per_person)
+            self.assertEqual(group_scores.total_daily_points(
+                group), expected_avg_points_per_person * group.size)

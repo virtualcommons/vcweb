@@ -16,8 +16,10 @@ def log_signal_errors(signal_sender):
         if results:
             for receiver, response in results:
                 if response is not None:
-                    logger.error("errors while dispatching to %s: %s", receiver, response)
+                    logger.error(
+                        "errors while dispatching to %s: %s", receiver, response)
     return error_checker
+
 
 def is_anonymous(user):
     return user is None or not user.is_authenticated()
@@ -25,7 +27,7 @@ def is_anonymous(user):
 
 def anonymous_required(view_function=None, redirect_to='core:dashboard'):
     return create_user_decorator(view_function, is_anonymous, redirect_to=redirect_to)
-    #return create_decorator(view_function, is_anonymous)
+    # return create_decorator(view_function, is_anonymous)
 
 
 def experimenter_required(view_function=None):
@@ -50,7 +52,8 @@ def create_user_decorator(view_function, is_valid_user, redirect_to='core:dashbo
                 logger.debug('user was valid: %s', request.user)
                 return fn(request, *args, **kwargs)
             else:
-                logger.debug('user was invalid, redirecting to %s', redirect_to)
+                logger.debug(
+                    'user was invalid, redirecting to %s', redirect_to)
                 return redirect(redirect_to)
 
         _decorated_view.__name__ = fn.__name__

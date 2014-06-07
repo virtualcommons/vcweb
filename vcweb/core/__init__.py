@@ -10,7 +10,9 @@ from django.utils.functional import curry
 
 logger = logging.getLogger(__name__)
 
+
 class VcwebJSONEncoder(DjangoJSONEncoder):
+
     def default(self, obj):
         if isinstance(obj, QuerySet):
             return json.loads(serialize('json', obj))
@@ -24,10 +26,12 @@ dumps = curry(json.dumps, cls=VcwebJSONEncoder)
 
 # FIXME: deprecate this in favor of django.cache memcached caching?
 class simplecache(object):
+
     """
     only works on no-arg functions that return instances of models that will never change (data parameters,
     experiment metadata, etc.)
     """
+
     def __init__(self, func):
         # invoking the func at init time causes syncdb to croak
         self.cached_object = None
@@ -42,6 +46,3 @@ class simplecache(object):
 def enum(*sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
     return type('Enum', (), enums)
-
-
-

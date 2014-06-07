@@ -39,12 +39,16 @@ class URLInput(widgets.Input):
 
 
 class BaseRegistrationForm(forms.Form):
-    first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    first_name = forms.CharField(
+        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    last_name = forms.CharField(
+        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=EmailInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_(
         'Please enter a valid email.  We will never share your email in any way, shape, or form.'))
-    password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
-    confirm_password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
+    password = forms.CharField(
+        widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
+    confirm_password = forms.CharField(
+        widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
     institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=True,
                                   help_text=_('The primary institution, if any, you are affiliated with.'))
 
@@ -63,7 +67,8 @@ class BaseRegistrationForm(forms.Form):
         confirm_pw = cleaned_data['confirm_password']
         if pw == confirm_pw:
             return cleaned_data
-        raise forms.ValidationError(_("Please make sure your passwords match."), code='invalid')
+        raise forms.ValidationError(
+            _("Please make sure your passwords match."), code='invalid')
 
 
 class RegistrationForm(BaseRegistrationForm):
@@ -72,30 +77,38 @@ class RegistrationForm(BaseRegistrationForm):
 
 
 class VcwebPasswordResetForm(PasswordResetForm):
+
     def __init__(self, *args, **kwargs):
         super(VcwebPasswordResetForm, self).__init__(*args, **kwargs)
 
 
 class LoginForm(forms.Form):
-    email = forms.EmailField(widget=EmailInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
-    password = forms.CharField(widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
+    email = forms.EmailField(
+        widget=EmailInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
+    password = forms.CharField(
+        widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
 
     def clean(self):
         cleaned_data = super(LoginForm, self).clean()
         email_address = cleaned_data.get('email').lower()
         password = cleaned_data.get('password')
         if email_address and password:
-            self.user_cache = authenticate(username=email_address, password=password)
+            self.user_cache = authenticate(
+                username=email_address, password=password)
             if self.user_cache is None:
-                raise forms.ValidationError(_("Your combination of email and password was incorrect."), code='invalid')
+                raise forms.ValidationError(
+                    _("Your combination of email and password was incorrect."), code='invalid')
             elif not self.user_cache.is_active:
-                raise forms.ValidationError(_("This user has been deactivated. Please contact us if this is in error."))
+                raise forms.ValidationError(
+                    _("This user has been deactivated. Please contact us if this is in error."))
         return cleaned_data
 
 
 class AsuRegistrationForm(forms.ModelForm):
-    first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    first_name = forms.CharField(
+        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    last_name = forms.CharField(
+        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES),
                              help_text=_('We will never share your email.'))
 
@@ -108,7 +121,6 @@ class AsuRegistrationForm(forms.ModelForm):
             for attr in ('first_name', 'last_name', 'email', 'major'):
                 self.fields[attr].initial = getattr(instance, attr)
 
-
     class Meta:
         model = Participant
         fields = ['major', 'class_status', 'gender', 'favorite_sport', 'favorite_color', 'favorite_food',
@@ -119,8 +131,10 @@ class AsuRegistrationForm(forms.ModelForm):
 
 
 class ParticipantAccountForm(forms.ModelForm):
-    first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    first_name = forms.CharField(
+        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    last_name = forms.CharField(
+        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES),
                              help_text=_('We will never share your email.'))
     institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False,
@@ -134,7 +148,8 @@ class ParticipantAccountForm(forms.ModelForm):
                                     'major', 'class_status', 'gender', 'favorite_sport', 'favorite_color',
                                     'favorite_food', 'favorite_movie_genre']
             self.fields['class_status'].label = 'Class Status'
-            self.fields['can_receive_invitations'].label = 'Receive invitations for experiments?'
+            self.fields[
+                'can_receive_invitations'].label = 'Receive invitations for experiments?'
 
             for attr in ('first_name', 'last_name', 'email'):
                 self.fields[attr].initial = getattr(instance, attr)
@@ -167,7 +182,8 @@ class ParticipantAccountForm(forms.ModelForm):
         favorite_sport = data.get('favorite_sport')
         favorite_movie_genre = data.get('favorite_movie_genre')
         if not email_address:
-            raise forms.ValidationError(_("Please enter a valid email address"))
+            raise forms.ValidationError(
+                _("Please enter a valid email address"))
 
         if can_be_invited and (not major or not gender or not class_status or not favorite_food or not favorite_color
                                or not favorite_sport or not favorite_movie_genre):
@@ -178,8 +194,10 @@ class ParticipantAccountForm(forms.ModelForm):
 
 
 class ExperimenterAccountForm(forms.ModelForm):
-    first_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    last_name = forms.CharField(widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    first_name = forms.CharField(
+        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
+    last_name = forms.CharField(
+        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
     email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES),
                              help_text=_('We will never share your email.'))
     institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False,
@@ -189,7 +207,8 @@ class ExperimenterAccountForm(forms.ModelForm):
         instance = kwargs.get('instance')
         if instance is not None:
             super(ExperimenterAccountForm, self).__init__(*args, **kwargs)
-            self.fields.keyOrder = ['first_name', 'last_name', 'email', 'institution', ]
+            self.fields.keyOrder = [
+                'first_name', 'last_name', 'email', 'institution', ]
 
             for attr in ('first_name', 'last_name', 'email'):
                 self.fields[attr].initial = getattr(instance, attr)
@@ -202,25 +221,30 @@ class ExperimenterAccountForm(forms.ModelForm):
 
     class Meta:
         model = Experimenter
-        exclude = ('approved', 'institution', 'failed_password_attempts', 'authentication_token', 'user')
+        exclude = ('approved', 'institution',
+                   'failed_password_attempts', 'authentication_token', 'user')
 
 
 email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
 
 
 class ExperimentConfigurationForm(forms.ModelForm):
+
     class Meta:
         model = ExperimentConfiguration
-        exclude = ('creator', 'last_modified', 'date_created', 'cached_final_sequence_number', 'invitation_text')
+        exclude = ('creator', 'last_modified', 'date_created',
+                   'cached_final_sequence_number', 'invitation_text')
         widgets = {
             'registration_email_subject': forms.Textarea(attrs={'class': 'form-control', 'cols': 40, 'rows': 2}),
         }
 
 
 class ExperimentParameterValueForm(forms.ModelForm):
+
     def __init__(self, *args, **kwargs):
         super(ExperimentParameterValueForm, self).__init__(*args, **kwargs)
-        self.fields['parameter'].queryset = self.fields['parameter'].queryset.filter(scope='experiment')
+        self.fields['parameter'].queryset = self.fields[
+            'parameter'].queryset.filter(scope='experiment')
 
         for name, field in self.fields.items():
             if field.widget.__class__ == CheckboxInput:
@@ -237,6 +261,7 @@ class ExperimentParameterValueForm(forms.ModelForm):
 
 
 class RoundConfigurationForm(forms.ModelForm):
+
     def __init__(self, *args, **kwargs):
         super(RoundConfigurationForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
@@ -259,9 +284,11 @@ class RoundConfigurationForm(forms.ModelForm):
 
 
 class RoundParameterValueForm(forms.ModelForm):
+
     def __init__(self, *args, **kwargs):
         super(RoundParameterValueForm, self).__init__(*args, **kwargs)
-        self.fields['parameter'].queryset = self.fields['parameter'].queryset.filter(scope='round')
+        self.fields['parameter'].queryset = self.fields[
+            'parameter'].queryset.filter(scope='round')
 
         for name, field in self.fields.items():
             if field.widget.__class__ == CheckboxInput:
@@ -276,6 +303,7 @@ class RoundParameterValueForm(forms.ModelForm):
             'string_value': forms.Textarea(attrs={'cols': 40, 'rows': 3}),
         }
 
+
 class EmailListField(forms.CharField):
     widget = forms.Textarea
 
@@ -284,7 +312,8 @@ class EmailListField(forms.CharField):
         lines = value.split('\n')
         #emails = email_separator_re.split(value)
         if not lines:
-            raise ValidationError(_(u'You must enter at least one email address.'))
+            raise ValidationError(
+                _(u'You must enter at least one email address.'))
         emails = []
         for line in lines:
             # check for emails in the form of Allen T Lee <allen.t.lee@asu.edu>
@@ -310,25 +339,29 @@ class RegisterParticipantsForm(forms.Form):
                                           help_text=_('''Participant password to login to the experiment.
                                            If blank, a unique password will be autogenerated by the system for each participant.'''))
     institution_name = forms.CharField(min_length=3, label="Institution name",
-                                  required=False, initial='Arizona State University',
-                                  widget=autocomplete_light.TextWidget(InstitutionAutocomplete),
-                                  help_text=_('Institution to associate with these participants if they do not already exist in the system.'))
+                                       required=False, initial='Arizona State University',
+                                       widget=autocomplete_light.TextWidget(
+                                           InstitutionAutocomplete),
+                                       help_text=_('Institution to associate with these participants if they do not already exist in the system.'))
     registration_email_from_address = forms.EmailField(widget=EmailInput(), label=_('Sender email'),
                                                        help_text=_(
                                                            "Email address to use in the from field of the registration email"))
-    sender = forms.CharField(required=False, label='Sender name', help_text=_('Name to use when signing off the registration email'), initial="The vcweb development team")
+    sender = forms.CharField(required=False, label='Sender name', help_text=_(
+        'Name to use when signing off the registration email'), initial="The vcweb development team")
     registration_email_subject = forms.CharField(min_length=3, label="Email subject",
                                                  help_text=_('Subject line for the registration email'))
     registration_email_text = forms.CharField(required=False, widget=forms.Textarea, label="Email body",
-            help_text=_('Custom registration email text to appear at the beginning of the message, before the generated registration text.'))
+                                              help_text=_('Custom registration email text to appear at the beginning of the message, before the generated registration text.'))
 
     def clean_institution(self):
         institution_name = self.cleaned_data.get('institution_name').strip()
         if institution_name is None:
             self.institution = None
         else:
-            (institution, created) = Institution.objects.get_or_create(name=institution_name)
-            logger.debug("get or create institution %s - created? %s", institution_name, created)
+            (institution, created) = Institution.objects.get_or_create(
+                name=institution_name)
+            logger.debug(
+                "get or create institution %s - created? %s", institution_name, created)
             self.institution = institution
         return self.institution
 
@@ -344,7 +377,8 @@ class RegisterTestParticipantsForm(RegisterParticipantsForm):
                                     email suffix of mailinator.com, the system will generate 20 participants with
                                     usernames ranging from s1asu@mailinator.com, s2asu@mailinator.com,
                                     s3asu@mailinator.com, ... s20asu@mailinator.com.'''))
-    number_of_participants = forms.IntegerField(min_value=2, initial=10, widget=NumberInput(attrs={'min': 2}))
+    number_of_participants = forms.IntegerField(
+        min_value=2, initial=10, widget=NumberInput(attrs={'min': 2}))
 
 
 class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
@@ -360,7 +394,8 @@ class RegisterExcelParticipantsForm(RegisterParticipantsForm):
 class ChatForm(forms.Form):
     message = forms.CharField()
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
-    target_participant_group_id = forms.IntegerField(widget=forms.HiddenInput, required=False)
+    target_participant_group_id = forms.IntegerField(
+        widget=forms.HiddenInput, required=False)
 
     def clean_message(self):
         return self.cleaned_data['message']
@@ -388,17 +423,21 @@ class BookmarkExperimentMetadataForm(forms.Form):
     def clean_experiment_metadata_id(self):
         experiment_metadata_id = self.cleaned_data['experiment_metadata_id']
         try:
-            self.cleaned_data['experiment_metadata'] = ExperimentMetadata.objects.get(pk=experiment_metadata_id)
+            self.cleaned_data['experiment_metadata'] = ExperimentMetadata.objects.get(
+                pk=experiment_metadata_id)
         except ExperimentMetadata.DoesNotExist:
-            raise ValidationError("Invalid experiment metadata id: %s" % experiment_metadata_id)
+            raise ValidationError(
+                "Invalid experiment metadata id: %s" % experiment_metadata_id)
         return experiment_metadata_id
 
     def clean_experimenter_id(self):
         experimenter_id = self.cleaned_data['experimenter_id']
         try:
-            self.cleaned_data['experimenter'] = Experimenter.objects.get(pk=experimenter_id)
+            self.cleaned_data['experimenter'] = Experimenter.objects.get(
+                pk=experimenter_id)
         except Experimenter.DoesNotExist:
-            raise ValidationError("Invalid experimenter id %s" % experimenter_id)
+            raise ValidationError(
+                "Invalid experimenter id %s" % experimenter_id)
         return experimenter_id
 
 
@@ -433,12 +472,15 @@ class LogMessageForm(forms.Form):
 
 class SingleIntegerDecisionForm(forms.Form):
     integer_decision = forms.IntegerField(required=True, min_value=0)
-    participant_group_id = forms.IntegerField(required=True, widget=forms.widgets.HiddenInput)
-    submitted = forms.BooleanField(required=False, widget=forms.widgets.HiddenInput)
+    participant_group_id = forms.IntegerField(
+        required=True, widget=forms.widgets.HiddenInput)
+    submitted = forms.BooleanField(
+        required=False, widget=forms.widgets.HiddenInput)
 
 
 class QuizForm(forms.Form):
-    name_question = forms.CharField(max_length=64, label=_("What is your name?"))
+    name_question = forms.CharField(
+        max_length=64, label=_("What is your name?"))
 
     def __init__(self, *args, **kwargs):
         quiz_questions = []
@@ -447,13 +489,10 @@ class QuizForm(forms.Form):
         finally:
             super(QuizForm, self).__init__(*args, **kwargs)
             for quiz_question in quiz_questions:
-                self.fields['quiz_question_%d' % quiz_question.pk] = forms.CharField(label=quiz_question.label)
+                self.fields['quiz_question_%d' % quiz_question.pk] = forms.CharField(
+                    label=quiz_question.label)
 
     def extra_questions(self):
         for name, value in self.cleaned_data.items():
             if name.startswith('quiz_question_'):
                 yield (self.fields[name].label, value)
-
-
-
-

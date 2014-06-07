@@ -5,7 +5,8 @@ from django.db import models, transaction
 from django.dispatch import receiver
 
 from vcweb.core import signals, simplecache
-from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, ParticipantGroupRelationship)
+from vcweb.core.models import (
+    ExperimentMetadata, Parameter, ParticipantRoundDataValue, ParticipantGroupRelationship)
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,8 @@ def get_regrowth_dv(group, round_data=None):
     return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0)
 
 
-# returns the number of resources regenerated for the given group in the given round
+# returns the number of resources regenerated for the given group in the
+# given round
 def get_regrowth(group, round_data=None):
     return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0).int_value
 
@@ -60,18 +62,21 @@ def get_harvest_decision(participant_group_relationship, round_data=None, defaul
 
 
 def set_regrowth(group, value, round_data=None):
-    group.set_data_value(parameter=get_regrowth_parameter(), value=value, round_data=round_data)
+    group.set_data_value(
+        parameter=get_regrowth_parameter(), value=value, round_data=round_data)
 
 
 def set_group_harvest(group, value, round_data=None):
-    group.set_data_value(parameter=get_group_harvest_parameter(), value=value, round_data=round_data)
+    group.set_data_value(
+        parameter=get_group_harvest_parameter(), value=value, round_data=round_data)
 
 
 def can_view_group_results(round_configuration, default=True):
     return round_configuration.get_parameter_value(name='view_group_results', default=default, inheritable=True)
 
 
-# FIXME: Boundry Effects Experiment also uses this and has a duplicate version in bound/models.py
+# FIXME: Boundry Effects Experiment also uses this and has a duplicate
+# version in bound/models.py
 def should_reset_resource_level(round_configuration, experiment):
     if round_configuration.is_repeating_round and experiment.current_repeated_round_sequence_number > 0:
         return False
@@ -136,19 +141,23 @@ def get_total_group_harvest(group, round_data):
 
 
 class GroupData(object):
+
     def __init__(self, self_pgr, previous_round_data, current_round_data):
         self.pgr = self_pgr
         self.group = self_pgr.group
-        self.pgr_list = ParticipantGroupRelationship.objects.filter(group=self.group)
+        self.pgr_list = ParticipantGroupRelationship.objects.filter(
+            group=self.group)
         self.player_dict = defaultdict(lambda: defaultdict(lambda: None))
 
         prdvs = ParticipantRoundDataValue.objects.for_group(group=self.group,
                                                             parameter=get_harvest_decision_parameter(),
                                                             round_data__in=[previous_round_data, current_round_data])
 
-        # Converting django ORM object to dictionary so that it can be indexed easily to get parameter values
+        # Converting django ORM object to dictionary so that it can be indexed
+        # easily to get parameter values
         for prdv in prdvs:
-            self.player_dict[prdv.participant_group_relationship][prdv.parameter] = prdv
+            self.player_dict[prdv.participant_group_relationship][
+                prdv.parameter] = prdv
 
     def get_last_harvest_decision(self, pgr):
         try:
@@ -167,7 +176,8 @@ class GroupData(object):
         return group_data
 
     def get_own_data(self):
-        own_data = {'lastHarvestDecision': self.get_last_harvest_decision(self.pgr)}
+        own_data = {
+            'lastHarvestDecision': self.get_last_harvest_decision(self.pgr)}
         return own_data
 
     def get_group_earnings(self, round_list, exchange_rate):
@@ -181,7 +191,7 @@ class GroupData(object):
         return group_data
 
     def get_own_earnings(self, round_list, exchange_rate):
-        return get_total_experiment_harvest(self.pgr, round_list)* exchange_rate
+        return get_total_experiment_harvest(self.pgr, round_list) * exchange_rate
 
 
 @transaction.atomic
@@ -233,7 +243,8 @@ def get_regrowth_rate_parameter():
     return Parameter.objects.for_round(name='regrowth_rate')
 
 
-# parameter for the amount of resources that were regrown at the end of the given round for the given group
+# parameter for the amount of resources that were regrown at the end of
+# the given round for the given group
 @simplecache
 def get_regrowth_parameter():
     return Parameter.objects.for_group(name='group_regrowth')
@@ -263,7 +274,8 @@ def get_initial_resource_level_parameter():
 @transaction.atomic
 def round_started_handler(sender, experiment=None, **kwargs):
     if experiment is None:
-        logger.error("Received round started signal with no experiment: %s", sender)
+        logger.error(
+            "Received round started signal with no experiment: %s", sender)
         raise ValueError("Received round started signal with no experiment")
 
     round_configuration = experiment.current_round
@@ -272,7 +284,8 @@ def round_started_handler(sender, experiment=None, **kwargs):
 
     # initialize group, group cluster, and participant data values
     experiment.initialize_data_values(
-        group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
+        group_parameters=(get_regrowth_parameter(
+        ), get_group_harvest_parameter(), get_resource_level_parameter()),
         defaults={
             get_regrowth_parameter(): 0
         }
@@ -280,11 +293,13 @@ def round_started_handler(sender, experiment=None, **kwargs):
 
     if should_reset_resource_level(round_configuration, experiment):
         initial_resource_level = get_max_resource_level(round_configuration)
-        logger.debug("Resetting resource level for all groups in %s to %d", round_configuration, initial_resource_level)
+        logger.debug("Resetting resource level for all groups in %s to %d",
+                     round_configuration, initial_resource_level)
 
         for group in experiment.groups:
             # set resource level to initial default values
-            existing_resource_level = get_resource_level_dv(group, round_data, round_configuration)
+            existing_resource_level = get_resource_level_dv(
+                group, round_data, round_configuration)
             group.log("Resetting resource level (%s) to initial value [%s]" %
                       (existing_resource_level, initial_resource_level))
             existing_resource_level.update_int(initial_resource_level)
@@ -293,30 +308,38 @@ def round_started_handler(sender, experiment=None, **kwargs):
 @transaction.atomic
 def update_resource_level(experiment, group, round_data, regrowth_rate, max_resource_level=None):
     if max_resource_level is None:
-        max_resource_level = get_max_resource_level(round_data.round_configuration)
+        max_resource_level = get_max_resource_level(
+            round_data.round_configuration)
 
     current_resource_level_dv = get_resource_level_dv(group, round_data)
     current_resource_level = current_resource_level_dv.int_value
     group_harvest_dv = get_group_harvest_dv(group, round_data)
     regrowth_dv = get_regrowth_dv(group, round_data)
     total_harvest = get_total_group_harvest(group, round_data)
-    logger.debug("Harvest: total group harvest for playable round: %s", total_harvest)
+    logger.debug(
+        "Harvest: total group harvest for playable round: %s", total_harvest)
 
     if current_resource_level > 0 and total_harvest > 0:
-        group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level))
+        group.log("Harvest: removing %s from current resource level %s" %
+                  (total_harvest, current_resource_level))
         group_harvest_dv.update_int(total_harvest)
         current_resource_level = current_resource_level - total_harvest
-        resource_regrowth = calculate_regrowth(current_resource_level, regrowth_rate, max_resource_level)
-        group.log("Regrowth: adding %s to current resource level %s" % (resource_regrowth, current_resource_level))
+        resource_regrowth = calculate_regrowth(
+            current_resource_level, regrowth_rate, max_resource_level)
+        group.log("Regrowth: adding %s to current resource level %s" %
+                  (resource_regrowth, current_resource_level))
         regrowth_dv.update_int(resource_regrowth)
         # clamp resource
-        current_resource_level_dv.update_int(min(current_resource_level + resource_regrowth, max_resource_level))
+        current_resource_level_dv.update_int(
+            min(current_resource_level + resource_regrowth, max_resource_level))
 
     # XXX: transfer resource levels across chat and quiz rounds if they exist
     if experiment.has_next_round:
         # set group round data resource_level for each group + regrowth
-        group.log("Transferring resource level %s to next round" % current_resource_level_dv.int_value)
-        group.copy_to_next_round(current_resource_level_dv, group_harvest_dv, regrowth_dv)
+        group.log("Transferring resource level %s to next round" %
+                  current_resource_level_dv.int_value)
+        group.copy_to_next_round(
+            current_resource_level_dv, group_harvest_dv, regrowth_dv)
 
 
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
@@ -339,15 +362,18 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                 round_data=round_data, participant_group_relationship=pgr,
                 parameter=harvest_decision_parameter, is_active=True
             )
-            # If no harvest decision was submitted by the participant then create one with default value
+            # If no harvest decision was submitted by the participant then
+            # create one with default value
             if prdvs.count() == 0:
                 prdv = ParticipantRoundDataValue.objects.create(
                     round_data=round_data, participant_group_relationship=pgr,
                     parameter=harvest_decision_parameter, is_active=True, int_value=0
                 )
-                logger.debug("created new harvest decision prdv %s for participant %s", prdv, pgr)
+                logger.debug(
+                    "created new harvest decision prdv %s for participant %s", prdv, pgr)
             elif prdvs.count() > 1:
-                # multiple active harvest decisions, only allow the latest one to be active
+                # multiple active harvest decisions, only allow the latest one
+                # to be active
                 latest_prdv = prdvs.latest()
                 prdvs.exclude(pk=latest_prdv.pk).update(is_active=False)
 

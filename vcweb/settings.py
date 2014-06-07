@@ -96,9 +96,9 @@ ROOT_URLCONF = 'vcweb.urls'
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 TEMPLATE_DIRS = (
-# Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-# Always use forward slashes, even on Windows.
-# Don't forget to use absolute paths, not relative paths.
+    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
 )
 
 INSTALLED_APPS = (
@@ -163,25 +163,15 @@ INSTAGRAM_CLIENT_SECRET = ''
 
 LOGIN_REDIRECT_URL = '/dashboard'
 LOGIN_ERROR_URL = '/login-error/'
-#LOGIN_REDIRECT_URL='/dashboard'
-#LOGIN_ERROR_URL='/accounts/login/error'
+# LOGIN_REDIRECT_URL='/dashboard'
+# LOGIN_ERROR_URL='/accounts/login/error'
 SOCIAL_AUTH_COMPLETE_URL_NAME = 'socialauth_complete'
 SOCIAL_AUTH_ASSOCIATE_URL_NAME = 'socialauth_associate_complete'
 
 SOCIAL_AUTH_RAISE_EXCEPTIONS = DEBUG
 
-#SOCIAL_AUTH_USER_MODEL = 'core.Participant'
-#AUTH_USER_MODEL = 'models.User'
-
-
 # websockets configuration
-WEBSOCKET_PORT = 8882;
-
-# celerybeat configuration
-CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
-CELERYBEAT_MAX_LOOP_INTERVAL = 5
-CELERYBEAT_LOG_FILE = 'celerybeat.log'
-CELERYBEAT_LOG_LEVEL = 'ERROR'
+WEBSOCKET_PORT = 8882
 
 # activation window
 ACCOUNT_ACTIVATION_DAYS = 30
@@ -199,7 +189,8 @@ AUTHENTICATION_BACKENDS = (
 STATIC_URL = '/static/'
 STATIC_ROOT = '/var/www/vcweb/static/'
 STATICFILES_DIRS = (
-    path.join(path.abspath(path.dirname(__file__)), 'static').replace('\\', '/'),
+    path.join(path.abspath(path.dirname(__file__)), 'static').replace(
+        '\\', '/'),
 )
 
 # Absolute path to the directory that holds media.
@@ -218,6 +209,7 @@ MEDIA_URL = '/static/media/'
 #     messages.constants.ERROR: 'ui-state-error ui-corner-all'
 # }
 
+
 def is_accessible(directory_path):
     return path.isdir(directory_path) and os.access(directory_path, os.W_OK | os.X_OK)
 
@@ -229,7 +221,7 @@ if not is_accessible(LOG_DIRECTORY):
         print "Unable to create absolute log directory at %s, setting to relative path logs instead" % LOG_DIRECTORY
         LOG_DIRECTORY = 'logs'
         if not is_accessible(LOG_DIRECTORY):
-            try: 
+            try:
                 os.makedirs(LOG_DIRECTORY)
             except OSError:
                 print "Couldn't create any log directory, startup will fail"
@@ -316,7 +308,8 @@ def add_settings_tuples(varname, settings_local):
     settings_local_tuple = getattr(settings_local, varname, None)
     original_settings_tuple = globals()[varname]
     if settings_local_tuple is not None:
-    #    print "adding local setting %s to existing %s %s" % (settings_local_tuple, varname, original_settings_tuple)
+        # print "adding local setting %s to existing %s %s" %
+        # (settings_local_tuple, varname, original_settings_tuple)
         globals()[varname] = original_settings_tuple + settings_local_tuple
 
 
@@ -328,8 +321,10 @@ if has_local_settings:
         DATABASES = getattr(settings_local, 'DATABASES', DATABASES)
         SECRET_KEY = getattr(settings_local, 'SECRET_KEY', SECRET_KEY)
         SITE_URL = getattr(settings_local, 'SITE_URL', SITE_URL)
-        BITBUCKET_API_USER = getattr(settings_local, 'BITBUCKET_API_USER', BITBUCKET_API_USER)
-        BITBUCKET_API_PW = getattr(settings_local, 'BITBUCKET_API_PW', BITBUCKET_API_PW)
+        BITBUCKET_API_USER = getattr(
+            settings_local, 'BITBUCKET_API_USER', BITBUCKET_API_USER)
+        BITBUCKET_API_PW = getattr(
+            settings_local, 'BITBUCKET_API_PW', BITBUCKET_API_PW)
         add_settings_tuples('MIDDLEWARE_CLASSES', settings_local)
         add_settings_tuples('INSTALLED_APPS', settings_local)
         add_settings_tuples('ALLOWED_HOSTS', settings_local)

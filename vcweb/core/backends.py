@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class EmailAuthenticationBackend(ModelBackend):
+
     """
     allow users to login with their email as their username,
     adapted from http://djangosnippets.org/snippets/74/ and
@@ -27,7 +28,8 @@ class EmailAuthenticationBackend(ModelBackend):
             user = User.objects.get(email=lowercase_username)
             if user.check_password(password):
                 return user
-                # check for and handle participants logging in with an auth code?
+                # check for and handle participants logging in with an auth
+                # code?
         except User.DoesNotExist:
             logger.warning("no user found with username %s", username)
         except:
@@ -36,6 +38,7 @@ class EmailAuthenticationBackend(ModelBackend):
 
 
 class ParticipantCASBackend(CASBackend):
+
     """
     CAS authentication backend with some user data populated from ASU's Web Directory.
 
@@ -50,9 +53,11 @@ class ParticipantCASBackend(CASBackend):
         user = super(ParticipantCASBackend, self).authenticate(ticket, service)
 
         # If user is not in the system then an user with empty fields will be created by the CAS. So delete that user
-        # FIXME: Permission denied error is thrown if the ASU Web Directory is down
+        # FIXME: Permission denied error is thrown if the ASU Web Directory is
+        # down
         if is_new_user(user):
-            logger.error("XXX: CAS authenticated user %s is not an undergrad student, deleting", user)
+            logger.error(
+                "XXX: CAS authenticated user %s is not an undergrad student, deleting", user)
             # Delete the user as it has an "unusable" password
             user.delete()
             raise PermissionDenied(

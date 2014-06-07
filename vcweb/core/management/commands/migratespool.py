@@ -18,15 +18,17 @@ class Command(BaseCommand):
     def migrate_participants(self, cnx):
         cursor = cnx.cursor()
         query = ("SELECT u.username, u.fullName, u.dateCreated, u.emailAddress, p.gender, p.classStatus, p.major, p.affiliation "
-                " FROM user u inner join participant p on u.id=p.id "
-                " WHERE u.active=1")
+                 " FROM user u inner join participant p on u.id=p.id "
+                 " WHERE u.active=1")
         cursor.execute(query)
-        asu_institution = Institution.objects.get(name='Arizona State University')
+        asu_institution = Institution.objects.get(
+            name='Arizona State University')
         existing_users = []
         new_users = []
         new_participants = []
         skipped_participants = []
-        class_status_offsets = {'Freshman': timedelta(days=365*3), 'Sophomore': timedelta(days=365*2), 'Junior': timedelta(days=365)}
+        class_status_offsets = {'Freshman': timedelta(
+            days=365 * 3), 'Sophomore': timedelta(days=365 * 2), 'Junior': timedelta(days=365)}
         now = datetime.now()
         for (username, full_name, date_created, email, gender, class_status, major, affiliation) in cursor:
             if class_status == 'Senior':
@@ -38,7 +40,8 @@ class Command(BaseCommand):
                 delta = class_status_offsets[class_status]
                 if date_created + delta < now:
                     # this one is expired
-                    self.stdout.write("Skipping {} that registered on {}".format(class_status, date_created))
+                    self.stdout.write(
+                        "Skipping {} that registered on {}".format(class_status, date_created))
                     skipped_participants.append("%s %s" % (username, email))
             #self.stdout.write(u"Looking at {} {} class {}".format(username, email, class_status))
             try:
@@ -47,7 +50,8 @@ class Command(BaseCommand):
                 set_full_name(u, full_name)
                 existing_users.append(u)
             except User.DoesNotExist:
-                u = User(username=username, email=email, password=User.objects.make_random_password())
+                u = User(username=username, email=email,
+                         password=User.objects.make_random_password())
                 new_users.append(u)
                 set_full_name(u, full_name)
             u.save()
@@ -69,10 +73,12 @@ class Command(BaseCommand):
                 self.stdout.write("Updating existing participant {}".format(p))
                 p.save()
             else:
-                self.stdout.write(u"Creating participant {} major: {} gender: {} class_status {} institution {}".format(p, p.major, p.gender, p.class_status, asu_institution))
+                self.stdout.write(u"Creating participant {} major: {} gender: {} class_status {} institution {}".format(
+                    p, p.major, p.gender, p.class_status, asu_institution))
                 new_participants.append(p)
             if p.user is None or not p.user.pk:
-                self.stdout.write(u"XXX: participant %s with user %s, %s" % (p, p.user, p.user.pk))
+                self.stdout.write(
+                    u"XXX: participant %s with user %s, %s" % (p, p.user, p.user.pk))
         # User.objects.bulk_create(new_users)
         Participant.objects.bulk_create(new_participants)
         self.stdout.write("existing users: %s" % existing_users)
@@ -83,13 +89,14 @@ class Command(BaseCommand):
         cursor.execute("SELECT question, answer FROM faq_entry")
         contributor = User.objects.get(pk=1)
         for (question, answer) in cursor:
-            faq_entry, created = OstromlabFaqEntry.objects.get_or_create(question=question, answer=answer, contributor=contributor)
+            faq_entry, created = OstromlabFaqEntry.objects.get_or_create(
+                question=question, answer=answer, contributor=contributor)
             self.stdout.write("faq entry %s (%s)" % (faq_entry, created))
-
 
     def handle(self, *args, **options):
         # open db connection to subject pool
-        cnx = mysql.connector.connect(user='spool', password='spool.migration', host='127.0.0.1', database='spool')
+        cnx = mysql.connector.connect(
+            user='spool', password='spool.migration', host='127.0.0.1', database='spool')
         self.stdout.write("opened connection %s to spool database" % cnx)
         self.migrate_participants(cnx)
         self.migrate_faq(cnx)
