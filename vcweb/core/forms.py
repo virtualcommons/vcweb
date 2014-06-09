@@ -11,8 +11,8 @@ from django.forms import widgets, ValidationError, CheckboxInput
 from django.utils.translation import ugettext_lazy as _
 import autocomplete_light
 
-from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete, ParticipantMajorAutocomplete
-from vcweb.core.models import (Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration,
+from .autocomplete_light_registry import InstitutionAutocomplete, ParticipantMajorAutocomplete
+from .models import (Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration,
                                ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
 
 

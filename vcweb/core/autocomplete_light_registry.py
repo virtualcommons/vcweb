@@ -2,7 +2,7 @@ import logging
 
 import autocomplete_light
 
-from vcweb.core.models import Institution, Participant
+from .models import Institution, Participant
 
 logger = logging.getLogger(__name__)
 

@@ -6,9 +6,9 @@ from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 
-from vcweb.core.ajax import (
+from .ajax import (
     get_round_data, save_experimenter_notes, create_experiment, clone_experiment, archive)
-from vcweb.core.views import (
+from .views import (
     dashboard, LoginView, LogoutView, monitor, RegisterEmailListView, RegisterTestParticipantsView, completed_survey,
     toggle_bookmark_experiment_metadata, check_survey_completed, Participate, download_data, download_participants,
     export_configuration, api_logger, participant_api_login, api_logout, participant_ready, check_ready_participants,

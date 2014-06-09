@@ -7,12 +7,12 @@ from django.core import serializers
 from django.test import TestCase
 from django.test.client import RequestFactory, Client
 
-from vcweb.core import signals
-from vcweb.core.models import (Experiment, Experimenter, ExperimentConfiguration, ParticipantRoundDataValue,
+from . import signals
+from .models import (Experiment, Experimenter, ExperimentConfiguration, ParticipantRoundDataValue,
                                Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
                                ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue, Institution,
                                GroupActivityLog, ExperimentSession, Invitation, ParticipantSignup)
-from vcweb.core.subjectpool.views import get_potential_participants
+from .subjectpool.views import get_potential_participants
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +177,7 @@ class ExperimentConfigurationTest(BaseVcwebTest):
         for obj in serializers.deserialize("xml", data):
             self.assertIsNotNone(obj)
             entity = obj.object
-            if obj.object.pk == ec.pk:
+            if entity.pk == ec.pk:
                 found = True
         self.assertTrue(found)
 
@@ -298,8 +298,6 @@ class GroupTest(BaseVcwebTest):
         e = self.advance_to_data_round()
         test_data_value = 10
         for g in e.group_set.all():
-            activity_log_counter = GroupActivityLog.objects.filter(
-                group=g).count()
             for data_value in g.data_value_set.all():
                 # XXX: pathological use of set_data_value, no point in doing it
                 # this way since typical usage would do a lookup by name.

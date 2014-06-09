@@ -19,15 +19,15 @@ from django.views.generic import FormView, TemplateView, ListView
 from django.views.generic.detail import SingleObjectMixin
 import unicodecsv
 
-from vcweb.core import dumps
-from vcweb.core.http import JsonResponse
-from vcweb.core.decorators import anonymous_required, experimenter_required, participant_required, retry
-from vcweb.core.forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
+from . import dumps
+from .http import JsonResponse
+from .decorators import anonymous_required, experimenter_required, participant_required, retry
+from .forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
                               UpdateExperimentForm, AsuRegistrationForm, ParticipantGroupIdForm,
                               RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
                               LogMessageForm, BookmarkExperimentMetadataForm, ExperimentConfigurationForm,
                               ExperimentParameterValueForm, RoundConfigurationForm, RoundParameterValueForm)
-from vcweb.core.models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
+from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
                                ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment,
                                Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata,
                                OstromlabFaqEntry, Experimenter, ExperimentParameterValue, RoundConfiguration,

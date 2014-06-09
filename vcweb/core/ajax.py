@@ -5,10 +5,10 @@ from django.shortcuts import get_object_or_404
 from django.template.loader_tags import BlockNode, ExtendsNode
 from django.template import loader, Context, RequestContext
 
-from vcweb.core import dumps
-from vcweb.core.decorators import experimenter_required
-from vcweb.core.http import JsonResponse
-from vcweb.core.models import (
+from . import dumps
+from .decorators import experimenter_required
+from .http import JsonResponse
+from .models import (
     Experiment, RoundData, get_chat_message_parameter, ExperimentConfiguration)
 
 logger = logging.getLogger(__name__)

@@ -3,8 +3,8 @@ import logging
 
 from kronos import register
 
-from vcweb.core import signals
-from vcweb.core.decorators import log_signal_errors
+from . import signals
+from .decorators import log_signal_errors
 
 
 logger = logging.getLogger(__name__)

@@ -8,7 +8,6 @@ import hashlib
 import itertools
 import logging
 import random
-import re
 import string
 
 from django.conf import settings
@@ -30,8 +29,8 @@ from model_utils import Choices
 from model_utils.managers import PassThroughManager
 import markdown
 
-from vcweb.core import signals, simplecache, dumps
-from vcweb.core.decorators import log_signal_errors
+from . import signals, simplecache, dumps
+from .decorators import log_signal_errors
 
 
 logger = logging.getLogger(__name__)
@@ -65,7 +64,7 @@ class ParameterValueMixin(object):
 
     """
     Model classes using this mixin should expose a 'parameter_value_set' attribute containing a QuerySet of
-    ParameterizedValues to have get_parameter_value 
+    ParameterizedValues to have get_parameter_value
 
     """
 
