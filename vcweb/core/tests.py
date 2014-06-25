@@ -111,7 +111,7 @@ class BaseVcwebTest(TestCase):
                                                  template_filename=template_filename,
                                                  template_id=template_id)
 
-    def create_new_parameter(self, name='vcweb.test.parameter', scope=Parameter.Scope.EXPERIMENT, parameter_type='string'):
+    def create_new_parameter(self, name='test.parameter', scope=Parameter.Scope.EXPERIMENT, parameter_type='string'):
         return Parameter.objects.create(creator=self.experimenter, name=name, scope=scope, type=parameter_type)
 
     def create_new_group(self, max_size=10, experiment=None):
@@ -236,7 +236,8 @@ class ExperimentTest(BaseVcwebTest):
     def test_authorization(self):
         experiment = self.experiment
         self.assertTrue(
-            self.client.login(username=experiment.experimenter.email, password='test'))
+            self.client.login(username=experiment.experimenter.email,
+                              password=BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD))
 
     def test_next_round(self):
         experiment = self.experiment
@@ -421,19 +422,19 @@ class RoundConfigurationTest(BaseVcwebTest):
             self.assertEqual(rp.value, 14)
             self.assertEqual(rp.int_value, 14)
 
-        '''
-        The type field in Parameter generates the value_field_name property by concatenating the name of the type with _value.
-        '''
+        # Parameter.type generates the value_field_name property by concatenating the name of the type with _value
         sample_values_for_type = {
             'int': 3, 'float': 3.0, 'string': 'ich bin ein ooga booga', 'boolean': True}
-        for type in ('int', 'float', 'string', 'boolean'):
+        for value_type in ('int', 'float', 'string', 'boolean'):
             p = Parameter.objects.create(
-                scope='round', name="test_nonunique_round_parameter_%s" % type, type=type, creator=e.experimenter)
+                scope='round', name="test_round_parameter_%s" % value_type, type=value_type, creator=e.experimenter)
             self.assertTrue(p.pk > 0)
-            self.assertEqual(p.value_field_name, '%s_value' % type)
+            field_name = '%s_value' % value_type
+            self.assertEqual(p.value_field_name, field_name)
             rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round,
-                                                    value=sample_values_for_type[type])
-            self.assertEqual(rp.value, sample_values_for_type[type])
+                                                    value=sample_values_for_type[value_type])
+            self.assertEqual(rp.value, sample_values_for_type[value_type])
+            self.assertEqual(getattr(rp, field_name), sample_values_for_type[value_type])
 
 
 class InvitationAlgorithmTest(BaseVcwebTest):
