@@ -2536,15 +2536,18 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
             'participant_group_relationship__group'
         ).filter(round_data=round_data, is_active=True, **kwargs)
 
-    def for_group(self, group=None, **kwargs):
+    def for_group(self, group=None, ordered=True, order_by='-date_created', **kwargs):
         if group is None:
             raise ValueError("Must specify a group in this query")
-        return self.select_related(
+        qs = self.select_related(
             'parameter',
             'participant_group_relationship__participant__user',
             'participant_group_relationship__group',
             'target_data_value__participant_group_relationship'
-        ).filter(participant_group_relationship__group=group, is_active=True, **kwargs).order_by('-date_created')
+        ).filter(participant_group_relationship__group=group, is_active=True, **kwargs)
+        if ordered:
+            qs.order_by(order_by)
+        return qs
 
     def for_experiment(self, experiment=None, **kwargs):
         if experiment is None:

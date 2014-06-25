@@ -9,9 +9,9 @@ from django.test.client import RequestFactory, Client
 
 from . import signals
 from .models import (Experiment, Experimenter, ExperimentConfiguration, ParticipantRoundDataValue,
-                               Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
-                               ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue, Institution,
-                               GroupActivityLog, ExperimentSession, Invitation, ParticipantSignup)
+                     Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
+                     ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue, Institution,
+                     GroupActivityLog, ExperimentSession, Invitation, ParticipantSignup)
 from .subjectpool.views import get_potential_participants
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,9 @@ class BaseVcwebTest(TestCase):
     """
     fixtures = ['forestry_experiment_metadata']
 
-    def load_experiment(self, experiment_metadata=None, **kwargs):
+    DEFAULT_EXPERIMENTER_PASSWORD = 'test.experimenter'
+
+    def load_experiment(self, experiment_metadata=None, experimenter_password=DEFAULT_EXPERIMENTER_PASSWORD, **kwargs):
         if experiment_metadata is None:
             experiment = Experiment.objects.first().clone()
         else:
@@ -42,6 +44,9 @@ class BaseVcwebTest(TestCase):
             experiment.setup_test_participants(
                 email_suffix='asu.edu', count=10, password='test')
         experiment.save()
+        u = experiment.experimenter.user
+        u.set_password(experimenter_password)
+        u.save()
         return experiment
 
     @property
@@ -230,8 +235,8 @@ class ExperimentTest(BaseVcwebTest):
 
     def test_authorization(self):
         experiment = self.experiment
-        self.client.login(
-            username=experiment.experimenter.email, password='test')
+        self.assertTrue(
+            self.client.login(username=experiment.experimenter.email, password='test'))
 
     def test_next_round(self):
         experiment = self.experiment
@@ -280,8 +285,7 @@ class ExperimentTest(BaseVcwebTest):
                 expected_size = group.size if parameter.name in (
                     'harvest_decision', 'participant_ready') else 0
                 self.assertEqual(expected_size,
-                                 ParticipantRoundDataValue.objects.filter(round_data=current_round_data,
-                                                                          participant_group_relationship__group=group, parameter=parameter).count(),
+                                 ParticipantRoundDataValue.objects.for_group(group, round_data=current_round_data, parameter=parameter, ordered=False).count(),
                                  "unexpected participant data values for parameter %s, only harvest_decision and participant_ready should be auto-created" % parameter.name)
 
 
@@ -594,16 +598,15 @@ class InvitationAlgorithmTest(BaseVcwebTest):
             else:
                 break
 
+
 class DecoratorTest(BaseVcwebTest):
 
     def test_anonymous_required(self):
         experiment = self.experiment
         c = self.client
-        response = c.get('/accounts/login')
+        response = c.get('/accounts/login/')
         self.assertEqual(200, response.status_code)
-        c.login(username=experiment.experimenter.email, password='test')
-        response = c.get('/accounts/login')
+        self.assertTrue(c.login(username=experiment.experimenter.email,
+                                password=BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD))
+        response = c.get('/accounts/login/')
         self.assertEqual(302, response.status_code)
-
-
-
