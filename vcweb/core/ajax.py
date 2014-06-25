@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader_tags import BlockNode, ExtendsNode
 from django.template import loader, Context, RequestContext
+from django.views.decorators.http import require_POST
 
 from . import dumps
 from .decorators import experimenter_required
@@ -99,6 +100,7 @@ def _render_experiment_monitor_block(block, experiment, request):
 
 
 @experimenter_required
+@require_POST
 def archive(request):
     experiment_id = request.POST.get('experiment_id')
     experiment = _get_experiment(request, experiment_id)
@@ -107,6 +109,7 @@ def archive(request):
 
 
 @experimenter_required
+@require_POST
 def clear_participants(request):
     experiment_id = request.POST.get('experiment_id')
     experiment = _get_experiment(request, experiment_id)

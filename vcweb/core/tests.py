@@ -593,3 +593,17 @@ class InvitationAlgorithmTest(BaseVcwebTest):
                 self.set_up_participant_signup(x, es_pk_list)
             else:
                 break
+
+class DecoratorTest(BaseVcwebTest):
+
+    def test_anonymous_required(self):
+        experiment = self.experiment
+        c = self.client
+        response = c.get('/accounts/login')
+        self.assertEqual(200, response.status_code)
+        c.login(username=experiment.experimenter.email, password='test')
+        response = c.get('/accounts/login')
+        self.assertEqual(302, response.status_code)
+
+
+

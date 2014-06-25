@@ -27,7 +27,6 @@ def is_anonymous(user):
 
 def anonymous_required(view_function=None, redirect_to='core:dashboard'):
     return create_user_decorator(view_function, is_anonymous, redirect_to=redirect_to)
-    # return create_decorator(view_function, is_anonymous)
 
 
 def experimenter_required(view_function=None):

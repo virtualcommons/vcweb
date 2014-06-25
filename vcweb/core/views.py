@@ -286,7 +286,7 @@ def participant_api_login(request):
     return JsonResponse(dumps({'success': False, 'message': "Invalid login"}))
 
 
-class LoginView(FormView, AnonymousMixin):
+class LoginView(AnonymousMixin, FormView):
     form_class = LoginForm
     template_name = 'account/login.html'
 
@@ -298,15 +298,16 @@ class LoginView(FormView, AnonymousMixin):
         return super(LoginView, self).form_valid(form)
 
     def get_success_url(self):
-        return_url = self.request.GET.get('next')
-        user = self.request.user
-        success_url = reverse('core:dashboard')
-        if is_participant(user):
-            participant = self.request.user.participant
-            active_experiment = get_active_experiment(participant)
-            if active_experiment:
-                success_url = active_experiment.participant_url
-        return return_url if return_url else success_url
+        next_url = self.request.GET.get('next')
+        if 'logout' in next_url:
+            next_url = None
+        if not next_url:
+            user = self.request.user
+            if is_participant(user):
+                active_experiment = get_active_experiment(user.participant)
+                if active_experiment:
+                    next_url = active_experiment.participant_url
+        return next_url if next_url else reverse('core:dashboard')
 
 
 class LogoutView(TemplateView):
@@ -331,21 +332,16 @@ class RegistrationView(FormView, AnonymousMixin):
         experimenter_requested = form.cleaned_data['experimenter']
         institution, created = Institution.objects.get_or_create(
             name=institution_string)
-        user = User.objects.create_user(email, email, password)
-        user.first_name = first_name
-        user.last_name = last_name
-        user.save()
+        user = User.objects.create_user(email, email, password, first_name=first_name, last_name=last_name)
         if experimenter_requested:
-            experimenter_request = ExperimenterRequest.objects.create(
-                user=user)
-            logger.debug(
-                "creating new experimenter request: %s", experimenter_request)
+            experimenter_request = ExperimenterRequest.objects.create(user=user)
+            logger.debug("creating new experimenter request: %s", experimenter_request)
         participant = Participant.objects.create(
             user=user, institution=institution)
         logger.debug("Creating new participant: %s", participant)
         request = self.request
-        auth.login(
-            request, auth.authenticate(username=email, password=password))
+        # auth + login the newly created user
+        auth.login(request, auth.authenticate(username=email, password=password))
         set_authentication_token(user, request.session.session_key)
         # FIXME: disabling auto registration, experiment configuration flags are not being set properly
         #        for experiment in Experiment.objects.public():
@@ -362,19 +358,19 @@ class AccountView(FormView):
 
 @login_required
 def update_account_profile(request):
+    """ FIXME: reduce code duplication distinguishing between participant/experimenter """
     user = request.user
 
     if is_experimenter(user):
         form = ExperimenterAccountForm(request.POST or None)
         if form.is_valid():
             email = form.cleaned_data.get('email').lower()
-            institution = form.cleaned_data.get('institution')
+            institution_name = form.cleaned_data.get('institution')
             e = Experimenter.objects.get(pk=user.experimenter.pk)
 
-            if institution:
-                ins, created = Institution.objects.get_or_create(
-                    name=institution)
-                e.institution = ins
+            if institution_name:
+                institution, created = Institution.objects.get_or_create(name=institution_name)
+                e.institution = institution
             else:
                 e.institution = None
                 logger.debug('Institution is empty')
@@ -392,26 +388,23 @@ def update_account_profile(request):
 
             e.save()
             e.user.save()
-
             return JsonResponse(dumps({
                 'success': True,
                 'message': 'Profile updated successfully.'
             }))
         return JsonResponse(dumps({'success': False,
                                    'message': 'Something went wrong. Please try again.'}))
-
     else:
         form = ParticipantAccountForm(request.POST or None)
-
         if form.is_valid():
             email = form.cleaned_data.get('email').lower()
-            institution = form.cleaned_data.get('institution')
+            institution_name = form.cleaned_data.get('institution')
 
             p = Participant.objects.get(pk=user.participant.pk)
 
-            if institution:
+            if institution_name:
                 ins, created = Institution.objects.get_or_create(
-                    name=institution)
+                    name=institution_name)
                 p.institution = ins
             else:
                 p.institution = None
