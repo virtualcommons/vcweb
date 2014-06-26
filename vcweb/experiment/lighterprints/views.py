@@ -15,13 +15,13 @@ from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship,
                                ParticipantRoundDataValue, Like)
 from vcweb.core.views import dumps, get_active_experiment, set_authentication_token, mimetypes
-from vcweb.experiment.lighterprints.forms import ActivityForm
-from vcweb.experiment.lighterprints.models import (Activity, has_leaderboard, get_lighterprints_experiment_metadata,
-                                                   is_linear_public_good_game,
-                                                   is_high_school_treatment, get_treatment_type,
-                                                   get_activity_performed_parameter, )
-from vcweb.experiment.lighterprints.services import (ActivityStatusList, GroupScores, do_activity, get_time_remaining,
-                                                     get_group_activity)
+from .forms import ActivityForm
+from .models import (Activity, has_leaderboard, get_lighterprints_experiment_metadata,
+                     is_linear_public_good_game,
+                     is_high_school_treatment, get_treatment_type,
+                     get_activity_performed_parameter, )
+from .services import (ActivityStatusList, GroupScores, do_activity, get_time_remaining,
+                       get_group_activity)
 
 
 logger = logging.getLogger(__name__)

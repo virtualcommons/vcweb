@@ -5,11 +5,10 @@ from datetime import date, timedelta
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.core.models import (
     ParticipantGroupRelationship, ParticipantRoundDataValue)
-from vcweb.experiment.lighterprints.models import (Activity, get_lighterprints_experiment_metadata,
-                                                   get_activity_performed_parameter, get_footprint_level,
-                                                   get_individual_points, get_performed_activity_ids)
-from vcweb.experiment.lighterprints.services import (
-    send_summary_emails, GroupScores, get_group_activity)
+from .models import (Activity, get_lighterprints_experiment_metadata,
+                     get_activity_performed_parameter, get_footprint_level,
+                     get_individual_points, get_performed_activity_ids)
+from .services import (send_summary_emails, GroupScores, get_group_activity)
 
 
 logger = logging.getLogger(__name__)

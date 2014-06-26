@@ -1,9 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, date, time, timedelta
-import itertools
-import locale
 from operator import itemgetter
-import re
 
 from django.conf import settings
 from django.core import mail
@@ -13,15 +10,25 @@ from django.dispatch import receiver
 from django.template import Context
 from django.template.loader import select_template
 from django.utils.timesince import timesince
-import markdown
 
 from vcweb.core import signals
-from vcweb.core.models import ParticipantRoundDataValue, ChatMessage, Experiment, Like, Comment
-from vcweb.experiment.lighterprints.models import Activity, is_scheduled_activity_experiment, \
-    get_activity_availability_cache, get_activity_performed_parameter, ActivityAvailability, _activity_status_sort_key, \
-    is_linear_public_good_game, is_high_school_treatment, has_leaderboard, get_activity_points_cache, \
-    get_footprint_level, get_group_threshold, get_points_to_next_level, get_experiment_completed_dv, logger, \
-    get_individual_points, get_footprint_level_dv, get_lighterprints_experiment_metadata
+
+from vcweb.core.models import (
+    ParticipantRoundDataValue, ChatMessage, Experiment, Like, Comment)
+from .models import (Activity, is_scheduled_activity_experiment,
+                     get_activity_availability_cache, get_activity_performed_parameter, ActivityAvailability,
+                     _activity_status_sort_key, is_linear_public_good_game, is_high_school_treatment,
+                     has_leaderboard, get_activity_points_cache, get_footprint_level, get_group_threshold,
+                     get_points_to_next_level, get_experiment_completed_dv, get_individual_points,
+                     get_footprint_level_dv, get_lighterprints_experiment_metadata)
+
+import itertools
+import locale
+import logging
+import markdown
+import re
+
+logger = logging.getLogger(__name__)
 
 
 class ActivityStatusList(object):
@@ -137,7 +144,7 @@ class GroupScores(object):
                 'total_daily_points'] / group_size
             group_data_dict['total_average_points'] = group_data_dict[
                 'total_points'] / group_size
-            #logger.debug("group data dictionary: %s", group_data_dict)
+            logger.debug("group data dictionary: %s", group_data_dict)
 
     def average_daily_points(self, group):
         return self.scores_dict[group]['average_daily_points']

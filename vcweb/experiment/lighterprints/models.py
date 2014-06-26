@@ -10,8 +10,8 @@ from model_utils.managers import PassThroughManager
 from mptt.models import MPTTModel, TreeForeignKey, TreeManager
 
 from vcweb.core import signals, simplecache
-from vcweb.core.models import (
-    ExperimentMetadata, GroupRoundDataValue, ParticipantRoundDataValue, Parameter, User)
+from vcweb.core.models import (ExperimentMetadata, GroupRoundDataValue, ParticipantRoundDataValue,
+                               Parameter, User)
 
 
 logger = logging.getLogger(__name__)

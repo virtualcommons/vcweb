@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from vcweb.experiment.lighterprints.views import (
+from .views import (
     post_chat_message, post_comment, perform_activity, participate, like, checkin, get_view_model,
     mobile_participate, mobile_login, download_payment_data,
 )
