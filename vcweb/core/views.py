@@ -297,10 +297,15 @@ class LoginView(AnonymousMixin, FormView):
         set_authentication_token(user, request.session.session_key)
         return super(LoginView, self).form_valid(form)
 
+    def get_next_url(self):
+        next_url = self.request.GET.get('next', '')
+        if 'logout' in next_url or next_url.startswith('http'):
+            return None
+        else:
+            return next_url
+
     def get_success_url(self):
-        next_url = self.request.GET.get('next')
-        if 'logout' in next_url:
-            next_url = None
+        next_url = self.get_next_url()
         if not next_url:
             user = self.request.user
             if is_participant(user):
@@ -921,9 +926,8 @@ def completed_survey(request):
         pgr.survey_completed = True
         pgr.save()
         success = True
-    except ParticipantGroupRelationship.DoesNotExist as e:
-        logger.debug(
-            "No ParticipantGroupRelationship found with id %s", pgr_id)
+    except ParticipantGroupRelationship.DoesNotExist:
+        logger.debug("No ParticipantGroupRelationship found with id %s", pgr_id)
     return JsonResponse(dumps({'success': success}))
 
 
