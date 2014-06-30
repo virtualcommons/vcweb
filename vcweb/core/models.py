@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 """
 Contains all data models used in the core as well as a number of helper functions.
-FIXME: getting a bit monolithically unwieldy, break up
+FIXME: growing monolithically unwieldy, break up
 """
 
 
@@ -150,11 +150,10 @@ class DataValueMixin(object):
                 "No data values found with criteria %s - returning default %s", criteria, default)
             return DefaultValue(default)
 
-    def copy_to_next_round(self, *data_values, **kwargs):
+    def copy_to_next_round(self, next_round_data=None, *data_values, **kwargs):
         e = self.experiment
         if e.is_last_round:
             return
-        next_round_data = kwargs.get('next_round_data', None)
         if not next_round_data:
             # no explicit round data to copy to, retrieve the next round data
             next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round,
@@ -1250,43 +1249,39 @@ class Experiment(models.Model):
         return self.start_round()
 
     def get_or_create_round_data(self, round_configuration=None, increment_repeated_round_sequence_number=False):
+        """ FIXME: needs refactoring to properly handle current_repeated_round_sequence_number """
         current_round = self.current_round
         if round_configuration is None:
             round_configuration = current_round
         ps = dict(round_configuration=round_configuration)
         if round_configuration.is_repeating_round:
-            same_repeating_round = self.current_round == round_configuration
-            # initialize repeating round sequence number as 0
+            same_repeating_round = (current_round == round_configuration)
+            # the next repeating round sequence number, initialized to 0
             rrsn = 0
-            # if the incoming round configuration is the same as the current round set to the
-            # current_repeated_round_sequence_number. we only explicitly increment the repeated round sequence number
-            # when invoked at the end of a round and copying data parameters from the current round to the next. I.e.,
-            # copy_to_next_round invokes get_or_create_round_data(...,
-            # increment_repeated_round_sequence_number=True)
+            # if the incoming round configuration is the same as the current round set rrsn to the
+            # current_repeated_round_sequence_number which gets incremented via advance_to_next_round
             if same_repeating_round:
                 rrsn = self.current_repeated_round_sequence_number
+                # only increment the repeated round sequence number when invoked at the end of a round and copying data
+                # parameters from the current round to the next. Right now, this is only from copy_to_next_round's
+                # get_or_create_round_data(..., increment_repeated_round_sequence_number=True)
                 if increment_repeated_round_sequence_number:
                     rrsn += 1
             ps['repeating_round_sequence_number'] = rrsn
         round_data, created = self.round_data_set.get_or_create(**ps)
-        if created:
-            logger.debug(
-                "created round data %s with criteria %s", round_data, ps)
         if self.experiment_configuration.is_experimenter_driven:
             # create participant ready data values for every round in
             # experimenter driven experiments
             logger.debug(
                 "creating participant ready participant values for experimenter driven experiment")
             # FIXME: use bulk_create for this?
-            # see
-            # https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk-create
+            # see https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk-create
             for pgr in self.participant_group_relationships:
                 pgr.data_value_set.get_or_create(
                     parameter=get_participant_ready_parameter(),
                     round_data=round_data,
                     defaults={'boolean_value': False})
-        if not created:
-            logger.debug("round data already created: %s", round_data)
+        logger.debug("round data %s - already created? %s ", round_data, created)
         return round_data, created
 
     @log_signal_errors
@@ -1305,7 +1300,7 @@ class Experiment(models.Model):
             # XXX: must create round data AFTER group allocation so that any participant round data values
             # (participant ready parameters for instance) are associated with the correct participant group
             # relationships.
-            self.get_or_create_round_data()
+            self.get_or_create_round_data(round_configuration=current_round_configuration)
             self.current_round_start_time = datetime.now()
             self.log('Starting round')
             self.save()

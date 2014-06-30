@@ -600,6 +600,16 @@ class InvitationAlgorithmTest(BaseVcwebTest):
                 break
 
 
+class GraphDatabaseTest(BaseVcwebTest):
+
+    def test_graph_database_init_and_shutdown(self):
+        from .graph import get_graph_db, shutdown
+        db = get_graph_db()
+        for i in range(1, 10):
+            self.assertEqual(db, get_graph_db())
+        shutdown()
+
+
 class DecoratorTest(BaseVcwebTest):
 
     def test_anonymous_required(self):

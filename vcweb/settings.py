@@ -1,5 +1,4 @@
 import os
-from os import path
 import locale
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
@@ -11,7 +10,7 @@ USE_TZ = False
 SITE_URL = 'https://vcweb.asu.edu'
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-SETTINGS_PATH = path.abspath(path.dirname(__file__))
+SETTINGS_PATH = os.path.abspath(os.path.dirname(__file__))
 SERVER_EMAIL = 'vcweb@asu.edu'
 SERVER_NAME = 'vcweb.asu.edu'
 EMAIL_HOST = 'smtp.asu.edu'
@@ -25,7 +24,7 @@ MANAGERS = ADMINS
 
 DATA_DIR = 'data'
 
-GRAPH_DATABASE_PATH = path.join(DATA_DIR, 'neo4j-store')
+GRAPH_DATABASE_PATH = os.path.join(DATA_DIR, 'neo4j')
 
 BITBUCKET_API_USER = 'vcweb'
 BITBUCKET_API_PW = 'not quite the real password'
@@ -33,7 +32,7 @@ BITBUCKET_API_PW = 'not quite the real password'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': path.join(DATA_DIR, 'vcweb.db'),
+        'NAME': os.path.join(DATA_DIR, 'vcweb.db'),
     },
     'postgres': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -43,6 +42,15 @@ DATABASES = {
     }
 }
 
+
+#NEO4J_DATABASES = {
+#    'default': {
+#        'HOST': 'localhost',
+#        'PORT': 7474,
+#        'ENDPOINT': GRAPH_DATABASE_PATH
+#    }
+#}
+#DATABASE_ROUTERS = ['neo4django.utils.Neo4djangoIntegrationRouter']
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
@@ -189,13 +197,13 @@ AUTHENTICATION_BACKENDS = (
 STATIC_URL = '/static/'
 STATIC_ROOT = '/var/www/vcweb/static/'
 STATICFILES_DIRS = (
-    path.join(path.abspath(path.dirname(__file__)), 'static').replace(
+    os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static').replace(
         '\\', '/'),
 )
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = path.join(STATIC_ROOT, 'media')
+MEDIA_ROOT = os.path.join(STATIC_ROOT, 'media')
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
@@ -211,7 +219,7 @@ MEDIA_URL = '/static/media/'
 
 
 def is_accessible(directory_path):
-    return path.isdir(directory_path) and os.access(directory_path, os.W_OK | os.X_OK)
+    return os.path.isdir(directory_path) and os.access(directory_path, os.W_OK | os.X_OK)
 
 LOG_DIRECTORY = '/opt/vcweb/logs'
 if not is_accessible(LOG_DIRECTORY):
@@ -262,7 +270,7 @@ LOGGING = {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'vcweb_verbose',
-            'filename': path.join(LOG_DIRECTORY, VCWEB_LOG_FILENAME),
+            'filename': os.path.join(LOG_DIRECTORY, VCWEB_LOG_FILENAME),
             'backupCount': 6,
             'maxBytes': 10000000,
         },
