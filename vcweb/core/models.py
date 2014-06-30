@@ -150,10 +150,11 @@ class DataValueMixin(object):
                 "No data values found with criteria %s - returning default %s", criteria, default)
             return DefaultValue(default)
 
-    def copy_to_next_round(self, next_round_data=None, *data_values, **kwargs):
+    def copy_to_next_round(self, *data_values, **kwargs):
         e = self.experiment
         if e.is_last_round:
             return
+        next_round_data = kwargs.get('next_round_data', None)
         if not next_round_data:
             # no explicit round data to copy to, retrieve the next round data
             next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round,
