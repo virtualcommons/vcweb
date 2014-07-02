@@ -19,3 +19,4 @@ resource/
 .project
 fabfile.py
 .ropeproject
+.coverage
