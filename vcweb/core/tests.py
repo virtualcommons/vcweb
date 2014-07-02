@@ -300,21 +300,16 @@ class GroupTest(BaseVcwebTest):
         first_pass = True
         while e.has_next_round:
             if first_pass:
-                for g in e.group_set.all():
-                    g.set_data_value(
-                        parameter=parameter, value=test_data_value)
-                    self.assertEqual(
-                        g.get_data_value(parameter=parameter)[0], test_data_value)
-                    self.assertEqual(
-                        g.get_scalar_data_value(parameter=parameter), test_data_value)
+                for g in e.groups:
+                    g.set_data_value(parameter=parameter, value=test_data_value)
+                    self.assertEqual(g.get_data_value(parameter=parameter)[0], test_data_value)
+                    self.assertEqual(g.get_scalar_data_value(parameter=parameter), test_data_value)
                     g.transfer_to_next_round(parameter)
                 first_pass = False
             else:
-                for g in e.group_set.all():
-                    self.assertEqual(
-                        g.get_data_value(parameter=parameter)[0], test_data_value)
-                    self.assertEqual(
-                        g.get_scalar_data_value(parameter=parameter), test_data_value)
+                for g in e.groups:
+                    self.assertEqual(g.get_data_value(parameter=parameter)[0], test_data_value)
+                    self.assertEqual(g.get_scalar_data_value(parameter=parameter), test_data_value)
                     g.transfer_to_next_round(parameter)
             e.advance_to_next_round()
 

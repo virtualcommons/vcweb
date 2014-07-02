@@ -10,9 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseTest(BaseVcwebTest):
-
-    def setUp(self, **kwargs):
-        super(BaseTest, self).setUp(experiment_metadata=get_experiment_metadata(), **kwargs)
+    pass
 
 
 class ForestryRoundSignalTest(BaseTest):

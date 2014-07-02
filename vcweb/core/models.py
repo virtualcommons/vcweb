@@ -44,7 +44,7 @@ FIXME: growing monolithically unwieldy, break up
 class DefaultValue(object):
 
     """
-    Simple object wrapper that returns the wrapped value on any attribute reference
+    Simple wrapper that returns the wrapped value on any getattr reference
     """
 
     def __init__(self, value):
@@ -89,31 +89,25 @@ class ParameterValueMixin(object):
         if parameter is None and name is None:
             raise ValueError(
                 "Can't set parameter value with no name or parameter given")
-        parameter_value_set = self.parameter_value_set
+        pvalue_set = self.parameter_value_set
         pv = None
         try:
-            pv = parameter_value_set.get(parameter=parameter) if parameter else parameter_value_set.get(
-                parameter__name=name)
-        except parameter_value_set.model.DoesNotExist:
-            pv = parameter_value_set.create(parameter=parameter)
-        if pv is not None:
-            if value is not None:
-                pv.value = value
-            elif len(kwargs) == 1:
-                # assume appropriate _value accessor in the kwargs
-                k, v = kwargs.popitem()
-                if '_value' not in k:
-                    logger.error(
-                        "invalid attribute accessor for %s: %s=%s", pv, k, v)
-                    raise ValueError("Invalid attribute accessor %s" % k)
-                setattr(pv, k, v)
-            else:
-                raise ValueError(
-                    "Can only specify a single value when setting parameter values, received %s instead" % kwargs)
-            pv.save()
-            return pv
-        logger.error(
-            "Unable to set parameter %s to %s", parameter if parameter else name, value)
+            pv = pvalue_set.get(parameter=parameter) if parameter else pvalue_set.get(parameter__name=name)
+        except pvalue_set.model.DoesNotExist:
+            pv = pvalue_set.create(parameter=parameter)
+        if value is not None:
+            pv.value = value
+        elif len(kwargs) == 1:
+            # assume appropriate _value accessor in the kwargs if value kwarg isn't set
+            k, v = kwargs.popitem()
+            if '_value' not in k:
+                logger.error("invalid attribute accessor trying to set %s.%s=%s", pv, k, v)
+                raise ValueError("Invalid attribute accessor %s" % k)
+            setattr(pv, k, v)
+        else:
+            raise ValueError("Can only specify a single value when setting parameter values, received %s instead" % kwargs)
+        pv.save()
+        return pv
 
 
 class DataValueMixin(object):
@@ -136,8 +130,7 @@ class DataValueMixin(object):
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None, use_filter=False, default=None):
         if round_data is None:
             round_data = self.experiment.current_round_data
-        criteria = self._criteria(
-            parameter=parameter, parameter_name=parameter_name, round_data=round_data)
+        criteria = self._criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         data_value_set = self.data_value_set.select_related('parameter')
         #data_value_class = data_value_set.model
         dvs = data_value_set.filter(**criteria)
@@ -146,8 +139,7 @@ class DataValueMixin(object):
         elif dvs.count() > 0:
             return dvs[0]
         else:
-            logger.warn(
-                "No data values found with criteria %s - returning default %s", criteria, default)
+            logger.warn("No data values found with criteria %s - returning default %s", criteria, default)
             return DefaultValue(default)
 
     def copy_to_next_round(self, *data_values, **kwargs):
@@ -171,8 +163,7 @@ class DataValueMixin(object):
             raise ValueError("need parameter and value to set")
         if round_data is None:
             round_data = self.experiment.current_round_data
-        dv = self.get_data_value(
-            round_data=round_data, parameter=parameter, **kwargs)
+        dv = self.get_data_value(round_data=round_data, parameter=parameter, **kwargs)
         dv.value = value
         dv.save()
 
@@ -907,61 +898,60 @@ class Experiment(models.Model):
                 subject = 'VCWEB experiment registration for %s' % self.display_name
         return subject
 
-    def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None,
-                              from_email=None):
+    @transaction.atomic
+    def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None, from_email=None):
         number_of_participants = self.participant_set.count()
         email_messages = []
         registered_participants = []
-        with transaction.atomic():
-            if number_of_participants > 0:
-                logger.warning("This experiment %s already has %d participants - aborting", self,
-                               number_of_participants)
+        if number_of_participants > 0:
+            logger.warning("This experiment %s already has %d participants - aborting", self,
+                            number_of_participants)
+            return
+        if users is None:
+            users = []
+            if emails is None:
+                logger.warning("No users or emails supplied, aborting.")
                 return
-            if users is None:
-                users = []
-                if emails is None:
-                    logger.warning("No users or emails supplied, aborting.")
-                    return
-                for email_line in emails:
-                    if not email_line:
-                        logger.debug(
-                            "invalid participant data: %s", email_line)
-                        continue
-                    # FIXME: parsing logic was already performed once in
-                    # EmailListField.clean, redundant
-                    (full_name, email_address) = parseaddr(email_line)
-                    # lowercase all usernames/email addresses internally and
-                    # strip all whitespace
-                    email_address = email_address.lower().strip()
-                    full_name = full_name.strip()
+            for email_line in emails:
+                if not email_line:
+                    logger.debug(
+                        "invalid participant data: %s", email_line)
+                    continue
+                # FIXME: parsing logic was already performed once in
+                # EmailListField.clean, redundant
+                (full_name, email_address) = parseaddr(email_line)
+                # lowercase all usernames/email addresses internally and
+                # strip all whitespace
+                email_address = email_address.lower().strip()
+                full_name = full_name.strip()
+                try:
+                    u = User.objects.get(email=email_address)
+                except User.DoesNotExist:
+                    # FIXME: replace nested try/except with
+                    # Q(email=email_address) | Q(username=email_address)
                     try:
-                        u = User.objects.get(email=email_address)
+                        u = User.objects.get(username=email_address)
                     except User.DoesNotExist:
-                        # FIXME: replace nested try/except with
-                        # Q(email=email_address) | Q(username=email_address)
-                        try:
-                            u = User.objects.get(username=email_address)
-                        except User.DoesNotExist:
-                            u = User.objects.create_user(
-                                username=email_address, email=email_address, password=password)
-                    updated = set_full_name(u, full_name)
-                    if updated:
-                        u.save()
-                    users.append(u)
-            for user in users:
-                # FIXME: unsafe for concurrent usage, but only one experimenter
-                # at a time should be invoking this
-                (p, created) = Participant.objects.get_or_create(user=user)
-                # FIXME: instead of asking for the email suffix, just append
-                # the institution URL to keep it simpler?
-                if institution and p.institution != institution:
-                    p.institution = institution
-                    p.save()
-                per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self,
-                                                                       created_by=self.experimenter.user)
-                registered_participants.append((user, password))
-                email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created,
-                                                                     sender=sender, from_email=from_email))
+                        u = User.objects.create_user(
+                            username=email_address, email=email_address, password=password)
+                updated = set_full_name(u, full_name)
+                if updated:
+                    u.save()
+                users.append(u)
+        for user in users:
+            # FIXME: unsafe for concurrent usage, but only one experimenter
+            # at a time should be invoking this
+            (p, created) = Participant.objects.get_or_create(user=user)
+            # FIXME: instead of asking for the email suffix, just append
+            # the institution URL to keep it simpler?
+            if institution and p.institution != institution:
+                p.institution = institution
+                p.save()
+            per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self,
+                                                                   created_by=self.experimenter.user)
+            registered_participants.append((user, password))
+            email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created,
+                                                                 sender=sender, from_email=from_email))
         if email_messages:
             mail.get_connection().send_messages(email_messages)
         return registered_participants
@@ -1282,8 +1272,7 @@ class Experiment(models.Model):
         self.save()
         # reset all survey completed flags on participant group relationships
         # within this experiment
-        ParticipantGroupRelationship.objects.for_experiment(
-            self).update(survey_completed=False)
+        ParticipantGroupRelationship.objects.for_experiment(self).update(survey_completed=False)
         self.log('Ending round with elapsed time %s' %
                  self.current_round_elapsed_time)
         sender = intern(self.experiment_metadata.namespace.encode(
@@ -1851,7 +1840,7 @@ class ParameterizedValue(models.Model):
             self.submitted = submitted
         self.save()
 
-    def update_boolean(self, boolean_value, submitted=False):
+    def update_boolean(self, boolean_value, submitted=None):
         self.boolean_value = boolean_value
         if submitted is not None:
             self.submitted = submitted
