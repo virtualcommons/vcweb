@@ -1,17 +1,18 @@
 import logging
 import random
 
-from vcweb.core.models import (
-    GroupRoundDataValue, ParticipantExperimentRelationship)
+from vcweb.core.models import (GroupRoundDataValue, ParticipantExperimentRelationship)
 from vcweb.core.tests import BaseVcwebTest
-from vcweb.experiment.forestry.models import *
+from .models import *
 
 
 logger = logging.getLogger(__name__)
 
 
 class BaseTest(BaseVcwebTest):
-    pass
+
+    def setUp(self, **kwargs):
+        super(BaseTest, self).setUp(experiment_metadata=get_experiment_metadata(), **kwargs)
 
 
 class ForestryRoundSignalTest(BaseTest):
@@ -229,8 +230,7 @@ class ForestryParametersTest(BaseTest):
             for p in self.participants:
                 per = ParticipantExperimentRelationship.objects.get(
                     participant=p, experiment=e)
-                pgr = ParticipantGroupRelationship.objects.get(
-                    group__experiment=e, participant=p)
+                pgr = ParticipantGroupRelationship.objects.get(group__experiment=e, participant=p)
                 prdv = ParticipantRoundDataValue.objects.create(
                     round_data=round_data, participant_group_relationship=pgr, parameter=data_param)
                 if data_param.type == 'int':

@@ -4,8 +4,10 @@ boundary effects experiment unit tests
 
 import logging
 
+from vcweb.core.models import GroupCluster
 from vcweb.core.tests import BaseVcwebTest
-from vcweb.experiment.bound.models import *
+
+from .models import *
 
 
 logger = logging.getLogger(__name__)
@@ -20,13 +22,44 @@ class BaseTest(BaseVcwebTest):
             set_harvest_decision(pgr, value, submitted=True)
 
     def setUp(self, **kwargs):
-        super(BaseTest, self).setUp(
-            experiment_metadata=get_experiment_metadata(), **kwargs)
+        super(BaseTest, self).setUp(experiment_metadata=get_experiment_metadata(), **kwargs)
         e = self.experiment
         cr = e.current_round
         cr.set_parameter_value(
             parameter=get_reset_resource_level_parameter(), boolean_value=True)
         logger.debug("boundary effects test loaded experiment %s", e)
+
+
+class GroupClusterTest(BaseTest):
+
+    def setUp(self, **kwargs):
+        super(GroupClusterTest, self).setUp(**kwargs)
+        cr = self.experiment.current_round
+        cr.create_group_clusters = True
+        cr.session_id = 'GroupClusterTest.1'
+        cr.save()
+
+    def test_group_cluster_data_values(self):
+        # FIXME: needs test coverage
+        pass
+
+    def test_related_group(self):
+        e = self.experiment
+        self.assertTrue(e.current_round.create_group_clusters)
+        self.assertTrue(e.current_round.is_playable_round)
+        e.activate()
+        for g in e.groups:
+            other_group = g.get_related_group()
+            self.assertNotEqual(g, other_group)
+        self.assertEqual(10, e.number_of_participants)
+        self.assertEqual(2, len(e.groups))
+        self.assertEqual(len(e.groups), GroupRelationship.objects.filter(group__experiment=e).count())
+        self.assertEqual(len(e.groups) / e.current_round.group_cluster_size,
+                         GroupCluster.objects.filter(experiment=e).count())
+        # FIXME: assumes single group cluster
+        gc = GroupCluster.objects.get(experiment=e)
+        for gr in GroupRelationship.objects.filter(group__experiment=e):
+            self.assertEqual(gc, gr.cluster)
 
 
 class MultipleHarvestDecisionTest(BaseTest):

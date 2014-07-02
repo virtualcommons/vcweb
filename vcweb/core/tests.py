@@ -11,7 +11,7 @@ from . import signals
 from .models import (Experiment, Experimenter, ExperimentConfiguration, ParticipantRoundDataValue,
                      Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship, Group,
                      ExperimentMetadata, RoundConfiguration, Parameter, RoundParameterValue, Institution,
-                     GroupActivityLog, ExperimentSession, Invitation, ParticipantSignup)
+                     ExperimentSession, Invitation, ParticipantSignup)
 from .subjectpool.views import get_potential_participants
 
 logger = logging.getLogger(__name__)
@@ -32,8 +32,7 @@ class BaseVcwebTest(TestCase):
         if experiment_metadata is None:
             experiment = Experiment.objects.first().clone()
         else:
-            experiment = self.create_new_experiment(
-                experiment_metadata, **kwargs)
+            experiment = self.create_new_experiment(experiment_metadata, **kwargs)
         self.experiment = experiment
         # currently associating all available Parameters with this
         # ExperimentMetadata
@@ -41,6 +40,7 @@ class BaseVcwebTest(TestCase):
             experiment.experiment_metadata.parameters.add(
                 *Parameter.objects.values_list('pk', flat=True))
         if experiment.participant_set.count() == 0:
+            logger.debug("adding participants to %s", experiment)
             experiment.setup_test_participants(
                 email_suffix='asu.edu', count=10, password='test')
         experiment.save()
@@ -76,8 +76,9 @@ class BaseVcwebTest(TestCase):
                                                                           name='Test Experiment Configuration',
                                                                           creator=experimenter)
         for index in xrange(1, 10):
-            experiment_configuration.round_configuration_set.create(
-                sequence_number=index, initialize_data_values=(index == 1))
+            experiment_configuration.round_configuration_set.create(sequence_number=index,
+                                                                    randomize_groups=(index == 1),
+                                                                    initialize_data_values=(index == 1))
         return Experiment.objects.create(experimenter=experimenter,
                                          experiment_metadata=experiment_metadata,
                                          experiment_configuration=experiment_configuration)
@@ -257,19 +258,6 @@ class ExperimentTest(BaseVcwebTest):
         self.assertEqual(0, experiment.current_round_elapsed_time.seconds)
         # FIXME: exercise current_round_elapsed_time and total_elapsed_time
 
-    def test_instructions_round_parameters(self):
-        e = self.experiment
-        e.activate()
-        # instructions round
-        current_round_data = e.current_round_data
-        self.assertEqual(current_round_data.group_data_value_set.count(), 0)
-        if e.experiment_configuration.is_experimenter_driven:
-            self.assertEqual(
-                current_round_data.participant_data_value_set.count(), e.participant_set.count())
-        else:
-            self.assertEqual(
-                current_round_data.participant_data_value_set.count(), 0)
-
     def test_playable_round(self):
         # advance_to_next_round automatically starts the round
         e = self.advance_to_data_round()
@@ -288,13 +276,6 @@ class ExperimentTest(BaseVcwebTest):
                 self.assertEqual(expected_size,
                                  ParticipantRoundDataValue.objects.for_group(group, round_data=current_round_data, parameter=parameter, ordered=False).count(),
                                  "unexpected participant data values for parameter %s, only harvest_decision and participant_ready should be auto-created" % parameter.name)
-
-
-class GroupClusterTest(BaseVcwebTest):
-
-    def test_group_cluster_data_values(self):
-        # FIXME: needs test coverage
-        pass
 
 
 class GroupTest(BaseVcwebTest):
@@ -603,11 +584,19 @@ class InvitationAlgorithmTest(BaseVcwebTest):
 class GraphDatabaseTest(BaseVcwebTest):
 
     def test_graph_database_init_and_shutdown(self):
-        from .graph import get_graph_db, shutdown
+        from .graph import get_graph_db, shutdown, VcwebGraphDatabase
         db = get_graph_db()
         for i in range(1, 10):
             self.assertEqual(db, get_graph_db())
         shutdown()
+        self.assertIsNone(VcwebGraphDatabase._db)
+        db = get_graph_db()
+        for i in range(1, 10):
+            self.assertEqual(db, get_graph_db())
+        shutdown()
+
+    def test_graph_create(self):
+        pass
 
 
 class DecoratorTest(BaseVcwebTest):

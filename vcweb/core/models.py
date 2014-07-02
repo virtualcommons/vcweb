@@ -1115,47 +1115,12 @@ class Experiment(models.Model):
         parameter_set = self.experiment_metadata.parameters
         return parameter_set.filter(scope=scope) if scope else parameter_set
 
-    def add_participant(self, participant, current_group=None, max_group_size=None, session_id=None):
-        # FIXME: simplify logic where possible
-        if participant not in self.participant_set.all():
-            logger.warning(
-                "participant %s not a member of this experiment %s, adding them", participant, self)
-            ParticipantExperimentRelationship.objects.create(participant=participant,
-                                                             experiment=self,
-                                                             created_by=participant.user)
-        pgrs = ParticipantGroupRelationship.objects.filter(
-            group__experiment=self, participant=participant)
-        if current_group is None:
-            # try to add them to the last group in group_set with the same
-            # session id
-            session_id_groups = self.group_set.filter(session_id=session_id)
-            if session_id_groups:
-                current_group = session_id_groups.reverse()[0]
-            number_of_groups = self.group_set.count()
-            if current_group is None or number_of_groups == 0:
-                # create a new group
-                current_group = self.group_set.create(number=number_of_groups,
-                                                      max_size=max_group_size,
-                                                      session_id=session_id)
-
-        if pgrs.exists():
-            # ensure that any existing group that this participant is in has a
-            # different session id from this group
-            for pgr in pgrs:
-                if pgr.group.session_id == current_group.session_id:
-                    logger.error("Participant %s already in a group %s with the same session id, not adding them to %s",
-                                 participant, pgr.group, current_group)
-                    return pgr
-        return current_group.add_participant(participant)
-
     @transaction.atomic
     def allocate_groups(self, randomize=True, preserve_existing_groups=False, session_id=u''):
-        logger.debug("allocating groups for %s with session_id %s (randomize? %s)" % (
-            self, session_id, randomize))
         # clear out all existing groups
-        # FIXME: record previous mappings in activity log.
         max_group_size = self.experiment_configuration.max_group_size
         participants = list(self.participant_set.all())
+        logger.debug("%s allocating groups for %s with session_id %s (randomize? %s)", self, participants, session_id, randomize)
         if randomize:
             random.shuffle(participants)
         gs = self.group_set
@@ -1165,8 +1130,7 @@ class Experiment(models.Model):
             # a session id if one isn't found.
             if preserve_existing_groups:
                 logger.debug("preserving existing groups")
-                # initialize session_id to round configuration session_id if
-                # unset. if none can be found abort
+                # initialize session_id to round configuration session_id if unset, abort if none can be found
                 if not session_id:
                     round_configuration = self.current_round
                     session_id = round_configuration.session_id
@@ -1183,11 +1147,12 @@ class Experiment(models.Model):
                     self.log("reallocating/deleting group %s" %
                              g.participant_group_relationship_set.all())
                 gqs.delete()
-                # add each participant to the next available group
-        current_group = None
+        # allocate participants to groups
+        current_group = self.group_set.create(number=1, max_size=max_group_size, session_id=session_id)
         for p in participants:
-            pgr = self.add_participant(
-                p, current_group, max_group_size, session_id)
+            # FIXME: simplify logic where possible
+            # create a new group
+            pgr = current_group.add_participant(p)
             current_group = pgr.group
         self.create_group_clusters()
 
@@ -1195,27 +1160,24 @@ class Experiment(models.Model):
         round_configuration = self.current_round
         session_id = round_configuration.session_id
         if round_configuration.create_group_clusters:
-            logger.debug(
-                "creating group clusters with session id %s", session_id)
-            gcs = self.group_cluster_set.filter(session_id=session_id)
+            logger.debug("creating new (and deleting existing) group clusters with session id %s", session_id)
+            self.group_cluster_set.filter(session_id=session_id).delete()
             gs = self.group_set.filter(session_id=session_id)
-            gcs.delete()
             group_cluster_size = round_configuration.group_cluster_size
             groups = list(gs)
             if len(groups) % group_cluster_size != 0:
-                logger.error("cannot create clusters of size %s, we have %s groups which isn't evenly divisible.",
+                logger.error("cannot create clusters with %s groups per cluster, we have %s groups which isn't evenly divisible.",
                              group_cluster_size, len(groups))
                 return
             random.shuffle(groups)
-            gc = GroupCluster.objects.create(
-                session_id=session_id, experiment=self)
-            for group in groups:
-                if gc.group_relationship_set.count() == group_cluster_size:
-                    # if this group cluster is full, create a new one
-                    gc = GroupCluster.objects.create(
-                        session_id=session_id, experiment=self)
-                # then add group to the cluster
-                gc.add(group)
+            current_group_cluster = GroupCluster.objects.create(session_id=session_id, experiment=self)
+            logger.debug("creating group clusters with %s groups per cluster", group_cluster_size)
+            for index, group in enumerate(groups):
+                if index >= group_cluster_size and (index % group_cluster_size == 0):
+                    # the current group cluster is full, create a new one
+                    current_group_cluster = GroupCluster.objects.create(session_id=session_id, experiment=self)
+                # add group to the cluster
+                GroupRelationship.objects.create(cluster=current_group_cluster, group=group)
 
     def get_round_configuration(self, sequence_number):
         return RoundConfiguration.objects.select_related('experiment_configuration').get(
@@ -1286,25 +1248,25 @@ class Experiment(models.Model):
         return round_data, created
 
     @log_signal_errors
+    @transaction.atomic
     def start_round(self, sender=None):
-        with transaction.atomic():
-            if self.status == Experiment.Status.ROUND_IN_PROGRESS:
-                logger.warning("round already started, ignoring")
-                return
-            logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
-            self.status = Experiment.Status.ROUND_IN_PROGRESS
-            current_round_configuration = self.current_round
-            if current_round_configuration.randomize_groups:
-                self.allocate_groups(
-                    preserve_existing_groups=current_round_configuration.preserve_existing_groups,
-                    session_id=current_round_configuration.session_id)
-            # XXX: must create round data AFTER group allocation so that any participant round data values
-            # (participant ready parameters for instance) are associated with the correct participant group
-            # relationships.
-            self.get_or_create_round_data(round_configuration=current_round_configuration)
-            self.current_round_start_time = datetime.now()
-            self.log('Starting round')
-            self.save()
+        if self.status == Experiment.Status.ROUND_IN_PROGRESS:
+            logger.warning("round already started, ignoring")
+            return
+        logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
+        self.status = Experiment.Status.ROUND_IN_PROGRESS
+        current_round_configuration = self.current_round
+        if current_round_configuration.randomize_groups or not self.group_set.exists():
+            self.allocate_groups(
+                preserve_existing_groups=current_round_configuration.preserve_existing_groups,
+                session_id=current_round_configuration.session_id)
+        # XXX: must create round data AFTER group allocation so that any participant round data values
+        # (participant ready parameters for instance) are associated with the correct participant group
+        # relationships.
+        self.get_or_create_round_data(round_configuration=current_round_configuration)
+        self.current_round_start_time = datetime.now()
+        self.log('Starting round')
+        self.save()
         # notify registered game handlers
         if sender is None:
             sender = intern(self.experiment_metadata.namespace.encode('utf8'))
@@ -1336,7 +1298,6 @@ class Experiment(models.Model):
                 "ignoring request to activate archived experiment, it would wipe existing data.")
         with transaction.atomic():
             if not self.is_active:
-                self.allocate_groups()
                 self.status = Experiment.Status.ACTIVE
                 self.date_activated = datetime.now()
                 self.start_round()
@@ -2045,8 +2006,7 @@ class Group(models.Model, DataValueMixin):
     def get_related_group(self):
         # FIXME: currently only assumes single paired relationships
         gr = GroupRelationship.objects.get(group=self)
-        related_gr = GroupRelationship.objects.select_related(
-            'group').get(~models.Q(group=self), cluster=gr.cluster)
+        related_gr = GroupRelationship.objects.select_related('group').get(~models.Q(group=self), cluster=gr.cluster)
         return related_gr.group
 
     def log(self, log_message):
@@ -2174,9 +2134,8 @@ class GroupCluster(models.Model, DataValueMixin):
 
 class GroupRelationship(models.Model):
     date_created = models.DateTimeField(default=datetime.now)
-    cluster = models.ForeignKey(
-        GroupCluster, related_name='group_relationship_set')
-    group = models.ForeignKey(Group)
+    cluster = models.ForeignKey(GroupCluster, related_name='group_relationship_set')
+    group = models.ForeignKey(Group, related_name='relationship_set')
 
     def __unicode__(self):
         return u"%s -> %s" % (self.group, self.cluster)
@@ -2507,6 +2466,13 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
 
     class Meta:
         ordering = ['group', 'participant_number']
+
+
+class ParticipantGroupEdge(models.Model):
+    DIRECTION = Choices('forward', 'bidirectional')
+    first = models.ForeignKey(ParticipantGroupRelationship, related_name='first_edge_set')
+    second = models.ForeignKey(ParticipantGroupRelationship, related_name='second_edge_set')
+    direction = models.CharField(choices=DIRECTION, default=DIRECTION.bidirectional, max_length=16)
 
 
 class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
