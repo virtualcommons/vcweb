@@ -1,5 +1,6 @@
-import os
 import locale
+import os
+import sys
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
@@ -41,7 +42,6 @@ DATABASES = {
         'PASSWORD': '',
     }
 }
-
 
 #NEO4J_DATABASES = {
 #    'default': {
@@ -339,6 +339,15 @@ if has_local_settings:
     except Exception as e:
         print "unexpected error while importing local settings: %s" % e
         pass
+
+
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:'
+    }
+
+
 DEBUG_TOOLBAR_CONFIG = {
     'INTERCEPT_REDIRECTS': False,
 }

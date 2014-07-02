@@ -87,6 +87,7 @@ class BaseVcwebTest(TestCase):
         self.client = Client()
         self.factory = RequestFactory()
         self.load_experiment(**kwargs)
+        logging.disable(logging.DEBUG)
 
     def advance_to_data_round(self):
         e = self.experiment
@@ -283,34 +284,32 @@ class GroupTest(BaseVcwebTest):
     def test_set_data_value(self):
         e = self.advance_to_data_round()
         test_data_value = 10
-        for g in e.group_set.all():
+        for g in e.groups:
             for data_value in g.data_value_set.all():
+                logger.debug("testing against data value %s", data_value)
                 # XXX: pathological use of set_data_value, no point in doing it
                 # this way since typical usage would do a lookup by name.
-                g.set_data_value(
-                    parameter=data_value.parameter, value=test_data_value)
-                self.assertEqual(
-                    g.get_scalar_data_value(parameter=data_value.parameter), test_data_value)
+                g.set_data_value(data_value.parameter, test_data_value)
+                self.assertEqual(g.get_scalar_data_value(parameter=data_value.parameter), test_data_value)
 
-    def test_transfer_to_next_round(self):
-        parameter = self.create_new_parameter(scope=Parameter.Scope.GROUP, name='test_group_parameter',
+    def test_copy_to_next_round(self):
+        parameter = self.create_new_parameter(scope=Parameter.Scope.GROUP,
+                                              name='test_group_parameter',
                                               parameter_type='int')
         test_data_value = 37
-        e = self.experiment
+        e = self.advance_to_data_round()
         first_pass = True
+        data_value = None
         while e.has_next_round:
-            if first_pass:
-                for g in e.groups:
-                    g.set_data_value(parameter=parameter, value=test_data_value)
-                    self.assertEqual(g.get_data_value(parameter=parameter)[0], test_data_value)
-                    self.assertEqual(g.get_scalar_data_value(parameter=parameter), test_data_value)
-                    g.transfer_to_next_round(parameter)
-                first_pass = False
-            else:
-                for g in e.groups:
-                    self.assertEqual(g.get_data_value(parameter=parameter)[0], test_data_value)
-                    self.assertEqual(g.get_scalar_data_value(parameter=parameter), test_data_value)
-                    g.transfer_to_next_round(parameter)
+            for g in e.groups:
+                if first_pass:
+                    data_value = g.set_data_value(parameter, test_data_value)
+                data_value = g.get_data_value(parameter=parameter)
+                self.assertEqual(data_value.int_value, test_data_value)
+                self.assertEqual(g.get_scalar_data_value(parameter=parameter), test_data_value)
+                test_data_value += 1
+                data_value.update_int(test_data_value)
+                g.copy_to_next_round(data_value)
             e.advance_to_next_round()
 
     def test_group_add(self):

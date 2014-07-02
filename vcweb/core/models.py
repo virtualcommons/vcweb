@@ -122,17 +122,16 @@ class DataValueMixin(object):
 
     def _criteria(self, parameter=None, parameter_name=None, round_data=None, active=True, **kwargs):
         return dict([('is_active', active),
-                     ('parameter', parameter) if parameter else (
-                         'parameter__name', parameter_name),
+                     ('parameter', parameter) if parameter else ('parameter__name', parameter_name),
                      ('round_data', self.experiment.current_round_data if round_data is None else round_data)],
                     **kwargs)
 
-    def get_data_value(self, parameter=None, parameter_name=None, round_data=None, use_filter=False, default=None):
+    def get_data_value(self, parameter=None, parameter_name=None, round_data=None, use_filter=False, default=None,
+                       **kwargs):
         if round_data is None:
             round_data = self.experiment.current_round_data
         criteria = self._criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         data_value_set = self.data_value_set.select_related('parameter')
-        #data_value_class = data_value_set.model
         dvs = data_value_set.filter(**criteria)
         if use_filter:
             return dvs
@@ -140,7 +139,12 @@ class DataValueMixin(object):
             return dvs[0]
         else:
             logger.warn("No data values found with criteria %s - returning default %s", criteria, default)
-            return DefaultValue(default)
+            if parameter is None:
+                parameter = Parameter.objects.get(name='parameter_name')
+            dv = self.data_value_set.create(parameter=parameter, round_data=round_data)
+            if default is not None:
+                dv.update(default)
+            return dv
 
     def copy_to_next_round(self, *data_values, **kwargs):
         e = self.experiment
@@ -164,8 +168,8 @@ class DataValueMixin(object):
         if round_data is None:
             round_data = self.experiment.current_round_data
         dv = self.get_data_value(round_data=round_data, parameter=parameter, **kwargs)
-        dv.value = value
-        dv.save()
+        dv.update(value)
+        return dv
 
 
 class AutoDateTimeField(models.DateTimeField):
@@ -905,7 +909,7 @@ class Experiment(models.Model):
         registered_participants = []
         if number_of_participants > 0:
             logger.warning("This experiment %s already has %d participants - aborting", self,
-                            number_of_participants)
+                           number_of_participants)
             return
         if users is None:
             users = []
@@ -1387,8 +1391,7 @@ class Experiment(models.Model):
         # FIXME: intended to provide some way to include more experiment
         # attributes at invocation time, may remove
         if attrs:
-            experiment_dict.update(
-                [(attr, getattr(self, attr, None)) for attr in attrs])
+            experiment_dict.update([(attr, getattr(self, attr, None)) for attr in attrs])
         return experiment_dict
 
     def as_dict(self, *args, **kwargs):
@@ -1808,8 +1811,7 @@ class ParameterizedValue(models.Model):
 
     @property
     def value(self):
-        value = getattr(
-            self, self.parameter.value_field_name, self.parameter.none_value)
+        value = getattr(self, self.parameter.value_field_name, self.parameter.none_value)
         if value is None:
             return self.parameter.none_value
         if self.parameter.is_foreign_key:
