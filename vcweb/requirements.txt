@@ -18,8 +18,6 @@ south
 raven
 feedparser
 feedcache
-# graph database
-neo4j-embedded
 xlrd
 xlwt
 django-bootstrap3
@@ -27,12 +25,15 @@ django-contact-form
 markdown
 unicodecsv
 pillow
+coverage
 # FIXME: this will fail on Mac OS X, see http://lxml.de/installation.html#macos-x for workarounds.
 # easiest is to use MacPorts, sudo port install py27-lxml beforehand to set up the appropriate xml libraries
 lxml
 git+http://git@github.com/kstateome/django-cas.git@0.9.1#egg=cas
 # for migratespool task
 mysql-connector-python
+# graph database
+neo4j-embedded
 # XXX: not necessary for production
 django-debug-toolbar
 # XXX: disabled packages 

@@ -83,12 +83,16 @@ class ParameterValueMixin(object):
             if inheritable:
                 return self.parent.get_parameter_value(parameter=parameter, name=name, default=default)
             else:
-                return DefaultValue(default)
+                if parameter is None:
+                    parameter = Parameter.objects.get(name=name)
+                pv = self.parameter_value_set.create(parameter=parameter)
+                if default is not None:
+                    pv.update(default)
+                return pv
 
     def set_parameter_value(self, parameter=None, name=None, value=None, **kwargs):
         if parameter is None and name is None:
-            raise ValueError(
-                "Can't set parameter value with no name or parameter given")
+            raise ValueError("Can't set parameter value with no name or parameter given")
         pvalue_set = self.parameter_value_set
         pv = None
         try:

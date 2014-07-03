@@ -53,7 +53,7 @@ syncdb_commands = [
 ]
 
 
-@hosts('csid@commons.asu.edu')
+@hosts('documentation.host')
 def docs():
     with lcd(env.docs_path):
         local("/usr/bin/make html")
