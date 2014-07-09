@@ -9,7 +9,7 @@ from .common import BaseVcwebTest
 from .. import signals
 from ..models import (ParticipantRoundDataValue, Participant, ParticipantExperimentRelationship,
                       ParticipantGroupRelationship, ExperimentMetadata, Parameter, RoundParameterValue, Institution,
-                      ExperimentSession, Invitation, ParticipantSignup)
+                      ExperimentSession, Invitation, ParticipantSignup, DefaultValue)
 from ..subjectpool.views import get_potential_participants
 
 logger = logging.getLogger(__name__)
@@ -159,8 +159,12 @@ class ExperimentTest(BaseVcwebTest):
                 expected_size = group.size if parameter.name in (
                     'harvest_decision', 'participant_ready') else 0
                 self.assertEqual(expected_size,
-                                 ParticipantRoundDataValue.objects.for_group(group, round_data=current_round_data, parameter=parameter, ordered=False).count(),
-                                 "unexpected participant data values for parameter %s, only harvest_decision and participant_ready should be auto-created" % parameter.name)
+                                 ParticipantRoundDataValue.objects.for_group(group,
+                                                                             round_data=current_round_data,
+                                                                             parameter=parameter,
+                                                                             ordered=False).count(),
+                                 "unexpected %s, only harvest_decision and participant_ready should be auto-created" %
+                                 parameter.name)
 
 
 class GroupTest(BaseVcwebTest):
@@ -177,9 +181,9 @@ class GroupTest(BaseVcwebTest):
                 self.assertEqual(g.get_scalar_data_value(parameter=data_value.parameter), test_data_value)
 
     def test_copy_to_next_round(self):
-        parameter = self.create_new_parameter(scope=Parameter.Scope.GROUP,
-                                              name='test_group_parameter',
-                                              parameter_type='int')
+        parameter = self.create_parameter(scope=Parameter.Scope.GROUP,
+                                          name='test_group_parameter',
+                                          parameter_type='int')
         test_data_value = 37
         e = self.advance_to_data_round()
         first_pass = True
@@ -200,7 +204,7 @@ class GroupTest(BaseVcwebTest):
         """
         Tests get_participant_number after groups have been assigned
         """
-        g = self.create_new_group(max_size=10, experiment=self.experiment)
+        g = self.create_group(max_size=10, experiment=self.experiment)
         count = 0
         logger.debug(
             "self participants: %s (%s)", self.participants, len(self.participants))
@@ -269,8 +273,7 @@ class RoundConfigurationTest(BaseVcwebTest):
 
     def test_round_parameters(self):
         e = self.experiment
-        p = Parameter.objects.create(
-            scope='round', name='test_round_parameter', type='int', creator=e.experimenter)
+        p = self.create_parameter(scope='round', name='test_round_parameter', parameter_type='int')
         self.assertTrue(p.pk > 0)
         self.assertEqual(p.value_field_name, 'int_value')
 
@@ -285,8 +288,9 @@ class RoundConfigurationTest(BaseVcwebTest):
         sample_values_for_type = {
             'int': 3, 'float': 3.0, 'string': 'ich bin ein ooga booga', 'boolean': True}
         for value_type in ('int', 'float', 'string', 'boolean'):
-            p = Parameter.objects.create(
-                scope='round', name="test_round_parameter_%s" % value_type, type=value_type, creator=e.experimenter)
+            p = self.create_parameter(scope='round',
+                                      name="test_round_parameter_%s" % value_type,
+                                      parameter_type=value_type)
             self.assertTrue(p.pk > 0)
             field_name = '%s_value' % value_type
             self.assertEqual(p.value_field_name, field_name)
@@ -403,8 +407,7 @@ class InvitationAlgorithmTest(BaseVcwebTest):
 
     def set_up_inv(self, participants, es_pk_list):
         invitations = []
-        experiment_sessions = ExperimentSession.objects.filter(
-            pk__in=es_pk_list)
+        experiment_sessions = ExperimentSession.objects.filter(pk__in=es_pk_list)
         user = User.objects.get(pk=256)
 
         for participant in participants:
@@ -457,6 +460,78 @@ class InvitationAlgorithmTest(BaseVcwebTest):
                 self.set_up_participant_signup(x, es_pk_list)
             else:
                 break
+
+
+class ParameterizedValueMixinTest(BaseVcwebTest):
+
+    def test_set_parameter_value(self):
+        e = self.experiment
+        e.activate()
+        cr = e.current_round
+        pv = None
+        try:
+            pv = cr.set_parameter_value(name='nonexistent_parameter')
+            self.fail("parameter value with nonexistent parameter should not be able to be set")
+        except Parameter.DoesNotExist:
+            self.assertIsNone(pv)
+        parameter = self.create_parameter(name='existent_parameter', scope=Parameter.Scope.ROUND, parameter_type='int')
+        pv = cr.set_parameter_value(parameter=parameter, value=17)
+        self.assertIsNotNone(pv)
+        self.assertFalse(type(pv) is DefaultValue)
+        self.assertEqual(pv.int_value, 17)
+
+    def test_get_parameter_value(self):
+        e = self.experiment
+        e.activate()
+        cr = e.current_round
+        pv = None
+        try:
+            pv = cr.get_parameter_value(name='nonexistent_parameter')
+            self.fail("parameter value with nonexistent parameter should not be able to be retrieved")
+        except Parameter.DoesNotExist:
+            self.assertIsNone(pv)
+        parameter = self.create_parameter(name='existent_parameter', scope=Parameter.Scope.ROUND, parameter_type='int')
+        pv = cr.get_parameter_value(parameter=parameter, default=17)
+        self.assertIsNotNone(pv)
+        self.assertFalse(type(pv) is DefaultValue)
+        self.assertEqual(pv.int_value, 17)
+
+
+class DataValueMixinTest(BaseVcwebTest):
+
+    def test_set_data_value(self):
+        e = self.experiment
+        e.activate()
+        parameter = self.create_parameter(scope=Parameter.Scope.GROUP, name='test_data_value_parameter')
+        expected_test_value = 'test value'
+        for g in e.groups:
+            dv = None
+            try:
+                dv = g.set_data_value(parameter_name='nonexistent_parameter', value=expected_test_value)
+                self.fail('data value with nonexistent parameter should not be able to be set')
+            except Parameter.DoesNotExist:
+                self.assertIsNone(dv)
+            dv = g.set_data_value(parameter=parameter, value=expected_test_value)
+            self.assertIsNotNone(dv)
+            self.assertFalse(type(dv) is DefaultValue)
+            self.assertEqual(dv.string_value, expected_test_value)
+
+    def test_get_data_value(self):
+        e = self.experiment
+        e.activate()
+        parameter = self.create_parameter(scope=Parameter.Scope.GROUP, name='test_data_value_parameter')
+        expected_test_value = 'test value'
+        for g in e.groups:
+            dv = None
+            try:
+                dv = g.get_data_value(name='nonexistent_parameter')
+                self.fail('data value with nonexistent parameter should not be able to be retrieved')
+            except Parameter.DoesNotExist:
+                self.assertIsNone(dv)
+            dv = g.get_data_value(parameter=parameter, default=expected_test_value)
+            self.assertIsNotNone(dv)
+            self.assertFalse(type(dv) is DefaultValue)
+            self.assertEqual(dv.string_value, expected_test_value)
 
 
 class GraphDatabaseTest(BaseVcwebTest):

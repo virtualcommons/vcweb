@@ -69,6 +69,10 @@ class ParameterValueMixin(object):
     """
 
     def get_parameter_value(self, parameter=None, name=None, default=None, inheritable=False):
+        """
+        returns the ParameterizedValue associated with the given parameter and this object's parameter value set. If
+        none exists, creates one.
+        """
         if parameter is None and name is None:
             logger.error(
                 "Can't lookup parameter values with no name or parameter, returning default %s", default)
@@ -91,16 +95,16 @@ class ParameterValueMixin(object):
                 return pv
 
     def set_parameter_value(self, parameter=None, name=None, value=None, **kwargs):
+        """
+        returns the ParameterizedValue associated with the given parameter and this object's parameter value set. If
+        none exists, creates one.
+        """
         if parameter is None and name is None:
             raise ValueError("Can't set parameter value with no name or parameter given")
         pvalue_set = self.parameter_value_set
-        pv = None
-        try:
-            pv = pvalue_set.get(parameter=parameter) if parameter else pvalue_set.get(parameter__name=name)
-        except pvalue_set.model.DoesNotExist:
-            pv = pvalue_set.create(parameter=parameter)
+        pv = self.get_parameter_value(parameter=parameter, name=name)
         if value is not None:
-            pv.value = value
+            pv.update(value)
         elif len(kwargs) == 1:
             # assume appropriate _value accessor in the kwargs if value kwarg isn't set
             k, v = kwargs.popitem()
@@ -108,9 +112,9 @@ class ParameterValueMixin(object):
                 logger.error("invalid attribute accessor trying to set %s.%s=%s", pv, k, v)
                 raise ValueError("Invalid attribute accessor %s" % k)
             setattr(pv, k, v)
+            pv.save()
         else:
             raise ValueError("Can only specify a single value when setting parameter values, received %s instead" % kwargs)
-        pv.save()
         return pv
 
 
@@ -166,9 +170,11 @@ class DataValueMixin(object):
             existing_dv.round_data = next_round_data
             existing_dv.save()
 
-    def set_data_value(self, parameter=None, value=None, round_data=None, **kwargs):
-        if parameter is None or value is None:
-            raise ValueError("need parameter and value to set")
+    def set_data_value(self, parameter=None, parameter_name=None, value=None, round_data=None, **kwargs):
+        if parameter is None and parameter_name is None:
+            raise ValueError("no parameter found")
+        if value is None:
+            raise ValueError("no value to set")
         if round_data is None:
             round_data = self.experiment.current_round_data
         dv = self.get_data_value(round_data=round_data, parameter=parameter, **kwargs)

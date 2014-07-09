@@ -94,7 +94,7 @@ def syncdb(**kwargs):
 def _virtualenv(executor, *commands, **kwargs):
     """ source the virtualenv before executing this command """
     env.command = ' && '.join(commands)
-    with prefix('source %(virtualenv_path)s/bin/activate' % env):
+    with prefix('. %(virtualenv_path)s/bin/activate' % env):
         executor('%(command)s' % env, **kwargs)
     """
     if os.path.exists(env.virtualenv_path):
@@ -109,14 +109,14 @@ def host_type():
 
 
 def coverage():
-    execute(test)
-    _virtualenv(local, 'coverage report --fail-under=85 --omit=*test*,*settings*,*migrations*,*fabfile*,*wsgi*')
+    execute(test, coverage=True)
+    local('coverage report --omit=*test*,*settings*,*migrations*,*fabfile*,*wsgi* > coverage-report.txt')
 
 
-def test(name=None, coverage=True):
+def test(name=None, coverage=False):
     '''
+    run specific tests via fab test:vcweb.core.tests.ExperimentTest
     local('coverage run --source='.' manage.py test --settings=vcweb.settings')
-    run specific tests like fab test:core.ExperimentTest
     '''
     if name is not None:
         env.apps = name

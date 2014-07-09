@@ -78,7 +78,7 @@ class BaseVcwebTest(TestCase):
         self.client = Client()
         self.factory = RequestFactory()
         self.load_experiment(**kwargs)
-        logging.disable(logging.DEBUG)
+        logging.disable(logging.WARNING)
 
     def advance_to_data_round(self):
         e = self.experiment
@@ -104,10 +104,10 @@ class BaseVcwebTest(TestCase):
                                                  template_filename=template_filename,
                                                  template_id=template_id)
 
-    def create_new_parameter(self, name='test.parameter', scope=Parameter.Scope.EXPERIMENT, parameter_type='string'):
+    def create_parameter(self, name='test.parameter', scope=Parameter.Scope.EXPERIMENT, parameter_type='string'):
         return Parameter.objects.create(creator=self.experimenter, name=name, scope=scope, type=parameter_type)
 
-    def create_new_group(self, max_size=10, experiment=None):
+    def create_group(self, max_size=10, experiment=None):
         if not experiment:
             experiment = self.experiment
         return Group.objects.create(number=1, max_size=max_size, experiment=experiment)
