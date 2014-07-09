@@ -26,5 +26,5 @@ Tha subject pool app provides following functionality to the experimenter
 - Experimenter have the option to see the calendar Year, Month, Week and day wise.
 - Experimenter can also see the experiment session details by clicking on the experiment session name on the calendar
 
-.. automodule:: vcweb.subject_pool.views
+.. automodule:: vcweb.core.subjectpool
         :members:

@@ -1,10 +1,10 @@
-from fabric.api import local, run, sudo, cd, env, lcd, hosts
-from fabric.context_managers import settings as fab_settings
+from fabric.api import local, run, sudo, cd, env, lcd, execute, hosts
+from fabric.context_managers import prefix
 from fabric.contrib import django
 from fabric.contrib.console import confirm
 from fabric.contrib.project import rsync_project
-import os
 import sys
+import os
 import shutil
 import logging
 
@@ -20,23 +20,17 @@ env.python = 'python'
 env.project_name = 'vcweb'
 env.deploy_user = 'apache'
 env.deploy_group = 'commons'
-env.virtualenv_path = "%s/.virtualenvs/%s" % (
-    os.getenv("HOME"), env['project_name'])
 env.database = 'default'
-# env.virtualenv_path = '/opt/virtualenvs/%(project_name)s' % env
 env.deploy_path = '/opt/'
 env.hosts = ['localhost']
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
 env.apache = 'httpd'
 # FIXME: use django conf INSTALLED_APPS to introspect instead, similar to
 # experiment_urls
-env.applist = [
-    'vcweb.core', 'vcweb.experiment.forestry', 'vcweb.experiment.bound',
-    'vcweb.experiment.lighterprints', 'vcweb.experiment.broker']
 env.docs_path = os.path.join(env.project_path, 'docs')
-env.remote_docs_path = '/home/csid/public_html/api/vcweb'
-env.testdata_fixtures = 'forestry_experiment_metadata lighterprints_experiment_metadata activities bound_experiment_metadata bound_parameters'
-env.apps = ' '.join(env.applist)
+env.test_fixtures = ' '.join(['forestry_experiment_metadata', 'lighterprints_experiment_metadata',
+                              'activities', 'bound_experiment_metadata', 'bound_parameters'])
+env.virtualenv_path = '%s/.virtualenvs/%s' % (os.getenv('HOME'), env.project_name)
 
 # django integration for access to settings, etc.
 django.project(env.project_name)
@@ -53,25 +47,23 @@ syncdb_commands = [
 ]
 
 
-@hosts('documentation.host')
-def docs():
+@hosts('csid@commons.asu.edu')
+def docs(api_path='/home/csid/public_html/api/vcweb'):
     with lcd(env.docs_path):
         local("/usr/bin/make html")
-        rsync_project(env.remote_docs_path, 'build/html/')
-    with cd(env.remote_docs_path):
+        rsync_project(api_path, 'build/html/')
+    with cd(api_path):
         run('find . -type d -exec chmod a+rx {} \; && chmod -R a+r .')
 
 
 def testdata():
     syncdb()
     with cd(env.project_path):
-        _virtualenv(
-            local, '%(python)s manage.py loaddata %(testdata_fixtures)s' % env)
+        _virtualenv(local, '%(python)s manage.py loaddata %(test_fixtures)s' % env)
 
 
 def migrate():
-    local("{python} manage.py migrate".format(
-        python=env.python), capture=False)
+    local("%(python)s manage.py migrate" % env, capture=False)
 
 
 def clean_update():
@@ -79,17 +71,16 @@ def clean_update():
 
 
 def cu():
-    clean_update()
-    migrate()
+    execute(clean_update)
+    execute(migrate)
 
 
 def psh():
-    local("{python} manage.py shell_plus".format(
-        python=env.python), capture=False)
+    local("%(python)s manage.py shell_plus" % env, capture=False)
 
 
 def shell():
-    local("{python} manage.py shell".format(python=env.python), capture=False)
+    local("%(python)s manage.py shell" % env, capture=False)
 
 
 def syncdb(**kwargs):
@@ -100,87 +91,75 @@ def syncdb(**kwargs):
         _virtualenv(local, *syncdb_commands, **kwargs)
 
 
-def setup_virtualenv():
-    """ Setup a fresh virtualenv """
-    try:
-        os.makedirs("%(virtualenv_path)s" % env)
-    except OSError:
-        pass
-    local('virtualenv -p %(python)s --no-site-packages %(virtualenv_path)s' %
-          env)
-
-
 def _virtualenv(executor, *commands, **kwargs):
     """ source the virtualenv before executing this command """
     env.command = ' && '.join(commands)
+    with prefix('source %(virtualenv_path)s/bin/activate' % env):
+        executor('%(command)s' % env, **kwargs)
+    """
     if os.path.exists(env.virtualenv_path):
         return executor('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
     else:
         return executor(env.command, **kwargs)
+    """
 
 
 def host_type():
     run('uname -a')
 
 
-def test(name=None):
+def coverage():
+    execute(test)
+    _virtualenv(local, 'coverage report --fail-under=85 --omit=*test*,*settings*,*migrations*,*fabfile*,*wsgi*')
+
+
+def test(name=None, coverage=True):
     '''
-    runs tests on this local codebase, never remote
+    local('coverage run --source='.' manage.py test --settings=vcweb.settings')
     run specific tests like fab test:core.ExperimentTest
     '''
-    with cd(env.project_path):
-        if name is not None:
-            env.apps = name
-        _virtualenv(local, '%(python)s manage.py test %(apps)s' % env)
+    if name is not None:
+        env.apps = name
+    else:
+        apps = ['vcweb.core'] + vcweb_settings.EXPERIMENTS
+        env.apps = ' '.join(apps)
+
+    if coverage:
+        env.python = "coverage run --source='.'"
+    local('%(python)s manage.py test %(apps)s' % env)
 
 
 def sockjs(ip="127.0.0.1", port=None):
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
-    _virtualenv(local, "{python} vcweb/vcweb-sockjs.py {port}".format(
-        python=env.python, port=port), capture=False)
+    _virtualenv(
+        local, "{python} vcweb/vcweb-sockjs.py {port}".format(python=env.python, port=port), capture=False)
 
 
 def tornadio(ip="127.0.0.1", port=None):
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
-    _virtualenv(local, "{python} vcweb/vcwebio.py {port}".format(
-        python=env.python, port=port), capture=False)
+    _virtualenv(local, "{python} vcweb/vcwebio.py {port}".format(python=env.python, port=port), capture=False)
 
 
 def ssl(ip='127.0.0.1', port=8443):
-    local("{python} manage.py runsslserver {ip}:{port}".format(
-        python=env.python, **locals()), capture=False)
+    local("{python} manage.py runsslserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
 
 
 def server(ip="127.0.0.1", port=8000):
-    local("{python} manage.py runserver {ip}:{port}".format(
-        python=env.python, **locals()), capture=False)
+    local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
 
 
 def dev():
-    env.project_path = env.deploy_path + env.project_name
-    env.hosts = ['staging.server']
+    env.hosts = ['www.thevirtualcommons.org']
 
 
 def prod():
-    env.project_path = env.deploy_path + env.project_name
-    env.hosts = ['production.server']
-
-
-def loc():
-    env.deploy_user = 'alllee'
-    env.apache = 'apache2'
-    env.hosts = ['localhost']
+    env.hosts = ['vcweb.asu.edu']
 
 
 def collectstatic():
     local('%(python)s manage.py collectstatic' % env)
-
-
-def setup():
-    setup_virtualenv()
-    pip()
 
 
 def _restart_command():
@@ -201,7 +180,8 @@ def sudo_chain(*commands, **kwargs):
 
 
 def deploy():
-    """ deploys to an already setup environment """
+    """ deploy to an already setup environment """
+    env.project_path = env.deploy_path + env.project_name
     if confirm("Deploy to %(hosts)s ?" % env):
         with cd(env.project_path):
             sudo_chain(

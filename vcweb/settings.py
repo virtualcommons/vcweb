@@ -347,7 +347,6 @@ if 'test' in sys.argv:
         'NAME': ':memory:'
     }
 
-
 DEBUG_TOOLBAR_CONFIG = {
     'INTERCEPT_REDIRECTS': False,
 }
@@ -368,3 +367,5 @@ CAS_RESPONSE_CALLBACKS = (
     'vcweb.core.views.get_cas_user',
 )
 CAS_CUSTOM_FORBIDDEN = 'cas_error'
+
+EXPERIMENTS = [app_name for app_name in INSTALLED_APPS if 'experiment' in app_name]

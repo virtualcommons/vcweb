@@ -55,18 +55,17 @@ urlpatterns = [
 
 def experiment_urls():
     # crude filter, if 'experiment' is in the app_name, include it
-    experiments = [
-        app_name for app_name in settings.INSTALLED_APPS if 'experiment' in app_name]
-    for experiment in experiments:
+    for experiment in settings.EXPERIMENTS:
         experiment_name = experiment.rpartition('.')[2]
 # include all experiment urls.py under the experiment name's namespace
         yield url(r'^' + experiment_name + '/',
-                  include(experiment + '.urls', namespace=experiment_name, app_name=experiment_name))
+                  include(experiment + '.urls',
+                          namespace=experiment_name,
+                          app_name=experiment_name))
 
 urlpatterns += experiment_urls()
 # core urls catches everything else
-urlpatterns.append(
-    url(r'', include('vcweb.core.urls', namespace='core', app_name='core')))
+urlpatterns.append(url(r'', include('vcweb.core.urls', namespace='core', app_name='core')))
 
 
 if settings.DEBUG:

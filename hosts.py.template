@@ -1,0 +1,3 @@
+dev_hosts = ['staging.server']
+prod_hosts = ['prod.server']
+remote_docs_path = ''
