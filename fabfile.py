@@ -1,4 +1,4 @@
-from fabric.api import local, run, sudo, cd, env, lcd, execute, hosts
+from fabric.api import local, run, sudo, cd, env, lcd, execute, hosts, roles
 from fabric.context_managers import prefix
 from fabric.contrib import django
 from fabric.contrib.console import confirm
@@ -16,6 +16,12 @@ env.project_path = os.path.dirname(__file__)
 sys.path.append(os.path.abspath(env.project_path))
 
 # default env configuration
+env.roledefs = {
+        'test': ['localhost'],
+        'dev': ['www.thevirtualcommons.org'],
+        'staging': ['www.thevirtualcommons.org'],
+        'prod': ['vcweb.asu.edu'],
+        }
 env.python = 'python'
 env.project_name = 'vcweb'
 env.deploy_user = 'apache'
@@ -132,8 +138,7 @@ def test(name=None, coverage=False):
 def sockjs(ip="127.0.0.1", port=None):
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
-    _virtualenv(
-        local, "{python} vcweb/vcweb-sockjs.py {port}".format(python=env.python, port=port), capture=False)
+    _virtualenv(local, "{python} vcweb/vcweb-sockjs.py {port}".format(python=env.python, port=port), capture=False)
 
 
 def tornadio(ip="127.0.0.1", port=None):
@@ -150,17 +155,20 @@ def server(ip="127.0.0.1", port=8000):
     local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
 
 
+@roles('dev')
 def dev():
-    env.hosts = ['www.thevirtualcommons.org']
+    execute(deploy)
 
 
+@roles('prod')
 def prod():
-    env.hosts = ['vcweb.asu.edu']
+    execute(deploy)
 
 
-def collectstatic():
-    local('%(python)s manage.py collectstatic' % env)
-
+@roles('test')
+def setup_postgres():
+    local("psql -c 'create role %(db_user)s CREATEDB;'" % env)
+    local("psql -c 'create database %(db_name)s;' -U %(db_user)s" % env)
 
 def _restart_command():
     return 'service %(apache)s restart && supervisorctl restart vcweb-sockjs' % env
