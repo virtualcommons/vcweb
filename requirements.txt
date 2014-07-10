@@ -31,22 +31,9 @@ coverage
 lxml
 git+http://git@github.com/kstateome/django-cas.git@0.9.1#egg=cas
 # for migratespool task
-mysql-connector-python
+#mysql-connector-python
+# XXX: not necessary for production
+#django-debug-toolbar
 # graph database
 neo4j-embedded
-# XXX: not necessary for production
-django-debug-toolbar
-# XXX: disabled packages 
-#celery
-#tornadio
-#django-celery
-#kombu
-#django-kombu
-#django-autocomplete
-#django-unittest-depth
-#redis
-#beanstalkc
-#couchdb
-#pyyaml
-#pymongo
-#brabeion
+
