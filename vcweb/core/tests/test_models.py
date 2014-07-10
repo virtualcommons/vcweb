@@ -177,7 +177,7 @@ class GroupTest(BaseVcwebTest):
                 logger.debug("testing against data value %s", data_value)
                 # XXX: pathological use of set_data_value, no point in doing it
                 # this way since typical usage would do a lookup by name.
-                g.set_data_value(data_value.parameter, test_data_value)
+                g.set_data_value(parameter=data_value.parameter, value=test_data_value)
                 self.assertEqual(g.get_scalar_data_value(parameter=data_value.parameter), test_data_value)
 
     def test_copy_to_next_round(self):
@@ -191,7 +191,7 @@ class GroupTest(BaseVcwebTest):
         while e.has_next_round:
             for g in e.groups:
                 if first_pass:
-                    data_value = g.set_data_value(parameter, test_data_value)
+                    data_value = g.set_data_value(parameter=parameter, value=test_data_value)
                 data_value = g.get_data_value(parameter=parameter)
                 self.assertEqual(data_value.int_value, test_data_value)
                 self.assertEqual(g.get_scalar_data_value(parameter=parameter), test_data_value)
