@@ -464,19 +464,24 @@ class InvitationAlgorithmTest(BaseVcwebTest):
 
 class ParameterizedValueMixinTest(BaseVcwebTest):
 
-    def test_get_default_value(self):
+    def test_invalid_parameters(self):
         e = self.experiment
         e.activate()
         cr = e.current_round
-        dpv = cr.get_parameter_value(default=23)
-        self.assertIsNotNone(dpv)
-        self.assertEqual(type(dpv), DefaultValue)
+        dpv = None
+        try:
+            dpv = cr.get_parameter_value(default=23)
+            self.fail("should have raised a ValueError")
+        except ValueError:
+            self.assertIsNone(dpv)
+
+    def test_default_value(self):
+        dpv = DefaultValue(23)
         self.assertEqual(dpv.value, 23)
         self.assertEqual(dpv.int_value, 23)
         self.assertEqual(dpv.anything, 23)
         self.assertEqual(str(dpv), '23')
         self.assertEqual(unicode(dpv), u'23')
-
 
     def test_set_parameter_value(self):
         e = self.experiment

@@ -74,9 +74,7 @@ class ParameterValueMixin(object):
         none exists, creates one.
         """
         if parameter is None and name is None:
-            logger.error(
-                "Can't lookup parameter values with no name or parameter, returning default %s", default)
-            return DefaultValue(default)
+            raise ValueError("Cannot retrieve parameter value with no name or parameter")
         parameter_value_set = self.parameter_value_set
         try:
             if parameter:
@@ -581,7 +579,7 @@ class Experiment(models.Model):
     current_round_sequence_number = models.PositiveIntegerField(
         default=1,
         help_text=_("One-based sequence number used to identify which round the experiment is currently running"))
-    """ A sequential sequence number, ranging from 1 to N to identify which round the experiment is currently running """
+    """ Sequence number ranging from 1 to N to identify which round the experiment is currently running """
     current_repeated_round_sequence_number = models.PositiveIntegerField(
         default=0,
         help_text=_("The number of times this round has been repeated"))
@@ -593,29 +591,24 @@ class Experiment(models.Model):
     """ the configuration parameters in use for this experiment run. """
     # FIXME: consider using django-model-utils but need to verify that it
     # works with South - status = StatusField()
-    status = models.CharField(
-        max_length=32, choices=Status, default=Status.INACTIVE)
+    status = models.CharField(max_length=32, choices=Status, default=Status.INACTIVE)
     """ the status of an experiment can be either INACTIVE, ACTIVE, ROUND_IN_PROGRESS, or COMPLETED """
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
     # FIXME: inherit from TimeFramedModel instead?
     date_activated = models.DateTimeField(null=True, blank=True)
-    # how long this experiment should run in a date format 1w2d = 1 week 2
-    # days = 9d
-    duration = models.CharField(max_length=32, blank=True)
+    duration = models.CharField(max_length=32, blank=True, help_text=_('Duration of the experiment'))
     start_date = models.DateField(
         null=True,
         blank=True,
-        help_text=_(
-            "Use with ExperimentConfiguration.has_daily_rounds set to true to signifythat the experiment should activate automatically on the specified date."))
-    #end_date = models.DateField(null=True, blank=True, help_text=_("Used in conjuction with ExperimentConfiguration.has_daily_rounds set to true and signifies that the experiment should end at the specified time."))
+        help_text=_("Signifies that the experiment should activate automatically on the specified date."))
     current_round_start_time = models.DateTimeField(null=True, blank=True)
     registration_email_subject = models.CharField(max_length=128, blank=True, help_text=_(
         "email subject header on registration emails sent to a participant"))
     registration_email_text = models.TextField(blank=True)
 
     cached_round_sequence_number = None
-    ''' used to cache the round configuration '''
+    ''' caches the round configuration '''
 
     objects = PassThroughManager.for_queryset_class(ExperimentQuerySet)()
 
@@ -647,8 +640,8 @@ class Experiment(models.Model):
     def end_date(self):
         if self.experiment_configuration.has_daily_rounds:
             return self.start_date + timedelta(self.number_of_rounds)
-        logger.warn("Asking for end_date for non daily rounds experiment %s, returning start date %s instead", self,
-                    self.start_date)
+        logger.warn("Asking for end_date for non daily rounds experiment %s, returning start date %s instead",
+                    self, self.start_date)
         return self.start_date
 
     @property
@@ -724,13 +717,6 @@ class Experiment(models.Model):
     @property
     def namespace(self):
         return self.experiment_metadata.namespace
-
-    # FIXME: remove these after new model of dashboard experiment controller is done
-    # The following URL helper properties are generic experiment management URLs
-    # available to experimenters but not participants
-    @property
-    def management_url(self):
-        return "/%s/experimenter" % self.get_absolute_url()
 
     @property
     def monitor_url(self):
