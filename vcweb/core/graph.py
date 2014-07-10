@@ -1,4 +1,3 @@
-from neo4j import GraphDatabase
 from django.conf import settings
 
 
@@ -11,6 +10,7 @@ class VcwebGraphDatabase(object):
         return self._db
 
     def get_db(self, data_dir=None):
+        from neo4j import GraphDatabase
         if self._db is None:
             if data_dir is None:
                 data_dir = settings.GRAPH_DATABASE_PATH
