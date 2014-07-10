@@ -101,7 +101,6 @@ class ParameterValueMixin(object):
         """
         if parameter is None and name is None:
             raise ValueError("Can't set parameter value with no name or parameter given")
-        pvalue_set = self.parameter_value_set
         pv = self.get_parameter_value(parameter=parameter, name=name)
         if value is not None:
             pv.update(value)
@@ -114,7 +113,7 @@ class ParameterValueMixin(object):
             setattr(pv, k, v)
             pv.save()
         else:
-            raise ValueError("Can only specify a single value when setting parameter values, received %s instead" % kwargs)
+            raise ValueError("single value required set_parameter_value, received %s instead" % kwargs)
         return pv
 
 
@@ -420,37 +419,32 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     The configuration for a given Experiment instance.  One ExperimentConfiguration can be applied to many Experiment
     instances but can only be associated to a single ExperimentMetadata record.
     """
-    experiment_metadata = models.ForeignKey(
-        ExperimentMetadata, related_name='experiment_configuration_set')
-    creator = models.ForeignKey(
-        Experimenter, related_name='experiment_configuration_set')
+    experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='experiment_configuration_set')
+    creator = models.ForeignKey(Experimenter, related_name='experiment_configuration_set')
     name = models.CharField(max_length=255)
     max_number_of_participants = models.PositiveIntegerField(default=0)
     registration_email_subject = models.TextField(
-        blank=True, help_text=_('subject header for email registrations'))
+        blank=True, help_text=_('Subject header for email registrations'))
     invitation_text = models.TextField(
-        blank=True, help_text=_('text to send out via email invitations'))
+        blank=True, help_text=_('Text to send out via email invitations'))
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
     is_public = models.BooleanField(default=False)
     max_group_size = models.PositiveIntegerField(default=5)
-    exchange_rate = models.DecimalField(null=True, blank=True, default=0.2, max_digits=6, decimal_places=2, help_text=_(
-        'The exchange rate of currency per in-game token, e.g., dollars per token'))
+    exchange_rate = models.DecimalField(null=True, blank=True, default=0.2, max_digits=6, decimal_places=2,
+                                        help_text=_('Exchange rate of currency per in-game token, dollars per token'))
     show_up_payment = models.DecimalField(null=True, blank=True, default=5.0, max_digits=6, decimal_places=2,
                                           help_text=_(
-                                              "The show up fee to be paid to an in-lab experiment participant for showing up"))
+                                              "Show up fee paid to an in-lab experiment participant for showing up"))
     maximum_payment = models.DecimalField(null=True, blank=True, default=40.0, max_digits=6, decimal_places=2,
                                           help_text=_(
-                                              "The maximum amount a participant can expect to be paid for this experiment"))
+                                              "Maximum amount a participant expects to be paid for this experiment"))
     treatment_id = models.CharField(blank=True, max_length=32, help_text=_(
-        'An alphanumeric ID that should be unique to the set of ExperimentConfigurations for a given ExperimentMetadata'))
-    is_experimenter_driven = models.BooleanField(default=True)
+        'Alphanumeric ID unique over the set of ExperimentConfigurations in a given ExperimentMetadata'))
+    is_experimenter_driven = models.BooleanField(default=True, help_text=_(
+        "Experimenter explicitly advances the experiment to the next round."))
     has_daily_rounds = models.BooleanField(default=False, help_text=_(
         "This experiment configuration has rounds that start and end each day starting at midnight."))
-    """
-    Experimenter driven experiments have checkpoints where the experimenter
-    needs to explicitly signal the system to move to the next round or stage.
-    """
     cached_final_sequence_number = 0
 
     @property
@@ -774,8 +768,7 @@ class Experiment(models.Model):
         csn = self.cached_round_sequence_number
         if csn is None or self.current_round_sequence_number != self.cached_round_sequence_number:
             self.cached_round_sequence_number = self.current_round_sequence_number
-            self.cached_round = self.get_round_configuration(
-                self.current_round_sequence_number)
+            self.cached_round = self.get_round_configuration(self.current_round_sequence_number)
         return self.cached_round
 
     @property
@@ -793,16 +786,14 @@ class Experiment(models.Model):
                 # XXX:  if we're looking for a previous repeating round and the current repeated
                 # round sequence number is 0 we need to clamp the repeated round sequence number to N - 1 where N is the
                 # number of repeats for that repeating round
-                current = round_configuration.repeat - \
-                    1 if current == 0 else current - 1
+                current = round_configuration.repeat - 1 if current == 0 else current - 1
             elif next_round:
                 current += 1
             ps.update(repeating_round_sequence_number=current)
         try:
             return RoundData.objects.select_related('round_configuration').get(experiment=self, **ps)
         except RoundData.DoesNotExist:
-            logger.error(
-                "No round data exists yet for round configuration %s", round_configuration)
+            logger.error("No round data exists yet for round configuration %s", round_configuration)
             return None
 
     @property
@@ -880,7 +871,8 @@ class Experiment(models.Model):
     def all_participants_submitted(self, parameter, round_data=None):
         if round_data is None:
             round_data = self.current_round_data
-        return ParticipantRoundDataValue.objects.filter(parameter=parameter, submitted=True,
+        return ParticipantRoundDataValue.objects.filter(parameter=parameter,
+                                                        submitted=True,
                                                         round_data=round_data).count() == self.participant_set.count()
 
     @property
@@ -1880,8 +1872,7 @@ class ParameterizedValue(models.Model):
 class ExperimentParameterValue(ParameterizedValue):
 
     """ Represents an experiment configuration parameter applicable across the entire experiment """
-    experiment_configuration = models.ForeignKey(
-        ExperimentConfiguration, related_name='parameter_value_set')
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='parameter_value_set')
 
     def to_dict(self, **kwargs):
         return {
@@ -1907,8 +1898,7 @@ class RoundParameterValue(ParameterizedValue):
     """
     Represents a specific piece of round configuration data.
     """
-    round_configuration = models.ForeignKey(
-        RoundConfiguration, related_name='parameter_value_set')
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='parameter_value_set')
 
     def to_dict(self, **kwargs):
         rc = self.round_configuration
@@ -2236,44 +2226,35 @@ class ParticipantQuerySet(models.query.QuerySet):
 
 class Participant(CommonsUser):
     GENDER_CHOICES = (('M', 'Male'), ('F', 'Female'),)
-    CLASS_CHOICES = Choices(
-        'Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate', 'Other')
-    SPORT_CHOICES = Choices(
-        'Football', 'Baseball', 'Hockey', 'Basketball', 'Other')
-    COLOR_CHOICES = Choices(
-        'red', 'blue', 'green', 'yellow', 'black', 'white', 'pink', 'purple', 'other')
-    FOOD_CHOICES = Choices(
-        'Fast food', 'Haute cuisine', 'Asian', 'Mexican', 'Other')
+    CLASS_CHOICES = Choices('Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate', 'Other')
+    SPORT_CHOICES = Choices('Football', 'Baseball', 'Hockey', 'Basketball', 'Other')
+    COLOR_CHOICES = Choices('red', 'blue', 'green', 'yellow', 'black', 'white', 'pink', 'purple', 'other')
+    FOOD_CHOICES = Choices('Fast food', 'Haute cuisine', 'Asian', 'Mexican', 'Other')
     MOVIE_GENRE_CHOICES = Choices('Family', 'Action', 'Comedy', 'Science Fiction', 'Documentary', 'Cult', 'Sport',
                                   'Musical', 'Horror', 'Foreign', 'Romance', 'Independent', 'Drama')
     UNDERGRADUATE_CLASS_CHOICES = ('Freshman', 'Sophomore', 'Junior', 'Senior')
     can_receive_invitations = models.BooleanField(default=False, help_text=_(
         "Check this box if you'd like to opt-in and receive email invitations for upcoming experiments"))
-    groups = models.ManyToManyField(
-        Group, through='ParticipantGroupRelationship', related_name='participant_set')
+    groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participant_set')
     experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship',
                                          related_name='participant_set')
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
     birthdate = models.DateField(null=True, blank=True)
     major = models.CharField(max_length=128, blank=True)
-    class_status = models.CharField(
-        max_length=32, choices=CLASS_CHOICES, blank=True)
+    class_status = models.CharField(max_length=32, choices=CLASS_CHOICES, blank=True)
     address = models.ForeignKey(Address, null=True, blank=True)
-    favorite_sport = models.CharField(
-        max_length=32, choices=SPORT_CHOICES, blank=True)
-    favorite_color = models.CharField(
-        max_length=32, choices=COLOR_CHOICES, blank=True)
-    favorite_food = models.CharField(
-        max_length=32, choices=FOOD_CHOICES, blank=True)
-    favorite_movie_genre = models.CharField(
-        max_length=64, choices=MOVIE_GENRE_CHOICES, blank=True)
+    favorite_sport = models.CharField(max_length=32, choices=SPORT_CHOICES, blank=True)
+    favorite_color = models.CharField(max_length=32, choices=COLOR_CHOICES, blank=True)
+    favorite_food = models.CharField(max_length=32, choices=FOOD_CHOICES, blank=True)
+    favorite_movie_genre = models.CharField(max_length=64, choices=MOVIE_GENRE_CHOICES, blank=True)
 
     objects = PassThroughManager.for_queryset_class(ParticipantQuerySet)()
 
     @property
     def is_profile_complete(self):
         if self.can_receive_invitations:
-            return self.class_status and self.gender and self.favorite_sport and self.favorite_color and self.favorite_food and self.favorite_movie_genre and self.major
+            return all([self.class_status, self.gender, self.favorite_sport, self.favorite_color, self.favorite_food,
+                        self.favorite_movie_genre, self.major])
         else:
             # incomplete profile doesn't matter if they're not set to receive
             # experiment invitations
@@ -2306,8 +2287,7 @@ class Participant(CommonsUser):
         self.user.is_active = False
         self.user.save()
         upcoming_signups = ParticipantSignup.objects.upcoming(participant=self)
-        logger.warn(
-            "deactivating user %s and deleting upcoming signups %s", self, upcoming_signups)
+        logger.warn("deactivating user %s and deleting upcoming signups %s", self, upcoming_signups)
         upcoming_signups.delete()
 
     def __unicode__(self):
@@ -2929,16 +2909,6 @@ def get_participant_ready_parameter():
     return Parameter.objects.get(name='participant_ready', scope=Parameter.Scope.PARTICIPANT)
 
 
-def is_experimenter(user, experimenter=None):
-    """
-    returns true if user.experimenter exists and is an Experimenter instance.  If an experimenter is passed in as a
-    keyword argument, adds the additional constraint that user.experimenter == experimenter
-    """
-    if hasattr(user, 'experimenter') and isinstance(user.experimenter, Experimenter):
-        return user.experimenter.approved and (experimenter is None or user.experimenter == experimenter)
-    return False
-
-
 SCALAR_DATA_FIELDS = (models.CharField, models.TextField, models.IntegerField, models.PositiveIntegerField,
                       models.PositiveSmallIntegerField)
 
@@ -2954,13 +2924,6 @@ def get_model_fields(model):
 def find_duplicate_users(field='email'):
     return User.objects.values(field).annotate(max_id=models.Max('id'),
                                                count_id=models.Count('id')).filter(count_id__gt=1).order_by()
-
-
-def is_participant(user):
-    """
-    returns true if user.participant exists and is a Participant instance.
-    """
-    return hasattr(user, 'participant') and isinstance(user.participant, Participant)
 
 
 @receiver(signals.system_daily_tick)

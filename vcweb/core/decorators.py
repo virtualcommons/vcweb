@@ -5,7 +5,6 @@ import logging
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import user_passes_test
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -29,13 +28,27 @@ def anonymous_required(view_function=None, redirect_to='core:dashboard'):
     return create_user_decorator(view_function, is_anonymous, redirect_to=redirect_to)
 
 
+def is_experimenter(user, experimenter=None):
+    """
+    returns true if user.experimenter exists and is an Experimenter instance.  If an experimenter is passed in as a
+    keyword argument, adds the additional constraint that user.experimenter == experimenter
+    """
+    return hasattr(user, 'experimenter') and user.experimenter.approved and (experimenter is None
+                                                                             or user.experimenter == experimenter)
+
+
+def is_participant(user):
+    """
+    returns true if user.participant exists and is a Participant instance.
+    """
+    return hasattr(user, 'participant') and user.is_active
+
+
 def experimenter_required(view_function=None):
-    from vcweb.core.models import is_experimenter
     return create_decorator(view_function, is_experimenter)
 
 
 def participant_required(view_function=None):
-    from vcweb.core.models import is_participant
     return create_decorator(view_function, is_participant)
 
 

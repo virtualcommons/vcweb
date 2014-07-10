@@ -6,17 +6,17 @@ from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 
-from .ajax import (
-    get_round_data, save_experimenter_notes, create_experiment, clone_experiment, archive)
-from .views import (
-    dashboard, LoginView, LogoutView, monitor, RegisterEmailListView, RegisterTestParticipantsView, completed_survey,
-    toggle_bookmark_experiment_metadata, check_survey_completed, Participate, download_data, download_participants,
-    export_configuration, api_logger, participant_api_login, api_logout, participant_ready, check_ready_participants,
-    get_dashboard_view_model, update_experiment, update_round_configuration, edit_experiment_configuration,
-    clone_experiment_configuration, unsubscribe, update_round_param_value, update_experiment_param_value,
-    update_experiment_configuration, OstromlabFaqList, cas_asu_registration, cas_asu_registration_submit,
-    account_profile, update_account_profile, check_user_email
-)
+from .ajax import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, archive,
+                   check_user_email)
+from .views import (dashboard, LoginView, LogoutView, monitor, RegisterEmailListView, RegisterTestParticipantsView,
+                    completed_survey, toggle_bookmark_experiment_metadata, check_survey_completed, Participate,
+                    download_data, download_participants, export_configuration, api_logger, participant_api_login,
+                    api_logout, participant_ready, check_ready_participants, get_dashboard_view_model,
+                    update_experiment, update_round_configuration, edit_experiment_configuration,
+                    clone_experiment_configuration, unsubscribe, update_round_param_value,
+                    update_experiment_param_value, update_experiment_configuration, OstromlabFaqList,
+                    cas_asu_registration, cas_asu_registration_submit, account_profile, update_account_profile,
+                    )
 
 
 logger = logging.getLogger(__name__)

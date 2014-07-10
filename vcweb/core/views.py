@@ -21,18 +21,17 @@ import unicodecsv
 
 from . import dumps
 from .http import JsonResponse
-from .decorators import anonymous_required, experimenter_required, participant_required, retry
-from .forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm,
-                              UpdateExperimentForm, AsuRegistrationForm, ParticipantGroupIdForm,
-                              RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
-                              LogMessageForm, BookmarkExperimentMetadataForm, ExperimentConfigurationForm,
-                              ExperimentParameterValueForm, RoundConfigurationForm, RoundParameterValueForm)
-from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship,
-                               ParticipantGroupRelationship, ExperimentConfiguration, ExperimenterRequest, Experiment,
-                               Institution, is_participant, is_experimenter, BookmarkedExperimentMetadata,
-                               OstromlabFaqEntry, Experimenter, ExperimentParameterValue, RoundConfiguration,
-                               RoundParameterValue, Parameter, ParticipantSignup, get_model_fields, )
-
+from .decorators import (anonymous_required, experimenter_required, participant_required, retry, is_participant,
+                         is_experimenter)
+from .forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm, UpdateExperimentForm,
+                    AsuRegistrationForm, ParticipantGroupIdForm, RegisterEmailListParticipantsForm,
+                    RegisterTestParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm,
+                    ExperimentConfigurationForm, ExperimentParameterValueForm, RoundConfigurationForm,
+                    RoundParameterValueForm)
+from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
+                     ExperimentConfiguration, ExperimenterRequest, Experiment, Institution,
+                     BookmarkedExperimentMetadata, OstromlabFaqEntry, Experimenter, ExperimentParameterValue,
+                     RoundConfiguration, RoundParameterValue, ParticipantSignup, get_model_fields, )
 
 logger = logging.getLogger(__name__)
 mimetypes.init()
@@ -115,8 +114,7 @@ class ParticipantDashboardViewModel(DashboardViewModel):
             experiment_status_dict[e.status].append(
                 e.to_dict(attrs=('participant_url', 'start_date'), name=e.experiment_metadata.title))
         self.pending_experiments = experiment_status_dict['INACTIVE']
-        self.running_experiments = experiment_status_dict[
-            'ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+        self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
         upcoming_signups = ParticipantSignup.objects.upcoming(self.participant)
         self.show_end_dates = False
         self.signups = []
@@ -446,19 +444,6 @@ def update_account_profile(request):
 
 
 @login_required
-def check_user_email(request):
-    email = request.GET.get("email").lower()
-    current_user = request.user
-    success = False
-    if current_user.email != email:
-        users = User.objects.filter(email=email)
-        success = users.count() == 0
-    else:
-        success = True
-    return JsonResponse(dumps(success))
-
-
-@login_required
 def account_profile(request):
     user = request.user
     if is_participant(user):
@@ -467,9 +452,6 @@ def account_profile(request):
     else:
         form = ExperimenterAccountForm(instance=user.experimenter)
     return render(request, 'account/profile.html', {'form': form})
-
-
-''' participant views '''
 
 
 class ParticipantMixin(object):
@@ -959,8 +941,11 @@ def _ready_participants_dict(experiment):
     number_of_ready_participants = experiment.number_of_ready_participants
     all_participants_ready = (
         number_of_ready_participants == experiment.number_of_participants)
-    return {'success': True, 'number_of_ready_participants': number_of_ready_participants,
-            'all_participants_ready': all_participants_ready}
+    return {
+        'success': True,
+        'number_of_ready_participants': number_of_ready_participants,
+        'all_participants_ready': all_participants_ready
+    }
 
 
 @login_required
@@ -1413,7 +1398,6 @@ def unsubscribe(request):
             user.participant.can_receive_invitations = False
             user.participant.save(update_fields=['can_receive_invitations'])
             successfully_unsubscribed = True
-        return render(request, 'account/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
-    else:
-        return render(request, 'invalid_request.html',
-                      {'message': "You aren't currently subscribed to our experiment session mailing list."})
+            return render(request, 'account/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
+    return render(request, 'invalid_request.html',
+                  {'message': "You aren't currently subscribed to our experiment session mailing list."})
