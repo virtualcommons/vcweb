@@ -17,3 +17,15 @@ class LoginTest(BaseVcwebTest):
         experiment = self.experiment
         self.assertTrue(self.client.login(username=experiment.experimenter.email,
                                           password=BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD))
+
+
+class DashboardViewTest(BaseVcwebTest):
+
+    def test_participant_login(self):
+        e = self.experiment
+        e.activate()
+        c = self.client
+        for p in e.participant_set.all():
+            self.assertTrue(c.login(username=p.email, password='test'))
+            response = c.get('/dashboard')
+            self.assertEqual(200, response.status_code)

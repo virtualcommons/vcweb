@@ -28,12 +28,10 @@ class BaseVcwebTest(TestCase):
         # currently associating all available Parameters with this
         # ExperimentMetadata
         if not experiment.experiment_metadata.parameters.exists():
-            experiment.experiment_metadata.parameters.add(
-                *Parameter.objects.values_list('pk', flat=True))
+            experiment.experiment_metadata.parameters.add(*Parameter.objects.values_list('pk', flat=True))
         if experiment.participant_set.count() == 0:
             logger.debug("adding participants to %s", experiment)
-            experiment.setup_test_participants(
-                email_suffix='asu.edu', count=10, password='test')
+            experiment.setup_test_participants(email_suffix='asu.edu', count=10, password='test')
         experiment.save()
         u = experiment.experimenter.user
         u.set_password(experimenter_password)
