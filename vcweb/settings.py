@@ -133,49 +133,19 @@ INSTALLED_APPS = (
     'cas',
 )
 
-SOUTH_TESTS_MIGRATE = False
-
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
 
 # django social auth keys
-TWITTER_CONSUMER_KEY = ''
-TWITTER_CONSUMER_SECRET = ''
-FACEBOOK_APP_ID = ''
-FACEBOOK_API_SECRET = ''
-FACEBOOK_EXTENDED_PERMISSIONS = ['email']
-LINKEDIN_CONSUMER_KEY = ''
-LINKEDIN_CONSUMER_SECRET = ''
-GOOGLE_CONSUMER_KEY = ''
-GOOGLE_CONSUMER_SECRET = ''
-GOOGLE_OAUTH2_CLIENT_ID = ''
-GOOGLE_OAUTH2_CLIENT_SECRET = ''
-FOURSQUARE_CONSUMER_KEY = ''
-FOURSQUARE_CONSUMER_SECRET = ''
 FOURSQUARE_OAUTH_ENDPOINT = 'https://foursquare.com/oauth2/authenticate'
 FOURSQUARE_OAUTH_ACCESS_TOKEN_ENDPOINT = 'https://foursquare.com/oauth2/access_token'
 FOURSQUARE_VENUE_SEARCH_ENDPOINT = 'https://api.foursquare.com/v2/venues/search'
 FOURSQUARE_CATEGORIES_ENDPOINT = 'https://api.foursquare.com/v2/venues/categories'
 FOURSQUARE_CONSUMER_DATE_VERIFIED = '20120417'
-GITHUB_APP_ID = ''
-GITHUB_API_SECRET = ''
-DROPBOX_APP_ID = ''
-DROPBOX_API_SECRET = ''
-FLICKR_APP_ID = ''
-FLICKR_API_SECRET = ''
-INSTAGRAM_CLIENT_ID = ''
-INSTAGRAM_CLIENT_SECRET = ''
 
 LOGIN_REDIRECT_URL = '/dashboard'
-LOGIN_ERROR_URL = '/login-error/'
-# LOGIN_REDIRECT_URL='/dashboard'
-# LOGIN_ERROR_URL='/accounts/login/error'
-SOCIAL_AUTH_COMPLETE_URL_NAME = 'socialauth_complete'
-SOCIAL_AUTH_ASSOCIATE_URL_NAME = 'socialauth_associate_complete'
-
-SOCIAL_AUTH_RAISE_EXCEPTIONS = DEBUG
 
 # websockets configuration
 WEBSOCKET_PORT = 8882
@@ -344,6 +314,12 @@ if 'test' in sys.argv:
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': ':memory:'
+    }
+    DATABASES['postgres'] = {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'vcweb',
+        'USER': 'postgres',
+        'PASSWORD': '',
     }
 
 DEBUG_TOOLBAR_CONFIG = {
