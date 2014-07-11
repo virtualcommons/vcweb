@@ -311,6 +311,8 @@ if has_local_settings:
 
 
 if 'test' in sys.argv:
+    SOUTH_TESTS_MIGRATE = False
+    SKIP_SOUTH_TESTS = True
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': ':memory:'
