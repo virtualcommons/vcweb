@@ -38,5 +38,6 @@ In order to participate in a vcweb experiment you must be invited to one by an e
 
 ### develop an experiment or contribute to the infrastructure
 [![Build Status](https://drone.io/bitbucket.org/virtualcommons/vcweb/status.png)](https://drone.io/bitbucket.org/virtualcommons/vcweb/latest)
-For more information on how to install and deploy the software please visit <https://bitbucket.org/virtualcommons/vcweb/wiki/Home>
+
+For more information on how to install and deploy the software please visit <https://bitbucket.org/virtualcommons/vcweb/wiki/Home> (work in progress)
 
