@@ -17,7 +17,8 @@ function connect(uri, port) {
         console.log("no uri specified, defaulting to /sockjs");
         uri = DEFAULT_URI;
     }
-    var sockjsServer = "http://" + host + ":" + port + uri;
+    // var sockjsServer = "http://" + host + ":" + port + uri;
+    var sockjsServer = "https://" + host + "/websocket" + uri;
     console.log("Establishing connection to " + sockjsServer);
     socket = new SockJS(sockjsServer);
     socket.onopen = function() {
