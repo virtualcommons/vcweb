@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 @register.simple_tag
 def active(request, pattern):
-    logger.debug("request: %s, pattern: %s", request, pattern)
     if request:
         return 'active' if pattern == request.path else 'inactive'
     else:

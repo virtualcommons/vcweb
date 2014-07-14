@@ -17,6 +17,7 @@ CACHES = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'HOST': 'localhost',
         'NAME': 'vcweb',
         'USER': 'vcweb',
         'PASSWORD': 'CUSTOMIZE_ME',
