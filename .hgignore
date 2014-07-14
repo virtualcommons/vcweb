@@ -20,3 +20,4 @@ resource/
 .ropeproject
 .coverage
 htmlcov
+build-id.txt

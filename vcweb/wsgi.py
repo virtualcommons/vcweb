@@ -23,6 +23,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vcweb.settings")
 from django.core.wsgi import get_wsgi_application
 from raven.contrib.django.raven_compat.middleware.wsgi import Sentry
 application = Sentry(get_wsgi_application())
+#application = get_wsgi_application()
 
 # Apply WSGI middleware here.
 # from helloworld.wsgi import HelloWorldApplication

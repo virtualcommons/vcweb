@@ -18,12 +18,18 @@ logger = logging.getLogger(__name__)
 
 @register.simple_tag
 def active(request, pattern):
-    return 'active' if pattern == request.path else 'inactive'
+    logger.debug("request: %s, pattern: %s", request, pattern)
+    if request:
+        return 'active' if pattern == request.path else 'inactive'
+    else:
+        return 'inactive'
 
 
 @register.simple_tag
 def active_re(request, pattern):
-    return 'active' if re.search(pattern, request.path) else 'inactive'
+    if request:
+        return 'active' if re.search(pattern, request.path) else 'inactive'
+    return 'inactive'
 
 
 @register.filter
@@ -38,7 +44,7 @@ def addcss(field, css):
 
 @register.simple_tag
 def build_id():
-    build_id_file_path = os.path.join(settings.BASE_DIR, os.pardir, '../build-id.txt')
+    build_id_file_path = os.path.join(settings.BASE_DIR, os.pardir, 'build-id.txt')
     try:
         with open(build_id_file_path, 'r') as f:
             return f.read()
