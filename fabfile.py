@@ -17,18 +17,17 @@ sys.path.append(os.path.abspath(env.project_path))
 
 # default env configuration
 env.roledefs = {
-        'test': ['localhost'],
-        'dev': ['www.thevirtualcommons.org'],
-        'staging': ['www.thevirtualcommons.org'],
-        'prod': ['vcweb.asu.edu'],
-        }
+    'test': ['localhost'],
+    'dev': ['www.thevirtualcommons.org'],
+    'staging': ['www.thevirtualcommons.org'],
+    'prod': ['vcweb.asu.edu'],
+}
 env.python = 'python'
 env.project_name = 'vcweb'
 env.deploy_user = 'apache'
 env.deploy_group = 'commons'
 env.database = 'default'
 env.deploy_path = '/opt/'
-env.hosts = ['localhost']
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
 env.apache = 'httpd'
 # FIXME: use django conf INSTALLED_APPS to introspect instead, similar to
@@ -36,7 +35,8 @@ env.apache = 'httpd'
 env.docs_path = os.path.join(env.project_path, 'docs')
 env.test_fixtures = ' '.join(['forestry_experiment_metadata', 'lighterprints_experiment_metadata',
                               'activities', 'bound_experiment_metadata', 'bound_parameters'])
-env.virtualenv_path = '%s/.virtualenvs/%s' % (os.getenv('HOME'), env.project_name)
+env.virtualenv_path = '%s/.virtualenvs/%s' % (
+    os.getenv('HOME'), env.project_name)
 
 # django integration for access to settings, etc.
 django.project(env.project_name)
@@ -65,7 +65,8 @@ def docs(api_path='/home/csid/public_html/api/vcweb'):
 def testdata():
     syncdb()
     with cd(env.project_path):
-        _virtualenv(local, '%(python)s manage.py loaddata %(test_fixtures)s' % env)
+        _virtualenv(
+            local, '%(python)s manage.py loaddata %(test_fixtures)s' % env)
 
 
 def migrate():
@@ -104,10 +105,10 @@ def _virtualenv(executor, *commands, **kwargs):
         executor('%(command)s' % env, **kwargs)
     """
     if os.path.exists(env.virtualenv_path):
-        return executor('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
+    return executor('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
     else:
-        return executor(env.command, **kwargs)
-    """
+    return executor(env.command, **kwargs)
+"""
 
 
 def host_type():
@@ -116,14 +117,10 @@ def host_type():
 
 def coverage():
     execute(test, coverage=True)
-    local('coverage report --omit=*test*,*settings*,*migrations*,*fabfile*,*wsgi* > coverage-report.txt')
+    local('coverage html --omit=*test*,*settings*,*migrations*,*fabfile*,*wsgi*')
 
 
 def test(name=None, coverage=False):
-    '''
-    run specific tests via fab test:vcweb.core.tests.ExperimentTest
-    local('coverage run --source='.' manage.py test --settings=vcweb.settings')
-    '''
     if name is not None:
         env.apps = name
     else:
@@ -131,28 +128,32 @@ def test(name=None, coverage=False):
         env.apps = ' '.join(apps)
 
     if coverage:
-        env.python = "coverage run --source='.'"
+        env.python = "coverage run --source='.' --omit=*test*,*settings*,*migrations*,*fabfile*,*wsgi*"
     local('%(python)s manage.py test %(apps)s' % env)
 
 
 def sockjs(ip="127.0.0.1", port=None):
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
-    _virtualenv(local, "{python} vcweb/vcweb-sockjs.py {port}".format(python=env.python, port=port), capture=False)
+    _virtualenv(
+        local, "{python} vcweb/vcweb-sockjs.py {port}".format(python=env.python, port=port), capture=False)
 
 
 def tornadio(ip="127.0.0.1", port=None):
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
-    _virtualenv(local, "{python} vcweb/vcwebio.py {port}".format(python=env.python, port=port), capture=False)
+    _virtualenv(
+        local, "{python} vcweb/vcwebio.py {port}".format(python=env.python, port=port), capture=False)
 
 
 def ssl(ip='127.0.0.1', port=8443):
-    local("{python} manage.py runsslserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
+    local("{python} manage.py runsslserver {ip}:{port}".format(
+        python=env.python, **locals()), capture=False)
 
 
 def server(ip="127.0.0.1", port=8000):
-    local("{python} manage.py runserver {ip}:{port}".format(python=env.python, **locals()), capture=False)
+    local("{python} manage.py runserver {ip}:{port}".format(
+        python=env.python, **locals()), capture=False)
 
 
 @roles('dev')
@@ -169,6 +170,7 @@ def prod():
 def setup_postgres():
     local("psql -c 'create role %(db_user)s CREATEDB;'" % env)
     local("psql -c 'create database %(db_name)s;' -U %(db_user)s" % env)
+
 
 def _restart_command():
     return 'service %(apache)s restart && supervisorctl restart vcweb-sockjs' % env
@@ -190,7 +192,7 @@ def sudo_chain(*commands, **kwargs):
 def deploy():
     """ deploy to an already setup environment """
     env.project_path = env.deploy_path + env.project_name
-    if confirm("Deploy to %(hosts)s ?" % env):
+    if confirm("Deploy to %(roles)s ?" % env):
         with cd(env.project_path):
             sudo_chain(
                 'hg pull && hg up -C',
