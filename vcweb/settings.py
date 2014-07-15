@@ -275,7 +275,7 @@ INTERNAL_IPS = ('127.0.0.1', '68.99.87.185',)
 # for other solutions
 has_local_settings = False
 try:
-    import settings_local
+    from settings_local import *
     has_local_settings = True
 except ImportError:
     has_local_settings = False
