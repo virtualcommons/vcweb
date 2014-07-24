@@ -1,4 +1,4 @@
-from fabric.api import local, run, sudo, cd, env, lcd, execute, hosts, roles
+from fabric.api import local, run, sudo, cd, env, lcd, execute, hosts, roles, task
 from fabric.context_managers import prefix
 from fabric.contrib import django
 from fabric.contrib.console import confirm
@@ -54,6 +54,7 @@ syncdb_commands = [
 
 
 @hosts('csid@commons.asu.edu')
+@task
 def docs(api_path='/home/csid/public_html/api/vcweb'):
     with lcd(env.docs_path):
         local("/usr/bin/make html")
@@ -62,6 +63,7 @@ def docs(api_path='/home/csid/public_html/api/vcweb'):
         run('find . -type d -exec chmod a+rx {} \; && chmod -R a+r .')
 
 
+@task
 def testdata():
     syncdb()
     with cd(env.project_path):
@@ -69,27 +71,33 @@ def testdata():
             local, '%(python)s manage.py loaddata %(test_fixtures)s' % env)
 
 
+@task
 def migrate():
     local("%(python)s manage.py migrate" % env, capture=False)
 
 
+@task
 def clean_update():
     local("hg pull && hg up -C")
 
 
+@task
 def cu():
     execute(clean_update)
     execute(migrate)
 
 
+@task
 def psh():
+    execute(shell)
+
+
+@task
+def shell():
     local("%(python)s manage.py shell_plus" % env, capture=False)
 
 
-def shell():
-    local("%(python)s manage.py shell" % env, capture=False)
-
-
+@task
 def syncdb(**kwargs):
     with cd(env.project_path):
         if os.path.exists(vcweb_settings.DATA_DIR):
@@ -111,15 +119,18 @@ def _virtualenv(executor, *commands, **kwargs):
 """
 
 
+@task
 def host_type():
     run('uname -a')
 
 
+@task
 def coverage():
     execute(test, coverage=True)
     local('coverage html --omit=*test*,*settings*,*migrations*,*fabfile*,*wsgi*')
 
 
+@task
 def test(name=None, coverage=False):
     if name is not None:
         env.apps = name
@@ -132,6 +143,7 @@ def test(name=None, coverage=False):
     local('%(python)s manage.py test %(apps)s' % env)
 
 
+@task
 def sockjs(ip="127.0.0.1", port=None):
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
@@ -139,6 +151,7 @@ def sockjs(ip="127.0.0.1", port=None):
         local, "{python} vcweb/vcweb-sockjs.py {port}".format(python=env.python, port=port), capture=False)
 
 
+@task
 def tornadio(ip="127.0.0.1", port=None):
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
@@ -146,27 +159,32 @@ def tornadio(ip="127.0.0.1", port=None):
         local, "{python} vcweb/vcwebio.py {port}".format(python=env.python, port=port), capture=False)
 
 
+@task
 def ssl(ip='127.0.0.1', port=8443):
     local("{python} manage.py runsslserver {ip}:{port}".format(
         python=env.python, **locals()), capture=False)
 
 
+@task
 def server(ip="127.0.0.1", port=8000):
     local("{python} manage.py runserver {ip}:{port}".format(
         python=env.python, **locals()), capture=False)
 
 
 @roles('dev')
+@task
 def dev():
     execute(deploy)
 
 
 @roles('prod')
+@task
 def prod():
     execute(deploy)
 
 
 @roles('test')
+@task
 def setup_postgres():
     local("psql -c 'create role %(db_user)s CREATEDB;'" % env)
     local("psql -c 'create database %(db_name)s;' -U %(db_user)s" % env)
@@ -176,11 +194,13 @@ def _restart_command():
     return 'service %(apache)s restart && supervisorctl restart vcweb-sockjs' % env
 
 
+@task
 def clean():
     with cd(env.project_path):
         sudo('find . -name "*.pyc" -delete -print')
 
 
+@task
 def restart():
     sudo(_restart_command(), pty=True)
 
