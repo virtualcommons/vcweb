@@ -191,7 +191,7 @@ def setup_postgres():
 
 
 def _restart_command():
-    return 'service %(apache)s restart && supervisorctl restart vcweb-sockjs' % env
+    return 'service %(apache)s restart && service supervisord restart' % env
 
 
 @task
