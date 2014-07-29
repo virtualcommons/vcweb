@@ -1415,22 +1415,17 @@ class Experiment(models.Model):
 
 
 class RoundConfiguration(models.Model, ParameterValueMixin):
-    # FIXME: refactor this into a single data structure
-    # maps round type name to (description, default_template_filename)
-    ROUND_TYPES_DICT = dict(
-        WELCOME=(_('Initial welcome page'), 'welcome.html'),
-        GENERAL_INSTRUCTIONS=(
-            _('General introduction'), 'general-instructions.html'),
-        REGULAR=(_('Regular experiment round'), 'participate.html'),
-        CHAT=(_('Chat round'), 'chat.html'),
-        DEBRIEFING=(_('Debriefing'), 'debriefing.html'),
-        INSTRUCTIONS=(_('Instructions'), 'instructions.html'),
-        PRACTICE=(_('Practice round'), 'practice.html'),
-        QUIZ=(_('Quiz round'), 'quiz.html'))
-    ROUND_TYPES = (CHAT, DEBRIEFING, GENERAL_INSTRUCTIONS, INSTRUCTIONS, PRACTICE, QUIZ, REGULAR, WELCOME) = sorted(
-        ROUND_TYPES_DICT.keys())
     RoundType = Choices(
-        *[(round_type, ROUND_TYPES_DICT[round_type][0]) for round_type in ROUND_TYPES])
+        ('WELCOME', _('Initial welcome page')),
+        ('GENERAL_INSTRUCTIONS', _('General introduction')),
+        ('REGULAR', _('Regular experiment round')),
+        ('CHAT', _('Communication round')),
+        ('DEBRIEFING', _('Debriefing round summary')),
+        ('INSTRUCTIONS', _('Instructions')),
+        ('PRACTICE', _('Practice round')),
+        ('QUIZ', _('Quiz round')),
+        ('SURVEY', _('Survey round')),
+    )
     PLAYABLE_ROUND_CONFIGURATIONS = (RoundType.PRACTICE, RoundType.REGULAR)
 
     experiment_configuration = models.ForeignKey(
