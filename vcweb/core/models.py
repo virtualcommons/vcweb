@@ -2481,6 +2481,9 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
                                                                                    is_active=True,
                                                                                    **kwargs)
 
+    def target_ids(self, participant_group_relationship):
+        return self.filter(participant_group_relationship=participant_group_relationship).values_list('target_data_value', flat=True)
+
 
 class ParticipantRoundDataValue(ParameterizedValue):
 
@@ -2501,8 +2504,7 @@ class ParticipantRoundDataValue(ParameterizedValue):
     submitted = models.BooleanField(default=False)
     target_data_value = models.ForeignKey('ParticipantRoundDataValue', related_name='target_data_value_set', null=True,
                                           blank=True)
-    objects = PassThroughManager.for_queryset_class(
-        ParticipantRoundDataValueQuerySet)()
+    objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
 
     @property
     def owner(self):
@@ -2631,6 +2633,8 @@ class ChatMessage(ParticipantRoundDataValue):
 
 class Comment(ParticipantRoundDataValue):
 
+    objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
+
     def __init__(self, *args, **kwargs):
         kwargs['parameter'] = get_comment_parameter()
         super(Comment, self).__init__(*args, **kwargs)
@@ -2650,13 +2654,14 @@ class Comment(ParticipantRoundDataValue):
 
 class Like(ParticipantRoundDataValue):
 
+    objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
+
     def __init__(self, *args, **kwargs):
         kwargs['parameter'] = get_like_parameter()
         super(Like, self).__init__(*args, **kwargs)
 
     def to_dict(self, cacheable=True, include_email=False):
-        data = super(Like, self).to_dict(cacheable=cacheable)
-        return data
+        return super(Like, self).to_dict(cacheable=cacheable)
 
 
 class ActivityLog(models.Model):

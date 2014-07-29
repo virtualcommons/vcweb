@@ -15,12 +15,11 @@ from vcweb.core import signals
 
 from vcweb.core.models import (
     ParticipantRoundDataValue, ChatMessage, Experiment, Like, Comment)
-from .models import (Activity, is_scheduled_activity_experiment,
-                     get_activity_availability_cache, get_activity_performed_parameter, ActivityAvailability,
-                     _activity_status_sort_key, is_linear_public_good_game, is_high_school_treatment,
-                     has_leaderboard, get_activity_points_cache, get_footprint_level, get_group_threshold,
-                     get_points_to_next_level, get_experiment_completed_dv, get_individual_points,
-                     get_footprint_level_dv, get_lighterprints_experiment_metadata)
+from .models import (Activity, is_scheduled_activity_experiment, get_activity_availability_cache,
+                     get_activity_performed_parameter, ActivityAvailability, _activity_status_sort_key,
+                     is_linear_public_good_game, is_high_school_treatment, has_leaderboard, get_activity_points_cache,
+                     get_footprint_level, get_group_threshold, get_points_to_next_level, get_experiment_completed_dv,
+                     get_individual_points, get_footprint_level_dv, get_lighterprints_experiment_metadata)
 
 import itertools
 import locale
@@ -39,9 +38,10 @@ class ActivityStatusList(object):
     """
 
     def __init__(self, participant_group_relationship, activities=None, round_configuration=None, group_level=1):
-        self.activities = list(
-            Activity.objects.all()) if activities is None else activities
-        self.round_configuration = participant_group_relationship.group.current_round if round_configuration is None else round_configuration
+        self.activities = list(Activity.objects.all()) if activities is None else activities
+        if round_configuration is None:
+            round_configuration = participant_group_relationship.group.current_round
+        self.round_configuration = round_configuration
         self.has_scheduled_activities = is_scheduled_activity_experiment(
             self.round_configuration.experiment_configuration)
         activity_availability_cache = get_activity_availability_cache()
@@ -49,8 +49,7 @@ class ActivityStatusList(object):
         self.all_unlocked_activities = Activity.objects.unlocked(self.round_configuration,
                                                                  scheduled=self.has_scheduled_activities,
                                                                  level=group_level)
-        all_unlocked_activity_ids = self.all_unlocked_activities.values_list(
-            'pk', flat=True)
+        all_unlocked_activity_ids = self.all_unlocked_activities.values_list('pk', flat=True)
         self.today = datetime.combine(date.today(), time())
         self.current_time = datetime.now().time()
         # first grab all the activities that have already been completed today
@@ -97,53 +96,54 @@ class GroupScores(object):
     def __init__(self, experiment, round_data=None, groups=None, participant_group_relationship=None, start_date=None,
                  end_date=None, experiment_configuration=None):
         self.experiment = experiment
-        self.round_data = experiment.current_round_data if round_data is None else round_data
-        self.groups = list(experiment.groups) if groups is None else groups
-        self.experiment_configuration = experiment.experiment_configuration if experiment_configuration is None else experiment_configuration
-        self.exchange_rate = float(self.experiment_configuration.exchange_rate)
-        self.has_scheduled_activities = is_scheduled_activity_experiment(
-            self.experiment_configuration)
-        self.is_linear_public_good_game = is_linear_public_good_game(
-            self.experiment_configuration)
-        self.number_of_groups = len(self.groups)
+        if round_data is None:
+            round_data = experiment.current_round_data
+        if groups is None:
+            groups = list(experiment.groups)
+        if experiment_configuration is None:
+            experiment_configuration = experiment.experiment_configuration
+        if start_date is None:
+            start_date = date.today()
+        self.round_data = round_data
+        self.groups = groups
+        self.experiment_configuration = experiment_configuration
+        self.exchange_rate = float(experiment_configuration.exchange_rate)
+        self.has_scheduled_activities = is_scheduled_activity_experiment(experiment_configuration)
+        self.is_linear_public_good_game = is_linear_public_good_game(experiment_configuration)
+        self.number_of_groups = len(groups)
         # { group : {average_daily_points, total_daily_points} }
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
         self.group_rankings = None
         self.total_participant_points = 0
         # establish date range
-        self.start_date = date.today() if start_date is None else start_date
-        self.end_date = self.start_date + \
-            timedelta(1) if end_date is None else end_date
+        self.start_date = start_date
+        self.end_date = start_date + timedelta(1) if end_date is None else end_date
         self.round_configuration = self.round_data.round_configuration
-        self.is_high_school_treatment = is_high_school_treatment(
-            self.round_configuration)
+        self.is_high_school_treatment = is_high_school_treatment(self.round_configuration)
         self.has_leaderboard = has_leaderboard(self.round_configuration)
+        self.initialize_scores(participant_group_relationship)
+
+    def initialize_scores(self, participant_group_relationship):
         activity_points_cache = get_activity_points_cache()
         activities_performed_qs = ParticipantRoundDataValue.objects.for_round(
             parameter=get_activity_performed_parameter(), round_data=self.round_data,
             date_created__range=(self.start_date, self.end_date))
         for activity_performed_dv in activities_performed_qs:
-            activity_points = activity_points_cache[
-                activity_performed_dv.int_value]
-            self.scores_dict[activity_performed_dv.participant_group_relationship.group][
-                'total_daily_points'] += activity_points
+            activity_points = activity_points_cache[activity_performed_dv.int_value]
+            self.scores_dict[activity_performed_dv.participant_group_relationship.group]['total_daily_points'] += activity_points
             if participant_group_relationship and activity_performed_dv.participant_group_relationship == participant_group_relationship:
                 self.total_participant_points += activity_points
         if self.is_linear_public_good_game:
             all_activities_performed_qs = ParticipantRoundDataValue.objects.for_experiment(experiment=self.experiment,
                                                                                            parameter=get_activity_performed_parameter())
             for activity_performed_dv in all_activities_performed_qs:
-                activity_points = activity_points_cache[
-                    activity_performed_dv.int_value]
-                self.scores_dict[activity_performed_dv.participant_group_relationship.group][
-                    'total_points'] += activity_points
+                activity_points = activity_points_cache[activity_performed_dv.int_value]
+                self.scores_dict[activity_performed_dv.participant_group_relationship.group]['total_points'] += activity_points
         for group in self.groups:
             group_data_dict = self.scores_dict[group]
             group_size = group.size
-            group_data_dict['average_daily_points'] = group_data_dict[
-                'total_daily_points'] / group_size
-            group_data_dict['total_average_points'] = group_data_dict[
-                'total_points'] / group_size
+            group_data_dict['average_daily_points'] = group_data_dict['total_daily_points'] / group_size
+            group_data_dict['total_average_points'] = group_data_dict['total_points'] / group_size
             logger.debug("group data dictionary: %s", group_data_dict)
 
     def average_daily_points(self, group):
@@ -209,8 +209,7 @@ class GroupScores(object):
         """
         # cached because we invoke this often via get_group_rank
         if self.group_rankings is None:
-            self.group_rankings = [g[0]
-                                   for g in self.get_sorted_group_scores()]
+            self.group_rankings = [g[0] for g in self.get_sorted_group_scores()]
         return self.group_rankings
 
     def get_group_data_list(self):
@@ -428,10 +427,8 @@ def get_group_activity(participant_group_relationship, limit=None):
     # FIXME: consider using InheritanceManager or manually selecting likes, comments, chatmessages, activities performed to
     # avoid n+1 selects when doing a to_dict
     data_values = ParticipantRoundDataValue.objects.for_group(group)
-    like_target_ids = Like.objects.filter(participant_group_relationship=participant_group_relationship).values_list(
-        'target_data_value', flat=True)
-    comment_target_ids = Comment.objects.filter(
-        participant_group_relationship=participant_group_relationship).values_list('target_data_value', flat=True)
+    like_target_ids = Like.objects.target_ids(participant_group_relationship)
+    comment_target_ids = Comment.objects.target_ids(participant_group_relationship)
     if limit is not None:
         data_values = data_values[:limit]
     for prdv in data_values:
@@ -451,16 +448,13 @@ def get_group_activity(participant_group_relationship, limit=None):
             data = prdv.like.to_dict()
         elif parameter_name == 'activity_performed':
             activity = prdv.cached_value
-            data = activity.to_dict(
-                attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
+            data = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
             data['pk'] = prdv.pk
             data['date_created'] = abbreviated_timesince(prdv.date_created)
-            data['date_performed'] = prdv.date_created
             pgr = prdv.participant_group_relationship
             data['participant_number'] = pgr.participant_number
             data['participant_name'] = pgr.full_name
             data['participant_group_id'] = pgr.pk
-            data['activity_performed_id'] = prdv.pk
         else:
             continue
         data['liked'] = prdv.pk in like_target_ids
