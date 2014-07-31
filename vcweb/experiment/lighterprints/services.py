@@ -39,12 +39,12 @@ class ActivityStatusList(object):
 
     def __init__(self, participant_group_relationship, activities=None, round_configuration=None, group_level=1):
         self.activities = list(Activity.objects.all()) if activities is None else activities
+        activity_availability_cache = get_activity_availability_cache()
         if round_configuration is None:
             round_configuration = participant_group_relationship.group.current_round
         self.round_configuration = round_configuration
         self.has_scheduled_activities = is_scheduled_activity_experiment(
             self.round_configuration.experiment_configuration)
-        activity_availability_cache = get_activity_availability_cache()
         # find all unlocked activities for the given participant
         self.all_unlocked_activities = Activity.objects.unlocked(self.round_configuration,
                                                                  scheduled=self.has_scheduled_activities,
@@ -57,38 +57,41 @@ class ActivityStatusList(object):
             parameter=get_activity_performed_parameter(),
             int_value__in=all_unlocked_activity_ids,
             date_created__gte=self.today)
-        self.completed_activity_ids = completed_activity_dvs.values_list(
-            'int_value', flat=True)
+        self.completed_activity_ids = completed_activity_dvs.values_list('int_value', flat=True)
         # next, find all the activity availabilities for the unlocked activities and partition them into currently
         # available, upcoming, or expired
         activity_availabilities = ActivityAvailability.objects.select_related('activity').filter(
             activity__pk__in=all_unlocked_activity_ids)
         self.currently_available_activity_ids = activity_availabilities.filter(start_time__lte=self.current_time,
-                                                                               end_time__gte=self.current_time).values_list(
-            'activity', flat=True)
-        self.upcoming_activity_ids = activity_availabilities.filter(start_time__gte=self.current_time).values_list(
-            'activity', flat=True)
-        self.activity_dict_list = []
-        for activity in self.activities:
-            activity_dict = activity.to_dict()
-            activity_status = 'locked'
-            if activity in self.all_unlocked_activities:
-                # check for 1. has activity already been completed 2. activity
-                # time slot eligibility
-                if activity.pk in self.completed_activity_ids:
-                    activity_status = 'completed'
-                elif activity.pk in self.currently_available_activity_ids:
-                    activity_status = 'available'
-                elif activity.pk in self.upcoming_activity_ids:
-                    activity_status = 'upcoming'
-                else:
-                    activity_status = 'expired'
-            activity_dict['status'] = activity_status
-            activity_dict['availableNow'] = activity_status == 'available'
-            activity_dict['availabilities'] = [aa.to_dict()
-                                               for aa in activity_availability_cache[activity.pk]]
-            self.activity_dict_list.append(activity_dict)
+                                                                               end_time__gte=self.current_time).values_list('activity', flat=True)
+        self.upcoming_activity_ids = activity_availabilities.filter(start_time__gte=self.current_time).values_list('activity', flat=True)
+        self.activity_dict_list = [self.to_activity_dict(activity, activity_availability_cache) for activity in self.activities]
         self.activity_dict_list.sort(key=_activity_status_sort_key)
+
+    def get_activity_status(self, activity):
+        activity_status = 'locked'
+        if activity in self.all_unlocked_activities:
+            # check for 1. has activity already been completed 2. activity
+            # time slot eligibility
+            if activity.pk in self.completed_activity_ids:
+                activity_status = 'completed'
+            elif activity.pk in self.currently_available_activity_ids:
+                activity_status = 'available'
+            elif activity.pk in self.upcoming_activity_ids:
+                activity_status = 'upcoming'
+            else:
+                activity_status = 'expired'
+        return activity_status
+
+    def to_activity_dict(self, activity, activity_availability_cache=None):
+        if activity_availability_cache is None:
+            activity_availability_cache = get_activity_availability_cache()
+        activity_dict = activity.to_dict()
+        activity_status = self.get_activity_status(activity)
+        activity_dict['status'] = activity_status
+        activity_dict['availableNow'] = activity_status == 'available'
+        activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
+        return activity_dict
 
 
 class GroupScores(object):
