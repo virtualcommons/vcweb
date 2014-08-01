@@ -43,8 +43,7 @@ class BaseTest(BaseVcwebTest):
         return performed_activities
 
     def setUp(self, treatment_type='LEADERBOARD', **kwargs):
-        super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(),
-                                    loglevel=logging.INFO, **kwargs)
+        super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
         ec = self.experiment_configuration
         ec.has_daily_rounds = True
         ec.save()
