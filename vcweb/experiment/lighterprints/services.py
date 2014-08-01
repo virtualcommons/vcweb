@@ -13,13 +13,12 @@ from django.utils.timesince import timesince
 
 from vcweb.core import signals
 
-from vcweb.core.models import (
-    ParticipantRoundDataValue, ChatMessage, Experiment, Like, Comment)
+from vcweb.core.models import (ParticipantRoundDataValue, ChatMessage, Like, Comment)
 from .models import (Activity, is_scheduled_activity_experiment, get_activity_availability_cache,
                      get_activity_performed_parameter, ActivityAvailability, _activity_status_sort_key,
                      is_linear_public_good_game, is_high_school_treatment, has_leaderboard, get_activity_points_cache,
-                     get_footprint_level, get_group_threshold, get_points_to_next_level, get_experiment_completed_dv,
-                     get_individual_points, get_footprint_level_dv, get_lighterprints_experiment_metadata)
+                     get_footprint_level, get_group_threshold, get_experiment_completed_dv, get_footprint_level_dv,
+                     EXPERIMENT_METADATA_NAME, get_experiment_completed_parameter, get_footprint_level_parameter,)
 
 import itertools
 import locale
@@ -43,8 +42,7 @@ class ActivityStatusList(object):
         if round_configuration is None:
             round_configuration = participant_group_relationship.group.current_round
         self.round_configuration = round_configuration
-        self.has_scheduled_activities = is_scheduled_activity_experiment(
-            self.round_configuration.experiment_configuration)
+        self.has_scheduled_activities = is_scheduled_activity_experiment(self.round_configuration)
         # find all unlocked activities for the given participant
         self.all_unlocked_activities = Activity.objects.unlocked(self.round_configuration,
                                                                  scheduled=self.has_scheduled_activities,
@@ -111,7 +109,6 @@ class GroupScores(object):
         self.groups = groups
         self.experiment_configuration = experiment_configuration
         self.exchange_rate = float(experiment_configuration.exchange_rate)
-        self.has_scheduled_activities = is_scheduled_activity_experiment(experiment_configuration)
         self.is_linear_public_good_game = is_linear_public_good_game(experiment_configuration)
         self.number_of_groups = len(groups)
         # { group : {average_daily_points, total_daily_points} }
@@ -122,6 +119,7 @@ class GroupScores(object):
         self.start_date = start_date
         self.end_date = start_date + timedelta(1) if end_date is None else end_date
         self.round_configuration = self.round_data.round_configuration
+        self.has_scheduled_activities = is_scheduled_activity_experiment(self.round_configuration)
         self.is_high_school_treatment = is_high_school_treatment(self.round_configuration)
         self.has_leaderboard = has_leaderboard(self.round_configuration)
         self.initialize_scores(participant_group_relationship)
@@ -260,10 +258,10 @@ class GroupScores(object):
         get_experiment_completed_dv(
             group, round_data=round_data).update_boolean(goal_reached)
         yesterday = date.today() - timedelta(1)
-        plaintext_template = select_template(
-            ['lighterprints/email/scheduled-activity/group-summary-email.txt'])
+        plaintext_template = select_template(['lighterprints/email/scheduled-activity/group-summary-email.txt'])
         experiment = group.experiment
         #experimenter_email = experiment.experimenter.email
+        # FIXME: change this to the experimenter or add a dedicated settings email from
         experimenter_email = settings.SERVER_EMAIL
         number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group,
                                                              date_created__gte=yesterday).count()
@@ -358,43 +356,13 @@ class GroupScores(object):
             html_content = markdown.markdown(plaintext_content)
             subject = 'Lighter Footprints Summary for %s' % yesterday
             to_address = [experimenter_email, pgr.participant.email]
-            msg = EmailMultiAlternatives(
-                subject, plaintext_content, experimenter_email, to_address)
+            msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
             msg.attach_alternative(html_content, 'text/html')
             messages.append(msg)
         return messages
 
     def __str__(self):
         return str(self.scores_dict)
-
-
-@receiver(signals.pre_system_daily_tick)
-def send_summary_emails(sender, time=None, start_date=None, debug=False, round_configuration=None, **kwargs):
-    """ FIXME: consider changing this into the round_ended handler and get rid of pre_system_daily_tick to get rid of
-    potential concurrency issues where summary email generation bleeds into the system_daily_tick that advances the
-    experiment to the next round.
-    invoked after midnight, so start_date should be set to the previous day.
-     """
-    if start_date is None:
-        start_date = date.today() - timedelta(1)
-    all_messages = []
-    with transaction.atomic():
-        active_experiments = Experiment.objects.select_for_update().active(
-            experiment_metadata=get_lighterprints_experiment_metadata())
-        logger.debug(
-            "sending summary emails to [%s] on %s", active_experiments, start_date)
-        for experiment in active_experiments:
-            # we use the current round data because this tick occurs *before* the system_daily_tick that advances each
-            # experiment to the next round.
-            round_data = experiment.current_round_data if round_configuration is None else experiment.get_round_data(
-                round_configuration)
-            group_scores = GroupScores(
-                experiment, round_data, list(experiment.groups), start_date=start_date)
-            all_messages.extend(group_scores.create_all_email_messages())
-    if not debug and all_messages:
-        logger.debug(
-            "sending %s generated emails for lighter footprints", len(all_messages))
-        mail.get_connection().send_messages(all_messages)
 
 
 @transaction.atomic
@@ -429,7 +397,10 @@ def get_group_activity(participant_group_relationship, limit=None):
     chat_messages = []
     # FIXME: consider using InheritanceManager or manually selecting likes, comments, chatmessages, activities performed to
     # avoid n+1 selects when doing a to_dict
-    data_values = ParticipantRoundDataValue.objects.for_group(group)
+    data_values = ParticipantRoundDataValue.objects.for_group(group, parameter__name__in=('chat_message',
+                                                                                          'comment',
+                                                                                          'like',
+                                                                                          'activity_performed'))
     like_target_ids = Like.objects.target_ids(participant_group_relationship)
     comment_target_ids = Comment.objects.target_ids(participant_group_relationship)
     if limit is not None:
@@ -439,31 +410,32 @@ def get_group_activity(participant_group_relationship, limit=None):
         if parameter_name == 'chat_message':
             data = prdv.chatmessage.to_dict()
             chat_messages.append(data)
-        elif parameter_name == 'comment':
+        elif parameter_name in ('comment', 'like'):
             # filters out comments not directed at the given participant_group_relationship (parameter to this method)
-            # FIXME: this is expensive, does an extra query per comment
+            # FIXME: extra query per comment
             if prdv.target_data_value.participant_group_relationship != participant_group_relationship:
                 continue
-            data = prdv.comment.to_dict()
-        elif parameter_name == 'like':
-            if prdv.target_data_value.participant_group_relationship != participant_group_relationship:
-                continue
-            data = prdv.like.to_dict()
+            data = getattr(prdv, parameter_name).to_dict()
         elif parameter_name == 'activity_performed':
             activity = prdv.cached_value
             data = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
-            data['pk'] = prdv.pk
-            data['date_created'] = abbreviated_timesince(prdv.date_created)
             pgr = prdv.participant_group_relationship
-            data['participant_number'] = pgr.participant_number
-            data['participant_name'] = pgr.full_name
-            data['participant_group_id'] = pgr.pk
+            data.update(
+                pk=prdv.pk,
+                date_created=abbreviated_timesince(prdv.date_created),
+                participant_number=pgr.participant_number,
+                participant_name=pgr.full_name,
+                participant_group_id=pgr.pk,
+            )
         else:
+            logger.warn("Invalid participant round data value %s", prdv)
             continue
-        data['liked'] = prdv.pk in like_target_ids
-        data['commented'] = prdv.pk in comment_target_ids
-        data['parameter_name'] = parameter_name
-        data['date_created'] = abbreviated_timesince(prdv.date_created)
+        data.update(
+            liked=prdv.pk in like_target_ids,
+            commented=prdv.pk in comment_target_ids,
+            parameter_name=parameter_name,
+            date_created=abbreviated_timesince(prdv.date_created),
+        )
         all_activity.append(data)
     return all_activity, chat_messages
 
@@ -476,3 +448,69 @@ def abbreviated_timesince(dt):
     s = re.sub(r'\sweeks?', 'w', s)
     s = re.sub(r'\smonths?', 'mo', s)
     return s.replace(',', '')
+
+
+@receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
+@transaction.atomic
+def round_ended_handler(sender, experiment=None, **kwargs):
+    logger.debug("ending lighter footprints round %s, sending summary emails", experiment)
+    send_summary_emails(experiment)
+
+
+def send_summary_emails(experiment, start_date=None, debug=False, round_data=None, **kwargs):
+    if start_date is None:
+        start_date = date.today() - timedelta(1)
+    all_messages = None
+    with transaction.atomic():
+        logger.debug("sending summary emails to %s on %s", experiment, start_date)
+        # use the current round data if not explicitly set, assuming this is invoked before the experiment has been
+        # advanced to the next round.
+        round_data = experiment.current_round_data if round_data is None else round_data
+        group_scores = GroupScores(experiment, round_data, list(experiment.groups), start_date=start_date)
+        all_messages = list(group_scores.create_all_email_messages())
+    if not debug and all_messages:
+        logger.debug("sending %s generated emails for lighter footprints", len(all_messages))
+        mail.get_connection().send_messages(all_messages)
+
+
+@receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
+@transaction.atomic
+def round_started_handler(sender, experiment=None, **kwargs):
+    logger.debug("starting lighter footprints round %s", experiment)
+    round_data = experiment.current_round_data
+    # FIXME: experiment.initialize_parameters could do some of this except for
+    # setting the default values properly
+    experiment_completed_parameter = get_experiment_completed_parameter()
+    initial_group_parameters = [experiment_completed_parameter]
+    initial_parameter_defaults = {experiment_completed_parameter: False}
+    if not is_scheduled_activity_experiment(round_data.round_configuration):
+        footprint_level_parameter = get_footprint_level_parameter()
+        initial_group_parameters.append(footprint_level_parameter)
+        initial_parameter_defaults[footprint_level_parameter] = 1
+    experiment.initialize_data_values(
+        group_parameters=initial_group_parameters,
+        round_data=round_data,
+        defaults=initial_parameter_defaults,
+    )
+
+
+def get_points_to_next_level(current_level):
+    """ returns the number of average points needed to advance to the next level """
+    if current_level == 1:
+        return 50
+    elif current_level == 2:
+        return 125
+    elif current_level == 3:
+        return 225
+
+
+def get_individual_points(participant_group_relationship, end_date=None):
+    if end_date is None:
+        end_date = date.today()
+    start_date = end_date - timedelta(1)
+    prdvs = ParticipantRoundDataValue.objects.for_participant(participant_group_relationship,
+                                                              date_created__range=(start_date, end_date),
+                                                              parameter=get_activity_performed_parameter())
+    logger.debug("found prdvs %s", prdvs)
+    # XXX: assumes that an Activity can only be performed once per round (day)
+    return Activity.objects.total(pks=prdvs.values_list('int_value', flat=True))

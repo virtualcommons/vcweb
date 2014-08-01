@@ -3,12 +3,11 @@ import logging
 from datetime import date, timedelta
 
 from vcweb.core.tests import BaseVcwebTest
-from vcweb.core.models import (
-    ParticipantGroupRelationship, ParticipantRoundDataValue)
-from .models import (Activity, get_lighterprints_experiment_metadata,
-                     get_activity_performed_parameter, get_footprint_level,
-                     get_individual_points, get_performed_activity_ids)
-from .services import (send_summary_emails, GroupScores, get_group_activity)
+from vcweb.core.models import ParticipantRoundDataValue
+from .models import (Activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter,
+                     get_footprint_level, get_performed_activity_ids, get_treatment_type_parameter,
+                     is_scheduled_activity_experiment, get_treatment_type)
+from .services import (GroupScores, get_individual_points, send_summary_emails, get_group_activity)
 
 
 logger = logging.getLogger(__name__)
@@ -26,14 +25,12 @@ class BaseTest(BaseVcwebTest):
         rd = self.experiment.current_round_data
         activities = Activity.objects.at_level(1)
         performed_activities = set()
-        for participant_group_relationship in ParticipantGroupRelationship.objects.filter(
-                group__experiment=self.experiment):
+        for participant_group_relationship in self.experiment.participant_group_relationships:
             participant = participant_group_relationship.participant
             self.assertTrue(self.client.login(username=participant.email, password='test'),
                             "%s failed to login" % participant)
             for activity in activities:
-                expected_success = activity.is_available_for(
-                    participant_group_relationship, rd)
+                expected_success = activity.is_available_for(participant_group_relationship, rd)
                 if expected_success:
                     performed_activities.add(activity)
                 response = self.client.post('/lighterprints/api/do-activity', {
@@ -45,12 +42,42 @@ class BaseTest(BaseVcwebTest):
                 self.assertEqual(expected_success, json_object['success'])
         return performed_activities
 
+    def setUp(self, treatment_type='LEADERBOARD', **kwargs):
+        super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(),
+                                    loglevel=logging.INFO, **kwargs)
+        ec = self.experiment_configuration
+        ec.has_daily_rounds = True
+        ec.save()
+        for rc in self.round_configurations.all():
+            rc.set_parameter_value(parameter=get_treatment_type_parameter(), string_value=treatment_type)
+            rc.initialize_data_values = True
+            rc.save()
+
+    class Meta:
+        abstract = True
+
+
+class LevelBasedTest(BaseTest):
+
     def setUp(self, **kwargs):
-        super(BaseTest, self).setUp(
-            experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
+        super(LevelBasedTest, self).setUp(treatment_type='LEVEL_BASED', **kwargs)
+
+    def test_treatment_type(self):
+        for rc in self.round_configurations.all():
+            self.assertFalse(is_scheduled_activity_experiment(rc))
+            self.assertEqual('LEVEL_BASED', get_treatment_type(rc).string_value)
+
+    def test_footprint_level_initialized(self):
+        e = self.experiment
+        e.activate()
+        while e.has_next_round:
+            rd = e.current_round_data
+            for g in e.groups:
+                self.assertEqual(1, get_footprint_level(g, round_data=rd))
+            e.advance_to_next_round()
 
 
-class ActivityViewTest(BaseTest):
+class ActivityViewTest(LevelBasedTest):
 
     def test_list(self):
         for pgr in self.experiment.participant_group_relationships:
@@ -68,7 +95,7 @@ class ActivityViewTest(BaseTest):
             self.assertEqual(response.status_code, 403)
 
 
-class UpdateLevelTest(BaseTest):
+class UpdateLevelTest(LevelBasedTest):
 
     def test_daily_points(self):
         e = self.experiment
@@ -85,7 +112,7 @@ class UpdateLevelTest(BaseTest):
                 )
                 activity_performed.int_value = activity.pk
                 activity_performed.save()
-        send_summary_emails(self, start_date=date.today())
+        send_summary_emails(e, start_date=date.today())
         gs = e.groups
         group_scores = GroupScores(e, current_round_data, gs)
         for group in gs:
@@ -94,13 +121,13 @@ class UpdateLevelTest(BaseTest):
             self.assertEqual(group_scores.average_daily_points(group), 177)
 
 
-class GroupActivityTest(BaseTest):
+class GroupActivityTest(LevelBasedTest):
 
     def test_group_activity(self):
         e = self.experiment
         e.activate()
         performed_activities = self.perform_activities()
-        for pgr in ParticipantGroupRelationship.objects.filter(group__experiment=e):
+        for pgr in e.participant_group_relationships:
             (group_activity, chat_messages) = get_group_activity(pgr)
             logger.debug("group activity is %s", len(group_activity))
             self.assertEqual(
@@ -117,7 +144,7 @@ class GroupActivityTest(BaseTest):
             self.assertEqual(len(messages), group.size)
 
 
-class ActivityTest(BaseTest):
+class ActivityTest(LevelBasedTest):
 
     def test_view(self):
         logger.debug("testing do activity view")
@@ -133,8 +160,7 @@ class ActivityTest(BaseTest):
             for activity in activities:
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant,
                              activity)
-                expected_success = activity.is_available_for(
-                    participant_group_relationship, rd)
+                expected_success = activity.is_available_for(participant_group_relationship, rd)
                 response = self.client.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk

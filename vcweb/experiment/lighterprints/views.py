@@ -33,8 +33,7 @@ def perform_activity(request):
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
         participant_group_id = form.cleaned_data['participant_group_id']
-        logger.debug(
-            "%s request to perform activity %s", participant_group_id, activity_id)
+        logger.debug("%s request to perform activity %s", participant_group_id, activity_id)
         participant_group_relationship = get_object_or_404(
             ParticipantGroupRelationship.objects.select_related(
                 'participant__user', 'group__experiment'),

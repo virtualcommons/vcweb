@@ -1,17 +1,15 @@
 from collections import defaultdict
-from datetime import datetime, date, timedelta
+from datetime import datetime
 import logging
 
 from django.core.cache import cache
-from django.db import models, transaction
+from django.db import models
 from django.db.models import Sum
-from django.dispatch import receiver
 from model_utils.managers import PassThroughManager
-from mptt.models import MPTTModel, TreeForeignKey, TreeManager
+from mptt.models import (MPTTModel, TreeForeignKey, TreeManager)
 
-from vcweb.core import signals, simplecache
-from vcweb.core.models import (ExperimentMetadata, GroupRoundDataValue, ParticipantRoundDataValue,
-                               Parameter, User)
+from vcweb.core import simplecache
+from vcweb.core.models import (ExperimentMetadata, GroupRoundDataValue, Parameter, User)
 
 
 logger = logging.getLogger(__name__)
@@ -40,27 +38,8 @@ def get_activity_availability_cache():
     return aac
 
 
-def is_scheduled_activity_experiment(experiment_configuration):
-    return experiment_configuration.has_daily_rounds
-
-
-@receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
-@transaction.atomic
-def round_started_handler(sender, experiment=None, **kwargs):
-    logger.debug("starting lighter footprints %s", experiment)
-    round_data = experiment.current_round_data
-    # FIXME: experiment.initialize_parameters could do some of this except for
-    # setting the default values properly
-    footprint_level_parameter = get_footprint_level_parameter()
-    experiment_completed_parameter = get_experiment_completed_parameter()
-    experiment.initialize_data_values(
-        group_parameters=(
-            footprint_level_parameter, experiment_completed_parameter,),
-        round_data=round_data,
-        defaults={
-            footprint_level_parameter: 1,
-            experiment_completed_parameter: False
-        })
+def is_scheduled_activity_experiment(round_configuration):
+    return get_treatment_type(round_configuration).string_value != 'LEVEL_BASED'
 
 
 class ActivityQuerySet(models.query.QuerySet):
@@ -122,7 +101,7 @@ class ActivityManager(TreeManager, PassThroughManager):
     def is_activity_available(self, activity, participant_group_relationship, round_data):
         round_configuration = round_data.round_configuration
         unlocked_activities = []
-        if is_scheduled_activity_experiment(round_configuration.experiment_configuration):
+        if is_scheduled_activity_experiment(round_configuration):
             # find scheduled set of activities
             unlocked_activities = self.scheduled(round_configuration)
         else:
@@ -313,8 +292,7 @@ def get_treatment_type(round_configuration=None, default_treatment_type='LEADERB
     """
     # XXX: if there is no treatment type we default to the compare other group
     # / leaderboard treatment
-    treatment_type = round_configuration.get_parameter_value(
-        parameter=get_treatment_type_parameter())
+    treatment_type = round_configuration.get_parameter_value(parameter=get_treatment_type_parameter())
     if treatment_type.string_value is None:
         # check if it's been globally defined via this round configuration's
         # experiment configuration
@@ -325,15 +303,13 @@ def get_treatment_type(round_configuration=None, default_treatment_type='LEADERB
 
 def is_high_school_treatment(round_configuration=None, treatment_type=None):
     if treatment_type is None:
-        treatment_type = get_treatment_type(
-            round_configuration=round_configuration).string_value
-    return 'HIGH_SCHOOL' in treatment_type
+        treatment_type = get_treatment_type(round_configuration).string_value
+    return 'HIGH_SCHOOL' == treatment_type
 
 
 def has_leaderboard(round_configuration=None, treatment_type=None):
     if treatment_type is None:
-        treatment_type = get_treatment_type(
-            round_configuration=round_configuration).string_value
+        treatment_type = get_treatment_type(round_configuration).string_value
     return 'LEADERBOARD' == treatment_type
 
 
@@ -354,26 +330,3 @@ def _activity_status_sort_key(activity_dict):
 def get_performed_activity_ids(participant_group_relationship):
     return participant_group_relationship.data_value_set.filter(
         parameter=get_activity_performed_parameter()).values_list('id', flat=True)
-
-
-def get_points_to_next_level(current_level):
-    """ returns the number of average points needed to advance to the next level """
-    if current_level == 1:
-        return 50
-    elif current_level == 2:
-        return 125
-    elif current_level == 3:
-        return 225
-
-
-def get_individual_points(participant_group_relationship, end_date=None):
-    if end_date is None:
-        end_date = date.today()
-    start_date = end_date - timedelta(1)
-    pks = ParticipantRoundDataValue.objects.filter(participant_group_relationship=participant_group_relationship,
-                                                   date_created__range=(
-                                                       start_date, end_date),
-                                                   parameter=get_activity_performed_parameter()).values_list(
-        'int_value', flat=True)
-    # XXX: assumes that an Activity can only be performed once per round (day)
-    return Activity.objects.total(pks=pks)

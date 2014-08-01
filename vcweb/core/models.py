@@ -92,7 +92,7 @@ class ParameterValueMixin(object):
                     pv.update(default)
                 return pv
 
-    def set_parameter_value(self, parameter=None, name=None, value=None, **kwargs):
+    def set_parameter_value(self, parameter=None, value=None, name=None, **kwargs):
         """
         returns the ParameterizedValue associated with the given parameter and this object's parameter value set. If
         none exists, creates one.
@@ -640,8 +640,6 @@ class Experiment(models.Model):
     def end_date(self):
         if self.experiment_configuration.has_daily_rounds:
             return self.start_date + timedelta(self.number_of_rounds)
-        logger.warn("Asking for end_date for non daily rounds experiment %s, returning start date %s instead",
-                    self, self.start_date)
         return self.start_date
 
     @property
@@ -1014,7 +1012,7 @@ class Experiment(models.Model):
 
     @transaction.atomic
     def initialize_data_values(self, group_parameters=[], participant_parameters=[], group_cluster_parameters=[],
-                               round_data=None, defaults={}):
+                               round_data=None, defaults=None):
         """
         FIXME: needs refactoring, replace get_or_create with creates and separate initialization of data values from copy_to_next_round semantics
         Issues:
@@ -1040,6 +1038,8 @@ class Experiment(models.Model):
             round_data,
             participant_parameters, group_parameters, group_cluster_parameters)
         parameter_defaults = defaultdict(dict)
+        if defaults is None:
+            defaults = {}
         # defaults map parameter model instances to their default initial value, e.g.,
         # { footprint-level-parameter: 1, resource-level-parameter: 100 }
         for parameter in itertools.chain(participant_parameters, group_parameters, group_cluster_parameters):
@@ -1289,7 +1289,6 @@ class Experiment(models.Model):
             "Restarting experiment entirely from the first round and clearing out all existing data.")
         self.deactivate()
         self.activate()
-        self.start_round()
 
     def restart_round(self):
         self.end_round()

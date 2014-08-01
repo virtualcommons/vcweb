@@ -139,6 +139,18 @@
     },
     {
         "fields": {
+               "name":"available_activity",
+               "creator": 1,
+               "type": "foreignkey",
+               "date_created": "2011-01-01 15:13:07",
+               "last_modified": "2011-07-07 15:13:03",
+               "scope": "round"
+        },
+        "model": "core.parameter",
+        "pk": 46
+    },
+    {
+        "fields": {
                "name":"experiment_completed",
                "creator": 1,
                "type": "boolean",

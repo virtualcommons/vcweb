@@ -51,6 +51,10 @@ class BaseVcwebTest(TestCase):
         return self.experiment.experimenter
 
     @property
+    def round_configurations(self):
+        return self.experiment_configuration.round_configuration_set
+
+    @property
     def participants(self):
         return self.experiment.participant_set.all()
 
@@ -72,11 +76,12 @@ class BaseVcwebTest(TestCase):
                                          experiment_metadata=experiment_metadata,
                                          experiment_configuration=experiment_configuration)
 
-    def setUp(self, **kwargs):
+    def setUp(self, disable_logging=True, disabled_loglevel=logging.WARNING, **kwargs):
         self.client = Client()
         self.factory = RequestFactory()
         self.load_experiment(**kwargs)
-        logging.disable(logging.WARNING)
+        if disable_logging:
+            logging.disable(disabled_loglevel)
 
     def advance_to_data_round(self):
         e = self.experiment
