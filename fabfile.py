@@ -203,6 +203,8 @@ def _restart_command():
 def clean():
     with cd(env.project_path):
         sudo('find . -name "*.pyc" -delete -print')
+        sudo('rm -rvf htmlcov')
+        sudo('rm -rvf docs/build')
 
 
 @task
