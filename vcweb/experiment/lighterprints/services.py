@@ -15,10 +15,10 @@ from vcweb.core import signals
 
 from vcweb.core.models import (ParticipantRoundDataValue, ChatMessage, Like, Comment)
 from .models import (Activity, is_scheduled_activity_experiment, get_activity_availability_cache,
-                     get_activity_performed_parameter, ActivityAvailability, _activity_status_sort_key,
-                     is_linear_public_good_game, is_high_school_treatment, has_leaderboard, get_activity_points_cache,
-                     get_footprint_level, get_group_threshold, get_experiment_completed_dv, get_footprint_level_dv,
-                     EXPERIMENT_METADATA_NAME, get_experiment_completed_parameter, get_footprint_level_parameter,)
+                     get_activity_performed_parameter, ActivityAvailability, is_linear_public_good_game,
+                     is_high_school_treatment, has_leaderboard, get_activity_points_cache, get_footprint_level,
+                     get_group_threshold, get_experiment_completed_dv, get_footprint_level_dv, EXPERIMENT_METADATA_NAME,
+                     get_experiment_completed_parameter, get_footprint_level_parameter,)
 
 import itertools
 import locale
@@ -27,6 +27,20 @@ import markdown
 import re
 
 logger = logging.getLogger(__name__)
+
+
+def _activity_status_sort_key(activity_dict):
+    s = activity_dict['status']
+    if 'available' in s:
+        return 1
+    elif 'upcoming' in s:
+        return 2
+    elif 'expired' in s:
+        return 3
+    elif 'completed' in s:
+        return 4
+    else:
+        return 5
 
 
 class ActivityStatusList(object):
@@ -38,7 +52,6 @@ class ActivityStatusList(object):
 
     def __init__(self, participant_group_relationship, activities=None, round_configuration=None, group_level=1):
         self.activities = list(Activity.objects.all()) if activities is None else activities
-        activity_availability_cache = get_activity_availability_cache()
         if round_configuration is None:
             round_configuration = participant_group_relationship.group.current_round
         self.round_configuration = round_configuration
@@ -60,10 +73,23 @@ class ActivityStatusList(object):
         # available, upcoming, or expired
         activity_availabilities = ActivityAvailability.objects.select_related('activity').filter(
             activity__pk__in=all_unlocked_activity_ids)
-        self.currently_available_activity_ids = activity_availabilities.filter(start_time__lte=self.current_time,
-                                                                               end_time__gte=self.current_time).values_list('activity', flat=True)
-        self.upcoming_activity_ids = activity_availabilities.filter(start_time__gte=self.current_time).values_list('activity', flat=True)
-        self.activity_dict_list = [self.to_activity_dict(activity, activity_availability_cache) for activity in self.activities]
+        self.currently_available_activity_ids = activity_availabilities.filter(
+            start_time__lte=self.current_time,
+            end_time__gte=self.current_time).values_list('activity', flat=True)
+        self.upcoming_activity_ids = activity_availabilities.filter(
+            start_time__gte=self.current_time).values_list('activity', flat=True)
+        self.initialize_activity_dict_list()
+
+    def initialize_activity_dict_list(self):
+        activity_availability_cache = get_activity_availability_cache()
+        self.activity_dict_list = []
+        for activity in self.activities:
+            activity_dict = activity.to_dict()
+            activity_status = self.get_activity_status(activity)
+            activity_dict['status'] = activity_status
+            activity_dict['availableNow'] = activity_status == 'available'
+            activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
+            self.activity_dict_list.append(activity_dict)
         self.activity_dict_list.sort(key=_activity_status_sort_key)
 
     def get_activity_status(self, activity):
@@ -80,16 +106,6 @@ class ActivityStatusList(object):
             else:
                 activity_status = 'expired'
         return activity_status
-
-    def to_activity_dict(self, activity, activity_availability_cache=None):
-        if activity_availability_cache is None:
-            activity_availability_cache = get_activity_availability_cache()
-        activity_dict = activity.to_dict()
-        activity_status = self.get_activity_status(activity)
-        activity_dict['status'] = activity_status
-        activity_dict['availableNow'] = activity_status == 'available'
-        activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
-        return activity_dict
 
 
 class GroupScores(object):
@@ -129,17 +145,17 @@ class GroupScores(object):
         activities_performed_qs = ParticipantRoundDataValue.objects.for_round(
             parameter=get_activity_performed_parameter(), round_data=self.round_data,
             date_created__range=(self.start_date, self.end_date))
-        for activity_performed_dv in activities_performed_qs:
-            activity_points = activity_points_cache[activity_performed_dv.int_value]
-            self.scores_dict[activity_performed_dv.participant_group_relationship.group]['total_daily_points'] += activity_points
-            if participant_group_relationship and activity_performed_dv.participant_group_relationship == participant_group_relationship:
+        for dv in activities_performed_qs:
+            activity_points = activity_points_cache[dv.int_value]
+            self.scores_dict[dv.participant_group_relationship.group]['total_daily_points'] += activity_points
+            if participant_group_relationship and dv.participant_group_relationship == participant_group_relationship:
                 self.total_participant_points += activity_points
         if self.is_linear_public_good_game:
             all_activities_performed_qs = ParticipantRoundDataValue.objects.for_experiment(experiment=self.experiment,
                                                                                            parameter=get_activity_performed_parameter())
-            for activity_performed_dv in all_activities_performed_qs:
-                activity_points = activity_points_cache[activity_performed_dv.int_value]
-                self.scores_dict[activity_performed_dv.participant_group_relationship.group]['total_points'] += activity_points
+            for dv in all_activities_performed_qs:
+                activity_points = activity_points_cache[dv.int_value]
+                self.scores_dict[dv.participant_group_relationship.group]['total_points'] += activity_points
         for group in self.groups:
             group_data_dict = self.scores_dict[group]
             group_size = group.size
@@ -363,6 +379,73 @@ class GroupScores(object):
 
     def __str__(self):
         return str(self.scores_dict)
+
+
+class GroupActivity(object):
+
+    def __init__(self, participant_group_relationship, limit=None):
+        self.participant_group_relationship = participant_group_relationship
+        self.limit = limit
+# maps parameter names to lists of the parameter data values
+        self.all_activity = defaultdict(list)
+        # FIXME: consider using InheritanceManager or manually selecting likes, comments, chatmessages, activities
+        # performed to avoid n+1 selects when doing a to_dict
+        participant_group_relationship = self.participant_group_relationship
+        group = participant_group_relationship.group
+        data_values = ParticipantRoundDataValue.objects.for_group(group).with_parameter_names(
+            names=('chat_message', 'comment', 'like', 'activity_performed'))
+# assign data value ids generated by this participant, targeted by other participant's Likes or Comments
+        like_target_ids = Like.objects.target_ids(participant_group_relationship)
+        comment_target_ids = Comment.objects.target_ids(participant_group_relationship)
+        if self.limit is not None:
+            data_values = data_values[:self.limit]
+        for prdv in data_values:
+            parameter_name = prdv.parameter.name
+            if parameter_name in ('chat_message', 'comment', 'like'):
+                # FIXME: hack to convert django orm attrname to match parameter.name ala comment and like
+                attrname = 'chatmessage' if parameter_name == 'chat_message' else parameter_name
+                data = getattr(prdv, attrname).to_dict()
+            elif parameter_name == 'activity_performed':
+                activity = prdv.cached_value
+                data = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
+                pgr = prdv.participant_group_relationship
+                data.update(
+                    pk=prdv.pk,
+                    date_created=abbreviated_timesince(prdv.date_created),
+                    participant_number=pgr.participant_number,
+                    participant_name=pgr.full_name,
+                    participant_group_id=pgr.pk,
+                )
+            else:
+                logger.warn("Invalid participant round data value %s", prdv)
+                continue
+            data.update(
+                liked=prdv.pk in like_target_ids,
+                commented=prdv.pk in comment_target_ids,
+                parameter_name=parameter_name,
+                date_created=abbreviated_timesince(prdv.date_created),
+            )
+            self.all_activity[parameter_name].append(data)
+
+    @property
+    def all_activities(self):
+        return list(itertools.chain.from_iterable(self.all_activity.values()))
+
+    @property
+    def chat_messages(self):
+        return self.all_activity['chat_message']
+
+    @property
+    def comments(self):
+        return self.all_activity['comment']
+
+    @property
+    def likes(self):
+        return self.all_activity['like']
+
+    @property
+    def performed_activities(self):
+        return self.all_activity['activity_performed']
 
 
 @transaction.atomic

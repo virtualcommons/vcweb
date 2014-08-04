@@ -2472,6 +2472,12 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
             qs.order_by(order_by)
         return qs
 
+    def with_parameter_names(self, names=None, **kwargs):
+        if names is not None:
+            kwargs.update(parameter__name__in=names)
+        return self.filter(**kwargs)
+
+
     def for_experiment(self, experiment=None, **kwargs):
         if experiment is None:
             raise ValueError("Must specify an experiment for this query")
@@ -2492,17 +2498,14 @@ class ParticipantRoundDataValue(ParameterizedValue):
 
     def __init__(self, *args, **kwargs):
         if 'round_data' not in kwargs and 'participant_group_relationship' in kwargs:
-            kwargs['round_data'] = kwargs[
-                'participant_group_relationship'].current_round_data
+            kwargs['round_data'] = kwargs['participant_group_relationship'].current_round_data
         super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
 
-    round_data = models.ForeignKey(
-        RoundData, related_name='participant_data_value_set')
-    participant_group_relationship = models.ForeignKey(
-        ParticipantGroupRelationship, related_name='data_value_set')
+    round_data = models.ForeignKey(RoundData, related_name='participant_data_value_set')
+    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='data_value_set')
     submitted = models.BooleanField(default=False)
-    target_data_value = models.ForeignKey('ParticipantRoundDataValue', related_name='target_data_value_set', null=True,
-                                          blank=True)
+    target_data_value = models.ForeignKey('ParticipantRoundDataValue', related_name='target_data_value_set',
+                                          null=True, blank=True)
     objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
 
     @property

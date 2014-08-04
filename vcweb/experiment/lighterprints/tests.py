@@ -61,6 +61,9 @@ class LevelBasedTest(BaseTest):
     def setUp(self, **kwargs):
         super(LevelBasedTest, self).setUp(treatment_type='LEVEL_BASED', **kwargs)
 
+
+class LevelTreatmentTest(LevelBasedTest):
+
     def test_treatment_type(self):
         for rc in self.round_configurations.all():
             self.assertFalse(is_scheduled_activity_experiment(rc))
@@ -115,8 +118,7 @@ class UpdateLevelTest(LevelBasedTest):
         gs = e.groups
         group_scores = GroupScores(e, current_round_data, gs)
         for group in gs:
-            logger.debug("all levels should be 2 now")
-            self.assertEqual(get_footprint_level(group), 2)
+            self.assertEqual(get_footprint_level(group), 2, 'All levels should have advanced to 2')
             self.assertEqual(group_scores.average_daily_points(group), 177)
 
 
@@ -128,9 +130,7 @@ class GroupActivityTest(LevelBasedTest):
         performed_activities = self.perform_activities()
         for pgr in e.participant_group_relationships:
             (group_activity, chat_messages) = get_group_activity(pgr)
-            logger.debug("group activity is %s", len(group_activity))
-            self.assertEqual(
-                len(group_activity), len(performed_activities) * pgr.group.size)
+            self.assertEqual(len(group_activity), len(performed_activities) * pgr.group.size)
 
     def test_group_activity_email(self):
         e = self.experiment
@@ -138,8 +138,7 @@ class GroupActivityTest(LevelBasedTest):
         self.perform_activities()
         group_scores = GroupScores(e, e.current_round_data)
         for group in e.groups:
-            messages = group_scores.create_level_based_group_summary_emails(
-                group, level=2)
+            messages = group_scores.create_level_based_group_summary_emails(group, level=2)
             self.assertEqual(len(messages), group.size)
 
 
@@ -198,12 +197,12 @@ class GroupScoreTest(ActivityTest):
     def test_individual_points(self):
         e = self.experiment
         e.activate()
-        performed_activities = self.perform_activities()
-        logger.debug("performed activities: %s", performed_activities)
+        self.perform_activities()
         for pgr in e.participant_group_relationships:
-            self.assertEqual(get_individual_points(pgr), 0)
-            self.assertTrue(
-                get_individual_points(pgr, end_date=date.today() + timedelta(1)) > 0)
+            self.assertEqual(get_individual_points(pgr), 0,
+                             'get_individual_points with no args looks for previous day activities, should be 0')
+            self.assertTrue(get_individual_points(pgr, end_date=date.today() + timedelta(1)) > 0,
+                            'get_individual_points with explicit end date should be > 0')
 
     def test_group_score(self):
         e = self.experiment

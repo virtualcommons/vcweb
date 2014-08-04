@@ -313,20 +313,6 @@ def has_leaderboard(round_configuration=None, treatment_type=None):
     return 'LEADERBOARD' == treatment_type
 
 
-def _activity_status_sort_key(activity_dict):
-    s = activity_dict['status']
-    if 'available' in s:
-        return 1
-    elif 'upcoming' in s:
-        return 2
-    elif 'expired' in s:
-        return 3
-    elif 'completed' in s:
-        return 4
-    else:
-        return 5
-
-
 def get_performed_activity_ids(participant_group_relationship):
     return participant_group_relationship.data_value_set.filter(
         parameter=get_activity_performed_parameter()).values_list('id', flat=True)

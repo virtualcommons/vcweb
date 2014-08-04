@@ -14,14 +14,11 @@ from vcweb.core.forms import (
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship,
                                ParticipantRoundDataValue, Like)
-from vcweb.core.views import dumps, get_active_experiment, set_authentication_token, mimetypes
+from vcweb.core.views import (dumps, get_active_experiment, set_authentication_token, mimetypes)
 from .forms import ActivityForm
-from .models import (Activity, has_leaderboard, get_lighterprints_experiment_metadata,
-                     is_linear_public_good_game,
-                     is_high_school_treatment, get_treatment_type,
-                     get_activity_performed_parameter, )
-from .services import (ActivityStatusList, GroupScores, do_activity, get_time_remaining,
-                       get_group_activity)
+from .models import (Activity, has_leaderboard, get_lighterprints_experiment_metadata, is_linear_public_good_game,
+                     is_high_school_treatment, get_treatment_type, get_activity_performed_parameter, )
+from .services import (ActivityStatusList, GroupScores, do_activity, get_time_remaining, GroupActivity)
 
 
 logger = logging.getLogger(__name__)
@@ -58,7 +55,7 @@ def perform_activity(request):
             else:
                 message = "Activity was not available at this time"
         else:
-            message = "You're not authorized to perform this activity as this person %s" % participant_group_relationship
+            message = "Unauthorized access: %s" % participant_group_relationship
             logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id,
                            participant_group_relationship)
     logger.warning(message)
@@ -80,9 +77,9 @@ def post_chat_message(request):
         chat_message = ChatMessage.objects.create(
             value=message, participant_group_relationship=pgr)
         logger.debug("%s: %s", pgr.participant, chat_message)
-        # TODO: refactor get_group_activity, chat_messages are unneeded
-        (team_activity, chat_messages) = get_group_activity(pgr)
-        return JsonResponse(dumps({'success': True, 'viewModel': {'groupActivity': team_activity}}))
+        # FIXME: can optimize by only retrieving the latest group activity since the last checkin time
+        group_activity = GroupActivity(pgr)
+        return JsonResponse(dumps({'success': True, 'viewModel': {'groupActivity': group_activity.all_activities}}))
     return JsonResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
 
 
@@ -156,28 +153,29 @@ class HighSchoolViewModel(object):
         self.treatment_type = get_treatment_type(
             self.round_configuration).string_value
         self.experiment_configuration = self.experiment.experiment_configuration
-        self.group_scores = GroupScores(experiment, round_data,
-                                        participant_group_relationship=participant_group_relationship)
-        self.initialize_activities()
-
-    def initialize_activities(self):
-        completed_activity_pks = self.participant_group_relationship.data_value_set.filter(
-            parameter=get_activity_performed_parameter(), round_data=self.round_data).values_list('int_value',
-                                                                                                  flat=True)
+        self.group_scores = GroupScores(experiment, round_data, participant_group_relationship)
         self.activities = []
-        scheduled_activity_pks = Activity.objects.scheduled(
-            self.round_configuration).values_list('pk', flat=True)
-        for activity in Activity.objects.all():
-            activity_dict = activity.to_dict()
-            status = 'locked'
-            if activity.pk in completed_activity_pks:
-                status = 'completed'
-            elif activity.pk in scheduled_activity_pks:
-                status = 'available'
-            activity_dict['status'] = status
-            activity_dict['availableNow'] = status == 'available'
-            activity_dict['availabilities'] = []
-            self.activities.append(activity_dict)
+
+    @property
+    def activities(self):
+        if not self.activities:
+            self.activities = []
+            completed_activity_pks = self.participant_group_relationship.data_value_set.filter(
+                parameter=get_activity_performed_parameter(),
+                round_data=self.round_data).values_list('int_value', flat=True)
+            scheduled_activity_pks = Activity.objects.scheduled(
+                self.round_configuration).values_list('pk', flat=True)
+            for activity in Activity.objects.all():
+                activity_dict = activity.to_dict()
+                status = 'locked'
+                if activity.pk in completed_activity_pks:
+                    status = 'completed'
+                elif activity.pk in scheduled_activity_pks:
+                    status = 'available'
+                activity_dict['status'] = status
+                activity_dict['availableNow'] = status == 'available'
+                activity_dict['availabilities'] = []
+                self.activities.append(activity_dict)
         return self.activities
 
     def to_json(self):
@@ -185,8 +183,7 @@ class HighSchoolViewModel(object):
         participant_group_relationship = self.participant_group_relationship
         own_group = participant_group_relationship.group
         group_scores = self.group_scores
-        (team_activity, chat_messages) = get_group_activity(
-            participant_group_relationship)
+        group_activity = GroupActivity(participant_group_relationship)
         return dumps({
             'activities': self.activities,
             'quizCompleted': participant_group_relationship.survey_completed,
@@ -196,10 +193,9 @@ class HighSchoolViewModel(object):
             'hoursLeft': hours_left,
             'minutesLeft': minutes_left,
             'firstVisit': participant_group_relationship.first_visit,
-            # FIXME: extract this from groupData instead..
             'averagePoints': group_scores.average_daily_points(own_group),
             'pointsToNextLevel': group_scores.get_points_goal(own_group),
-            'groupActivity': team_activity,
+            'groupActivity': group_activity.all_activities,
             'groupName': own_group.name,
             'totalPoints': group_scores.total_participant_points,
             'surveyUrl': self.round_configuration.make_survey_url(pid=participant_group_relationship.pk),
@@ -258,9 +254,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     own_group_level = group_scores.get_group_level(own_group)
     activity_status_list = ActivityStatusList(participant_group_relationship, activities, round_configuration,
                                               group_level=own_group_level)
-    (team_activity, chat_messages) = get_group_activity(
-        participant_group_relationship)
-    #(chat_messages, group_activity) = get_group_activity_tuple(participant_group_relationship)
+    group_activity = GroupActivity(participant_group_relationship)
     (hours_left, minutes_left) = get_time_remaining()
     return dumps({
         'participantGroupId': participant_group_relationship.pk,
@@ -278,7 +272,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         'averagePoints': group_scores.average_daily_points(own_group),
         'pointsToNextLevel': group_scores.get_points_goal(own_group),
         'hasScheduledActivities': group_scores.has_scheduled_activities,
-        'groupActivity': team_activity,
+        'groupActivity': group_activity.all_activities,
         'groupName': own_group.name,
         'activities': activity_status_list.activity_dict_list,
         'totalPoints': total_participant_points,
