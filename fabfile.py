@@ -17,9 +17,9 @@ sys.path.append(os.path.abspath(env.project_path))
 
 # default env configuration
 env.roledefs = {
-    'test': ['localhost'],
-    'dev': ['www.thevirtualcommons.org'],
-    'staging': ['www.thevirtualcommons.org'],
+    'localhost': ['localhost'],
+    'dev': ['dev.commons.asu.edu'],
+    'staging': ['dev.commons.asu.edu'],
     'prod': ['vcweb.asu.edu'],
 }
 env.python = 'python'
@@ -53,13 +53,15 @@ syncdb_commands = [
 ]
 
 
-@hosts('csid@commons.asu.edu')
+@hosts('dev.commons.asu.edu')
 @task
-def docs(api_path='/home/csid/public_html/api/vcweb'):
+def docs(remote_path='/home/www/dev.commons.asu.edu/vcweb/'):
     with lcd(env.docs_path):
         local("/usr/bin/make html")
-        rsync_project(api_path, 'build/html/')
-    with cd(api_path):
+        rsync_project(local_dir='build/html/', remote_dir=os.path.join(remote_path, 'apidocs'), delete=True)
+    execute(coverage)
+    rsync_project(local_dir='htmlcov/', remote_dir=os.path.join(remote_path, 'coverage'), delete=True)
+    with cd(remote_path):
         run('find . -type d -exec chmod a+rx {} \; && chmod -R a+r .')
 
 
@@ -124,12 +126,14 @@ def host_type():
     run('uname -a')
 
 
+@roles('localhost')
 @task
 def coverage():
     execute(test, coverage=True)
     local('coverage html --omit=*test*,*settings*,*migrations*,*fabfile*,*wsgi*')
 
 
+@roles('localhost')
 @task
 def test(name=None, coverage=False):
     if name is not None:
@@ -183,7 +187,7 @@ def prod():
     execute(deploy)
 
 
-@roles('test')
+@roles('localhost')
 @task
 def setup_postgres():
     local("psql -c 'create role %(db_user)s CREATEDB;'" % env)
@@ -194,6 +198,7 @@ def _restart_command():
     return 'service %(apache)s restart && service supervisord restart' % env
 
 
+@roles('localhost')
 @task
 def clean():
     with cd(env.project_path):
