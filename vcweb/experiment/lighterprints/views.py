@@ -141,10 +141,19 @@ def post_comment(request):
         return JsonResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
 
 
+class LighterprintsViewModel(object):
+
+    def __init__(self, participant_group_relationship, experiment=None, round_data=None):
+        self.participant_group_relationship = participant_group_relationship
+        self.group = participant_group_relationship.group
+        self.experiment = self.group.experiment if experiment is None else experiment
+        self.round_data = self.experiment.current_round_data if round_data is None else round_data
+
+
+
 class HighSchoolViewModel(object):
 
-    def __init__(self, participant_group_relationship, experiment=None, round_configuration=None, round_data=None,
-                 **kwargs):
+    def __init__(self, participant_group_relationship, experiment=None, round_configuration=None, round_data=None):
         self.participant_group_relationship = participant_group_relationship
         self.group = participant_group_relationship.group
         self.experiment = self.group.experiment if experiment is None else experiment
@@ -229,7 +238,7 @@ def download_payment_data(request, pk=None):
 
 
 def get_view_model_json(participant_group_relationship, activities=None, experiment=None, round_configuration=None,
-                        round_data=None, **kwargs):
+                        round_data=None):
     """
     FIXME: replace with view model class that stitches together ActivityStatusList and GroupScores appropriately and
     handles conditional switches between the different experiment types (scheduled activities, level based, high school)
