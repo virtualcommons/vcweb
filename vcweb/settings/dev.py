@@ -24,4 +24,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 USE_I18N = False
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'customize this local secret key'
+SECRET_KEY = 'customize this dev secret key'
+
+INSTALLED_APPS += (
+    'debug_toolbar',  # FIXME: replace with 'debug_toolbar.apps.DebugToolbarConfig' for 1.7
+    'sslserver',
+)
