@@ -223,8 +223,10 @@ class ExperimentMetadataQuerySet(models.query.QuerySet):
         bem_pks = BookmarkedExperimentMetadata.objects.filter(
             experimenter=experimenter).values_list('experiment_metadata', flat=True)
         bem_pks_str = ','.join([str(x) for x in bem_pks])
-        return self.extra(select={'bookmarked': "id in (%s)" % bem_pks_str})
-        # return
+
+        if bem_pks_str:
+            return self.extra(select={'bookmarked': "id in (%s)" % bem_pks_str})
+        return self.extra()
         # self.filter(**kwargs).annotate(bookmarked=models.Q(pk__in=bem_pks))
 
 
