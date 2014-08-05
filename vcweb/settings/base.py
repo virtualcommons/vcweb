@@ -12,7 +12,6 @@ USE_TZ = False
 SITE_URL = 'https://vcweb.asu.edu'
 
 BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
-print 'BASE_DIR is %s' % BASE_DIR
 
 SERVER_EMAIL = 'vcweb@asu.edu'
 SERVER_NAME = 'vcweb.asu.edu'
