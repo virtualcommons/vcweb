@@ -1,6 +1,6 @@
 *.pyc
 *~
-settings_local.py
+settings/local.py
 vcweb.db
 tags
 .settings
