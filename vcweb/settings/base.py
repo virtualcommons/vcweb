@@ -1,16 +1,19 @@
-import locale
+#import locale
 import os
 import sys
 
-locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+#locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 USE_TZ = False
+
 SITE_URL = 'https://vcweb.asu.edu'
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+print 'BASE_DIR is %s' % BASE_DIR
+
 SERVER_EMAIL = 'vcweb@asu.edu'
 SERVER_NAME = 'vcweb.asu.edu'
 EMAIL_HOST = 'smtp.asu.edu'
@@ -19,15 +22,10 @@ ALLOWED_HOSTS = ('.asu.edu', 'localhost',)
 ADMINS = (
     ('Allen Lee', 'allen.lee@asu.edu'),
 )
-
 MANAGERS = ADMINS
 
 DATA_DIR = 'data'
-
 GRAPH_DATABASE_PATH = os.path.join(DATA_DIR, 'neo4j')
-
-BITBUCKET_API_USER = 'vcweb'
-BITBUCKET_API_PW = 'not quite the real password'
 
 DATABASES = {
     'default': {
@@ -42,14 +40,6 @@ DATABASES = {
     }
 }
 
-#NEO4J_DATABASES = {
-#    'default': {
-#        'HOST': 'localhost',
-#        'PORT': 7474,
-#        'ENDPOINT': GRAPH_DATABASE_PATH
-#    }
-#}
-#DATABASE_ROUTERS = ['neo4django.utils.Neo4djangoIntegrationRouter']
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
@@ -72,9 +62,7 @@ USE_I18N = False
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '2km^iq&48&6uv*x$ew@56d0#w9zqth@)_4tby(85+ac2wf4r-u'
 
-
 CSRF_FAILURE_VIEW = 'vcweb.core.views.csrf_failure'
-
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
@@ -108,21 +96,17 @@ TEMPLATE_DIRS = (
     # Don't forget to use absolute paths, not relative paths.
 )
 
-INSTALLED_APPS = (
+DEFAULT_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.admin',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+)
+
+THIRD_PARTY_APPS = (
     'autocomplete_light',
-    'vcweb.core',
-    # TODO: make these dynamically discoverable?
-    'vcweb.experiment.forestry',
-    'vcweb.experiment.lighterprints',
-    'vcweb.experiment.bound',
-    'vcweb.experiment.broker',
-    'vcweb.experiment.irrigation',
     'raven.contrib.django.raven_compat',
     'contact_form',
     'kronos',
@@ -133,17 +117,17 @@ INSTALLED_APPS = (
     'cas',
 )
 
-STATICFILES_FINDERS = (
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+VCWEB_APPS = (
+    'vcweb.core',
+    # TODO: make these dynamically discoverable?
+    'vcweb.experiment.forestry',
+    'vcweb.experiment.lighterprints',
+    'vcweb.experiment.bound',
+    'vcweb.experiment.broker',
+    'vcweb.experiment.irrigation',
 )
 
-# django social auth keys
-FOURSQUARE_OAUTH_ENDPOINT = 'https://foursquare.com/oauth2/authenticate'
-FOURSQUARE_OAUTH_ACCESS_TOKEN_ENDPOINT = 'https://foursquare.com/oauth2/access_token'
-FOURSQUARE_VENUE_SEARCH_ENDPOINT = 'https://api.foursquare.com/v2/venues/search'
-FOURSQUARE_CATEGORIES_ENDPOINT = 'https://api.foursquare.com/v2/venues/categories'
-FOURSQUARE_CONSUMER_DATE_VERIFIED = '20120417'
+INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + VCWEB_APPS
 
 LOGIN_REDIRECT_URL = '/dashboard'
 
@@ -157,18 +141,20 @@ DEFAULT_FROM_EMAIL = 'vcweb@asu.edu'
 
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (
-    # 'cas.backends.CASBackend',
     'vcweb.core.backends.ParticipantCASBackend',
     "vcweb.core.backends.EmailAuthenticationBackend",
     "django.contrib.auth.backends.ModelBackend",
 )
 
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+)
 STATIC_URL = '/static/'
 STATIC_ROOT = '/var/www/vcweb/static/'
-STATICFILES_DIRS = (
-    os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static').replace(
-        '\\', '/'),
-)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, 'vcweb', 'static').replace('\\', '/'),)
+
+#### Media file configuration (for user uploads etc) ####
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
@@ -179,18 +165,12 @@ MEDIA_ROOT = os.path.join(STATIC_ROOT, 'media')
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
 MEDIA_URL = '/static/media/'
 
-# css classes for django messages, disabled due to use of bootstrap_messages
-# MESSAGE_TAGS = {
-#     messages.constants.INFO: 'ui-state-highlight ui-corner-all',
-#     messages.constants.WARNING: 'ui-state-error ui-corner-all',
-#     messages.constants.ERROR: 'ui-state-error ui-corner-all'
-# }
-
 
 def is_accessible(directory_path):
     return os.path.isdir(directory_path) and os.access(directory_path, os.W_OK | os.X_OK)
 
 LOG_DIRECTORY = '/opt/vcweb/logs'
+
 if not is_accessible(LOG_DIRECTORY):
     try:
         os.makedirs(LOG_DIRECTORY)
@@ -203,9 +183,6 @@ if not is_accessible(LOG_DIRECTORY):
             except OSError:
                 print "Couldn't create any log directory, startup will fail"
 
-# logging configuration
-VCWEB_LOG_FILENAME = 'vcweb.log'
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
@@ -215,9 +192,6 @@ LOGGING = {
     },
     'formatters': {
         'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
-        },
-        'vcweb_verbose': {
             'format': '%(levelname)s %(asctime)s [%(name)s|%(funcName)s:%(lineno)d] %(message)s'
         },
         'simple': {
@@ -233,13 +207,13 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'vcweb_verbose',
+            'formatter': 'verbose',
         },
         'vcweb.file': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'formatter': 'vcweb_verbose',
-            'filename': os.path.join(LOG_DIRECTORY, VCWEB_LOG_FILENAME),
+            'formatter': 'verbose',
+            'filename': os.path.join(LOG_DIRECTORY, 'vcweb.log'),
             'backupCount': 6,
             'maxBytes': 10000000,
         },
@@ -261,75 +235,18 @@ LOGGING = {
             'propagate': False,
         },
         'vcweb': {
-            'handlers': ['vcweb.file', 'console'],
             'level': 'DEBUG',
+            'handlers': ['vcweb.file', 'console'],
             'propagate': False,
         },
     }
 }
 
-# for django-debug-toolbar
-INTERNAL_IPS = ('127.0.0.1', '68.99.87.185',)
-# FIXME: hacky, see
-# http://stackoverflow.com/questions/8219940/how-do-i-access-imported-local-settings-without-a-circular-import
-# for other solutions
-has_local_settings = False
-try:
-    import settings_local
-    from .settings_local import *
-    has_local_settings = True
-except ImportError:
-    has_local_settings = False
-
-
-def add_settings_tuples(varname, settings_local):
-    settings_local_tuple = getattr(settings_local, varname, None)
-    original_settings_tuple = globals()[varname]
-    if settings_local_tuple is not None:
-        # print "adding local setting %s to existing %s %s" %
-        # (settings_local_tuple, varname, original_settings_tuple)
-        globals()[varname] = original_settings_tuple + settings_local_tuple
-
-
-if has_local_settings:
-    try:
-        DEBUG = getattr(settings_local, 'DEBUG', DEBUG)
-        RAVEN_CONFIG = getattr(settings_local, 'RAVEN_CONFIG', None)
-        EMAIL_BACKEND = getattr(settings_local, 'EMAIL_BACKEND', EMAIL_BACKEND)
-        DATABASES = getattr(settings_local, 'DATABASES', DATABASES)
-        SECRET_KEY = getattr(settings_local, 'SECRET_KEY', SECRET_KEY)
-        SITE_URL = getattr(settings_local, 'SITE_URL', SITE_URL)
-        BITBUCKET_API_USER = getattr(
-            settings_local, 'BITBUCKET_API_USER', BITBUCKET_API_USER)
-        BITBUCKET_API_PW = getattr(
-            settings_local, 'BITBUCKET_API_PW', BITBUCKET_API_PW)
-        add_settings_tuples('MIDDLEWARE_CLASSES', settings_local)
-        add_settings_tuples('INSTALLED_APPS', settings_local)
-        add_settings_tuples('ALLOWED_HOSTS', settings_local)
-    except Exception as e:
-        print "unexpected error while importing local settings: %s" % e
-        pass
-
-
-if 'test' in sys.argv:
-    SOUTH_TESTS_MIGRATE = False
-    SKIP_SOUTH_TESTS = True
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:'
-    }
-    DATABASES['postgres'] = {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'vcweb',
-        'USER': 'postgres',
-        'PASSWORD': '',
-    }
-
 DEBUG_TOOLBAR_CONFIG = {
     'INTERCEPT_REDIRECTS': False,
 }
 
-# Required by the System if using CAS
+# Required if using CAS
 CAS_UNIVERSITY_NAME = "Arizona State University"
 CAS_UNIVERSITY_URL = "http://www.asu.edu"
 WEB_DIRECTORY_URL = "https://webapp4.asu.edu/directory/ws/search?asuriteId="
@@ -346,4 +263,18 @@ CAS_RESPONSE_CALLBACKS = (
 )
 CAS_CUSTOM_FORBIDDEN = 'cas_error'
 
-EXPERIMENTS = [app_name for app_name in INSTALLED_APPS if 'experiment' in app_name]
+EXPERIMENTS = [app_name for app_name in VCWEB_APPS if 'experiment' in app_name]
+
+if 'test' in sys.argv:
+    SOUTH_TESTS_MIGRATE = False
+    SKIP_SOUTH_TESTS = True
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:'
+    }
+    DATABASES['postgres'] = {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'vcweb',
+        'USER': 'postgres',
+        'PASSWORD': '',
+    }

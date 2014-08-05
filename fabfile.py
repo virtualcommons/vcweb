@@ -1,7 +1,7 @@
 from fabric.api import local, run, sudo, cd, env, lcd, execute, hosts, roles, task
 from fabric.context_managers import prefix
-from fabric.contrib import django
 from fabric.contrib.console import confirm
+from fabric.contrib import django
 from fabric.contrib.project import rsync_project
 import sys
 import os
@@ -24,6 +24,7 @@ env.roledefs = {
 }
 env.python = 'python'
 env.project_name = 'vcweb'
+env.project_conf = 'vcweb.settings'
 env.deploy_user = 'apache'
 env.deploy_group = 'commons'
 env.database = 'default'
@@ -35,8 +36,7 @@ env.apache = 'httpd'
 env.docs_path = os.path.join(env.project_path, 'docs')
 env.test_fixtures = ' '.join(['forestry_experiment_metadata', 'lighterprints_experiment_metadata',
                               'activities', 'bound_experiment_metadata', 'bound_parameters'])
-env.virtualenv_path = '%s/.virtualenvs/%s' % (
-    os.getenv('HOME'), env.project_name)
+env.virtualenv_path = '%s/.virtualenvs/%s' % (os.getenv('HOME'), env.project_name)
 
 # django integration for access to settings, etc.
 django.project(env.project_name)
@@ -96,7 +96,7 @@ def psh():
 
 @task
 def shell():
-    local("%(python)s manage.py shell_plus" % env, capture=False)
+    dj('shell_plus')
 
 
 @task
@@ -108,17 +108,19 @@ def syncdb(**kwargs):
         _virtualenv(local, *syncdb_commands, **kwargs)
 
 
+def dj(command, **kwargs):
+    """
+    Run a Django manage.py command on the server.
+    """
+    _virtualenv(local,
+                'python manage.py {dj_command} --settings {project_conf}'.format(dj_command=command, **env), **kwargs)
+
+
 def _virtualenv(executor, *commands, **kwargs):
     """ source the virtualenv before executing this command """
     env.command = ' && '.join(commands)
     with prefix('. %(virtualenv_path)s/bin/activate' % env):
         executor('%(command)s' % env, **kwargs)
-    """
-    if os.path.exists(env.virtualenv_path):
-    return executor('. %(virtualenv_path)s/bin/activate && %(command)s' % env, **kwargs)
-    else:
-    return executor(env.command, **kwargs)
-"""
 
 
 @task
@@ -165,14 +167,12 @@ def tornadio(ip="127.0.0.1", port=None):
 
 @task
 def ssl(ip='127.0.0.1', port=8443):
-    local("{python} manage.py runsslserver {ip}:{port}".format(
-        python=env.python, **locals()), capture=False)
+    dj('runsslserver {ip}:{port}'.format(ip=ip, port=port), capture=False)
 
 
 @task
 def server(ip="127.0.0.1", port=8000):
-    local("{python} manage.py runserver {ip}:{port}".format(
-        python=env.python, **locals()), capture=False)
+    dj('runserver {ip}:{port}'.format(ip=ip, port=port), capture=False)
 
 
 @roles('dev')
