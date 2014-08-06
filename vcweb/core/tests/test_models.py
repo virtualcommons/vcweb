@@ -9,7 +9,7 @@ from .common import BaseVcwebTest
 from .. import signals
 from ..models import (ParticipantRoundDataValue, Participant, ParticipantExperimentRelationship,
                       ParticipantGroupRelationship, ExperimentMetadata, Parameter, RoundParameterValue, Institution,
-                      ExperimentSession, Invitation, ParticipantSignup, DefaultValue)
+                      ExperimentSession, Invitation, ParticipantSignup, DefaultValue, Experimenter)
 from ..subjectpool.views import get_potential_participants
 
 logger = logging.getLogger(__name__)
@@ -566,3 +566,18 @@ class GraphDatabaseTest(BaseVcwebTest):
         for i in range(1, 10):
             self.assertEqual(db, get_graph_db())
         shutdown()
+
+
+class BookmarkedExperimentMetadataTest(BaseVcwebTest):
+
+    def test_bookmarks(self):
+        e = Experimenter.objects.get(pk=1)
+        bookmarked = ExperimentMetadata.objects.bookmarked(e)
+        logger.error("bookmarked %s", bookmarked)
+        self.assertEqual(1, bookmarked.count())
+        em = bookmarked[0]
+        self.assertFalse(em.bookmarked)
+        new_experimenter = self.create_experimenter()
+        bookmarked = ExperimentMetadata.objects.bookmarked(new_experimenter)
+        self.assertEqual(1, bookmarked.count())
+        self.assertFalse(bookmarked[0].bookmarked)

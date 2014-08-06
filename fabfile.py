@@ -219,7 +219,7 @@ def sudo_chain(*commands, **kwargs):
 def deploy():
     """ deploy to an already setup environment """
     env.project_path = env.deploy_path + env.project_name
-    if confirm("Deploy to %(roles)s ?" % env):
+    if confirm("Deploying with env %s ?" % env):
         with cd(env.project_path):
             sudo_chain(
                 'hg pull && hg up -C',

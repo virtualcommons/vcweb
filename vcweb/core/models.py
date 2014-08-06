@@ -209,6 +209,7 @@ class NullCharField(models.CharField):
             return super(NullCharField, self).get_prep_value(value)
 
 
+# FIXME: remove when django 1.7 drops
 from south.modelsinspector import add_introspection_rules
 
 add_introspection_rules([], ["^vcweb\.core\.models\.AutoDateTimeField"])
@@ -218,15 +219,13 @@ add_introspection_rules([], ["^vcweb\.core\.models\.NullCharField"])
 class ExperimentMetadataQuerySet(models.query.QuerySet):
 
     def bookmarked(self, experimenter=None, **kwargs):
-        if experimenter is None:
-            return self.extra(select={'bookmarked': False})
-        bem_pks = BookmarkedExperimentMetadata.objects.filter(
-            experimenter=experimenter).values_list('experiment_metadata', flat=True)
-        bem_pks_str = ','.join([str(x) for x in bem_pks])
-
-        if bem_pks_str:
-            return self.extra(select={'bookmarked': "id in (%s)" % bem_pks_str})
-        return self.extra()
+        if experimenter is not None:
+            bem_pks = BookmarkedExperimentMetadata.objects.filter(
+                experimenter=experimenter).values_list('experiment_metadata', flat=True)
+            if bem_pks:
+                bem_pks_str = ','.join([str(x) for x in bem_pks])
+                return self.extra(select={'bookmarked': "id in (%s)" % bem_pks_str})
+        return self.extra(select={'bookmarked': False})
         # self.filter(**kwargs).annotate(bookmarked=models.Q(pk__in=bem_pks))
 
 
@@ -392,10 +391,8 @@ class Experimenter(CommonsUser):
 
 
 class BookmarkedExperimentMetadata(models.Model):
-    experimenter = models.ForeignKey(
-        Experimenter, related_name='bookmarked_experiment_metadata_set')
-    experiment_metadata = models.ForeignKey(
-        ExperimentMetadata, related_name='bookmarked_experiment_metadata_set')
+    experimenter = models.ForeignKey(Experimenter, related_name='bookmarked_experiment_metadata_set')
+    experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='bookmarked_experiment_metadata_set')
     date_created = models.DateTimeField(default=datetime.now)
 
     class Meta:

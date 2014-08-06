@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.test.client import RequestFactory, Client
 
-from ..models import (Experiment, Experimenter, ExperimentConfiguration, RoundConfiguration, Parameter, Group)
+from ..models import (Experiment, Experimenter, ExperimentConfiguration, RoundConfiguration, Parameter, Group, User)
 
 import logging
 
@@ -82,6 +82,10 @@ class BaseVcwebTest(TestCase):
         self.load_experiment(**kwargs)
         if disable_logging:
             logging.disable(disabled_loglevel)
+
+    def create_experimenter(self, email='test.experimenter@mailinator.com', password='test'):
+        u = User.objects.create_user(username='test_experimenter', email=email, password=password)
+        return Experimenter.objects.create(user=u)
 
     def advance_to_data_round(self):
         e = self.experiment
