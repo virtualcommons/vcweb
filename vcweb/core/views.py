@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.models import Group as AuthGroup
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.http import HttpResponse
@@ -202,6 +203,9 @@ def cas_asu_registration_submit(request):
             setattr(participant, attr, form.cleaned_data.get(attr))
         user.first_name = form.cleaned_data['first_name']
         user.last_name = form.cleaned_data['last_name']
+        # Assign the user to participant permission group
+        participants_group = AuthGroup.objects.get(name="Participants")
+        user.groups.add(participants_group)
         user.save()
         participant.save()
         messages.add_message(request, messages.INFO,
