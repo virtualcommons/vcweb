@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST, require_GET
 
 from . import dumps
-from .decorators import experimenter_required
+from .decorators import group_required
 from .http import JsonResponse
 from .models import (Experiment, RoundData, get_chat_message_parameter, ExperimentConfiguration, User)
 
@@ -21,7 +21,7 @@ def _get_experiment(request, pk):
         "Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter, pk))
 
 
-@experimenter_required
+@group_required('Experimenters')
 @require_POST
 def archive(request):
     experiment_id = request.POST.get('experiment_id')
@@ -33,7 +33,7 @@ def archive(request):
     }))
 
 
-@experimenter_required
+@group_required('Experimenters')
 @require_POST
 def clear_participants(request):
     experiment_id = request.POST.get('experiment_id')
@@ -45,7 +45,7 @@ def clear_participants(request):
     }))
 
 
-@experimenter_required
+@group_required('Experimenters')
 def clone_experiment(request):
     experiment_id = request.POST.get('experiment_id')
     logger.debug("cloning experiment %s", experiment_id)
@@ -58,7 +58,7 @@ def clone_experiment(request):
     }))
 
 
-@experimenter_required
+@group_required('Experimenters')
 def create_experiment(request):
     experiment_configuration_id = request.POST.get('experiment_configuration_id')
     experiment_configuration = get_object_or_404(ExperimentConfiguration.objects.select_related('experiment_metadata'),
@@ -91,7 +91,7 @@ def check_user_email(request):
     return JsonResponse(dumps(success))
 
 
-@experimenter_required
+@group_required('Experimenters', 'Demo Experimenters')
 def save_experimenter_notes(request):
     experiment_id = request.POST.get('experiment_id')
     notes = request.POST.get('notes')
@@ -112,12 +112,12 @@ def save_experimenter_notes(request):
         }))
 
 
-@experimenter_required
+@group_required('Experimenters')
 def get_experiment_model(request, pk):
     return _get_experiment(request, pk).to_json()
 
 
-@experimenter_required
+@group_required('Experimenters')
 def get_round_data(request):
     # FIXME: naively implemented performance wise, revisit if this turns into
     # a hot spot..
@@ -137,7 +137,7 @@ def get_round_data(request):
     }))
 
 
-@experimenter_required
+@group_required('Experimenters')
 def experiment_controller(request):
     pk = request.POST.get('pk')
     action = request.POST.get('action')

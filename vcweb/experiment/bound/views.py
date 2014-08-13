@@ -8,7 +8,7 @@ from django.http import Http404
 from django.shortcuts import render, get_object_or_404
 
 from vcweb.core import dumps
-from vcweb.core.decorators import participant_required
+from vcweb.core.decorators import group_required
 from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (
@@ -25,7 +25,7 @@ from vcweb.experiment.bound.models import (get_experiment_metadata, get_regrowth
 logger = logging.getLogger(__name__)
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def participate(request, experiment_id=None):
     participant = request.user.participant
     logger.debug(
@@ -43,7 +43,7 @@ def participate(request, experiment_id=None):
     })
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def submit_harvest_decision(request, experiment_id=None):
     form = SingleIntegerDecisionForm(request.POST or None)
     experiment = get_object_or_404(Experiment, pk=experiment_id)
@@ -74,7 +74,7 @@ def submit_harvest_decision(request, experiment_id=None):
     return JsonResponse(dumps({'success': False}))
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def get_view_model(request, experiment_id=None):
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
                                    pk=experiment_id)

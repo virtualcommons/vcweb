@@ -27,14 +27,14 @@ from vcweb.core.models import (
     ExperimentSession, ExperimentMetadata, Invitation, send_email)
 from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
-from vcweb.core.decorators import experimenter_required, participant_required
+from vcweb.core.decorators import group_required, ownership_required
 from vcweb.core.models import (Participant, Institution, ParticipantSignup, )
 
 
 logger = logging.getLogger(__name__)
 
 
-@experimenter_required
+@group_required('Experimenters')
 def experimenter_index(request):
     """
     Returns by rendering the Subject Recruitment page with all the active experiment sessions and past experiment
@@ -60,7 +60,7 @@ def experimenter_index(request):
                   {"view_model_json": dumps(session_data), "form": form})
 
 
-@experimenter_required
+@group_required('Experimenters')
 @transaction.atomic
 def update_session(request):
     """
@@ -113,7 +113,7 @@ def update_session(request):
     }))
 
 
-@experimenter_required
+@group_required('Experimenters')
 def get_session_events(request):
     """
     Returns the list of Experiment sessions that fall within the given range,
@@ -222,7 +222,7 @@ def get_invitation_email_content(custom_invitation_text, experiment_session_ids)
     return plaintext_content, html_content
 
 
-@experimenter_required
+@group_required('Experimenters')
 def send_invitations(request):
     """
     Sends out invitation emails to random participants which match the required invitation criteria,
@@ -313,7 +313,7 @@ def send_invitations(request):
             'message': message
         }))
 
-
+@group_required('Experimenters')
 def invite_email_preview(request):
     """
     Generates email Preview for the provided invitation details
@@ -385,7 +385,8 @@ def get_excluded_participants(days_threshold, experiment_metadata_pk):
     return list(set(itertools.chain(invited_in_last_threshold_days, signup_participants, mailinator_participants)))
 
 
-@experimenter_required
+@group_required('Experimenters')
+@ownership_required(ExperimentSession)
 def manage_participant_attendance(request, pk=None):
     """
     Performs Update or Get operation on the ParticipantSignup model depending upon the request.
@@ -394,41 +395,38 @@ def manage_participant_attendance(request, pk=None):
     """
     es = ExperimentSession.objects.get(pk=pk)
 
-    if es.creator == request.user:
-        invitations_sent = Invitation.objects.filter(experiment_session=es)
-        session_detail = dict(pk=es.pk, experiment_metadata=es.experiment_metadata, start_date=es.scheduled_date.date(),
-                              start_time=es.scheduled_date.strftime('%I:%M %p'), end_date=es.scheduled_end_date.date(),
-                              end_time=es.scheduled_end_date.strftime('%I:%M %p'), location=es.location,
-                              capacity=es.capacity)
+    invitations_sent = Invitation.objects.filter(experiment_session=es)
+    session_detail = dict(pk=es.pk, experiment_metadata=es.experiment_metadata, start_date=es.scheduled_date.date(),
+                          start_time=es.scheduled_date.strftime('%I:%M %p'), end_date=es.scheduled_end_date.date(),
+                          end_time=es.scheduled_end_date.strftime('%I:%M %p'), location=es.location,
+                          capacity=es.capacity)
 
-        attendanceformset = modelformset_factory(ParticipantSignup, form=ParticipantAttendanceForm,
-                                                 exclude=('date_created',), extra=0)
+    attendanceformset = modelformset_factory(ParticipantSignup, form=ParticipantAttendanceForm,
+                                             exclude=('date_created',), extra=0)
 
-        if request.method == "POST":
-            formset = attendanceformset(request.POST,
-                                        queryset=ParticipantSignup.objects.select_related(
-                                            'invitation__participant__user').
-                                        filter(invitation__in=invitations_sent))
-            if formset.is_valid():
-                messages.add_message(
-                    request, messages.SUCCESS, 'Well done...Your changes were successfully saved.')
-                if formset.has_changed():
-                    formset.save()
-            else:
-                messages.add_message(request, messages.ERROR,
-                                     'Something went wrong...Your changes were not saved. Please try again')
+    if request.method == "POST":
+        formset = attendanceformset(request.POST,
+                                    queryset=ParticipantSignup.objects.select_related(
+                                        'invitation__participant__user').
+                                    filter(invitation__in=invitations_sent))
+        if formset.is_valid():
+            messages.add_message(
+                request, messages.SUCCESS, 'Well done...Your changes were successfully saved.')
+            if formset.has_changed():
+                formset.save()
         else:
-            formset = attendanceformset(
-                queryset=ParticipantSignup.objects.select_related('invitation__participant__user').
-                filter(invitation__in=invitations_sent))
-
-        return render(request, 'experimenter/session_detail.html',
-                      {'session_detail': session_detail, 'formset': formset})
+            messages.add_message(request, messages.ERROR,
+                                 'Something went wrong...Your changes were not saved. Please try again')
     else:
-        raise PermissionDenied("You don't have access to this experiment.")
+        formset = attendanceformset(
+            queryset=ParticipantSignup.objects.select_related('invitation__participant__user').
+            filter(invitation__in=invitations_sent))
+
+    return render(request, 'experimenter/session_detail.html',
+                  {'session_detail': session_detail, 'formset': formset})
 
 
-@participant_required
+@group_required('Participants')
 def cancel_experiment_session_signup(request):
     form = CancelSignupForm(request.POST or None)
     if form.is_valid():
@@ -450,7 +448,7 @@ def cancel_experiment_session_signup(request):
     return redirect('core:dashboard')
 
 
-@participant_required
+@group_required('Participants')
 def submit_experiment_session_signup(request):
     """
     Enrolls the currently logged in user in the selected experiment session.
@@ -499,7 +497,8 @@ def submit_experiment_session_signup(request):
         return redirect('core:experiment_session_signup')
 
 
-@experimenter_required
+@group_required('Experimenters')
+@ownership_required(ExperimentSession)
 def download_experiment_session(request, pk=None):
     user = request.user
     experiment_session = get_object_or_404(
@@ -525,7 +524,7 @@ def download_experiment_session(request, pk=None):
     return response
 
 
-@participant_required
+@group_required('Participants')
 def experiment_session_signup(request):
     """
     Returns and renders all the experiment session invitation that currently logged in participant has received

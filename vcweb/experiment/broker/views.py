@@ -4,7 +4,7 @@ import logging
 
 from django.shortcuts import get_object_or_404, render
 
-from vcweb.core.decorators import participant_required
+from vcweb.core.decorators import group_required
 from vcweb.core import dumps
 from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.http import JsonResponse
@@ -19,7 +19,7 @@ from vcweb.experiment.broker.forms import ChatPreferenceForm
 logger = logging.getLogger(__name__)
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def submit_chat_preferences(request, experiment_id=None):
     form = ChatPreferenceForm(request.POST or None)
     experiment = get_object_or_404(Experiment, pk=experiment_id)
@@ -83,7 +83,7 @@ def submit_chat_preferences(request, experiment_id=None):
     return JsonResponse(dumps({'success': False}))
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def submit_decision(request, experiment_id=None):
     form = SingleIntegerDecisionForm(request.POST or None)
     experiment = get_object_or_404(Experiment, pk=experiment_id)
@@ -106,7 +106,7 @@ def submit_decision(request, experiment_id=None):
     return JsonResponse(dumps({'success': False}))
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id)
@@ -121,7 +121,7 @@ def participate(request, experiment_id=None):
     })
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def get_view_model(request, experiment_id=None):
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     participant_group_relationship = get_object_or_404(

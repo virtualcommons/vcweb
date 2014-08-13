@@ -10,9 +10,11 @@ import logging
 import random
 import string
 
+
 from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
+from django.contrib.auth.models import Group as AuthGroup
 from django.core import mail, serializers
 from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
@@ -502,6 +504,9 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
                 rpv.round_configuration = rc_clone
                 rpv.save()
         return ec
+
+    def is_owner(self, user):
+        return self.creator == user.experimenter or user.is_superuser
 
     def to_dict(self, **kwargs):
         return {
@@ -996,6 +1001,8 @@ class Experiment(models.Model):
                 "This experiment %s already has %d participants - aborting", self, number_of_participants)
             return
         users = []
+        demo_participants_group = AuthGroup.objects.get(name="Demo Participants")
+
         for i in xrange(1, count + 1):
             email_address = u's%d%s@%s' % (i, username_suffix, email_suffix)
             try:
@@ -1005,6 +1012,7 @@ class Experiment(models.Model):
                     username=email_address, email=email_address, password=password)
                 user.first_name = u'Student'
                 user.last_name = unicode(i)
+                user.groups.add(demo_participants_group)
                 user.save()
             users.append(user)
         return self.register_participants(users=users, institution=institution, password=password)
@@ -1396,6 +1404,9 @@ class Experiment(models.Model):
                                          experiment_configuration=self.experiment_configuration,
                                          duration=self.duration,
                                          status=Experiment.Status.INACTIVE)
+
+    def is_owner(self, user):
+        return self.experimenter == user.experimenter or user.is_superuser
 
     def template_context(self, participant_group_relationship, **kwargs):
         return dict(
@@ -2712,6 +2723,9 @@ class ExperimentSession(models.Model):
     @property
     def is_online(self):
         return self.location and self.location.lower() in ('online', 'internet', 'network', 'remote', 'virtual')
+
+    def is_owner(self, user):
+        return self.creator == user.experimenter or user.is_superuser
 
     def to_dict(self, **kwargs):
         scheduled_date = self.scheduled_date

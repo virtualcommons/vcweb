@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 import unicodecsv
 
-from vcweb.core.decorators import participant_required, experimenter_required
+from vcweb.core.decorators import group_required, ownership_required
 from vcweb.core.forms import (
     ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
 from vcweb.core.http import JsonResponse
@@ -24,7 +24,7 @@ from .services import (ActivityStatusList, GroupScores, do_activity, get_time_re
 logger = logging.getLogger(__name__)
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def perform_activity(request):
     form = ActivityForm(request.POST or None)
     if form.is_valid():
@@ -215,26 +215,23 @@ class HighSchoolViewModel(object):
         return 'lighterprints/highschool.html'
 
 
-@experimenter_required
+@group_required('Experimenters')
+@ownership_required(Experiment)
 def download_payment_data(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     user = request.user
-    if user.is_superuser or experiment.experimenter == user.experimenter:
-        response = HttpResponse(content_type=mimetypes.types_map['.csv'])
-        response[
-            'Content-Disposition'] = 'attachment; filename=payment-%s' % experiment.data_file_name()
-        writer = unicodecsv.writer(response, encoding='utf-8')
-        group_scores = GroupScores(experiment)
-        writer.writerow(['Group', 'Participant', 'Username', 'Total Earnings'])
-        for pgr in experiment.participant_group_relationships:
-            participant = pgr.participant
-            group = pgr.group
-            writer.writerow(
-                [group, participant.email, participant.username, group_scores.total_earnings(group)])
-        return response
-    else:
-        raise PermissionDenied(
-            "You aren't authorized to access this experiment.")
+    response = HttpResponse(content_type=mimetypes.types_map['.csv'])
+    response[
+        'Content-Disposition'] = 'attachment; filename=payment-%s' % experiment.data_file_name()
+    writer = unicodecsv.writer(response, encoding='utf-8')
+    group_scores = GroupScores(experiment)
+    writer.writerow(['Group', 'Participant', 'Username', 'Total Earnings'])
+    for pgr in experiment.participant_group_relationships:
+        participant = pgr.participant
+        group = pgr.group
+        writer.writerow(
+            [group, participant.email, participant.username, group_scores.total_earnings(group)])
+    return response
 
 
 def get_view_model_json(participant_group_relationship, activities=None, experiment=None, round_configuration=None,
@@ -288,7 +285,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     })
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def get_view_model(request, participant_group_id=None):
     if participant_group_id is None:
         # check in the request query parameters as well
@@ -325,7 +322,7 @@ def mobile_login(request):
     return render(request, 'lighterprints/mobile/login.html')
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def mobile_participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_active_experiment(
@@ -341,7 +338,7 @@ def mobile_participate(request, experiment_id=None):
     })
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id,
@@ -378,7 +375,7 @@ def participate(request, experiment_id=None):
         return render(request, 'lighterprints/inactive.html', {'experiment': experiment, 'upcoming': upcoming})
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)
     if form.is_valid():

@@ -21,8 +21,7 @@ import unicodecsv
 
 from . import dumps
 from .http import JsonResponse
-from .decorators import (anonymous_required, experimenter_required, participant_required, retry, is_participant,
-                         is_experimenter)
+from .decorators import (anonymous_required, retry, is_participant, is_experimenter, ownership_required, group_required)
 from .forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm, UpdateExperimentForm,
                     AsuRegistrationForm, ParticipantGroupIdForm, RegisterEmailListParticipantsForm,
                     RegisterTestParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm,
@@ -50,7 +49,7 @@ class AnonymousMixin(object):
 
 class Participate(TemplateView):
 
-    @method_decorator(participant_required)
+    @method_decorator(group_required('Participants'))
     def dispatch(self, *args, **kwargs):
         participant = self.request.user.participant
         experiment = get_active_experiment(participant)
@@ -147,6 +146,13 @@ class DashboardViewModelFactory(object):
             return ParticipantDashboardViewModel(user)
 
 
+def has_model_permissions( entity, model, perms, app ):
+    for p in perms:
+        if not entity.has_perm( "%s.%s_%s" % ( app, p, model.__name__ ) ):
+            return False
+        return True
+
+
 def csrf_failure(request, reason=""):
     logger.error("csrf failure on %s due to %s", request, reason)
     return render(request, 'invalid_request.html', {"message": 'Sorry, we were unable to process your request.'})
@@ -159,7 +165,7 @@ def dashboard(request):
     """
     user = request.user
     if is_participant(user):
-        if not user.participant.is_profile_complete:
+        if not user.participant.is_profile_complete and not bool(user.groups.filter(name='Demo Participants')):
             return redirect('core:profile')
         elif user.participant.has_pending_invitations:
             return redirect('subjectpool:experiment_session_signup')
@@ -170,6 +176,7 @@ def dashboard(request):
 
 
 @login_required
+@group_required('Participants')
 def cas_asu_registration(request):
     user = request.user
     if is_participant(user) and not user.participant.is_profile_complete:
@@ -182,7 +189,7 @@ def cas_asu_registration(request):
         return redirect('core:dashboard')
 
 
-@participant_required
+@group_required('Participants')
 def cas_asu_registration_submit(request):
     form = AsuRegistrationForm(request.POST or None)
     if form.is_valid():
@@ -360,6 +367,7 @@ class AccountView(FormView):
 
 
 @login_required
+@group_required("Experimenters", "Participants")
 def update_account_profile(request):
     """ FIXME: reduce code duplication distinguishing between participant/experimenter """
     user = request.user
@@ -406,8 +414,7 @@ def update_account_profile(request):
             p = Participant.objects.get(pk=user.participant.pk)
 
             if institution_name:
-                ins, created = Institution.objects.get_or_create(
-                    name=institution_name)
+                ins, created = Institution.objects.get_or_create(name=institution_name)
                 p.institution = ins
             else:
                 p.institution = None
@@ -456,7 +463,7 @@ def account_profile(request):
 
 class ParticipantMixin(object):
 
-    @method_decorator(participant_required)
+    @method_decorator(group_required('Participants'))
     def dispatch(self, *args, **kwargs):
         return super(ParticipantMixin, self).dispatch(*args, **kwargs)
 
@@ -470,7 +477,7 @@ these.
 
 class ExperimenterMixin(object):
 
-    @method_decorator(experimenter_required)
+    @method_decorator(group_required('Experimenters'))
     def dispatch(self, *args, **kwargs):
         return super(ExperimenterMixin, self).dispatch(*args, **kwargs)
 
@@ -525,7 +532,7 @@ class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, Templa
         return self.render_to_response(context)
 
 
-@experimenter_required
+@group_required('Experimenters')
 def toggle_bookmark_experiment_metadata(request):
     form = BookmarkExperimentMetadataForm(request.POST or None)
     if form.is_valid():
@@ -545,20 +552,16 @@ def toggle_bookmark_experiment_metadata(request):
     return JsonResponse(FAILURE_JSON)
 
 
-@experimenter_required
+@group_required('Experimenters', 'Demo Experimenters')
+@ownership_required(Experiment)
 def monitor(request, pk=None):
     experiment = get_object_or_404(Experiment.objects.select_related(
         'experiment_configuration', 'experimenter'), pk=pk)
-    user = request.user
-    if is_experimenter(user, experiment.experimenter):
-        return render(request, 'experimenter/monitor.html', {
-            'experiment': experiment,
-            'experimentModelJson': experiment.to_json(include_round_data=True),
-        })
-    else:
-        logger.warning(
-            "unauthorized access to experiment %s by user %s", experiment, user)
-        raise PermissionDenied("You do not have access to %s" % experiment)
+
+    return render(request, 'experimenter/monitor.html', {
+        'experiment': experiment,
+        'experimentModelJson': experiment.to_json(include_round_data=True),
+    })
 
 
 class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView):
@@ -675,7 +678,7 @@ class CsvDataExporter(DataExportMixin):
                                      chat_message.date_created, round_configuration])
 
 
-@experimenter_required
+@group_required('Experimenters')
 def export_configuration(request, pk=None, file_extension='.xml'):
     experiment = get_object_or_404(Experiment, pk=pk)
     if experiment.experimenter != request.user.experimenter:
@@ -691,13 +694,10 @@ def export_configuration(request, pk=None, file_extension='.xml'):
     return response
 
 
-@experimenter_required
+@group_required('Experimenters', 'Demo Experimenters')
+@ownership_required(Experiment)
 def download_participants(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
-    if experiment.experimenter != request.user.experimenter:
-        logger.error(
-            "unauthorized access to %s from %s", experiment, request.user.experimenter)
-        raise PermissionDenied("You don't have access to this experiment.")
     response = HttpResponse(content_type=mimetypes.types_map['.csv'])
     response['Content-Disposition'] = 'attachment; filename=participants.csv'
     writer = unicodecsv.writer(response, encoding='utf-8')
@@ -711,13 +711,10 @@ def download_participants(request, pk=None):
 
 
 # FIXME: add data converter objects to write to csv, excel, etc.
-@experimenter_required
+@group_required('Experimenters', 'Demo Experimenters')
+@ownership_required(Experiment)
 def download_data(request, pk=None, file_type='csv'):
     experiment = get_object_or_404(Experiment, pk=pk)
-    if experiment.experimenter != request.user.experimenter:
-        logger.warning(
-            "unauthorized access to %s from %s", experiment, request.user.experimenter)
-        raise PermissionDenied("You don't have access to this experiment")
     content_type = mimetypes.types_map['.%s' % file_type]
     logger.debug("Downloading data as %s", content_type)
     response = HttpResponse(content_type=content_type)
@@ -785,7 +782,8 @@ def download_data(request, pk=None, file_type='csv'):
     return response
 
 
-@experimenter_required
+@group_required('Experimenters')
+@ownership_required(Experiment)
 def download_data_excel(request, pk=None):
     import xlwt
 
@@ -827,22 +825,20 @@ def download_data_excel(request, pk=None):
         logger.warning(e)
 
 
-@experimenter_required
+@group_required('Experimenters')
+@ownership_required(Experiment)
 def deactivate(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     experimenter = request.user.experimenter
-    if experimenter == experiment.experimenter:
-        experiment.deactivate()
-        return redirect('core:monitor_experiment', pk=pk)
-    logger.warning(
-        "Invalid experiment deactivation request for %s by %s", experiment, experimenter)
-    return redirect('core:dashboard')
+    experiment.deactivate()
+    return redirect('core:monitor_experiment', pk=pk)
 
 
-@experimenter_required
+@group_required('Experimenters', 'Demo Experimenters')
 def update_experiment(request):
     form = UpdateExperimentForm(request.POST or None)
-    if form.is_valid():
+    user = request.user
+    if form.is_valid() and has_model_permissions(user, Experiment, ['delete'], 'core'):
         experiment = get_object_or_404(
             Experiment, pk=form.cleaned_data['experiment_id'])
         action = form.cleaned_data['action']
@@ -888,7 +884,7 @@ def api_logger(request, participant_group_id=None):
     return JsonResponse(dumps({'success': success}))
 
 
-@participant_required
+@group_required('Participants')
 def completed_survey(request):
     pgr_id = request.GET.get('pid', None)
     # FIXME: prevent manual pinging (check referrer + threaded data sent to
@@ -913,7 +909,7 @@ def completed_survey(request):
     return JsonResponse(dumps({'success': success}))
 
 
-@participant_required
+@group_required('Participants')
 def check_survey_completed(request, pk=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=pk)
@@ -922,7 +918,7 @@ def check_survey_completed(request, pk=None):
     }))
 
 
-@participant_required
+@group_required('Participants', 'Demo Participants')
 def participant_ready(request):
     form = ParticipantGroupIdForm(request.POST or None)
     if form.is_valid():
@@ -1115,7 +1111,7 @@ def reset_password(email, from_email='vcweb@asu.edu', template='registration/pas
     return None
 
 
-@experimenter_required
+@group_required('Experimenters')
 def update_experiment_param_value(request, pk):
     success = True
     request_type = request.POST['request_type']
@@ -1161,7 +1157,7 @@ def update_experiment_param_value(request, pk):
         }))
 
 
-@experimenter_required
+@group_required('Experimenters')
 def update_round_param_value(request, pk):
     success = True
     request_type = request.POST['request_type']
@@ -1216,18 +1212,14 @@ def sort_round_configurations(old_sequence_number, new_sequence_number, exp_conf
     logger.debug('sorting round configuration sequence numbers')
     round_configs = RoundConfiguration.objects.filter(
         experiment_configuration__pk=exp_config_pk)
-    # logger.debug(round_configs)
-    # logger.debug(old_sequence_number)
     if old_sequence_number:
         for rc in round_configs:
             current_sequence_number = rc.sequence_number
             if old_sequence_number < current_sequence_number <= new_sequence_number:
                 rc.sequence_number = current_sequence_number - 1
-                # logger.debug('sequence_number decreased by 1')
                 rc.save()
             elif new_sequence_number <= current_sequence_number <= old_sequence_number:
                 rc.sequence_number = current_sequence_number + 1
-                # logger.debug('sequence_number increased by 1')
                 rc.save()
     else:
         flag = True
@@ -1236,14 +1228,13 @@ def sort_round_configurations(old_sequence_number, new_sequence_number, exp_conf
             if new_sequence_number <= current_sequence_number and flag:
                 if new_sequence_number == current_sequence_number:
                     rc.sequence_number = current_sequence_number + 1
-                    # logger.debug('sequence_number increased by 1')
                     rc.save()
                     new_sequence_number += 1
                 else:
                     flag = False
 
 
-@experimenter_required
+@group_required('Experimenters')
 def update_round_configuration(request, pk):
     success = True
 
@@ -1303,7 +1294,8 @@ def update_round_configuration(request, pk):
         }))
 
 
-@experimenter_required
+@group_required('Experimenters')
+@ownership_required(ExperimentConfiguration)
 def update_experiment_configuration(request, pk):
 
     try:
@@ -1328,7 +1320,8 @@ def update_experiment_configuration(request, pk):
     }))
 
 
-@experimenter_required
+@group_required('Experimenters')
+@ownership_required(ExperimentConfiguration)
 def edit_experiment_configuration(request, pk):
     ec = ExperimentConfiguration.objects.get(pk=pk)
     ecf = ExperimentConfigurationForm(instance=ec)
@@ -1374,7 +1367,7 @@ class OstromlabFaqList(ListView):
     template_name = 'ostromlab/faq.html'
 
 
-@experimenter_required
+@group_required('Experimenters')
 def clone_experiment_configuration(request):
     experiment_configuration_id = request.POST.get(
         'experiment_configuration_id')
@@ -1389,6 +1382,7 @@ def clone_experiment_configuration(request):
 
 
 @login_required
+@group_required('Participants')
 def unsubscribe(request):
     user = request.user
     if is_participant(user) and user.participant.can_receive_invitations:

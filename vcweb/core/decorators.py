@@ -4,6 +4,7 @@ import logging
 
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import user_passes_test
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 
 logger = logging.getLogger(__name__)
 
@@ -44,17 +45,14 @@ def is_participant(user):
     return hasattr(user, 'participant') and user.is_active
 
 
-def experimenter_required(view_function=None):
-    return create_decorator(view_function, is_experimenter)
-
-
-def participant_required(view_function=None):
-    return create_decorator(view_function, is_participant)
-
-
-def create_decorator(view_function, is_valid_user):
-    actual_decorator = user_passes_test(is_valid_user)
-    return actual_decorator if view_function is None else actual_decorator(view_function)
+def group_required(*group_names):
+    """Requires user membership in at least one of the groups passed in."""
+    def in_groups(u):
+        if u.is_authenticated() and ((hasattr(u, 'experimenter') and u.experimenter.approved) or (hasattr(u, 'participant') and u.is_active)):
+            if bool(u.groups.filter(name__in=group_names)) | u.is_superuser:
+                return True
+            return False
+    return user_passes_test(in_groups)
 
 
 def create_user_decorator(view_function, is_valid_user, redirect_to='core:dashboard'):
@@ -97,7 +95,6 @@ def retry(exceptiontocheck, tries=4, delay=3, backoff=2, logger=None):
     """
 
     def deco_retry(f):
-
         @wraps(f)
         def f_retry(*args, **kwargs):
             mtries, mdelay = tries, delay
@@ -114,7 +111,36 @@ def retry(exceptiontocheck, tries=4, delay=3, backoff=2, logger=None):
                     mtries -= 1
                     mdelay *= backoff
             return f(*args, **kwargs)
-
         return f_retry  # true decorator
-
     return deco_retry
+
+
+def ownership_required(model, attr_name='pk'):
+    """ Decorator to verify the ownership permission on the Object of provided Model and pk
+
+    :param model: The name of a Model of which the object ownership permission needs to be checked
+    :param attr_name: The name by which pk attribute is binded in the url
+
+    """
+    def decorator(view_function):
+        def wrap(request, *args, **kwargs):
+            pk = kwargs.get(attr_name, None)
+
+            if pk is None:
+                raise RuntimeError('The decorator requires pk argument to be set (got {} instead)'.format(kwargs))
+            is_owner_func = getattr(model, 'is_owner', None)
+
+            if is_owner_func is None:
+                raise RuntimeError('The decorator requires model class {} to provide is_owner function)'.format(model))
+
+            try:
+                obj = model.objects.get(pk=pk) #raises ObjectDoesNotExist
+                if obj.is_owner(request.user):
+                    return view_function(request, *args, **kwargs)
+            except ObjectDoesNotExist:
+                pass
+
+            logger.warning("unauthorized access to %s Model by user %s", model, request.user)
+            raise PermissionDenied
+        return wraps(view_function)(wrap)
+    return decorator

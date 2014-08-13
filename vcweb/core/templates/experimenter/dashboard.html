@@ -14,33 +14,50 @@
             </ul>
             <div class='tab-content'>
                 <div class='tab-pane' id='start'>
-                    <div data-bind='foreach: sortedExperimentMetadataList'>
-                        <h3><span data-bind='text: title'></span>
-                            <i style='cursor: pointer;' class="fa" data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data), css: { "fa-star-o": ! bookmarked(), "fa-star text-gold": bookmarked}'></i>
-                        </h3>
-                        <div data-bind='foreach: configurations'>
-                            <div class='alert alert-warning'>
-                                <h4><span data-bind='text: name'>configuration name</span>
-                                    <span data-bind='if: treatment_id()'>
+                {% if not perms.core.add_experiment %}
+                    <div class='alert alert-warning'>
+                        Demo Experimenter Account doesn't have permission to start a new Experiment.
+                    </div>
+                {% else %}
+                    <h2>Bookmark Your Favorite Experiments</h2>
+                    <div class="callout callout-info" data-bind='foreach: experimentMetadataList'>
+                        <span class="badge badge-info" data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data)'>
+                            <span data-bind='text: title'></span>
+                            <i style='cursor: pointer;' class="fa" data-bind= 'css: { "fa-star-o": ! bookmarked(), "fa-star text-gold": bookmarked}'></i>
+                        </span>
+                    </div>
+                    <div data-bind='foreach: bookmarkedExperimentMetadataList'>
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                    <span data-bind='text: title'></span>
+                                    <i style='cursor: pointer;' class="fa" data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data), css: { "fa-star-o": ! bookmarked(), "fa-star text-gold": bookmarked}'></i>
+                            </div>
+                            <div class="panel-body" data-bind='foreach: configurations'>
+                                <div class='callout' data-bind='css: { "callout-info": $root.isOwnerOfExperimentConfiguration($data), "callout-warning": !$root.isOwnerOfExperimentConfiguration($data) }'>
+                                    <h4><span data-bind='text: name'>configuration name</span>
+                                        <span data-bind='if: treatment_id()'>
                                         (treatment id: <span data-bind='text: treatment_id()'></span>)
-                                    </span>
-                                    <span class='pull-right' data-bind='text: date_created'></span>
-                                </h4>
-                                <span data-bind='text: number_of_rounds'></span> rounds, group size <span data-bind='text: max_group_size'></span>
-                                <br>
-                                <div class='btn-group'>
-                                    <a class='btn btn-default' data-bind='click: $root.createNewExperiment.bind($data)'><i class='fa fa-flask'></i> start new experiment</a>
-                                    <a class='btn btn-default' data-bind='attr: { href: "/configuration/"+ pk()+"/edit" }'><i class='fa fa-pencil-square-o'></i> edit configuration</a>
-                                    <a class='btn btn-default' data-bind='click: $root.cloneExperimentConfiguration.bind($data)'><i class='fa fa-files-o'></i> clone configuration</a>
+                                        </span>
+                                        <span class='pull-right' data-bind='text: date_created'></span>
+                                    </h4>
+                                    <span data-bind='text: number_of_rounds'></span> rounds, group size <span data-bind='text: max_group_size'></span>
+                                    <br>
+                                    <div class='btn-group'>
+                                        <a class='btn btn-default' data-bind='click: $root.createNewExperiment.bind($data), disableClick: !$root.isOwnerOfExperimentConfiguration($data)'><i class='fa fa-flask'></i> start new experiment</a>
+                                        <a class='btn btn-default' data-bind='attr: { href: "/configuration/"+ pk()+"/edit" }, disableClick: !$root.isOwnerOfExperimentConfiguration($data)'><i class='fa fa-pencil-square-o'></i> edit configuration</a>
+                                        <a class='btn btn-default' data-bind='click: $root.cloneExperimentConfiguration.bind($data)'><i class='fa fa-files-o'></i> clone configuration</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                {% endif %}
                 </div>
                 <div class='tab-pane' id='pending'>
-                    <h3>Pending experiments</h3>
                     <div data-bind='if: pendingExperiments().length === 0'>
-                        No pending experiments.
+                        <div class='alert alert-warning'>
+                            No pending experiments.
+                        </div>
                     </div>
                     <div data-bind='template: { name: "experiment-controller-template", foreach: pendingExperiments }'></div>
                 </div>
@@ -91,6 +108,9 @@
 {{ block.super }}
 <script>
     var viewModelObject = $.parseJSON("{{ dashboardViewModelJson|escapejs }}");
+    viewModelObject.currentExperimenterId = "{{ user.experimenter.pk }}";
+    viewModelObject.is_superuser = {{ user.is_superuser | yesno:"true,false" }};
+
     $(function() {
         preserveLastSelectedTab();
         function DashboardViewModel(viewModelObject) {
@@ -106,22 +126,13 @@
                     }
                 });
             };
-            model.sortedExperimentMetadataList = ko.computed(function() {
-                return model.experimentMetadataList.sort(function(a, b) {
-                    if (a.bookmarked() && b.bookmarked()) {
-                        return a.title() > b.title();
-                    }
-                    else if (a.bookmarked()) {
-                        return -1;
-                    }
-                    else if (b.bookmarked()) {
-                        return 1;
-                    }
-                    else {
-                        return a.title() > b.title();
-                    }
+
+            model.bookmarkedExperimentMetadataList = ko.computed(function() {
+                return ko.utils.arrayFilter(model.experimentMetadataList(), function(experiment_metadata) {
+                    return experiment_metadata.bookmarked();
                 });
             });
+
             model.toggleExperimentMetadataBookmark = function(experimentMetadataModel) {
                 console.debug("toggling bookmark for experiment metadata");
                 $.post("/experimenter/bookmark-experiment-metadata", {
@@ -189,6 +200,11 @@
                 $.post("/api/experiment/clone", { experiment_id: experimentModel.pk() })
                  .done(pendingExperimentCallback);
             };
+
+            model.isOwnerOfExperimentConfiguration = function(configurationModel) {
+                return configurationModel.creator.pk() == model.currentExperimenterId() || model.is_superuser();
+            };
+
             // FIXME: unify these, eliminate redundant code
             model.clearParticipants = function(experimentModel, event) {
                 model.updateExperiment(experimentModel, "clear_participants");
@@ -211,9 +227,22 @@
             model.canRegisterParticipants = function(experimentModel) {
                 return ! experimentModel.isArchived() && (experimentModel.participantCount() === 0);
             };
-
             return model;
         }
+
+        ko.bindingHandlers.disableClick = {
+            init: function (element, valueAccessor) {
+                $(element).click(function(evt) {
+                    if(valueAccessor())
+                        evt.preventDefault();
+                });
+            },
+            update: function(element, valueAccessor) {
+                var value = ko.utils.unwrapObservable(valueAccessor());
+                ko.bindingHandlers.css.update(element, function() {return { disabled: value }; });
+            }
+        };
+
         var model = new DashboardViewModel(viewModelObject);
         ko.applyBindings(model);
     });
