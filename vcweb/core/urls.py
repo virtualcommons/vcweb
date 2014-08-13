@@ -13,9 +13,10 @@ from .views import (dashboard, LoginView, LogoutView, monitor, RegisterEmailList
                     download_data, download_participants, export_configuration, api_logger, participant_api_login,
                     api_logout, participant_ready, check_ready_participants, get_dashboard_view_model,
                     update_experiment, update_round_configuration, edit_experiment_configuration,
-                    clone_experiment_configuration, unsubscribe, update_round_param_value,
-                    update_experiment_param_value, update_experiment_configuration, OstromlabFaqList,
-                    cas_asu_registration, cas_asu_registration_submit, account_profile, update_account_profile,
+                    delete_experiment_configuration, clone_experiment_configuration, unsubscribe,
+                    update_round_param_value, update_experiment_param_value, update_experiment_configuration,
+                    OstromlabFaqList, cas_asu_registration, cas_asu_registration_submit, account_profile,
+                    update_account_profile,
                     )
 
 
@@ -60,6 +61,8 @@ urlpatterns = [
         export_configuration, name='export_configuration'),
     url(r'^configuration/(?P<pk>\d+)/edit', edit_experiment_configuration,
         name='edit_experiment_configuration'),
+    url(r'^api/configuration/(?P<pk>\d+)/delete', delete_experiment_configuration,
+        name='delete_experiment_configuration'),
     url(r'^api/configuration/round/(?P<pk>\-?\d+)$',
         update_round_configuration, name='update_round_configuration'),
     url(r'^api/configuration/round/param/(?P<pk>\-?\d+)$',

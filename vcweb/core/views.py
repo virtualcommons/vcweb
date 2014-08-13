@@ -1310,14 +1310,27 @@ def update_experiment_configuration(request, pk):
 
     if form.is_valid():
         form.save()
-        return JsonResponse(dumps({
-            'success': True,
-        }))
+        return JsonResponse(SUCCESS_JSON)
 
     return JsonResponse(dumps({
         'success': False,
         'message': form.errors
     }))
+
+
+@group_required('Experimenters')
+@ownership_required(ExperimentConfiguration)
+def delete_experiment_configuration(request, pk):
+    try:
+        ec = ExperimentConfiguration.objects.get(pk=pk)
+        ec.delete()
+    except Exception as e:
+        return JsonResponse(dumps({
+            'success': False,
+            'message': '%s (%s)' % (e.message, type(e))
+        }))
+
+    return JsonResponse(SUCCESS_JSON)
 
 
 @group_required('Experimenters')

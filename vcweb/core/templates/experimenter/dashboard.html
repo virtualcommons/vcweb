@@ -45,6 +45,7 @@
                                     <div class='btn-group'>
                                         <a class='btn btn-default' data-bind='click: $root.createNewExperiment.bind($data), disableClick: !$root.isOwnerOfExperimentConfiguration($data)'><i class='fa fa-flask'></i> start new experiment</a>
                                         <a class='btn btn-default' data-bind='attr: { href: "/configuration/"+ pk()+"/edit" }, disableClick: !$root.isOwnerOfExperimentConfiguration($data)'><i class='fa fa-pencil-square-o'></i> edit configuration</a>
+                                        <a class='btn btn-default' data-bind='click: $root.deleteExperimentConfiguration.bind($data), disableClick: !$root.isOwnerOfExperimentConfiguration($data)'><i class='fa fa-trash-o'></i> delete configuration</a>
                                         <a class='btn btn-default' data-bind='click: $root.cloneExperimentConfiguration.bind($data)'><i class='fa fa-files-o'></i> clone configuration</a>
                                     </div>
                                 </div>
@@ -171,6 +172,17 @@
                     });
                 }
             }
+            function deleteExperimentConfigurationCallback(experiment_configuration) {
+                return function(data) {
+                    if(data.success) {
+                        ko.utils.arrayForEach(model.experimentMetadataList(), function(item) {
+                            if(item.pk() == experiment_configuration.experiment_metadata_pk()) {
+                                item.configurations.remove(experiment_configuration); 
+                            }
+                        });
+                    }
+                }
+            }
             function modifyExperimentCallback(experimentModel) {
                 return function(data) {
                     console.debug(data);
@@ -220,6 +232,10 @@
             model.cloneExperimentConfiguration = function(configurationModel, Event) {
                 $.post("/api/configuration/clone", { experiment_configuration_id: configurationModel.pk() })
                  .done(clonedExperimentConfigurationCallback);
+            };
+            model.deleteExperimentConfiguration = function(configurationModel, Event) {
+                $.get("/api/configuration/" + configurationModel.pk() + "/delete")
+                 .done(deleteExperimentConfigurationCallback(configurationModel));
             };
             model.canClearParticipants = function(experimentModel) {
                 return experimentModel.status() === 'INACTIVE' && experimentModel.participantCount() > 0;
