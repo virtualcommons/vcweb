@@ -3,7 +3,7 @@ from .common import BaseVcwebTest
 
 class LoginTest(BaseVcwebTest):
 
-    def test_anonymous_required(self):
+    def test_authentication_redirect(self):
         experiment = self.experiment
         c = self.client
         response = c.get('/accounts/login/')
@@ -15,13 +15,15 @@ class LoginTest(BaseVcwebTest):
 
     def test_authorization(self):
         experiment = self.experiment
+        self.assertFalse(self.client.login(username=experiment.experimenter.email,
+                                           password='jibber jabber'))
         self.assertTrue(self.client.login(username=experiment.experimenter.email,
                                           password=BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD))
 
 
-class ParticipantViewTest(BaseVcwebTest):
+class ParticipantDashboardTest(BaseVcwebTest):
 
-    def test_account_profile(self):
+    def test_demo_participants_dashboard(self):
         e = self.experiment
         e.activate()
         c = self.client
@@ -29,10 +31,11 @@ class ParticipantViewTest(BaseVcwebTest):
             self.assertFalse(p.is_profile_complete)
             self.assertTrue(c.login(username=p.email, password='test'))
             response = c.get('/dashboard/')
-            self.assertEqual(302, response.status_code)
-            self.assertTrue('/accounts/profile/' in response.url)
+# test demo participants don't need to get redirected to the account profile to fill out profile info when they visit
+# the dashboard.
+            self.assertEqual(200, response.status_code)
 
-    def test_dashboard(self):
+    def test_completed_profile_dashboard(self):
         e = self.experiment
         e.activate()
         c = self.client

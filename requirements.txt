@@ -33,4 +33,4 @@ git+http://git@github.com/kstateome/django-cas.git@0.9.1#egg=cas
 #django-debug-toolbar
 # graph database
 neo4j-embedded
-
+enum34

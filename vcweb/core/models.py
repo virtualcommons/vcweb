@@ -989,6 +989,7 @@ class Experiment(models.Model):
         msg.attach_alternative(html_content, "text/html")
         return msg
 
+# FIXME: rename to setup_demo_participants
     def setup_test_participants(self, count=20, institution=None, email_suffix='mailinator.com', username_suffix='asu',
                                 password=None):
         if password is None:

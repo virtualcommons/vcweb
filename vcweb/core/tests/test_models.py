@@ -8,8 +8,9 @@ from django.core import serializers
 from .common import BaseVcwebTest
 from .. import signals
 from ..models import (ParticipantRoundDataValue, Participant, ParticipantExperimentRelationship,
-                      ParticipantGroupRelationship, ExperimentMetadata, Parameter, RoundParameterValue, Institution,
-                      ExperimentSession, Invitation, ParticipantSignup, DefaultValue, Experimenter)
+                      BookmarkedExperimentMetadata, ParticipantGroupRelationship, ExperimentMetadata, Parameter,
+                      RoundParameterValue, Institution, ExperimentSession, Invitation, ParticipantSignup, DefaultValue,
+                      Experimenter)
 from ..subjectpool.views import get_potential_participants
 
 logger = logging.getLogger(__name__)
@@ -575,8 +576,7 @@ class BookmarkedExperimentMetadataTest(BaseVcwebTest):
         bookmarks = ExperimentMetadata.objects.bookmarked(e)
         self.assertEqual(1, bookmarks.count())
         self.assertFalse(bookmarks[0].bookmarked)
-        bem = BookmarkedExperimentMetadata.objects.create(experiment_metadata=e.experiment_metadata,
-                                                          experimenter=experimenter)
+        BookmarkedExperimentMetadata.objects.create(experiment_metadata=bookmarks[0], experimenter=e)
         bookmarks = ExperimentMetadata.objects.bookmarked(e)
         self.assertEqual(1, bookmarks.count())
         self.assertTrue(bookmarks[0].bookmarked)
