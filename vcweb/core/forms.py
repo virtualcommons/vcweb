@@ -423,21 +423,17 @@ class BookmarkExperimentMetadataForm(forms.Form):
     def clean_experiment_metadata_id(self):
         experiment_metadata_id = self.cleaned_data['experiment_metadata_id']
         try:
-            self.cleaned_data['experiment_metadata'] = ExperimentMetadata.objects.get(
-                pk=experiment_metadata_id)
+            self.cleaned_data['experiment_metadata'] = ExperimentMetadata.objects.get(pk=experiment_metadata_id)
         except ExperimentMetadata.DoesNotExist:
-            raise ValidationError(
-                "Invalid experiment metadata id: %s" % experiment_metadata_id)
+            raise ValidationError("Invalid experiment metadata id: %s" % experiment_metadata_id)
         return experiment_metadata_id
 
     def clean_experimenter_id(self):
         experimenter_id = self.cleaned_data['experimenter_id']
         try:
-            self.cleaned_data['experimenter'] = Experimenter.objects.get(
-                pk=experimenter_id)
+            self.cleaned_data['experimenter'] = Experimenter.objects.get(pk=experimenter_id)
         except Experimenter.DoesNotExist:
-            raise ValidationError(
-                "Invalid experimenter id %s" % experimenter_id)
+            raise ValidationError("Invalid experimenter id %s" % experimenter_id)
         return experimenter_id
 
 

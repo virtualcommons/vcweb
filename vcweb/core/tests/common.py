@@ -1,7 +1,8 @@
 from django.test import TestCase
 from django.test.client import RequestFactory, Client
 
-from ..models import (Experiment, Experimenter, ExperimentConfiguration, RoundConfiguration, Parameter, Group, User)
+from ..models import (Experiment, Experimenter, ExperimentConfiguration, RoundConfiguration, Parameter, Group, User,
+                      PERMISSION_GROUPS, AuthGroup)
 
 import logging
 
@@ -79,6 +80,8 @@ class BaseVcwebTest(TestCase):
     def setUp(self, disable_logging=True, disabled_loglevel=logging.WARNING, **kwargs):
         self.client = Client()
         self.factory = RequestFactory()
+        for name in PERMISSION_GROUPS:
+            AuthGroup.objects.get_or_create(name=name)
         self.load_experiment(**kwargs)
         if disable_logging:
             logging.disable(disabled_loglevel)

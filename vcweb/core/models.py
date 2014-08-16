@@ -42,13 +42,13 @@ Contains all data models used in the core as well as a number of helper function
 FIXME: growing monolithically unwieldy, break up
 """
 
+PERMISSION_GROUPS = ('Participants', 'Experimenters', 'Demo Experimenters', 'Demo Participants', )
+
 
 class DefaultValue(object):
-
     """
-    Simple wrapper that returns the wrapped value on any getattr reference
+    Dumb wrapper that returns the wrapped value on any getattr reference
     """
-
     def __init__(self, value):
         self.value = value
 
@@ -2830,13 +2830,15 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
 
 
 class ParticipantSignup(models.Model):
-    ATTENDANCE = Choices((0, 'participated', _('participated')), (1, 'discharged', _('turned away')),
-                         (2, 'absent', _('absent')), (3, 'registered', _('signed up')))
+    ATTENDANCE = Choices(
+            (0, 'participated', _('participated')),
+            (1, 'discharged', _('turned away')),
+            (2, 'absent', _('absent')),
+            (3, 'registered', _('signed up')))
     """ Provides participated, discharged, absent, and initial attendance enum values """
     invitation = models.ForeignKey(Invitation, related_name='signup_set')
     date_created = models.DateTimeField(default=datetime.now)
-    attendance = models.PositiveIntegerField(
-        max_length=1, choices=ATTENDANCE, default=ATTENDANCE.registered)
+    attendance = models.PositiveIntegerField(max_length=1, choices=ATTENDANCE, default=ATTENDANCE.registered)
 
     objects = PassThroughManager.for_queryset_class(
         ParticipantSignupQuerySet)()
@@ -2882,8 +2884,7 @@ def compare_dates(date1, date2):
 
 
 class SpoolParticipantStatistics(models.Model):
-    participant = models.ForeignKey(
-        Participant, related_name='spool_statistics_set')
+    participant = models.ForeignKey(Participant, related_name='spool_statistics_set')
     absences = models.PositiveIntegerField(default=0)
     discharges = models.PositiveIntegerField(default=0)
     participations = models.PositiveIntegerField(default=0)

@@ -572,12 +572,15 @@ class BookmarkedExperimentMetadataTest(BaseVcwebTest):
 
     def test_bookmarks(self):
         e = Experimenter.objects.get(pk=1)
-        bookmarked = ExperimentMetadata.objects.bookmarked(e)
-        logger.error("bookmarked %s", bookmarked)
-        self.assertEqual(1, bookmarked.count())
-        em = bookmarked[0]
-        self.assertFalse(em.bookmarked)
+        bookmarks = ExperimentMetadata.objects.bookmarked(e)
+        self.assertEqual(1, bookmarks.count())
+        self.assertFalse(bookmarks[0].bookmarked)
+        bem = BookmarkedExperimentMetadata.objects.create(experiment_metadata=e.experiment_metadata,
+                                                          experimenter=experimenter)
+        bookmarks = ExperimentMetadata.objects.bookmarked(e)
+        self.assertEqual(1, bookmarks.count())
+        self.assertTrue(bookmarks[0].bookmarked)
         new_experimenter = self.create_experimenter()
-        bookmarked = ExperimentMetadata.objects.bookmarked(new_experimenter)
-        self.assertEqual(1, bookmarked.count())
-        self.assertFalse(bookmarked[0].bookmarked)
+        bookmarks = ExperimentMetadata.objects.bookmarked(new_experimenter)
+        self.assertEqual(1, bookmarks.count())
+        self.assertFalse(bookmarks[0].bookmarked)
