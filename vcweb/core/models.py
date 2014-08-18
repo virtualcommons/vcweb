@@ -1015,7 +1015,7 @@ class Experiment(models.Model):
                 "This experiment %s already has %d participants - aborting", self, number_of_participants)
             return
         users = []
-        demo_participants_group = AuthGroup.objects.get(name=Permission.demo_participant.value)
+        demo_participants_group = AuthGroup.objects.get(name=PermissionGroup.demo_participant.value)
 
         for i in xrange(1, count + 1):
             email_address = u's%d%s@%s' % (i, username_suffix, email_suffix)
