@@ -13,7 +13,7 @@ from vcweb.core.forms import (
     ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship,
-                               ParticipantRoundDataValue, Like)
+                               ParticipantRoundDataValue, Like, PermissionGroup)
 from vcweb.core.views import (dumps, get_active_experiment, set_authentication_token, mimetypes)
 from .forms import ActivityForm
 from .models import (Activity, has_leaderboard, get_lighterprints_experiment_metadata, is_linear_public_good_game,
@@ -24,7 +24,7 @@ from .services import (ActivityStatusList, GroupScores, do_activity, get_time_re
 logger = logging.getLogger(__name__)
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def perform_activity(request):
     form = ActivityForm(request.POST or None)
     if form.is_valid():
@@ -215,7 +215,7 @@ class HighSchoolViewModel(object):
         return 'lighterprints/highschool.html'
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 @ownership_required(Experiment)
 def download_payment_data(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
@@ -285,7 +285,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     })
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def get_view_model(request, participant_group_id=None):
     if participant_group_id is None:
         # check in the request query parameters as well
@@ -322,7 +322,7 @@ def mobile_login(request):
     return render(request, 'lighterprints/mobile/login.html')
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def mobile_participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_active_experiment(
@@ -338,7 +338,7 @@ def mobile_participate(request, experiment_id=None):
     })
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id,
@@ -375,7 +375,7 @@ def participate(request, experiment_id=None):
         return render(request, 'lighterprints/inactive.html', {'experiment': experiment, 'upcoming': upcoming})
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def checkin(request):
     form = GeoCheckinForm(request.POST or None)
     if form.is_valid():

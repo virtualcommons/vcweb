@@ -5,7 +5,7 @@ from django.shortcuts import render, get_object_or_404
 from vcweb.core import dumps
 from vcweb.core.decorators import group_required
 from vcweb.core.http import JsonResponse
-from vcweb.core.models import Experiment
+from vcweb.core.models import Experiment, PermissionGroup
 from vcweb.experiment.irrigation.services import get_experiment_metadata
 
 
@@ -37,7 +37,7 @@ class ViewModel(object):
         )
         return dumps(self.experiment_model)
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment.objects.select_related(
@@ -49,7 +49,7 @@ def participate(request, experiment_id=None):
                   experiment.template_context(pgr, experimentModelJson=ViewModel(pgr, experiment=experiment).to_json()))
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def get_view_model(request, experiment_id=None):
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
                                    pk=experiment_id)
@@ -58,6 +58,6 @@ def get_view_model(request, experiment_id=None):
     return JsonResponse(ViewModel(pgr, experiment=experiment).to_json())
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def control_gate(request, experiment_id=None):
     pass

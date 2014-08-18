@@ -45,10 +45,12 @@ def is_participant(user):
     return hasattr(user, 'participant') and user.is_active
 
 
-def group_required(*group_names):
+def group_required(*permissions):
     """Requires user membership in at least one of the groups passed in."""
     def in_groups(u):
         if u.is_authenticated() and ((hasattr(u, 'experimenter') and u.experimenter.approved) or (hasattr(u, 'participant') and u.is_active)):
+            group_names = [permission.value for permission in permissions]
+            logger.debug(group_names)
             if bool(u.groups.filter(name__in=group_names)) | u.is_superuser:
                 return True
             return False

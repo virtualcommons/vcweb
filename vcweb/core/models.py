@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, date, time
 from email.utils import parseaddr
 from string import Template
 from urllib import urlencode
+from enum import Enum
 import base64
 import hashlib
 import itertools
@@ -36,6 +37,18 @@ from .decorators import log_signal_errors
 
 
 logger = logging.getLogger(__name__)
+
+
+"""
+Permission Enum for Django Auth Permission Groups
+"""
+
+class PermissionGroup(Enum):
+    participant = 'Participants'
+    experimenter = 'Experimenters'
+    demo_participant = 'Demo Participants'
+    demo_experimenter = 'Demo Experimenters'
+
 
 """
 Contains all data models used in the core as well as a number of helper functions.
@@ -1002,7 +1015,7 @@ class Experiment(models.Model):
                 "This experiment %s already has %d participants - aborting", self, number_of_participants)
             return
         users = []
-        demo_participants_group = AuthGroup.objects.get(name="Demo Participants")
+        demo_participants_group = AuthGroup.objects.get(name=Permission.demo_participant.value)
 
         for i in xrange(1, count + 1):
             email_address = u's%d%s@%s' % (i, username_suffix, email_suffix)

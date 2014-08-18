@@ -31,7 +31,7 @@ from .forms import (RegistrationForm, LoginForm, ParticipantAccountForm, Experim
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
                      ExperimentConfiguration, ExperimenterRequest, Experiment, Institution,
                      BookmarkedExperimentMetadata, OstromlabFaqEntry, Experimenter, ExperimentParameterValue,
-                     RoundConfiguration, RoundParameterValue, ParticipantSignup, get_model_fields, )
+                     RoundConfiguration, RoundParameterValue, ParticipantSignup, get_model_fields, PermissionGroup)
 
 logger = logging.getLogger(__name__)
 mimetypes.init()
@@ -50,7 +50,7 @@ class AnonymousMixin(object):
 
 class Participate(TemplateView):
 
-    @method_decorator(group_required('Participants'))
+    @method_decorator(group_required(PermissionGroup.participant))
     def dispatch(self, *args, **kwargs):
         participant = self.request.user.participant
         experiment = get_active_experiment(participant)
@@ -166,7 +166,7 @@ def dashboard(request):
     """
     user = request.user
     if is_participant(user):
-        if not user.participant.is_profile_complete and not bool(user.groups.filter(name='Demo Participants')):
+        if not user.participant.is_profile_complete and not bool(user.groups.filter(name=PermissionGroup.demo_participant)):
             return redirect('core:profile')
         elif user.participant.has_pending_invitations:
             return redirect('subjectpool:experiment_session_signup')
@@ -177,7 +177,7 @@ def dashboard(request):
 
 
 @login_required
-@group_required('Participants')
+@group_required(PermissionGroup.participant)
 def cas_asu_registration(request):
     user = request.user
     if is_participant(user) and not user.participant.is_profile_complete:
@@ -190,7 +190,7 @@ def cas_asu_registration(request):
         return redirect('core:dashboard')
 
 
-@group_required('Participants')
+@group_required(PermissionGroup.participant)
 def cas_asu_registration_submit(request):
     form = AsuRegistrationForm(request.POST or None)
     if form.is_valid():
@@ -467,7 +467,7 @@ def account_profile(request):
 
 class ParticipantMixin(object):
 
-    @method_decorator(group_required('Participants'))
+    @method_decorator(group_required(PermissionGroup.participant))
     def dispatch(self, *args, **kwargs):
         return super(ParticipantMixin, self).dispatch(*args, **kwargs)
 
@@ -481,7 +481,7 @@ these.
 
 class ExperimenterMixin(object):
 
-    @method_decorator(group_required('Experimenters'))
+    @method_decorator(group_required(PermissionGroup.experimenter))
     def dispatch(self, *args, **kwargs):
         return super(ExperimenterMixin, self).dispatch(*args, **kwargs)
 
@@ -536,7 +536,7 @@ class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, Templa
         return self.render_to_response(context)
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 def toggle_bookmark_experiment_metadata(request):
     form = BookmarkExperimentMetadataForm(request.POST or None)
     if form.is_valid():
@@ -556,7 +556,7 @@ def toggle_bookmark_experiment_metadata(request):
     return JsonResponse(FAILURE_JSON)
 
 
-@group_required('Experimenters', 'Demo Experimenters')
+@group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
 @ownership_required(Experiment)
 def monitor(request, pk=None):
     experiment = get_object_or_404(Experiment.objects.select_related(
@@ -682,7 +682,7 @@ class CsvDataExporter(DataExportMixin):
                                      chat_message.date_created, round_configuration])
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 def export_configuration(request, pk=None, file_extension='.xml'):
     experiment = get_object_or_404(Experiment, pk=pk)
     if experiment.experimenter != request.user.experimenter:
@@ -698,7 +698,7 @@ def export_configuration(request, pk=None, file_extension='.xml'):
     return response
 
 
-@group_required('Experimenters', 'Demo Experimenters')
+@group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
 @ownership_required(Experiment)
 def download_participants(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
@@ -715,7 +715,7 @@ def download_participants(request, pk=None):
 
 
 # FIXME: add data converter objects to write to csv, excel, etc.
-@group_required('Experimenters', 'Demo Experimenters')
+@group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
 @ownership_required(Experiment)
 def download_data(request, pk=None, file_type='csv'):
     experiment = get_object_or_404(Experiment, pk=pk)
@@ -786,7 +786,7 @@ def download_data(request, pk=None, file_type='csv'):
     return response
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 @ownership_required(Experiment)
 def download_data_excel(request, pk=None):
     import xlwt
@@ -829,7 +829,7 @@ def download_data_excel(request, pk=None):
         logger.warning(e)
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 @ownership_required(Experiment)
 def deactivate(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
@@ -838,7 +838,7 @@ def deactivate(request, pk=None):
     return redirect('core:monitor_experiment', pk=pk)
 
 
-@group_required('Experimenters', 'Demo Experimenters')
+@group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
 def update_experiment(request):
     form = UpdateExperimentForm(request.POST or None)
     user = request.user
@@ -888,7 +888,7 @@ def api_logger(request, participant_group_id=None):
     return JsonResponse(dumps({'success': success}))
 
 
-@group_required('Participants')
+@group_required(PermissionGroup.participant)
 def completed_survey(request):
     pgr_id = request.GET.get('pid', None)
     # FIXME: prevent manual pinging (check referrer + threaded data sent to
@@ -913,7 +913,7 @@ def completed_survey(request):
     return JsonResponse(dumps({'success': success}))
 
 
-@group_required('Participants')
+@group_required(PermissionGroup.participant)
 def check_survey_completed(request, pk=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=pk)
@@ -922,7 +922,7 @@ def check_survey_completed(request, pk=None):
     }))
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def participant_ready(request):
     form = ParticipantGroupIdForm(request.POST or None)
     if form.is_valid():
@@ -1115,7 +1115,7 @@ def reset_password(email, from_email='vcweb@asu.edu', template='registration/pas
     return None
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 def update_experiment_param_value(request, pk):
     success = True
     request_type = request.POST['request_type']
@@ -1161,7 +1161,7 @@ def update_experiment_param_value(request, pk):
         }))
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 def update_round_param_value(request, pk):
     success = True
     request_type = request.POST['request_type']
@@ -1238,7 +1238,7 @@ def sort_round_configurations(old_sequence_number, new_sequence_number, exp_conf
                     flag = False
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 def update_round_configuration(request, pk):
     success = True
 
@@ -1298,7 +1298,7 @@ def update_round_configuration(request, pk):
         }))
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentConfiguration)
 def update_experiment_configuration(request, pk):
 
@@ -1322,7 +1322,7 @@ def update_experiment_configuration(request, pk):
     }))
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentConfiguration)
 def delete_experiment_configuration(request, pk):
     try:
@@ -1337,7 +1337,7 @@ def delete_experiment_configuration(request, pk):
     return JsonResponse(SUCCESS_JSON)
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentConfiguration)
 def edit_experiment_configuration(request, pk):
     ec = ExperimentConfiguration.objects.get(pk=pk)
@@ -1384,7 +1384,7 @@ class OstromlabFaqList(ListView):
     template_name = 'ostromlab/faq.html'
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 def clone_experiment_configuration(request):
     experiment_configuration_id = request.POST.get(
         'experiment_configuration_id')
@@ -1399,7 +1399,7 @@ def clone_experiment_configuration(request):
 
 
 @login_required
-@group_required('Participants')
+@group_required(PermissionGroup.participant)
 def unsubscribe(request):
     user = request.user
     if is_participant(user) and user.participant.can_receive_invitations:

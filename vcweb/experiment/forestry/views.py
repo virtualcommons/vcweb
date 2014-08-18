@@ -9,7 +9,7 @@ from vcweb.core.decorators import group_required
 from vcweb.core.http import JsonResponse
 from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.models import (
-    Experiment, ChatMessage, ParticipantGroupRelationship, RoundConfiguration)
+    Experiment, ChatMessage, ParticipantGroupRelationship, RoundConfiguration, PermissionGroup)
 from vcweb.experiment.forestry.models import (get_experiment_metadata, get_max_allowed_harvest_decision,
                                               get_resource_level, get_initial_resource_level, get_harvest_decision_dv,
                                               get_regrowth_dv, set_harvest_decision, get_average_harvest, GroupData,
@@ -19,7 +19,7 @@ from vcweb.experiment.forestry.models import (get_experiment_metadata, get_max_a
 logger = logging.getLogger(__name__)
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def participate(request, experiment_id=None):
     participant = request.user.participant
 
@@ -41,7 +41,7 @@ def participate(request, experiment_id=None):
     })
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def submit_harvest_decision(request, experiment_id=None):
     form = SingleIntegerDecisionForm(request.POST or None)
     experiment = get_object_or_404(Experiment, pk=experiment_id)
@@ -72,7 +72,7 @@ def submit_harvest_decision(request, experiment_id=None):
     return JsonResponse(dumps({'success': False}))
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def get_view_model(request, experiment_id=None):
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
                                    pk=experiment_id)

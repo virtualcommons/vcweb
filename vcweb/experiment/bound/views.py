@@ -11,8 +11,7 @@ from vcweb.core import dumps
 from vcweb.core.decorators import group_required
 from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.http import JsonResponse
-from vcweb.core.models import (
-    Experiment, ParticipantGroupRelationship, ChatMessage)
+from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage, PermissionGroup)
 from vcweb.experiment.bound.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
                                            get_cost_of_living, get_resource_level, get_initial_resource_level,
                                            get_final_session_storage_queryset,
@@ -25,7 +24,7 @@ from vcweb.experiment.bound.models import (get_experiment_metadata, get_regrowth
 logger = logging.getLogger(__name__)
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def participate(request, experiment_id=None):
     participant = request.user.participant
     logger.debug(
@@ -43,7 +42,7 @@ def participate(request, experiment_id=None):
     })
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def submit_harvest_decision(request, experiment_id=None):
     form = SingleIntegerDecisionForm(request.POST or None)
     experiment = get_object_or_404(Experiment, pk=experiment_id)
@@ -74,7 +73,7 @@ def submit_harvest_decision(request, experiment_id=None):
     return JsonResponse(dumps({'success': False}))
 
 
-@group_required('Participants', 'Demo Participants')
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def get_view_model(request, experiment_id=None):
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
                                    pk=experiment_id)

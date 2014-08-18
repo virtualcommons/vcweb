@@ -28,13 +28,13 @@ from vcweb.core.models import (
 from vcweb.core import dumps
 from vcweb.core.http import JsonResponse
 from vcweb.core.decorators import group_required, ownership_required
-from vcweb.core.models import (Participant, Institution, ParticipantSignup, )
+from vcweb.core.models import (Participant, Institution, ParticipantSignup, PermissionGroup)
 
 
 logger = logging.getLogger(__name__)
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 def experimenter_index(request):
     """
     Returns by rendering the Subject Recruitment page with all the active experiment sessions and past experiment
@@ -60,7 +60,7 @@ def experimenter_index(request):
                   {"view_model_json": dumps(session_data), "form": form})
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 @transaction.atomic
 def update_session(request):
     """
@@ -113,7 +113,7 @@ def update_session(request):
     }))
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 def get_session_events(request):
     """
     Returns the list of Experiment sessions that fall within the given range,
@@ -222,7 +222,7 @@ def get_invitation_email_content(custom_invitation_text, experiment_session_ids)
     return plaintext_content, html_content
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 def send_invitations(request):
     """
     Sends out invitation emails to random participants which match the required invitation criteria,
@@ -313,7 +313,7 @@ def send_invitations(request):
             'message': message
         }))
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 def invite_email_preview(request):
     """
     Generates email Preview for the provided invitation details
@@ -385,7 +385,7 @@ def get_excluded_participants(days_threshold, experiment_metadata_pk):
     return list(set(itertools.chain(invited_in_last_threshold_days, signup_participants, mailinator_participants)))
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentSession)
 def manage_participant_attendance(request, pk=None):
     """
@@ -426,7 +426,7 @@ def manage_participant_attendance(request, pk=None):
                   {'session_detail': session_detail, 'formset': formset})
 
 
-@group_required('Participants')
+@group_required(PermissionGroup.participant)
 def cancel_experiment_session_signup(request):
     form = CancelSignupForm(request.POST or None)
     if form.is_valid():
@@ -448,7 +448,7 @@ def cancel_experiment_session_signup(request):
     return redirect('core:dashboard')
 
 
-@group_required('Participants')
+@group_required(PermissionGroup.participant)
 def submit_experiment_session_signup(request):
     """
     Enrolls the currently logged in user in the selected experiment session.
@@ -497,7 +497,7 @@ def submit_experiment_session_signup(request):
         return redirect('core:experiment_session_signup')
 
 
-@group_required('Experimenters')
+@group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentSession)
 def download_experiment_session(request, pk=None):
     user = request.user
@@ -524,7 +524,7 @@ def download_experiment_session(request, pk=None):
     return response
 
 
-@group_required('Participants')
+@group_required(PermissionGroup.participant)
 def experiment_session_signup(request):
     """
     Returns and renders all the experiment session invitation that currently logged in participant has received
