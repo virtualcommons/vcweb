@@ -166,7 +166,7 @@ def dashboard(request):
     """
     user = request.user
     if is_participant(user):
-        if not user.participant.is_profile_complete and not bool(user.groups.filter(name=PermissionGroup.demo_participant)):
+        if not user.participant.is_profile_complete and not bool(user.groups.filter(name=PermissionGroup.demo_participant.value)):
             return redirect('core:profile')
         elif user.participant.has_pending_invitations:
             return redirect('subjectpool:experiment_session_signup')
