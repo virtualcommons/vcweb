@@ -16,10 +16,10 @@
                 <div class='tab-pane' id='start'>
                 {% if not perms.core.add_experiment %}
                     <div class='alert alert-warning'>
-                        Demo Experimenter Account doesn't have permission to start a new Experiment.
+                        Demo experimenters cannot start new experiments, try <a href='#running' data-bind='click: activateRunningExperimentsTab'> running an experiment instead</a>.
                     </div>
                 {% else %}
-                    <h2>Bookmark Your Favorite Experiments</h2>
+                    <h2>Bookmarked Experiments</h2>
                     <div class="callout callout-info" data-bind='foreach: experimentMetadataList'>
                         <span class="badge badge-info" data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data)'>
                             <span data-bind='text: title'></span>
@@ -29,8 +29,8 @@
                     <div data-bind='foreach: bookmarkedExperimentMetadataList'>
                         <div class="panel panel-info">
                             <div class="panel-heading">
-                                    <span data-bind='text: title'></span>
-                                    <i style='cursor: pointer;' class="fa" data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data), css: { "fa-star-o": ! bookmarked(), "fa-star text-gold": bookmarked}'></i>
+                                <span data-bind='text: title'></span>
+                                <i style='cursor: pointer;' class="fa" data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data), css: { "fa-star-o": ! bookmarked(), "fa-star text-gold": bookmarked}'></i>
                             </div>
                             <div class="panel-body" data-bind='foreach: configurations'>
                                 <div class='callout' data-bind='css: { "callout-info": $root.isOwnerOfExperimentConfiguration($data), "callout-warning": !$root.isOwnerOfExperimentConfiguration($data) }'>
@@ -118,6 +118,7 @@
             var self = this;
             var model = ko.mapping.fromJS(viewModelObject);
             model.activateStartExperimentTab = activateTabFunctor('#start');
+            model.activateRunningExperimentsTab = activateTabFunctor('#running');
             model.activatePendingExperimentsTab = activateTabFunctor('#pending');
             model.refreshViewModel = function() {
                 $.get('api/dashboard', function(response) {

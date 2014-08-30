@@ -73,12 +73,11 @@ class ExperimenterDashboardViewModel(DashboardViewModel):
         self.experimenter = user.experimenter
         _configuration_cache = {}
         self.experiment_metadata_dict = defaultdict(list)
-        for ec in ExperimentConfiguration.objects.select_related('experiment_metadata', 'creator'):
+        for ec in ExperimentConfiguration.objects.select_related('experiment_metadata', 'creator').filter(experiment_metadata__active=True):
             self.experiment_metadata_dict[ec.experiment_metadata].append(ec)
             _configuration_cache[ec.pk] = ec
         self.experiment_metadata_list = []
-        bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=self.experimenter).values_list(
-            'experiment_metadata', flat=True)
+        bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=self.experimenter).values_list('experiment_metadata', flat=True)
         for em, ecs in self.experiment_metadata_dict.iteritems():
             d = em.to_dict(include_configurations=True, configurations=ecs)
             d['bookmarked'] = em.pk in bem_pks

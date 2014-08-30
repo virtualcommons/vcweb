@@ -261,21 +261,18 @@ class ExperimentMetadata(models.Model):
     define and add a single ExperimentMetadata record for the experiment type that it represents.
     """
     title = models.CharField(max_length=255)
-    namespace = models.CharField(
-        max_length=255, unique=True, null=True, blank=True, validators=[RegexValidator(r'^[\w_-]*$')])
-    short_name = models.SlugField(
-        max_length=32, unique=True, null=True, blank=True)
+    namespace = models.CharField(max_length=255, unique=True, null=True, blank=True, validators=[RegexValidator(r'^[\w_-]*$')])
+    short_name = models.SlugField(max_length=32, unique=True, null=True, blank=True)
     description = models.TextField(blank=True)
     date_created = models.DateTimeField(default=datetime.now)
     last_modified = AutoDateTimeField(default=datetime.now)
     about_url = models.URLField(null=True, blank=True)
     logo_url = models.URLField(null=True, blank=True)
-    default_configuration = models.ForeignKey(
-        'ExperimentConfiguration', null=True, blank=True)
+    default_configuration = models.ForeignKey('ExperimentConfiguration', null=True, blank=True)
+    active = models.BooleanField(default=True)
     parameters = models.ManyToManyField('Parameter')
 
-    objects = ExperimentMetadataManager.for_queryset_class(
-        ExperimentMetadataQuerySet)()
+    objects = ExperimentMetadataManager.for_queryset_class(ExperimentMetadataQuerySet)()
 
     @property
     def hosted(self):
@@ -2453,11 +2450,13 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
         ordering = ['group', 'participant_number']
 
 
+""" FIXME: disabled for the interim, lighter footprints is using GroupClusters instead
 class ParticipantGroupEdge(models.Model):
     DIRECTION = Choices('forward', 'bidirectional')
     first = models.ForeignKey(ParticipantGroupRelationship, related_name='first_edge_set')
     second = models.ForeignKey(ParticipantGroupRelationship, related_name='second_edge_set')
     direction = models.CharField(choices=DIRECTION, default=DIRECTION.bidirectional, max_length=16)
+"""
 
 
 class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
