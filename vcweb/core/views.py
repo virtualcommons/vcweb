@@ -841,9 +841,8 @@ def deactivate(request, pk=None):
 def update_experiment(request):
     form = UpdateExperimentForm(request.POST or None)
     user = request.user
-    if form.is_valid() and has_model_permissions(user, Experiment, ['delete'], 'core'):
-        experiment = get_object_or_404(
-            Experiment, pk=form.cleaned_data['experiment_id'])
+    if form.is_valid():
+        experiment = get_object_or_404(Experiment, pk=form.cleaned_data['experiment_id'])
         action = form.cleaned_data['action']
         experimenter = request.user.experimenter
         logger.debug(

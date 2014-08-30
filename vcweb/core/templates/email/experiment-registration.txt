@@ -1,6 +1,6 @@
 Greetings,
 
-You've been registered with a VCWEB experiment. You can access the experiment by logging in at {{SITE_URL}} using the following credentials:
+You've been registered with a vcweb experiment. You can access the experiment by logging in at {{SITE_URL}} using the following credentials:
 
     Email:    {{participant.email}}
     Password: {{password}}

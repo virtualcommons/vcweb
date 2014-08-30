@@ -914,6 +914,7 @@ class Experiment(models.Model):
             if emails is None:
                 logger.warning("No users or emails supplied, aborting.")
                 return
+            participants_group = AuthGroup.objects.get(name=PermissionGroup.participant.value)
             for email_line in emails:
                 if not email_line:
                     logger.debug(
@@ -939,6 +940,7 @@ class Experiment(models.Model):
                 updated = set_full_name(u, full_name)
                 if updated:
                     u.save()
+                u.groups.add(participants_group)
                 users.append(u)
         for user in users:
             # FIXME: unsafe for concurrent usage, but only one experimenter
@@ -1021,8 +1023,8 @@ class Experiment(models.Model):
                     username=email_address, email=email_address, password=password)
                 user.first_name = u'Student'
                 user.last_name = unicode(i)
-                user.groups.add(demo_participants_group)
                 user.save()
+            user.groups.add(demo_participants_group)
             users.append(user)
         return self.register_participants(users=users, institution=institution, password=password)
 
@@ -1326,6 +1328,7 @@ class Experiment(models.Model):
         self.log(
             "Deactivating experiment, deleting all data and flagging as inactive.")
         self.status = Experiment.Status.INACTIVE
+        self.groups.delete()
         self.round_data_set.all().delete()
         self.current_round_sequence_number = 1
         self.current_repeated_round_sequence_number = 0
@@ -1334,10 +1337,8 @@ class Experiment(models.Model):
     @transaction.atomic
     def clear_participants(self):
         logger.debug("clearing all participants for experiment %s", self)
-        ParticipantExperimentRelationship.objects.filter(
-            experiment=self).delete()
-        ParticipantGroupRelationship.objects.filter(
-            group__experiment=self).delete()
+        ParticipantExperimentRelationship.objects.filter(experiment=self).delete()
+        ParticipantGroupRelationship.objects.filter(group__experiment=self).delete()
         self.deactivate()
 
     def check_elapsed_time(self):
