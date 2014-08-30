@@ -55,8 +55,6 @@ Contains all data models used in the core as well as a number of helper function
 FIXME: growing monolithically unwieldy, break up
 """
 
-PERMISSION_GROUPS = ('Participants', 'Experimenters', 'Demo Experimenters', 'Demo Participants', )
-
 
 class DefaultValue(object):
     """
