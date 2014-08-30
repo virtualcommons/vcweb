@@ -33,7 +33,7 @@
                                 <i style='cursor: pointer;' class="fa" data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data), css: { "fa-star-o": ! bookmarked(), "fa-star text-gold": bookmarked}'></i>
                             </div>
                             <div class="panel-body" data-bind='foreach: configurations'>
-                                <div class='callout' data-bind='css: { "callout-info": $root.isOwnerOfExperimentConfiguration($data), "callout-warning": !$root.isOwnerOfExperimentConfiguration($data) }'>
+                                <div class='callout' data-bind='css: { "callout-info": $root.canEdit($data), "callout-warning": !$root.canEdit($data) }'>
                                     <h4><span data-bind='text: name'>configuration name</span>
                                         <span data-bind='if: treatment_id()'>
                                         (treatment id: <span data-bind='text: treatment_id()'></span>)
@@ -43,9 +43,9 @@
                                     <span data-bind='text: number_of_rounds'></span> rounds, group size <span data-bind='text: max_group_size'></span>
                                     <br>
                                     <div class='btn-group'>
-                                        <a class='btn btn-default' data-bind='click: $root.createNewExperiment.bind($data), disableClick: !$root.isOwnerOfExperimentConfiguration($data)'><i class='fa fa-flask'></i> start new experiment</a>
-                                        <a class='btn btn-default' data-bind='attr: { href: "/configuration/"+ pk()+"/edit" }, disableClick: !$root.isOwnerOfExperimentConfiguration($data)'><i class='fa fa-pencil-square-o'></i> edit configuration</a>
-                                        <a class='btn btn-default' data-bind='click: $root.deleteExperimentConfiguration.bind($data), disableClick: !$root.isOwnerOfExperimentConfiguration($data)'><i class='fa fa-trash-o'></i> delete configuration</a>
+                                        <a class='btn btn-default' data-bind='click: $root.createNewExperiment.bind($data)'><i class='fa fa-flask'></i> start new experiment</a>
+                                        <a class='btn btn-default' data-bind='attr: { href: "/configuration/"+ pk()+"/edit" }, visible: $root.canEdit($data)'><i class='fa fa-pencil-square-o'></i> edit configuration</a>
+                                        <a class='btn btn-default' data-bind='click: $root.deleteExperimentConfiguration.bind($data), visible: $root.canEdit($data)'><i class='fa fa-trash-o'></i> delete configuration</a>
                                         <a class='btn btn-default' data-bind='click: $root.cloneExperimentConfiguration.bind($data)'><i class='fa fa-files-o'></i> clone configuration</a>
                                     </div>
                                 </div>
@@ -214,8 +214,8 @@
                  .done(pendingExperimentCallback);
             };
 
-            model.isOwnerOfExperimentConfiguration = function(configurationModel) {
-                return configurationModel.creator.pk() == model.currentExperimenterId() || model.is_superuser();
+            model.canEdit = function(configurationModel) {
+                return model.is_superuser() || configurationModel.creator.pk() == model.currentExperimenterId();
             };
 
             // FIXME: unify these, eliminate redundant code
