@@ -8,27 +8,17 @@
     <div class='col-md-6'>
         <div class='alert alert-white' data-bind='visible: isActive'>
             <h4>ROUND MANAGEMENT</h4>
-            <div class='btn-toolbar' role='toolbar'>
-                <div class='btn-group'>
-                    <a class='btn btn-success' data-bind="visible: isRoundInProgress, click: confirmExperimentControllerAction.bind($data, true)" data-action='end_round' data-content='Ends the round.'><i class='fa fa-stop'></i> end round</a>
-                    <a class='btn btn-success' data-bind="visible: ! isRoundInProgress(), click: confirmExperimentControllerAction.bind($data, true)" data-action='start_round' data-content='Starts the round.'><i class='fa fa-play'></i> start</a>
-                    <a class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, true)' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='fa fa-step-forward'></i> next round</a>
-                </div>
-            </div>
-            <div class='btn-toolbar' role='toolbar'>
-                <div class='btn-group'>
-                    <a class='btn btn-primary' data-bind='click: updateParticipants' data-content='Updates all connected participants.' ><i class='fa fa-exchange'></i> update participants</a>
-                    <a class='btn btn-primary' data-bind='click: refresh' data-content='Updates this page.' ><i class='fa fa-refresh'></i> refresh</a>
-                </div>
-            </div>
-            <div class='btn-toolbar' role='toolbar'>
-                <div class='btn-group'>
-                    <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
-                        data-action='restart' data-content='Restart the experiment from the beginning, clearing all group and participant data and returning to the first round.' data-original-title='Reset Experiment'>
-                        <i class='fa fa-arrow-circle-up'></i> restart experiment</a>
-                    <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment and disables participant logins.'><i class='fa fa-power-off'></i> deactivate</a>
-                </div>
-            </div>
+            <a class='btn btn-success' data-bind='click: confirmExperimentControllerAction.bind($data, true)' data-action='advance_to_next_round' data-content='Advances to and starts the next round.'><i class='fa fa-step-forward'></i> next round</a>
+            {% comment %}
+            DISABLED
+            <a class='btn btn-success' data-bind="visible: ! isRoundInProgress(), click: confirmExperimentControllerAction.bind($data, true)" data-action='start_round' data-content='Starts the round.'><i class='fa fa-play'></i> start</a>
+            <a class='btn btn-primary' data-bind='click: updateParticipants' data-content='Requests all connected participants to update themselves.' ><i class='fa fa-exchange'></i> update participants</a>
+            <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='deactivate' data-content='Deactivates this experiment and disables participant logins.'><i class='fa fa-power-off'></i> deactivate</a>
+            {% endcomment %}
+            <hr>
+            <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
+                data-action='restart' data-content='Restart the experiment from the beginning, clearing all group and participant data and returning to the first round.' data-original-title='Reset Experiment'>
+                <i class='fa fa-arrow-circle-up'></i> restart experiment</a>
         </div>
         <div data-bind="ifnot: isActive() || isArchived()">
             <div data-bind="ifnot: hasParticipants">
@@ -56,7 +46,7 @@
             <b class='text-info' data-bind='text:roundSequenceLabel'></b><br>
             <span data-bind='text:roundStatusLabel'></span><br>
             Round started on: <span data-bind='text:currentRoundStartTime'></span><br>
-            Time remaining: <span data-bind='text:timeRemaining'></span><br>
+            Time remaining: <span data-bind='text: timeRemainingText'></span><br>
             {% comment %}
             FIXME: embed form in each round data object instead?
             {% endcomment %}
@@ -247,6 +237,10 @@
                     model.currentInterval(undefined);
                 }
             };
+            model.timeRemainingText = ko.computed(function() {
+                var tr = model.timeRemaining();
+                return (tr < 0) ? "Unlimited" : tr + " s";
+            });
             model.tick = function() {
                 model.timeRemaining(model.timeRemaining() - 1);
                 if (model.timeRemaining() < 0) {
@@ -267,12 +261,6 @@
                  .always(function() {
                     setTimeout(function() { $('#submitExperimenterNotesButton').html("Save"); }, 1000);
                  });
-            };
-            // FIXME: factor out the code duplication with this and confirmExperimentControllerAction for
-            // showing the modal and invoking the ajax call if possible
-            model.refresh = function() {
-                console.debug("refreshing page");
-                window.location.reload(true);
             };
             model.loadRoundData = function(localModel) {
                 console.debug("loading round data for round data with pk: " + localModel.pk());
