@@ -81,7 +81,7 @@ class BaseVcwebTest(TestCase):
         self.client = Client()
         self.factory = RequestFactory()
         for permission in PermissionGroup:
-            AuthGroup.objects.get_or_create(name=permission.name)
+            AuthGroup.objects.get_or_create(name=permission.value)
         self.load_experiment(**kwargs)
         if disable_logging:
             logging.disable(disabled_loglevel)
