@@ -9,11 +9,7 @@ from .models import *
 logger = logging.getLogger(__name__)
 
 
-class BaseTest(BaseVcwebTest):
-    pass
-
-
-class ForestryRoundSignalTest(BaseTest):
+class ForestryRoundSignalTest(BaseVcwebTest):
 
     def verify_resource_level(self, group, value=100):
         self.assertEqual(get_resource_level(group), value)
@@ -65,7 +61,7 @@ class ForestryRoundSignalTest(BaseTest):
             e, lambda experiment: round_ended_handler(None, experiment))
 
 
-class TransferParametersTest(BaseTest):
+class TransferParametersTest(BaseVcwebTest):
 
     def test_transfer_parameters(self):
         def calculate_expected_resource_level(resource_level, harvested):
@@ -97,7 +93,7 @@ class TransferParametersTest(BaseTest):
             e.advance_to_next_round()
 
 
-class ForestryParametersTest(BaseTest):
+class ForestryParametersTest(BaseVcwebTest):
 
     def test_parameters_set_at_round_end(self):
         e = self.advance_to_data_round()
@@ -156,6 +152,7 @@ class ForestryParametersTest(BaseTest):
             for hd in group.get_participant_data_values(parameter=harvest_decision_parameter, round_data=round_data):
                 self.assertEqual(hd.value, 8)
                 self.assertEqual(hd.value, hd.int_value)
+        self.assertTrue(e.all_participants_submitted)
 
     def test_simple_cache_parameters(self):
         def verify_cached_data(func):

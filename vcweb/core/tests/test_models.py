@@ -96,13 +96,93 @@ class ExperimentTest(BaseVcwebTest):
         raise ValueError(
             "Contrived ValueError from test round started handler")
 
+    def test_clone(self):
+        e = self.experiment
+        experimenter = e.experimenter
+        new_experimenter = self.create_experimenter()
+        ce = e.clone(new_experimenter)
+        self.assertNotEqual(e, ce)
+        self.assertEqual(e.experiment_configuration, ce.experiment_configuration)
+        self.assertNotEqual(experimenter, ce.experimenter)
+        self.assertTrue(e.is_owner(experimenter.user))
+        self.assertFalse(e.is_owner(new_experimenter.user))
+        self.assertTrue(ce.is_owner(new_experimenter.user))
+        self.assertTrue(ce.is_owner(experimenter.user))
+
+    def test_activate(self):
+        e = self.experiment
+        self.assertFalse(e.is_active)
+        self.assertEqual(len(e.groups), 0)
+        self.assertEqual(len(e.participant_group_relationships), 0)
+        e.activate()
+        self.assertTrue(e.is_active)
+        self.assertEqual(len(e.groups), 2)
+        self.assertEqual(len(e.participant_group_relationships), 10)
+
+    def test_clear_participants(self):
+        e = self.experiment
+        e.activate()
+        self.assertEqual(10, e.number_of_participants)
+        self.assertEqual(2, len(e.groups))
+        e.clear_participants()
+        self.assertEqual(0, e.number_of_participants)
+        self.assertEqual(0, len(e.groups))
+
+    def test_deactivate(self):
+        e = self.experiment
+        e.activate()
+        self.assertTrue(1, e.round_data_set.count())
+        self.assertTrue(2, len(e.groups))
+        self.assertTrue(10, len(e.participant_group_relationships))
+        self.assertTrue(e.is_active)
+        e.advance_to_next_round()
+        self.assertTrue(2, e.current_round_sequence_number)
+        self.assertTrue(2, e.round_data_set.count())
+        self.assertTrue(2, len(e.groups))
+        self.assertTrue(10, len(e.participant_group_relationships))
+        e.deactivate()
+        self.assertFalse(e.is_active)
+        self.assertEqual(10, e.number_of_participants)
+        self.assertEqual(0, len(e.groups))
+        self.assertEqual(0, len(e.participant_group_relationships))
+        self.assertEqual(0, e.round_data_set.count())
+        self.assertEqual(1, e.current_round_sequence_number)
+        self.assertEqual(0, e.current_repeated_round_sequence_number)
+
+    def test_restart(self):
+        e = self.experiment
+        e.activate()
+        total_number_of_rounds = 1
+        while e.has_next_round:
+            total_number_of_rounds += 1
+            e.advance_to_next_round()
+        self.assertEqual(total_number_of_rounds, e.experiment_configuration.total_number_of_rounds)
+        e.restart()
+        self.assertTrue(e.is_active)
+        self.assertEqual(10, e.number_of_participants)
+        self.assertEqual(2, len(e.groups))
+        self.assertEqual(10, len(e.participant_group_relationships))
+        self.assertEqual(1, e.round_data_set.count())
+        self.assertEqual(1, e.current_round_sequence_number)
+        self.assertEqual(0, e.current_repeated_round_sequence_number)
+
+    def test_archive(self):
+        e = self.experiment
+        e.activate()
+        while e.has_next_round:
+            e.advance_to_next_round()
+        self.assertFalse(e.has_next_round)
+        self.assertFalse(e.is_completed)
+        e.complete()
+        self.assertTrue(e.is_completed)
+
     def test_start_round(self):
         signals.round_started.connect(
             self.round_started_test_handler, sender=self)
         self.experiment.start_round(sender=self)
         self.assertTrue(self.experiment.is_active)
-        self.assertFalse(self.experiment.start_round(
-            sender=self), "subsequent start rounds should be no-ops and return false")
+        self.assertFalse(self.experiment.start_round(sender=self),
+                         "subsequent start rounds should be no-ops that return false")
 
     def test_group_allocation(self):
         experiment = self.experiment
@@ -139,10 +219,15 @@ class ExperimentTest(BaseVcwebTest):
                     experiment.current_round_sequence_number == round_number)
 
     def test_elapsed_time(self):
-        experiment = self.experiment
-        experiment.activate()
-        self.assertEqual(0, experiment.current_round_elapsed_time.seconds)
-        # FIXME: exercise current_round_elapsed_time and total_elapsed_time
+        e = self.experiment
+        e.activate()
+        self.assertEqual(0, e.current_round_elapsed_time.seconds)
+        self.assertTrue('Untimed round' in e.time_remaining_label)
+        self.advance_to_data_round()
+        self.assertTrue(e.time_remaining > 0)
+        self.assertTrue(e.total_elapsed_time.total_seconds > 0)
+        self.assertFalse(e.is_time_expired)
+        self.assertTrue(int(e.time_remaining_label) > 0)
 
     def test_playable_round(self):
         # advance_to_next_round automatically starts the round

@@ -626,7 +626,9 @@ class Experiment(models.Model):
 
     @property
     def is_time_expired(self):
-        return self.current_round_elapsed_time >= self.current_round.duration
+        #logger.error("current round elapsed time: %s vs duration %s", self.current_round_elapsed_time.total_seconds,
+        #             self.current_round.duration)
+        return self.current_round_elapsed_time >= timedelta(self.current_round.duration)
 
     @property
     def is_round_in_progress(self):

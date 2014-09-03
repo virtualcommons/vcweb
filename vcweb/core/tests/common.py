@@ -30,6 +30,7 @@ class BaseVcwebTest(TestCase):
         # ExperimentMetadata
         if not experiment.experiment_metadata.parameters.exists():
             experiment.experiment_metadata.parameters.add(*Parameter.objects.values_list('pk', flat=True))
+        experiment.experiment_configuration.round_configuration_set.exclude(sequence_number=1).update(duration=60)
         if experiment.participant_set.count() == 0:
             logger.debug("adding participants to %s", experiment)
             experiment.setup_test_participants(email_suffix='asu.edu', count=10, password='test')
@@ -70,9 +71,10 @@ class BaseVcwebTest(TestCase):
                                                                           name='Test Experiment Configuration',
                                                                           creator=experimenter)
         for index in xrange(1, 10):
+            should_initialize = (index == 1)
             experiment_configuration.round_configuration_set.create(sequence_number=index,
-                                                                    randomize_groups=(index == 1),
-                                                                    initialize_data_values=(index == 1))
+                                                                    randomize_groups=should_initialize,
+                                                                    initialize_data_values=should_initialize)
         return Experiment.objects.create(experimenter=experimenter,
                                          experiment_metadata=experiment_metadata,
                                          experiment_configuration=experiment_configuration)
