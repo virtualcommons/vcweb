@@ -18,10 +18,6 @@ from .models import (Experimenter, Institution, Participant, ExperimentMetadata,
 
 logger = logging.getLogger(__name__)
 
-REQUIRED_EMAIL_ATTRIBUTES = {'class': 'required email'}
-REQUIRED_ATTRIBUTES = {'class': 'required'}
-
-
 class NumberInput(widgets.Input):
     input_type = 'number'
 
@@ -39,17 +35,15 @@ class URLInput(widgets.Input):
 
 
 class BaseRegistrationForm(forms.Form):
-    first_name = forms.CharField(
-        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    last_name = forms.CharField(
-        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    email = forms.EmailField(widget=EmailInput(attrs=REQUIRED_EMAIL_ATTRIBUTES), help_text=_(
+    required_css_class = 'required'
+
+    first_name = forms.CharField(widget=widgets.TextInput)
+    last_name = forms.CharField(widget=widgets.TextInput)
+    email = forms.EmailField(widget=EmailInput, help_text=_(
         'Please enter a valid email.  We will never share your email in any way, shape, or form.'))
-    password = forms.CharField(
-        widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
-    confirm_password = forms.CharField(
-        widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
-    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=True,
+    password = forms.CharField(widget=widgets.PasswordInput)
+    confirm_password = forms.CharField(widget=widgets.PasswordInput)
+    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete),
                                   help_text=_('The primary institution, if any, you are affiliated with.'))
 
     def clean_email(self):
@@ -84,9 +78,9 @@ class VcwebPasswordResetForm(PasswordResetForm):
 
 class LoginForm(forms.Form):
     email = forms.EmailField(
-        widget=EmailInput(attrs=REQUIRED_EMAIL_ATTRIBUTES))
+        widget=EmailInput)
     password = forms.CharField(
-        widget=widgets.PasswordInput(attrs=REQUIRED_ATTRIBUTES))
+        widget=widgets.PasswordInput)
 
     def clean(self):
         cleaned_data = super(LoginForm, self).clean()
@@ -105,12 +99,11 @@ class LoginForm(forms.Form):
 
 
 class AsuRegistrationForm(forms.ModelForm):
-    first_name = forms.CharField(
-        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    last_name = forms.CharField(
-        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES),
-                             help_text=_('We will never share your email.'))
+    required_css_class = 'required'
+
+    first_name = forms.CharField(widget=widgets.TextInput)
+    last_name = forms.CharField(widget=widgets.TextInput)
+    email = forms.EmailField(widget=widgets.TextInput, help_text=_('We will never share your email.'))
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
@@ -131,12 +124,11 @@ class AsuRegistrationForm(forms.ModelForm):
 
 
 class ParticipantAccountForm(forms.ModelForm):
-    first_name = forms.CharField(
-        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    last_name = forms.CharField(
-        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES),
-                             help_text=_('We will never share your email.'))
+    required_css_class = 'required'
+
+    first_name = forms.CharField(widget=widgets.TextInput)
+    last_name = forms.CharField(widget=widgets.TextInput)
+    email = forms.EmailField(widget=widgets.TextInput, help_text=_('We will never share your email.'))
     institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False,
                                   help_text=_('The primary institution, if any, you are affiliated with.'))
 
@@ -194,12 +186,11 @@ class ParticipantAccountForm(forms.ModelForm):
 
 
 class ExperimenterAccountForm(forms.ModelForm):
-    first_name = forms.CharField(
-        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    last_name = forms.CharField(
-        widget=widgets.TextInput(attrs=REQUIRED_ATTRIBUTES))
-    email = forms.EmailField(widget=widgets.TextInput(attrs=REQUIRED_EMAIL_ATTRIBUTES),
-                             help_text=_('We will never share your email.'))
+    required_css_class = 'required'
+
+    first_name = forms.CharField(widget=widgets.TextInput)
+    last_name = forms.CharField(widget=widgets.TextInput)
+    email = forms.EmailField(widget=widgets.TextInput, help_text=_('We will never share your email.'))
     institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False,
                                   help_text=_('The primary institution, if any, you are affiliated with.'))
 
@@ -229,6 +220,7 @@ email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
 
 
 class ExperimentConfigurationForm(forms.ModelForm):
+    required_css_class = 'required'
 
     class Meta:
         model = ExperimentConfiguration
@@ -240,6 +232,7 @@ class ExperimentConfigurationForm(forms.ModelForm):
 
 
 class ExperimentParameterValueForm(forms.ModelForm):
+    required_css_class = 'required'
 
     def __init__(self, *args, **kwargs):
         super(ExperimentParameterValueForm, self).__init__(*args, **kwargs)
@@ -261,6 +254,7 @@ class ExperimentParameterValueForm(forms.ModelForm):
 
 
 class RoundConfigurationForm(forms.ModelForm):
+    required_css_class = 'required'
 
     def __init__(self, *args, **kwargs):
         super(RoundConfigurationForm, self).__init__(*args, **kwargs)
@@ -284,6 +278,7 @@ class RoundConfigurationForm(forms.ModelForm):
 
 
 class RoundParameterValueForm(forms.ModelForm):
+    required_css_class = 'required'
 
     def __init__(self, *args, **kwargs):
         super(RoundParameterValueForm, self).__init__(*args, **kwargs)
@@ -331,6 +326,8 @@ class EmailListField(forms.CharField):
 
 
 class RegisterParticipantsForm(forms.Form):
+    required_css_class = 'required'
+
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
     start_date = forms.DateField(required=False,
                                  help_text=_('''Date this experiment should activate and start.

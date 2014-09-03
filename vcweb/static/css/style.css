@@ -32,6 +32,12 @@ label.error {
     margin: 0.4em;
     padding: 0.4em;
 }
+
+.form-group.required label:after {
+    content: "*";
+    color: rgb(194, 52, 52);
+}
+
 .chat-sidebar {
     overflow: auto;
     height: 90%;
