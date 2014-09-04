@@ -223,10 +223,10 @@ class NullCharField(models.CharField):
 
 
 # FIXME: remove when django 1.7 drops
-from south.modelsinspector import add_introspection_rules
+#from south.modelsinspector import add_introspection_rules
 
-add_introspection_rules([], ["^vcweb\.core\.models\.AutoDateTimeField"])
-add_introspection_rules([], ["^vcweb\.core\.models\.NullCharField"])
+#add_introspection_rules([], ["^vcweb\.core\.models\.AutoDateTimeField"])
+#add_introspection_rules([], ["^vcweb\.core\.models\.NullCharField"])
 
 
 class ExperimentMetadataQuerySet(models.query.QuerySet):

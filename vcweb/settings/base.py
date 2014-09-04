@@ -109,7 +109,6 @@ THIRD_PARTY_APPS = (
     'raven.contrib.django.raven_compat',
     'contact_form',
     'kronos',
-    'south',
     'django_extensions',
     'mptt',
     'bootstrap3',
