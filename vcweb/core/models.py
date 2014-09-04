@@ -40,8 +40,9 @@ logger = logging.getLogger(__name__)
 
 
 """
-Permission Enum for Django Auth Permission Groups
+Permissions Enum for Auth Permission Groups
 """
+
 
 class PermissionGroup(Enum):
     participant = 'Participants'
@@ -192,12 +193,6 @@ class DataValueMixin(object):
         return dv
 
 
-class AutoDateTimeField(models.DateTimeField):
-
-    def pre_save(self, model_instance, add):
-        return datetime.now()
-
-
 class NullCharField(models.CharField):
     description = "CharField that stores nulls in the db but returns ''"
     __metaclass__ = models.SubfieldBase
@@ -206,6 +201,12 @@ class NullCharField(models.CharField):
         kwargs['null'] = True
         kwargs['blank'] = True
         super(NullCharField, self).__init__(*args, **kwargs)
+
+    def deconstruct(self):
+        name, path, args, kwargs = super(NullCharField, self).deconstruct()
+        del kwargs['null']
+        del kwargs['blank']
+        return name, path, args, kwargs
 
     def to_python(self, value):
         if isinstance(value, models.CharField):
@@ -220,13 +221,6 @@ class NullCharField(models.CharField):
             return None
         else:
             return super(NullCharField, self).get_prep_value(value)
-
-
-# FIXME: remove when django 1.7 drops
-#from south.modelsinspector import add_introspection_rules
-
-#add_introspection_rules([], ["^vcweb\.core\.models\.AutoDateTimeField"])
-#add_introspection_rules([], ["^vcweb\.core\.models\.NullCharField"])
 
 
 class ExperimentMetadataQuerySet(models.query.QuerySet):
@@ -262,8 +256,8 @@ class ExperimentMetadata(models.Model):
     namespace = models.CharField(max_length=255, unique=True, null=True, blank=True, validators=[RegexValidator(r'^[\w_-]*$')])
     short_name = models.SlugField(max_length=32, unique=True, null=True, blank=True)
     description = models.TextField(blank=True)
-    date_created = models.DateTimeField(default=datetime.now)
-    last_modified = AutoDateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     about_url = models.URLField(null=True, blank=True)
     logo_url = models.URLField(null=True, blank=True)
     default_configuration = models.ForeignKey('ExperimentConfiguration', null=True, blank=True)
@@ -311,8 +305,8 @@ class ExperimentMetadata(models.Model):
 class OstromlabFaqEntry(models.Model):
     question = models.TextField(help_text=_("FAQ Question"))
     answer = models.TextField(help_text=_("FAQ Answer"))
-    date_created = models.DateTimeField(default=datetime.now)
-    last_modified = AutoDateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     contributor = models.ForeignKey(User)
 
     def __unicode__(self):
@@ -327,8 +321,8 @@ class Institution(models.Model):
     acronym = models.CharField(max_length=16, blank=True)
     description = models.TextField(blank=True)
     url = models.URLField(null=True, blank=True)
-    date_created = models.DateTimeField(default=datetime.now)
-    last_modified = AutoDateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     cas_server_url = models.URLField(null=True, blank=True)
 
     def __unicode__(self):
@@ -403,7 +397,7 @@ class Experimenter(CommonsUser):
 class BookmarkedExperimentMetadata(models.Model):
     experimenter = models.ForeignKey(Experimenter, related_name='bookmarked_experiment_metadata_set')
     experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='bookmarked_experiment_metadata_set')
-    date_created = models.DateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = (('experimenter', 'experiment_metadata'),)
@@ -416,7 +410,7 @@ class ExperimenterRequest(models.Model):
     a request for this user to be an experimenter, should notify admins
     """
     user = models.OneToOneField(User, verbose_name=u'Django User', unique=True)
-    date_created = models.DateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
     approved = models.BooleanField(default=False)
 
 
@@ -434,8 +428,8 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
         blank=True, help_text=_('Subject header for email registrations'))
     invitation_text = models.TextField(
         blank=True, help_text=_('Text to send out via email invitations'))
-    date_created = models.DateTimeField(default=datetime.now)
-    last_modified = AutoDateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=False)
     max_group_size = models.PositiveIntegerField(default=5)
     exchange_rate = models.DecimalField(null=True, blank=True, default=0.2, max_digits=6, decimal_places=2,
@@ -605,8 +599,8 @@ class Experiment(models.Model):
     # works with South - status = StatusField()
     status = models.CharField(max_length=32, choices=Status, default=Status.INACTIVE)
     """ the status of an experiment can be either INACTIVE, ACTIVE, ROUND_IN_PROGRESS, or COMPLETED """
-    date_created = models.DateTimeField(default=datetime.now)
-    last_modified = AutoDateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     # FIXME: inherit from TimeFramedModel instead?
     date_activated = models.DateTimeField(null=True, blank=True)
     duration = models.CharField(max_length=32, blank=True, help_text=_('Duration of the experiment'))
@@ -1456,8 +1450,8 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     display_number = models.PositiveIntegerField(
         default=0,
         help_text=_('Display round number, defaults to sequence_number if 0.'))
-    date_created = models.DateTimeField(default=datetime.now)
-    last_modified = AutoDateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     duration = models.PositiveIntegerField(
         default=0,
         help_text=_('Duration in seconds. 0 signifies an untimed round only advanced by an experimenter.'))
@@ -1699,8 +1693,8 @@ class Parameter(models.Model):
     class_name = models.CharField(max_length=64, blank=True,
                                   help_text='Model classname in the form of appname.modelname, e.g., "core.Experiment".  Only applicable for foreign key parameters.')
     default_value_string = models.CharField(max_length=255, blank=True)
-    date_created = models.DateTimeField(default=datetime.now)
-    last_modified = AutoDateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     creator = models.ForeignKey(Experimenter)
     enum_choices = models.TextField(blank=True)
     is_required = models.BooleanField(default=False)
@@ -1792,8 +1786,8 @@ class ParameterizedValue(models.Model):
     int_value = models.IntegerField(null=True, blank=True)
     float_value = models.FloatField(null=True, blank=True)
     boolean_value = models.NullBooleanField(null=True, blank=True)
-    date_created = models.DateTimeField(default=datetime.now, db_index=True)
-    last_modified = AutoDateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True, db_index=True)
+    last_modified = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
     @property
@@ -2103,7 +2097,7 @@ class GroupClusterQuerySet(models.query.QuerySet):
 
 
 class GroupCluster(models.Model, DataValueMixin):
-    date_created = models.DateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=64, blank=True)
     session_id = models.CharField(max_length=64, blank=True, default='')
     experiment = models.ForeignKey(
@@ -2126,7 +2120,7 @@ class GroupCluster(models.Model, DataValueMixin):
 
 
 class GroupRelationship(models.Model):
-    date_created = models.DateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
     cluster = models.ForeignKey(GroupCluster, related_name='group_relationship_set')
     group = models.ForeignKey(Group, related_name='relationship_set')
 
@@ -2320,7 +2314,7 @@ class ParticipantExperimentRelationship(models.Model):
     sequential_participant_identifier = models.PositiveIntegerField()
     experiment = models.ForeignKey(
         Experiment, related_name='participant_relationship_set')
-    date_created = models.DateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User)
     last_completed_round_sequence_number = models.PositiveIntegerField(
         default=0)
@@ -2333,8 +2327,7 @@ class ParticipantExperimentRelationship(models.Model):
         ParticipantExperimentRelationshipQuerySet)()
 
     def __init__(self, *args, **kwargs):
-        super(ParticipantExperimentRelationship, self).__init__(
-            *args, **kwargs)
+        super(ParticipantExperimentRelationship, self).__init__(*args, **kwargs)
         if 'experiment' in kwargs:
             self.generate_identifier()
 
@@ -2391,7 +2384,7 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
     group = models.ForeignKey(
         Group, related_name='participant_group_relationship_set')
     round_joined = models.ForeignKey(RoundConfiguration)
-    date_created = models.DateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
     first_visit = models.BooleanField(default=True)
     notifications_since = models.DateTimeField(
@@ -2692,7 +2685,7 @@ class Like(ParticipantRoundDataValue):
 
 class ActivityLog(models.Model):
     log_message = models.TextField()
-    date_created = models.DateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
         return u"%s - %s" % (self.date_created.strftime("%m-%d-%Y %H:%M"), self.log_message)
@@ -2718,7 +2711,7 @@ class ExperimentSession(models.Model):
     """
     experiment_metadata = models.ForeignKey(
         ExperimentMetadata, related_name='experiment_session_set')
-    date_created = models.DateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
     scheduled_date = models.DateTimeField()
     scheduled_end_date = models.DateTimeField(null=True, blank=True)
     capacity = models.PositiveIntegerField(default=20)
@@ -2778,7 +2771,7 @@ class InvitationQuerySet(models.query.QuerySet):
 class Invitation(models.Model):
     participant = models.ForeignKey(Participant)
     experiment_session = models.ForeignKey(ExperimentSession)
-    date_created = models.DateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
     sender = models.ForeignKey(User)
 
     objects = PassThroughManager.for_queryset_class(InvitationQuerySet)()
@@ -2851,7 +2844,7 @@ class ParticipantSignup(models.Model):
             (3, 'registered', _('signed up')))
     """ Provides participated, discharged, absent, and initial attendance enum values """
     invitation = models.ForeignKey(Invitation, related_name='signup_set')
-    date_created = models.DateTimeField(default=datetime.now)
+    date_created = models.DateTimeField(auto_now_add=True)
     attendance = models.PositiveIntegerField(max_length=1, choices=ATTENDANCE, default=ATTENDANCE.registered)
 
     objects = PassThroughManager.for_queryset_class(
