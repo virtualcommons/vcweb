@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
 
-from vcweb.core.models import Participant, Experimenter
+from vcweb.core.models import Participant, Experimenter, PermissionGroup
 
 import logging
 logger = logging.getLogger(__name__)
@@ -17,12 +17,16 @@ class Command(BaseCommand):
             logger.debug("User %s assigned to %s permissions group.", item.user, group)
 
     def handle(self, *args, **options):
+        # first make sure all permission groups exist
+        groups = {}
+        for p in PermissionGroup:
+            groups[p], created = Group.objects.get_or_create(name=p.value)
         participant_list = Participant.objects.select_related('user').exclude(user__email__regex=r'@mailinator.com$')
         experimenter_list = Experimenter.objects.select_related('user').exclude(user__email__regex=r'@mailinator.com$')
         demo_participant_list = Participant.objects.select_related('user').filter(user__email__regex=r'@mailinator.com$')
         demo_experimenter_list = Experimenter.objects.select_related('user').filter(user__email__regex=r'@mailinator.com$')
 
-        self.assign_group(participant_list, Group.objects.get(name="Participants"))
-        self.assign_group(demo_participant_list, Group.objects.get(name="Demo Participants"))
-        self.assign_group(experimenter_list, Group.objects.get(name="Experimenters"))
-        self.assign_group(demo_experimenter_list, Group.objects.get(name="Demo Experimenters"))
+        self.assign_group(participant_list, groups[PermissionGroup.participant])
+        self.assign_group(demo_participant_list, groups[PermissionGroup.demo_participant])
+        self.assign_group(experimenter_list, groups[PermissionGroup.experimenter])
+        self.assign_group(demo_experimenter_list, groups[PermissionGroup.demo_experimenter])
