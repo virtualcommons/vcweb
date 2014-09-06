@@ -12,7 +12,9 @@ from tornado import web, ioloop
 
 sys.path.append(
     path.abspath(path.join(path.dirname(path.abspath(__file__)), '..')))
-os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings.local'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
+import django
+django.setup()
 from django.conf import settings
 from vcweb.core.models import (
     Experiment, ParticipantExperimentRelationship, Experimenter, ChatMessage)

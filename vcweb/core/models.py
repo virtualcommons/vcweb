@@ -50,6 +50,17 @@ class PermissionGroup(Enum):
     demo_participant = 'Demo Participants'
     demo_experimenter = 'Demo Experimenters'
 
+    def get_django_group(self):
+        key = 'permissions.%s' % self.name
+        g = cache.get(key)
+        if not g:
+            g = AuthGroup.objects.get(name=self.value)
+            cache.set(key, g)
+        return g
+
+    def __str__(self):
+        return self.value
+
 
 """
 Contains all data models used in the core as well as a number of helper functions.
@@ -1695,7 +1706,7 @@ class Parameter(models.Model):
     default_value_string = models.CharField(max_length=255, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    creator = models.ForeignKey(Experimenter)
+    creator = models.ForeignKey(Experimenter, null=True, blank=True)
     enum_choices = models.TextField(blank=True)
     is_required = models.BooleanField(default=False)
 

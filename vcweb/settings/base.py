@@ -13,6 +13,10 @@ SITE_URL = 'https://vcweb.asu.edu'
 
 BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 
+sys.path.append(BASE_DIR)
+
+DEMO_EXPERIMENTER_EMAIL = 'vcweb.demo@mailinator.com'
+DEFAULT_FROM_EMAIL = 'vcweb@asu.edu'
 SERVER_EMAIL = 'vcweb@asu.edu'
 SERVER_NAME = 'vcweb.asu.edu'
 EMAIL_HOST = 'smtp.asu.edu'
@@ -135,7 +139,6 @@ WEBSOCKET_PORT = 8882
 # activation window
 ACCOUNT_ACTIVATION_DAYS = 30
 
-DEFAULT_FROM_EMAIL = 'vcweb@asu.edu'
 
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (
@@ -264,7 +267,6 @@ CAS_CUSTOM_FORBIDDEN = 'cas_error'
 EXPERIMENTS = [app_name for app_name in VCWEB_APPS if 'experiment' in app_name]
 
 if 'test' in sys.argv:
-    SOUTH_TESTS_MIGRATE = False
     SKIP_SOUTH_TESTS = True
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',

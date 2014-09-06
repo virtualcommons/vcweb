@@ -13,10 +13,11 @@ import autocomplete_light
 
 from .autocomplete_light_registry import InstitutionAutocomplete, ParticipantMajorAutocomplete
 from .models import (Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration,
-                               ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
+                     ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
 
 
 logger = logging.getLogger(__name__)
+
 
 class NumberInput(widgets.Input):
     input_type = 'number'

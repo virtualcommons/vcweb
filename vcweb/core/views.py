@@ -132,25 +132,22 @@ class ParticipantDashboardViewModel(DashboardViewModel):
         }
 
 
-class DashboardViewModelFactory(object):
-
-    @staticmethod
-    def create(user):
-        if user is None or not user.is_active:
-            logger.error(
-                "can't create dashboard view model from invalid user %s", user)
-            raise ValueError("invalid user")
-        if is_experimenter(user):
-            return ExperimenterDashboardViewModel(user)
-        else:
-            return ParticipantDashboardViewModel(user)
+def create_dashboard_view_model(user):
+    if user is None or not user.is_active:
+        logger.error(
+            "can't create dashboard view model from invalid user %s", user)
+        raise ValueError("invalid user")
+    if is_experimenter(user):
+        return ExperimenterDashboardViewModel(user)
+    else:
+        return ParticipantDashboardViewModel(user)
 
 
-def has_model_permissions( entity, model, perms, app ):
+def has_model_permissions(entity, model, perms, app):
     for p in perms:
-        if not entity.has_perm( "%s.%s_%s" % ( app, p, model.__name__ ) ):
+        if not entity.has_perm("%s.%s_%s" % (app, p, model.__name__)):
             return False
-        return True
+    return True
 
 
 def csrf_failure(request, reason=""):
@@ -165,12 +162,13 @@ def dashboard(request):
     """
     user = request.user
     if is_participant(user):
-        if not user.participant.is_profile_complete and not bool(user.groups.filter(name=PermissionGroup.demo_participant.value)):
+        if not user.participant.is_profile_complete and not user.groups.filter(name=PermissionGroup.demo_participant.name).exists():
+            # redirect to the profile page if this is a non-demo participant and their profile is incomplete
             return redirect('core:profile')
         elif user.participant.has_pending_invitations:
             return redirect('subjectpool:experiment_session_signup')
 
-    dashboard_view_model = DashboardViewModelFactory.create(user)
+    dashboard_view_model = create_dashboard_view_model(user)
     return render(request, dashboard_view_model.template_name,
                   {'dashboardViewModelJson': dashboard_view_model.to_json()})
 
@@ -219,7 +217,7 @@ def cas_asu_registration_submit(request):
 @login_required
 def get_dashboard_view_model(request):
     return JsonResponse(
-        dumps({'success': True, 'dashboardViewModelJson': DashboardViewModelFactory.create(request.user).to_json()}))
+        dumps({'success': True, 'dashboardViewModelJson': create_dashboard_view_model(request.user).to_json()}))
 
 
 def set_authentication_token(user, authentication_token=''):
@@ -828,15 +826,6 @@ def download_data_excel(request, pk=None):
         logger.warning(e)
 
 
-@group_required(PermissionGroup.experimenter)
-@ownership_required(Experiment)
-def deactivate(request, pk=None):
-    experiment = get_object_or_404(Experiment, pk=pk)
-    experimenter = request.user.experimenter
-    experiment.deactivate()
-    return redirect('core:monitor_experiment', pk=pk)
-
-
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
 def update_experiment(request):
     form = UpdateExperimentForm(request.POST or None)
@@ -1305,7 +1294,7 @@ def update_experiment_configuration(request, pk):
     except ObjectDoesNotExist:
         return JsonResponse(dumps({
             'success': False,
-            'message': "Experiment Configuration with provided pk does not exist"
+            'message': "Experiment configuration with pk %d did not exist" % pk,
         }))
 
     form = ExperimentConfigurationForm(request.POST or None, instance=ec)

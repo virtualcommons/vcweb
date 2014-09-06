@@ -333,7 +333,7 @@ class Migration(migrations.Migration):
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('enum_choices', models.TextField(blank=True)),
                 ('is_required', models.BooleanField(default=False)),
-                ('creator', models.ForeignKey(to='core.Experimenter')),
+                ('creator', models.ForeignKey(blank=True, to='core.Experimenter', null=True)),
             ],
             options={
                 'ordering': ['name'],

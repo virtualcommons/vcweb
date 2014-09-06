@@ -21,6 +21,8 @@ class Command(BaseCommand):
         groups = {}
         for p in PermissionGroup:
             groups[p], created = Group.objects.get_or_create(name=p.value)
+            if created:
+                logger.warning("creating groups but this should normally be done via data migration.")
         participant_list = Participant.objects.select_related('user').exclude(user__email__regex=r'@mailinator.com$')
         experimenter_list = Experimenter.objects.select_related('user').exclude(user__email__regex=r'@mailinator.com$')
         demo_participant_list = Participant.objects.select_related('user').filter(user__email__regex=r'@mailinator.com$')
