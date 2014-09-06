@@ -247,7 +247,7 @@ def get_regrowth_rate_parameter():
 # the given round for the given group
 @simplecache
 def get_regrowth_parameter():
-    return Parameter.objects.for_group(name='group_regrowth')
+    return Parameter.objects.for_group(name='regrowth')
 
 
 @simplecache

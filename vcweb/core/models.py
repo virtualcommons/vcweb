@@ -1698,6 +1698,7 @@ class Parameter(models.Model):
     """
     scope = models.CharField(max_length=32, choices=Scope, default=Scope.ROUND)
     name = models.CharField(max_length=255, unique=True)
+# FIXME: rename to label for consistency
     display_name = models.CharField(max_length=255, blank=True, default='')
     description = models.CharField(max_length=512, blank=True, default='')
     type = models.CharField(max_length=32, choices=ParameterType)
