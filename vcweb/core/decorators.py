@@ -42,7 +42,7 @@ def is_participant(user):
     """
     returns true if user.participant exists and is a Participant instance.
     """
-    return hasattr(user, 'participant') and user.is_active
+    return hasattr(user, 'participant') and user.is_active and not user.participant.is_demo_participant
 
 
 def group_required(*permissions):
@@ -134,7 +134,7 @@ def ownership_required(model, attr_name='pk'):
                 raise RuntimeError('The decorator requires model class {} to provide is_owner function)'.format(model))
 
             try:
-                obj = model.objects.get(pk=pk) #raises ObjectDoesNotExist
+                obj = model.objects.get(pk=pk)  # raises ObjectDoesNotExist
                 if obj.is_owner(request.user):
                     return view_function(request, *args, **kwargs)
             except ObjectDoesNotExist:

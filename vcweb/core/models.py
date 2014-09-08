@@ -2269,6 +2269,10 @@ class Participant(CommonsUser):
             return False
 
     @property
+    def is_demo_participant(self):
+        return self.user.groups.filter(name=PermissionGroup.demo_participant).exists()
+
+    @property
     def has_pending_invitations(self):
         if ParticipantSignup.objects.upcoming(self).exists():
             return False
@@ -2505,7 +2509,6 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
         if names is not None:
             kwargs.update(parameter__name__in=names)
         return self.filter(**kwargs)
-
 
     def for_experiment(self, experiment=None, **kwargs):
         if experiment is None:
@@ -2850,10 +2853,10 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
 
 class ParticipantSignup(models.Model):
     ATTENDANCE = Choices(
-            (0, 'participated', _('participated')),
-            (1, 'discharged', _('turned away')),
-            (2, 'absent', _('absent')),
-            (3, 'registered', _('signed up')))
+        (0, 'participated', _('participated')),
+        (1, 'discharged', _('turned away')),
+        (2, 'absent', _('absent')),
+        (3, 'registered', _('signed up')))
     """ Provides participated, discharged, absent, and initial attendance enum values """
     invitation = models.ForeignKey(Invitation, related_name='signup_set')
     date_created = models.DateTimeField(auto_now_add=True)

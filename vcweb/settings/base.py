@@ -1,8 +1,6 @@
-#import locale
 import os
 import sys
-
-#locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+import logging
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -243,10 +241,6 @@ LOGGING = {
     }
 }
 
-DEBUG_TOOLBAR_CONFIG = {
-    'INTERCEPT_REDIRECTS': False,
-}
-
 # Required if using CAS
 CAS_UNIVERSITY_NAME = "Arizona State University"
 CAS_UNIVERSITY_URL = "http://www.asu.edu"
@@ -263,3 +257,7 @@ CAS_RESPONSE_CALLBACKS = (
     'vcweb.core.views.get_cas_user',
 )
 CAS_CUSTOM_FORBIDDEN = 'cas_error'
+
+# tests invoke logging.disable(settings.DISABLED_TEST_LOGLEVEL) 
+# set to logging.NOTSET in local.py to see all log messages based on individual log handlers
+DISABLED_TEST_LOGLEVEL = logging.DEBUG

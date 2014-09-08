@@ -30,6 +30,7 @@ class ParticipantDashboardTest(BaseVcwebTest):
         for p in e.participant_set.all():
             self.assertFalse(p.is_profile_complete)
             self.assertTrue(c.login(username=p.email, password='test'))
+            self.assertTrue(p.user.groups.filter(name='Demo Participants').exists())
             response = c.get('/dashboard/')
 # test demo participants don't need to get redirected to the account profile to fill out profile info when they visit
 # the dashboard.

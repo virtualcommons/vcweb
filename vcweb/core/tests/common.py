@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test import TestCase
 from django.test.client import RequestFactory, Client
 
@@ -13,15 +14,14 @@ class BaseVcwebTest(TestCase):
 
     """
     base class for vcweb.core tests, sets up test fixtures for participants,
-    forestry_test_data, and a number of participants, experiments, etc.,
-    based on the forestry experiment
+    and a number of participants, experiments, etc.
     """
-    fixtures = ['forestry_experiment_metadata']
-
     DEFAULT_EXPERIMENTER_PASSWORD = 'test.experimenter'
 
     def load_experiment(self, experiment_metadata=None, experimenter_password=DEFAULT_EXPERIMENTER_PASSWORD, **kwargs):
         if experiment_metadata is None:
+            # FIXME: assumes that there is always some Experiment available to load. revisit this, or figure out some
+            # better way to bootstrap tests
             experiment = Experiment.objects.first().clone()
         else:
             experiment = self.create_new_experiment(experiment_metadata, **kwargs)
@@ -79,14 +79,19 @@ class BaseVcwebTest(TestCase):
                                          experiment_metadata=experiment_metadata,
                                          experiment_configuration=experiment_configuration)
 
-    def setUp(self, disable_logging=True, disabled_loglevel=logging.WARNING, **kwargs):
+    def setUp(self, **kwargs):
         self.client = Client()
         self.factory = RequestFactory()
         for permission in PermissionGroup:
             AuthGroup.objects.get_or_create(name=permission.value)
         self.load_experiment(**kwargs)
-        if disable_logging:
-            logging.disable(disabled_loglevel)
+        logging.disable(settings.DISABLED_TEST_LOGLEVEL)
+
+    @property
+    def demo_experimenter(self):
+        if getattr(self, '_demo_experimenter', None) is None:
+            self._demo_experimenter = Experimenter.objects.get(user__email=settings.DEMO_EXPERIMENTER_EMAIL)
+        return self._demo_experimenter
 
     def create_experimenter(self, email='test.experimenter@mailinator.com', password='test'):
         u = User.objects.create_user(username='test_experimenter', email=email, password=password)

@@ -27,6 +27,9 @@ USE_I18N = False
 SECRET_KEY = 'customize this dev secret key'
 
 INSTALLED_APPS += (
-    'debug_toolbar',  # FIXME: replace with 'debug_toolbar.apps.DebugToolbarConfig' for 1.7
+    'debug_toolbar.apps.DebugToolbarConfig',
     'sslserver',
 )
+DEBUG_TOOLBAR_CONFIG = {
+    'INTERCEPT_REDIRECTS': False,
+}

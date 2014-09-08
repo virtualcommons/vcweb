@@ -9,8 +9,7 @@ from .common import BaseVcwebTest
 from .. import signals
 from ..models import (ParticipantRoundDataValue, Participant, ParticipantExperimentRelationship,
                       BookmarkedExperimentMetadata, ParticipantGroupRelationship, ExperimentMetadata, Parameter,
-                      RoundParameterValue, Institution, ExperimentSession, Invitation, ParticipantSignup, DefaultValue,
-                      Experimenter)
+                      RoundParameterValue, Institution, ExperimentSession, Invitation, ParticipantSignup, DefaultValue,)
 from ..subjectpool.views import get_potential_participants
 
 logger = logging.getLogger(__name__)
@@ -97,17 +96,17 @@ class ExperimentTest(BaseVcwebTest):
             "Contrived ValueError from test round started handler")
 
     def test_clone(self):
-        e = self.experiment
-        experimenter = e.experimenter
+        experiment = self.experiment
+        experimenter = experiment.experimenter
         new_experimenter = self.create_experimenter()
-        ce = e.clone(new_experimenter)
-        self.assertNotEqual(e, ce)
-        self.assertEqual(e.experiment_configuration, ce.experiment_configuration)
-        self.assertNotEqual(experimenter, ce.experimenter)
-        self.assertTrue(e.is_owner(experimenter.user))
-        self.assertFalse(e.is_owner(new_experimenter.user))
-        self.assertTrue(ce.is_owner(new_experimenter.user))
-        self.assertTrue(ce.is_owner(experimenter.user))
+        cloned_experiment = experiment.clone(new_experimenter)
+        self.assertNotEqual(experiment, cloned_experiment)
+        self.assertEqual(experiment.experiment_configuration, cloned_experiment.experiment_configuration)
+        self.assertNotEqual(experimenter, cloned_experiment.experimenter)
+        self.assertTrue(experiment.is_owner(experimenter.user))
+        self.assertFalse(experiment.is_owner(new_experimenter.user))
+        self.assertTrue(cloned_experiment.is_owner(new_experimenter.user))
+        self.assertFalse(cloned_experiment.is_owner(experimenter.user))
 
     def test_activate(self):
         e = self.experiment
@@ -156,6 +155,7 @@ class ExperimentTest(BaseVcwebTest):
         while e.has_next_round:
             total_number_of_rounds += 1
             e.advance_to_next_round()
+        logger.error("round configurations: %s", e.experiment_configuration.round_configuration_set.all())
         self.assertEqual(total_number_of_rounds, e.experiment_configuration.total_number_of_rounds)
         e.restart()
         self.assertTrue(e.is_active)
@@ -237,10 +237,10 @@ class ExperimentTest(BaseVcwebTest):
         e.end_round()
         for group in e.groups:
             for parameter in group.parameters.all():
-                gdvs = current_round_data.group_data_value_set.filter(
-                    parameter=parameter, group=group)
-                self.assertEqual(
-                    1, gdvs.count(), "Should only be a single group data value")
+                gdvs = current_round_data.group_data_value_set.filter(parameter=parameter, group=group)
+                if gdvs.exists():
+                    logger.error("testing parameter %s", parameter)
+                    self.assertEqual(1, gdvs.count(), "Should only be a single group data value for parameter")
             for parameter in e.parameters(Parameter.Scope.PARTICIPANT):
                 expected_size = group.size if parameter.name in (
                     'harvest_decision', 'participant_ready') else 0
@@ -388,14 +388,13 @@ class RoundConfigurationTest(BaseVcwebTest):
 
 class InvitationAlgorithmTest(BaseVcwebTest):
 
-    def set_up_participants(self):
+    def setup_participants(self):
         password = "test"
         participants = []
         for x in xrange(500):
             email = "student" + str(x) + "asu@asu.edu"
             user = User.objects.create_user(first_name='xyz', last_name='%d' % x, username=email, email=email,
                                             password=password)
-            user.save()
             p = Participant(user=user)
             p.can_receive_invitations = random.choice([True, False])
             p.gender = random.choice(['M', 'F'])
@@ -413,7 +412,7 @@ class InvitationAlgorithmTest(BaseVcwebTest):
         Participant.objects.bulk_create(participants)
         # logger.debug("TOTAL PARTICIPANTS %d", len(Participant.objects.all()))
 
-    def set_up_experiment_sessions(self):
+    def setup_experiment_sessions(self):
         e = self.experiment
         es_pk = []
         for x in xrange(4):
@@ -427,7 +426,7 @@ class InvitationAlgorithmTest(BaseVcwebTest):
             es.scheduled_end_date = random_date
             es.capacity = 1
             es.location = "Online"
-            es.creator = User.objects.get(pk=256)  # creator is vcweb
+            es.creator = self.demo_experimenter.user
             es.date_created = datetime.now()
             es.save()
             es_pk.append(es.pk)
@@ -473,7 +472,7 @@ class InvitationAlgorithmTest(BaseVcwebTest):
                     # logger.debug(final_participants)
         return final_participants
 
-    def set_up_participant_signup(self, participant_list, es_pk_list):
+    def setup_participant_signup(self, participant_list, es_pk_list):
         participant_list = participant_list[:25]
 
         for person in participant_list:
@@ -491,10 +490,10 @@ class InvitationAlgorithmTest(BaseVcwebTest):
             # logger.debug(ps.attendance)
             ps.save()
 
-    def set_up_inv(self, participants, es_pk_list):
+    def setup_invitations(self, participants, es_pk_list):
         invitations = []
         experiment_sessions = ExperimentSession.objects.filter(pk__in=es_pk_list)
-        user = User.objects.get(pk=256)
+        user = self.demo_experimenter.user
 
         for participant in participants:
             # recipient_list.append(participant.email)
@@ -509,19 +508,13 @@ class InvitationAlgorithmTest(BaseVcwebTest):
         Invitation.objects.bulk_create(invitations)
 
     def test_invitations(self):
-
-        self.set_up_participants()
-
+        self.setup_participants()
         last_week_date = datetime.now() - timedelta(days=7)
-
         for index in range(3):
             # First Iteration
             logger.debug("Iteration %d", index + 1)
-
-            es_pk_list = self.set_up_experiment_sessions()
-
+            es_pk_list = self.setup_experiment_sessions()
             x = self.get_final_participants()
-
             if x:
                 pk_list = [p.pk for p in x]
 
@@ -541,9 +534,9 @@ class InvitationAlgorithmTest(BaseVcwebTest):
                                                institution__name='Arizona State University',
                                                pk__in=pk_list).count(), len(x))
 
-                self.set_up_inv(x, es_pk_list)
+                self.setup_invitations(x, es_pk_list)
 
-                self.set_up_participant_signup(x, es_pk_list)
+                self.setup_participant_signup(x, es_pk_list)
             else:
                 break
 
@@ -657,15 +650,19 @@ class GraphDatabaseTest(BaseVcwebTest):
 class BookmarkedExperimentMetadataTest(BaseVcwebTest):
 
     def test_bookmarks(self):
-        e = Experimenter.objects.get(pk=1)
+        e = self.demo_experimenter
         bookmarks = ExperimentMetadata.objects.bookmarked(e)
-        self.assertEqual(1, bookmarks.count())
-        self.assertFalse(bookmarks[0].bookmarked)
+        self.assertEqual(2, bookmarks.count())
+        for experiment_metadata in bookmarks:
+            self.assertFalse(experiment_metadata.bookmarked)
         BookmarkedExperimentMetadata.objects.create(experiment_metadata=bookmarks[0], experimenter=e)
         bookmarks = ExperimentMetadata.objects.bookmarked(e)
-        self.assertEqual(1, bookmarks.count())
+        self.assertEqual(2, bookmarks.count())
+# FIXME: can we rely on queryset ordering here?
         self.assertTrue(bookmarks[0].bookmarked)
+        self.assertFalse(bookmarks[1].bookmarked)
         new_experimenter = self.create_experimenter()
         bookmarks = ExperimentMetadata.objects.bookmarked(new_experimenter)
-        self.assertEqual(1, bookmarks.count())
-        self.assertFalse(bookmarks[0].bookmarked)
+        self.assertEqual(2, bookmarks.count())
+        for experiment_metadata in bookmarks:
+            self.assertFalse(experiment_metadata.bookmarked)

@@ -162,7 +162,7 @@ def dashboard(request):
     """
     user = request.user
     if is_participant(user):
-        if not user.participant.is_profile_complete and not user.groups.filter(name=PermissionGroup.demo_participant.name).exists():
+        if not user.participant.is_profile_complete:
             # redirect to the profile page if this is a non-demo participant and their profile is incomplete
             return redirect('core:profile')
         elif user.participant.has_pending_invitations:
