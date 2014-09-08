@@ -1,5 +1,4 @@
 import os
-import sys
 import logging
 
 DEBUG = True
@@ -258,6 +257,7 @@ CAS_RESPONSE_CALLBACKS = (
 )
 CAS_CUSTOM_FORBIDDEN = 'cas_error'
 
-# tests invoke logging.disable(settings.DISABLED_TEST_LOGLEVEL) 
-# set to logging.NOTSET in local.py to see all log messages based on individual log handlers
-DISABLED_TEST_LOGLEVEL = logging.DEBUG
+# reset in local.py to enable more verbose logging (e.g., DISABLED_TEST_LOGLEVEL = logging.NOTSET)
+DISABLED_TEST_LOGLEVEL = logging.CRITICAL
+
+TEST_RUNNER = 'vcweb.core.tests.runner.VcwebTestRunner'

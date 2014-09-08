@@ -100,6 +100,10 @@ def create_forestry_configuration(apps, schema_editor, experiment_metadata=None,
         int_value=100,
         round_configuration=second_repeating_round
     )
+    final_debriefing = forestry_configuration.round_configuration_set.create(
+        round_type='DEBRIEFING',
+        sequence_number=6,
+    )
     return forestry_configuration
 
 
