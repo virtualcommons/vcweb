@@ -1057,10 +1057,11 @@ def get_cas_user(tree):
     6. CAS_RESPONSE_CALLBACKS - The call back function that is being called after the successful authentication by CAS
     """
     username = tree[0][0].text.lower()
+    participants_group = AuthGroup.objects.get(name=PermissionGroup.participant.value)
 
     try:
         User.objects.get(username=username)
-    except ObjectDoesNotExist:
+    except User.DoesNotExist:
         try:
             directory_profile = ASUWebDirectoryProfile(username)
             logger.debug(
@@ -1069,9 +1070,8 @@ def get_cas_user(tree):
             user = User.objects.get(username=directory_profile.email)
             user.username = username
             user.save()
-        except ObjectDoesNotExist:
-            # If this exception is throw it basically means that User Log in
-            # via CAS is a new user
+        except User.DoesNotExist:
+            # If this exception is thrown it means that User Logged in via CAS is a new user
             logger.debug("No user found with username %s", username)
             # Create vcweb Participant only if the user is an undergrad student
             if directory_profile.is_undergraduate:
@@ -1082,15 +1082,27 @@ def get_cas_user(tree):
                 logger.debug("%s (%s)", directory_profile, user.email)
                 password = User.objects.make_random_password()
                 user.set_password(password)
-                institution = Institution.objects.get(
-                    name='Arizona State University')
+                institution = Institution.objects.get(name=settings.CAS_UNIVERSITY_NAME)
+                user.groups.add(participants_group)
                 user.save()
                 participant = Participant.objects.create(user=user, major=directory_profile.major,
                                                          institution=institution)
                 logger.debug(
                     "CAS backend created participant %s from web directory", participant)
+            else:
+                logger.error(
+                    "CAS authenticated user %s is not an undergrad student", username)
         except:
-            logger.debug("Something went wrong. ASU Web Directory is down")
+            logger.error("ASU Web Directory is Down: Error retrieving user's info")
+            logger.debug("Creating user with username %s and random password", username)
+
+            user = User.objects.create_user(username=username)
+            password = User.objects.make_random_password()
+            user.set_password(password)
+            institution = Institution.objects.get(name=settings.CAS_UNIVERSITY_NAME)
+            user.groups.add(participants_group)
+            user.save()
+            participant = Participant.objects.create(user=user, institution=institution)
 
 
 def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):

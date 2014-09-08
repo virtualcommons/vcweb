@@ -142,7 +142,7 @@ ACCOUNT_ACTIVATION_DAYS = 30
 
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (
-    'vcweb.core.backends.ParticipantCASBackend',
+    'cas.backends.CASBackend',
     "vcweb.core.backends.EmailAuthenticationBackend",
     "django.contrib.auth.backends.ModelBackend",
 )
@@ -258,7 +258,7 @@ CAS_IGNORE_REFERER = True
 # CAS_LOGOUT_COMPLETELY = True
 # CAS_PROVIDE_URL_TO_LOGOUT = True
 CAS_REDIRECT_URL = "/cas/asu"
-
+CAS_AUTOCREATE_USERS = False
 CAS_RESPONSE_CALLBACKS = (
     'vcweb.core.views.get_cas_user',
 )

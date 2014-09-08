@@ -1,11 +1,8 @@
 import logging
 
-from cas.backends import CASBackend
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
-
-from .views import PermissionDenied
 
 
 logger = logging.getLogger(__name__)
@@ -22,8 +19,8 @@ class EmailAuthenticationBackend(ModelBackend):
     """
 
     def authenticate(self, username=None, password=None, **kwargs):
-        lowercase_username = username.lower()
         try:
+            lowercase_username = username.lower()
             validate_email(lowercase_username)
             user = User.objects.get(email=lowercase_username)
             if user.check_password(password):
@@ -36,35 +33,3 @@ class EmailAuthenticationBackend(ModelBackend):
             logger.warning("unhandled exception with username %s", username, exc_info=True)
         return None
 
-
-class ParticipantCASBackend(CASBackend):
-
-    """
-    CAS authentication backend with some user data populated from ASU's Web Directory.
-
-    Primary responsibility is to check whether the user was created by the callback or CAS
-    1. If the User was created by the cas.
-        b. It means the user is not an undergrad student or ASU Web directory was down So Redirect such users to error
-        page. Moreover delete the newly created user.
-    """
-
-    def authenticate(self, ticket, service):
-        """Authenticates CAS ticket and retrieves user data"""
-        user = super(ParticipantCASBackend, self).authenticate(ticket, service)
-
-        # If user is not in the system then an user with empty fields will be created by the CAS. So delete that user
-        # FIXME: Permission denied error is thrown if the ASU Web Directory is
-        # down
-        if is_new_user(user):
-            logger.error(
-                "XXX: CAS authenticated user %s is not an undergrad student, deleting", user)
-            # Delete the user as it has an "unusable" password
-            user.delete()
-            raise PermissionDenied(
-                "Registration is only available to ASU undergraduates. Please contact us for more information.")
-        return user
-
-
-def is_new_user(user):
-    """ returns true iff the user has an empty email, first name, and last name """
-    return not user.email and not user.first_name and not user.last_name
