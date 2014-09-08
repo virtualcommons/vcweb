@@ -141,8 +141,7 @@ def test(name=None, coverage=False):
     if name is not None:
         env.apps = name
     else:
-        apps = ['vcweb.core'] + vcweb_settings.EXPERIMENTS
-        env.apps = ' '.join(apps)
+        env.apps = ' '.join(vcweb_settings.VCWEB_APPS)
 
     if coverage:
         env.python = "coverage run --source='.' --omit=*test*,*settings*,*migrations*,*fabfile*,*wsgi*"

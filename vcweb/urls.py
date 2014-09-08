@@ -1,7 +1,4 @@
-import autocomplete_light
-# import every app/autocomplete_light_registry.py FIXME: can probably
-# remove for Django 1.7
-autocomplete_light.autodiscover()
+
 from django.conf import settings
 from django.conf.urls import url, include
 from django.contrib import admin
@@ -51,8 +48,7 @@ urlpatterns = [
 
 
 def experiment_urls():
-    # crude filter, if 'experiment' is in the app_name, include it
-    for experiment in settings.EXPERIMENTS:
+    for experiment in settings.VCWEB_EXPERIMENTS:
         experiment_name = experiment.rpartition('.')[2]
 # include all experiment urls.py under the experiment name's namespace
         yield url(r'^' + experiment_name + '/',

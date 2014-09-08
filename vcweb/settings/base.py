@@ -13,8 +13,6 @@ SITE_URL = 'https://vcweb.asu.edu'
 
 BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 
-sys.path.append(BASE_DIR)
-
 DEMO_EXPERIMENTER_EMAIL = 'vcweb.demo@mailinator.com'
 DEFAULT_FROM_EMAIL = 'vcweb@asu.edu'
 SERVER_EMAIL = 'vcweb@asu.edu'
@@ -99,7 +97,7 @@ TEMPLATE_DIRS = (
     # Don't forget to use absolute paths, not relative paths.
 )
 
-DEFAULT_APPS = (
+DJANGO_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -119,9 +117,8 @@ THIRD_PARTY_APPS = (
     'cas',
 )
 
-VCWEB_APPS = (
-    'vcweb.core',
-    # TODO: make these dynamically discoverable?
+
+VCWEB_EXPERIMENTS = (
     'vcweb.experiment.forestry',
     'vcweb.experiment.lighterprints',
     'vcweb.experiment.bound',
@@ -129,7 +126,10 @@ VCWEB_APPS = (
     'vcweb.experiment.irrigation',
 )
 
-INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + VCWEB_APPS
+VCWEB_APPS = ('vcweb.core',) + VCWEB_EXPERIMENTS
+
+
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + VCWEB_APPS
 
 LOGIN_REDIRECT_URL = '/dashboard'
 
@@ -263,18 +263,3 @@ CAS_RESPONSE_CALLBACKS = (
     'vcweb.core.views.get_cas_user',
 )
 CAS_CUSTOM_FORBIDDEN = 'cas_error'
-
-EXPERIMENTS = [app_name for app_name in VCWEB_APPS if 'experiment' in app_name]
-
-if 'test' in sys.argv:
-    SKIP_SOUTH_TESTS = True
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:'
-    }
-    DATABASES['postgres'] = {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'vcweb',
-        'USER': 'postgres',
-        'PASSWORD': '',
-    }

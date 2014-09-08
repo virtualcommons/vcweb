@@ -146,8 +146,7 @@ class Activity(MPTTModel):
     last_modified = models.DateTimeField(default=datetime.now)
     # for the "in-the-wild" app, activities unlock other sets of activities in
     # a tree-like fashion
-    parent = TreeForeignKey(
-        'self', null=True, blank=True, related_name='children_set')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children_set')
     is_public = models.BooleanField(default=False)
 
     objects = ActivityManager.for_queryset_class(ActivityQuerySet)()
@@ -229,7 +228,7 @@ class ActivityAvailability(models.Model):
 
 @simplecache
 def get_linear_public_good_parameter():
-    return Parameter.objects.for_experiment(name='linear_public_good')
+    return Parameter.objects.for_experiment(name='lfp_linear_public_good')
 
 
 @simplecache
@@ -259,7 +258,7 @@ def get_experiment_completed_parameter():
 
 @simplecache
 def get_treatment_type_parameter():
-    return Parameter.objects.get(name='treatment_type')
+    return Parameter.objects.get(name='lfp_treatment_type')
 
 
 def is_linear_public_good_game(experiment_configuration, default=False):

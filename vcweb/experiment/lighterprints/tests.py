@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class BaseTest(BaseVcwebTest):
-    fixtures = ['lighterprints_experiment_metadata', 'activities']
-
     """
     FIXME: only works on level based experiments without has_daily_rounds, fix to operate on scheduled activity rounds
     as well by adding available_activity parameters and scheduled activities
