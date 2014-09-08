@@ -64,7 +64,7 @@ def create_forestry_configuration(apps, schema_editor, experiment_metadata=None,
     RoundParameterValue.objects.create(
         parameter=initial_resource_level_param,
         int_value=100,
-        round_configuration=practice_round
+        round_configuration=practice_round,
     )
     first_repeating_round = forestry_configuration.round_configuration_set.create(
         round_type='REGULAR',
