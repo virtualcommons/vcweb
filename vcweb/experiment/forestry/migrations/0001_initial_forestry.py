@@ -16,6 +16,8 @@ def create_forestry_experiment_metadata(apps, schema_editor):
         about_url='http://commons.asu.edu',
         description='Web-based version of forestry field experiments conducted by Cardenas, Janssen, and Bousquet'
     )
+    parameters = create_forestry_parameters(apps, schema_editor)
+    forestry_experiment_metadata.parameters.add(*parameters)
     forestry_configuration = create_forestry_configuration(apps, schema_editor,
                                                            experiment_metadata=forestry_experiment_metadata,
                                                            experimenter=demo_experimenter)
@@ -109,59 +111,59 @@ def create_forestry_configuration(apps, schema_editor, experiment_metadata=None,
 
 def create_forestry_parameters(apps, schema_editor):
     Parameter = apps.get_model('core', 'Parameter')
-    Parameter.objects.create(
-        name='initial_resource_level',
-        display_name='Initial resource level',
-        description='Initial number of resources to set at the beginning of the round. Will only be set if reset_resource_level is true',
-        scope='round',
-        type='int',
-        default_value_string='100',
-    )
-    Parameter.objects.create(
-        name='reset_resource_level',
-        display_name='Reset resource level?',
-        description='Set to true if you want to set the resource level to the initial resource level at the beginning of this round',
-        scope='round',
-        type='boolean',
-        default_value_string='false',
-    )
-    Parameter.objects.create(
-        name='regrowth',
-        display_name='Resource regrowth',
-        description='Amount of resource regrowth for a given group in a given round',
-        scope='group',
-        type='int',
-    )
-    Parameter.objects.create(
-        name='resource_level',
-        display_name='Resource level',
-        description='Integer value representing the resource level for the given group in the given round',
-        scope='group',
-        type='int',
-    )
-    Parameter.objects.create(
-        name='group_harvest',
-        display_name='Total group harvest',
-        description='Total number of trees harvested by the given group in the given round',
-        scope='group',
-        type='int',
-    )
-    Parameter.objects.create(
-        name='regrowth_rate',
-        display_name='Resource regrowth rate',
-        description='''Resource regrowth scaling factor, a floating point number between 0 and 1. The forestry experiment
-        uses a simple regrowth function, N*r + N, where N is the current resource level and r is the regrowth rate.
-        ''',
-        scope='round',
-        type='float',
-    )
-    Parameter.objects.create(
-        name='harvest_decision',
-        display_name='Participant harvest decision',
-        description='Number of resources this participant elected to harvest this round.',
-        scope='participant',
-        type='int',
-    )
+    return [
+        Parameter.objects.create(
+            name='initial_resource_level',
+            display_name='Initial resource level',
+            description='Initial number of resources to set at the beginning of the round. Will only be set if reset_resource_level is true',
+            scope='round',
+            type='int',
+            default_value_string='100',
+        ),
+        Parameter.objects.create(
+            name='reset_resource_level',
+            display_name='Reset resource level?',
+            description='Set to true if you want to set the resource level to the initial resource level at the beginning of this round',
+            scope='round',
+            type='boolean',
+            default_value_string='false',
+        ),
+        Parameter.objects.create(
+            name='regrowth',
+            display_name='Resource regrowth',
+            description='Amount of resource regrowth for a given group in a given round',
+            scope='group',
+            type='int',
+        ),
+        Parameter.objects.create(
+            name='resource_level',
+            display_name='Resource level',
+            description='Integer value representing the resource level for the given group in the given round',
+            scope='group',
+            type='int',
+        ),
+        Parameter.objects.create(
+            name='group_harvest',
+            display_name='Total group harvest',
+            description='Total number of trees harvested by the given group in the given round',
+            scope='group',
+            type='int',
+        ),
+        Parameter.objects.create(
+            name='regrowth_rate',
+            display_name='Resource regrowth rate',
+            description='''Resource regrowth scaling factor, a floating point number between 0 and 1. The forestry experiment uses a simple regrowth function, N*r + N, where N is the current resource level and r is the regrowth rate. ''',
+            scope='round',
+            type='float',
+        ),
+        Parameter.objects.create(
+            name='harvest_decision',
+            display_name='Participant harvest decision',
+            description='Number of resources this participant elected to harvest this round.',
+            scope='participant',
+            type='int',
+        ),
+    ]
 
 
 class Migration(migrations.Migration):
@@ -171,6 +173,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(create_forestry_parameters),
         migrations.RunPython(create_forestry_experiment_metadata),
     ]

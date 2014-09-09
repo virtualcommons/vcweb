@@ -258,6 +258,6 @@ CAS_RESPONSE_CALLBACKS = (
 CAS_CUSTOM_FORBIDDEN = 'cas_error'
 
 # reset in local.py to enable more verbose logging (e.g., DISABLED_TEST_LOGLEVEL = logging.NOTSET)
-DISABLED_TEST_LOGLEVEL = logging.CRITICAL
+DISABLED_TEST_LOGLEVEL = logging.WARNING
 
 TEST_RUNNER = 'vcweb.core.tests.runner.VcwebTestRunner'
