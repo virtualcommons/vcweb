@@ -10,6 +10,5 @@ class LighterprintsConfig(AppConfig):
     verbose_name = 'Lighter Footprints'
 
     def ready(self):
-        from .signals import *
+        from .signals import round_started_handler, round_ended_handler
         logger.debug("lighterprints app ready")
-
