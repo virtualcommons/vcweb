@@ -93,6 +93,7 @@ class ParameterValueMixin(object):
 
     """
 
+    @transaction.atomic
     def get_parameter_value(self, parameter=None, name=None, default=None, inheritable=False):
         """
         returns the ParameterizedValue associated with the given parameter and this object's parameter value set. If
@@ -100,7 +101,7 @@ class ParameterValueMixin(object):
         """
         if parameter is None and name is None:
             raise ValueError("Cannot retrieve parameter value with no name or parameter")
-        parameter_value_set = self.parameter_value_set
+        parameter_value_set = self.parameter_value_set.select_for_update()
         try:
             if parameter:
                 return parameter_value_set.get(parameter=parameter)
@@ -156,12 +157,13 @@ class DataValueMixin(object):
                      ('round_data', self.experiment.current_round_data if round_data is None else round_data)],
                     **kwargs)
 
+    @transaction.atomic
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None, use_filter=False, default=None,
                        **kwargs):
         if round_data is None:
             round_data = self.experiment.current_round_data
         criteria = self._criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
-        data_value_set = self.data_value_set.select_related('parameter')
+        data_value_set = self.data_value_set.select_for_update().select_related('parameter')
         dvs = data_value_set.filter(**criteria)
         if use_filter:
             return dvs
@@ -176,6 +178,7 @@ class DataValueMixin(object):
                 dv.update(default)
             return dv
 
+    @transaction.atomic
     def copy_to_next_round(self, *data_values, **kwargs):
         e = self.experiment
         if e.is_last_round:
@@ -1238,6 +1241,7 @@ class Experiment(models.Model):
                 if increment_repeated_round_sequence_number:
                     rrsn += 1
             ps['repeating_round_sequence_number'] = rrsn
+        self.round_data_set.select_for_update()
         round_data, created = self.round_data_set.get_or_create(**ps)
         if self.experiment_configuration.is_experimenter_driven:
             # create participant ready data values for every round in
@@ -1251,7 +1255,7 @@ class Experiment(models.Model):
                     parameter=get_participant_ready_parameter(),
                     round_data=round_data,
                     defaults={'boolean_value': False})
-        logger.debug("round data %s - already created? %s ", round_data, created)
+        logger.debug("round data %s - newly created? %s ", round_data, created)
         return round_data, created
 
     @log_signal_errors
@@ -2395,10 +2399,8 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
     # FIXME: should also add a participant_identifier field here in case we
     # want to use something other than numbers..?
     participant_number = models.PositiveIntegerField()
-    participant = models.ForeignKey(
-        Participant, related_name='participant_group_relationship_set')
-    group = models.ForeignKey(
-        Group, related_name='participant_group_relationship_set')
+    participant = models.ForeignKey(Participant, related_name='participant_group_relationship_set')
+    group = models.ForeignKey(Group, related_name='participant_group_relationship_set')
     round_joined = models.ForeignKey(RoundConfiguration)
     date_created = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)

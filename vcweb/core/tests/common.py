@@ -18,7 +18,7 @@ class BaseVcwebTest(TestCase):
     """
     DEFAULT_EXPERIMENTER_PASSWORD = 'test.experimenter'
 
-    def load_experiment(self, experiment_metadata=None, experimenter_password=DEFAULT_EXPERIMENTER_PASSWORD, **kwargs):
+    def load_experiment(self, experiment_metadata=None, test_email_suffix='asu.edu', experimenter_password=DEFAULT_EXPERIMENTER_PASSWORD, **kwargs):
         if experiment_metadata is None:
             # FIXME: assumes that there is always some Experiment available to load. revisit this, or figure out some
             # better way to bootstrap tests
@@ -33,7 +33,7 @@ class BaseVcwebTest(TestCase):
         experiment.experiment_configuration.round_configuration_set.exclude(sequence_number=1).update(duration=60)
         if experiment.participant_set.count() == 0:
             logger.debug("adding participants to %s", experiment)
-            experiment.setup_test_participants(email_suffix='asu.edu', count=10, password='test')
+            experiment.setup_test_participants(email_suffix=test_email_suffix, count=10, password='test')
         experiment.save()
         u = experiment.experimenter.user
         u.set_password(experimenter_password)
@@ -65,8 +65,11 @@ class BaseVcwebTest(TestCase):
         return self.experiment.participant_group_relationships
 
     def create_new_experiment(self, experiment_metadata, experimenter=None):
+        """
+        Creates a new Experiment and ExperimentConfiguration based on the given ExperimentMetadata.
+        """
         if experimenter is None:
-            experimenter = Experimenter.objects.get(pk=1)
+            experimenter = self.demo_experimenter
         experiment_configuration = ExperimentConfiguration.objects.create(experiment_metadata=experiment_metadata,
                                                                           name='Test Experiment Configuration',
                                                                           creator=experimenter)
