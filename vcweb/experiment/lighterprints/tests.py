@@ -1,13 +1,12 @@
 import json
 import logging
-from datetime import date, timedelta
 
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.core.models import ParticipantRoundDataValue
 from .models import (Activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter,
                      get_footprint_level, get_performed_activity_ids, get_treatment_type_parameter,
                      is_scheduled_activity_experiment, is_level_based_experiment, is_high_school_treatment)
-from .services import (GroupScores, get_individual_points, get_group_activity, daily_update)
+from .services import (GroupScores, get_individual_points, get_group_activity)
 
 
 logger = logging.getLogger(__name__)
@@ -208,7 +207,7 @@ class GroupScoreTest(LevelBasedTest):
         self.perform_activities()
         current_round_data = e.current_round_data
         for pgr in e.participant_group_relationships:
-            self.assertEqual(get_individual_points(pgr, current_round_data), 0)
+            self.assertEqual(get_individual_points(pgr, current_round_data), 107)
 
     def test_group_score(self):
         e = self.experiment
@@ -217,9 +216,14 @@ class GroupScoreTest(LevelBasedTest):
         # expected average points per person is the straight sum of all activities in the performed activities because
         # every participant in the group has performed them
         expected_avg_points_per_person = sum([activity.points for activity in performed_activities])
-        e.advance_to_next_round()
         gs = e.groups
         group_scores = GroupScores(e, groups=gs)
         for group in gs:
             self.assertEqual(group_scores.average_daily_points(group), expected_avg_points_per_person)
             self.assertEqual(group_scores.total_daily_points(group), expected_avg_points_per_person * group.size)
+        e.advance_to_next_round()
+        group_scores = GroupScores(e, groups=gs)
+        for group in gs:
+            self.assertEqual(group_scores.average_daily_points(group), 0)
+            self.assertEqual(group_scores.total_daily_points(group), 0)
+
