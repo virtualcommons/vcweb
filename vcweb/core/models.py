@@ -2934,10 +2934,18 @@ def get_participant_ready_parameter():
 
 
 SCALAR_DATA_FIELDS = (models.CharField, models.TextField, models.IntegerField, models.PositiveIntegerField,
-                      models.PositiveSmallIntegerField)
+                      models.PositiveSmallIntegerField, models.BooleanField, models.BigIntegerField,
+                      models.DecimalField, models.FloatField)
 
 
 def get_model_fields(model):
+    """
+    Returns all Django model fields that should be emitted in a data outfile. Returns the data_fields attribute if set,
+    otherwise looks up all the scalar data fields in the django model meta class.
+
+    FIXME: Scalar data fields are currently defined in this module's SCALAR_DATA_FIELDS, perhaps it should live in
+    settings in the future. Also, reliance on model._meta is brittle and liable to change in the future.
+    """
     # return only direct scalar fields
     if hasattr(model, 'data_fields'):
         return getattr(model, 'data_fields')
@@ -2948,6 +2956,66 @@ def get_model_fields(model):
 def find_duplicate_users(field='email'):
     return User.objects.values(field).annotate(max_id=models.Max('id'),
                                                count_id=models.Count('id')).filter(count_id__gt=1).order_by()
+
+
+
+def reset_password(email_address, from_email=settings.SERVER_EMAIL, template='registration/password_reset_email.html'):
+    """
+    Reset the password for all (active) users with given E-Mail address
+    """
+    form = PasswordResetForm({'email': email_address, })
+    return form.save(from_email=from_email, email_template_name=template)
+
+
+def set_full_name(user, full_name):
+    """ crudely splits last token as last_name and everything else as first_name """
+    (first_name, separator, last_name) = full_name.rpartition(' ')
+    logger.debug("first_name %s, last_name %s", first_name, last_name)
+    updated = False
+    if first_name and not user.first_name:
+        user.first_name = first_name
+        updated = True
+    if last_name and not user.last_name:
+        user.last_name = last_name
+        updated = True
+    return updated
+
+
+def send_email(template, context, subject, from_email, to_email, bcc=None):
+    """
+    Utility function to send emails. Expects a plaintext markdown template and converts it into an HTML message as well.
+    """
+    plaintext_template = get_template(template)
+    c = Context(context)
+    plaintext_content = plaintext_template.render(c)
+    html_content = markdown.markdown(plaintext_content)
+
+    msg = EmailMultiAlternatives(subject=subject, body=plaintext_content, from_email=from_email, to=to_email, bcc=bcc)
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()
+
+
+@receiver(signals.system_daily_tick)
+def send_reminder_emails(sender, start=None, **kwargs):
+    """
+    midnight check sending reminder emails to participants signed up for an ExperimentSession being run
+    on the following day
+    """
+    if settings.DEBUG:
+        logger.debug("not sending reminder emails in debug mode")
+        return
+    tomorrow = date.today() + timedelta(days=1)
+    start_date_time = datetime.combine(tomorrow, time.min)
+    end_date_time = datetime.combine(tomorrow, time.max)
+    es_list = ExperimentSession.objects.filter(
+        scheduled_date__range=(start_date_time, end_date_time))
+    for es in es_list:
+        participant_emails = ParticipantSignup.objects.filter(invitation__experiment_session=es).values_list(
+            'invitation__participant__email', flat=True)
+        logger.debug(
+            "subject pool sending reminder emails to %s", participant_emails)
+        send_email("subject-pool/email/reminder-email.txt", {"session": es}, "Reminder Email",
+                   settings.SERVER_EMAIL, participant_emails)
 
 
 @receiver(signals.system_daily_tick)
@@ -2978,64 +3046,3 @@ def update_daily_experiments(sender, timestamp=None, start=None, **kwargs):
             e.activate()
 
 
-def reset_password(email_address, from_email=settings.SERVER_EMAIL, template='registration/password_reset_email.html'):
-    """
-    Reset the password for all (active) users with given E-Mail address
-    """
-    form = PasswordResetForm({'email': email_address, })
-    return form.save(from_email=from_email, email_template_name=template)
-
-
-def set_full_name(user, full_name):
-    """ crudely splits last token as last_name and everything else as first_name """
-    (first_name, separator, last_name) = full_name.rpartition(' ')
-    logger.debug("first_name %s, last_name %s", first_name, last_name)
-    updated = False
-    if first_name and not user.first_name:
-        user.first_name = first_name
-        updated = True
-    if last_name and not user.last_name:
-        user.last_name = last_name
-        updated = True
-    return updated
-
-
-def send_email(template, context, subject, from_email, to_email, bcc=None):
-    """
-     Utility function to send out confirmation and reminder emails
-    """
-    plaintext_template = get_template(template)
-
-    c = Context(context)
-
-    plaintext_content = plaintext_template.render(c)
-    html_content = markdown.markdown(plaintext_content)
-
-    msg = EmailMultiAlternatives(
-        subject=subject, body=plaintext_content, from_email=from_email, to=to_email, bcc=bcc)
-    msg.attach_alternative(html_content, "text/html")
-
-    msg.send()
-
-
-@receiver(signals.system_daily_tick)
-def send_reminder_emails(sender, start=None, **kwargs):
-    """
-    midnight check sending reminder emails to participants signed up for an ExperimentSession being run
-    on the following day
-    """
-    if settings.DEBUG:
-        logger.debug("not sending reminder emails in debug mode")
-        return
-    tomorrow = date.today() + timedelta(days=1)
-    start_date_time = datetime.combine(tomorrow, time.min)
-    end_date_time = datetime.combine(tomorrow, time.max)
-    es_list = ExperimentSession.objects.filter(
-        scheduled_date__range=(start_date_time, end_date_time))
-    for es in es_list:
-        participant_emails = ParticipantSignup.objects.filter(invitation__experiment_session=es).values_list(
-            'invitation__participant__email', flat=True)
-        logger.debug(
-            "subject pool sending reminder emails to %s", participant_emails)
-        send_email("subject-pool/email/reminder-email.txt", {"session": es}, "Reminder Email",
-                   settings.SERVER_EMAIL, participant_emails)

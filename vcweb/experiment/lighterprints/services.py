@@ -6,19 +6,16 @@ from django.conf import settings
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
-from django.dispatch import receiver
 from django.template import Context
 from django.template.loader import select_template
 from django.utils.timesince import timesince
 
-from vcweb.core import signals
 
 from vcweb.core.models import (ParticipantRoundDataValue, ChatMessage, Like, Comment)
 from .models import (Activity, is_scheduled_activity_experiment, get_activity_availability_cache,
                      get_activity_performed_parameter, ActivityAvailability, is_linear_public_good_game,
                      is_high_school_treatment, has_leaderboard, get_activity_points_cache, get_footprint_level,
-                     get_group_threshold, get_experiment_completed_dv, get_footprint_level_dv, EXPERIMENT_METADATA_NAME,
-                     get_experiment_completed_parameter, get_footprint_level_parameter,)
+                     get_group_threshold, get_experiment_completed_dv, get_footprint_level_dv,)
 
 import itertools
 import locale
@@ -523,23 +520,6 @@ def get_group_activity(participant_group_relationship, limit=None):
     return all_activity, chat_messages
 
 
-def abbreviated_timesince(dt):
-    s = timesince(dt)
-    s = re.sub(r'\sdays?', 'd', s)
-    s = re.sub(r'\sminutes?', 'm', s)
-    s = re.sub(r'\shours?', 'h', s)
-    s = re.sub(r'\sweeks?', 'w', s)
-    s = re.sub(r'\smonths?', 'mo', s)
-    return s.replace(',', '')
-
-
-@receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
-@transaction.atomic
-def round_ended_handler(sender, experiment=None, **kwargs):
-    logger.debug("ending lighter footprints round %s, sending summary emails", experiment)
-    send_summary_emails(experiment)
-
-
 def send_summary_emails(experiment, start_date=None, debug=False, round_data=None, **kwargs):
     if start_date is None:
         start_date = date.today() - timedelta(1)
@@ -556,25 +536,14 @@ def send_summary_emails(experiment, start_date=None, debug=False, round_data=Non
         mail.get_connection().send_messages(all_messages)
 
 
-@receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
-@transaction.atomic
-def round_started_handler(sender, experiment=None, **kwargs):
-    logger.debug("starting lighter footprints round %s", experiment)
-    round_data = experiment.current_round_data
-    # FIXME: experiment.initialize_parameters could do some of this except for
-    # setting the default values properly
-    experiment_completed_parameter = get_experiment_completed_parameter()
-    initial_group_parameters = [experiment_completed_parameter]
-    initial_parameter_defaults = {experiment_completed_parameter: False}
-    if not is_scheduled_activity_experiment(round_data.round_configuration):
-        footprint_level_parameter = get_footprint_level_parameter()
-        initial_group_parameters.append(footprint_level_parameter)
-        initial_parameter_defaults[footprint_level_parameter] = 1
-    experiment.initialize_data_values(
-        group_parameters=initial_group_parameters,
-        round_data=round_data,
-        defaults=initial_parameter_defaults,
-    )
+def abbreviated_timesince(dt):
+    s = timesince(dt)
+    s = re.sub(r'\sdays?', 'd', s)
+    s = re.sub(r'\sminutes?', 'm', s)
+    s = re.sub(r'\shours?', 'h', s)
+    s = re.sub(r'\sweeks?', 'w', s)
+    s = re.sub(r'\smonths?', 'mo', s)
+    return s.replace(',', '')
 
 
 def get_points_to_next_level(current_level):

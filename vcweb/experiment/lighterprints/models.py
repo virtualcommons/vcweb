@@ -38,6 +38,10 @@ def get_activity_availability_cache():
     return aac
 
 
+def is_level_based_experiment(round_configuration):
+    return get_treatment_type(round_configuration).string_value == 'LEVEL_BASED'
+
+
 def is_scheduled_activity_experiment(round_configuration):
     return get_treatment_type(round_configuration).string_value != 'LEVEL_BASED'
 
