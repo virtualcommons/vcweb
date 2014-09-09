@@ -7,7 +7,7 @@ from vcweb.core.models import ParticipantRoundDataValue
 from .models import (Activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter,
                      get_footprint_level, get_performed_activity_ids, get_treatment_type_parameter,
                      is_scheduled_activity_experiment, is_level_based_experiment, is_high_school_treatment)
-from .services import (GroupScores, get_individual_points, get_group_activity)
+from .services import (GroupScores, get_individual_points, get_group_activity, daily_update)
 
 
 logger = logging.getLogger(__name__)
@@ -102,23 +102,32 @@ class UpdateLevelTest(LevelBasedTest):
         current_round_data = e.current_round_data
         self.assertTrue(is_level_based_experiment(e))
         # initialize participant carbon savings
-        level_one_activities = Activity.objects.filter(level=1)
+        level_one_activities = Activity.objects.filter(level=1).values_list('pk', flat=True)
         for pgr in e.participant_group_relationships:
-            self.assertEqual(get_footprint_level(pgr.group), 1, 'All participants should be on level 1')
-            for activity in level_one_activities:
+            for activity_pk in level_one_activities:
                 activity_performed = ParticipantRoundDataValue.objects.create(
                     participant_group_relationship=pgr,
                     round_data=current_round_data,
                     parameter=get_activity_performed_parameter()
                 )
-                activity_performed.int_value = activity.pk
-                activity_performed.save()
-        e.advance_to_next_round()
+                activity_performed.update_int(activity_pk)
         gs = e.groups
+        group_scores = GroupScores(e, current_round_data, gs)
+        logger.debug("group scores created for current round data")
+        for group in gs:
+            self.assertEqual(get_footprint_level(group), 1, 'All participants should still be on level 1')
+            self.assertEqual(group_scores.average_daily_points(group), 177)
+        # manually invoking daily_update
+        e.advance_to_next_round()
         group_scores = GroupScores(e, current_round_data, gs)
         for group in gs:
             self.assertEqual(get_footprint_level(group), 2, 'All levels should have advanced to 2')
             self.assertEqual(group_scores.average_daily_points(group), 177)
+        group_scores = GroupScores(e, groups=gs)
+        for group in gs:
+            self.assertEqual(get_footprint_level(group), 2, 'Footprint level should still be 2')
+            self.assertEqual(0, group_scores.average_daily_points(group),
+                             'average daily points should have been reset to 0')
 
 
 class GroupActivityTest(LevelBasedTest):
@@ -197,11 +206,9 @@ class GroupScoreTest(LevelBasedTest):
         e = self.experiment
         e.activate()
         self.perform_activities()
+        current_round_data = e.current_round_data
         for pgr in e.participant_group_relationships:
-            self.assertEqual(get_individual_points(pgr), 0,
-                             'get_individual_points with no args looks for previous day activities, should be 0')
-            self.assertTrue(get_individual_points(pgr, end_date=date.today() + timedelta(1)) > 0,
-                            'get_individual_points with explicit end date should be > 0')
+            self.assertEqual(get_individual_points(pgr, current_round_data), 0)
 
     def test_group_score(self):
         e = self.experiment

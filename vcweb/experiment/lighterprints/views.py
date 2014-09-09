@@ -16,7 +16,7 @@ from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGrou
                                ParticipantRoundDataValue, Like, PermissionGroup)
 from vcweb.core.views import (dumps, get_active_experiment, set_authentication_token, mimetypes)
 from .forms import ActivityForm
-from .models import (Activity, has_leaderboard, get_lighterprints_experiment_metadata, is_linear_public_good_game,
+from .models import (Activity, get_lighterprints_experiment_metadata, is_linear_public_good_game,
                      is_high_school_treatment, get_treatment_type, get_activity_performed_parameter, )
 from .services import (ActivityStatusList, GroupScores, do_activity, get_time_remaining, GroupActivity)
 
@@ -150,7 +150,6 @@ class LighterprintsViewModel(object):
         self.round_data = self.experiment.current_round_data if round_data is None else round_data
 
 
-
 class HighSchoolViewModel(object):
 
     def __init__(self, participant_group_relationship, experiment=None, round_configuration=None, round_data=None):
@@ -219,10 +218,8 @@ class HighSchoolViewModel(object):
 @ownership_required(Experiment)
 def download_payment_data(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
-    user = request.user
     response = HttpResponse(content_type=mimetypes.types_map['.csv'])
-    response[
-        'Content-Disposition'] = 'attachment; filename=payment-%s' % experiment.data_file_name()
+    response['Content-Disposition'] = 'attachment; filename=payment-%s' % experiment.data_file_name()
     writer = unicodecsv.writer(response, encoding='utf-8')
     group_scores = GroupScores(experiment)
     writer.writerow(['Group', 'Participant', 'Username', 'Total Earnings'])
@@ -245,16 +242,15 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         experiment = own_group.experiment
     if round_configuration is None:
         round_configuration = experiment.current_round
-    if is_high_school_treatment(round_configuration):
+    experiment_configuration = round_configuration.experiment_configuration
+    if is_high_school_treatment(experiment_configuration=experiment_configuration):
         return HighSchoolViewModel(participant_group_relationship, experiment, round_configuration).to_json()
     if activities is None:
         activities = Activity.objects.all()
     if round_data is None:
         round_data = experiment.current_round_data
-    experiment_configuration = round_configuration.experiment_configuration
     linear_public_good = is_linear_public_good_game(experiment_configuration)
-    group_scores = GroupScores(
-        experiment, round_data, participant_group_relationship=participant_group_relationship)
+    group_scores = GroupScores(experiment, round_data, participant_group_relationship=participant_group_relationship)
     total_participant_points = group_scores.total_participant_points
     group_data = group_scores.get_group_data_list()
     own_group_level = group_scores.get_group_level(own_group)
@@ -348,7 +344,7 @@ def participate(request, experiment_id=None):
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'),
                                 participant=participant, group__experiment=experiment)
         treatment_type = get_treatment_type(experiment).string_value
-        if is_high_school_treatment(treatment_type=treatment_type):
+        if treatment_type == 'HIGH_SCHOOL':
             view_model = HighSchoolViewModel(pgr, experiment=experiment, round_configuration=round_configuration)
             return render(request, view_model.template_name, {
                 'experiment': experiment,
@@ -362,7 +358,7 @@ def participate(request, experiment_id=None):
         return render(request, 'lighterprints/participate.html', {
             'experiment': experiment,
             'participant_group_relationship': pgr,
-            'has_leaderboard': has_leaderboard(treatment_type=treatment_type),
+            'has_leaderboard': treatment_type == 'LEADERBOARD',
             'view_model_json': view_model_json,
         })
     else:

@@ -108,7 +108,7 @@ class ActivityStatusList(object):
 class GroupScores(object):
 
     def __init__(self, experiment, round_data=None, groups=None, participant_group_relationship=None,
-                 start_date=None, end_date=None, experiment_configuration=None):
+                 experiment_configuration=None):
         self.experiment = experiment
         if round_data is None:
             round_data = experiment.current_round_data
@@ -116,8 +116,6 @@ class GroupScores(object):
             groups = list(experiment.groups)
         if experiment_configuration is None:
             experiment_configuration = experiment.experiment_configuration
-        if start_date is None:
-            start_date = date.today()
         self.round_data = round_data
         self.groups = groups
         self.experiment_configuration = experiment_configuration
@@ -128,8 +126,6 @@ class GroupScores(object):
         self.group_rankings = None
         self.total_participant_points = 0
         # establish date range
-        self.start_date = start_date
-        self.end_date = start_date + timedelta(1) if end_date is None else end_date
         self.round_configuration = self.round_data.round_configuration
         self.treatment_type = get_treatment_type(experiment_configuration=experiment_configuration).string_value
         self.initialize_scores(participant_group_relationship)
@@ -155,8 +151,7 @@ class GroupScores(object):
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
         activity_points_cache = get_activity_points_cache()
         activities_performed_qs = ParticipantRoundDataValue.objects.for_round(
-            parameter=get_activity_performed_parameter(), round_data=self.round_data,
-            date_created__range=(self.start_date, self.end_date))
+            parameter=get_activity_performed_parameter(), round_data=self.round_data)
         for dv in activities_performed_qs:
             activity_points = activity_points_cache[dv.int_value]
             self.scores_dict[dv.participant_group_relationship.group]['total_daily_points'] += activity_points
@@ -222,8 +217,8 @@ class GroupScores(object):
                       reverse=True)
 
     def should_advance_level(self, group, level, max_level=3):
-        logger.debug("checking if group %s at level %s should advance in level on %s (%s)",
-                     group, level, self.start_date, self.scores_dict[group])
+        logger.debug("checking if group %s at level %s should advance in level: %s",
+                     group, level, self.scores_dict[group])
         if level <= max_level:
             return self.average_daily_points(group) >= get_points_to_next_level(level)
         return False
@@ -259,7 +254,7 @@ class GroupScores(object):
             'pointsToNextLevel': self.get_points_goal(group),
         }
 
-    def daily_update(self):
+    def perform_daily_update(self):
         logger.debug("creating daily update email messages for all groups")
         return itertools.chain.from_iterable(self.update(group) for group in self.groups)
 
@@ -289,8 +284,7 @@ class GroupScores(object):
         #experimenter_email = experiment.experimenter.email
         # FIXME: change this to the experimenter or add a dedicated settings email from
         experimenter_email = settings.SERVER_EMAIL
-        number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group,
-                                                             date_created__gte=yesterday).count()
+        number_of_chat_messages = ChatMessage.objects.for_group(group, round_data=round_data).count()
         messages = []
         c = Context({
             'experiment': experiment,
@@ -308,7 +302,7 @@ class GroupScores(object):
             'has_leaderboard': self.has_leaderboard
         })
         for pgr in group.participant_group_relationship_set.all():
-            c['individual_points'] = get_individual_points(pgr)
+            c['individual_points'] = get_individual_points(pgr, round_data)
             plaintext_content = plaintext_template.render(c)
             html_content = markdown.markdown(plaintext_content)
             subject = 'Lighter Footprints Summary for %s' % yesterday
@@ -331,6 +325,7 @@ class GroupScores(object):
             footprint_level_grdv.update_int(next_level)
             if current_level == 3:
                 completed = True
+        group.copy_to_next_round(footprint_level_grdv)
         return {'promoted': promoted, 'completed': completed, 'level': footprint_level_grdv.int_value}
 
     def update_level_experiment(self, group):
@@ -341,8 +336,7 @@ class GroupScores(object):
             # skip this group if it's already completed the experiment.
             return []
         level_status_dict = self.check_and_advance_level(group)
-        group_summary_emails = self.create_level_based_group_summary_emails(group, round_data=round_data,
-                                                                            **level_status_dict)
+        group_summary_emails = self.create_level_based_group_summary_emails(group, **level_status_dict)
         # XXX: push into check_and_advance_level? would then have to thread experiment completed dv into method params
         # as well
         if level_status_dict['completed']:
@@ -350,30 +344,29 @@ class GroupScores(object):
             experiment_completed_dv.update_boolean(True)
         return group_summary_emails
 
-    def create_level_based_group_summary_emails(self, group, level=1, **kwargs):
-        logger.debug(
-            "creating level based group summary email for group %s", group)
+    def create_level_based_group_summary_emails(self, group, level=1, promoted=False, completed=False):
+        logger.debug("creating level based group summary email for group %s", group)
         yesterday = date.today() - timedelta(1)
-        plaintext_template = select_template(
-            ['lighterprints/email/group-summary-email.txt'])
         experiment = group.experiment
         experimenter_email = experiment.experimenter.email
-        number_of_chat_messages = ChatMessage.objects.filter(participant_group_relationship__group=group,
-                                                             date_created__gte=yesterday).count()
-        messages = []
+        plaintext_template = select_template(['lighterprints/email/group-summary-email.txt'])
+        number_of_chat_messages = ChatMessage.objects.for_group(group, round_data=self.round_data).count()
+        summary_emails = []
         average_group_points = self.average_daily_points(group)
         points_to_next_level = get_points_to_next_level(level)
-        c = Context(dict({'experiment': experiment,
-                          'number_of_groups': self.number_of_groups,
-                          'group_name': group.name,
-                          'group_level': level,
-                          'group_rank': self.get_group_rank(group),
-                          'summary_date': yesterday,
-                          'has_leaderboard': self.has_leaderboard,
-                          'points_to_next_level': points_to_next_level,
-                          'average_daily_points': average_group_points,
-                          'number_of_chat_messages': number_of_chat_messages,
-                          }, **kwargs))
+        c = Context(dict(experiment=experiment,
+                         number_of_groups=self.number_of_groups,
+                         group_name=group.name,
+                         group_level=level,
+                         group_rank=self.get_group_rank(group),
+                         summary_date=yesterday,
+                         has_leaderboard=self.has_leaderboard,
+                         points_to_next_level=points_to_next_level,
+                         average_daily_points=average_group_points,
+                         number_of_chat_messages=number_of_chat_messages,
+                         promoted=promoted,
+                         completed=completed)
+                    )
         for pgr in group.participant_group_relationship_set.all():
             c['individual_points'] = get_individual_points(pgr)
             plaintext_content = plaintext_template.render(c)
@@ -382,8 +375,8 @@ class GroupScores(object):
             to_address = [experimenter_email, pgr.participant.email]
             msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
             msg.attach_alternative(html_content, 'text/html')
-            messages.append(msg)
-        return messages
+            summary_emails.append(msg)
+        return summary_emails
 
     def __str__(self):
         return str(self.scores_dict)
@@ -531,17 +524,17 @@ def get_group_activity(participant_group_relationship, limit=None):
     return all_activity, chat_messages
 
 
-def send_summary_emails(experiment, start_date=None, debug=False, round_data=None, **kwargs):
-    if start_date is None:
-        start_date = date.today() - timedelta(1)
+def daily_update(experiment, debug=False, round_data=None, **kwargs):
+    """
+    uses the current round data if not explicitly set and assumes this is invoked before the experiment has been
+    advanced to the next round.
+    """
     all_messages = None
     with transaction.atomic():
-        logger.debug("sending summary emails to %s on %s", experiment, start_date)
-        # use the current round data if not explicitly set, assuming this is invoked before the experiment has been
-        # advanced to the next round.
         round_data = experiment.current_round_data if round_data is None else round_data
-        group_scores = GroupScores(experiment, round_data, list(experiment.groups), start_date=start_date)
-        all_messages = list(group_scores.daily_update())
+        logger.debug("sending summary emails to %s for round %s", experiment, round_data)
+        group_scores = GroupScores(experiment, round_data, list(experiment.groups))
+        all_messages = list(group_scores.perform_daily_update())
     if not debug and all_messages:
         logger.debug("sending %s generated emails for lighter footprints", len(all_messages))
         mail.get_connection().send_messages(all_messages)
@@ -567,13 +560,10 @@ def get_points_to_next_level(current_level):
         return 225
 
 
-def get_individual_points(participant_group_relationship, end_date=None):
-    if end_date is None:
-        end_date = date.today()
-    start_date = end_date - timedelta(1)
+def get_individual_points(participant_group_relationship, round_data=None, end_date=None):
+    if round_data is None:
+        round_data = participant_group_relationship.current_round_data
     prdvs = ParticipantRoundDataValue.objects.for_participant(participant_group_relationship,
-                                                              date_created__range=(start_date, end_date),
+                                                              round_data=round_data,
                                                               parameter=get_activity_performed_parameter())
-    logger.debug("found prdvs %s", prdvs)
-    # XXX: assumes that an Activity can only be performed once per round (day)
     return Activity.objects.total(pks=prdvs.values_list('int_value', flat=True))

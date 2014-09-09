@@ -4,7 +4,7 @@ from vcweb.core import signals
 
 from .models import (EXPERIMENT_METADATA_NAME, get_experiment_completed_parameter,
                      get_footprint_level_parameter, is_level_based_experiment)
-from .services import send_summary_emails
+from .services import daily_update
 
 import logging
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 @transaction.atomic
 def round_ended_handler(sender, experiment=None, **kwargs):
     logger.debug("ending lighter footprints round %s, sending summary emails", experiment)
-    send_summary_emails(experiment)
+    daily_update(experiment)
 
 
 @receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
