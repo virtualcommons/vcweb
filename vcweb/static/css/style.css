@@ -33,7 +33,7 @@ label.error {
     padding: 0.4em;
 }
 
-.form-group.required label:after {
+.form-group.required > label:first-of-type:after {
     content: "*";
     color: rgb(194, 52, 52);
 }

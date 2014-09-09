@@ -908,7 +908,7 @@ class Experiment(models.Model):
         return subject
 
     @transaction.atomic
-    def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None, from_email=None):
+    def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None, from_email=None, send_email=True):
         number_of_participants = self.participant_set.count()
         email_messages = []
         registered_participants = []
@@ -963,7 +963,7 @@ class Experiment(models.Model):
             registered_participants.append((user, password))
             email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created,
                                                                  sender=sender, from_email=from_email))
-        if email_messages:
+        if email_messages and send_email:
             mail.get_connection().send_messages(email_messages)
         return registered_participants
 

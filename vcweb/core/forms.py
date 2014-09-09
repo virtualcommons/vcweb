@@ -380,6 +380,9 @@ class RegisterTestParticipantsForm(RegisterParticipantsForm):
 
 
 class RegisterEmailListParticipantsForm(RegisterParticipantsForm):
+    send_email = forms.BooleanField(initial=True,
+                                    help_text=_(
+                                        'Check this box if you would like to send emails to below participants.'))
     participant_emails = EmailListField(label="Participant emails",
                                         help_text=_(
                                             'A newline delimited list of participant emails to register for this experiment.'))

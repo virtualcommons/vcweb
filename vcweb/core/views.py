@@ -601,6 +601,7 @@ class RegisterEmailListView(BaseExperimentRegistrationView):
     def form_valid(self, form):
         valid = super(RegisterEmailListView, self).form_valid(form)
         emails = form.cleaned_data.get('participant_emails')
+        send_email = form.cleaned_data.get('send_email')
         institution = form.cleaned_data.get('institution')
         sender = form.cleaned_data.get('sender')
         from_email = form.cleaned_data.get('registration_email_from_address')
@@ -609,7 +610,7 @@ class RegisterEmailListView(BaseExperimentRegistrationView):
                      experiment)
         experiment.register_participants(emails=emails, institution=institution,
                                          password=experiment.authentication_code,
-                                         sender=sender, from_email=from_email)
+                                         sender=sender, from_email=from_email, send_email=send_email)
         return valid
 
 
