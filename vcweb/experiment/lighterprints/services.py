@@ -14,8 +14,8 @@ from django.utils.timesince import timesince
 from vcweb.core.models import (ParticipantRoundDataValue, ChatMessage, Like, Comment)
 from .models import (Activity, is_scheduled_activity_experiment, get_activity_availability_cache,
                      get_activity_performed_parameter, ActivityAvailability, is_linear_public_good_game,
-                     is_high_school_treatment, has_leaderboard, get_activity_points_cache, get_footprint_level,
-                     get_group_threshold, get_experiment_completed_dv, get_footprint_level_dv,)
+                     get_activity_points_cache, get_footprint_level, get_group_threshold, get_experiment_completed_dv,
+                     get_footprint_level_dv, get_treatment_type)
 
 import itertools
 import locale
@@ -52,7 +52,7 @@ class ActivityStatusList(object):
         if round_configuration is None:
             round_configuration = participant_group_relationship.group.current_round
         self.round_configuration = round_configuration
-        self.has_scheduled_activities = is_scheduled_activity_experiment(self.round_configuration)
+        self.has_scheduled_activities = is_scheduled_activity_experiment(participant_group_relationship.group.experiment)
         # find all unlocked activities for the given participant
         self.all_unlocked_activities = Activity.objects.unlocked(self.round_configuration,
                                                                  scheduled=self.has_scheduled_activities,
@@ -107,8 +107,8 @@ class ActivityStatusList(object):
 
 class GroupScores(object):
 
-    def __init__(self, experiment, round_data=None, groups=None, participant_group_relationship=None, start_date=None,
-                 end_date=None, experiment_configuration=None):
+    def __init__(self, experiment, round_data=None, groups=None, participant_group_relationship=None,
+                 start_date=None, end_date=None, experiment_configuration=None):
         self.experiment = experiment
         if round_data is None:
             round_data = experiment.current_round_data
@@ -125,19 +125,34 @@ class GroupScores(object):
         self.is_linear_public_good_game = is_linear_public_good_game(experiment_configuration)
         self.number_of_groups = len(groups)
         # { group : {average_daily_points, total_daily_points} }
-        self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
         self.group_rankings = None
         self.total_participant_points = 0
         # establish date range
         self.start_date = start_date
         self.end_date = start_date + timedelta(1) if end_date is None else end_date
         self.round_configuration = self.round_data.round_configuration
-        self.has_scheduled_activities = is_scheduled_activity_experiment(self.round_configuration)
-        self.is_high_school_treatment = is_high_school_treatment(self.round_configuration)
-        self.has_leaderboard = has_leaderboard(self.round_configuration)
+        self.treatment_type = get_treatment_type(experiment_configuration=experiment_configuration).string_value
         self.initialize_scores(participant_group_relationship)
 
+    # FIXME: refactor this logic strewn across models.py and services.py
+    @property
+    def is_level_based_experiment(self):
+        return self.treatment_type == 'LEVEL_BASED'
+
+    @property
+    def has_scheduled_activities(self):
+        return self.treatment_type != 'LEVEL_BASED'
+
+    @property
+    def is_high_school_treatment(self):
+        return self.treatment_type == 'HIGH_SCHOOL'
+
+    @property
+    def has_leaderboard(self):
+        return self.treatment_type == 'LEADERBOARD'
+
     def initialize_scores(self, participant_group_relationship):
+        self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
         activity_points_cache = get_activity_points_cache()
         activities_performed_qs = ParticipantRoundDataValue.objects.for_round(
             parameter=get_activity_performed_parameter(), round_data=self.round_data,
@@ -244,32 +259,30 @@ class GroupScores(object):
             'pointsToNextLevel': self.get_points_goal(group),
         }
 
-    def create_all_email_messages(self):
-        logger.debug("creating email messages for all groups")
-        return itertools.chain.from_iterable(self.create_email_messages(group) for group in self.groups)
+    def daily_update(self):
+        logger.debug("creating daily update email messages for all groups")
+        return itertools.chain.from_iterable(self.update(group) for group in self.groups)
 
-    def create_email_messages(self, group):
-        if self.has_scheduled_activities:
-            return self.create_scheduled_activity_experiment_emails(group)
-        else:
+    def update(self, group):
+        if self.is_level_based_experiment:
             # calculate total carbon savings and determine if the group should
             # advance to the next level
-            return self.create_level_experiment_emails(group)
+            return self.update_level_experiment(group)
+        else:
+            return self.update_scheduled_activity_experiment(group)
 
-    def create_scheduled_activity_experiment_emails(self, group):
+    def update_scheduled_activity_experiment(self, group):
         # FIXME: remove code duplication / redundancy between this and
         # create_level_experiment_email_messages
         round_data = self.round_data
-        logger.debug(
-            "Calculating thresholds for scheduled activity experiment")
+        logger.debug("Calculating thresholds for scheduled activity experiment")
         threshold = self.get_points_goal(group)
         average_group_points = self.average_daily_points(group)
         logger.debug(
             "threshold: %s vs average group points: %s", threshold, average_group_points)
         goal_reached = average_group_points >= threshold
         # they reached their goal, set their completion flag for this round
-        get_experiment_completed_dv(
-            group, round_data=round_data).update_boolean(goal_reached)
+        get_experiment_completed_dv(group, round_data=round_data).update_boolean(goal_reached)
         yesterday = date.today() - timedelta(1)
         plaintext_template = select_template(['lighterprints/email/scheduled-activity/group-summary-email.txt'])
         experiment = group.experiment
@@ -307,8 +320,7 @@ class GroupScores(object):
         return messages
 
     def check_and_advance_level(self, group):
-        footprint_level_grdv = get_footprint_level_dv(
-            group, round_data=self.round_data)
+        footprint_level_grdv = get_footprint_level_dv(group, round_data=self.round_data)
         current_level = footprint_level_grdv.int_value
         promoted = False
         completed = False
@@ -321,10 +333,9 @@ class GroupScores(object):
                 completed = True
         return {'promoted': promoted, 'completed': completed, 'level': footprint_level_grdv.int_value}
 
-    def create_level_experiment_emails(self, group):
+    def update_level_experiment(self, group):
         round_data = self.round_data
-        experiment_completed_dv = get_experiment_completed_dv(
-            group, round_data=round_data)
+        experiment_completed_dv = get_experiment_completed_dv(group, round_data=round_data)
         already_completed = experiment_completed_dv.boolean_value
         if already_completed:
             # skip this group if it's already completed the experiment.
@@ -475,8 +486,8 @@ def get_group_activity(participant_group_relationship, limit=None):
     group = participant_group_relationship.group
     all_activity = []
     chat_messages = []
-    # FIXME: consider using InheritanceManager or manually selecting likes, comments, chatmessages, activities performed to
-    # avoid n+1 selects when doing a to_dict
+    # FIXME: consider using InheritanceManager or manually selecting likes, comments, chatmessages, activities performed
+    # to avoid n+1 selects when doing a to_dict
     data_values = ParticipantRoundDataValue.objects.for_group(group, parameter__name__in=('chat_message',
                                                                                           'comment',
                                                                                           'like',
@@ -530,7 +541,7 @@ def send_summary_emails(experiment, start_date=None, debug=False, round_data=Non
         # advanced to the next round.
         round_data = experiment.current_round_data if round_data is None else round_data
         group_scores = GroupScores(experiment, round_data, list(experiment.groups), start_date=start_date)
-        all_messages = list(group_scores.create_all_email_messages())
+        all_messages = list(group_scores.daily_update())
     if not debug and all_messages:
         logger.debug("sending %s generated emails for lighter footprints", len(all_messages))
         mail.get_connection().send_messages(all_messages)

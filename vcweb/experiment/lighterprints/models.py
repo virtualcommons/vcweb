@@ -38,12 +38,12 @@ def get_activity_availability_cache():
     return aac
 
 
-def is_level_based_experiment(round_configuration):
-    return get_treatment_type(round_configuration).string_value == 'LEVEL_BASED'
+def is_level_based_experiment(experiment):
+    return get_treatment_type(experiment).string_value == 'LEVEL_BASED'
 
 
-def is_scheduled_activity_experiment(round_configuration):
-    return get_treatment_type(round_configuration).string_value != 'LEVEL_BASED'
+def is_scheduled_activity_experiment(experiment):
+    return get_treatment_type(experiment).string_value != 'LEVEL_BASED'
 
 
 class ActivityQuerySet(models.query.QuerySet):
@@ -104,8 +104,9 @@ class ActivityManager(TreeManager, PassThroughManager):
 
     def is_activity_available(self, activity, participant_group_relationship, round_data):
         round_configuration = round_data.round_configuration
+        experiment_configuration = round_configuration.experiment_configuration
         unlocked_activities = []
-        if is_scheduled_activity_experiment(round_configuration):
+        if is_scheduled_activity_experiment(experiment_configuration=experiment_configuration):
             # find scheduled set of activities
             unlocked_activities = self.scheduled(round_configuration)
         else:
@@ -114,8 +115,7 @@ class ActivityManager(TreeManager, PassThroughManager):
                 level=get_footprint_level(participant_group_relationship.group, round_data))
         if activity in unlocked_activities:
             # check for time availability but disable for high school treatment
-            currently_available = is_high_school_treatment(
-                round_configuration) or self.is_available_now(activity)
+            currently_available = is_high_school_treatment(experiment_configuration=experiment_configuration) or self.is_available_now(activity)
             if currently_available:
                 # finally, if it is currently available, make sure they haven't
                 # already performed it
@@ -289,18 +289,21 @@ def get_experiment_completed_dv(group, round_data=None):
     return group.get_data_value(parameter=get_experiment_completed_parameter(), round_data=round_data)
 
 
-def get_treatment_type(round_configuration=None, default_treatment_type='LEADERBOARD', **kwargs):
+def get_treatment_type(experiment=None, experiment_configuration=None, default_treatment_type='LEADERBOARD', **kwargs):
     """
     possible treatment types: LEADERBOARD / NO_LEADERBOARD / HIGH_SCHOOL / LEVEL_BASED
     """
     # XXX: if there is no treatment type we default to the compare other group
     # / leaderboard treatment
-    treatment_type = round_configuration.get_parameter_value(parameter=get_treatment_type_parameter())
+    if experiment_configuration is None:
+        experiment_configuration = experiment.experiment_configuration
+    treatment_type = experiment_configuration.get_parameter_value(parameter=get_treatment_type_parameter())
     if treatment_type.string_value is None:
         # check if it's been globally defined via this round configuration's
         # experiment configuration
-        treatment_type = round_configuration.experiment_configuration.get_parameter_value(
-            parameter=get_treatment_type_parameter(), default=default_treatment_type)
+        treatment_type = experiment_configuration.get_parameter_value(
+            parameter=get_treatment_type_parameter(),
+            default=default_treatment_type)
     return treatment_type
 
 

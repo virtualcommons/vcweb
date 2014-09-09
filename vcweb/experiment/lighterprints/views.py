@@ -265,7 +265,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
     return dumps({
         'participantGroupId': participant_group_relationship.pk,
         'completed': group_scores.is_completed(own_group),
-        'hasLeaderboard': has_leaderboard(round_configuration=round_configuration),
+        'hasLeaderboard': group_scores.has_leaderboard,
         'groupData': group_data,
         'hoursLeft': hours_left,
         'minutesLeft': minutes_left,
@@ -347,9 +347,9 @@ def participate(request, experiment_id=None):
         round_configuration = experiment.current_round
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'),
                                 participant=participant, group__experiment=experiment)
-        if is_high_school_treatment(round_configuration):
-            view_model = HighSchoolViewModel(
-                pgr, experiment=experiment, round_configuration=round_configuration)
+        treatment_type = get_treatment_type(experiment).string_value
+        if is_high_school_treatment(treatment_type=treatment_type):
+            view_model = HighSchoolViewModel(pgr, experiment=experiment, round_configuration=round_configuration)
             return render(request, view_model.template_name, {
                 'experiment': experiment,
                 'participant_group_relationship': pgr,
@@ -359,14 +359,10 @@ def participate(request, experiment_id=None):
         all_activities = Activity.objects.all()
         view_model_json = get_view_model_json(pgr, activities=all_activities, experiment=experiment,
                                               round_configuration=round_configuration)
-        #    if request.mobile:
-        # FIXME: change this to look up templates in a mobile templates directory?
-        #        logger.warning("mobile request detected by %s, but we're not ready for mobile apps", participant)
-        # return redirect('https://vcweb.asu.edu/devfoot')
         return render(request, 'lighterprints/participate.html', {
             'experiment': experiment,
             'participant_group_relationship': pgr,
-            'has_leaderboard': has_leaderboard(round_configuration=round_configuration),
+            'has_leaderboard': has_leaderboard(treatment_type=treatment_type),
             'view_model_json': view_model_json,
         })
     else:

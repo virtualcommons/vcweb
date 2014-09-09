@@ -270,6 +270,8 @@ def get_initial_resource_level_parameter():
     return Parameter.objects.for_round(name='initial_resource_level')
 
 
+# FIXME: consider refactoring, move signal receivers to signals.py and dependent functions to services.py
+
 @receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
 @transaction.atomic
 def round_started_handler(sender, experiment=None, **kwargs):

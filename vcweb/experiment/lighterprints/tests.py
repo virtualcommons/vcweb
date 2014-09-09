@@ -6,14 +6,29 @@ from vcweb.core.tests import BaseVcwebTest
 from vcweb.core.models import ParticipantRoundDataValue
 from .models import (Activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter,
                      get_footprint_level, get_performed_activity_ids, get_treatment_type_parameter,
-                     is_scheduled_activity_experiment, get_treatment_type)
-from .services import (GroupScores, get_individual_points, send_summary_emails, get_group_activity)
+                     is_scheduled_activity_experiment, is_level_based_experiment, is_high_school_treatment)
+from .services import (GroupScores, get_individual_points, get_group_activity)
 
 
 logger = logging.getLogger(__name__)
 
 
 class BaseTest(BaseVcwebTest):
+
+    def setUp(self, treatment_type='LEADERBOARD', **kwargs):
+        super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
+        ec = self.experiment_configuration
+        ec.has_daily_rounds = True
+        ec.set_parameter_value(parameter=get_treatment_type_parameter(), string_value=treatment_type)
+        ec.save()
+        ec.round_configuration_set.all().update(initialize_data_values=True)
+
+    class Meta:
+        abstract = True
+
+
+class LevelBasedTest(BaseTest):
+
     """
     FIXME: only works on level based experiments without has_daily_rounds, fix to operate on scheduled activity rounds
     as well by adding available_activity parameters and scheduled activities
@@ -40,22 +55,6 @@ class BaseTest(BaseVcwebTest):
                 self.assertEqual(expected_success, json_object['success'])
         return performed_activities
 
-    def setUp(self, treatment_type='LEADERBOARD', **kwargs):
-        super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
-        ec = self.experiment_configuration
-        ec.has_daily_rounds = True
-        ec.save()
-        for rc in self.round_configurations.all():
-            rc.set_parameter_value(parameter=get_treatment_type_parameter(), string_value=treatment_type)
-            rc.initialize_data_values = True
-            rc.save()
-
-    class Meta:
-        abstract = True
-
-
-class LevelBasedTest(BaseTest):
-
     def setUp(self, **kwargs):
         super(LevelBasedTest, self).setUp(treatment_type='LEVEL_BASED', **kwargs)
 
@@ -63,9 +62,9 @@ class LevelBasedTest(BaseTest):
 class LevelTreatmentTest(LevelBasedTest):
 
     def test_treatment_type(self):
-        for rc in self.round_configurations.all():
-            self.assertFalse(is_scheduled_activity_experiment(rc))
-            self.assertEqual('LEVEL_BASED', get_treatment_type(rc).string_value)
+        self.assertTrue(is_level_based_experiment(self.experiment))
+        self.assertFalse(is_scheduled_activity_experiment(self.experiment))
+        self.assertFalse(is_high_school_treatment(self.experiment))
 
     def test_footprint_level_initialized(self):
         e = self.experiment
@@ -101,9 +100,11 @@ class UpdateLevelTest(LevelBasedTest):
         e = self.experiment
         e.activate()
         current_round_data = e.current_round_data
+        self.assertTrue(is_level_based_experiment(e))
         # initialize participant carbon savings
         level_one_activities = Activity.objects.filter(level=1)
         for pgr in e.participant_group_relationships:
+            self.assertEqual(get_footprint_level(pgr.group), 1, 'All participants should be on level 1')
             for activity in level_one_activities:
                 activity_performed = ParticipantRoundDataValue.objects.create(
                     participant_group_relationship=pgr,
@@ -112,7 +113,7 @@ class UpdateLevelTest(LevelBasedTest):
                 )
                 activity_performed.int_value = activity.pk
                 activity_performed.save()
-        send_summary_emails(e, start_date=date.today())
+        e.advance_to_next_round()
         gs = e.groups
         group_scores = GroupScores(e, current_round_data, gs)
         for group in gs:
@@ -190,7 +191,7 @@ class ActivityTest(LevelBasedTest):
                 self.assertIsNotNone(json_object['viewModel'])
 
 
-class GroupScoreTest(ActivityTest):
+class GroupScoreTest(LevelBasedTest):
 
     def test_individual_points(self):
         e = self.experiment
@@ -206,11 +207,12 @@ class GroupScoreTest(ActivityTest):
         e = self.experiment
         e.activate()
         performed_activities = self.perform_activities()
-        gs = e.groups
-        group_scores = GroupScores(e, groups=gs)
         # expected average points per person is the straight sum of all activities in the performed activities because
         # every participant in the group has performed them
         expected_avg_points_per_person = sum([activity.points for activity in performed_activities])
+        e.advance_to_next_round()
+        gs = e.groups
+        group_scores = GroupScores(e, groups=gs)
         for group in gs:
             self.assertEqual(group_scores.average_daily_points(group), expected_avg_points_per_person)
             self.assertEqual(group_scores.total_daily_points(group), expected_avg_points_per_person * group.size)
