@@ -6,6 +6,25 @@ from django.db import models, migrations
 
 _activities = [
     {
+        "display_name": "Adjust your thermostat by 2 degrees",
+        "description": "Climate-controlled buildings cost a lot of energy. Adjusting the temperature by two degrees saves 2,000 pounds of CO2 a year.",
+        "available_all_day": False,
+        "url": "http://earthcareindiana.org/node/131",
+        "level": 1,
+        "group_activity": False,
+        "summary": "Heating or cooling buildings less saves energy",
+        "cooldown": 1,
+        "savings": "5.50",
+        "points": 55,
+        "icon": "lighterprints/activity-icons/93-thermometer_1.png",
+        "personal_benefits": "Less energy used results in savings on an electric bill. ",
+        "lft": 0,
+        "rght": 0,
+        "tree_id": 0,
+        "is_public": True,
+        "name": "adjust-thermostat"
+    },
+    {
         "display_name": "Eat locally grown food for lunch",
         "description": "The food we eat comes from all over the world. How much CO2 this emits depends on your specific location and menu. On average, a person in the USA can save 1,400 pounds of CO2 per year by switching to locally grown food. We assume that one lunch is equivalent of 1.5 pounds of CO2 saved.",
         "available_all_day": False,
@@ -220,7 +239,7 @@ _activities = [
         "name": "lights-off"
     },
     {
-        "display_name": "Become a vegan for a day",
+        "display_name": "Eat a vegan breakfast",
         "description": "A plant-based diet saves 1,608 pounds of CO2 per year compared to the average diet.",
         "available_all_day": False,
         "url": "http://www.simplesteps.org/tools/house-savings-calculator#diet",
@@ -235,7 +254,7 @@ _activities = [
         "rght": 0,
         "tree_id": 0,
         "is_public": True,
-        "name": "vegan-for-a-day"
+        "name": "eat-vegan-breakfast"
     },
     {
         "display_name": "Wash your clothes with cold water",
@@ -259,10 +278,95 @@ _activities = [
 
 def create_activities(apps, schema_editor):
     Activity = apps.get_model('lighterprints', 'Activity')
+    ActivityAvailability = apps.get_model('lighterprints', 'ActivityAvailability')
     Activity.objects.bulk_create(
         [Activity(**activity_dict) for activity_dict in _activities]
     )
-
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='adjust-thermostat'),
+        start_time='06:00:00',
+        end_time='08:00:00',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='eat-local-lunch'),
+        start_time='12:00:00',
+        end_time='14:00:00',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='enable-sleep-on-computer'),
+        start_time='00:00:00',
+        end_time='23:59:59',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='recycle-materials'),
+        start_time='00:00:00',
+        end_time='23:59:59',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='share-your-ride'),
+        start_time='08:00:00',
+        end_time='10:00:00',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='share-your-ride'),
+        start_time='16:00:00',
+        end_time='18:00:00',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='bike-or-walk'),
+        start_time='18:00:00',
+        end_time='23:00:00',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='computer-off-night'),
+        start_time='00:00:00',
+        end_time='08:00:00',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='no-beef'),
+        start_time='18:00:00',
+        end_time='19:00:00',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='recycle-paper'),
+        start_time='00:00:00',
+        end_time='23:59:59',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='water-off-while-brushing-teeth'),
+        start_time='07:00:00',
+        end_time='09:00:00',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='water-off-while-brushing-teeth'),
+        start_time='22:00:00',
+        end_time='23:59:59',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='air-dry-clothes'),
+        start_time='00:00:00',
+        end_time='07:00:00',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='cold-water-wash'),
+        start_time='16:00:00',
+        end_time='23:00:00',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='eat-green-lunch'),
+        start_time='12:00:00',
+        end_time='14:00:00',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='lights-off'),
+        start_time='18:00:00',
+        end_time='23:00:00',
+    )
+    ActivityAvailability.objects.create(
+        activity=Activity.objects.get(name='eat-vegan-breakfast'),
+        start_time='07:00:00',
+        end_time='09:00:00',
+    )
 
 _parameters = [
     {
@@ -329,20 +433,18 @@ _parameters = [
     },
 ]
 
-def create_parameters(apps, schema_editor):
-    Parameter = apps.get_model('core', 'Parameter')
-    Parameter.objects.bulk_create(
-        [Parameter(**parameter_dict) for parameter_dict in _parameters]
-    )
-
 
 def create_lighterprints_experiment_metadata(apps, schema_editor):
     ExperimentMetadata = apps.get_model('core', 'ExperimentMetadata')
+    Parameter = apps.get_model('core', 'Parameter')
     lighterprints_metadata = ExperimentMetadata.objects.create(
         description="A mobile-ready HTML5 experiment / game that educates and examines how groups of people coordinate to reach carbon emission targets.",
         title="Lighter Footprints",
         namespace="lighterprints",
     )
+    for parameter_dict in _parameters:
+        lighterprints_metadata.parameters.add(Parameter.objects.create(**parameter_dict))
+
 
 class Migration(migrations.Migration):
 
@@ -353,5 +455,4 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(create_activities),
         migrations.RunPython(create_lighterprints_experiment_metadata),
-        migrations.RunPython(create_parameters),
     ]
