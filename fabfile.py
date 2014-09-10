@@ -37,6 +37,7 @@ env.docs_path = os.path.join(env.project_path, 'docs')
 env.test_fixtures = ' '.join(['forestry_experiment_metadata', 'lighterprints_experiment_metadata',
                               'activities', 'bound_experiment_metadata', 'bound_parameters'])
 env.virtualenv_path = '%s/.virtualenvs/%s' % (os.getenv('HOME'), env.project_name)
+env.ignored_pkgs = ('test', 'settings', 'migrations', 'fabfile', 'wsgi', 'broker', 'irrigation', 'commands')
 
 # django integration for access to settings, etc.
 django.project(env.project_name)
@@ -127,14 +128,12 @@ def _virtualenv(executor, *commands, **kwargs):
 def host_type():
     run('uname -a')
 
-
 @roles('localhost')
 @task
 def coverage():
     execute(test, coverage=True)
-    IGNORED_PACKAGES = ['*{0}*'.format(ignored_pkg) for ignored_pkg in
-                        ('test', 'settings', 'migrations', 'fabfile', 'wsgi', 'broker', 'irrigation')]
-    local('coverage html --omit=' + ','.join(IGNORED_PACKAGES))
+    ignored = ['*{0}*'.format(ignored_pkg) for ignored_pkg in env.ignored_pkgs]
+    local('coverage html --omit=' + ','.join(ignored))
 
 
 @roles('localhost')
