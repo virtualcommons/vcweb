@@ -4,6 +4,7 @@ import logging
 import mimetypes
 import urllib2
 import xml.etree.ElementTree as ET
+import unicodecsv
 
 from django.conf import settings
 from django.contrib import auth, messages
@@ -18,7 +19,8 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import FormView, TemplateView, ListView
 from django.views.generic.detail import SingleObjectMixin
-import unicodecsv
+
+from contact_form.views import ContactFormView
 
 from . import dumps
 from .http import JsonResponse
@@ -27,7 +29,7 @@ from .forms import (RegistrationForm, LoginForm, ParticipantAccountForm, Experim
                     AsuRegistrationForm, ParticipantGroupIdForm, RegisterEmailListParticipantsForm,
                     RegisterTestParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm,
                     ExperimentConfigurationForm, ExperimentParameterValueForm, RoundConfigurationForm,
-                    RoundParameterValueForm)
+                    RoundParameterValueForm, AntiSpamContactForm)
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
                      ExperimentConfiguration, ExperimenterRequest, Experiment, Institution,
                      BookmarkedExperimentMetadata, OstromlabFaqEntry, Experimenter, ExperimentParameterValue,
@@ -1412,3 +1414,10 @@ def unsubscribe(request):
             return render(request, 'account/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
     return render(request, 'invalid_request.html',
                   {'message': "You aren't currently subscribed to our experiment session mailing list."})
+
+class AntiSpamContactFormView(ContactFormView):
+    form_class = AntiSpamContactForm
+
+    def form_valid(self, form):
+        form.save()
+        return super(AntiSpamContactFormView, self).form_valid(form)

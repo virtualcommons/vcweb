@@ -7,11 +7,15 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic.base import TemplateView
 
+from vcweb.core.views import AntiSpamContactFormView
+
 urlpatterns = [
     url(r'^$', TemplateView.as_view(template_name='index.html'), name='home'),
     url(r'^about/$', TemplateView.as_view(template_name='about.html'),
         name='about'),
-    url(r'^contact/', include('contact_form.urls')),
+    url(r'^contact/$', AntiSpamContactFormView.as_view(), name='contact_form'),
+    url(r'^contact/sent/$', TemplateView.as_view(template_name='contact_form/contact_form_sent.html'),
+        name='contact_form_sent'),
     url(r'^invalid-request$', TemplateView.as_view(template_name='invalid_request.html'),
         name='invalid_request'),
     url(r'^accounts/password/reset/$', auth_views.password_reset,
