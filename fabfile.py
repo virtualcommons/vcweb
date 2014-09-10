@@ -132,7 +132,9 @@ def host_type():
 @task
 def coverage():
     execute(test, coverage=True)
-    local('coverage html --omit=*test*,*settings*,*migrations*,*fabfile*,*wsgi*')
+    IGNORED_PACKAGES = ['*{0}*'.format(ignored_pkg) for ignored_pkg in
+                        ('test', 'settings', 'migrations', 'fabfile', 'wsgi', 'broker', 'irrigation')]
+    local('coverage html --omit=' + ','.join(IGNORED_PACKAGES))
 
 
 @roles('localhost')
