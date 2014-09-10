@@ -18,8 +18,7 @@ sys.path.append(os.path.abspath(env.project_path))
 # default env configuration
 env.roledefs = {
     'localhost': ['localhost'],
-    'dev': ['dev.commons.asu.edu'],
-    'staging': ['dev.commons.asu.edu'],
+    'dev': ['vcweb-dev.asu.edu'],
     'prod': ['vcweb.asu.edu'],
 }
 env.python = 'python'
@@ -37,7 +36,7 @@ env.docs_path = os.path.join(env.project_path, 'docs')
 env.test_fixtures = ' '.join(['forestry_experiment_metadata', 'lighterprints_experiment_metadata',
                               'activities', 'bound_experiment_metadata', 'bound_parameters'])
 env.virtualenv_path = '%s/.virtualenvs/%s' % (os.getenv('HOME'), env.project_name)
-env.ignored_pkgs = ('test', 'settings', 'migrations', 'fabfile', 'wsgi', 'broker', 'irrigation', 'commands')
+env.ignored_coverage = ('test', 'settings', 'migrations', 'fabfile', 'wsgi', 'broker', 'irrigation', 'commands', 'sanitation')
 
 # django integration for access to settings, etc.
 django.project(env.project_name)
@@ -132,7 +131,7 @@ def host_type():
 @task
 def coverage():
     execute(test, coverage=True)
-    ignored = ['*{0}*'.format(ignored_pkg) for ignored_pkg in env.ignored_pkgs]
+    ignored = ['*{0}*'.format(ignored_pkg) for ignored_pkg in env.ignored_coverage]
     local('coverage html --omit=' + ','.join(ignored))
 
 
