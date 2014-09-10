@@ -34,3 +34,4 @@ git+http://git@github.com/virtualcommons/django-cas.git#egg=cas
 # graph database
 neo4j-embedded
 enum34
+python-coveralls

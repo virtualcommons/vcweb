@@ -6,6 +6,8 @@ before_script:
     - psql -c 'create user vcweb CREATEDB;' -U postgres
     - psql -c 'create database vcweb' -U vcweb -d template1
     - cp vcweb/settings/local.py.example vcweb/settings/local.py
+after_success:
+    - coveralls
 script: fab test
 env: DB=postgres
 services:
