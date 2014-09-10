@@ -239,7 +239,7 @@ class ExperimentTest(BaseVcwebTest):
             for parameter in group.parameters.all():
                 gdvs = current_round_data.group_data_value_set.filter(parameter=parameter, group=group)
                 if gdvs.exists():
-                    logger.error("testing parameter %s", parameter)
+                    logger.debug("testing parameter %s", parameter)
                     self.assertEqual(1, gdvs.count(), "Should only be a single group data value for parameter")
             for parameter in e.parameters(Parameter.Scope.PARTICIPANT):
                 expected_size = group.size if parameter.name in (

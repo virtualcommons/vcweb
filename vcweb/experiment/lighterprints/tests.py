@@ -226,4 +226,3 @@ class GroupScoreTest(LevelBasedTest):
         for group in gs:
             self.assertEqual(group_scores.average_daily_points(group), 0)
             self.assertEqual(group_scores.total_daily_points(group), 0)
-
