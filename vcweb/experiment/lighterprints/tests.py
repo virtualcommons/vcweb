@@ -201,14 +201,6 @@ class ActivityTest(LevelBasedTest):
 
 class GroupScoreTest(LevelBasedTest):
 
-    def test_individual_points(self):
-        e = self.experiment
-        e.activate()
-        self.perform_activities()
-        current_round_data = e.current_round_data
-        for pgr in e.participant_group_relationships:
-            self.assertEqual(get_individual_points(pgr, current_round_data), 107)
-
     def test_group_score(self):
         e = self.experiment
         e.activate()
@@ -221,6 +213,8 @@ class GroupScoreTest(LevelBasedTest):
         for group in gs:
             self.assertEqual(group_scores.average_daily_points(group), expected_avg_points_per_person)
             self.assertEqual(group_scores.total_daily_points(group), expected_avg_points_per_person * group.size)
+            for pgr in group.participant_group_relationship_set.all():
+                self.assertEqual(get_individual_points(pgr, group_scores.round_data), expected_avg_points_per_person)
         e.advance_to_next_round()
         group_scores = GroupScores(e, groups=gs)
         for group in gs:
