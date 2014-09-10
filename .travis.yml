@@ -8,7 +8,7 @@ before_script:
     - cp vcweb/settings/local.py.example vcweb/settings/local.py
 after_success:
     - coveralls
-script: fab test
+script: fab coverage
 env: DB=postgres
 services:
     - memcached
