@@ -37,7 +37,8 @@ if you'd like to request an experimenter account.
 In order to participate in a vcweb experiment you must be invited to one by an experimenter. 
 
 ### develop an experiment or contribute to the infrastructure
-[![Build Status](https://drone.io/bitbucket.org/virtualcommons/vcweb/status.png)](https://drone.io/bitbucket.org/virtualcommons/vcweb/latest)
+[![Build Status](https://travis-ci.org/virtualcommons/vcweb.svg?branch=master)](https://travis-ci.org/virtualcommons/vcweb)
+[![Coverage Status](https://img.shields.io/coveralls/virtualcommons/vcweb.svg)](https://coveralls.io/r/virtualcommons/vcweb?branch=master)
 
 For more information on how to install and deploy the software please visit <https://bitbucket.org/virtualcommons/vcweb/wiki/Home> (work in progress)
 
