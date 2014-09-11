@@ -50,7 +50,6 @@ def group_required(*permissions):
     def in_groups(u):
         if u.is_authenticated() and ((hasattr(u, 'experimenter') and u.experimenter.approved) or (hasattr(u, 'participant') and u.is_active)):
             group_names = [permission.value for permission in permissions]
-            logger.debug(group_names)
             return u.is_superuser or bool(u.groups.filter(name__in=group_names))
     return user_passes_test(in_groups)
 
