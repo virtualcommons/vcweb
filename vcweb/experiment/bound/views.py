@@ -12,13 +12,10 @@ from vcweb.core.decorators import group_required
 from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage, PermissionGroup)
-from vcweb.experiment.bound.models import (get_experiment_metadata, get_regrowth_rate, get_max_allowed_harvest_decision,
-                                           get_cost_of_living, get_resource_level, get_initial_resource_level,
-                                           get_final_session_storage_queryset,
-                                           get_harvest_decision_dv, set_harvest_decision, can_observe_other_group,
-                                           get_average_harvest,
-                                           get_average_storage, get_total_harvest, get_number_alive, get_player_data,
-                                           get_regrowth_dv)
+from .models import (get_experiment_metadata, get_regrowth_rate, get_max_harvest_decision, get_cost_of_living,
+                     get_resource_level, get_initial_resource_level, get_final_session_storage_queryset,
+                     get_harvest_decision_dv, set_harvest_decision, can_observe_other_group, get_average_harvest,
+                     get_average_storage, get_total_harvest, get_number_alive, get_player_data, get_regrowth_dv)
 
 
 logger = logging.getLogger(__name__)
@@ -148,8 +145,7 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
     regrowth_rate = get_regrowth_rate(current_round)
     cost_of_living = get_cost_of_living(current_round)
     experiment_model_dict['costOfLiving'] = cost_of_living
-    experiment_model_dict['maxHarvestDecision'] = get_max_allowed_harvest_decision(participant_group_relationship,
-                                                                                   current_round_data, ec)
+    experiment_model_dict['maxHarvestDecision'] = get_max_harvest_decision(ec)
     experiment_model_dict['templateName'] = current_round.template_name
     experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
     # FIXME: only show the tour on the first practice round, this is a bit brittle.  better setup might be to have a

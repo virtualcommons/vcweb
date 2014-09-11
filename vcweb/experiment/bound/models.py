@@ -133,10 +133,6 @@ def get_max_harvest_decision(experiment_configuration):
                                                         default=10).int_value
 
 
-def get_max_allowed_harvest_decision(participant_group_relationship, round_data=None, experiment_configuration=None):
-    return get_max_harvest_decision(experiment_configuration)
-
-
 def get_resource_level(group, round_data=None, round_configuration=None, cluster=None):
     return get_resource_level_dv(group, round_data, round_configuration, cluster).int_value
 

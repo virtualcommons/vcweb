@@ -31,8 +31,6 @@ def create_forestry_experiment_metadata(apps, schema_editor):
 def create_forestry_configuration(apps, schema_editor, experiment_metadata=None, experimenter=None):
     ExperimentConfiguration = apps.get_model('core', 'ExperimentConfiguration')
     Parameter = apps.get_model('core', 'Parameter')
-    RoundParameterValue = apps.get_model('core', 'RoundParameterValue')
-
     initial_resource_level_param = Parameter.objects.get(name='initial_resource_level')
     reset_resource_level_param = Parameter.objects.get(name='reset_resource_level')
 
@@ -58,15 +56,13 @@ def create_forestry_configuration(apps, schema_editor, experiment_metadata=None,
         repeat=2,
         initialize_data_values=True,
     )
-    RoundParameterValue.objects.create(
+    practice_round.parameter_value_set.create(
         parameter=reset_resource_level_param,
         boolean_value=True,
-        round_configuration=practice_round
     )
-    RoundParameterValue.objects.create(
+    practice_round.parameter_value_set.create(
         parameter=initial_resource_level_param,
         int_value=100,
-        round_configuration=practice_round,
     )
     first_repeating_round = forestry_configuration.round_configuration_set.create(
         round_type='REGULAR',
@@ -75,15 +71,13 @@ def create_forestry_configuration(apps, schema_editor, experiment_metadata=None,
         initialize_data_values=True,
         chat_enabled=True,
     )
-    RoundParameterValue.objects.create(
+    first_repeating_round.parameter_value_set.create(
         parameter=reset_resource_level_param,
         boolean_value=True,
-        round_configuration=first_repeating_round
     )
-    RoundParameterValue.objects.create(
+    first_repeating_round.parameter_value_set.create(
         parameter=initial_resource_level_param,
         int_value=100,
-        round_configuration=first_repeating_round
     )
     second_repeating_round = forestry_configuration.round_configuration_set.create(
         round_type='REGULAR',
@@ -92,17 +86,15 @@ def create_forestry_configuration(apps, schema_editor, experiment_metadata=None,
         initialize_data_values=True,
         chat_enabled=False,
     )
-    RoundParameterValue.objects.create(
+    second_repeating_round.parameter_value_set.create(
         parameter=reset_resource_level_param,
         boolean_value=True,
-        round_configuration=second_repeating_round
     )
-    RoundParameterValue.objects.create(
+    second_repeating_round.parameter_value_set.create(
         parameter=initial_resource_level_param,
         int_value=100,
-        round_configuration=second_repeating_round
     )
-    final_debriefing = forestry_configuration.round_configuration_set.create(
+    forestry_configuration.round_configuration_set.create(
         round_type='DEBRIEFING',
         sequence_number=6,
     )

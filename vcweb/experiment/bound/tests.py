@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class BaseTest(BaseVcwebTest):
-    fixtures = ['bound_experiment_metadata',
-                'forestry_experiment_metadata', 'bound_parameters', ]
 
     def create_harvest_decisions(self, value=10):
         for pgr in self.experiment.participant_group_relationships:
