@@ -34,6 +34,7 @@ def create_boundary_configuration(apps, schema_editor, experiment_metadata=None,
     initial_resource_level = Parameter.objects.get(name='initial_resource_level')
     reset_resource_level = Parameter.objects.get(name='reset_resource_level')
     observe_other_group = Parameter.objects.get(name='observe_other_group')
+    shared_resource = Parameter.objects.get(name='shared_resource')
 
     boundary_configuration = ExperimentConfiguration.objects.create(
         name='Boundary Effects AB',
@@ -52,7 +53,9 @@ def create_boundary_configuration(apps, schema_editor, experiment_metadata=None,
     rc = boundary_configuration.round_configuration_set.create(
         round_type='PRACTICE',
         sequence_number=3,
-        repeat=6
+        repeat=6,
+        duration=60,
+        initialize_data_values=True,
     )
     rc.parameter_value_set.create(
         parameter=initial_resource_level,
@@ -67,7 +70,7 @@ def create_boundary_configuration(apps, schema_editor, experiment_metadata=None,
         template_id='PRACTICE_ROUND_RESULTS',
         sequence_number=4,
     )
-    rc = boundary_configuration.round_configuration_set.create(
+    boundary_configuration.round_configuration_set.create(
         round_type='INSTRUCTIONS',
         template_id='TREATMENT_A_INSTRUCTIONS',
         sequence_number=5,
@@ -79,8 +82,11 @@ def create_boundary_configuration(apps, schema_editor, experiment_metadata=None,
         round_type='REGULAR',
         sequence_number=6,
         repeat=10,
-        session_id='A'
+        session_id='A',
+        initialize_data_values=True,
+        duration=60
     )
+    rc.parameter_value_set.create(parameter=shared_resource, boolean_value=True)
     rc.parameter_value_set.create(parameter=initial_resource_level, int_value=240)
     rc.parameter_value_set.create(parameter=reset_resource_level, boolean_value=True)
     rc.parameter_value_set.create(parameter=observe_other_group, boolean_value=True)
@@ -102,6 +108,8 @@ def create_boundary_configuration(apps, schema_editor, experiment_metadata=None,
         sequence_number=9,
         repeat=10,
         session_id='B',
+        initialize_data_values=True,
+        duration=60
     )
     rc.parameter_value_set.create(parameter=initial_resource_level, int_value=240)
     rc.parameter_value_set.create(parameter=reset_resource_level, boolean_value=True)
@@ -142,7 +150,7 @@ def create_boundary_effects_parameters(apps, schema_editor):
         Parameter.objects.create(
             name='shared_resource',
             display_name='Shared resource?',
-            description='Boolean signifying whether the given round should set up a single shared resource for each group clusters.',
+            description='Boolean signifying whether the given round should set up a single shared resource for each group cluster.',
             type='boolean',
             scope='round',
         ),
@@ -159,7 +167,7 @@ def create_boundary_effects_parameters(apps, schema_editor):
             description='Boolean signifying whether this group can observe the other group',
             type='boolean',
             scope='round',
-        )
+        ),
     ]
 
 

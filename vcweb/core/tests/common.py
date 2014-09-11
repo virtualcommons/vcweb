@@ -2,8 +2,7 @@ from django.conf import settings
 from django.test import TestCase
 from django.test.client import RequestFactory, Client
 
-from ..models import (Experiment, Experimenter, ExperimentConfiguration, RoundConfiguration, Parameter, Group, User,
-                      PermissionGroup, AuthGroup)
+from ..models import (Experiment, Experimenter, ExperimentConfiguration, RoundConfiguration, Parameter, Group, User)
 
 import logging
 
@@ -18,7 +17,7 @@ class BaseVcwebTest(TestCase):
     """
     DEFAULT_EXPERIMENTER_PASSWORD = 'test.experimenter'
 
-    def load_experiment(self, experiment_metadata=None, test_email_suffix='asu.edu', experimenter_password=DEFAULT_EXPERIMENTER_PASSWORD, **kwargs):
+    def load_experiment(self, experiment_metadata=None, experimenter_password=DEFAULT_EXPERIMENTER_PASSWORD, **kwargs):
         if experiment_metadata is None:
             # FIXME: assumes that there is always some Experiment available to load. revisit this, or figure out some
             # better way to bootstrap tests
@@ -31,9 +30,6 @@ class BaseVcwebTest(TestCase):
         if not experiment.experiment_metadata.parameters.exists():
             experiment.experiment_metadata.parameters.add(*Parameter.objects.values_list('pk', flat=True))
         experiment.experiment_configuration.round_configuration_set.exclude(sequence_number=1).update(duration=60)
-        if experiment.participant_set.count() == 0:
-            logger.debug("adding participants to %s", experiment)
-            experiment.setup_test_participants(email_suffix=test_email_suffix, count=10, password='test')
         experiment.save()
         u = experiment.experimenter.user
         u.set_password(experimenter_password)
@@ -82,12 +78,21 @@ class BaseVcwebTest(TestCase):
                                          experiment_metadata=experiment_metadata,
                                          experiment_configuration=experiment_configuration)
 
+    def add_test_participants(self, test_email_suffix='asu.edu', number_of_participants=None, **kwargs):
+        experiment = self.experiment
+        if experiment.participant_set.count() == 0:
+            logger.debug("adding participants to %s", experiment)
+            if number_of_participants is None:
+                # set default number of participants to max group size * 2
+                number_of_participants = experiment.experiment_configuration.max_group_size * 2
+            experiment.setup_test_participants(email_suffix=test_email_suffix,
+                                               count=number_of_participants, password='test')
+
     def setUp(self, **kwargs):
         self.client = Client()
         self.factory = RequestFactory()
-        for permission in PermissionGroup:
-            AuthGroup.objects.get_or_create(name=permission.value)
         self.load_experiment(**kwargs)
+        self.add_test_participants(**kwargs)
         logging.disable(settings.DISABLED_TEST_LOGLEVEL)
 
     @property

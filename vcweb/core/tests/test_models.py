@@ -652,17 +652,20 @@ class BookmarkedExperimentMetadataTest(BaseVcwebTest):
     def test_bookmarks(self):
         e = self.demo_experimenter
         bookmarks = ExperimentMetadata.objects.bookmarked(e)
-        self.assertEqual(2, bookmarks.count())
+        forestry = ExperimentMetadata.objects.get(namespace='forestry')
+        bound = ExperimentMetadata.objects.get(namespace='bound')
+        lighterprints = ExperimentMetadata.objects.get(namespace='lighterprints')
+        self.assertEqual(ExperimentMetadata.objects.count(), bookmarks.count())
         for experiment_metadata in bookmarks:
             self.assertFalse(experiment_metadata.bookmarked)
-        BookmarkedExperimentMetadata.objects.create(experiment_metadata=bookmarks[0], experimenter=e)
+        BookmarkedExperimentMetadata.objects.create(experiment_metadata=forestry, experimenter=e)
+        BookmarkedExperimentMetadata.objects.create(experiment_metadata=bound, experimenter=e)
         bookmarks = ExperimentMetadata.objects.bookmarked(e)
-        self.assertEqual(2, bookmarks.count())
-# FIXME: can we rely on queryset ordering here?
-        self.assertTrue(bookmarks[0].bookmarked)
-        self.assertFalse(bookmarks[1].bookmarked)
+        self.assertEqual(ExperimentMetadata.objects.count(), bookmarks.count())
+        for em in bookmarks:
+            self.assertEquals(em.bookmarked, em in (forestry, bound))
         new_experimenter = self.create_experimenter()
         bookmarks = ExperimentMetadata.objects.bookmarked(new_experimenter)
-        self.assertEqual(2, bookmarks.count())
+        self.assertEqual(ExperimentMetadata.objects.count(), bookmarks.count())
         for experiment_metadata in bookmarks:
             self.assertFalse(experiment_metadata.bookmarked)

@@ -1072,11 +1072,9 @@ class Experiment(models.Model):
         # { footprint-level-parameter: 1, resource-level-parameter: 100 }
         for parameter in itertools.chain(participant_parameters, group_parameters, group_cluster_parameters):
             if parameter in defaults:
-                parameter_defaults[parameter] = {
-                    parameter.value_field_name: defaults[parameter]}
+                parameter_defaults[parameter] = {parameter.value_field_name: defaults[parameter]}
         if parameter_defaults:
-            logger.debug(
-                "setting default values for parameters: %s", parameter_defaults)
+            logger.debug("setting default values for parameters: %s", parameter_defaults)
         # create group cluster parameter data values
         if group_cluster_parameters:
             for group_cluster in self.active_group_clusters:

@@ -323,12 +323,13 @@ def round_started_handler(sender, experiment=None, **kwargs):
     logger.debug("setting up round %s", round_configuration)
     # initialize group, group cluster, and participant data values
     experiment.initialize_data_values(
-        group_cluster_parameters=(
-            get_regrowth_parameter(), get_resource_level_parameter()),
-        group_parameters=(get_regrowth_parameter(
-        ), get_group_harvest_parameter(), get_resource_level_parameter()),
-        participant_parameters=(
-            get_storage_parameter(), get_player_status_parameter())
+        group_cluster_parameters=(get_regrowth_parameter(), get_resource_level_parameter()),
+        group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
+        participant_parameters=(get_storage_parameter(), get_player_status_parameter()),
+        defaults={
+            get_storage_parameter(): 0,
+            get_player_status_parameter(): True,
+        }
     )
     shared_resource_enabled = is_shared_resource_enabled(round_configuration)
     if should_reset_resource_level(round_configuration, experiment):
@@ -548,8 +549,7 @@ def update_participants(experiment, round_data, round_configuration):
         player_alive = player_status_dv.boolean_value
         if player_alive:
             harvest_decision = get_harvest_decision(pgr, round_data)
-            updated_storage = storage_dv.int_value + \
-                harvest_decision - cost_of_living
+            updated_storage = storage_dv.int_value + harvest_decision - cost_of_living
             if updated_storage < 0:
                 # player has "died"
                 player_status_dv.update_boolean(False)
@@ -569,45 +569,48 @@ def round_ended_handler(sender, experiment=None, **kwargs):
     round_configuration = experiment.current_round
     round_data = experiment.get_round_data(round_configuration)
     logger.debug("ending boundary effects round: %s", round_configuration)
-    if round_configuration.is_playable_round:
-        regrowth_rate = get_regrowth_rate(round_configuration)
-        harvest_decision_parameter = get_harvest_decision_parameter()
-        for pgr in experiment.participant_group_relationships:
-            # FIXME: not thread-safe but this *should* only be invoked once per experiment.  If we start getting
-            # spurious data values, revisit this section
-            prdvs = ParticipantRoundDataValue.objects.filter(
-                round_data=round_data,
-                participant_group_relationship=pgr,
-                parameter=harvest_decision_parameter,
-                is_active=True)
-            # create zero harvest decisions for any unsubmitted harvest
-            # decisions
-            if prdvs.count() == 0:
-                prdv = ParticipantRoundDataValue.objects.create(round_data=round_data,
-                                                                participant_group_relationship=pgr,
-                                                                parameter=harvest_decision_parameter,
-                                                                is_active=True,
-                                                                int_value=0)
-                logger.debug(
-                    "autozero harvest decision for participant %s", pgr)
-            elif prdvs.count() > 1:
-                # another degenerate data condition, deactivate all prior
-                logger.debug(
-                    "multiple harvest decisions found for %s, deactivating all but the latest", pgr)
-                prdv = prdvs.latest('id')
-                prdvs.exclude(pk=prdv.pk).update(is_active=False)
+    try:
+        if round_configuration.is_playable_round:
+            regrowth_rate = get_regrowth_rate(round_configuration)
+            harvest_decision_parameter = get_harvest_decision_parameter()
+            for pgr in experiment.participant_group_relationships:
+                # FIXME: not thread-safe but this *should* only be invoked once per experiment.  If we start getting
+                # spurious data values, revisit this section
+                prdvs = ParticipantRoundDataValue.objects.filter(
+                    round_data=round_data,
+                    participant_group_relationship=pgr,
+                    parameter=harvest_decision_parameter,
+                    is_active=True)
+                # create zero harvest decisions for any unsubmitted harvest
+                # decisions
+                if prdvs.count() == 0:
+                    prdv = ParticipantRoundDataValue.objects.create(round_data=round_data,
+                                                                    participant_group_relationship=pgr,
+                                                                    parameter=harvest_decision_parameter,
+                                                                    is_active=True,
+                                                                    int_value=0)
+                    logger.debug(
+                        "autozero harvest decision for participant %s", pgr)
+                elif prdvs.count() > 1:
+                    # another degenerate data condition, deactivate all prior
+                    logger.debug(
+                        "multiple harvest decisions found for %s, deactivating all but the latest", pgr)
+                    prdv = prdvs.latest('id')
+                    prdvs.exclude(pk=prdv.pk).update(is_active=False)
 
-        # FIXME: generify and merge update_shared_resource_level and
-        # update_resource_level to operate on "group-like" objects if possible
-        if is_shared_resource_enabled(round_configuration):
-            for group_cluster in experiment.active_group_clusters:
-                update_shared_resource_level(
-                    experiment, group_cluster, round_data, regrowth_rate)
-        else:
-            for group in experiment.groups:
-                update_resource_level(
-                    experiment, group, round_data, regrowth_rate)
-        update_participants(experiment, round_data, round_configuration)
+            # FIXME: generify and merge update_shared_resource_level and
+            # update_resource_level to operate on "group-like" objects if possible
+            if is_shared_resource_enabled(round_configuration):
+                for group_cluster in experiment.active_group_clusters:
+                    update_shared_resource_level(
+                        experiment, group_cluster, round_data, regrowth_rate)
+            else:
+                for group in experiment.groups:
+                    update_resource_level(
+                        experiment, group, round_data, regrowth_rate)
+            update_participants(experiment, round_data, round_configuration)
+    except:
+        logger.exception('Failed to end round cleanly')
 
 
 def calculate_regrowth(resource_level, regrowth_rate, max_resource_level):
