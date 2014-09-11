@@ -38,6 +38,9 @@ label.error {
     color: rgb(194, 52, 52);
 }
 
+input#id_contact_number {
+    display: none;
+}
 .chat-sidebar {
     overflow: auto;
     height: 90%;

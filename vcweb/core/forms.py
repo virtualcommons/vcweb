@@ -502,11 +502,10 @@ class QuizForm(forms.Form):
 
 
 class AntiSpamContactForm(ContactForm):
-    timestamp     = forms.IntegerField(widget=forms.HiddenInput)
-    security_hash = forms.CharField(min_length=40, max_length=40, widget=forms.HiddenInput)
-    honeypot      = forms.CharField(required=False,
-                                    widget=forms.TextInput(attrs={'style':'display:none;'}),
-                                    label='')
+    timestamp       = forms.IntegerField(widget=forms.HiddenInput)
+    security_hash   = forms.CharField(min_length=40, max_length=40, widget=forms.HiddenInput)
+    # Honeypot field
+    contact_number  = forms.CharField(required=False, widget=forms.TextInput, label='')
 
     def __init__(self, *args, **kwargs):
         initial = kwargs.get("initial", {})
@@ -517,7 +516,7 @@ class AntiSpamContactForm(ContactForm):
     def security_errors(self):
         """Return just those errors associated with security"""
         errors = ErrorDict()
-        for f in ["honeypot", "timestamp", "security_hash"]:
+        for f in ["contact_number", "timestamp", "security_hash"]:
             if f in self.errors:
                 errors[f] = self.errors[f]
         return errors
@@ -567,7 +566,7 @@ class AntiSpamContactForm(ContactForm):
 
     def clean_honeypot(self):
         """Check that nothing's been entered into the honeypot."""
-        value = self.cleaned_data["honeypot"]
+        value = self.cleaned_data["contact_number"]
         if value:
-            raise forms.ValidationError(self.fields["honeypot"].label)
+            raise forms.ValidationError(self.fields["contact_number"].label)
         return value
