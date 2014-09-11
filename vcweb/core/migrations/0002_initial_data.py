@@ -38,7 +38,7 @@ class DemoExperimenter(object):
         groups = {}
         for p in PermissionGroup:
             groups[p] = Group.objects.create(name=p)
-        demo_experimenter_user.groups.add(groups[PermissionGroup.demo_participant])
+        demo_experimenter_user.groups.add(groups[PermissionGroup.demo_experimenter])
         Experimenter.objects.create(user=demo_experimenter_user, approved=True, institution=asu)
 
     @staticmethod
