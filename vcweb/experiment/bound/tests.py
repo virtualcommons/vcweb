@@ -141,7 +141,7 @@ class ParticipantTest(BaseTest):
                 self.login_participant(participant)
                 response = self.get(self.experiment.participant_url)
                 self.assertEqual(response.status_code, 200)
-            self.advance_to_next_round
+            self.experiment.advance_to_next_round()
 
 
 class MaxResourceLevelTest(BaseTest):
