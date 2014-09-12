@@ -841,8 +841,7 @@ def update_experiment(request):
             "experimenter %s invoking %s on %s", experimenter, action, experiment)
         try:
             response_tuples = experiment.invoke(action, experimenter)
-            logger.debug(
-                "invoking action %s: %s", action, str(response_tuples))
+            logger.debug("invoking action %s: %s", action, str(response_tuples))
             return JsonResponse(dumps({
                 'success': True,
                 'experiment': experiment.to_dict()

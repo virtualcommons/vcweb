@@ -132,6 +132,14 @@ class BaseVcwebTest(TestCase):
                 return e
             e.advance_to_next_round()
 
+    def reload_experiment(self):
+        self.experiment = Experiment.objects.get(pk=self.experiment.pk)
+
+    def post(self, *args, **kwargs):
+        response = self.client.post(*args, **kwargs)
+        self.reload_experiment()
+        return response
+
     def all_data_rounds(self):
         e = self.experiment
         e.activate()

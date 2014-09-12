@@ -1196,8 +1196,7 @@ class Experiment(models.Model):
 
     def invoke(self, action_name, experimenter=None):
         if action_name in Experiment.ALLOWED_ACTIONS and experimenter == self.experimenter:
-            logger.debug(
-                "experimenter %s invoking action %s", experimenter, action_name)
+            logger.debug("experimenter %s invoking action %s", experimenter, action_name)
             action = getattr(self, action_name)
             return action()
         else:
@@ -1323,6 +1322,7 @@ class Experiment(models.Model):
 
     def archive(self):
         self.complete()
+        logger.error("archived %s", self.status)
 
     @transaction.atomic
     def complete(self):
@@ -2956,7 +2956,6 @@ def get_model_fields(model):
 def find_duplicate_users(field='email'):
     return User.objects.values(field).annotate(max_id=models.Max('id'),
                                                count_id=models.Count('id')).filter(count_id__gt=1).order_by()
-
 
 
 def reset_password(email_address, from_email=settings.SERVER_EMAIL, template='registration/password_reset_email.html'):
