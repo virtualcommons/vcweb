@@ -145,7 +145,7 @@ def test(name=None, coverage=False):
         env.apps = ' '.join(vcweb_settings.VCWEB_APPS)
     if coverage:
         ignored = ['*{0}*'.format(ignored_pkg) for ignored_pkg in env.ignored_coverage]
-        env.python = "coverage run --omit=" + ','.join(ignored)
+        env.python = "coverage run --source='.' --omit=" + ','.join(ignored)
     local('%(python)s manage.py test %(apps)s' % env)
 
 
