@@ -11,8 +11,8 @@ from vcweb.core.tests import BaseVcwebTest
 
 from .models import (get_experiment_metadata, set_harvest_decision, GroupRelationship, get_resource_level_dv,
                      get_regrowth_rate, calculate_regrowth, set_resource_level, get_resource_level,
-                     get_harvest_decision_parameter, get_max_resource_level, get_harvest_decision)
-
+                     get_harvest_decision_parameter, get_max_resource_level, get_harvest_decision,
+                     get_max_harvest_decision)
 
 logger = logging.getLogger(__name__)
 
@@ -115,13 +115,26 @@ class AdjustHarvestDecisionsTest(BaseTest):
 
 class ParticipantTest(BaseTest):
 
+    def test_harvest_decision(self):
+        self.experiment.activate()
+        max_harvest_decision = get_max_harvest_decision(self.experiment.experiment_configuration)
+        for pgr in self.participant_group_relationships:
+            self.login_participant(pgr.participant)
+            response = self.get(self.experiment.participant_url)
+            self.assertEqual(response.status_code, 200)
+            harvest_decision = random.randint(0, max_harvest_decision)
+            response = self.post(self.experiment.get_participant_url('submit-harvest-decision'),
+                                 {'participant_group_id': pgr.pk, 'integer_decision': harvest_decision})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(harvest_decision, get_harvest_decision(pgr))
+            # FIXME: parse & verify json response content
+
     def test_participate(self):
-# inactive experiment
         for participant in self.participants:
             self.login_participant(participant)
             response = self.get(self.experiment.participant_url)
             self.assertEqual(response.status_code, 302)
-            self.assertTrue('dashboard' in response['Location'])
+            self.assertTrue('dashboard' in response['Location'], 'inactive experiment should redirect to dashboard')
         self.experiment.activate()
         for participant in self.participants:
             self.login_participant(participant)

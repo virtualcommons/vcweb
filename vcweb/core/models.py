@@ -745,9 +745,12 @@ class Experiment(models.Model):
     def controller_url(self):
         return "/experiment/%s" % self.pk
 
+    def get_participant_url(self, uri):
+        return '/{0}/{1}'.format(self.get_absolute_url(), uri)
+
     @property
     def participant_url(self):
-        return "/%s/participate" % self.get_absolute_url()
+        return self.get_participant_url('participate')
 
     @property
     def full_participant_url(self):
