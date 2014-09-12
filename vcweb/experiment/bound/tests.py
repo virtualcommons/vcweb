@@ -136,10 +136,12 @@ class ParticipantTest(BaseTest):
             self.assertEqual(response.status_code, 302)
             self.assertTrue('dashboard' in response['Location'], 'inactive experiment should redirect to dashboard')
         self.experiment.activate()
-        for participant in self.participants:
-            self.login_participant(participant)
-            response = self.get(self.experiment.participant_url)
-            self.assertEqual(response.status_code, 200)
+        while self.experiment.has_next_round:
+            for participant in self.participants:
+                self.login_participant(participant)
+                response = self.get(self.experiment.participant_url)
+                self.assertEqual(response.status_code, 200)
+            self.advance_to_next_round
 
 
 class MaxResourceLevelTest(BaseTest):
