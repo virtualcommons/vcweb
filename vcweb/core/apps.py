@@ -10,4 +10,4 @@ class VcwebCoreConfig(AppConfig):
     verbose_name = 'vcweb core management services'
 
     def ready(self):
-        logger.error("vcweb core ready")
+        logger.debug("vcweb core ready")

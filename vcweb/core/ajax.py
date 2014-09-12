@@ -34,18 +34,6 @@ def archive(request):
 
 
 @group_required(PermissionGroup.experimenter)
-@require_POST
-def clear_participants(request):
-    experiment_id = request.POST.get('experiment_id')
-    experiment = _get_experiment(request, experiment_id)
-    experiment.clear_participants()
-    return JsonResponse(dumps({
-        'success': True,
-        'experiment': experiment.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))
-    }))
-
-
-@group_required(PermissionGroup.experimenter)
 def clone_experiment(request):
     experiment_id = request.POST.get('experiment_id')
     logger.debug("cloning experiment %s", experiment_id)

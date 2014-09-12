@@ -155,7 +155,6 @@ class ExperimentTest(BaseVcwebTest):
         while e.has_next_round:
             total_number_of_rounds += 1
             e.advance_to_next_round()
-        logger.error("round configurations: %s", e.experiment_configuration.round_configuration_set.all())
         self.assertEqual(total_number_of_rounds, e.experiment_configuration.total_number_of_rounds)
         e.restart()
         self.assertTrue(e.is_active)

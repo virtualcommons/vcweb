@@ -1,4 +1,4 @@
-from .common import BaseVcwebTest
+from .common import BaseVcwebTest, logger
 
 
 class LoginTest(BaseVcwebTest):
@@ -17,8 +17,7 @@ class LoginTest(BaseVcwebTest):
         experiment = self.experiment
         self.assertFalse(self.client.login(username=experiment.experimenter.email,
                                            password='jibber jabber'))
-        self.assertTrue(self.client.login(username=experiment.experimenter.email,
-                                          password=BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD))
+        self.login_experimenter()
 
 
 class ParticipantDashboardTest(BaseVcwebTest):
@@ -55,3 +54,45 @@ class ParticipantDashboardTest(BaseVcwebTest):
             self.assertTrue(c.login(username=p.email, password='test'))
             response = c.get('/dashboard/')
             self.assertEqual(200, response.status_code)
+
+
+class ClearParticipantsApiTest(BaseVcwebTest):
+
+    def test_api(self):
+        c = self.client
+        self.login_experimenter()
+        e = self.experiment
+        e.activate()
+        self.assertTrue(e.participant_set.count() > 0)
+        response = c.post('/api/experiment/update', dict(experiment_id=self.experiment.pk, action='clear_participants'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(e.participant_set.count(), 0)
+
+    def test_unauthorized_experimenter_access(self):
+        c = self.client
+        new_experimenter = self.create_experimenter()
+        self.login_experimenter(new_experimenter)
+        response = c.post('/api/experiment/update',
+                          {'experiment_id': self.experiment.pk, 'action': 'clear_participants'})
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(self.experiment.participant_set.count() > 0)
+
+    def test_unauthorized_participant_access(self):
+        self.login_participant(self.experiment.participant_set.first())
+        response = self.client.post('/api/experiment/update',
+                                    {'experiment_id': self.experiment.pk, 'action': 'clear_participants'})
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(self.experiment.participant_set.count() > 0)
+
+
+class ArchiveApiTest(BaseVcwebTest):
+
+    def test_archive(self):
+        c = self.client
+        self.login_experimenter()
+        e = self.experiment
+        e.activate()
+        self.assertFalse(e.is_archived)
+        response = c.post('/api/experiment/update', dict(experiment_id=self.experiment.pk, action='archive'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(e.is_archived)

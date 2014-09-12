@@ -6,8 +6,7 @@ from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 
-from .ajax import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, archive,
-                   check_user_email)
+from .ajax import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, check_user_email)
 from .views import (dashboard, LoginView, LogoutView, monitor, RegisterEmailListView, RegisterTestParticipantsView,
                     completed_survey, toggle_bookmark_experiment_metadata, check_survey_completed, Participate,
                     download_data, download_participants, export_configuration, api_logger, participant_api_login,
@@ -77,7 +76,6 @@ urlpatterns = [
         name='clone_experiment_configuration'),
     url(r'^api/experiment/(?P<pk>\d+)/check-ready-participants$', check_ready_participants,
         name='check_ready_participants'),
-    url(r'^api/experiment/archive', archive, name='archive'),
     url(r'^api/experiment/clone', clone_experiment, name='clone_experiment'),
     url(r'^api/experiment/create',
         create_experiment, name='create_experiment'),

@@ -16,14 +16,18 @@ class BaseVcwebTest(TestCase):
     and a number of participants, experiments, etc.
     """
     DEFAULT_EXPERIMENTER_PASSWORD = 'test.experimenter'
+    DEFAULT_EXPERIMENTER_EMAIL = 'vcweb.test@mailinator.com'
 
-    def load_experiment(self, experiment_metadata=None, experimenter_password=DEFAULT_EXPERIMENTER_PASSWORD, **kwargs):
+    def load_experiment(self, experiment_metadata=None, experimenter_password=None, **kwargs):
         if experiment_metadata is None:
             # FIXME: assumes that there is always some Experiment available to load. revisit this, or figure out some
             # better way to bootstrap tests
             experiment = Experiment.objects.first().clone()
         else:
             experiment = self.create_new_experiment(experiment_metadata, **kwargs)
+        if experimenter_password is None:
+            experimenter_password = BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD
+
         self.experiment = experiment
         # currently associating all available Parameters with this
         # ExperimentMetadata
@@ -59,6 +63,17 @@ class BaseVcwebTest(TestCase):
     @property
     def participant_group_relationships(self):
         return self.experiment.participant_group_relationships
+
+    def login_participant(self, participant):
+        self.assertTrue(self.client.login(username=participant.email, password='test'))
+
+    def login_experimenter(self, experimenter=None, password=None):
+        if experimenter is None:
+            experimenter = self.experimenter
+        if password is None:
+            password = BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD
+        self.assertTrue(self.client.login(username=experimenter.email,
+                                          password=password))
 
     def create_new_experiment(self, experiment_metadata, experimenter=None):
         """
@@ -101,8 +116,12 @@ class BaseVcwebTest(TestCase):
             self._demo_experimenter = Experimenter.objects.get(user__email=settings.DEMO_EXPERIMENTER_EMAIL)
         return self._demo_experimenter
 
-    def create_experimenter(self, email='test.experimenter@mailinator.com', password='test'):
-        u = User.objects.create_user(username='test_experimenter', email=email, password=password)
+    def create_experimenter(self, email=None, password=None):
+        if email is None:
+            email = BaseVcwebTest.DEFAULT_EXPERIMENTER_EMAIL
+        if password is None:
+            password = BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD
+        u = User.objects.create_user(username=email, email=email, password=password)
         return Experimenter.objects.create(user=u)
 
     def advance_to_data_round(self):
