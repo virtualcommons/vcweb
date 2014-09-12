@@ -1,23 +1,33 @@
 from .common import BaseVcwebTest, logger
 
 
-class LoginTest(BaseVcwebTest):
+class AuthTest(BaseVcwebTest):
 
     def test_authentication_redirect(self):
         experiment = self.experiment
-        c = self.client
-        response = c.get('/accounts/login/')
+        response = self.get('/accounts/login/')
         self.assertEqual(200, response.status_code)
-        self.assertTrue(c.login(username=experiment.experimenter.email,
-                                password=BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD))
-        response = c.get('/accounts/login/')
+        self.assertTrue(self.login(username=experiment.experimenter.email,
+                                   password=BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD))
+        response = self.get('/accounts/login/')
         self.assertEqual(302, response.status_code)
 
-    def test_authorization(self):
+    def test_invalid_password(self):
         experiment = self.experiment
-        self.assertFalse(self.client.login(username=experiment.experimenter.email,
-                                           password='jibber jabber'))
-        self.login_experimenter()
+        self.assertFalse(self.login(username=experiment.experimenter.email, password='jibber jabber'))
+        response = self.post('/accounts/login', dict(username=experiment.experimenter.email,
+                                                     password='jibber jabber'))
+        self.assertTrue('/accounts/login' in response['Location'])
+        logger.error(response)
+
+    def test_experimenter_permissions(self):
+        self.assertTrue(self.login_experimenter())
+        # FIXME: more tests
+
+    def test_participant_permissions(self):
+        for pgr in self.participant_group_relationships:
+            self.assertTrue(self.login_participant(pgr.participant))
+            # FIXME: more tests on participant permissions
 
 
 class ParticipantDashboardTest(BaseVcwebTest):

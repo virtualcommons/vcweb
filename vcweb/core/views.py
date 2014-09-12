@@ -50,7 +50,7 @@ class AnonymousMixin(object):
         return super(AnonymousMixin, self).dispatch(*args, **kwargs)
 
 
-class Participate(TemplateView):
+class ParticipateView(TemplateView):
 
     @method_decorator(group_required(PermissionGroup.participant))
     def dispatch(self, *args, **kwargs):
@@ -231,8 +231,7 @@ def set_authentication_token(user, authentication_token=''):
     else:
         logger.error("Invalid user: %s", user)
         return
-    logger.debug(
-        "%s authentication_token=%s", commons_user, authentication_token)
+    logger.debug("setting %s authentication_token=%s", commons_user, authentication_token)
     commons_user.authentication_token = authentication_token
     commons_user.save()
 
@@ -1413,6 +1412,7 @@ def unsubscribe(request):
             return render(request, 'account/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
     return render(request, 'invalid_request.html',
                   {'message': "You aren't currently subscribed to our experiment session mailing list."})
+
 
 class AntiSpamContactFormView(ContactFormView):
     form_class = AntiSpamContactForm

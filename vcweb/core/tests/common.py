@@ -64,16 +64,18 @@ class BaseVcwebTest(TestCase):
     def participant_group_relationships(self):
         return self.experiment.participant_group_relationships
 
-    def login_participant(self, participant):
-        self.assertTrue(self.client.login(username=participant.email, password='test'))
+    def login(self, *args, **kwargs):
+        return self.client.login(*args, **kwargs)
+
+    def login_participant(self, participant, password='test'):
+        return self.client.login(username=participant.email, password=password)
 
     def login_experimenter(self, experimenter=None, password=None):
         if experimenter is None:
             experimenter = self.experimenter
         if password is None:
             password = BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD
-        self.assertTrue(self.client.login(username=experimenter.email,
-                                          password=password))
+        return self.client.login(username=experimenter.email, password=password)
 
     def create_new_experiment(self, experiment_metadata, experimenter=None):
         """
