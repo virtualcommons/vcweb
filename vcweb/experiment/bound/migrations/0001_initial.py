@@ -159,7 +159,7 @@ def create_boundary_effects_parameters(apps, schema_editor):
             display_name='Max harvest decision',
             description='The maximum number of resources a participant can harvest in the given round.',
             type='int',
-            scope='round',
+            scope='experiment',
         ),
         Parameter.objects.create(
             name='observe_other_group',

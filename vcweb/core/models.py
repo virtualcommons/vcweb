@@ -90,7 +90,6 @@ class ParameterValueMixin(object):
     """
     Model classes using this mixin should expose a 'parameter_value_set' attribute containing a QuerySet of
     ParameterizedValues to have get_parameter_value
-
     """
 
     @transaction.atomic
@@ -1322,7 +1321,6 @@ class Experiment(models.Model):
 
     def archive(self):
         self.complete()
-        logger.error("archived %s", self.status)
 
     @transaction.atomic
     def complete(self):
@@ -3043,5 +3041,3 @@ def update_daily_experiments(sender, timestamp=None, start=None, **kwargs):
             logger.debug(
                 "activating experiment %s with start date of %s", e, e.start_date)
             e.activate()
-
-

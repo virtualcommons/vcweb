@@ -3,9 +3,10 @@ from operator import itemgetter
 from urllib import urlencode
 import logging
 
+from django.contrib import messages
 from django.db import transaction
 from django.http import Http404
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 
 from vcweb.core import dumps
 from vcweb.core.decorators import group_required
@@ -28,15 +29,19 @@ def participate(request, experiment_id=None):
         "handling participate request for %s and experiment %s", participant, experiment_id)
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
                                    pk=experiment_id)
-    pgr = experiment.get_participant_group_relationship(participant)
-    if experiment.experiment_metadata != get_experiment_metadata():
-        raise Http404
-    return render(request, experiment.participant_template, {
-        'experiment': experiment,
-        'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
-        'participant_group_relationship': pgr,
-        'experimentModelJson': get_view_model_json(experiment, pgr),
-    })
+    if experiment.is_active:
+        pgr = experiment.get_participant_group_relationship(participant)
+        if experiment.experiment_metadata != get_experiment_metadata():
+            raise Http404
+        return render(request, experiment.participant_template, {
+            'experiment': experiment,
+            'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
+            'participant_group_relationship': pgr,
+            'experimentModelJson': get_view_model_json(experiment, pgr),
+        })
+    else:
+        messages.info(request, '%s has not been activated yet. Please wait until the experimenter activates the experiment and try again.' % experiment)
+        return redirect('core:dashboard')
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)

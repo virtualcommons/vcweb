@@ -140,6 +140,9 @@ class BaseVcwebTest(TestCase):
         self.reload_experiment()
         return response
 
+    def get(self, *args, **kwargs):
+        return self.client.get(*args, **kwargs)
+
     def all_data_rounds(self):
         e = self.experiment
         e.activate()

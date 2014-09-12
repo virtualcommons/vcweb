@@ -84,6 +84,23 @@ class ClearParticipantsApiTest(BaseVcwebTest):
         self.assertTrue(self.experiment.participant_set.count() > 0)
 
 
+class ActivateApiTest(BaseVcwebTest):
+
+    def test_activate(self):
+        self.assertFalse(self.experiment.is_active)
+        self.login_experimenter()
+        response = self.post('/api/experiment/update',
+                             {'experiment_id': self.experiment.pk, 'action': 'activate'})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(self.experiment.is_active)
+        self.assertEqual(len(self.participant_group_relationships),
+                         self.experiment.experiment_configuration.max_group_size * len(self.experiment.groups))
+        response = self.post('/api/experiment/update',
+                             {'experiment_id': self.experiment.pk, 'action': 'deactivate'})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(self.experiment.is_active)
+
+
 class ArchiveApiTest(BaseVcwebTest):
 
     def test_archive(self):

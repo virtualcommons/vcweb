@@ -5,6 +5,7 @@ boundary effects experiment unit tests
 import logging
 import random
 
+
 from vcweb.core.models import (GroupCluster, Experiment, ParticipantRoundDataValue)
 from vcweb.core.tests import BaseVcwebTest
 
@@ -110,6 +111,22 @@ class AdjustHarvestDecisionsTest(BaseTest):
             self.assertEqual(get_resource_level(g), 0)
         for pgr in self.participant_group_relationships:
             self.assertTrue(get_harvest_decision(pgr) <= 8)
+
+
+class ParticipantTest(BaseTest):
+
+    def test_participate(self):
+# inactive experiment
+        for participant in self.participants:
+            self.login_participant(participant)
+            response = self.get(self.experiment.participant_url)
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue('dashboard' in response['Location'])
+        self.experiment.activate()
+        for participant in self.participants:
+            self.login_participant(participant)
+            response = self.get(self.experiment.participant_url)
+            self.assertEqual(response.status_code, 200)
 
 
 class MaxResourceLevelTest(BaseTest):
