@@ -1,4 +1,6 @@
+from ..models import Experiment
 from .common import BaseVcwebTest, logger
+import json
 
 
 class AuthTest(BaseVcwebTest):
@@ -120,4 +122,19 @@ class ArchiveApiTest(BaseVcwebTest):
         response = self.post('/api/experiment/update',
                              {'experiment_id': self.experiment.pk, 'action': 'archive'})
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(self.experiment.is_archived)
+        self.assertTrue(self.reload_experiment().is_archived)
+
+
+class CloneExperimentTest(BaseVcwebTest):
+
+    def test_clone(self):
+        experimenter = self.create_experimenter()
+        self.assertTrue(self.login_experimenter(experimenter))
+        response = self.post('/api/experiment/clone',
+                             {'experiment_id': self.experiment.pk})
+        experiment_json = json.loads(response.content)
+        cloned_experiment = Experiment.objects.get(pk=experiment_json['experiment']['pk'])
+        self.assertEqual(cloned_experiment.experiment_metadata, self.experiment.experiment_metadata)
+        self.assertEqual(cloned_experiment.experiment_configuration, self.experiment.experiment_configuration)
+        self.assertNotEqual(cloned_experiment.experimenter, self.experiment.experimenter)
+        self.assertEqual(cloned_experiment.experimenter, experimenter)

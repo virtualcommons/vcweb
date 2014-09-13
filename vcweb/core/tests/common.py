@@ -2,7 +2,8 @@ from django.conf import settings
 from django.test import TestCase
 from django.test.client import RequestFactory, Client
 
-from ..models import (Experiment, Experimenter, ExperimentConfiguration, RoundConfiguration, Parameter, Group, User)
+from ..models import (Experiment, Experimenter, ExperimentConfiguration, RoundConfiguration, Parameter, Group, User,
+                      PermissionGroup)
 
 import logging
 
@@ -124,7 +125,9 @@ class BaseVcwebTest(TestCase):
         if password is None:
             password = BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD
         u = User.objects.create_user(username=email, email=email, password=password)
-        return Experimenter.objects.create(user=u)
+        u.groups.add(PermissionGroup.experimenter.get_django_group())
+        logger.error("user groups: %s", u.groups.all())
+        return Experimenter.objects.create(user=u, approved=True)
 
     def advance_to_data_round(self):
         e = self.experiment

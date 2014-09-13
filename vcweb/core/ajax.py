@@ -24,7 +24,7 @@ def _get_experiment(request, pk):
 @group_required(PermissionGroup.experimenter)
 def clone_experiment(request):
     experiment_id = request.POST.get('experiment_id')
-    logger.debug("cloning experiment %s", experiment_id)
+    logger.error("cloning experiment %s", experiment_id)
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     experimenter = request.user.experimenter
     cloned_experiment = experiment.clone(experimenter=experimenter)
