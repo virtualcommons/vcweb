@@ -136,6 +136,7 @@ class BaseVcwebTest(TestCase):
 
     def reload_experiment(self):
         self.experiment = Experiment.objects.get(pk=self.experiment.pk)
+        return self.experiment
 
     def post(self, *args, **kwargs):
         response = self.client.post(*args, **kwargs)

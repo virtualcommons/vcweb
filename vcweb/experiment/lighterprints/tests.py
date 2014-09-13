@@ -220,3 +220,15 @@ class GroupScoreTest(LevelBasedTest):
         for group in gs:
             self.assertEqual(group_scores.average_daily_points(group), 0)
             self.assertEqual(group_scores.total_daily_points(group), 0)
+
+
+class TestRoundEndedSignal(LevelBasedTest):
+
+    def test_system_daily_tick(self):
+        self.experiment.activate()
+        self.assertEqual(self.experiment.current_round.sequence_number, 1)
+        from vcweb.core.cron import system_daily_tick
+        system_daily_tick()
+        self.assertEqual(self.reload_experiment().current_round.sequence_number, 2)
+
+
