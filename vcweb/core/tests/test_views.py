@@ -20,7 +20,6 @@ class AuthTest(BaseVcwebTest):
         response = self.post('/accounts/login', dict(username=experiment.experimenter.email,
                                                      password='jibber jabber'))
         self.assertTrue('/accounts/login' in response['Location'])
-        logger.error(response)
 
     def test_experimenter_permissions(self):
         self.assertTrue(self.login_experimenter())
@@ -85,7 +84,7 @@ class ClearParticipantsApiTest(BaseVcwebTest):
         self.login_experimenter(new_experimenter)
         response = self.post('/api/experiment/update',
                              {'experiment_id': self.experiment.pk, 'action': 'clear_participants'})
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
         self.assertTrue(self.experiment.participant_set.count() > 0)
 
     def test_unauthorized_participant_access(self):

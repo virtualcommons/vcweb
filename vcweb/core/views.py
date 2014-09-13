@@ -836,6 +836,9 @@ def update_experiment(request):
         experiment = get_object_or_404(Experiment, pk=form.cleaned_data['experiment_id'])
         action = form.cleaned_data['action']
         experimenter = request.user.experimenter
+        if experimenter != experiment.experimenter:
+            logger.warn("user %s tried to invoke %s on %s", user, action, experiment)
+            raise PermissionDenied("You aren't authorized to perform this action on this experiment.")
         logger.debug(
             "experimenter %s invoking %s on %s", experimenter, action, experiment)
         try:
