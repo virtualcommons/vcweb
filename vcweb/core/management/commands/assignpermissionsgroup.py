@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 
 from vcweb.core.models import Participant, Experimenter, PermissionGroup
 
@@ -23,6 +23,16 @@ class Command(BaseCommand):
             groups[p], created = Group.objects.get_or_create(name=p.value)
             if created:
                 logger.warning("creating groups but this should normally be done via data migration.")
+
+            # Adding permissions that are currently used in templates.
+            # Need to revisit in future when more permissions are being used.
+            if p == PermissionGroup.participant:
+                perms = Permission.objects.filter(content_type__name='user')
+                groups[p].permissions = perms
+            elif p == PermissionGroup.experimenter:
+                perms = Permission.objects.filter(content_type__name='experiment')
+                groups[p].permissions = perms
+
         participant_list = Participant.objects.select_related('user').exclude(user__email__regex=r'@mailinator.com$')
         experimenter_list = Experimenter.objects.select_related('user').exclude(user__email__regex=r'@mailinator.com$')
         demo_participant_list = Participant.objects.select_related('user').filter(user__email__regex=r'@mailinator.com$')
