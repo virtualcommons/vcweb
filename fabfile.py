@@ -29,7 +29,8 @@ env.deploy_group = 'commons'
 env.database = 'default'
 env.deploy_path = '/opt/'
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
-env.apache = 'httpd'
+env.git_url = 'https://github.com/virtualcommons/vcweb.git'
+env.webserver = 'httpd'
 # FIXME: use django conf INSTALLED_APPS to introspect instead, similar to
 # experiment_urls
 env.docs_path = os.path.join(env.project_path, 'docs')
@@ -37,6 +38,21 @@ env.test_fixtures = ' '.join(['forestry_experiment_metadata', 'lighterprints_exp
                               'activities', 'bound_experiment_metadata', 'bound_parameters'])
 env.virtualenv_path = '%s/.virtualenvs/%s' % (os.getenv('HOME'), env.project_name)
 env.ignored_coverage = ('test', 'settings', 'migrations', 'fabfile', 'wsgi', 'broker', 'irrigation', 'commands', 'sanitation')
+env.branches = {
+    'prod': {
+        'hg': 'stable',
+        'git': 'master'
+    },
+    'dev': {
+        'hg': 'default',
+        'git': 'develop',
+    }
+}
+env.vcs = 'git'
+env.vcs_commands = {
+    'hg': 'hg pull && hg up -C %(branch)s && hg id -n > build-id.txt',
+    'git': 'export GIT_WORK_TREE=/opt/vcweb && git checkout -f %(branch)s && git describe > build-id.txt',
+}
 
 # django integration for access to settings, etc.
 django.project(env.project_name)
@@ -178,13 +194,13 @@ def server(ip="127.0.0.1", port=8000):
 @roles('dev')
 @task
 def dev():
-    execute(deploy)
+    execute(deploy, env.branches['dev'])
 
 
 @roles('prod')
 @task
 def prod():
-    execute(deploy)
+    execute(deploy, env.branches['prod'])
 
 
 @roles('localhost')
@@ -195,7 +211,7 @@ def setup_postgres():
 
 
 def _restart_command():
-    return 'service %(apache)s restart && service supervisord restart' % env
+    return 'service %(webserver)s restart && service supervisord restart' % env
 
 
 @roles('localhost')
@@ -216,14 +232,20 @@ def sudo_chain(*commands, **kwargs):
     sudo(' && '.join(commands), **kwargs)
 
 
-def deploy():
+def _vcs_command(branch):
+    return env.vcs_commands % branch[env.vcs]
+
+
+def deploy(vcs_branch_dict):
     """ deploy to an already setup environment """
     env.project_path = env.deploy_path + env.project_name
-    if confirm("Deploy to host %(host)s ?" % env):
+    vcs = env.vcs
+    env.branch = vcs_branch_dict[vcs]
+    vcs_command = env.vcs_commands[vcs] % env
+    if confirm("Deploying '%(branch)s' branch to host %(host)s using %(vcs)s - continue? " % env):
         with cd(env.project_path):
             sudo_chain(
-                'hg pull && hg up -C',
-                'hg id -n > build-id.txt',
+                vcs_command,
                 'chmod g+s logs',
                 'chmod -R g+rw logs/',
                 user=env.deploy_user, pty=True)
