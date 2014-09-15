@@ -9,7 +9,8 @@ certifi==14.05.14
 coverage==3.7.1
 django-autocomplete-light==1.4.14
 django-bootstrap3==4.11.0
-django-cas==0.9.1
+# virtualcommons forked django-cas
+git+http://git@github.com/virtualcommons/django-cas.git#egg=cas
 django-contact-form==1.0
 django-extensions==1.4.0
 django-kronos==0.4
