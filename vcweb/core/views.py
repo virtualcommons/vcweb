@@ -10,7 +10,6 @@ from django.conf import settings
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordResetForm
-from django.contrib.auth.models import Group as AuthGroup
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.http import HttpResponse
@@ -203,8 +202,7 @@ def cas_asu_registration_submit(request):
         user.first_name = form.cleaned_data['first_name']
         user.last_name = form.cleaned_data['last_name']
         # Assign the user to participant permission group
-        participants_group = AuthGroup.objects.get(name="Participants")
-        user.groups.add(participants_group)
+        user.groups.add(PermissionGroup.participant.get_django_group())
         user.save()
         participant.save()
         messages.add_message(request, messages.INFO,
@@ -369,7 +367,7 @@ class AccountView(FormView):
 
 
 @login_required
-@group_required("Experimenters", "Participants")
+@group_required(PermissionGroup.experimenter, PermissionGroup.participant)
 def update_account_profile(request):
     """ FIXME: reduce code duplication distinguishing between participant/experimenter """
     user = request.user
@@ -1061,7 +1059,6 @@ def get_cas_user(tree):
     6. CAS_RESPONSE_CALLBACKS - The call back function that is being called after the successful authentication by CAS
     """
     username = tree[0][0].text.lower()
-    participants_group = AuthGroup.objects.get(name=PermissionGroup.participant.value)
 
     try:
         User.objects.get(username=username)
@@ -1087,7 +1084,7 @@ def get_cas_user(tree):
                 password = User.objects.make_random_password()
                 user.set_password(password)
                 institution = Institution.objects.get(name=settings.CAS_UNIVERSITY_NAME)
-                user.groups.add(participants_group)
+                user.groups.add(PermissionGroup.participant.get_django_group())
                 user.save()
                 participant = Participant.objects.create(user=user, major=directory_profile.major,
                                                          institution=institution)
