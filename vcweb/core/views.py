@@ -182,7 +182,7 @@ def cas_asu_registration(request):
         directory_profile = ASUWebDirectoryProfile(user.username)
         logger.debug("directory profile: %s", directory_profile)
         # user.save()
-        return render(request, 'account/asu_registration.html',
+        return render(request, 'accounts/asu_registration.html',
                       {'form': AsuRegistrationForm(instance=user.participant)})
     else:
         return redirect('core:dashboard')
@@ -293,7 +293,7 @@ def participant_api_login(request):
 
 class LoginView(AnonymousMixin, FormView):
     form_class = LoginForm
-    template_name = 'account/login.html'
+    template_name = 'accounts/login.html'
 
     def form_valid(self, form):
         request = self.request
@@ -331,7 +331,7 @@ class LogoutView(TemplateView):
 
 class RegistrationView(FormView, AnonymousMixin):
     form_class = RegistrationForm
-    template_name = 'account/register.html'
+    template_name = 'accounts/register.html'
 
     def form_valid(self, form):
         email = form.cleaned_data['email'].lower()
@@ -458,7 +458,7 @@ def account_profile(request):
         # logger.debug(form)
     else:
         form = ExperimenterAccountForm(instance=user.experimenter)
-    return render(request, 'account/profile.html', {'form': form})
+    return render(request, 'accounts/profile.html', {'form': form})
 
 
 class ParticipantMixin(object):
@@ -1409,7 +1409,7 @@ def unsubscribe(request):
             user.participant.can_receive_invitations = False
             user.participant.save(update_fields=['can_receive_invitations'])
             successfully_unsubscribed = True
-            return render(request, 'account/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
+            return render(request, 'accounts/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
     return render(request, 'invalid_request.html',
                   {'message': "You aren't currently subscribed to our experiment session mailing list."})
 

@@ -34,17 +34,35 @@ class AuthTest(BaseVcwebTest):
             # FIXME: more tests on participant permissions
 
 
+class ParticipantProfileTest(BaseVcwebTest):
+
+    def setUp(self, **kwargs):
+        super(ParticipantProfileTest, self).setUp(demo_participants=False)
+
+    def test_save_profile(self):
+        e = self.experiment
+        e.activate()
+        for p in e.participant_set.all():
+            self.assertFalse(p.is_profile_complete)
+            self.assertTrue(self.login_participant(p))
+            self.assertFalse(p.user.groups.filter(name='Demo Participants').exists())
+            self.assertTrue(p.user.groups.filter(name='Participants').exists())
+            response = self.get('/dashboard/')
+            self.assertEqual(302, response.status_code)
+            self.assertTrue('/accounts/profile' in response['Location'])
+            self.post('/accounts/profile', {})
+
+
 class ParticipantDashboardTest(BaseVcwebTest):
 
     def test_demo_participants_dashboard(self):
         e = self.experiment
         e.activate()
-        c = self.client
         for p in e.participant_set.all():
             self.assertFalse(p.is_profile_complete)
-            self.assertTrue(c.login(username=p.email, password='test'))
+            self.assertTrue(self.login_participant(p))
             self.assertTrue(p.user.groups.filter(name='Demo Participants').exists())
-            response = c.get('/dashboard/')
+            response = self.get('/dashboard/')
 # test demo participants don't need to get redirected to the account profile to fill out profile info when they visit
 # the dashboard.
             self.assertEqual(200, response.status_code)
@@ -52,7 +70,6 @@ class ParticipantDashboardTest(BaseVcwebTest):
     def test_completed_profile_dashboard(self):
         e = self.experiment
         e.activate()
-        c = self.client
         for p in e.participant_set.all():
             self.assertFalse(p.is_profile_complete)
             p.can_receive_invitations = True
@@ -65,8 +82,8 @@ class ParticipantDashboardTest(BaseVcwebTest):
             p.major = 'Science'
             p.save()
             self.assertTrue(p.is_profile_complete)
-            self.assertTrue(c.login(username=p.email, password='test'))
-            response = c.get('/dashboard/')
+            self.assertTrue(self.login_participant(p))
+            response = self.get('/dashboard/')
             self.assertEqual(200, response.status_code)
 
 

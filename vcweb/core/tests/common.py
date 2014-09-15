@@ -101,6 +101,17 @@ class BaseVcwebTest(TestCase):
                                          experiment_metadata=experiment_metadata,
                                          experiment_configuration=experiment_configuration)
 
+    def add_participants(self, demo_participants=True, number_of_participants=None, participant_emails=None, **kwargs):
+        if number_of_participants is None:
+            # set default number of participants to max group size * 2
+            number_of_participants = self.experiment.experiment_configuration.max_group_size * 2
+        if demo_participants:
+            self.add_test_participants(number_of_participants=number_of_participants, **kwargs)
+        else:
+            if participant_emails is None:
+                participant_emails = ['s%d@asu.edu' % index for index in range(0, number_of_participants)]
+            self.experiment.register_participants(emails=participant_emails, password='test')
+
     def add_test_participants(self, test_email_suffix='asu.edu', number_of_participants=None, **kwargs):
         experiment = self.experiment
         if experiment.participant_set.count() == 0:
@@ -115,7 +126,7 @@ class BaseVcwebTest(TestCase):
         self.client = Client()
         self.factory = RequestFactory()
         self.load_experiment(**kwargs)
-        self.add_test_participants(**kwargs)
+        self.add_participants(**kwargs)
         logging.disable(settings.DISABLED_TEST_LOGLEVEL)
 
     @property
@@ -131,7 +142,6 @@ class BaseVcwebTest(TestCase):
             password = BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD
         u = User.objects.create_user(username=email, email=email, password=password)
         u.groups.add(PermissionGroup.experimenter.get_django_group())
-        logger.error("user groups: %s", u.groups.all())
         return Experimenter.objects.create(user=u, approved=True)
 
     def advance_to_data_round(self):
