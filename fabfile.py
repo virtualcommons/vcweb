@@ -25,9 +25,9 @@ env.python = 'python'
 env.project_name = 'vcweb'
 env.project_conf = 'vcweb.settings'
 env.deploy_user = 'apache'
-env.deploy_group = 'commons'
+env.deploy_group = 'vcweb'
 env.database = 'default'
-env.deploy_path = '/opt/'
+env.deploy_parent_dir = '/opt/'
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
 env.git_url = 'https://github.com/virtualcommons/vcweb.git'
 env.webserver = 'httpd'
@@ -51,7 +51,7 @@ env.branches = {
 env.vcs = 'git'
 env.vcs_commands = {
     'hg': 'hg pull && hg up -C %(branch)s && hg id -n > build-id.txt',
-    'git': 'export GIT_WORK_TREE=/opt/vcweb && git checkout -f %(branch)s && git describe > build-id.txt',
+    'git': 'export GIT_WORK_TREE=%(deploy_dir)s && git fetch && git checkout -f %(branch)s && git describe > build-id.txt',
 }
 
 # django integration for access to settings, etc.
@@ -232,20 +232,16 @@ def sudo_chain(*commands, **kwargs):
     sudo(' && '.join(commands), **kwargs)
 
 
-def _vcs_command(branch):
-    return env.vcs_commands % branch[env.vcs]
-
-
 def deploy(vcs_branch_dict):
     """ deploy to an already setup environment """
-    env.project_path = env.deploy_path + env.project_name
+    env.deploy_dir = env.deploy_parent_dir + env.project_name
     vcs = env.vcs
     env.branch = vcs_branch_dict[vcs]
-    vcs_command = env.vcs_commands[vcs] % env
-    if confirm("Deploying '%(branch)s' branch to host %(host)s using %(vcs)s - continue? " % env):
-        with cd(env.project_path):
+    env.vcs_command = env.vcs_commands[vcs] % env
+    if confirm("Deploying '%(branch)s' branch to host %(host)s : \n\r %(vcs_command)s\nContinue? " % env):
+        with cd(env.deploy_dir):
             sudo_chain(
-                vcs_command,
+                env.vcs_command,
                 'chmod g+s logs',
                 'chmod -R g+rw logs/',
                 user=env.deploy_user, pty=True)
