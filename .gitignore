@@ -1,6 +1,6 @@
 *.pyc
 *~
-settings/local.py
+vcweb/settings/local.py
 vcweb.db
 tags
 .settings
@@ -16,3 +16,5 @@ resource/
 .pydevproject
 *.sql
 .project
+htmlcov
+.coverage
