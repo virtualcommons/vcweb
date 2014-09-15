@@ -1,7 +1,10 @@
-from ..models import Experiment
-from .common import BaseVcwebTest, logger
-import json
+from ..models import ExperimentMetadata, Experiment, ExperimentSession
+from .common import BaseVcwebTest, SubjectPoolTest
 
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AuthTest(BaseVcwebTest):
 
@@ -137,3 +140,70 @@ class CloneExperimentTest(BaseVcwebTest):
         self.assertEqual(cloned_experiment.experiment_configuration, self.experiment.experiment_configuration)
         self.assertNotEqual(cloned_experiment.experimenter, self.experiment.experimenter)
         self.assertEqual(cloned_experiment.experimenter, experimenter)
+
+class SubjectPoolViewTest(SubjectPoolTest):
+
+    def test_subjectpool_experimenter_page(self):
+        e = self.create_experimenter()
+        self.assertTrue(self.login_experimenter(e))
+
+        response = self.get('/subject-pool/')
+        self.assertEqual(200, response.status_code)
+
+    def test_send_invitations(self):
+        e = self.create_experimenter()
+        self.assertTrue(self.login_experimenter(e))
+
+        self.setup_participants()
+        es_pk_list = self.setup_experiment_sessions()
+
+        response = self.post('/subject-pool/session/invite', {'number_of_people' :30, 'only_undergrad': 'on',
+                             'affiliated_institution': 'Arizona State University', 'invitation_subject':'Test',
+                             'invitation_text' : 'Testing', 'session_pk_list': str(es_pk_list[0])})
+        self.assertEqual(200, response.status_code)
+
+        response_dict = json.loads(response.content)
+
+        self.assertTrue(response_dict['success'])
+
+    def test_get_session_events(self):
+        fro = 1409554800000
+        to = 1412146800000
+        e = self.create_experimenter()
+        self.assertTrue(self.login_experimenter(e))
+
+        response = self.get('/subject-pool/session/events?from='+str(fro)+'&to='+ str(to) +'/')
+        self.assertEqual(200, response.status_code)
+
+    def test_update_experiment_session(self):
+        # test creating, deleting and updating  experiment session
+        e = self.create_experimenter()
+        self.assertTrue(self.login_experimenter(e))
+
+        # test create experiment session
+        em = ExperimentMetadata.objects.order_by('?')[0]
+        response = self.post('/subject-pool/session/update', {'pk':-1, 'experiment_metadata_pk': em.pk, 'start_date': '2014-09-23',
+                             'start_hour':2, 'start_min': 0, 'capacity':10, 'location':'Online', 'end_date':'2014-09-23',
+                             'end_hour':3, 'end_min':0, 'request_type':'create'})
+        self.assertEqual(200, response.status_code)
+
+        response_dict = json.loads(response.content)
+        self.assertTrue(response_dict['success'])
+
+        # test edit/update experiment session
+        response = self.post('/subject-pool/session/update', {'pk':response_dict['session']['pk'], 'experiment_metadata_pk': em.pk,
+                             'start_date': '2014-09-23',
+                             'start_hour':2, 'start_min': 0, 'capacity':10, 'location':'Online', 'end_date':'2014-09-23',
+                             'end_hour':4, 'end_min':0, 'request_type':'update'})
+        self.assertEqual(200, response.status_code)
+
+        response_dict = json.loads(response.content)
+        self.assertTrue(response_dict['success'])
+
+        # test delete experiment session
+        response = self.post('/subject-pool/session/update', {'pk':response_dict['session']['pk'], 'request_type':'delete'})
+        self.assertEqual(200, response.status_code)
+
+        response_dict = json.loads(response.content)
+        self.assertTrue(response_dict['success'])
+

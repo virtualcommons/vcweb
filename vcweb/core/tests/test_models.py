@@ -1,16 +1,15 @@
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 import random
 import logging
 
 from django.contrib.auth.models import User
 from django.core import serializers
 
-from .common import BaseVcwebTest
+from .common import BaseVcwebTest, SubjectPoolTest
 from .. import signals
 from ..models import (ParticipantRoundDataValue, Participant, ParticipantExperimentRelationship,
                       BookmarkedExperimentMetadata, ParticipantGroupRelationship, ExperimentMetadata, Parameter,
                       RoundParameterValue, Institution, ExperimentSession, Invitation, ParticipantSignup, DefaultValue,)
-from ..subjectpool.views import get_potential_participants
 
 logger = logging.getLogger(__name__)
 
@@ -385,159 +384,42 @@ class RoundConfigurationTest(BaseVcwebTest):
             self.assertEqual(getattr(rp, field_name), sample_values_for_type[value_type])
 
 
-class InvitationAlgorithmTest(BaseVcwebTest):
-
-    def setup_participants(self):
-        password = "test"
-        participants = []
-        for x in xrange(500):
-            email = "student" + str(x) + "asu@asu.edu"
-            user = User.objects.create_user(first_name='xyz', last_name='%d' % x, username=email, email=email,
-                                            password=password)
-            p = Participant(user=user)
-            p.can_receive_invitations = random.choice([True, False])
-            p.gender = random.choice(['M', 'F'])
-            year = random.choice(range(1980, 1995))
-            month = random.choice(range(1, 12))
-            day = random.choice(range(1, 28))
-            random_date = datetime(year, month, day)
-            p.birthdate = random_date
-            p.major = 'CS'
-            p.class_status = random.choice(
-                ['Freshman', 'Sophomore', 'Junior', 'Senior'])
-            p.institution = Institution.objects.get(
-                name="Arizona State University")
-            participants.append(p)
-        Participant.objects.bulk_create(participants)
-        # logger.debug("TOTAL PARTICIPANTS %d", len(Participant.objects.all()))
-
-    def setup_experiment_sessions(self):
-        e = self.experiment
-        es_pk = []
-        for x in xrange(4):
-            es = ExperimentSession()
-            es.experiment_metadata = e.experiment_metadata
-            year = date.today().year
-            month = date.today().month
-            day = random.choice(range(1, 30))
-            random_date = datetime(year, month, day)
-            es.scheduled_date = random_date
-            es.scheduled_end_date = random_date
-            es.capacity = 1
-            es.location = "Online"
-            es.creator = self.demo_experimenter.user
-            es.date_created = datetime.now()
-            es.save()
-            es_pk.append(es.pk)
-        return es_pk
-
-    def get_final_participants(self):
-        potential_participants = get_potential_participants(
-            self.experiment_metadata.pk, "Arizona State University")
-        potential_participants_count = len(potential_participants)
-        # logger.debug(potential_participants)
-        no_of_invitations = 50
-
-        if potential_participants_count == 0:
-            final_participants = []
-        else:
-            if potential_participants_count < no_of_invitations:
-                final_participants = potential_participants
-            else:
-                priority_list = ParticipantSignup.objects \
-                    .filter(invitation__participant__in=potential_participants,
-                            attendance=ParticipantSignup.ATTENDANCE.discharged) \
-                    .values_list('invitation__participant__pk', flat=True)
-                priority_list = Participant.objects.filter(
-                    pk__in=priority_list)
-                logger.debug("Priority Participants")
-                logger.debug(priority_list)
-                if len(priority_list) >= no_of_invitations:
-                    final_participants = random.sample(
-                        priority_list, no_of_invitations)
-                else:
-                    final_participants = list(priority_list)
-                    # logger.debug(final_participants)
-                    new_potential_participants = list(
-                        set(potential_participants) - set(priority_list))
-                    # logger.debug("New Potential Participants")
-                    # logger.debug(new_potential_participants)
-                    x = random.sample(
-                        new_potential_participants, no_of_invitations - len(priority_list))
-                    # logger.debug("Random Sample")
-                    # logger.debug(x)
-                    final_participants += x
-                    # logger.debug("Final Participants")
-                    # logger.debug(final_participants)
-        return final_participants
-
-    def setup_participant_signup(self, participant_list, es_pk_list):
-        participant_list = participant_list[:25]
-
-        for person in participant_list:
-            inv = Invitation.objects.filter(
-                participant=person, experiment_session__pk__in=es_pk_list).order_by('?')[:1]
-            ps = ParticipantSignup()
-            ps.invitation = inv[0]
-            year = date.today().year
-            month = date.today().month - 1
-            day = random.choice(range(1, 30))
-            random_date = datetime(year, month, day)
-            ps.date_created = random_date
-            # logger.debug(random_date)
-            ps.attendance = random.choice([0, 1, 2, 3])
-            # logger.debug(ps.attendance)
-            ps.save()
-
-    def setup_invitations(self, participants, es_pk_list):
-        invitations = []
-        experiment_sessions = ExperimentSession.objects.filter(pk__in=es_pk_list)
-        user = self.demo_experimenter.user
-
-        for participant in participants:
-            # recipient_list.append(participant.email)
-            for es in experiment_sessions:
-                year = date.today().year
-                month = date.today().month - 1
-                day = random.choice(range(1, 30))
-                random_date = datetime(year, month, day)
-                invitations.append(Invitation(participant=participant, experiment_session=es, date_created=random_date,
-                                              sender=user))
-
-        Invitation.objects.bulk_create(invitations)
+class SubjectPoolInvitationTest(SubjectPoolTest):
 
     def test_invitations(self):
+
         self.setup_participants()
         last_week_date = datetime.now() - timedelta(days=7)
+
         for index in range(3):
             # First Iteration
             logger.debug("Iteration %d", index + 1)
             es_pk_list = self.setup_experiment_sessions()
             x = self.get_final_participants()
-            if x:
-                pk_list = [p.pk for p in x]
-
-                # The chosen set of participants should not have participated
-                # in past for the same experiment
-                self.assertEqual(
-                    ParticipantSignup.objects.filter(attendance__in=[0, 3], invitation__participant__in=x).count(), 0)
-
-                # The chosen set of participants should not have received
-                # invitations in last threshold days
-                self.assertEqual(Invitation.objects.filter(participant__in=x, date_created__gt=last_week_date).count(),
-                                 0)
-                # The chosen set of participants should be from provided
-                # university and must have enabled can_receive invitations
-                self.assertEqual(
-                    Participant.objects.filter(can_receive_invitations=True,
-                                               institution__name='Arizona State University',
-                                               pk__in=pk_list).count(), len(x))
-
-                self.setup_invitations(x, es_pk_list)
-
-                self.setup_participant_signup(x, es_pk_list)
-            else:
+            # None left in the participant pool to invite
+            if not x:
                 break
+            pk_list = [p.pk for p in x]
+
+            # The chosen set of participants should not have participated
+            # in past for the same experiment
+            self.assertEqual(
+                ParticipantSignup.objects.filter(attendance__in=[0, 3], invitation__participant__in=x).count(), 0)
+
+            # The chosen set of participants should not have received
+            # invitations in last threshold days
+            self.assertEqual(Invitation.objects.filter(participant__in=x, date_created__gt=last_week_date).count(),
+                             0)
+            # The chosen set of participants should be from provided
+            # university and must have enabled can_receive invitations
+            self.assertEqual(
+                Participant.objects.filter(can_receive_invitations=True,
+                                           institution__name='Arizona State University',
+                                           pk__in=pk_list).count(), len(x))
+
+            self.setup_invitations(x, es_pk_list)
+
+            self.setup_participant_signup(x, es_pk_list)
 
 
 class ParameterizedValueMixinTest(BaseVcwebTest):
