@@ -3,7 +3,6 @@ Fabric==1.10.0
 Markdown==2.5
 Pillow==2.5.3
 PyYAML==3.11
-South==1.0
 backports.ssl-match-hostname==3.4.0.2
 certifi==14.05.14
 coverage==3.7.1
