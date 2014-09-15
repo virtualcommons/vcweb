@@ -191,6 +191,10 @@ class SubjectPoolTest(BaseVcwebTest):
             email = "student" + str(x) + "asu@asu.edu"
             user = User.objects.create_user(first_name='xyz', last_name='%d' % x, username=email, email=email,
                                             password=password)
+            # Assign the user to participant permission group
+            user.groups.add(PermissionGroup.participant.get_django_group())
+            user.save()
+
             p = Participant(user=user)
             p.can_receive_invitations = random.choice([True, False])
             p.gender = random.choice(['M', 'F'])

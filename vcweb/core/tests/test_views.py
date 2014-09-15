@@ -207,3 +207,5 @@ class SubjectPoolViewTest(SubjectPoolTest):
         response_dict = json.loads(response.content)
         self.assertTrue(response_dict['success'])
 
+    def test_experiment_session_signup_page(self):
+        pass
