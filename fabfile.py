@@ -18,7 +18,7 @@ sys.path.append(os.path.abspath(env.project_path))
 # default env configuration
 env.roledefs = {
     'localhost': ['localhost'],
-    'dev': ['vcweb-dev.asu.edu'],
+    'staging': ['vcweb-dev.asu.edu'],
     'prod': ['vcweb.asu.edu'],
 }
 env.python = 'python'
@@ -43,7 +43,7 @@ env.branches = {
         'hg': 'stable',
         'git': 'master'
     },
-    'dev': {
+    'staging': {
         'hg': 'default',
         'git': 'develop',
     }
@@ -51,7 +51,7 @@ env.branches = {
 env.vcs = 'git'
 env.vcs_commands = {
     'hg': 'hg pull && hg up -C %(branch)s && hg id -n > build-id.txt',
-    'git': 'export GIT_WORK_TREE=%(deploy_dir)s && git fetch && git checkout -f %(branch)s && git describe > build-id.txt',
+    'git': 'export GIT_WORK_TREE=%(deploy_dir)s && git pull && git checkout -f %(branch)s && git describe > build-id.txt',
 }
 
 # django integration for access to settings, etc.
@@ -191,10 +191,10 @@ def server(ip="127.0.0.1", port=8000):
     dj('runserver {ip}:{port}'.format(ip=ip, port=port), capture=False)
 
 
-@roles('dev')
+@roles('staging')
 @task
-def dev():
-    execute(deploy, env.branches['dev'])
+def staging():
+    execute(deploy, env.branches['staging'])
 
 
 @roles('prod')
