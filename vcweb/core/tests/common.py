@@ -251,31 +251,8 @@ class SubjectPoolTest(BaseVcwebTest):
             if potential_participants_count < no_of_invitations:
                 final_participants = potential_participants
             else:
-                priority_list = ParticipantSignup.objects \
-                    .filter(invitation__participant__in=potential_participants,
-                            attendance=ParticipantSignup.ATTENDANCE.discharged) \
-                    .values_list('invitation__participant__pk', flat=True)
-                priority_list = Participant.objects.filter(
-                    pk__in=priority_list)
-                logger.debug("Priority Participants")
-                logger.debug(priority_list)
-                if len(priority_list) >= no_of_invitations:
-                    final_participants = random.sample(
-                        priority_list, no_of_invitations)
-                else:
-                    final_participants = list(priority_list)
-                    # logger.debug(final_participants)
-                    new_potential_participants = list(
-                        set(potential_participants) - set(priority_list))
-                    # logger.debug("New Potential Participants")
-                    # logger.debug(new_potential_participants)
-                    x = random.sample(
-                        new_potential_participants, no_of_invitations - len(priority_list))
-                    # logger.debug("Random Sample")
-                    # logger.debug(x)
-                    final_participants += x
-                    # logger.debug("Final Participants")
-                    # logger.debug(final_participants)
+                final_participants = random.sample(potential_participants,
+                                                   no_of_invitations)
         return final_participants
 
     def setup_participant_signup(self, participant_list, es_pk_list):

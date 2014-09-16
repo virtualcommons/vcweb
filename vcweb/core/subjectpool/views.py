@@ -490,12 +490,12 @@ def submit_experiment_session_signup(request):
             "You are now registered for this experiment session. A confirmation email has been sent and you should also receive a reminder email one day before the session. Thanks in advance for participating!"))
         chosen_session = ExperimentSession.objects.get(
             pk=invitation.experiment_session.pk)
-        send_email("subject-pool/email/confirmation-email.txt", {'session': chosen_session}, "Confirmation Email",
+        send_email("email/confirmation-email.txt", {'session': chosen_session}, "Confirmation Email",
                    settings.SERVER_EMAIL, [user.email])
         return redirect('core:dashboard')
     else:
         messages.error(request, _("This session is currently full."))
-        return redirect('core:experiment_session_signup')
+        return redirect('subjectpool:experiment_session_signup')
 
 
 @group_required(PermissionGroup.experimenter)
