@@ -101,26 +101,22 @@ class BaseVcwebTest(TestCase):
                                          experiment_metadata=experiment_metadata,
                                          experiment_configuration=experiment_configuration)
 
-    def add_participants(self, demo_participants=True, number_of_participants=None, participant_emails=None, **kwargs):
+    def add_participants(self, demo_participants=True, number_of_participants=None, participant_emails=None,
+                         test_email_suffix='asu.edu', **kwargs):
         if number_of_participants is None:
             # set default number of participants to max group size * 2
             number_of_participants = self.experiment.experiment_configuration.max_group_size * 2
+        experiment = self.experiment
         if demo_participants:
-            self.add_test_participants(number_of_participants=number_of_participants, **kwargs)
+            if experiment.participant_set.count() == 0:
+                logger.debug("no participants found. adding %d participants to %s", number_of_participants, experiment)
+                experiment.setup_test_participants(email_suffix=test_email_suffix,
+                                                   count=number_of_participants, password='test')
         else:
             if participant_emails is None:
-                participant_emails = ['s%d@asu.edu' % index for index in range(0, number_of_participants)]
+                # generate participant emails
+                participant_emails = ['generated-test-%d@asu.edu' % index for index in range(0, number_of_participants)]
             self.experiment.register_participants(emails=participant_emails, password='test')
-
-    def add_test_participants(self, test_email_suffix='asu.edu', number_of_participants=None, **kwargs):
-        experiment = self.experiment
-        if experiment.participant_set.count() == 0:
-            logger.debug("adding participants to %s", experiment)
-            if number_of_participants is None:
-                # set default number of participants to max group size * 2
-                number_of_participants = experiment.experiment_configuration.max_group_size * 2
-            experiment.setup_test_participants(email_suffix=test_email_suffix,
-                                               count=number_of_participants, password='test')
 
     def setUp(self, **kwargs):
         self.client = Client()
