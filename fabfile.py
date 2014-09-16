@@ -191,6 +191,10 @@ def server(ip="127.0.0.1", port=8000):
     dj('runserver {ip}:{port}'.format(ip=ip, port=port), capture=False)
 
 
+@task
+def dev():
+    execute(staging)
+
 @roles('staging')
 @task
 def staging():
