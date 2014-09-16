@@ -59,7 +59,6 @@ def has_leaderboard(round_configuration=None, treatment_type=None):
     return 'LEADERBOARD' == treatment_type
 
 
-
 class ActivityQuerySet(models.query.QuerySet):
 
     """

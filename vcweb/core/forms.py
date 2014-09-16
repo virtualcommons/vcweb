@@ -502,10 +502,10 @@ class QuizForm(forms.Form):
 
 
 class AntiSpamContactForm(ContactForm):
-    timestamp       = forms.IntegerField(widget=forms.HiddenInput)
-    security_hash   = forms.CharField(min_length=40, max_length=40, widget=forms.HiddenInput)
+    timestamp = forms.IntegerField(widget=forms.HiddenInput)
+    security_hash = forms.CharField(min_length=40, max_length=40, widget=forms.HiddenInput)
     # Honeypot field
-    contact_number  = forms.CharField(required=False, widget=forms.TextInput, label='')
+    contact_number = forms.CharField(required=False, widget=forms.TextInput, label='')
 
     def __init__(self, *args, **kwargs):
         initial = kwargs.get("initial", {})
@@ -524,7 +524,7 @@ class AntiSpamContactForm(ContactForm):
     def clean_security_hash(self):
         """Check the security hash."""
         security_hash_dict = {
-            'timestamp' : self.data.get("timestamp", ""),
+            'timestamp': self.data.get("timestamp", ""),
         }
         expected_hash = self.generate_security_hash(**security_hash_dict)
         actual_hash = self.cleaned_data["security_hash"]
@@ -543,9 +543,9 @@ class AntiSpamContactForm(ContactForm):
     def generate_security_data(self):
         """Generate a dict of security data for "initial" data."""
         timestamp = int(time.time())
-        security_dict =   {
-            'timestamp'     : str(timestamp),
-            'security_hash' : self.initial_security_hash(timestamp),
+        security_dict = {
+            'timestamp': str(timestamp),
+            'security_hash': self.initial_security_hash(timestamp),
         }
         return security_dict
 
@@ -555,8 +555,8 @@ class AntiSpamContactForm(ContactForm):
         """
 
         initial_security_dict = {
-            'timestamp' : str(timestamp),
-          }
+            'timestamp': str(timestamp),
+        }
         return self.generate_security_hash(**initial_security_dict)
 
     def generate_security_hash(self, timestamp):

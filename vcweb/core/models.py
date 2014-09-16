@@ -69,9 +69,11 @@ FIXME: growing monolithically unwieldy, break up
 
 
 class DefaultValue(object):
+
     """
     Dumb wrapper that returns the wrapped value on any getattr reference
     """
+
     def __init__(self, value):
         self.value = value
 
@@ -266,7 +268,8 @@ class ExperimentMetadata(models.Model):
     define and add a single ExperimentMetadata record for the experiment type that it represents.
     """
     title = models.CharField(max_length=255)
-    namespace = models.CharField(max_length=255, unique=True, null=True, blank=True, validators=[RegexValidator(r'^[\w_-]*$')])
+    namespace = models.CharField(
+        max_length=255, unique=True, null=True, blank=True, validators=[RegexValidator(r'^[\w_-]*$')])
     short_name = models.SlugField(max_length=32, unique=True, null=True, blank=True)
     description = models.TextField(blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -633,7 +636,7 @@ class Experiment(models.Model):
 
     @property
     def is_time_expired(self):
-        #logger.error("current round elapsed time: %s vs duration %s", self.current_round_elapsed_time.total_seconds,
+        # logger.error("current round elapsed time: %s vs duration %s", self.current_round_elapsed_time.total_seconds,
         #             self.current_round.duration)
         return self.current_round_elapsed_time >= timedelta(self.current_round.duration)
 
@@ -1130,7 +1133,8 @@ class Experiment(models.Model):
         # clear out all existing groups
         max_group_size = self.experiment_configuration.max_group_size
         participants = list(self.participant_set.all())
-        logger.debug("%s allocating groups for %s with session_id %s (randomize? %s)", self, participants, session_id, randomize)
+        logger.debug("%s allocating groups for %s with session_id %s (randomize? %s)",
+                     self, participants, session_id, randomize)
         if randomize:
             random.shuffle(participants)
         gs = self.group_set

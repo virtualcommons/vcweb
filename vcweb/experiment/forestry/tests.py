@@ -234,7 +234,8 @@ class ForestryParametersTest(BaseVcwebTest):
         for p in self.participants:
             participant_data_values = round_data.participant_data_value_set.filter(
                 participant_group_relationship__participant=p)
-            self.assertEqual(participant_data_values.count(), 2, "should only be 2 participant data values present, harvest decision and participant is ready %s" % participant_data_values)
+            self.assertEqual(participant_data_values.count(
+            ), 2, "should only be 2 participant data values present, harvest decision and participant is ready %s" % participant_data_values)
             pexpr = e.get_participant_experiment_relationship(p)
             for dv in participant_data_values.filter(parameter__type='int'):
                 self.assertEqual(

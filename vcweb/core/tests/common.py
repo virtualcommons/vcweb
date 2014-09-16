@@ -312,4 +312,3 @@ class SubjectPoolTest(BaseVcwebTest):
                                               sender=user))
 
         Invitation.objects.bulk_create(invitations)
-

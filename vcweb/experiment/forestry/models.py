@@ -298,7 +298,8 @@ def round_started_handler(sender, experiment=None, **kwargs):
         for group in experiment.groups:
             # set resource level to initial default values
             existing_resource_level = get_resource_level_dv(group, round_data)
-            group.log("Resetting resource level (%s) to initial value [%s]" % (existing_resource_level, initial_resource_level))
+            group.log("Resetting resource level (%s) to initial value [%s]" % (
+                existing_resource_level, initial_resource_level))
             existing_resource_level.update_int(initial_resource_level)
 
 
@@ -371,5 +372,6 @@ def round_ended_handler(sender, experiment=None, **kwargs):
 def calculate_regrowth(resource_level, regrowth_rate, max_resource_level):
     if resource_level == max_resource_level:
         return 0
-    logger.debug("calculating regrowth: (%s * %s) * (1 - (%s / %s))", regrowth_rate, resource_level, resource_level, max_resource_level)
+    logger.debug("calculating regrowth: (%s * %s) * (1 - (%s / %s))",
+                 regrowth_rate, resource_level, resource_level, max_resource_level)
     return regrowth_rate * resource_level

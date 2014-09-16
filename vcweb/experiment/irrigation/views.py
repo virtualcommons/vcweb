@@ -37,6 +37,7 @@ class ViewModel(object):
         )
         return dumps(self.experiment_model)
 
+
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def participate(request, experiment_id=None):
     participant = request.user.participant

@@ -313,6 +313,7 @@ def send_invitations(request):
             'message': message
         }))
 
+
 @group_required(PermissionGroup.experimenter)
 def invite_email_preview(request):
     """

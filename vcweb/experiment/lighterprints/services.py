@@ -52,7 +52,8 @@ class ActivityStatusList(object):
         if round_configuration is None:
             round_configuration = participant_group_relationship.group.current_round
         self.round_configuration = round_configuration
-        self.has_scheduled_activities = is_scheduled_activity_experiment(participant_group_relationship.group.experiment)
+        self.has_scheduled_activities = is_scheduled_activity_experiment(
+            participant_group_relationship.group.experiment)
         # find all unlocked activities for the given participant
         self.all_unlocked_activities = Activity.objects.unlocked(self.round_configuration,
                                                                  scheduled=self.has_scheduled_activities,

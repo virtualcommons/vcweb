@@ -37,7 +37,8 @@ env.docs_path = os.path.join(env.project_path, 'docs')
 env.test_fixtures = ' '.join(['forestry_experiment_metadata', 'lighterprints_experiment_metadata',
                               'activities', 'bound_experiment_metadata', 'bound_parameters'])
 env.virtualenv_path = '%s/.virtualenvs/%s' % (os.getenv('HOME'), env.project_name)
-env.ignored_coverage = ('test', 'settings', 'migrations', 'fabfile', 'wsgi', 'broker', 'irrigation', 'commands', 'sanitation')
+env.ignored_coverage = ('test', 'settings', 'migrations', 'fabfile', 'wsgi',
+                        'broker', 'irrigation', 'commands', 'sanitation')
 env.branches = {
     'prod': {
         'hg': 'stable',
@@ -194,6 +195,7 @@ def server(ip="127.0.0.1", port=8000):
 @task
 def dev():
     execute(staging)
+
 
 @roles('staging')
 @task

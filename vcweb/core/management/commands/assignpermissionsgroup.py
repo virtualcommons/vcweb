@@ -35,8 +35,10 @@ class Command(BaseCommand):
 
         participant_list = Participant.objects.select_related('user').exclude(user__email__regex=r'@mailinator.com$')
         experimenter_list = Experimenter.objects.select_related('user').exclude(user__email__regex=r'@mailinator.com$')
-        demo_participant_list = Participant.objects.select_related('user').filter(user__email__regex=r'@mailinator.com$')
-        demo_experimenter_list = Experimenter.objects.select_related('user').filter(user__email__regex=r'@mailinator.com$')
+        demo_participant_list = Participant.objects.select_related(
+            'user').filter(user__email__regex=r'@mailinator.com$')
+        demo_experimenter_list = Experimenter.objects.select_related(
+            'user').filter(user__email__regex=r'@mailinator.com$')
 
         self.assign_group(participant_list, groups[PermissionGroup.participant])
         self.assign_group(demo_participant_list, groups[PermissionGroup.demo_participant])

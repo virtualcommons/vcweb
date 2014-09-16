@@ -29,8 +29,10 @@ class Migration(migrations.Migration):
                 ('available_all_day', models.BooleanField(default=False)),
                 ('personal_benefits', models.TextField(null=True, blank=True)),
                 ('level', models.PositiveIntegerField(default=1)),
-                ('group_activity', models.BooleanField(default=False, help_text=b'Whether or not this activity has beneficial group effect multipliers, e.g., ride sharing')),
-                ('cooldown', models.PositiveIntegerField(default=1, help_text=b'How much time, in hours, must elapse before this activity can become available again', null=True, blank=True)),
+                ('group_activity', models.BooleanField(
+                    default=False, help_text=b'Whether or not this activity has beneficial group effect multipliers, e.g., ride sharing')),
+                ('cooldown', models.PositiveIntegerField(
+                    default=1, help_text=b'How much time, in hours, must elapse before this activity can become available again', null=True, blank=True)),
                 ('icon', models.ImageField(upload_to=b'lighterprints/activity-icons/')),
                 ('date_created', models.DateTimeField(default=datetime.datetime.now)),
                 ('last_modified', models.DateTimeField(default=datetime.datetime.now)),
@@ -39,7 +41,8 @@ class Migration(migrations.Migration):
                 ('rght', models.PositiveIntegerField(editable=False, db_index=True)),
                 ('tree_id', models.PositiveIntegerField(editable=False, db_index=True)),
                 ('creator', models.ForeignKey(blank=True, to=settings.AUTH_USER_MODEL, null=True)),
-                ('parent', mptt.fields.TreeForeignKey(related_name=b'children_set', blank=True, to='lighterprints.Activity', null=True)),
+                ('parent', mptt.fields.TreeForeignKey(
+                    related_name=b'children_set', blank=True, to='lighterprints.Activity', null=True)),
             ],
             options={
                 'ordering': ['level', 'name'],

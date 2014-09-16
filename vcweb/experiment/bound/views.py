@@ -40,7 +40,8 @@ def participate(request, experiment_id=None):
             'experimentModelJson': get_view_model_json(experiment, pgr),
         })
     else:
-        messages.info(request, '%s has not been activated yet. Please wait until the experimenter activates the experiment and try again.' % experiment)
+        messages.info(
+            request, '%s has not been activated yet. Please wait until the experimenter activates the experiment and try again.' % experiment)
         return redirect('core:dashboard')
 
 

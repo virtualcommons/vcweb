@@ -32,4 +32,3 @@ class EmailAuthenticationBackend(ModelBackend):
         except:
             logger.warning("unhandled exception with username %s", username, exc_info=True)
         return None
-

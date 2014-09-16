@@ -276,6 +276,7 @@ _activities = [
     },
 ]
 
+
 def create_activities(apps, schema_editor):
     Activity = apps.get_model('lighterprints', 'Activity')
     ActivityAvailability = apps.get_model('lighterprints', 'ActivityAvailability')
@@ -370,7 +371,7 @@ def create_activities(apps, schema_editor):
 
 _parameters = [
     {
-        "name":"participant_level",
+        "name": "participant_level",
         "type": "int",
         "description": "The given participant's personal footprint level, updated nightly",
         "display_name": "Participant Level",
@@ -387,14 +388,14 @@ _parameters = [
     },
     {
         "display_name": "Activity Performed",
-        "name":"activity_performed",
+        "name": "activity_performed",
         "class_name": "lighterprints.Activity",
         "type": "foreignkey",
         "description": "The referenced Activity has been performed by the given participant",
         "scope": "participant"
     },
     {
-        "name":"footprint_level",
+        "name": "footprint_level",
         "display_name": "Group level",
         "type": "int",
         "description": "The given group's footprint level.",
@@ -402,21 +403,21 @@ _parameters = [
     },
     {
         "display_name": "Available activity",
-        "name":"available_activity",
+        "name": "available_activity",
         "type": "foreignkey",
         "scope": "round",
         "description": "The referenced Activity is available in the given round for all participants in the associated experiment",
     },
     {
         "display_name": "Experiment completed",
-        "name":"experiment_completed",
+        "name": "experiment_completed",
         "type": "boolean",
         "scope": "group",
         "description": "The given group has completed the experiment.",
     },
     {
         "display_name": "Lighter Footprints Treatment Type",
-        "name":"lfp_treatment_type",
+        "name": "lfp_treatment_type",
         "type": "enum",
         "scope": "experiment",
         "enum_choices": "LEADERBOARD, NO_LEADERBOARD, HIGH_SCHOOL, LEVEL_BASED",
@@ -424,7 +425,7 @@ _parameters = [
     },
     {
         'display_name': 'Lighter Footprints Linear Public Good Toggle',
-        "name":"lfp_linear_public_good",
+        "name": "lfp_linear_public_good",
         "description": '''Boolean toggle signifying whether or not this experiment is a linear public good experiment
         where each participant's payoff is entirely dependent on their contributions as opposed to surpassing a threshold or
         advancing in level.''',

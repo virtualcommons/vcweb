@@ -230,5 +230,3 @@ class TestRoundEndedSignal(LevelBasedTest):
         from vcweb.core.cron import system_daily_tick
         system_daily_tick()
         self.assertEqual(self.reload_experiment().current_round.sequence_number, 2)
-
-
