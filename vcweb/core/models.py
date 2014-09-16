@@ -1307,8 +1307,8 @@ class Experiment(models.Model):
 
     def activate(self):
         if self.is_archived:
-            logger.debug(
-                "ignoring request to activate archived experiment, it would wipe existing data.")
+            logger.debug("ignoring request to activate archived experiment %s", self)
+            return
         with transaction.atomic():
             if not self.is_active:
                 self.status = Experiment.Status.ACTIVE
@@ -1339,6 +1339,9 @@ class Experiment(models.Model):
 
     @transaction.atomic
     def deactivate(self):
+        if self.is_archived:
+            logger.debug("ignoring request to deactivate archived experiment %s", self)
+            return
         self.log(
             "Deactivating experiment, deleting all data and flagging as inactive.")
         self.status = Experiment.Status.INACTIVE
@@ -1350,6 +1353,9 @@ class Experiment(models.Model):
 
     @transaction.atomic
     def clear_participants(self):
+        if self.is_archived:
+            logger.debug("ignoring request to clear participants for archived experiment %s", self)
+            return
         logger.debug("clearing all participants for experiment %s", self)
         ParticipantExperimentRelationship.objects.filter(experiment=self).delete()
         ParticipantGroupRelationship.objects.filter(group__experiment=self).delete()

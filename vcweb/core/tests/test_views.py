@@ -142,7 +142,12 @@ class ArchiveApiTest(BaseVcwebTest):
         response = self.post('/api/experiment/update',
                              {'experiment_id': self.experiment.pk, 'action': 'archive'})
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(self.reload_experiment().is_archived)
+        self.reload_experiment()
+        self.assertTrue(self.experiment.is_archived)
+        # this should be a no-op for archived experiments
+        self.experiment.activate()
+        self.assertTrue(self.experiment.is_archived)
+        self.assertFalse(self.experiment.is_active)
 
 
 class CloneExperimentTest(BaseVcwebTest):
