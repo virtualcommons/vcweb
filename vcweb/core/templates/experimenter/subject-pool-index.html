@@ -315,13 +315,14 @@ Experiment Session Management
                         bootbox.alert("ERROR: Scheduled end time cannot be earlier than the Start Time. Please choose a later end time.", function() {});
                         return;
                     }
+                    experiment_session_old_pk = formElement.elements["pk"].value
                     // FIXME: push this logic server-side instead
-                    if(formElement.elements["pk"].value == -1){
+                    if(experiment_session_old_pk == -1){
                         formData = $(formElement).serialize()  + '&request_type=create';
                     } else {
                         formData = $(formElement).serialize()  + '&request_type=update';
                     }
-                    $.ajax("/subject-pool/session/update", {
+                    $.ajax("{% url 'subjectpool:manage_experiment_session' %}", {
                         data: formData,
                         type: "POST",
                         success: function(result) {
@@ -329,6 +330,9 @@ Experiment Session Management
                                 self.pk(result.session.pk);
                                 self.editable(false);
                                 calendar = createCalendar();
+                                if(experiment_session_old_pk == -1) {
+                                    $(formElement).find("input[type=checkbox]").prop('checked', true);
+                                }
                             } else {
                                 $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.errors+'</div>');
                                 $(window).scrollTop($('#error-messages').offset().top - 100);
@@ -421,7 +425,7 @@ Experiment Session Management
                             if (result) {
                                 var formData = $(event.target).parents("form").serialize();
 
-                                $.ajax("/subject-pool/session/update", {
+                                $.ajax("{% url 'subjectpool:manage_experiment_session' %}", {
                                     type : "POST",
                                     data : formData + '&request_type=delete',
                                     success: function(result) {
@@ -444,7 +448,7 @@ Experiment Session Management
                     btn.button('loading')
                     if(session_pk_list.length) {
                         var formData = $(formElement).serialize()  + '&session_pk_list='+ session_pk_list;
-                        $.ajax("/subject-pool/session/invite", {
+                        $.ajax("{% url 'subjectpool:send_invites' %}", {
                             type : "POST",
                             data : formData,
                             success: function(result) {
@@ -477,7 +481,7 @@ Experiment Session Management
                     var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
                     if(session_pk_list.length) {
                         var formData = $("#invite-form form").serialize()  + '&session_pk_list='+ session_pk_list;
-                        $.ajax("/subject-pool/session/invite/count", {
+                        $.ajax("{% url 'subjectpool:get_invitations_count' %}", {
                             type : "POST",
                             data : formData,
                             success: function(result) {
@@ -485,7 +489,7 @@ Experiment Session Management
                             }
                         });
 
-                        $.ajax("/subject-pool/session/email-preview", {
+                        $.ajax("{% url 'subjectpool:invite_email_preview' %}", {
                             type : "POST",
                             data : formData,
                             success: function(result) {

@@ -62,7 +62,7 @@ def experimenter_index(request):
 
 @group_required(PermissionGroup.experimenter)
 @transaction.atomic
-def update_session(request):
+def manage_experiment_session(request):
     """
     Depending upon the type of request, this view method can be used to create, update or delete Experiment sessions.
     """

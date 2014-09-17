@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from vcweb.core.subjectpool.views import (experimenter_index, update_session, get_session_events,
+from vcweb.core.subjectpool.views import (experimenter_index, manage_experiment_session, get_session_events,
                                           manage_participant_attendance,
                                           send_invitations, get_invitations_count, invite_email_preview,
                                           experiment_session_signup, submit_experiment_session_signup,
@@ -9,7 +9,7 @@ from vcweb.core.subjectpool.views import (experimenter_index, update_session, ge
 
 urlpatterns = [
     url(r'^$', experimenter_index, name='experimenter_index'),
-    url(r'^session/update$', update_session, name='update_session'),
+    url(r'^session/manage$', manage_experiment_session, name='manage_experiment_session'),
     url(r'^session/events$', get_session_events, name='session_events'),
     url(r'^session/detail/event/(?P<pk>\d+)$',
         manage_participant_attendance, name='session_event_detail'),
