@@ -1,5 +1,6 @@
 from ..models import Participant, ExperimentMetadata, Experiment, ExperimentSession, Invitation, ParticipantSignup
 from .common import BaseVcwebTest, SubjectPoolTest
+from ..forms import LoginForm
 from django.core.urlresolvers import reverse
 
 import random
@@ -24,9 +25,9 @@ class AuthTest(BaseVcwebTest):
     def test_invalid_password(self):
         experiment = self.experiment
         self.assertFalse(self.login(username=experiment.experimenter.email, password='jibber jabber'))
-        response = self.post(self.login_url, dict(username=experiment.experimenter.email,
-                                                  password='jibber jabber'))
-        self.assertTrue(self.login_url in response['Location'])
+        response = self.post(self.login_url, {'email': experiment.experimenter.email,
+                                              'password': 'jibber jabber'})
+        self.assertTrue(LoginForm.INVALID_AUTHENTICATION_MESSAGE in response.content)
 
     def test_experimenter_permissions(self):
         self.assertTrue(self.login_experimenter())
@@ -163,7 +164,6 @@ class CloneExperimentTest(BaseVcwebTest):
                              {'experiment_id': self.experiment.pk,
                               'action': 'clone'})
         experiment_json = json.loads(response.content)
-        logger.error(experiment_json)
         cloned_experiment = Experiment.objects.get(pk=experiment_json['experiment']['pk'])
         self.assertEqual(cloned_experiment.experiment_metadata, self.experiment.experiment_metadata)
         self.assertEqual(cloned_experiment.experiment_configuration, self.experiment.experiment_configuration)
@@ -292,4 +292,3 @@ class SubjectPoolViewTest(SubjectPoolTest):
 
         self.assertEqual(302, response.status_code)
         self.assertTrue('/subject-pool/signup/' in response['Location'])
-

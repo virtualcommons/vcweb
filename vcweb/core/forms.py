@@ -84,21 +84,19 @@ class VcwebPasswordResetForm(PasswordResetForm):
 
 
 class LoginForm(forms.Form):
-    email = forms.EmailField(
-        widget=EmailInput)
-    password = forms.CharField(
-        widget=widgets.PasswordInput)
+    email = forms.EmailField(widget=EmailInput)
+    password = forms.CharField(widget=widgets.PasswordInput)
+    INVALID_AUTHENTICATION_MESSAGE = "Your combination of email and password was incorrect."
 
     def clean(self):
         cleaned_data = super(LoginForm, self).clean()
         email_address = cleaned_data.get('email').lower()
         password = cleaned_data.get('password')
         if email_address and password:
-            self.user_cache = authenticate(
-                username=email_address, password=password)
+            self.user_cache = authenticate(username=email_address, password=password)
             if self.user_cache is None:
                 raise forms.ValidationError(
-                    _("Your combination of email and password was incorrect."), code='invalid')
+                    _(LoginForm.INVALID_AUTHENTICATION_MESSAGE), code='invalid')
             elif not self.user_cache.is_active:
                 raise forms.ValidationError(
                     _("This user has been deactivated. Please contact us if this is in error."))

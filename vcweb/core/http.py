@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 
 
+# FIXME: replace with django JsonResponse
 class JsonResponse(HttpResponse):
 
     def __init__(self, *args, **kwargs):
