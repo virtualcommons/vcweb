@@ -14,19 +14,19 @@ class AuthTest(BaseVcwebTest):
 
     def test_authentication_redirect(self):
         experiment = self.experiment
-        response = self.get('/accounts/login/')
+        response = self.get(self.login_url)
         self.assertEqual(200, response.status_code)
         self.assertTrue(self.login(username=experiment.experimenter.email,
                                    password=BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD))
-        response = self.get('/accounts/login/')
+        response = self.get(self.login_url)
         self.assertEqual(302, response.status_code)
 
     def test_invalid_password(self):
         experiment = self.experiment
         self.assertFalse(self.login(username=experiment.experimenter.email, password='jibber jabber'))
-        response = self.post('/accounts/login', dict(username=experiment.experimenter.email,
-                                                     password='jibber jabber'))
-        self.assertTrue('/accounts/login' in response['Location'])
+        response = self.post(self.login_url, dict(username=experiment.experimenter.email,
+                                                  password='jibber jabber'))
+        self.assertTrue(self.login_url in response['Location'])
 
     def test_experimenter_permissions(self):
         self.assertTrue(self.login_experimenter())
@@ -51,10 +51,11 @@ class ParticipantProfileTest(BaseVcwebTest):
             self.assertTrue(self.login_participant(p))
             self.assertFalse(p.user.groups.filter(name='Demo Participants').exists())
             self.assertTrue(p.user.groups.filter(name='Participants').exists())
-            response = self.get('/dashboard/')
+            response = self.get(self.dashboard_url)
             self.assertEqual(302, response.status_code)
-            self.assertTrue('/accounts/profile' in response['Location'])
-            self.post('/accounts/profile', {})
+            self.assertTrue(self.profile_url in response['Location'])
+# FIXME: fill in profile save
+            self.post(self.profile_url, {})
 
 
 class ParticipantDashboardTest(BaseVcwebTest):
@@ -66,7 +67,7 @@ class ParticipantDashboardTest(BaseVcwebTest):
             self.assertFalse(p.is_profile_complete)
             self.assertTrue(self.login_participant(p))
             self.assertTrue(p.user.groups.filter(name='Demo Participants').exists())
-            response = self.get('/dashboard/')
+            response = self.get(self.dashboard_url)
 # test demo participants don't need to get redirected to the account profile to fill out profile info when they visit
 # the dashboard.
             self.assertEqual(200, response.status_code)
@@ -87,7 +88,7 @@ class ParticipantDashboardTest(BaseVcwebTest):
             p.save()
             self.assertTrue(p.is_profile_complete)
             self.assertTrue(self.login_participant(p))
-            response = self.get('/dashboard/')
+            response = self.get(self.dashboard_url)
             self.assertEqual(200, response.status_code)
 
 
@@ -98,7 +99,7 @@ class ClearParticipantsApiTest(BaseVcwebTest):
         e = self.experiment
         e.activate()
         self.assertTrue(e.participant_set.count() > 0)
-        response = self.post('/api/experiment/update',
+        response = self.post(self.update_experiment_url,
                              {'experiment_id': self.experiment.pk, 'action': 'clear_participants'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(e.participant_set.count(), 0)
@@ -106,14 +107,14 @@ class ClearParticipantsApiTest(BaseVcwebTest):
     def test_unauthorized_experimenter_access(self):
         new_experimenter = self.create_experimenter()
         self.login_experimenter(new_experimenter)
-        response = self.post('/api/experiment/update',
+        response = self.post(self.update_experiment_url,
                              {'experiment_id': self.experiment.pk, 'action': 'clear_participants'})
         self.assertEqual(response.status_code, 403)
         self.assertTrue(self.experiment.participant_set.count() > 0)
 
     def test_unauthorized_participant_access(self):
         self.login_participant(self.experiment.participant_set.first())
-        response = self.post('/api/experiment/update',
+        response = self.post(self.update_experiment_url,
                              {'experiment_id': self.experiment.pk, 'action': 'clear_participants'})
         self.assertEqual(response.status_code, 302)
         self.assertTrue(self.experiment.participant_set.count() > 0)
@@ -124,13 +125,13 @@ class ActivateApiTest(BaseVcwebTest):
     def test_activate(self):
         self.assertFalse(self.experiment.is_active)
         self.login_experimenter()
-        response = self.post('/api/experiment/update',
+        response = self.post(self.update_experiment_url,
                              {'experiment_id': self.experiment.pk, 'action': 'activate'})
         self.assertEqual(response.status_code, 200)
         self.assertTrue(self.experiment.is_active)
         self.assertEqual(len(self.participant_group_relationships),
                          self.experiment.experiment_configuration.max_group_size * len(self.experiment.groups))
-        response = self.post('/api/experiment/update',
+        response = self.post(self.update_experiment_url,
                              {'experiment_id': self.experiment.pk, 'action': 'deactivate'})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(self.experiment.is_active)
@@ -142,7 +143,7 @@ class ArchiveApiTest(BaseVcwebTest):
         self.login_experimenter()
         self.experiment.activate()
         self.assertFalse(self.experiment.is_archived)
-        response = self.post('/api/experiment/update',
+        response = self.post(self.update_experiment_url,
                              {'experiment_id': self.experiment.pk, 'action': 'archive'})
         self.assertEqual(response.status_code, 200)
         self.reload_experiment()
@@ -158,14 +159,25 @@ class CloneExperimentTest(BaseVcwebTest):
     def test_clone(self):
         experimenter = self.create_experimenter()
         self.assertTrue(self.login_experimenter(experimenter))
-        response = self.post('/api/experiment/clone',
-                             {'experiment_id': self.experiment.pk})
+        response = self.post(self.reverse('core:clone_experiment'),
+                             {'experiment_id': self.experiment.pk,
+                              'action': 'clone'})
         experiment_json = json.loads(response.content)
+        logger.error(experiment_json)
         cloned_experiment = Experiment.objects.get(pk=experiment_json['experiment']['pk'])
         self.assertEqual(cloned_experiment.experiment_metadata, self.experiment.experiment_metadata)
         self.assertEqual(cloned_experiment.experiment_configuration, self.experiment.experiment_configuration)
         self.assertNotEqual(cloned_experiment.experimenter, self.experiment.experimenter)
         self.assertEqual(cloned_experiment.experimenter, experimenter)
+
+
+class CheckEmailTest(BaseVcwebTest):
+
+    def test_email_available(self):
+        self.experiment.activate()
+        for p in self.participants:
+            response = self.get(self.check_email_url, {'email': p.email})
+            self.assertEqual(response.status_code, 200)
 
 
 class SubjectPoolViewTest(SubjectPoolTest):
@@ -259,18 +271,18 @@ class SubjectPoolViewTest(SubjectPoolTest):
         response = self.post(reverse('subjectpool:submit_experiment_session_signup'), {'invitation_pk': invitation.pk, 'experiment_metadata_pk': invitation.experiment_session.experiment_metadata.pk})
 
         self.assertEqual(302, response.status_code)
-        self.assertTrue('/dashboard' in response['Location'])
+        self.assertTrue(self.dashboard_url in response['Location'])
 
         # test cancel session signup
         ps = ParticipantSignup.objects.get(invitation=invitation)
         response = self.post(reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
         self.assertEqual(302, response.status_code)
-        self.assertTrue('/dashboard' in response['Location'])
+        self.assertTrue(self.dashboard_url in response['Location'])
 
         # test canceling an already cancel session signup
         response = self.post(reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
         self.assertEqual(302, response.status_code)
-        self.assertTrue('/dashboard' in response['Location'])
+        self.assertTrue(self.dashboard_url in response['Location'])
 
         # Test submit experiment session signup on zero capacity
         invitation.experiment_session.capacity = 0

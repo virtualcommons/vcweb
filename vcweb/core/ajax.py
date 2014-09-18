@@ -1,4 +1,3 @@
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST, require_GET
 
@@ -52,17 +51,15 @@ def create_experiment(request):
     }))
 
 
-@login_required
 @require_GET
-def check_user_email(request):
+def is_email_available(request):
+    '''
+    Returns true if the email address is not registered in our database yet. If the user is already logged in, returns
+    true if the user's email is the same as the given email.
+    '''
     email = request.GET.get("email").lower()
     current_user = request.user
-    success = False
-    if current_user.email != email:
-        users = User.objects.filter(email=email)
-        success = users.count() == 0
-    else:
-        success = True
+    success = (current_user.is_authenticated() and current_user.email == email) or not User.objects.filter(email=email).exists()
     return JsonResponse(dumps(success))
 
 

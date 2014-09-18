@@ -2,6 +2,7 @@ import random
 
 from datetime import datetime, date
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.test.client import RequestFactory, Client
 
@@ -47,6 +48,26 @@ class BaseVcwebTest(TestCase):
         return experiment
 
     @property
+    def login_url(self):
+        return reverse('core:login')
+
+    @property
+    def profile_url(self):
+        return reverse('core:profile')
+
+    @property
+    def dashboard_url(self):
+        return reverse('core:dashboard')
+
+    @property
+    def update_experiment_url(self):
+        return reverse('core:update_experiment')
+
+    @property
+    def check_email_url(self):
+        return reverse('core:check_email')
+
+    @property
     def experiment_metadata(self):
         return self.experiment.experiment_metadata
 
@@ -69,6 +90,13 @@ class BaseVcwebTest(TestCase):
     @property
     def participant_group_relationships(self):
         return self.experiment.participant_group_relationships
+
+    def update_experiment(self, action=None, **kwargs):
+        kwargs.update(experiment_id=self.experiment.pk, action=action)
+        return self.post(self.update_experiment_url, kwargs)
+
+    def reverse(self, *args, **kwargs):
+        return reverse(*args, **kwargs)
 
     def login(self, *args, **kwargs):
         return self.client.login(*args, **kwargs)

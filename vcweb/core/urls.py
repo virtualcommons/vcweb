@@ -6,7 +6,7 @@ from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 
-from .ajax import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, check_user_email)
+from .ajax import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, is_email_available)
 from .views import (dashboard, LoginView, LogoutView, monitor, RegisterEmailListView, RegisterTestParticipantsView,
                     completed_survey, toggle_bookmark_experiment_metadata, check_survey_completed, ParticipateView,
                     download_data, download_participants, export_configuration, api_logger, participant_api_login,
@@ -35,7 +35,7 @@ urlpatterns = [
     url(r'^accounts/profile/$', account_profile, name='profile'),
     url(r'^accounts/profile/update$',
         update_account_profile, name='update_profile'),
-    url(r'^accounts/check-email$', check_user_email, name='check_email'),
+    url(r'^accounts/check-email$', is_email_available, name='check_email'),
     url(r'^ostromlab/faq$', OstromlabFaqList.as_view(), name='ostromlab_faq'),
     url(r'^accounts/unsubscribe$', unsubscribe, name='unsubscribe'),
     url(r'^participate/?$', ParticipateView.as_view(), name='participate'),
