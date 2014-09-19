@@ -1,6 +1,6 @@
-from ..models import (Participant, ExperimentMetadata, Experiment, ExperimentSession, Invitation, ParticipantSignup,
-                      PermissionGroup)
+from ..models import (Participant, ExperimentMetadata, Experiment, Invitation, ParticipantSignup, PermissionGroup)
 from ..forms import LoginForm
+from ..views import ExperimenterDashboardViewModel
 from .common import BaseVcwebTest, SubjectPoolTest
 from django.core.urlresolvers import reverse
 
@@ -96,6 +96,33 @@ class ParticipantDashboardTest(BaseVcwebTest):
             self.assertTrue(self.login_participant(p))
             response = self.get(self.dashboard_url)
             self.assertEqual(200, response.status_code)
+
+
+class ExperimenterDashboardTest(BaseVcwebTest):
+
+    def test_dashboard_view_model(self):
+        dashboard_view_model = ExperimenterDashboardViewModel(self.demo_experimenter.user)
+        vmdict = dashboard_view_model.to_dict()
+        self.assertFalse(vmdict['isAdmin'])
+        self.assertEqual(vmdict['experimenterId'], self.demo_experimenter.pk)
+        self.assertFalse(vmdict['runningExperiments'])
+        self.experiment.activate()
+        dashboard_view_model = ExperimenterDashboardViewModel(self.experiment.experimenter.user)
+        vmdict = dashboard_view_model.to_dict()
+        self.assertFalse(vmdict['isAdmin'])
+        self.assertEqual(vmdict['experimenterId'], self.experiment.experimenter.pk)
+        self.assertTrue(vmdict['runningExperiments'])
+        self.assertEqual(self.experiment.status, vmdict['runningExperiments'][0]['status'])
+
+    def test_experimenter_dashboard(self):
+        e = self.experiment
+        e.activate()
+        experimenter = e.experimenter
+        self.assertTrue(self.login_experimenter(experimenter))
+        self.assertTrue(experimenter.approved)
+        self.assertTrue(experimenter.is_demo_experimenter)
+        response = self.get(self.dashboard_url)
+        self.assertEqual(200, response.status_code)
 
 
 class ClearParticipantsApiTest(BaseVcwebTest):

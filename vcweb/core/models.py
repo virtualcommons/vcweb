@@ -397,6 +397,10 @@ class CommonsUser(models.Model):
     def is_authenticated(self):
         return self.user.is_authenticated()
 
+    @property
+    def is_superuser(self):
+        return self.user.is_superuser
+
     def __unicode__(self):
         return u"%s (%s)" % (self.full_name, self.user.email)
 
@@ -406,6 +410,10 @@ class CommonsUser(models.Model):
 
 class Experimenter(CommonsUser):
     approved = models.BooleanField(default=False)
+
+    @property
+    def is_demo_experimenter(self):
+        return self.user.groups.filter(name=PermissionGroup.demo_experimenter).exists()
 
     class Meta:
         ordering = ['user']
@@ -2325,7 +2333,9 @@ class Participant(CommonsUser):
         upcoming_signups.delete()
 
     def __unicode__(self):
-        return unicode(self.user.get_full_name())
+        if self.full_name:
+            return unicode(self.full_name)
+        return self.email
 
     def all_data_string(self):
         return u"(email: %s) (class: %s) (major: %s) (gender: %s) (username: %s)" % (

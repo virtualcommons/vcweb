@@ -109,8 +109,6 @@
 {{ block.super }}
 <script>
     var viewModelObject = $.parseJSON("{{ dashboardViewModelJson|escapejs }}");
-    viewModelObject.currentExperimenterId = "{{ user.experimenter.pk }}";
-    viewModelObject.is_superuser = {{ user.is_superuser | yesno:"true,false" }};
 
     $(function() {
         preserveLastSelectedTab();
@@ -215,7 +213,7 @@
             };
 
             model.canEdit = function(configurationModel) {
-                return model.is_superuser() || configurationModel.creator.pk() == model.currentExperimenterId();
+                return model.isAdmin() || configurationModel.creator.pk() == model.experimenterId();
             };
 
             // FIXME: unify these, eliminate redundant code

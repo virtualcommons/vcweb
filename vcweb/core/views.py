@@ -101,6 +101,8 @@ class ExperimenterDashboardViewModel(DashboardViewModel):
             'pendingExperiments': self.pending_experiments,
             'runningExperiments': self.running_experiments,
             'archivedExperiments': self.archived_experiments,
+            'experimenterId': self.experimenter.pk,
+            'isAdmin': self.experimenter.is_superuser
         }
 
 
@@ -164,10 +166,13 @@ def dashboard(request):
     user = request.user
     if is_participant(user):
         participant = user.participant
+# special case for if this participant needs to update their profile or if they have pending invitations to respond to
+# immediately.
+# FIXME: see https://github.com/virtualcommons/vcweb/issues/8
         if participant.should_update_profile:
             # redirect to the profile page if this is a non-demo participant and their profile is incomplete
             return redirect('core:profile')
-        elif user.participant.has_pending_invitations:
+        elif participant.has_pending_invitations:
             return redirect('subjectpool:experiment_session_signup')
 
     dashboard_view_model = create_dashboard_view_model(user)
