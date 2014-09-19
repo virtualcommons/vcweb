@@ -179,7 +179,7 @@ def dashboard(request):
 @group_required(PermissionGroup.participant)
 def cas_asu_registration(request):
     user = request.user
-    if is_participant(user) and not user.participant.is_profile_complete:
+    if is_participant(user) and not user.participant.should_update_profile:
         directory_profile = ASUWebDirectoryProfile(user.username)
         logger.debug("directory profile: %s", directory_profile)
         # user.save()

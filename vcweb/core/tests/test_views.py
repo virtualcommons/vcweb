@@ -1,6 +1,7 @@
-from ..models import Participant, ExperimentMetadata, Experiment, ExperimentSession, Invitation, ParticipantSignup
-from .common import BaseVcwebTest, SubjectPoolTest
+from ..models import (Participant, ExperimentMetadata, Experiment, ExperimentSession, Invitation, ParticipantSignup,
+                      PermissionGroup)
 from ..forms import LoginForm
+from .common import BaseVcwebTest, SubjectPoolTest
 from django.core.urlresolvers import reverse
 
 import random
@@ -48,7 +49,7 @@ class ParticipantProfileTest(BaseVcwebTest):
         e = self.experiment
         e.activate()
         for p in e.participant_set.all():
-            self.assertFalse(p.is_profile_complete)
+            self.assertTrue(p.should_update_profile)
             self.assertTrue(self.login_participant(p))
             self.assertFalse(p.user.groups.filter(name='Demo Participants').exists())
             self.assertTrue(p.user.groups.filter(name='Participants').exists())
@@ -65,7 +66,7 @@ class ParticipantDashboardTest(BaseVcwebTest):
         e = self.experiment
         e.activate()
         for p in e.participant_set.all():
-            self.assertFalse(p.is_profile_complete)
+            self.assertFalse(p.should_update_profile)
             self.assertTrue(self.login_participant(p))
             self.assertTrue(p.is_demo_participant)
             response = self.get(self.dashboard_url)
@@ -76,9 +77,13 @@ class ParticipantDashboardTest(BaseVcwebTest):
     def test_completed_profile_dashboard(self):
         e = self.experiment
         e.activate()
+        participant_group = PermissionGroup.participant.get_django_group()
         for p in e.participant_set.all():
-            self.assertFalse(p.is_profile_complete)
+            self.assertFalse(p.should_update_profile)
             p.can_receive_invitations = True
+            p.user.groups = [participant_group]
+            p.user.save()
+            self.assertTrue(p.should_update_profile)
             p.class_status = 'Freshman'
             p.gender = 'F'
             p.favorite_sport = 'Football'
@@ -87,7 +92,7 @@ class ParticipantDashboardTest(BaseVcwebTest):
             p.favorite_movie_genre = 'Documentary'
             p.major = 'Science'
             p.save()
-            self.assertTrue(p.is_profile_complete)
+            self.assertFalse(p.should_update_profile)
             self.assertTrue(self.login_participant(p))
             response = self.get(self.dashboard_url)
             self.assertEqual(200, response.status_code)
@@ -160,7 +165,7 @@ class CloneExperimentTest(BaseVcwebTest):
     def test_clone(self):
         experimenter = self.create_experimenter()
         self.assertTrue(self.login_experimenter(experimenter))
-        response = self.post(self.reverse('core:clone_experiment'),
+        response = self.post(reverse('core:clone_experiment'),
                              {'experiment_id': self.experiment.pk,
                               'action': 'clone'})
         experiment_json = json.loads(response.content)

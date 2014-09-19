@@ -2283,7 +2283,7 @@ class Participant(CommonsUser):
             # experiment invitations or a demo participant
             return False
         # otherwise return all the fields we want them to submit
-        return all([self.class_status, self.gender, self.favorite_sport, self.favorite_color, self.favorite_food,
+        return not all([self.class_status, self.gender, self.favorite_sport, self.favorite_color, self.favorite_food,
                         self.favorite_movie_genre, self.major])
 
     @property
