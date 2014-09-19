@@ -97,7 +97,7 @@ def migrate():
 
 @task
 def clean_update():
-    local("hg pull && hg up -C")
+    local("hg pull --rebase && hg up -C")
 
 
 @task
@@ -216,8 +216,12 @@ def setup_postgres():
     local("psql -c 'create database %(db_name)s;' -U %(db_user)s" % env)
 
 
-def _restart_command():
-    return 'service %(webserver)s restart && service supervisord restart' % env
+def _restart_command(systemd=True):
+    if systemd:
+        cmd = 'systemctl restart %(webserver)s supervisord && systemctl status -l %(webserver)s supervisord'
+    else:
+        cmd = 'service %(webserver)s restart && service supervisord restart'
+    return cmd % env
 
 
 @roles('localhost')
