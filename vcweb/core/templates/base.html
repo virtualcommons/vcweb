@@ -14,14 +14,14 @@
 {% url 'subjectpool:experimenter_index' as subjectpool %}
 <!DOCTYPE html>
 <html lang="en">
-{% with jquery_version="2.1.1" bootstrap_version="3.1.1" %}
+{% with jquery_version="2.1.1" bootstrap_version="3.2.0" fontawesome_version="4.2.0" %}
 <head>
 {% block head %}
 <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name='viewport' content='width=device-width, initial-scale=1'>
-<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/{{bootstrap_version}}/css/bootstrap.min.css">
-<link rel='stylesheet' href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/{{bootstrap_version}}/css/bootstrap.min.css">
+<link rel='stylesheet' href="//maxcdn.bootstrapcdn.com/font-awesome/{{fontawesome_version}}/css/font-awesome.min.css">
 <link rel="stylesheet" href="{% static 'css/style.css' %}" media="screen" />
 <link href='//fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
 {% endblock %}
@@ -135,9 +135,9 @@
     </div>
     {% endblock footer %}
 </footer>
-    <script src='//cdnjs.cloudflare.com/ajax/libs/jquery/{{jquery_version}}/jquery.min.js'></script>
+<script src='//code.jquery.com/jquery-{{jquery_version}}.min.js'></script>
     <!-- Latest compiled and minified JavaScript -->
-    <script src="//netdna.bootstrapcdn.com/bootstrap/{{bootstrap_version}}/js/bootstrap.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/{{bootstrap_version}}/js/bootstrap.min.js"></script>
     <script src='{% static "js/bootbox.min.js" %}'></script>
     <script src='{% static "js/jquery.cookie.js" %}'></script>
     <script src='//cdnjs.cloudflare.com/ajax/libs/knockout/3.1.0/knockout-min.js'></script>
