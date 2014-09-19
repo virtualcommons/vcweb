@@ -49,11 +49,6 @@ def get_storage_parameter():
 
 
 @simplecache
-def get_survival_cost_parameter():
-    return Parameter.objects.for_round(name='survival_cost')
-
-
-@simplecache
 def get_max_harvest_decision_parameter():
     return Parameter.objects.for_experiment(name='max_harvest_decision')
 
