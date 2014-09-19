@@ -1718,7 +1718,7 @@ class Parameter(models.Model):
     name = models.CharField(max_length=255, unique=True)
 # FIXME: rename to label for consistency
     display_name = models.CharField(max_length=255, blank=True, default='')
-    description = models.CharField(max_length=512, blank=True, default='')
+    description = models.TextField(blank=True)
     type = models.CharField(max_length=32, choices=ParameterType)
     class_name = models.CharField(max_length=64, blank=True,
                                   help_text='Model classname in the form of appname.modelname, e.g., "core.Experiment".  Only applicable for foreign key parameters.')
