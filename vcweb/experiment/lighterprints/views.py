@@ -48,10 +48,10 @@ def perform_activity(request):
             #            logger.debug("Found venues: %s", venues)
             if performed_activity is not None:
                 participant_group_relationship.set_first_visit()
-                return JsonResponse(dumps({
+                return JsonResponse({
                     'success': True,
-                    'viewModel': get_view_model_json(participant_group_relationship)
-                }))
+                    'viewModel': get_view_model_dict(participant_group_relationship)
+                })
             else:
                 message = "Activity was not available at this time"
         else:
@@ -59,7 +59,7 @@ def perform_activity(request):
             logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id,
                            participant_group_relationship)
     logger.warning(message)
-    return JsonResponse(dumps({'success': False, 'response': message}))
+    return JsonResponse({'success': False, 'response': message})
 
 
 @login_required
@@ -73,14 +73,14 @@ def post_chat_message(request):
         if pgr.participant != request.user.participant:
             logger.warning(
                 "authenticated user %s tried to post message %s as %s", request.user, message, pgr)
-            return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
+            return JsonResponse({'success': False, 'message': "Invalid request"})
         chat_message = ChatMessage.objects.create(
             value=message, participant_group_relationship=pgr)
         logger.debug("%s: %s", pgr.participant, chat_message)
         # FIXME: can optimize by only retrieving the latest group activity since the last checkin time
         group_activity = GroupActivity(pgr)
-        return JsonResponse(dumps({'success': True, 'viewModel': {'groupActivity': group_activity.all_activities}}))
-    return JsonResponse(dumps({'success': False, 'message': "Invalid chat message post"}))
+        return JsonResponse({'success': True, 'viewModel': {'groupActivity': group_activity.all_activities}})
+    return JsonResponse({'success': False, 'message': "Invalid chat message post"})
 
 
 @login_required
@@ -96,7 +96,7 @@ def like(request):
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to like target_id %s as %s", request.user, target_id,
                            participant_group_relationship)
-            return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
+            return JsonResponse({'success': False, 'message': "Invalid request"})
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         # FIXME: either needs a uniqueness constraint to ensure that duplicates don't get created or add guards when we
         # retrieve them to only send back the latest one (feels hacky).  See
@@ -106,10 +106,10 @@ def like(request):
                             target_data_value=target)
         logger.debug(
             "Participant %s liked %s", participant_group_relationship, target)
-        return JsonResponse(dumps({'success': True, 'viewModel': get_view_model_json(participant_group_relationship)}))
+        return JsonResponse({'success': True, 'viewModel': get_view_model_dict(participant_group_relationship)})
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
-        return JsonResponse(dumps({'success': False, 'message': 'Invalid like post'}))
+        return JsonResponse({'success': False, 'message': 'Invalid like post'})
 
 
 @login_required
@@ -126,7 +126,7 @@ def post_comment(request):
         if participant_group_relationship.participant != request.user.participant:
             logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message,
                            target_id, participant_group_relationship)
-            return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
+            return JsonResponse({'success': False, 'message': "Invalid request"})
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         Comment.objects.create(
             string_value=message,
@@ -135,10 +135,10 @@ def post_comment(request):
             target_data_value=target)
         logger.debug("Participant %s commented '%s' on %s",
                      participant_group_relationship.participant, message, target)
-        return JsonResponse(dumps({'success': True, 'viewModel': get_view_model_json(participant_group_relationship)}))
+        return JsonResponse({'success': True, 'viewModel': get_view_model_dict(participant_group_relationship)})
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
-        return JsonResponse(dumps({'success': False, 'message': 'Invalid post comment'}))
+        return JsonResponse({'success': False, 'message': 'Invalid post comment'})
 
 
 class LighterprintsViewModel(object):
@@ -231,7 +231,7 @@ def download_payment_data(request, pk=None):
     return response
 
 
-def get_view_model_json(participant_group_relationship, activities=None, experiment=None, round_configuration=None,
+def get_view_model_dict(participant_group_relationship, activities=None, experiment=None, round_configuration=None,
                         round_data=None):
     """
     FIXME: replace with view model class that stitches together ActivityStatusList and GroupScores appropriately and
@@ -258,7 +258,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
                                               group_level=own_group_level)
     group_activity = GroupActivity(participant_group_relationship)
     (hours_left, minutes_left) = get_time_remaining()
-    return dumps({
+    return {
         'participantGroupId': participant_group_relationship.pk,
         'completed': group_scores.is_completed(own_group),
         'hasLeaderboard': group_scores.has_leaderboard,
@@ -278,7 +278,7 @@ def get_view_model_json(participant_group_relationship, activities=None, experim
         'groupName': own_group.name,
         'activities': activity_status_list.activity_dict_list,
         'totalPoints': total_participant_points,
-    })
+    }
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
@@ -298,8 +298,8 @@ def get_view_model(request, participant_group_id=None):
         logger.warning(
             "user %s tried to access view model for %s", request.user.participant, pgr)
         raise PermissionDenied("Access denied.")
-    view_model_json = get_view_model_json(pgr, experiment=pgr.group.experiment)
-    return JsonResponse(dumps({'success': True, 'view_model_json': view_model_json}))
+    view_model = get_view_model_dict(pgr, experiment=pgr.group.experiment)
+    return JsonResponse(dumps({'success': True, 'view_model_json': view_model}))
 
 
 # FIXME: push this into core api/login if possible
@@ -325,11 +325,11 @@ def mobile_participate(request, experiment_id=None):
         participant, experiment_metadata=get_lighterprints_experiment_metadata())
     pgr = experiment.get_participant_group_relationship(participant)
     all_activities = Activity.objects.all()
-    view_model_json = get_view_model_json(pgr, all_activities, experiment)
+    view_model = get_view_model_dict(pgr, all_activities, experiment)
     return render(request, 'lighterprints/mobile/index.html', {
         'experiment': experiment,
         'participant_group_relationship': pgr,
-        'view_model_json': view_model_json,
+        'view_model_json': dumps(view_model),
         'all_activities': all_activities,
     })
 
@@ -353,13 +353,13 @@ def participate(request, experiment_id=None):
             })
 
         all_activities = Activity.objects.all()
-        view_model_json = get_view_model_json(pgr, activities=all_activities, experiment=experiment,
-                                              round_configuration=round_configuration)
+        view_model = get_view_model_dict(pgr, activities=all_activities, experiment=experiment,
+                                         round_configuration=round_configuration)
         return render(request, 'lighterprints/participate.html', {
             'experiment': experiment,
             'participant_group_relationship': pgr,
             'has_leaderboard': treatment_type == 'LEADERBOARD',
-            'view_model_json': view_model_json,
+            'view_model_json': dumps(view_model),
         })
     else:
         sd = experiment.start_date

@@ -45,7 +45,7 @@ class LevelBasedTest(BaseTest):
                 expected_success = activity.is_available_for(participant_group_relationship, rd)
                 if expected_success:
                     performed_activities.add(activity)
-                response = self.client.post('/lighterprints/api/do-activity', {
+                response = self.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
                 }, follow=True)
@@ -166,7 +166,7 @@ class ActivityTest(LevelBasedTest):
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant,
                              activity)
                 expected_success = activity.is_available_for(participant_group_relationship, rd)
-                response = self.client.post('/lighterprints/api/do-activity', {
+                response = self.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
                 })
@@ -175,7 +175,7 @@ class ActivityTest(LevelBasedTest):
                 self.assertEqual(expected_success, json_object['success'])
                 # trying to do the same activity again should result in an
                 # error response
-                response = self.client.post('/lighterprints/api/do-activity', {
+                response = self.post('/lighterprints/api/do-activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
                 })
@@ -188,7 +188,7 @@ class ActivityTest(LevelBasedTest):
             text = "This is a harrowing comment"
             for activity_id in performed_activity_ids:
                 logger.debug("posting comment on id %s", activity_id)
-                response = self.client.post('/lighterprints/api/comment', {
+                response = self.post('/lighterprints/api/comment', {
                     'participant_group_id': participant_group_relationship.pk,
                     'message': text,
                     'target_id': activity_id

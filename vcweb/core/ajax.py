@@ -1,7 +1,7 @@
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST, require_GET
 
-from . import dumps
 from .decorators import group_required
 from .http import JsonResponse
 from .models import (Experiment, RoundData, get_chat_message_parameter, ExperimentConfiguration, User, PermissionGroup)
@@ -20,18 +20,20 @@ def _get_experiment(request, pk):
         "Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter, pk))
 
 
+@require_POST
 @group_required(PermissionGroup.experimenter)
 def clone_experiment(request):
     experiment_id = request.POST.get('experiment_id')
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     experimenter = request.user.experimenter
     cloned_experiment = experiment.clone(experimenter=experimenter)
-    return JsonResponse(dumps({
+    return JsonResponse({
         'success': True,
         'experiment': cloned_experiment.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))
-    }))
+    })
 
 
+@require_POST
 @group_required(PermissionGroup.experimenter)
 def create_experiment(request):
     experiment_configuration_id = request.POST.get('experiment_configuration_id')
@@ -45,10 +47,10 @@ def create_experiment(request):
                                   experiment_configuration=experiment_configuration,
                                   status=Experiment.Status.INACTIVE
                                   )
-    return JsonResponse(dumps({
+    return JsonResponse({
         'success': True,
         'experiment': e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))
-    }))
+    })
 
 
 @require_GET
@@ -60,7 +62,7 @@ def is_email_available(request):
     email = request.GET.get("email").lower()
     current_user = request.user
     success = (current_user.is_authenticated() and current_user.email == email) or not User.objects.filter(email=email).exists()
-    return JsonResponse(dumps(success))
+    return HttpResponse(success)
 
 
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
@@ -76,12 +78,12 @@ def save_experimenter_notes(request):
                 current_experimenter_notes, notes))
         current_round_data.experimenter_notes = notes
         current_round_data.save()
-        return JsonResponse(dumps({'success': True}))
+        return JsonResponse({'success': True})
     else:
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': False,
             'message': "Experimenter notes were unchanged, no need to save '%s'" % notes
-        }))
+        })
 
 
 @group_required(PermissionGroup.experimenter)
@@ -103,10 +105,10 @@ def get_round_data(request):
             'participant_group_relationship__participant__user',
             'parameter').exclude(parameter=get_chat_message_parameter())
     ]
-    return JsonResponse(dumps({
+    return JsonResponse({
         'groupDataValues': group_data_values,
         'participantDataValues': participant_data_values
-    }))
+    })
 
 
 @group_required(PermissionGroup.experimenter)
@@ -120,14 +122,14 @@ def experiment_controller(request):
     try:
         response_tuples = experiment.invoke(action, experimenter)
         logger.debug("invoking action %s: %s", action, str(response_tuples))
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': True,
             'experiment': experiment.to_dict()
-        }))
+        })
     except AttributeError as e:
         logger.warning(
             "no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': False,
             'message': 'Invalid experiment action %s' % action
-        }))
+        })

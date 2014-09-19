@@ -5,9 +5,8 @@ import logging
 from django.shortcuts import get_object_or_404, render
 
 from vcweb.core.decorators import group_required
-from vcweb.core import dumps
 from vcweb.core.forms import SingleIntegerDecisionForm
-from vcweb.core.http import JsonResponse
+from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.models import (
     Experiment, ParticipantGroupRelationship, RoundConfiguration, ParticipantRoundDataValue, PermissionGroup)
 from vcweb.experiment.broker.models import (get_max_harvest_hours, set_harvest_decision, set_conservation_decision, get_harvest_decision,
@@ -79,8 +78,8 @@ def submit_chat_preferences(request, experiment_id=None):
                         break
 
             response_dict['all_participants_submitted'] = True
-        return JsonResponse(dumps(response_dict))
-    return JsonResponse(dumps({'success': False}))
+        return JsonResponse(response_dict)
+    return JsonResponse({'success': False})
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
@@ -99,11 +98,11 @@ def submit_decision(request, experiment_id=None):
         set_harvest_decision(pgr, harvest_hours, round_data=round_data)
         set_conservation_decision(
             pgr, conservation_hours, round_data=round_data)
-        return JsonResponse(dumps({'success': True, 'experimentModelJson': get_view_model_json(experiment, pgr)}))
+        return JsonResponse({'success': True, 'experimentModelJson': get_view_model_dict(experiment, pgr)})
     for field in form:
         if field.errors:
             logger.debug("field %s had errors %s", field, field.errors)
-    return JsonResponse(dumps({'success': False}))
+    return JsonResponse({'success': False})
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
@@ -117,7 +116,7 @@ def participate(request, experiment_id=None):
         'experiment': experiment,
         'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
         'participant_group_relationship': participant_group_relationship,
-        'experimentModelJson': get_view_model_json(experiment, participant_group_relationship),
+        'experimentModelJson': get_view_model_dict(experiment, participant_group_relationship),
     })
 
 
@@ -126,9 +125,9 @@ def get_view_model(request, experiment_id=None):
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     participant_group_relationship = get_object_or_404(
         ParticipantGroupRelationship, pk=request.GET.get('participant_group_id'))
-    return JsonResponse(get_view_model_json(experiment, participant_group_relationship))
+    return JsonResponse(get_view_model_dict(experiment, participant_group_relationship))
 
-experiment_model_defaults = {
+EXPERIMENT_MODEL_DEFAULTS = {
     'chatEnabled': True,
     'maxHarvestDecision': 10,
     'maxEarnings': 20.00,
@@ -139,7 +138,7 @@ experiment_model_defaults = {
 }
 
 
-def get_view_model_json(experiment, participant_group_relationship, **kwargs):
+def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict = experiment.to_dict(
         include_round_data=False, default_value_dict=experiment_model_defaults)
     group = participant_group_relationship.group
@@ -207,4 +206,4 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         'participantsPerGroup'] = group.max_size * number_of_connected_groups
 
     experiment_model_dict.update(**kwargs)
-    return dumps(experiment_model_dict)
+    return experiment_model_dict

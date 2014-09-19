@@ -2,9 +2,8 @@ import logging
 
 from django.shortcuts import render, get_object_or_404
 
-from vcweb.core import dumps
 from vcweb.core.decorators import group_required
-from vcweb.core.http import JsonResponse
+from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.models import Experiment, PermissionGroup
 from vcweb.experiment.irrigation.services import get_experiment_metadata
 
@@ -29,13 +28,16 @@ class ViewModel(object):
         self.experiment_model = self.experiment.to_dict(
             include_round_data=False, default_value_dict=ViewModel.experiment_model_defaults)
 
-    def to_json(self):
+    def to_dict(self):
         current_round = self.experiment.current_round
         self.experiment_model.update(
             pid=self.participant_group_relationship.pk,
             templateName=self.current_round.template_name,
         )
-        return dumps(self.experiment_model)
+        return self.experiment_model
+
+    def to_json(self):
+        return dumps(self.to_dict())
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
@@ -56,7 +58,7 @@ def get_view_model(request, experiment_id=None):
                                    pk=experiment_id)
     pgr = experiment.get_participant_group_relationship(
         request.user.participant)
-    return JsonResponse(ViewModel(pgr, experiment=experiment).to_json())
+    return JsonResponse(ViewModel(pgr, experiment=experiment).to_dict())
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)

@@ -4,9 +4,8 @@ from django.http import Http404
 from django.db import transaction
 from django.shortcuts import render, get_object_or_404
 
-from vcweb.core import dumps
 from vcweb.core.decorators import group_required
-from vcweb.core.http import JsonResponse
+from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.models import (
     Experiment, ChatMessage, ParticipantGroupRelationship, RoundConfiguration, PermissionGroup)
@@ -37,7 +36,7 @@ def participate(request, experiment_id=None):
         'experiment': experiment,
         'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
         'participant_group_relationship': pgr,
-        'experimentModelJson': get_view_model_json(experiment, pgr),
+        'experimentModelJson': dumps(get_view_model(experiment, pgr)),
     })
 
 
@@ -63,13 +62,13 @@ def submit_harvest_decision(request, experiment_id=None):
                 'success': True,
                 'message': message % (pgr.participant_handle, harvest_decision),
             }
-            return JsonResponse(dumps(response_dict))
+            return JsonResponse(response_dict)
     else:
         logger.debug("form was invalid: %s", form)
     for field in form:
         if field.errors:
             logger.debug("field %s had errors %s", field, field.errors)
-    return JsonResponse(dumps({'success': False}))
+    return JsonResponse({'success': False})
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
@@ -78,7 +77,7 @@ def get_view_model(request, experiment_id=None):
                                    pk=experiment_id)
     pgr = experiment.get_participant_group_relationship(
         request.user.participant)
-    return JsonResponse(get_view_model_json(experiment, pgr))
+    return JsonResponse(get_view_model(experiment, pgr))
 
 
 experiment_model_defaults = {
@@ -107,7 +106,7 @@ experiment_model_defaults = {
 }
 
 
-def get_view_model_json(experiment, participant_group_relationship, **kwargs):
+def get_view_model(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
     current_round_data = experiment.current_round_data
@@ -200,4 +199,4 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['chatMessages'] = [
             cm.to_dict() for cm in ChatMessage.objects.for_group(own_group)]
 
-    return dumps(experiment_model_dict)
+    return experiment_model_dict

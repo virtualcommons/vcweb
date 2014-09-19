@@ -8,10 +8,9 @@ from django.db import transaction
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 
-from vcweb.core import dumps
 from vcweb.core.decorators import group_required
 from vcweb.core.forms import SingleIntegerDecisionForm
-from vcweb.core.http import JsonResponse
+from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage, PermissionGroup)
 from .models import (get_experiment_metadata, get_regrowth_rate, get_max_harvest_decision, get_cost_of_living,
                      get_resource_level, get_initial_resource_level, get_final_session_storage_queryset,
@@ -37,7 +36,7 @@ def participate(request, experiment_id=None):
             'experiment': experiment,
             'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
             'participant_group_relationship': pgr,
-            'experimentModelJson': get_view_model_json(experiment, pgr),
+            'experimentModelJson': get_view_model_dict(experiment, pgr),
         })
     else:
         messages.info(
@@ -67,13 +66,13 @@ def submit_harvest_decision(request, experiment_id=None):
                 'success': True,
                 'message': message % (pgr.participant_handle, harvest_decision),
             }
-            return JsonResponse(dumps(response_dict))
+            return JsonResponse(response_dict)
     else:
         logger.debug("form was invalid: %s", form)
     for field in form:
         if field.errors:
             logger.debug("field %s had errors %s", field, field.errors)
-    return JsonResponse(dumps({'success': False}))
+    return JsonResponse({'success': False})
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
@@ -82,7 +81,7 @@ def get_view_model(request, experiment_id=None):
                                    pk=experiment_id)
     pgr = experiment.get_participant_group_relationship(
         request.user.participant)
-    return JsonResponse(get_view_model_json(experiment, pgr))
+    return JsonResponse(get_view_model_dict(experiment, pgr))
 
 
 experiment_model_defaults = {
@@ -135,7 +134,7 @@ experiment_model_defaults = {
 # FIXME: bloated method with too many special cases, try to refactor
 
 
-def get_view_model_json(experiment, participant_group_relationship, **kwargs):
+def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
     current_round_data = experiment.current_round_data
@@ -266,5 +265,4 @@ def get_view_model_json(experiment, participant_group_relationship, **kwargs):
                 'numberAlive': "%s out of %s" % (number_alive, other_group.size),
                 'isResourceEmpty': resource_level == 0,
             }
-
-    return dumps(experiment_model_dict)
+    return experiment_model_dict

@@ -25,8 +25,7 @@ from vcweb.core.views import mimetypes
 
 from vcweb.core.models import (
     ExperimentSession, ExperimentMetadata, Invitation, send_email)
-from vcweb.core import dumps
-from vcweb.core.http import JsonResponse
+from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.decorators import group_required, ownership_required
 from vcweb.core.models import (Participant, Institution, ParticipantSignup, PermissionGroup)
 
@@ -100,17 +99,17 @@ def manage_experiment_session(request):
             es.experiment_metadata = ExperimentMetadata.objects.get(pk=exp_pk)
             es.save()
 
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': True,
             'session': es
-        }))
+        })
 
     error_list = [e for e in form.non_field_errors()]
 
-    return JsonResponse(dumps({
+    return JsonResponse({
         'success': False,
         'errors': error_list
-    }))
+    })
 
 
 @group_required(PermissionGroup.experimenter)
@@ -144,7 +143,7 @@ def get_session_events(request):
 
     objects_head = {"success": True, "result": objects_body}
 
-    return JsonResponse(dumps(objects_head))
+    return JsonResponse(objects_head)
 
 
 def timestamp_to_datetime(timestamp):
@@ -198,15 +197,15 @@ def get_invitations_count(request):
 
         potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_institution,
                                                             only_undergrad=only_undergrad)
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': True,
             'invitesCount': len(potential_participants)
-        }))
+        })
     else:
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': False,
             'invitesCount': 0
-        }))
+        })
 
 
 def get_invitation_email_content(custom_invitation_text, experiment_session_ids):
@@ -295,23 +294,23 @@ def send_invitations(request):
                 msg.attach_alternative(html_content, "text/html")
                 msg.send()
 
-            return JsonResponse(dumps({
+            return JsonResponse({
                 'success': True,
                 'message': message,
                 'invitesCount': len(final_participants)
-            }))
+            })
         else:
             message = "To Invite Participants Please Select Experiment Sessions of same Experiment"
-            return JsonResponse(dumps({
+            return JsonResponse({
                 'success': False,
                 'message': message
-            }))
+            })
     else:
         # Form is not valid
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': False,
             'message': message
-        }))
+        })
 
 
 @group_required(PermissionGroup.experimenter)
@@ -326,16 +325,16 @@ def invite_email_preview(request):
         session_pk_list = request.POST.get('session_pk_list').split(",")
         plaintext_content, html_content = get_invitation_email_content(
             invitation_text, session_pk_list)
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': True,
             'content': html_content
-        }))
+        })
     else:
         # Form is not Valid
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': False,
             'message': message
-        }))
+        })
 
 
 def get_potential_participants(experiment_metadata_pk, institution="Arizona State University", days_threshold=7,

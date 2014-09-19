@@ -21,8 +21,7 @@ from django.views.generic.detail import SingleObjectMixin
 
 from contact_form.views import ContactFormView
 
-from . import dumps
-from .http import JsonResponse
+from .http import JsonResponse, dumps
 from .decorators import (anonymous_required, retry, is_participant, is_experimenter, ownership_required, group_required)
 from .forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm, UpdateExperimentForm,
                     AsuRegistrationForm, ParticipantGroupIdForm, RegisterEmailListParticipantsForm,
@@ -36,8 +35,8 @@ from .models import (User, ChatMessage, Participant, ParticipantExperimentRelati
 
 logger = logging.getLogger(__name__)
 mimetypes.init()
-SUCCESS_JSON = dumps({'success': True})
-FAILURE_JSON = dumps({'success': False})
+SUCCESS_DICT = {'success': True}
+FAILURE_DICT = {'success': False}
 
 
 class AnonymousMixin(object):
@@ -217,9 +216,10 @@ def cas_asu_registration_submit(request):
 
 @login_required
 def get_dashboard_view_model(request):
-    return JsonResponse(
-        dumps({'success': True, 'dashboardViewModelJson': create_dashboard_view_model(request.user).to_json()}))
-
+    return JsonResponse({
+        'success': True, 
+        'dashboardViewModelJson': create_dashboard_view_model(request.user).to_json()
+    })
 
 def set_authentication_token(user, authentication_token=''):
     commons_user = None
@@ -255,17 +255,17 @@ def autocomplete_account(request, term):
     candidates = []
     if term in ('major', 'institution'):
         candidates = ["Implement", "Me"]
-        return JsonResponse(dumps({'success': True, 'candidates': candidates}))
+        return JsonResponse({'success': True, 'candidates': candidates})
     else:
         logger.debug("can't autocomplete unsupported term %s", term)
-        return JsonResponse(dumps({'success': False, 'message': "Unsupported autocomplete term %s" % term}))
+        return JsonResponse({'success': False, 'message': "Unsupported autocomplete term %s" % term})
 
 
 def api_logout(request):
     user = request.user
     set_authentication_token(user)
     auth.logout(request)
-    return JsonResponse(SUCCESS_JSON)
+    return JsonResponse(SUCCESS_DICT)
 
 
 def participant_api_login(request):
@@ -284,12 +284,12 @@ def participant_api_login(request):
             active_experiment = get_active_experiment(participant)
             participant_group_relationship = active_experiment.get_participant_group_relationship(
                 participant)
-            return JsonResponse(dumps({'success': True, 'participant_group_id': participant_group_relationship.pk}))
+            return JsonResponse({'success': True, 'participant_group_id': participant_group_relationship.pk})
         else:
             logger.debug("invalid form %s", form)
     except Exception as e:
         logger.debug("Invalid login: %s", e)
-    return JsonResponse(dumps({'success': False, 'message': "Invalid login"}))
+    return JsonResponse({'success': False, 'message': "Invalid login"})
 
 
 class LoginView(AnonymousMixin, FormView):
@@ -390,22 +390,22 @@ def update_account_profile(request):
             if e.user.email != email:
                 users = User.objects.filter(email=email)
                 if users.count() > 0:
-                    return JsonResponse(dumps({
+                    return JsonResponse({
                         'success': False,
                         'message': 'This email is already registered with our system, please try another.'
-                    }))
+                    })
 
             for attr in ('first_name', 'last_name', 'email'):
                 setattr(e.user, attr, form.cleaned_data.get(attr))
 
             e.save()
             e.user.save()
-            return JsonResponse(dumps({
+            return JsonResponse({
                 'success': True,
                 'message': 'Profile updated successfully.'
-            }))
-        return JsonResponse(dumps({'success': False,
-                                   'message': 'Something went wrong. Please try again.'}))
+            })
+        return JsonResponse({'success': False,
+                                  'message': 'Something went wrong. Please try again.'})
     else:
         form = ParticipantAccountForm(request.POST or None)
         if form.is_valid():
@@ -424,10 +424,10 @@ def update_account_profile(request):
             if p.user.email != email:
                 users = User.objects.filter(email=email)
                 if users.count() > 0:
-                    return JsonResponse(dumps({
+                    return JsonResponse({
                         'success': False,
                         'message': 'This email is already registered with our system, please try another.'
-                    }))
+                    })
 
             for attr in (
                     'major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food', 'favorite_sport',
@@ -440,15 +440,15 @@ def update_account_profile(request):
             p.save()
             p.user.save()
 
-            return JsonResponse(dumps({
+            return JsonResponse({
                 'success': True,
                 'message': 'Updated profile successfully.'
-            }))
+            })
 
-        return JsonResponse(dumps({'success': False,
-                                   'message': 'You need to provide your major, class status, gender, favorite sport, '
-                                              'favorite food, favorite color and favorite movie genre, if you want to '
-                                              'receive invitations'}))
+        return JsonResponse({
+            'success': False,
+            'message': 'Please fill in all the fields on this page to receive invitations.'
+        })
 
 
 @login_required
@@ -546,11 +546,11 @@ def toggle_bookmark_experiment_metadata(request):
                 # toggle deletion, remove this bookmark
                 logger.debug("Deleting existing bookmark: %s", bem)
                 bem.delete()
-            return JsonResponse(SUCCESS_JSON)
+            return JsonResponse(SUCCESS_DICT)
         else:
             logger.warn(
                 "Invalid toggle bookmark experiment metadata request: %s", request)
-    return JsonResponse(FAILURE_JSON)
+    return JsonResponse(FAILURE_DICT)
 
 
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
@@ -843,17 +843,17 @@ def update_experiment(request):
         try:
             response_tuples = experiment.invoke(action, experimenter)
             logger.debug("invoking action %s: %s", action, str(response_tuples))
-            return JsonResponse(dumps({
+            return JsonResponse({
                 'success': True,
                 'experiment': experiment.to_dict()
-            }))
+            })
         except AttributeError as e:
             logger.warning(
                 "no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
-    return JsonResponse(dumps({
+    return JsonResponse({
         'success': False,
         'message': 'Invalid update experiment request: %s' % form
-    }))
+    })
 
 
 @login_required
@@ -875,7 +875,7 @@ def api_logger(request, participant_group_id=None):
     else:
         logger.error(
             "Failed to validate log message form %s (%s)", request, form)
-    return JsonResponse(dumps({'success': success}))
+    return JsonResponse({'success': success})
 
 
 @group_required(PermissionGroup.participant)
@@ -900,16 +900,16 @@ def completed_survey(request):
         success = True
     except ParticipantGroupRelationship.DoesNotExist:
         logger.debug("No ParticipantGroupRelationship found with id %s", pgr_id)
-    return JsonResponse(dumps({'success': success}))
+    return JsonResponse({'success': success})
 
 
 @group_required(PermissionGroup.participant)
 def check_survey_completed(request, pk=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment, pk=pk)
-    return JsonResponse(dumps({
+    return JsonResponse({
         'survey_completed': experiment.get_participant_group_relationship(participant).survey_completed,
-    }))
+    })
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
@@ -922,15 +922,14 @@ def participant_ready(request):
         experiment = pgr.group.experiment
         round_data = experiment.current_round_data
         pgr.set_participant_ready(round_data)
-        return JsonResponse(dumps(_ready_participants_dict(experiment)))
+        return JsonResponse(_ready_participants_dict(experiment))
     else:
-        return JsonResponse(dumps({'success': False, 'message': "Invalid form"}))
+        return JsonResponse({'success': False, 'message': "Invalid form"})
 
 
 def _ready_participants_dict(experiment):
     number_of_ready_participants = experiment.number_of_ready_participants
-    all_participants_ready = (
-        number_of_ready_participants == experiment.number_of_participants)
+    all_participants_ready = (number_of_ready_participants == experiment.number_of_participants)
     return {
         'success': True,
         'number_of_ready_participants': number_of_ready_participants,
@@ -941,7 +940,7 @@ def _ready_participants_dict(experiment):
 @login_required
 def check_ready_participants(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
-    return JsonResponse(dumps(_ready_participants_dict(experiment)))
+    return JsonResponse(_ready_participants_dict(experiment))
 
 
 class ASUWebDirectoryProfile(object):
@@ -1125,9 +1124,7 @@ def update_experiment_param_value(request, pk):
     if request_type == 'delete':
         if pk:
             ExperimentParameterValue.objects.get(pk=pk).delete()
-            return JsonResponse(dumps({
-                'success': True
-            }))
+            return JsonResponse(SUCCESS_DICT)
         else:
             success = False
     # create Request
@@ -1151,28 +1148,29 @@ def update_experiment_param_value(request, pk):
             success = False
 
     if success:
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': True,
             'experiment_param': epv.to_dict()
-        }))
+        })
     else:
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': False,
             'message': form.errors
-        }))
+        })
 
 
 @group_required(PermissionGroup.experimenter)
 def update_round_param_value(request, pk):
+    """
+    FIXME: needs refactoring
+    """
     success = True
     request_type = request.POST['request_type']
     # delete Request
     if request_type == 'delete':
         if pk:
             RoundParameterValue.objects.get(pk=pk).delete()
-            return JsonResponse(dumps({
-                'success': True,
-            }))
+            return JsonResponse(SUCCESS_DICT)
         else:
             success = False
     # Create Request
@@ -1202,15 +1200,15 @@ def update_round_param_value(request, pk):
             success = False
 
     if success:
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': True,
             'round_param': rpv.to_dict()
-        }))
+        })
     else:
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': False,
             'message': form.errors
-        }))
+        })
 
 
 def sort_round_configurations(old_sequence_number, new_sequence_number, exp_config_pk):
@@ -1249,10 +1247,7 @@ def update_round_configuration(request, pk):
     if request_type == 'delete':
         if pk:
             RoundConfiguration.objects.get(pk=pk).delete()
-
-            return JsonResponse(dumps({
-                'success': True
-            }))
+            return JsonResponse(SUCCESS_DICT)
         else:
             success = False
 
@@ -1288,15 +1283,15 @@ def update_round_configuration(request, pk):
             success = False
 
     if success:
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': True,
             'round_config': rc.to_dict()
-        }))
+        })
     else:
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': False,
             'message': form.errors
-        }))
+        })
 
 
 @group_required(PermissionGroup.experimenter)
@@ -1306,21 +1301,21 @@ def update_experiment_configuration(request, pk):
     try:
         ec = ExperimentConfiguration.objects.get(pk=pk)
     except ObjectDoesNotExist:
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': False,
             'message': "Experiment configuration with pk %d did not exist" % pk,
-        }))
+        })
 
     form = ExperimentConfigurationForm(request.POST or None, instance=ec)
 
     if form.is_valid():
         form.save()
-        return JsonResponse(SUCCESS_JSON)
+        return JsonResponse(SUCCESS_DICT)
 
-    return JsonResponse(dumps({
+    return JsonResponse({
         'success': False,
         'message': form.errors
-    }))
+    })
 
 
 @group_required(PermissionGroup.experimenter)
@@ -1330,12 +1325,12 @@ def delete_experiment_configuration(request, pk):
         ec = ExperimentConfiguration.objects.get(pk=pk)
         ec.delete()
     except Exception as e:
-        return JsonResponse(dumps({
+        return JsonResponse({
             'success': False,
             'message': '%s (%s)' % (e.message, type(e))
-        }))
+        })
 
-    return JsonResponse(SUCCESS_JSON)
+    return JsonResponse(SUCCESS_DICT)
 
 
 @group_required(PermissionGroup.experimenter)
@@ -1396,7 +1391,7 @@ def clone_experiment_configuration(request):
     experimenter = request.user.experimenter
     cloned_experiment_configuration = experiment_configuration.clone(
         creator=experimenter)
-    return JsonResponse(dumps({'success': True, 'experiment_configuration': cloned_experiment_configuration.to_dict()}))
+    return JsonResponse({'success': True, 'experiment_configuration': cloned_experiment_configuration.to_dict()})
 
 
 @login_required

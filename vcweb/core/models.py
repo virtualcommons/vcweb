@@ -32,8 +32,9 @@ from model_utils import Choices
 from model_utils.managers import PassThroughManager
 import markdown
 
-from . import signals, simplecache, dumps
+from . import signals, simplecache
 from .decorators import log_signal_errors
+from .http import dumps
 
 
 logger = logging.getLogger(__name__)
