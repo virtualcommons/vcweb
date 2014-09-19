@@ -145,6 +145,9 @@ class BaseVcwebTest(TestCase):
                 # generate participant emails
                 participant_emails = ['generated-test-%d@asu.edu' % index for index in range(0, number_of_participants)]
             self.experiment.register_participants(emails=participant_emails, password='test')
+            # XXX: should can_receive_invitations automatically be set to true in Experiment.register_participants
+            # instead?
+            self.experiment.participant_set.update(can_receive_invitations=True)
 
     def setUp(self, **kwargs):
         self.client = Client()

@@ -51,7 +51,7 @@ class ParticipantProfileTest(BaseVcwebTest):
         for p in e.participant_set.all():
             self.assertTrue(p.should_update_profile)
             self.assertTrue(self.login_participant(p))
-            self.assertFalse(p.user.groups.filter(name='Demo Participants').exists())
+            self.assertFalse(p.is_demo_participant)
             self.assertTrue(p.user.groups.filter(name='Participants').exists())
             response = self.get(self.dashboard_url)
             self.assertEqual(302, response.status_code)
