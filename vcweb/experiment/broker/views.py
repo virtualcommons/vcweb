@@ -7,10 +7,11 @@ from django.shortcuts import get_object_or_404, render
 from vcweb.core.decorators import group_required
 from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.http import JsonResponse, dumps
-from vcweb.core.models import (
-    Experiment, ParticipantGroupRelationship, RoundConfiguration, ParticipantRoundDataValue, PermissionGroup)
-from vcweb.experiment.broker.models import (get_max_harvest_hours, set_harvest_decision, set_conservation_decision, get_harvest_decision,
-                                            get_conservation_decision, get_payoff, get_chat_within_group_parameter, get_chat_between_group_parameter,
+from vcweb.core.models import (Experiment, ParticipantGroupRelationship, RoundConfiguration, ParticipantRoundDataValue,
+                               PermissionGroup)
+from vcweb.experiment.broker.models import (get_max_harvest_hours, set_harvest_decision, set_conservation_decision,
+                                            get_harvest_decision, get_conservation_decision, get_payoff,
+                                            get_chat_within_group_parameter, get_chat_between_group_parameter,
                                             get_participant_link_parameter)
 from vcweb.experiment.broker.forms import ChatPreferenceForm
 
@@ -140,7 +141,7 @@ EXPERIMENT_MODEL_DEFAULTS = {
 
 def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict = experiment.to_dict(
-        include_round_data=False, default_value_dict=experiment_model_defaults)
+        include_round_data=False, default_value_dict=EXPERIMENT_MODEL_DEFAULTS)
     group = participant_group_relationship.group
     experiment_configuration = experiment.experiment_configuration
     round_configuration = experiment.current_round

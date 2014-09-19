@@ -67,7 +67,7 @@ class ParticipantDashboardTest(BaseVcwebTest):
         for p in e.participant_set.all():
             self.assertFalse(p.is_profile_complete)
             self.assertTrue(self.login_participant(p))
-            self.assertTrue(p.user.groups.filter(name='Demo Participants').exists())
+            self.assertTrue(p.is_demo_participant)
             response = self.get(self.dashboard_url)
 # test demo participants don't need to get redirected to the account profile to fill out profile info when they visit
 # the dashboard.
@@ -101,7 +101,7 @@ class ClearParticipantsApiTest(BaseVcwebTest):
         e.activate()
         self.assertTrue(e.participant_set.count() > 0)
         response = self.post(self.update_experiment_url,
-                             {'experiment_id': self.experiment.pk, 'action': 'clear_participants'})
+                             {'experiment_id': self.experiment.pk, 'action': 'clear'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(e.participant_set.count(), 0)
 
@@ -109,14 +109,14 @@ class ClearParticipantsApiTest(BaseVcwebTest):
         new_experimenter = self.create_experimenter()
         self.login_experimenter(new_experimenter)
         response = self.post(self.update_experiment_url,
-                             {'experiment_id': self.experiment.pk, 'action': 'clear_participants'})
+                             {'experiment_id': self.experiment.pk, 'action': 'clear'})
         self.assertEqual(response.status_code, 403)
         self.assertTrue(self.experiment.participant_set.count() > 0)
 
     def test_unauthorized_participant_access(self):
         self.login_participant(self.experiment.participant_set.first())
         response = self.post(self.update_experiment_url,
-                             {'experiment_id': self.experiment.pk, 'action': 'clear_participants'})
+                             {'experiment_id': self.experiment.pk, 'action': 'clear'})
         self.assertEqual(response.status_code, 302)
         self.assertTrue(self.experiment.participant_set.count() > 0)
 

@@ -40,9 +40,9 @@ def is_experimenter(user, experimenter=None):
 
 def is_participant(user):
     """
-    returns true if user.participant exists and is a Participant instance.
+    returns true iff user.participant exists, is active
     """
-    return hasattr(user, 'participant') and user.is_active and not user.participant.is_demo_participant
+    return hasattr(user, 'participant') and user.is_active
 
 
 def group_required(*permissions):

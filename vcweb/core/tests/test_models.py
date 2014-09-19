@@ -117,14 +117,17 @@ class ExperimentTest(BaseVcwebTest):
         self.assertEqual(len(e.groups), 2)
         self.assertEqual(len(e.participant_group_relationships), 10)
 
-    def test_clear_participants(self):
+    def test_clear(self):
         e = self.experiment
         e.activate()
         self.assertEqual(10, e.number_of_participants)
         self.assertEqual(2, len(e.groups))
-        e.clear_participants()
+        e.advance_to_next_round()
+        self.assertEqual(e.current_round_data.round_configuration, e.current_round)
+        e.clear()
         self.assertEqual(0, e.number_of_participants)
         self.assertEqual(0, len(e.groups))
+        self.assertFalse(e.is_active or e.is_archived)
 
     def test_deactivate(self):
         e = self.experiment

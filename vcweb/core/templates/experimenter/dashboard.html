@@ -95,10 +95,10 @@
         <button class='btn btn-default' data-content='Register participants for this experiment with fake email addresses by providing an email suffix and the number of participants.'
             data-bind='enable: $root.canRegisterParticipants($data), click: $root.gotoExperimentUrl.bind($data, "register-test-participants")'>
             <i class='fa fa-users'></i> test participants</button>
-        <button data-content='Remove all participants from the experiment, including any data they may have generated.'
-            data-action='clear-participants'
-            data-bind='enable: $root.canClearParticipants($data), click: $root.clearParticipants' class='btn btn-default'>
-            <i class='fa fa-trash-o'></i> clear all participants</button>
+        <button data-content='Clear out this experiment, removing all participants and data they may have generated.'
+            data-action='clear'
+            data-bind='enable: $root.canClearExperiment($data), click: $root.clearExperiment' class='btn btn-default'>
+            <i class='fa fa-trash-o'></i> clear out experiment</button>
         <button data-action='complete' data-content='Archive and mark this experiment as completed'
             data-bind='disable: isArchived, click: $root.archive' class='btn btn-default'><i class='fa fa-floppy-o'></i> archive</button>
         <button data-action='deactivate' data-content='Flag this experiment as inactive'
@@ -219,8 +219,8 @@
             };
 
             // FIXME: unify these, eliminate redundant code
-            model.clearParticipants = function(experimentModel, event) {
-                model.updateExperiment(experimentModel, "clear_participants");
+            model.clearExperiment = function(experimentModel, event) {
+                model.updateExperiment(experimentModel, "clear");
             };
             model.archive = function(experimentModel, event) {
                 $.post("/api/experiment/update", { experiment_id: experimentModel.pk(), action: "archive" })
@@ -238,7 +238,7 @@
                 $.get("/api/configuration/" + configurationModel.pk() + "/delete")
                  .done(deleteExperimentConfigurationCallback(configurationModel));
             };
-            model.canClearParticipants = function(experimentModel) {
+            model.canClearExperiment = function(experimentModel) {
                 return experimentModel.status() === 'INACTIVE' && experimentModel.participantCount() > 0;
             };
             model.canRegisterParticipants = function(experimentModel) {

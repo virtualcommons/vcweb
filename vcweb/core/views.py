@@ -163,7 +163,8 @@ def dashboard(request):
     """
     user = request.user
     if is_participant(user):
-        if not user.participant.is_profile_complete:
+        participant = user.participant
+        if participant.should_update_profile:
             # redirect to the profile page if this is a non-demo participant and their profile is incomplete
             return redirect('core:profile')
         elif user.participant.has_pending_invitations:
@@ -456,7 +457,6 @@ def account_profile(request):
     user = request.user
     if is_participant(user):
         form = ParticipantAccountForm(instance=user.participant)
-        # logger.debug(form)
     else:
         form = ExperimenterAccountForm(instance=user.experimenter)
     return render(request, 'accounts/profile.html', {'form': form})

@@ -1203,7 +1203,7 @@ class Experiment(models.Model):
             experiment_configuration__experiment=self, sequence_number=sequence_number)
 
     ALLOWED_ACTIONS = ('advance_to_next_round', 'end_round', 'start_round', 'move_to_previous_round', 'activate',
-                       'deactivate', 'complete', 'restart_round', 'restart', 'clone', 'clear_participants', 'archive')
+                       'deactivate', 'complete', 'restart_round', 'restart', 'clone', 'clear', 'archive')
 
     def invoke(self, action_name, experimenter=None):
         if action_name in Experiment.ALLOWED_ACTIONS and experimenter == self.experimenter:
@@ -1357,11 +1357,11 @@ class Experiment(models.Model):
         self.save()
 
     @transaction.atomic
-    def clear_participants(self):
+    def clear(self):
         if self.is_archived:
-            logger.debug("ignoring request to clear participants for archived experiment %s", self)
+            logger.debug("ignoring request to clear archived experiment %s", self)
             return
-        logger.debug("clearing all participants for experiment %s", self)
+        logger.debug("clearing all participants and data for experiment %s", self)
         ParticipantExperimentRelationship.objects.filter(experiment=self).delete()
         ParticipantGroupRelationship.objects.filter(group__experiment=self).delete()
         self.deactivate()
@@ -2277,14 +2277,14 @@ class Participant(CommonsUser):
     objects = PassThroughManager.for_queryset_class(ParticipantQuerySet)()
 
     @property
-    def is_profile_complete(self):
-        if self.can_receive_invitations:
-            return all([self.class_status, self.gender, self.favorite_sport, self.favorite_color, self.favorite_food,
-                        self.favorite_movie_genre, self.major])
-        else:
+    def should_update_profile(self):
+        if self.is_demo_participant or not self.can_receive_invitations:
             # incomplete profile doesn't matter if they're not set to receive
-            # experiment invitations
+            # experiment invitations or a demo participant
             return False
+        # otherwise return all the fields we want them to submit
+        return all([self.class_status, self.gender, self.favorite_sport, self.favorite_color, self.favorite_food,
+                        self.favorite_movie_genre, self.major])
 
     @property
     def is_demo_participant(self):
@@ -2292,6 +2292,10 @@ class Participant(CommonsUser):
 
     @property
     def has_pending_invitations(self):
+        """
+        Participants have pending invitations if there are any upcoming Invitations associated with them. Returns false
+        if there are upcoming registered signups to prevent already-signed-up-participant confusion.
+        """
         if ParticipantSignup.objects.upcoming(self).exists():
             return False
         else:
