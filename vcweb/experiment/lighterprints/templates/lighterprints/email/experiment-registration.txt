@@ -5,7 +5,7 @@ To access the experiment please visit {{experiment.full_participant_url}} and lo
 ID]({{SITE_URL}}/cas/login/) or using the following credentials:
 
     Email:          {{ participant.email }}
-    Password:       {{ password }} 
+    Password:       {{ password }}
 
 You can reset your password at any time by entering your email at
 

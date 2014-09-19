@@ -27,3 +27,5 @@ SECRET_KEY = 'CUSTOMIZE_ME'
 RAVEN_CONFIG = {
     'dsn': 'https://public:secret@vcweb.asu.edu/1',
 }
+
+SITE_URL = 'https://vcweb.asu.edu'

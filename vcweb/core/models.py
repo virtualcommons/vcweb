@@ -758,6 +758,10 @@ class Experiment(models.Model):
 
     @property
     def full_participant_url(self):
+        """
+        would typically use request.build_absolute_uri for this but we don't always have access to a request when
+        sending the email out (e.g., nightly cron-driven activation)
+        """
         return "%s%s" % (settings.SITE_URL, self.participant_url)
 
     @property

@@ -6,7 +6,7 @@ TEMPLATE_DEBUG = DEBUG
 
 USE_TZ = False
 
-SITE_URL = 'https://vcweb.asu.edu'
+SITE_URL = 'http://localhost:8000'
 
 BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 

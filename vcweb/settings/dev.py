@@ -23,6 +23,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # XXX: no i18n for the time being
 USE_I18N = False
 
+SITE_URL = 'https://vcweb-dev.asu.edu'
+
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'customize this dev secret key'
 
