@@ -36,7 +36,7 @@ def participate(request, experiment_id=None):
             'experiment': experiment,
             'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
             'participant_group_relationship': pgr,
-            'experimentModelJson': get_view_model_dict(experiment, pgr),
+            'experimentModelJson': dumps(get_view_model_dict(experiment, pgr)),
         })
     else:
         messages.info(
