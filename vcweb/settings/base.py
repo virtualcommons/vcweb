@@ -266,3 +266,5 @@ TEST_RUNNER = 'vcweb.core.tests.runner.VcwebTestRunner'
 # revision reporting support using dealer
 DEALER_TYPE = 'git'
 DEALER_SILENT = True
+DEALER_BACKENDS = ('git', 'mercurial')
+DEALER_PATH = BASE_DIR
