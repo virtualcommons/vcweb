@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 
-from django.contrib import auth
+from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
@@ -336,7 +336,12 @@ def mobile_participate(request, experiment_id=None):
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def participate(request, experiment_id=None):
-    participant = request.user.participant
+    user = request.user
+    if not is_participant(user):
+        logger.warning("%s trying to participate in experiment %s", user, experiment_id)
+        messages.warning(request, "You aren't a participant and cannot participate in experiment %d." % (user, experiment_id))
+        return redirect('core:dashboard')
+    participant = user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id,
                                    experiment_metadata=get_lighterprints_experiment_metadata())
     if experiment.is_active:
