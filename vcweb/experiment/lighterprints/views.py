@@ -338,7 +338,7 @@ def participate(request, experiment_id=None):
     user = request.user
     if not is_participant(user):
         logger.warning("%s trying to participate in experiment %s", user, experiment_id)
-        messages.warning(request, "You aren't a participant and cannot participate in experiment %d." % (user, experiment_id))
+        messages.warning(request, "You are not a participant and cannot participate in experiment %s." % experiment_id)
         return redirect('core:dashboard')
     participant = user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id,
