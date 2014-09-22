@@ -70,6 +70,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.tz",
     'django.contrib.messages.context_processors.messages',
     'vcweb.core.context_processors.common',
+    'dealer.contrib.django.context_processor',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -261,3 +262,7 @@ CAS_CUSTOM_FORBIDDEN = 'cas_error'
 DISABLED_TEST_LOGLEVEL = logging.WARNING
 
 TEST_RUNNER = 'vcweb.core.tests.runner.VcwebTestRunner'
+
+# revision reporting support using dealer
+DEALER_TYPE = 'git'
+DEALER_SILENT = True

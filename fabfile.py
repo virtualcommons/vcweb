@@ -51,8 +51,8 @@ env.branches = {
 }
 env.vcs = 'git'
 env.vcs_commands = {
-    'hg': 'hg pull && hg up -C %(branch)s && hg id -n > build-id.txt',
-    'git': 'export GIT_WORK_TREE=%(deploy_dir)s && git checkout -f %(branch)s && git pull && git describe > build-id.txt',
+    'hg': 'hg pull && hg up -C %(branch)s',
+    'git': 'export GIT_WORK_TREE=%(deploy_dir)s && git checkout -f %(branch)s && git pull',
 }
 
 # django integration for access to settings, etc.

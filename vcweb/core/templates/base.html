@@ -122,7 +122,7 @@
             <li><a href='http://csid.asu.edu'>Center for the Study of Institutional Diversity</a></li>
             <li><a href='http://shesc.asu.edu'>School of Human Evolution &amp; Social Change</a></li>
             <li><a href='http://www.azregents.edu/'>&copy; 2011-{% now "Y" %} Arizona Board of Regents</a></li>
-            <li>build: {% build_id %}</li>
+            <li>build: {{ TAG }}</li>
         </ul>
         <a style='margin-top: 15px;' class='visible-xs pull-right' href='{{home}}'><img class='logo' src='{% static "images/vcweb-logo.png" %}' width='30' height='23' alt='vcweb logo'/></a>
         <ul style='margin-top: 5px;' class='list-unstyled visible-xs'>
@@ -144,7 +144,10 @@
     <script src='{% static "js/ko/knockout.mapping.min.js" %}'></script>
     <script src='{% static "js/common.js" %}'></script>
     <script src="//cdn.ravenjs.com/{{ravenjs_version}}/jquery,native/raven.min.js"></script>
-    <script>Raven.config('{% sentry_public_dsn %}').install();</script>
+    <script>
+        var options = { tags: { git_commit: '{{ REVISION }}'} }
+        Raven.config('{% sentry_public_dsn %}', options).install();
+    </script>
     {% block javascript %}
     {% endblock %}
 </body>
