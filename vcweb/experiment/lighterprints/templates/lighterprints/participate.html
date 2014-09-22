@@ -497,17 +497,17 @@ $(function() {
         viewModel.showActivityPerformedModal();
         var id = challengeModel.pk();
         var formData = $('#challengeForm' + id).serialize();
-        // console.debug("form data: " + formData);
         $.post('/lighterprints/api/do-activity', formData, function(data) {
             console.debug(data);
             if (data.success) {
-                ko.mapping.fromJSON(data.viewModel, viewModel);
+                ko.mapping.fromJS(data.viewModel, viewModel);
                 viewModel.lastPerformedActivity(challengeModel);
                 viewModel.hideActivityPerformedModal();
                 viewModel.initializeChart();
             }
             else {
-                console.debug("ERROR: " + data.response);
+                console.warn("ERROR: ");
+                console.warn(data.response);
                 $('#activityPerformedModal').modal('hide');
                 viewModel.errorMessage(data.response);
                 $('#activityUnavailableModal').modal();
