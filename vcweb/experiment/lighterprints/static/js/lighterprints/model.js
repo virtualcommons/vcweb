@@ -1,6 +1,6 @@
-function LighterFootprintsModel(modelJson) {
+function LighterFootprintsModel(data) {
     var self = this;
-    var model = ko.mapping.fromJS(modelJson);
+    var model = ko.mapping.fromJS(data);
     function hasStatus(activity, status) {
         return activity.status() === status;
     }
@@ -42,9 +42,6 @@ function LighterFootprintsModel(modelJson) {
         model.hoursLeft(hoursLeft);
         model.minutesLeft(minutesLeft);
     };
-    setInterval(model.minuteTick, 1000*60);
-    // FIXME: hacky, figure out if there is a way to pass the observable in directly from the model object we get in
-    // performActivity
     model.lastPerformedActivity = ko.observable();
     model.errorMessage = ko.observable();
     model.hasGroupActivity = ko.computed(function() {
@@ -53,14 +50,30 @@ function LighterFootprintsModel(modelJson) {
     model.groupActivityTemplate = function(groupActivity) {
         return groupActivity.parameter_name();
     };
+    model.isChatMessage = function(groupActivity) {
+        return groupActivity.parameter_name().indexOf("chat_message") === 0;
+    }
+    model.isComment = function(groupActivity) {
+        return groupActivity.parameter_name().indexOf("comment") === 0;
+    }
     model.teamActivity = ko.computed(function() {
-        return ko.utils.arrayFilter(model.groupActivity(), function(groupActivity) {
-            return groupActivity.parameter_name().indexOf("chat_message") != 0;
-        });
+        // My Group tab excludes all chat messages from team activity display
+        return ko.utils.arrayFilter(model.groupActivity(),
+                                    function (groupActivity) { return ! model.isChatMessage(groupActivity); });
     });
+    model.sidebarGroupActivities = ko.computed(function() {
+        var endIndex = model.hasLeaderboard() ? 6 : 12;
+        return ko.utils.arrayFilter(model.groupActivity(), function (groupActivity) {
+            if (model.isComment(groupActivity)) {
+                return groupActivity.participant_group_id() != model.participantGroupId();
+            }
+            return true;
+        }).slice(0, endIndex);
+    });
+
     model.chatMessages = ko.computed(function() {
-            return ko.utils.arrayFilter(model.groupActivity(), function(groupActivity) { return groupActivity.parameter_name().indexOf("chat_message") === 0 });
-        });
+        return ko.utils.arrayFilter(model.groupActivity(), model.isChatMessage);
+    });
     model.hasChatMessages = ko.computed(function() {
         return model.chatMessages().length > 0;
     });
@@ -68,7 +81,7 @@ function LighterFootprintsModel(modelJson) {
         var formData = $('#chat-form').serialize();
         $.post('/lighterprints/api/message', formData, function(response) {
                 if (response.success) {
-                    console.debug("successful post - updated view model: ");
+                    console.debug("successful post - updating view model");
                     ko.mapping.fromJS(response.viewModel, model);
                 }
                 else {
@@ -83,6 +96,7 @@ function LighterFootprintsModel(modelJson) {
         $('.comment-popover').popover('hide');
         $.post('/lighterprints/api/comment', formData, function(response) {
             if (response.success) {
+                console.debug("Commented successfully response");
                 ko.mapping.fromJS(response.viewModel, model);
             }
             else {
@@ -107,7 +121,6 @@ function LighterFootprintsModel(modelJson) {
                 }
             });
     };
-
     model.lockedChallenges = ko.computed(function() {
             return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.status() === 'locked' });
         });
@@ -123,6 +136,7 @@ function LighterFootprintsModel(modelJson) {
     model.closeCommentPopover = function(targetModel) {
         $('.comment-popover').popover('hide');
     };
+    setInterval(model.minuteTick, 1000*60);
     return model;
 }
 ko.bindingHandlers.popover = {

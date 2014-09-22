@@ -6,16 +6,14 @@ from .views import (
 )
 
 urlpatterns = [
-    url(r'^(?P<experiment_id>\d+)/participate/$',
-        participate, name='participate'),
-    url(r'^(?P<pk>\d+)/download-payment-data/$',
-        download_payment_data, name='download_payment_data'),
+    url(r'^(?P<experiment_id>\d+)/participate/$', participate, name='participate'),
+    url(r'^(?P<pk>\d+)/download-payment-data/$', download_payment_data, name='download_payment_data'),
     url(r'^api/view-model/(?P<participant_group_id>\d+)?', get_view_model),
-    url(r'^api/do-activity$', perform_activity),
-    url(r'^api/message', post_chat_message),
-    url(r'^api/comment', post_comment),
-    url(r'^api/like', like),
-    url(r'^api/checkin', checkin),
+    url(r'^api/perform-activity$', perform_activity, name='perform_activity'),
+    url(r'^api/message', post_chat_message, name='post_chat'),
+    url(r'^api/comment', post_comment, name='post_comment'),
+    url(r'^api/like', like, name='like'),
+    url(r'^api/checkin', checkin, name='checkin'),
     # FIXME: hacky, replace mobile login with core api login instead?
     url(r'^mobile/login?$', mobile_login, name='mobile_login'),
     url(r'^mobile/?$', mobile_participate, name='mobile_participate'),

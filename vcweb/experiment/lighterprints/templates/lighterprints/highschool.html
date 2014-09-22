@@ -419,7 +419,7 @@ $(function() {
         var id = challengeModel.pk();
         var formData = $('#challengeForm' + id).serialize();
         // console.debug("form data: " + formData);
-        $.post('/lighterprints/api/do-activity', formData, function(data) {
+        $.post("{% url 'lighterprints:perform_activity' %}", formData, function(data) {
             console.debug(data);
             if (data.success) {
                 ko.mapping.fromJSON(data.viewModel, viewModel);

@@ -23,61 +23,56 @@
         <script>
             $(document).on('pagecreate', function(event){
                 var viewModelData = $.parseJSON("{{view_model_json|escapejs}}");
-		var viewModel = new LighterFootprintsModel(viewModelData);
-		viewModel.perform1 = function(challengeModel){
-       			if (!challengeModel.availableNow()) {
-		            console.debug("tried to perform an activity that's not available right now");
-		            console.debug(challengeModel);
-		            return;
-		        }
-		        var id = challengeModel.pk();
-			var formData = {
-			participant_group_id: viewModel.participantGroupId(), activity_id:id
-			};
-        		$.post('/lighterprints/api/do-activity', formData, function(data){
-		        	if (data.success) {
-					console.debug(data);
-					$("#popupDialog1").popup('open');
-                			ko.mapping.fromJSON(data.viewModel, viewModel);
-					viewModel.lastPerformedActivity(challengeModel);
-					console.debug('refreshing lists');
-					$('#challengesList1').listview('refresh');
-					$('#teamList1').listview('refresh');
-					$('#teamActivityList1').listview('refresh');
-            			}
-				else {
-        	        		console.debug("ERROR: " + data.message);
-				}
-			})
-		};
-		viewModel.perform2 = function(challengeModel){
-       			if (!challengeModel.availableNow()) {
-		            console.debug("tried to perform an activity that's not available right now");
-		            console.debug(challengeModel);
-		            return;
-		        }
-		        var id = challengeModel.pk();
-			var formData = {
-			participant_group_id: viewModel.participantGroupId(), activity_id:id
-			};
-        		$.post('/lighterprints/api/do-activity', formData, function(data){
-		        	if (data.success) {
-					console.debug(data);
-					$("#popupDialog3").popup('open');
-                			ko.mapping.fromJSON(data.viewModel, viewModel);
-					viewModel.lastPerformedActivity(challengeModel);
-					console.debug('refreshing lists');
-					$('#challengesList3').listview('refresh');
-					$('#teamList3').listview('refresh');
-					$('#teamActivityList3').listview('refresh');
-            			}
-				else {
-        	        		console.debug("ERROR: " + data.message);
-				}
-			})		
-		};
-
-		viewModel.send = function(){
+                var viewModel = new LighterFootprintsModel(viewModelData);
+                viewModel.perform1 = function(challengeModel) {
+                    if (!challengeModel.availableNow()) {
+                        console.debug("tried to perform an activity that's not available right now");
+                        console.debug(challengeModel);
+                        return;
+                    }
+                    var id = challengeModel.pk();
+                    var formData = { participant_group_id: viewModel.participantGroupId(), activity_id:id };
+                    $.post("{% url 'lighterprints:perform_activity' %}", formData, function(data) {
+                        if (data.success) {
+                            console.debug(data);
+                            $("#popupDialog1").popup('open');
+                                    ko.mapping.fromJSON(data.viewModel, viewModel);
+                            viewModel.lastPerformedActivity(challengeModel);
+                            console.debug('refreshing lists');
+                            $('#challengesList1').listview('refresh');
+                            $('#teamList1').listview('refresh');
+                            $('#teamActivityList1').listview('refresh');
+                        }
+                        else {
+                            console.debug("ERROR: " + data.message);
+                            }
+                    });
+                };
+                viewModel.perform2 = function(challengeModel) {
+                    if (!challengeModel.availableNow()) {
+                        console.debug("tried to perform an activity that's not available right now");
+                        console.debug(challengeModel);
+                        return;
+                    }
+                    var id = challengeModel.pk();
+                    var formData = { participant_group_id: viewModel.participantGroupId(), activity_id:id };
+                    $.post("{% url 'lighterprints:perform_activity' %}", formData, function(data) {
+                        if (data.success) {
+                            console.debug(data);
+                            $("#popupDialog3").popup('open');
+                                    ko.mapping.fromJSON(data.viewModel, viewModel);
+                            viewModel.lastPerformedActivity(challengeModel);
+                            console.debug('refreshing lists');
+                            $('#challengesList3').listview('refresh');
+                            $('#teamList3').listview('refresh');
+                            $('#teamActivityList3').listview('refresh');
+                        }
+                        else {
+                            console.debug("ERROR: " + data.message);
+                        }
+                    });
+                };
+                viewModel.send = function() {
 	                if ($('#chatText').val()) {
                         var formData = {participant_group_id: viewModel.participantGroupId(), message:$('#chatText').val()};
                         $.post('/lighterprints/api/message', formData, function(response){

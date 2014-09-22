@@ -403,10 +403,10 @@ class GroupActivity(object):
             data_values = data_values[:self.limit]
         for prdv in data_values:
             parameter_name = prdv.parameter.name
-            if parameter_name in ('chat_message', 'comment', 'like'):
-                # FIXME: hack to convert django orm attrname to match parameter.name ala comment and like
-                attrname = 'chatmessage' if parameter_name == 'chat_message' else parameter_name
-                data = getattr(prdv, attrname).to_dict()
+            if parameter_name == 'chat_message':
+                data = prdv.chatmessage.to_dict()
+            elif parameter_name in ('comment', 'like'):
+                data = getattr(prdv, parameter_name).to_dict()
             elif parameter_name == 'activity_performed':
                 activity = prdv.cached_value
                 data = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))

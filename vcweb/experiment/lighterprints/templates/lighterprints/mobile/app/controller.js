@@ -49,7 +49,7 @@ function LighterFootprintsModel(modelJson){
         }
         var id = challengeModel.pk();
         var formData = $('#challengeForm' + id).serialize();
-        $.post('http://vcweb.asu.edu/lighterprints/api/do-activity', formData, function(data){
+        $.post('//lighterprints/api/perform-activity', formData, function(data){
             if (data.success) {
 				console.debug(data);
                 ko.mapping.fromJSON(data.viewModel, model);
@@ -66,7 +66,7 @@ function LighterFootprintsModel(modelJson){
 }
 
 function initKOModel(response){
-    var groupURL = "http://vcweb.asu.edu/lighterprints/api/view-model/" + participant_group_id;
+    var groupURL = "//lighterprints/api/view-model/" + participant_group_id;
     $.ajax({
         type: "GET",
         url: groupURL,
@@ -92,7 +92,7 @@ $(document).live('pageinit', function(event){
         var formData = $("#loginForm").serialize();
         $.ajax({
             type: "POST",
-            url: "http://vcweb.asu.edu/lighterprints/api/login",
+            url: "//lighterprints/api/login",
             cache: false,
             data: formData,
             dataType: "json",
@@ -116,7 +116,7 @@ $(document).live('pageinit', function(event){
         event.preventDefault();
 
         var formData = $('#chat-form').serialize();
-        $.post('http://vcweb.asu.edu/lighterprints/api/message', formData, function(response) {
+        $.post('//lighterprints/api/message', formData, function(response) {
                 if (response.success) {
                     console.debug("successful post - updated view model: ");
                     ko.mapping.fromJS(response.viewModel, globalViewModel);

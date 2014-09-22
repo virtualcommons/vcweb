@@ -1,6 +1,7 @@
 import json
 import logging
 
+from django.core.cache import cache
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.core.models import ParticipantRoundDataValue
 from .models import (Activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter,
@@ -16,6 +17,7 @@ class BaseTest(BaseVcwebTest):
 
     def setUp(self, treatment_type='LEADERBOARD', **kwargs):
         super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
+        cache.clear()
         ec = self.experiment_configuration
         ec.has_daily_rounds = True
         ec.set_parameter_value(parameter=get_treatment_type_parameter(), string_value=treatment_type)
@@ -45,7 +47,7 @@ class LevelBasedTest(BaseTest):
                 expected_success = activity.is_available_for(participant_group_relationship, rd)
                 if expected_success:
                     performed_activities.add(activity)
-                response = self.post('/lighterprints/api/do-activity', {
+                response = self.post(self.reverse('lighterprints:perform_activity'), {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
                 }, follow=True)
@@ -166,7 +168,7 @@ class ActivityTest(LevelBasedTest):
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant,
                              activity)
                 expected_success = activity.is_available_for(participant_group_relationship, rd)
-                response = self.post('/lighterprints/api/do-activity', {
+                response = self.post(self.reverse('lighterprints:perform_activity'), {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
                 })
@@ -175,7 +177,7 @@ class ActivityTest(LevelBasedTest):
                 self.assertEqual(expected_success, json_object['success'])
                 # trying to do the same activity again should result in an
                 # error response
-                response = self.post('/lighterprints/api/do-activity', {
+                response = self.post(self.reverse('lighterprints:perform_activity'), {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
                 })
@@ -188,7 +190,7 @@ class ActivityTest(LevelBasedTest):
             text = "This is a harrowing comment"
             for activity_id in performed_activity_ids:
                 logger.debug("posting comment on id %s", activity_id)
-                response = self.post('/lighterprints/api/comment', {
+                response = self.post(self.reverse('lighterprints:post_comment'), {
                     'participant_group_id': participant_group_relationship.pk,
                     'message': text,
                     'target_id': activity_id
@@ -207,9 +209,11 @@ class GroupScoreTest(LevelBasedTest):
         performed_activities = self.perform_activities()
         # expected average points per person is the straight sum of all activities in the performed activities because
         # every participant in the group has performed them
+        logger.error("performed activities: %s", performed_activities)
         expected_avg_points_per_person = sum([activity.points for activity in performed_activities])
         gs = e.groups
         group_scores = GroupScores(e, groups=gs)
+        logger.error(group_scores.scores_dict)
         for group in gs:
             self.assertEqual(group_scores.average_daily_points(group), expected_avg_points_per_person)
             self.assertEqual(group_scores.total_daily_points(group), expected_avg_points_per_person * group.size)

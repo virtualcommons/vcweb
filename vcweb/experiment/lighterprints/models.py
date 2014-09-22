@@ -211,7 +211,8 @@ class Activity(MPTTModel):
         return cv
 
     def __unicode__(self):
-        return unicode(self.pk)
+        # return unicode(self.pk)
+        return unicode(self.label)
         # return u'%s : %s' % (self.label, self.points)
 
     class Meta:

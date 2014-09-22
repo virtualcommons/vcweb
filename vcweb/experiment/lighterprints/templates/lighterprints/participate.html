@@ -342,7 +342,7 @@
         <div data-bind='template: { name: "no-group-activity-template" }'></div>
     </div>
     <table class='table group-activity'>
-        <tbody data-bind='template: { name: groupActivityTemplate, foreach: groupActivity.slice(0, 6) }'>
+        <tbody data-bind='template: { name: groupActivityTemplate, foreach: sidebarGroupActivities }'>
         </tbody>
     </table>
 </div>
@@ -497,8 +497,7 @@ $(function() {
         viewModel.showActivityPerformedModal();
         var id = challengeModel.pk();
         var formData = $('#challengeForm' + id).serialize();
-        $.post('/lighterprints/api/do-activity', formData, function(data) {
-            console.debug(data);
+        $.post("{% url 'lighterprints:perform_activity' %}", formData, function(data) {
             if (data.success) {
                 ko.mapping.fromJS(data.viewModel, viewModel);
                 viewModel.lastPerformedActivity(challengeModel);
@@ -506,8 +505,7 @@ $(function() {
                 viewModel.initializeChart();
             }
             else {
-                console.warn("ERROR: ");
-                console.warn(data.response);
+                Raven.captureMessage("Unable to perform activity: " + formData);
                 $('#activityPerformedModal').modal('hide');
                 viewModel.errorMessage(data.response);
                 $('#activityUnavailableModal').modal();
@@ -560,7 +558,7 @@ $(function() {
 </script>
 <!-- group activity templates, keyed by parameter name -->
 <script type='text/html' id='comment'>
-    <tr data-bind='if: $root.participantGroupId() != participant_group_id()'>
+    <tr data-bind='ifnot: $root.participantGroupId() == participant_group_id()'>
         <td class='group-activity-icon'><i class='fa fa-comment lighterprints-blue'></i></td>
         <td class='group-activity'>
             Participant <strong data-bind='text: participant_number'></strong>

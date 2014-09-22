@@ -2602,10 +2602,10 @@ class ParticipantRoundDataValue(ParameterizedValue):
             data['participant_email'] = pgr.participant.email
         tdv = self.target_data_value
         if tdv is not None:
-            data.update({
-                'target_data_value': unicode(tdv.cached_value if cacheable else tdv.value),
-                'target_parameter_name': tdv.parameter.name
-            })
+            data.update(
+                target_data_value=unicode(tdv.cached_value if cacheable else tdv.value),
+                target_parameter_name=tdv.parameter.name
+            )
         return data
 
     def __unicode__(self):
@@ -2708,9 +2708,7 @@ class Comment(ParticipantRoundDataValue):
         return self.string_value
 
     def to_dict(self, cacheable=True, include_email=False):
-        data = super(Comment, self).to_dict(cacheable=cacheable)
-        data['message'] = self.message
-        return data
+        return super(Comment, self).to_dict(cacheable=cacheable)
 
     class Meta:
         ordering = ['-date_created']
