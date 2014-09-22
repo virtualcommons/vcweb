@@ -223,7 +223,7 @@ def cas_asu_registration_submit(request):
 @login_required
 def get_dashboard_view_model(request):
     return JsonResponse({
-        'success': True, 
+        'success': True,
         'dashboardViewModelJson': create_dashboard_view_model(request.user).to_json()
     })
 
@@ -1122,98 +1122,78 @@ def reset_password(email, from_email='vcweb@asu.edu', template='registration/pas
 
 @group_required(PermissionGroup.experimenter)
 def update_experiment_param_value(request, pk):
-    success = True
-    request_type = request.POST['request_type']
+    # extract request type
+    request_type = request.POST.get('request_type')
 
     # delete Request
-    if request_type == 'delete':
-        if pk:
+    if request_type == 'delete' and pk:
+        try:
             ExperimentParameterValue.objects.get(pk=pk).delete()
             return JsonResponse(SUCCESS_DICT)
-        else:
-            success = False
+        except:
+            return JsonResponse(FAILURE_DICT)
     # create Request
     elif request_type == 'create':
         form = ExperimentParameterValueForm(request.POST or None)
         if form.is_valid():
             epv = form.save(commit=False)
-            exp_config_pk = request.POST['experiment_configuration']
+            exp_config_pk = request.POST.get('experiment_configuration')
             epv.experiment_configuration = ExperimentConfiguration.objects.get(
                 pk=exp_config_pk)
             epv.save()
-        else:
-            success = False
-    # update Request
-    elif request_type == 'update':
+            return JsonResponse({'success': True, 'experiment_param': epv.to_dict()})
+   # update Request
+    elif request_type == 'update' and pk:
         epv = ExperimentParameterValue.objects.get(pk=pk)
         form = ExperimentParameterValueForm(request.POST or None, instance=epv)
         if form.is_valid():
             form.save()
-        else:
-            success = False
+            return JsonResponse({'success': True, 'experiment_param': epv.to_dict()})
 
-    if success:
-        return JsonResponse({
-            'success': True,
-            'experiment_param': epv.to_dict()
-        })
-    else:
-        return JsonResponse({
-            'success': False,
-            'message': form.errors
-        })
+    return JsonResponse({
+        'success': False,
+        'message': form.errors
+    })
 
 
 @group_required(PermissionGroup.experimenter)
 def update_round_param_value(request, pk):
-    """
-    FIXME: needs refactoring
-    """
-    success = True
-    request_type = request.POST['request_type']
+    # extract request type
+    request_type = request.POST.get('request_type')
+
     # delete Request
-    if request_type == 'delete':
-        if pk:
+    if request_type == 'delete' and pk:
+        try:
             RoundParameterValue.objects.get(pk=pk).delete()
             return JsonResponse(SUCCESS_DICT)
-        else:
-            success = False
+        except:
+            return JsonResponse(FAILURE_DICT)
     # Create Request
     elif request_type == 'create':
         form = RoundParameterValueForm(request.POST or None)
         if form.is_valid():
             rpv = form.save(commit=False)
-            round_config_pk = request.POST["round_configuration"]
+            round_config_pk = request.POST.get("round_configuration")
             try:
                 round_config = RoundConfiguration.objects.get(
                     pk=round_config_pk)
                 rpv.round_configuration = round_config
                 rpv.save()
-            except ObjectDoesNotExist:
-                success = False
-                logger.debug(
-                    "Round Configuration with provided pk does not exist")
-        else:
-            success = False
+                return JsonResponse({'success': True, 'round_param': rpv.to_dict()})
+            except RoundConfiguration.DoesNotExist:
+                logger.debug("Round Configuration with provided pk does not exist")
     # Update Request
-    elif request_type == "update":
+    elif request_type == 'update' and pk:
         rpv = RoundParameterValue.objects.get(pk=pk)
         form = RoundParameterValueForm(request.POST or None, instance=rpv)
-        if success:
+        if form.is_valid():
             form.save()
-        else:
-            success = False
+            return JsonResponse({'success': True, 'round_param': rpv.to_dict()})
 
-    if success:
-        return JsonResponse({
-            'success': True,
-            'round_param': rpv.to_dict()
-        })
-    else:
-        return JsonResponse({
-            'success': False,
-            'message': form.errors
-        })
+    return JsonResponse({
+        'success': False,
+        'message': form.errors
+    })
 
 
 def sort_round_configurations(old_sequence_number, new_sequence_number, exp_config_pk):
@@ -1244,78 +1224,42 @@ def sort_round_configurations(old_sequence_number, new_sequence_number, exp_conf
 
 @group_required(PermissionGroup.experimenter)
 def update_round_configuration(request, pk):
-    success = True
-
-    request_type = request.POST['request_type']
+    # extract request type
+    request_type = request.POST.get('request_type')
 
     # delete Request
-    if request_type == 'delete':
-        if pk:
+    if request_type == 'delete' and pk:
+        try:
             RoundConfiguration.objects.get(pk=pk).delete()
             return JsonResponse(SUCCESS_DICT)
-        else:
-            success = False
-
+        except:
+            return JsonResponse(FAILURE_DICT)
     # Create Request
     elif request_type == 'create':
-        # rc = RoundConfiguration()
         form = RoundConfigurationForm(request.POST or None)
         if form.is_valid():
             rc = form.save(commit=False)
-            exp_config_pk = request.POST['experiment_config_pk']
+            exp_config_pk = request.POST.get('experiment_config_pk')
             ec = ExperimentConfiguration.objects.get(pk=exp_config_pk)
             rc.experiment_configuration = ec
-
             if form.cleaned_data.get('sequence_number') != rc.sequence_number:
                 sort_round_configurations(rc.sequence_number, form.cleaned_data.get('sequence_number'),
                                           rc.experiment_configuration.pk)
 
             rc.save()
-        else:
-            success = False
+            return JsonResponse({ 'success': True, 'round_config': rc.to_dict() })
+
     # Update request
-    elif request_type == "update":
+    elif request_type == "update" and pk:
         rc = RoundConfiguration.objects.get(pk=pk)
         form = RoundConfigurationForm(request.POST or None, instance=rc)
         if form.is_valid():
             form.save(commit=False)
-
             if form.cleaned_data.get('sequence_number') != rc.sequence_number:
                 sort_round_configurations(rc.sequence_number, form.cleaned_data.get('sequence_number'),
                                           rc.experiment_configuration.pk)
             rc.save()
-        else:
-            success = False
-
-    if success:
-        return JsonResponse({
-            'success': True,
-            'round_config': rc.to_dict()
-        })
-    else:
-        return JsonResponse({
-            'success': False,
-            'message': form.errors
-        })
-
-
-@group_required(PermissionGroup.experimenter)
-@ownership_required(ExperimentConfiguration)
-def update_experiment_configuration(request, pk):
-
-    try:
-        ec = ExperimentConfiguration.objects.get(pk=pk)
-    except ObjectDoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': "Experiment configuration with pk %d did not exist" % pk,
-        })
-
-    form = ExperimentConfigurationForm(request.POST or None, instance=ec)
-
-    if form.is_valid():
-        form.save()
-        return JsonResponse(SUCCESS_DICT)
+            return JsonResponse({ 'success': True, 'round_config': rc.to_dict() })
 
     return JsonResponse({
         'success': False,
@@ -1325,10 +1269,28 @@ def update_experiment_configuration(request, pk):
 
 @group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentConfiguration)
-def delete_experiment_configuration(request, pk):
+def update_experiment_configuration(request, pk):
     try:
         ec = ExperimentConfiguration.objects.get(pk=pk)
-        ec.delete()
+        form = ExperimentConfigurationForm(request.POST or None, instance=ec)
+        if form.is_valid():
+            form.save()
+            return JsonResponse(SUCCESS_DICT)
+        else:
+            return JsonResponse({ 'success': False, 'message': form.errors })
+
+    except ExperimentConfiguration.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': "Experiment configuration with pk %d did not exist" % pk,
+        })
+
+
+@group_required(PermissionGroup.experimenter)
+@ownership_required(ExperimentConfiguration)
+def delete_experiment_configuration(request, pk):
+    try:
+        ExperimentConfiguration.objects.get(pk=pk).delete()
     except Exception as e:
         return JsonResponse({
             'success': False,
