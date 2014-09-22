@@ -8,9 +8,8 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 import unicodecsv
 
-from vcweb.core.decorators import group_required, ownership_required
-from vcweb.core.forms import (
-    ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
+from vcweb.core.decorators import group_required, ownership_required, is_participant
+from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship,
                                ParticipantRoundDataValue, Like, PermissionGroup)
