@@ -72,8 +72,7 @@ function LighterFootprintsModel(modelJson) {
                     ko.mapping.fromJS(response.viewModel, model);
                 }
                 else {
-                    console.debug("unable to post message to server");
-                    console.debug(response);
+                    Raven.captureMessage("Unable to post chat message: " + formData);
                 }
             });
         $('#chatText').val('');
@@ -84,7 +83,10 @@ function LighterFootprintsModel(modelJson) {
         $('.comment-popover').popover('hide');
         $.post('/lighterprints/api/comment', formData, function(response) {
             if (response.success) {
-                ko.mapping.fromJSON(response.viewModel, model);
+                ko.mapping.fromJS(response.viewModel, model);
+            }
+            else {
+                Raven.captureMessage("Unable to post comment: " + formData);
             }
         });
     };
@@ -96,8 +98,13 @@ function LighterFootprintsModel(modelJson) {
         }
         targetModel.liked(true);
         $.post('/lighterprints/api/like', {participant_group_id: model.participantGroupId(), target_id: targetModel.pk()},
-            function(data) {
-                targetModel.liked(data.success);
+            function(response) {
+                if (response.success) {
+                    targetModel.liked(true);
+                }
+                else {
+                    Raven.captureMessage(model.participantGroupId() + " unable to like " + targetModel.pk());
+                }
             });
     };
 
