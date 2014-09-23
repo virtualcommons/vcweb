@@ -24,13 +24,13 @@ env.roledefs = {
 env.python = 'python'
 env.project_name = 'vcweb'
 env.project_conf = 'vcweb.settings'
-env.deploy_user = 'apache'
+env.deploy_user = 'nginx'
 env.deploy_group = 'vcweb'
 env.database = 'default'
 env.deploy_parent_dir = '/opt/'
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
 env.git_url = 'https://github.com/virtualcommons/vcweb.git'
-env.webserver = 'httpd'
+env.webserver = 'nginx'
 # FIXME: use django conf INSTALLED_APPS to introspect instead, similar to
 # experiment_urls
 env.docs_path = os.path.join(env.project_path, 'docs')
