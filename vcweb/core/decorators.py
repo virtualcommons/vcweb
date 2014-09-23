@@ -15,9 +15,9 @@ def log_signal_errors(signal_sender):
         results = signal_sender(*args, **kwargs)
         if results:
             for receiver, response in results:
-                if response is not None:
-                    logger.error(
-                        "errors while dispatching to %s: %s", receiver, response)
+                if isinstance(response, Exception):
+                    logger.error("errors while dispatching to %s", receiver)
+                    logger.exception(response)
     return error_checker
 
 
