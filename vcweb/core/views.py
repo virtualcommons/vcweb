@@ -1158,7 +1158,15 @@ def update_experiment_param_value(request, pk):
 
 @group_required(PermissionGroup.experimenter)
 def update_round_param_value(request, pk):
-    # extract request type
+    """ FIXME: I'd like to see this method structured more like this, see also changes to RoundParameterValueForm
+    form = RoundParameterValueForm(request.POST or None, pk=pk)
+    if form.is_valid():
+        rpv = form.save()
+        return JsonResponse({'success': True, 'round_param': rpv.to_dict() })
+    return JsonResponse({'success': False, 'errors': form.errors })
+    """
+
+
     request_type = request.POST.get('request_type')
 
     # delete Request
