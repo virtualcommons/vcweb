@@ -850,7 +850,7 @@ def update_experiment(request):
             logger.debug("invoking action %s: %s", action, str(response_tuples))
             return JsonResponse({
                 'success': True,
-                'experiment': experiment.to_dict()
+                'experiment': experiment.to_dict(include_round_data=True)
             })
         except AttributeError as e:
             logger.warning(

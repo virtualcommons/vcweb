@@ -942,7 +942,7 @@ class Experiment(models.Model):
             if emails is None:
                 logger.warning("No users or emails supplied, aborting.")
                 return
-            participants_group = AuthGroup.objects.get(name=PermissionGroup.participant.value)
+            participants_group = PermissionGroup.participant.get_django_group()
             for email_line in emails:
                 if not email_line:
                     logger.debug(
@@ -1040,7 +1040,8 @@ class Experiment(models.Model):
                 "This experiment %s already has %d participants - aborting", self, number_of_participants)
             return
         users = []
-        demo_participants_group = AuthGroup.objects.get(name=PermissionGroup.demo_participant.value)
+
+        demo_participants_group = PermissionGroup.demo_participant.get_django_group()
 
         for i in xrange(1, count + 1):
             email_address = u's%d%s@%s' % (i, username_suffix, email_suffix)
