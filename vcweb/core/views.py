@@ -34,7 +34,9 @@ from .models import (User, ChatMessage, Participant, ParticipantExperimentRelati
                      RoundConfiguration, RoundParameterValue, ParticipantSignup, get_model_fields, PermissionGroup)
 
 logger = logging.getLogger(__name__)
+
 mimetypes.init()
+
 SUCCESS_DICT = {'success': True}
 FAILURE_DICT = {'success': False}
 
