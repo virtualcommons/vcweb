@@ -141,12 +141,18 @@ ko.bindingHandlers.popover = {
         var popoverId = "comment-popover" + attribute.id;
         $(element).attr('id', popoverId);
         $(element).click(function() {
+            // Check state before we toggle it
+            var popoverPrevStateVisible = $('#' + attribute.id+'-popover').size() == 0 ? false: true;
+
             $(this).popover('toggle');
             var thePopover = document.getElementById(attribute.id+"-popover");
             // FIXME: only apply bindings if we haven't done so once on this popover, otherwise clicking repeatedly on
             // the popover causes KO errors to be thrown
             childBindingContext = bindingContext.createChildContext(viewModel);
-            ko.applyBindingsToDescendants(childBindingContext, thePopover);
+            // if the popover was visible, it should now be hidden, so bind the view model to our dom ID
+            if(!popoverPrevStateVisible) {
+                ko.applyBindingsToDescendants(childBindingContext, thePopover);
+            }
         });
         return { controlsDescendantBindings: true };
     },
