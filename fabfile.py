@@ -260,9 +260,9 @@ def deploy(vcs_branch_dict):
             _virtualenv(run, '%(python)s manage.py installtasks' % env)
             sudo_chain(
                 'chmod -R ug+rw .',
-                'find %(static_root)s -type d -exec chmod a+x {} \;' % env,
-                'find %(static_root)s -type f -exec chmod a+r {} \;' % env,
+                'find %(static_root)s %(virtualenv_path)s -type d -exec chmod a+x {} \;' % env,
+                'find %(static_root)s %(virtualenv_path)s -type f -exec chmod a+r {} \;' % env,
                 'find . -type d -exec chmod ug+x {} \;',
-                'chown -R %(deploy_user)s:%(deploy_group)s . %(static_root)s' % env,
+                'chown -R %(deploy_user)s:%(deploy_group)s . %(static_root)s %(virtualenv_path)s' % env,
                 _restart_command(),
                 pty=True)
