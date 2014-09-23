@@ -25,6 +25,8 @@ import re
 
 logger = logging.getLogger(__name__)
 
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+
 
 def _activity_status_sort_key(activity_dict):
     s = activity_dict['status']
