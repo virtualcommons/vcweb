@@ -286,37 +286,36 @@ class RoundParameterValueForm(forms.ModelForm):
     required_css_class = 'required'
 
     def __init__(self, post_dict=None, instance=None, pk=None, **kwargs):
-        if instance is None:
-            if pk is not None:
-                instance = RoundParameterValue.objects.get(pk=pk)
+        if instance is None and pk is not None and  pk != '-1':
+            instance = RoundParameterValue.objects.get(pk=pk)
         super(RoundParameterValueForm, self).__init__(post_dict, instance=instance, **kwargs)
+
         self.fields['parameter'].queryset = self.fields['parameter'].queryset.filter(scope='round')
+
         for name, field in self.fields.items():
             if isinstance(field.widget, CheckboxInput):
                 field.widget.attrs['data-bind'] = 'checked: %s' % name
             else:
                 field.widget.attrs['data-bind'] = 'value: %s' % name
+        if post_dict:
+            self.request_type = post_dict.get('request_type')
 
     def save(self, commit=True):
         rpv = super(RoundParameterValueForm, self).save(commit=False)
-        """
-        request_type = self.fields['request_type']
-        if request_type == 'delete':
+        if self.request_type == 'delete':
             logger.warn("Deleting round parameter value %s", rpv)
             rpv.delete()
-        # custom create / update logic shouldn't be needed anymore if you set round_configuration_id in your POST
-        # dictionary. also refactor $.ajax usage in your templates to $.post
-        if commit:
+        elif commit:
             rpv.save()
         return rpv
-        """
 
 
     class Meta:
         model = RoundParameterValue
-        exclude = ('round_configuration', 'last_modified', 'date_created')
+        exclude = ('last_modified', 'date_created')
         widgets = {
             'string_value': forms.Textarea(attrs={'cols': 40, 'rows': 3}),
+            'round_configuration': forms.HiddenInput
         }
 
 

@@ -1168,42 +1168,11 @@ def update_round_param_value(request, pk):
     return JsonResponse({'success': False, 'errors': form.errors })
     """
 
-
-    request_type = request.POST.get('request_type')
-
-    # delete Request
-    if request_type == 'delete' and pk:
-        try:
-            RoundParameterValue.objects.get(pk=pk).delete()
-            return JsonResponse(SUCCESS_DICT)
-        except:
-            return JsonResponse(FAILURE_DICT)
-    # Create Request
-    elif request_type == 'create':
-        form = RoundParameterValueForm(request.POST or None)
-        if form.is_valid():
-            rpv = form.save(commit=False)
-            round_config_pk = request.POST.get("round_configuration")
-            try:
-                round_config = RoundConfiguration.objects.get(
-                    pk=round_config_pk)
-                rpv.round_configuration = round_config
-                rpv.save()
-                return JsonResponse({'success': True, 'round_param': rpv.to_dict()})
-            except RoundConfiguration.DoesNotExist:
-                logger.debug("Round Configuration with provided pk does not exist")
-    # Update Request
-    elif request_type == 'update' and pk:
-        rpv = RoundParameterValue.objects.get(pk=pk)
-        form = RoundParameterValueForm(request.POST or None, instance=rpv)
-        if form.is_valid():
-            form.save()
-            return JsonResponse({'success': True, 'round_param': rpv.to_dict()})
-
-    return JsonResponse({
-        'success': False,
-        'message': form.errors
-    })
+    form = RoundParameterValueForm(request.POST or None, pk=pk)
+    if form.is_valid():
+        rpv = form.save()
+        return JsonResponse({'success': True, 'round_param': rpv.to_dict() })
+    return JsonResponse({'success': False, 'errors': form.errors })
 
 
 def sort_round_configurations(old_sequence_number, new_sequence_number, exp_config_pk):
