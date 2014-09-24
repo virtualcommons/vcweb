@@ -1124,50 +1124,15 @@ def reset_password(email, from_email='vcweb@asu.edu', template='registration/pas
 
 @group_required(PermissionGroup.experimenter)
 def update_experiment_param_value(request, pk):
-    # extract request type
-    request_type = request.POST.get('request_type')
-
-    # delete Request
-    if request_type == 'delete' and pk:
-        try:
-            ExperimentParameterValue.objects.get(pk=pk).delete()
-            return JsonResponse(SUCCESS_DICT)
-        except:
-            return JsonResponse(FAILURE_DICT)
-    # create Request
-    elif request_type == 'create':
-        form = ExperimentParameterValueForm(request.POST or None)
-        if form.is_valid():
-            epv = form.save(commit=False)
-            exp_config_pk = request.POST.get('experiment_configuration')
-            epv.experiment_configuration = ExperimentConfiguration.objects.get(
-                pk=exp_config_pk)
-            epv.save()
-            return JsonResponse({'success': True, 'experiment_param': epv.to_dict()})
-   # update Request
-    elif request_type == 'update' and pk:
-        epv = ExperimentParameterValue.objects.get(pk=pk)
-        form = ExperimentParameterValueForm(request.POST or None, instance=epv)
-        if form.is_valid():
-            form.save()
-            return JsonResponse({'success': True, 'experiment_param': epv.to_dict()})
-
-    return JsonResponse({
-        'success': False,
-        'message': form.errors
-    })
+    form = ExperimentParameterValueForm(request.POST or None, pk=pk)
+    if form.is_valid():
+        epv = form.save()
+        return JsonResponse({'success': True, 'experiment_param': epv.to_dict() })
+    return JsonResponse({'success': False, 'errors': form.errors })
 
 
 @group_required(PermissionGroup.experimenter)
 def update_round_param_value(request, pk):
-    """ FIXME: I'd like to see this method structured more like this, see also changes to RoundParameterValueForm
-    form = RoundParameterValueForm(request.POST or None, pk=pk)
-    if form.is_valid():
-        rpv = form.save()
-        return JsonResponse({'success': True, 'round_param': rpv.to_dict() })
-    return JsonResponse({'success': False, 'errors': form.errors })
-    """
-
     form = RoundParameterValueForm(request.POST or None, pk=pk)
     if form.is_valid():
         rpv = form.save()

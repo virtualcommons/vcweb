@@ -203,7 +203,7 @@
 
     <script type='text/html' id='round-param-template'>
         <form method="post" class="form-horizontal" data-bind="submit: $root.saveRoundParam">
-            <input type="hidden" data-bind="value: pk">
+            <input type="hidden" data-bind="value: pk" class="hidden-param">
             {%  bootstrap_form round_param_form layout="horizontal" label_class="col-md-3" field_class="col-md-6"%}
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">Save</button>
@@ -214,7 +214,7 @@
     <script type='text/html' id='exp-param-template'>
         <form method="post" class="form-horizontal" data-bind="submit: $root.saveExpParam">
         {%  bootstrap_form exp_param_form layout="horizontal" label_class="col-md-3" field_class="col-md-6"%}
-	    <input type="hidden" data-bind="value: pk">
+	    <input type="hidden" data-bind="value: pk" class="hidden-param">
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">Save</button>
             </div>
@@ -223,8 +223,8 @@
 
     <script type="text/html" id="round-config-template">
         <form class="form-horizontal" data-bind="submit: $root.saveRoundConfig">
-            {%  bootstrap_form round_config_form layout="horizontal" label_class="col-md-4" field_class="col-md-6"%}
             <input type="hidden" data-bind="value: pk">
+            {%  bootstrap_form round_config_form layout="horizontal" label_class="col-md-4" field_class="col-md-6"%}
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">Save</button>
             </div>
@@ -234,9 +234,9 @@
     <script type="text/javascript">
 
         var JSONdata = $.parseJSON("{{ json_data | escapejs }}");
+        var experiment_configuration_pk = {{ experiment_config.pk }}
 
         $(function() {
-
             //wrapper to an observable that requires accept/cancel
             ko.protectedObservable = function(initialValue) {
                 //private variables
@@ -284,6 +284,7 @@
                 self.display_name = ko.observable(data.display_name);
                 self.pk = ko.observable(data.pk);
                 self.round_configuration = ko.observable(data.round_configuration || data.round_configuration_pk);
+                self.experiment_configuration = ko.observable(data.experiment_configuration || data.experiment_configuration_pk);
                 self.parameter = ko.observable(data.parameter_pk);
                 self.string_value = ko.observable(data.string_value);
                 self.int_value = ko.observable(data.int_value);
@@ -348,6 +349,7 @@
                     },
                     'expParamValuesList': {
                         create: function (options) {
+                            options.data.experiment_configuration_pk = experiment_configuration_pk
                             return new ParamViewModel(options.data);
                         }
                     }
@@ -365,20 +367,24 @@
                 }
 
                 model.addExpParam = function (data, event) {
-                    var temp = new ParamViewModel({'is_active': true});
+                    var temp = new ParamViewModel({'experiment_configuration': experiment_configuration_pk ,'is_active': true});
                     model.modalData(temp);
                     model.template("exp-param-template");
                     model.activateModal(true);
                 }
 		
-                model.editExpParam = function (data){
-                    model.modalData(data);
+                model.editExpParam = function (expParamModel){
+                    model.modalData(expParamModel);
                     model.template("exp-param-template");
                     model.activateModal(true);
                 }
 
                 model.removeExpParam = function (expParam){
-                    $.post("/api/configuration/experiment/param/" + expParam.pk(), 'request_type=delete')
+                    var data = 'experiment_configuration='+ experiment_configuration_pk +
+                                '&parameter='+ expParam.parameter()+
+                                '&request_type=delete';
+
+                    $.post("/api/configuration/experiment/param/" + expParam.pk(), data)
                         .done(function(result) {
                             if (result.success){
                                 model.expParamValuesList.remove(expParam);
@@ -443,7 +449,7 @@
                 }
                 model.saveRoundParam = function(form) {
                     var form = $(form),
-                        paramPk = parseInt(form.find("input[type='hidden']").val()),
+                        paramPk = parseInt(form.find("input[type='hidden'].hidden-param").val()),
                         formData = form.serialize();
 
                     if (paramPk) {
@@ -483,7 +489,7 @@
 
                 model.saveRoundConfig = function(form) {
                     var form = $(form);
-                    var roundPk = form.find("input[type='hidden']").val();
+                    var roundPk = form.find("input[type='hidden'].hidden-param").val();
                     var formData = form.serialize();
 
                     if (roundPk) {
@@ -559,45 +565,37 @@
 
                 model.saveExpParam = function(form) {
                     var form = $(form);
-                    var paramPk = parseInt(form.find("input[type='hidden']").val());
+                    var paramPk = parseInt(form.find("input[type='hidden'].hidden-param").val());
                     var formData = form.serialize();
 
                     if (paramPk) {
                         //Update Request
-
                         var match = ko.utils.arrayFirst(model.expParamValuesList(), function (expParam) {
                             return parseInt(paramPk) === expParam.pk();
                         });
-                        $.ajax("/api/configuration/experiment/param/"+ paramPk, {
-                            data: formData + '&request_type=update',
-                            type: "POST",
-                            success: function(result){
+                        $.post("/api/configuration/experiment/param/"+ paramPk, formData + '&request_type=update')
+                            .done(function(result){
                                 if(result.success){
                                     match.display_name(result.experiment_param.display_name);
                                     model.hideModal();
                                 } else {
                                     // Error Message
                                 }
-                            }
-                        });
+                            });
                     } else {
                         // Create Request
-
-                        formData += '&experiment_configuration=' + {{ experiment_config.pk }};
-            			$.ajax("/api/configuration/experiment/param/-1", {
-                            data: formData + '&request_type=create',
-                            type: "POST",
-                            success: function(result) {
+                        $.post("/api/configuration/experiment/param/-1", formData + '&request_type=create')
+                            .done(function(result) {
                                 if(result.success){
                                     model.expParamValuesList.push(new ParamViewModel(result.experiment_param));
                                     model.hideModal();
                                 } else {
                                     // Error Message
                                 }
-                            }
-                        });
+                            });
                     }
                 }
+
                 model.saveExperimentConfig = function(form) {
                     var form = $(form);
                     var formData = form.serialize();
