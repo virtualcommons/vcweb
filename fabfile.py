@@ -24,7 +24,7 @@ env.roledefs = {
 env.python = 'python'
 env.project_name = 'vcweb'
 env.project_conf = 'vcweb.settings'
-env.deploy_user = 'nginx'
+env.deploy_user = 'vcweb'
 env.deploy_group = 'vcweb'
 env.database = 'default'
 env.deploy_parent_dir = '/opt/'
@@ -217,6 +217,9 @@ def setup_postgres():
 
 
 def _restart_command(systemd=True):
+    """
+    FIXME: look into less drastic ways to reload the app and sockjs servers
+    """
     if systemd:
         cmd = 'systemctl restart %(webserver)s supervisord && systemctl status -l %(webserver)s supervisord'
     else:
