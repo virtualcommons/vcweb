@@ -133,6 +133,7 @@ LOGIN_REDIRECT_URL = '/dashboard'
 
 # websockets configuration
 WEBSOCKET_PORT = 8882
+WEBSOCKET_URI = '/websocket'
 
 # activation window
 ACCOUNT_ACTIVATION_DAYS = 30
