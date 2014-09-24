@@ -3023,7 +3023,7 @@ def send_email(template, context, subject, from_email, to_email, bcc=None):
     msg.send()
 
 
-@receiver(signals.system_daily_tick)
+@receiver(signals.system_daily_tick, dispatch_uid='send-reminder-emails')
 def send_reminder_emails(sender, start=None, **kwargs):
     """
     midnight check sending reminder emails to participants signed up for an ExperimentSession being run
@@ -3046,7 +3046,7 @@ def send_reminder_emails(sender, start=None, **kwargs):
                    settings.SERVER_EMAIL, participant_emails)
 
 
-@receiver(signals.system_daily_tick)
+@receiver(signals.system_daily_tick, dispatch_uid='update-daily-experiments')
 @transaction.atomic
 def update_daily_experiments(sender, timestamp=None, start=None, **kwargs):
     """
