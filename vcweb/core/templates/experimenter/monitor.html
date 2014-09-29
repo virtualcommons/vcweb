@@ -347,7 +347,15 @@
                 confirmAction(evt.target, function(confirmed, action) {
                     if (confirmed) {
                         console.debug("sending update event");
-                        // FIXME: add the endpoint to updateParticipants
+                        $.post("/experiment/{{ experiment.pk }}/update-participants")
+                         .done(function(response) {
+                            if (!response.success) {
+                                model.addMessage("Something went wrong. Please try again.")
+                            }
+                        })
+                        .fail(function(response) {
+                            model.addMessage("Unable to perform experiment controller action: " + response.message);
+                        });
                     }
                 });
             };
@@ -376,6 +384,8 @@
         function initialize(experimentModelJson) {
             var experimentModel = new ExperimentModel(experimentModelJson);
             ko.applyBindings(experimentModel);
+            // Start the Timer
+            experimentModel.startTimer();
             // establish sockjs websocket connection
             var s = connect("/experimenter");
             s.onmessage = function(message) {

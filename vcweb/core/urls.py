@@ -15,7 +15,7 @@ from .views import (dashboard, LoginView, LogoutView, monitor, RegisterEmailList
                     delete_experiment_configuration, clone_experiment_configuration, unsubscribe,
                     update_round_param_value, update_experiment_param_value, update_experiment_configuration,
                     OstromlabFaqList, cas_asu_registration, cas_asu_registration_submit, account_profile,
-                    update_account_profile, handle_chat_message,
+                    update_account_profile, handle_chat_message, update_participants,
                     )
 
 
@@ -42,6 +42,7 @@ urlpatterns = [
     url(r'^participate/survey-completed', completed_survey, name='survey_completed'),
     url(r'^participate/(?P<pk>\d+)/check-survey-completed', check_survey_completed, name='check_survey_completed'),
     url(r'^experiment/participant-ready$', participant_ready, name='participant_ready'),
+    url(r'^experiment/(?P<pk>\d+)/update-participants$', update_participants, name='update_participant'),
     url(r'^experiment/(?P<pk>\d+)/monitor$', monitor, name='monitor_experiment'),
     url(r'^experiment/(?P<pk>\d+)/register-email-list$',
         RegisterEmailListView.as_view(), name='register_email_list'),

@@ -67,7 +67,7 @@
     </table>
     <div class='alert alert-info'>
         <i class='fa fa-info-circle'></i> Remember, only <b>one</b> of your sessions will be selected at random for
-        payment.  We will now move on to the next session.
+        payment. We will now move on to the next session.
     </div>
     <ul class='pager'>
         <li class='next'>
@@ -709,7 +709,6 @@ function onYouTubeIframeAPIReady() {
             model.participantReady = function(message) {
                 $.post('/experiment/participant-ready', { participant_group_id: model.participantGroupId() }, function(response) {
                     model.readyParticipants(response.number_of_ready_participants);
-                    // getWebSocket().send(createReadyEvent(message));
                     model.activateTemplate("WAITING_ROOM");
                 });
                 scrollToTop();
@@ -828,7 +827,6 @@ function onYouTubeIframeAPIReady() {
                 var message = $('#chatMessage').val();
                 if (message) {
                     $('#chatMessage').val('');
-                    //getWebSocket().send(createMessageEvent(message));
                     $.post('/api/experiment/{{experiment.pk|default:-1}}/chat/submit',
                             { participant_group_id: model.participantGroupId(), message: message },
                         function(data) {

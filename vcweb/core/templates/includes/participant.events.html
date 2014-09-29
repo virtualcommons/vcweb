@@ -11,15 +11,9 @@ function createMessageEvent(payload, event_type) {
         "auth_token": "{{ request.user.participant.authentication_token }}",
         "experiment_id": {{experiment.pk|default:-1}},
         {% if participant_group_relationship %}
-            "participant_group_relationship_id": {{participant_group_relationship.pk|default:-1}},
-        {% endif %}
-        {% if participant_experiment_relationship %}
-            "participant_experiment_relationship_id": {{participant_experiment_relationship.pk|default:-1}},
+            "participant_group": "{{participant_group_relationship.group|default:-1}}",
         {% endif %}
         "message": payload
     });
-}
-function createSubmitEvent(payload) {
-    return createMessageEvent(payload, "submit");
 }
 </script>

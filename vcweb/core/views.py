@@ -40,9 +40,6 @@ mimetypes.init()
 SUCCESS_DICT = {'success': True}
 FAILURE_DICT = {'success': False}
 
-import redis
-
-redis_client = redis.Redis()
 
 @login_required
 def handle_chat_message(request, pk):
@@ -64,9 +61,9 @@ def handle_chat_message(request, pk):
         chat_message = ChatMessage.objects.create(participant_group_relationship=pgr,
                                                   string_value=message,
                                                   round_data=current_round_data)
-        logger.debug("Publishing to redis on channel group_channel.{}".format(pgr.pk))
-        redis_client.publish('group_channel.{}'.format(pgr.pk), chat_message.to_json())
-        redis_client.publish('experimenter_channel.{}'.format(experiment.pk), chat_message.to_json())
+        logger.debug("Publishing to redis on channel group_channel.{}".format(pgr.group))
+        experiment.publish_to_participants(chat_message.to_json(), pgr.group)
+        experiment.publish_to_experimenter(chat_message.to_json())
 
         return JsonResponse(SUCCESS_JSON)
     return JsonResponse(FAILURE_JSON)
@@ -882,11 +879,9 @@ def update_experiment(request):
             response_tuples = experiment.invoke(action, experimenter)
             logger.debug("invoking action %s: %s", action, str(response_tuples))
 
-            logger.debug("Publishing to redis")
-            logger.debug('experimenter_channel.{}'.format(experiment.pk))
-            redis_client.publish('experiment_channel.{}'.format(experiment.pk), create_message_event("", "update"))
-            redis_client.publish('experimenter_channel.{}'.format(experiment.pk), create_message_event(
-                "Updating all connected participants"))
+            logger.debug("Publishing to redis on channel experimenter_channel.{}".format(experiment.pk))
+            experiment.publish_to_participants(create_message_event("", "update"))
+            experiment.publish_to_experimenter(create_message_event("Updating all connected participants"))
 
             return JsonResponse({
                 'success': True,
@@ -899,6 +894,19 @@ def update_experiment(request):
         'success': False,
         'message': 'Invalid update experiment request: %s' % form
     })
+
+
+@group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
+def update_participants(request, pk):
+    try:
+        experiment = Experiment.objects.get(pk=pk)
+        logger.debug("Publishing to redis on channel experimenter_channel.{}".format(experiment.pk))
+        experiment.publish_to_participants(create_message_event("", "update"))
+        experiment.publish_to_experimenter(create_message_event("Updating all connected participants"))
+        return JsonResponse(SUCCESS_JSON)
+    except Exception as e:
+        logger.debug(e)
+        return JsonResponse(FAILURE_JSON)
 
 
 def create_message_event(message, event_type='info'):
@@ -974,10 +982,11 @@ def participant_ready(request):
 
         logger.debug("handling participant ready event for experiment %s", experiment)
         message = "Participant %s is ready." % request.user.participant
-        redis_client.publish('experiment_channel.{}'.format(experiment.pk), create_message_event(message,
-            "participant_ready"))
+
+        experiment.publish_to_participants(create_message_event(message, "participant_ready"))
+
         if experiment.all_participants_ready:
-            redis_client.publish('experimenter_channel.{}'.format(experiment.pk), create_message_event(
+            experiment.publish_to_experimenter(create_message_event(
                 "All participants are ready to move on to the next round."))
 
         return JsonResponse(_ready_participants_dict(experiment))

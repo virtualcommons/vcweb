@@ -8,7 +8,6 @@ function createMessageEvent(message, event_type) {
     }
     return JSON.stringify({
         "event_type": event_type,
-        "experimenter_id": {{request.user.experimenter.pk}},
         "experiment_id": {{experiment.pk}},
         "auth_token": "{{ request.user.experimenter.authentication_token }}",
         "message": message
