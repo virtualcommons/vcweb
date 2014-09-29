@@ -306,14 +306,11 @@
                         return false;
                     }
                     $('#progress-modal').modal('show');
-                    $.post("/api/experiment/update", { experiment_id: {{ experiment.pk }}, action: action })
+                    $.post("/api/experiment/update", { experiment_id: {{ experiment.pk }}, should_update_participants: shouldUpdateParticipants, action: action })
                      .done(function(response) {
                         if (response.success) {
                             ko.mapping.fromJS(response.experiment, model);
                             model.startTimer();
-                            if (shouldUpdateParticipants) {
-                                sendUpdateEvent();
-                            }
                             $('#progress-modal').modal('hide');
                         }
                      })

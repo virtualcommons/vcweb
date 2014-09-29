@@ -171,7 +171,7 @@ def sockjs(ip="127.0.0.1", port=None):
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
     _virtualenv(
-        local, "{python} vcweb/vcweb-sockjs.py {port}".format(python=env.python, port=port), capture=False)
+        local, "{python} vcweb/vcweb-sockjs-redis.py {port}".format(python=env.python, port=port), capture=False)
 
 
 @task

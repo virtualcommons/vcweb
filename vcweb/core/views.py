@@ -40,6 +40,10 @@ mimetypes.init()
 SUCCESS_DICT = {'success': True}
 FAILURE_DICT = {'success': False}
 
+import redis
+
+redis_client = redis.Redis()
+
 
 class AnonymousMixin(object):
 
@@ -850,6 +854,12 @@ def update_experiment(request):
         try:
             response_tuples = experiment.invoke(action, experimenter)
             logger.debug("invoking action %s: %s", action, str(response_tuples))
+
+            logger.debug("Publishing to redis")
+            logger.debug('experimenter_channel.{}'.format(experiment.pk))
+            UPDATE_EVENT = dumps({'event_type': 'update'})
+            redis_client.publish('broadcast_channel.{}'.format(experiment.pk), UPDATE_EVENT)
+            redis_client.publish('experimenter_channel.{}'.format(experiment.pk), create_message_event("Updating all connected participants"))
             return JsonResponse({
                 'success': True,
                 'experiment': experiment.to_dict(include_round_data=True)
@@ -861,6 +871,10 @@ def update_experiment(request):
         'success': False,
         'message': 'Invalid update experiment request: %s' % form
     })
+
+
+def create_message_event(message, event_type='info'):
+    return dumps({'message': message, 'event_type': event_type})
 
 
 @login_required

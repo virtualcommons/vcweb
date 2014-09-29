@@ -2,20 +2,8 @@
 function createUpdateEvent() {
     return createMessageEvent("Update all participants", "update_participants");
 }
-function createRefreshEvent() {
-    return createMessageEvent("Refresh all clients", "refresh");
-}
-function createGotoEvent(url) {
-    if (! url) {
-        url = "participate";
-    }
-    return createMessageEvent(url, "goto");
-}
 function createConnectionEvent() {
     return createMessageEvent("Initial connection", "connect");
-}
-function createReconnectionEvent() {
-    return createMessageEvent("Reconnecting from disconnect", "reconnect");
 }
 function createMessageEvent(message, event_type) {
     if (! event_type) {
@@ -29,19 +17,7 @@ function createMessageEvent(message, event_type) {
         "message": message
     });
 }
-function createChatEvent(message) {
-    return createMessageEvent(message);
-}
 function sendUpdateEvent() {
     getWebSocket().send(createUpdateEvent());
-}
-function sendRefreshEvent() {
-    var webSocket = getWebSocket();
-    if (webSocket) {
-        webSocket.send(createRefreshEvent());
-    }
-    else {
-        console.debug("no web socket available, ignoring");
-    }
 }
 </script>
