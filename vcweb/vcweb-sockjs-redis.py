@@ -15,6 +15,8 @@ from raven.contrib.tornado import AsyncSentryClient
 
 from django.conf import settings
 
+from redis_pubsub import RedisPubSub
+
 # redefine logger
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,6 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings.local'
 
 DEFAULT_WEBSOCKET_PORT = 8882
 
-redis_client = redis.Redis()
 # Create the tornadoredis.Client instance and use it for redis channel subscriptions
 subscriber = tornadoredis.pubsub.SockJSSubscriber(tornadoredis.Client())
 
@@ -49,12 +50,13 @@ class ParticipantConnection(SockJSConnection):
             self.experiment = message_dict['experiment_id']
 
             # Subscribe to 'experiment' and 'group' message channels
-            subscriber.subscribe(['experiment_channel.{}'.format(self.experiment),
-                                  'group_channel.{}'.format(self.group)], self)
+            subscriber.subscribe([RedisPubSub.get_participant_broadcast_channel(self.experiment),
+                                  RedisPubSub.get_participant_group_channel(self.group)], self)
 
     def on_close(self):
-        subscriber.unsubscribe('group_channel.{}'.format(self.group), self)
-        subscriber.unsubscribe('experiment_channel.{}'.format(self.experiment), self)
+        subscriber.unsubscribe(RedisPubSub.get_participant_broadcast_channel(self.experiment), self)
+        subscriber.unsubscribe(RedisPubSub.get_participant_group_channel(self.group), self)
+
 
 """
 Experimenter sockjs connection class.
@@ -73,10 +75,10 @@ class ExperimenterConnection(SockJSConnection):
         if message_dict['event_type'] == 'connect':
             # Subscribe to experiment specific 'broadcast' message channels
             self.experiment = message_dict['experiment_id']
-            subscriber.subscribe(['experimenter_channel.{}'.format(self.experiment)], self)
+            subscriber.subscribe([RedisPubSub.get_experimenter_channel(self.experiment)], self)
 
     def on_close(self):
-        subscriber.unsubscribe('experimenter_channel.{}'.format(self.experiment), self)
+        subscriber.unsubscribe(RedisPubSub.get_experimenter_channel(self.experiment), self)
 
 
 def main(argv=None):

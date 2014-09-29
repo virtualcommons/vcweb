@@ -10,7 +10,6 @@ import itertools
 import logging
 import random
 import string
-import redis
 
 from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm
@@ -36,21 +35,9 @@ from . import signals, simplecache
 from .decorators import log_signal_errors
 from .http import dumps
 
+from vcweb.redis_pubsub import RedisPubSub
 
 logger = logging.getLogger(__name__)
-
-"""
-Singleton class for Redis Client
-"""
-
-class RedisClient(object):
-    __instance = None
-
-    @classmethod
-    def get_instance(cls):
-        if cls.__instance is None:
-            cls.__instance = redis.Redis()
-                return cls.__instance
 
 
 """
@@ -941,13 +928,14 @@ class Experiment(models.Model):
         return subject
 
     def publish_to_participants(self, message, group=None):
+        redis_client = RedisPubSub.get_redis_instance()
         if group is None:
-            RedisClient.get_instance().publish('experiment_channel.{}'.format(self.pk), message)
+            redis_client.publish(RedisPubSub.get_participant_broadcast_channel(self.pk), message)
         else:
-            RedisClient.get_instance().publish('group_channel.{}'.format(group), message)
+            redis_client.publish(RedisPubSub.get_participant_group_channel(group), message)
 
     def publish_to_experimenter(self, message):
-        RedisClient.get_instance().publish('experimenter_channel.{}'.format(self.pk), message)
+        RedisPubSub.get_redis_instance().publish(RedisPubSub.get_experimenter_channel(self.pk), message)
 
     @transaction.atomic
     def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None, from_email=None, send_email=True):
