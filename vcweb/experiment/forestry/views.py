@@ -36,7 +36,7 @@ def participate(request, experiment_id=None):
         'experiment': experiment,
         'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
         'participant_group_relationship': pgr,
-        'experimentModelJson': dumps(get_view_model(experiment, pgr)),
+        'experimentModelJson': dumps(get_view_model_dict(experiment, pgr)),
     })
 
 
@@ -77,7 +77,7 @@ def get_view_model(request, experiment_id=None):
                                    pk=experiment_id)
     pgr = experiment.get_participant_group_relationship(
         request.user.participant)
-    return JsonResponse(get_view_model(experiment, pgr))
+    return JsonResponse(get_view_model_dict(experiment, pgr))
 
 
 experiment_model_defaults = {
@@ -106,7 +106,7 @@ experiment_model_defaults = {
 }
 
 
-def get_view_model(experiment, participant_group_relationship, **kwargs):
+def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
     current_round = experiment.current_round
     current_round_data = experiment.current_round_data
