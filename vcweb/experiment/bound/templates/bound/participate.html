@@ -33,9 +33,10 @@
                 </div>
             </div>
             <form id="chat-form" class='form-inline' data-bind='submit: submitChatMessage' >
+                <input type='hidden' name='participant_group_id' value='{{participant_group_relationship.id}}'/>
                 <div class='input-group'>
                     <span class='input-group-addon'><i id='chat-icon' class='text-info fa fa-comment'></i></span>
-                    <input id='chatMessage' class="form-control" type="text" placeholder="Chat with your group">
+                    <input id='chatMessage' class="form-control" name="message" type="text" placeholder="Chat with your group">
                 </div>
             </form>
             <div class='chat-sidebar'>
@@ -708,7 +709,7 @@ function onYouTubeIframeAPIReady() {
             model.participantReady = function(message) {
                 $.post('/experiment/participant-ready', { participant_group_id: model.participantGroupId() }, function(response) {
                     model.readyParticipants(response.number_of_ready_participants);
-                    getWebSocket().send(createReadyEvent(message));
+                    // getWebSocket().send(createReadyEvent(message));
                     model.activateTemplate("WAITING_ROOM");
                 });
                 scrollToTop();
@@ -827,7 +828,14 @@ function onYouTubeIframeAPIReady() {
                 var message = $('#chatMessage').val();
                 if (message) {
                     $('#chatMessage').val('');
-                    getWebSocket().send(createMessageEvent(message));
+                    //getWebSocket().send(createMessageEvent(message));
+                    $.post('/api/experiment/{{experiment.pk|default:-1}}/chat/submit',
+                            { participant_group_id: model.participantGroupId(), message: message },
+                        function(data) {
+                            if(!data.success) {
+                                console.error("There was some error sending chat.")
+                            }
+                        });
                     $('#chatMessage').focus();
                 }
                 return false;

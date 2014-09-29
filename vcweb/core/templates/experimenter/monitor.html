@@ -347,7 +347,7 @@
                 confirmAction(evt.target, function(confirmed, action) {
                     if (confirmed) {
                         console.debug("sending update event");
-                        sendUpdateEvent();
+                        // FIXME: add the endpoint to updateParticipants
                     }
                 });
             };

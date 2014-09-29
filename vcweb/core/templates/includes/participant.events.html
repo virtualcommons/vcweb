@@ -2,12 +2,6 @@
 function createConnectionEvent() {
     return createMessageEvent("Initial connection", "connect");
 }
-function createReconnectionEvent() {
-    return createMessageEvent("Reconnecting from disconnect", "reconnect");
-}
-function createReadyEvent(message) {
-    return createMessageEvent(message, "participant_ready");
-}
 function createMessageEvent(payload, event_type) {
     if (! event_type) {
         event_type = "chat";
@@ -24,9 +18,6 @@ function createMessageEvent(payload, event_type) {
         {% endif %}
         "message": payload
     });
-}
-function createChatEvent(payload) {
-    return createMessageEvent(payload);
 }
 function createSubmitEvent(payload) {
     return createMessageEvent(payload, "submit");

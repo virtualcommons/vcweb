@@ -33,11 +33,22 @@ subscriber = tornadoredis.pubsub.SockJSSubscriber(tornadoredis.Client())
 class ParticipantConnection(SockJSConnection):
 
     def on_open(self, request):
-        self.group = request.group
-        self.experiment = request.experiment
-        # Subscribe to 'experiment' and 'group' message channels
-        subscriber.subscribe(['experiment_channel.{}'.format(request.experiment),
-                              'group_channel.{}'.format(request.group)], self)
+        logger.debug("opening connection %s", request)
+
+    def on_message(self, msg):
+        if not msg:
+            return
+
+        message_dict = json.loads(msg)
+
+        logger.debug("message: %s", message_dict)
+        self.group = message_dict['participant_group_relationship_id']
+        self.experiment = message_dict['experiment_id']
+
+        if message_dict['event_type'] == 'connect':
+            # Subscribe to 'experiment' and 'group' message channels
+            subscriber.subscribe(['experiment_channel.{}'.format(self.experiment),
+                                  'group_channel.{}'.format(self.group)], self)
 
     def on_close(self):
         subscriber.unsubscribe('group_channel.{}'.format(self.group), self)
@@ -52,7 +63,6 @@ class ExperimenterConnection(SockJSConnection):
     def on_message(self, msg):
         if not msg:
             return
-        logger.debug("message: %s", msg)
         message_dict = json.loads(msg)
 
         logger.debug("message: %s", message_dict)
@@ -60,8 +70,6 @@ class ExperimenterConnection(SockJSConnection):
             # Subscribe to experiment specific 'broadcast' message channels
             self.experiment = message_dict['experiment_id']
             subscriber.subscribe(['experimenter_channel.{}'.format(self.experiment)], self)
-        else:
-            super(SockJSSubscriber, self).on_message(msg)
 
     def on_close(self):
         subscriber.unsubscribe('experimenter_channel.{}'.format(self.experiment), self)

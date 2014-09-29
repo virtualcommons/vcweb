@@ -15,7 +15,7 @@ from .views import (dashboard, LoginView, LogoutView, monitor, RegisterEmailList
                     delete_experiment_configuration, clone_experiment_configuration, unsubscribe,
                     update_round_param_value, update_experiment_param_value, update_experiment_configuration,
                     OstromlabFaqList, cas_asu_registration, cas_asu_registration_submit, account_profile,
-                    update_account_profile,
+                    update_account_profile, handle_chat_message,
                     )
 
 
@@ -69,6 +69,8 @@ urlpatterns = [
         name='clone_experiment_configuration'),
     url(r'^api/experiment/(?P<pk>\d+)/check-ready-participants$', check_ready_participants,
         name='check_ready_participants'),
+    url(r'^api/experiment/(?P<pk>\d+)/chat/submit$', handle_chat_message,
+        name='handle_chat_messasge'),
     url(r'^api/experiment/clone', clone_experiment, name='clone_experiment'),
     url(r'^api/experiment/create',
         create_experiment, name='create_experiment'),

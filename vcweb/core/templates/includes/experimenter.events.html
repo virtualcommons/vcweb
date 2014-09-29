@@ -1,7 +1,4 @@
 <script type="text/javascript">
-function createUpdateEvent() {
-    return createMessageEvent("Update all participants", "update_participants");
-}
 function createConnectionEvent() {
     return createMessageEvent("Initial connection", "connect");
 }
@@ -16,8 +13,5 @@ function createMessageEvent(message, event_type) {
         "auth_token": "{{ request.user.experimenter.authentication_token }}",
         "message": message
     });
-}
-function sendUpdateEvent() {
-    getWebSocket().send(createUpdateEvent());
 }
 </script>

@@ -27,7 +27,7 @@ from .forms import (RegistrationForm, LoginForm, ParticipantAccountForm, Experim
                     AsuRegistrationForm, ParticipantGroupIdForm, RegisterEmailListParticipantsForm,
                     RegisterTestParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm,
                     ExperimentConfigurationForm, ExperimentParameterValueForm, RoundConfigurationForm,
-                    RoundParameterValueForm, AntiSpamContactForm)
+                    RoundParameterValueForm, AntiSpamContactForm, ChatForm)
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
                      ExperimentConfiguration, ExperimenterRequest, Experiment, Institution,
                      BookmarkedExperimentMetadata, OstromlabFaqEntry, Experimenter, ExperimentParameterValue,
@@ -43,6 +43,33 @@ FAILURE_DICT = {'success': False}
 import redis
 
 redis_client = redis.Redis()
+
+@login_required
+def handle_chat_message(request, pk):
+    logger.debug("Experiment ID %s", pk)
+    experiment_id = pk
+    form = ChatForm(request.POST or None)
+    if form.is_valid():
+        participant_group_id = form.cleaned_data['participant_group_id']
+        message = form.cleaned_data['message']
+        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'),
+                                pk=participant_group_id)
+        if pgr.participant != request.user.participant:
+            logger.warning(
+                "authenticated user %s tried to post message %s as %s", request.user, message, pgr)
+            return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
+
+        experiment = Experiment.objects.get(pk=experiment_id)
+        current_round_data = experiment.current_round_data
+        chat_message = ChatMessage.objects.create(participant_group_relationship=pgr,
+                                                  string_value=message,
+                                                  round_data=current_round_data)
+        logger.debug("Publishing to redis on channel group_channel.{}".format(pgr.pk))
+        redis_client.publish('group_channel.{}'.format(pgr.pk), chat_message.to_json())
+        redis_client.publish('experimenter_channel.{}'.format(experiment.pk), chat_message.to_json())
+
+        return JsonResponse(SUCCESS_JSON)
+    return JsonResponse(FAILURE_JSON)
 
 
 class AnonymousMixin(object):
@@ -857,9 +884,10 @@ def update_experiment(request):
 
             logger.debug("Publishing to redis")
             logger.debug('experimenter_channel.{}'.format(experiment.pk))
-            UPDATE_EVENT = dumps({'event_type': 'update'})
-            redis_client.publish('broadcast_channel.{}'.format(experiment.pk), UPDATE_EVENT)
-            redis_client.publish('experimenter_channel.{}'.format(experiment.pk), create_message_event("Updating all connected participants"))
+            redis_client.publish('experiment_channel.{}'.format(experiment.pk), create_message_event("", "update"))
+            redis_client.publish('experimenter_channel.{}'.format(experiment.pk), create_message_event(
+                "Updating all connected participants"))
+
             return JsonResponse({
                 'success': True,
                 'experiment': experiment.to_dict(include_round_data=True)
@@ -943,6 +971,15 @@ def participant_ready(request):
         experiment = pgr.group.experiment
         round_data = experiment.current_round_data
         pgr.set_participant_ready(round_data)
+
+        logger.debug("handling participant ready event for experiment %s", experiment)
+        message = "Participant %s is ready." % request.user.participant
+        redis_client.publish('experiment_channel.{}'.format(experiment.pk), create_message_event(message,
+            "participant_ready"))
+        if experiment.all_participants_ready:
+            redis_client.publish('experimenter_channel.{}'.format(experiment.pk), create_message_event(
+                "All participants are ready to move on to the next round."))
+
         return JsonResponse(_ready_participants_dict(experiment))
     else:
         return JsonResponse({'success': False, 'message': "Invalid form"})
