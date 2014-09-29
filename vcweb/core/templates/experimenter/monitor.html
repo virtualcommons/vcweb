@@ -89,6 +89,15 @@
                     <a href='download-participants'><i class='fa fa-users'></i> download participant sheet</a>
                 </div>
                 <div id='registeredParticipants' class='panel-collapse collapse'>
+                    {% comment %} display registered participants in a flat list if groups haven't been formed yet {% endcomment %}
+                    <div class='panel-default panel-body' data-bind='ifnot: groups'>
+                        <table class='table table-compact table-striped table-bordered'>
+                            <thead><tr><th>Participant</th><th>Email</th></tr></thead>
+                            <tbody data-bind='foreach: participants'>
+                            <tr><td data-bind='text: full_name'></td><td data-bind='text: email'></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <div class='panel-default panel-body' data-bind='foreach: groups'>
                         <table class='table table-compact table-striped table-bordered'>
                             <caption class='text-info'><b><span data-bind='text: name'></span> (PK: <span data-bind='text: pk'></span>)</b></caption>

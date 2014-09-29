@@ -93,8 +93,7 @@ class ExperimenterDashboardViewModel(DashboardViewModel):
             experiment_status_dict[e.status].append(
                 e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
         self.pending_experiments = experiment_status_dict['INACTIVE']
-        self.running_experiments = experiment_status_dict[
-            'ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+        self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
         self.archived_experiments = experiment_status_dict['COMPLETED']
 
     def to_dict(self):
@@ -139,9 +138,8 @@ class ParticipantDashboardViewModel(DashboardViewModel):
 
 def create_dashboard_view_model(user):
     if user is None or not user.is_active:
-        logger.error(
-            "can't create dashboard view model from invalid user %s", user)
-        raise ValueError("invalid user")
+        logger.error("can't create dashboard view model from invalid user %s", user)
+        raise ValueError("invalid user: %s" % user)
     if is_experimenter(user):
         return ExperimenterDashboardViewModel(user)
     else:
@@ -186,9 +184,10 @@ def dashboard(request):
 @group_required(PermissionGroup.participant)
 def cas_asu_registration(request):
     user = request.user
-    if is_participant(user) and not user.participant.should_update_profile:
+    if is_participant(user) and user.participant.should_update_profile:
         directory_profile = ASUWebDirectoryProfile(user.username)
-        logger.debug("directory profile: %s", directory_profile)
+        logger.debug("participant %s needs to update their profile, requested directory profile %s",
+                     user, directory_profile)
         # user.save()
         return render(request, 'accounts/asu_registration.html',
                       {'form': AsuRegistrationForm(instance=user.participant)})

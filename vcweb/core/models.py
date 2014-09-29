@@ -1400,17 +1400,18 @@ class Experiment(models.Model):
 
     def to_dict(self, include_round_data=False, default_value_dict=None, attrs=None, *args, **kwargs):
         experiment_dict = dict(default_value_dict or {}, **kwargs)
+        start_time = self.current_round_start_time.strftime('%c') if self.current_round_start_time else 'N/A'
         experiment_dict.update({
             'roundStatusLabel': self.status_label,
             'roundSequenceLabel': self.sequence_label,
             'timeRemaining': self.time_remaining,
-            'currentRoundStartTime': self.current_round_start_time.strftime(
-                '%c') if self.current_round_start_time else 'N/A',
+            'currentRoundStartTime': start_time,
             'participantCount': self.participant_set.count(),
             'isRoundInProgress': self.is_round_in_progress,
             'isActive': self.is_active,
             'isArchived': self.is_archived,
             'exchangeRate': float(self.experiment_configuration.exchange_rate),
+            'participants': [{ 'full_name': p.full_name, 'email': p.email } for p in self.participant_set.all()],
             'readyParticipants': self.number_of_ready_participants,
             'status': self.status,
             'pk': self.pk
