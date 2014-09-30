@@ -3,18 +3,16 @@
 var socket;
 var DEFAULT_PORT = {{WEBSOCKET_PORT|default_if_none:8882}};
 var DEFAULT_URI = "/participant";
+var MAX_FAILURES = 128;
 function connect(uri, port) {
-    if ( !port ) {
-        console.log("no port specified, using default port: " + DEFAULT_PORT);
-        port = DEFAULT_PORT;
-    }
     var host = window.location.hostname;
+    var numFailures = 0;
     if ( !host ) {
         console.log("Tried to connect to null host, defaulting to vcweb.asu.edu instead.");
         host = "vcweb.asu.edu";
     }
     if ( !uri ) {
-        console.log("no uri specified, defaulting to /sockjs");
+        console.log("defaulting to " + DEFAULT_URI);
         uri = DEFAULT_URI;
     }
     // var sockjsServer = "http://" + host + ":" + port + uri;
@@ -28,7 +26,12 @@ function connect(uri, port) {
         console.log('received message', e.data);
     };
     socket.onclose = function() {
-        console.log('sockjs connection closed');
+        console.log('sockjs connection closed.');
+        numFailures++;
+        if (numFailures < MAX_FAILURES) {
+            console.log("Trying to re-establish sockjs connection until " + numFailures + " exceeds " + MAX_FAILURES);
+            socket = new SockJS(sockjsServer);
+        }
     };
     return socket;
 }
