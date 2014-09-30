@@ -593,7 +593,7 @@ class AntiSpamContactForm(ContactForm):
         info = (timestamp, settings.SECRET_KEY)
         return sha1("".join(info)).hexdigest()
 
-    def clean_honeypot(self):
+    def clean_contact_number(self):
         """Check that nothing's been entered into the honeypot."""
         value = self.cleaned_data["contact_number"]
         if value:

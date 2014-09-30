@@ -212,7 +212,7 @@ def cas_asu_registration_submit(request):
         user.groups.add(PermissionGroup.participant.get_django_group())
         user.save()
         participant.save()
-        messages.info(request, 
+        messages.info(request,
                       _("You've been successfully registered with our mailing list. Thanks!"))
         logger.debug(
             "created new participant from asurite registration: %s", participant)
@@ -1388,5 +1388,5 @@ class AntiSpamContactFormView(ContactFormView):
     form_class = AntiSpamContactForm
 
     def form_valid(self, form):
-        form.save()
         return super(AntiSpamContactFormView, self).form_valid(form)
+
