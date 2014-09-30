@@ -30,5 +30,5 @@ class EmailAuthenticationBackend(ModelBackend):
         except User.DoesNotExist:
             logger.warning("no user found with username %s", username)
         except:
-            logger.warning("unhandled exception with username %s", username, exc_info=True)
+            logger.exception("unhandled exception with username %s", username, exc_info=True)
         return None
