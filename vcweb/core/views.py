@@ -1157,7 +1157,7 @@ def get_cas_user(tree):
                 user.groups.add(PermissionGroup.participant.get_django_group())
                 user.save()
                 participant = Participant.objects.create(user=user, major=directory_profile.major,
-                                                         institution=institution)
+                                                         institution=institution, can_receive_invitations=True)
                 logger.debug(
                     "CAS backend created participant %s from web directory", participant)
             else:
