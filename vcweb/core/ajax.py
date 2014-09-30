@@ -62,7 +62,8 @@ def is_email_available(request):
     email = request.GET.get("email").lower()
     current_user = request.user
     success = (current_user.is_authenticated() and current_user.email == email) or not User.objects.filter(email=email).exists()
-    return HttpResponse(success)
+    logger.debug("user %s checking if email %s is available? %s", current_user, email, success)
+    return JsonResponse(success if success else "That email is not available, please select another.")
 
 
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)

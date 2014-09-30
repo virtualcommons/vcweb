@@ -11,11 +11,7 @@
 {% include "includes/bootstrap-form.html" %}
     <div class="form-group">
     <div class="col-md-offset-2 col-md-10">
-        {% if perms.auth.change_user %}
-            <button type='submit' id='submitForm' class='btn btn-primary'>Save</button>
-        {% else %}
-            <button type='submit' id='submitForm' class='btn btn-primary' disabled=disabled>Save</button>
-        {% endif %}
+        <button type='submit' id='submitForm' class='btn btn-primary'>Save</button>
     </div>
   </div>
 {% endblock %}
@@ -73,18 +69,16 @@
                 },
                 submitHandler: function(form) {
                     var formData = $('#vcweb-form').serialize();
-                    $.ajax({
-                        type: "POST",
-                        url: "/accounts/profile/update",
-                        data: formData,
-                        success: function(data) {
+                    console.debug("submitting form");
+                    $.post("/accounts/profile/update", formData,
+                         function(data) {
                             if(data.success) {
-                                $("#error-messages").html('<div class="alert alert-success"><strong>Thanks! </strong>Your profile has been updated successfully.</strong></div>');
+                                $("#error-messages").html('<div class="alert alert-success">Your profile has been updated. Thank you for registering!</strong></div>');
                             } else {
                                 $("#error-messages").html('<div class="alert alert-danger"><strong>'+data.message+'</strong></div>');
                             }
-                        }
-                    });
+                        });
+
                 }
             });
         });

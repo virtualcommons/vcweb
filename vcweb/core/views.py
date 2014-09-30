@@ -212,8 +212,8 @@ def cas_asu_registration_submit(request):
         user.groups.add(PermissionGroup.participant.get_django_group())
         user.save()
         participant.save()
-        messages.add_message(request, messages.INFO,
-                             _("You've been successfully registered with our mailing list. Thanks!"))
+        messages.info(request, 
+                      _("You've been successfully registered with our mailing list. Thanks!"))
         logger.debug(
             "created new participant from asurite registration: %s", participant)
         return redirect('core:dashboard')
@@ -372,6 +372,70 @@ class RegistrationView(FormView, AnonymousMixin):
 
 class AccountView(FormView):
     pass
+
+
+@login_required
+@group_required(PermissionGroup.experimenter, PermissionGroup.participant)
+def update_profile(request):
+    """ FIXME: reduce code duplication distinguishing between participant/experimenter """
+    user = request.user
+
+    if is_experimenter(user):
+        form = ExperimenterAccountForm(request.POST or None)
+        if form.is_valid():
+            # FIXME: replace with form.save(user.experimenter)
+            email = form.cleaned_data.get('email').lower()
+            institution_name = form.cleaned_data.get('institution')
+            e = Experimenter.objects.get(pk=user.experimenter.pk)
+
+            if institution_name:
+                institution, created = Institution.objects.get_or_create(name=institution_name)
+                e.institution = institution
+            else:
+                e.institution = None
+                logger.debug('Institution is empty')
+
+            for attr in ('first_name', 'last_name', 'email'):
+                setattr(e.user, attr, form.cleaned_data.get(attr))
+            e.save()
+            e.user.save()
+            messages.info("Your profile has been updated.")
+            return redirect('core:dashboard')
+        messages.warning(request, _("There were errors in your form submission. Please try again."))
+        return render(request, 'accounts/profile.html', {'form': form})
+    else:
+        form = ParticipantAccountForm(request.POST or None)
+        if form.is_valid():
+            email = form.cleaned_data.get('email').lower()
+            institution_name = form.cleaned_data.get('institution')
+
+            with transaction.atomic():
+                p = Participant.objects.get(pk=user.participant.pk)
+                if institution_name:
+                    ins, created = Institution.objects.get_or_create(name=institution_name)
+                    p.institution = ins
+                else:
+                    p.institution = None
+                    logger.debug('Institution is empty')
+                if p.user.email != email:
+                    if User.objects.filter(email=email).exists():
+                        messages.warning(request, _("That email is already taken."))
+                        return render(request, 'accounts/profile.html', {'form': form})
+                for attr in (
+                        'major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food', 'favorite_sport',
+                        'favorite_color', 'favorite_movie_genre'):
+                    setattr(p, attr, form.cleaned_data.get(attr))
+
+                for attr in ('first_name', 'last_name', 'email'):
+                    setattr(p.user, attr, form.cleaned_data.get(attr))
+                p.save()
+                p.user.save()
+            messages.info(request, "Your account has been successfully updated. Thank you!")
+            return redirect('core:dashboard')
+        messages.info(request, _("Please fill out every field in this form to register. Thank you!"))
+        return render(request, 'accounts/profile.html', { 'form': form })
+
+
 
 
 @login_required
