@@ -5,6 +5,8 @@ import mimetypes
 import urllib2
 import xml.etree.ElementTree as ET
 import unicodecsv
+import requests
+import json
 
 from django.conf import settings
 from django.contrib import auth, messages
@@ -19,6 +21,8 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import FormView, TemplateView, ListView
 from django.views.generic.detail import SingleObjectMixin
+from django.template.loader import get_template
+from django.template import Context
 
 from contact_form.views import ContactFormView
 
@@ -29,7 +33,7 @@ from .forms import (RegistrationForm, LoginForm, ParticipantAccountForm, Experim
                     AsuRegistrationForm, ParticipantGroupIdForm, RegisterEmailListParticipantsForm,
                     RegisterTestParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm,
                     ExperimentConfigurationForm, ExperimentParameterValueForm, RoundConfigurationForm,
-                    RoundParameterValueForm, AntiSpamContactForm)
+                    RoundParameterValueForm, AntiSpamContactForm, BugReportForm)
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
                      ExperimentConfiguration, ExperimenterRequest, Experiment, Institution,
                      BookmarkedExperimentMetadata, OstromlabFaqEntry, Experimenter, ExperimentParameterValue,
@@ -1417,6 +1421,59 @@ def unsubscribe(request):
             return render(request, 'accounts/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
     return render(request, 'invalid_request.html',
                   {'message': "You aren't currently subscribed to our experiment session mailing list."})
+
+
+def create_github_issue(data):
+    headers = {'Authorization': 'token '+ settings.GITHUB_ACCESS_TOKEN, 'Content-Type': 'application/json'}
+    issues_url = "{0}/{1}".format(settings.GITHUB_URL, "/".join(["repos", settings.GITHUB_REPO_OWNER, settings.GITHUB_REPO, "issues"]))
+    logger.debug(json.dumps(data))
+    return requests.post(issues_url, headers=headers, data=json.dumps(data))
+
+
+class BugReportFormView(FormView):
+    form_class = BugReportForm
+    template_name = 'forms/bug_form.html'
+    success_url = '/thanks/' # Not used. Kept it so Django doesn't throw error of success_url not provided
+
+    def form_valid(self, form):
+        response = super(BugReportFormView, self).form_valid(form)
+
+        # Creating Issue
+        if self.request.user:
+            user_id = self.request.user.pk
+        else:
+            user_id = NA
+
+        context = {
+            "issue_text":form.cleaned_data['body'],
+            "user_id": user_id,
+            "url": self.request.POST.get('url'),
+        }
+        plaintext_template = get_template('github-issue.html')
+        c = Context(context)
+        plaintext_content = plaintext_template.render(c)
+
+        data = {
+            'title': form.cleaned_data['title'],
+            'body': plaintext_content,
+            'labels': settings.GITHUB_ISSUE_LABELS,
+        }
+
+        r = create_github_issue(data)
+
+        if(r.ok):
+            res = json.loads(r.text or r.content)
+            logger.debug("Issue created with response %s", res)
+            return self.render_to_json_response(SUCCESS_DICT)
+        else:
+            res = json.loads(r.text or r.content)
+            logger.debug("Issue creation failed with response %s", res)
+            return self.render_to_json_response(FAILURE_DICT)
+
+    def render_to_json_response(self, context, **response_kwargs):
+        data = dumps(context)
+        response_kwargs['content_type'] = 'application/json'
+        return HttpResponse(data, **response_kwargs)
 
 
 class AntiSpamContactFormView(ContactFormView):

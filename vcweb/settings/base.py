@@ -11,6 +11,13 @@ SITE_URL = 'http://localhost:8000'
 BASE_DIR = os.path.dirname(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 
+# GITHUB
+GITHUB_URL = "https://api.github.com"
+GITHUB_ACCESS_TOKEN = "ADD YOUR ACCESS TOKEN TO LOCAL SETTINGS FILE"
+GITHUB_REPO = "vcweb"
+GITHUB_REPO_OWNER = "virtualcommons"
+GITHUB_ISSUE_LABELS = ["bug"]
+
 DEMO_EXPERIMENTER_EMAIL = 'vcweb.demo@mailinator.com'
 DEFAULT_FROM_EMAIL = 'vcweb@asu.edu'
 SERVER_EMAIL = 'vcweb@asu.edu'

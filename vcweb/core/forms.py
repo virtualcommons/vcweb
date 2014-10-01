@@ -493,7 +493,7 @@ class CommentForm(forms.Form):
 
 
 class LogMessageForm(forms.Form):
-    log_levels = [(getattr(logging, levelName), levelName) for levelName in ('DEBUG', 'INFO', 'WARNING', 
+    log_levels = [(getattr(logging, levelName), levelName) for levelName in ('DEBUG', 'INFO', 'WARNING',
                                                                              'ERROR', 'CRITICAL')]
     level = forms.ChoiceField(choices=log_levels)
     message = forms.CharField()
@@ -513,17 +513,37 @@ class SingleIntegerDecisionForm(forms.Form):
         required=False, widget=forms.widgets.HiddenInput)
 
 
-class AntiSpamContactForm(ContactForm):
+class QuizForm(forms.Form):
+    name_question = forms.CharField(
+        max_length=64, label=_("What is your name?"))
+
+    def __init__(self, *args, **kwargs):
+        quiz_questions = []
+        try:
+            quiz_questions = kwargs.pop('quiz_questions')
+        finally:
+            super(QuizForm, self).__init__(*args, **kwargs)
+            for quiz_question in quiz_questions:
+                self.fields['quiz_question_%d' % quiz_question.pk] = forms.CharField(
+                    label=quiz_question.label)
+
+    def extra_questions(self):
+        for name, value in self.cleaned_data.items():
+            if name.startswith('quiz_question_'):
+                yield (self.fields[name].label, value)
+
+
+class AntiSpamForm(forms.Form):
     timestamp = forms.IntegerField(widget=forms.HiddenInput)
     security_hash = forms.CharField(min_length=40, max_length=40, widget=forms.HiddenInput)
-    # honeypot 
+    # honeypot
     contact_number = forms.CharField(required=False, widget=forms.TextInput, label='')
 
     def __init__(self, *args, **kwargs):
         initial = kwargs.get("initial", {})
         initial.update(self.generate_security_data())
         kwargs["initial"] = initial
-        super(AntiSpamContactForm, self).__init__(*args, **kwargs)
+        super(AntiSpamForm, self).__init__(*args, **kwargs)
 
     def security_errors(self):
         """Return just those errors associated with security"""
@@ -582,3 +602,16 @@ class AntiSpamContactForm(ContactForm):
         if value:
             raise forms.ValidationError(self.fields["contact_number"].label)
         return value
+
+
+class AntiSpamContactForm(AntiSpamForm, ContactForm):
+    pass
+
+
+class BugReportForm(AntiSpamForm):
+    def __init__(self, *args, **kwargs):
+        super(BugReportForm, self).__init__(*args, **kwargs)
+
+    title = forms.CharField(max_length=512)
+    body = forms.CharField(widget=forms.Textarea,
+                                  label=u'The contents of the issue.')

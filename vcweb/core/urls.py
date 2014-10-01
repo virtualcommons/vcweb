@@ -19,6 +19,7 @@ from .views import (dashboard, LoginView, LogoutView, monitor, RegisterEmailList
                     update_account_profile,
                     )
 
+from vcweb.core.views import BugReportFormView
 
 logger = logging.getLogger(__name__)
 
@@ -94,8 +95,9 @@ urlpatterns = [
     url(r'api/logout', api_logout, name='api_logout'),
     url(r'api/dashboard', get_dashboard_view_model,
         name='dashboard_view_model'),
-    url(r'bug-report', RedirectView.as_view(url='https://bitbucket.org/virtualcommons/vcweb/issues/new'),
-        name='report_issues'),
+    #url(r'bug-report', RedirectView.as_view(url='https://bitbucket.org/virtualcommons/vcweb/issues/new'),
+    #    name='report_issues'),
+    url(r'bug-report', BugReportFormView.as_view(), name='report_issues'),
 ]
 
 

@@ -52,7 +52,8 @@
                 {% endif %}
                 {% endif %}
                 <li class='{% active_re request "contact" %}'><a href='/contact'><i class='fa fa-bell-o'></i> Contact us</a></li>
-                <li><a target='_blank' href='{{ issues_url }}'><i class='fa fa-bullhorn'></i> Report a bug</a></li>
+                <!-- li><a target='_blank' href='{{ issues_url }}'><i class='fa fa-bullhorn'></i> Report a bug</a></li --> 
+                <li><a href='#' id="report-issue" data-toggle="modal" data-target="#bugModal" ><i class='fa fa-bullhorn'></i> Report a bug</a></li>
             </ul>
             {% endblock headerlinks %}
             {% block login %}
@@ -131,8 +132,18 @@
             <li><a href='http://www.azregents.edu/'>&copy; 2011-{% now "Y" %} Arizona Board of Regents</a>
         </ul>
         {% endblock footerlinks %}
-
     </div>
+    <div class="modal fade" id="bugModal" tabindex="-1" role="dialog" aria-labelledby="bugModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">Report Bug</h4>
+                </div>
+                <div class="modal-body"></div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
     {% endblock footer %}
 </footer>
     <script src='//code.jquery.com/jquery-{{jquery_version}}.min.js'></script>
@@ -155,6 +166,25 @@
          })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
         ga('create', 'UA-321755-10', 'auto');
         ga('send', 'pageview');
+    </script>
+    <script>
+        $("#report-issue").click(function(e) {
+            e.preventDefault(); 
+            $.get('/bug-report')
+                .done( function(data) {
+                    $("#bugModal .modal-body").html(data);
+                });
+        });
+        $("#bugModal").on('submit', '#bug-form', function(e) {
+            e.preventDefault();
+            var data = $("#bugModal form").serialize() + "&url="+window.location;
+            $.post('/bug-report', data)
+                 .done(function(data) {
+                    if(data.success) {
+                        $('#bugModal').modal('hide');
+                    }
+                }); 
+        });
     </script>
     {% block javascript %}
     {% endblock %}
