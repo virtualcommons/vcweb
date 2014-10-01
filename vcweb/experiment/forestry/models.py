@@ -270,7 +270,8 @@ def get_initial_resource_level_parameter():
     return Parameter.objects.for_round(name='initial_resource_level')
 
 
-# FIXME: consider refactoring, move signal receivers to signals.py and dependent functions to services.py
+# FIXME: consider refactoring, move signal receivers to signals.py and
+# dependent functions to services.py
 
 @receiver(signals.round_started, sender=EXPERIMENT_METADATA_NAME)
 @transaction.atomic
@@ -286,7 +287,8 @@ def round_started_handler(sender, experiment=None, **kwargs):
 
     # initialize group, group cluster, and participant data values
     experiment.initialize_data_values(
-        group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
+        group_parameters=(get_regrowth_parameter(
+        ), get_group_harvest_parameter(), get_resource_level_parameter()),
         defaults={
             get_regrowth_parameter(): 0
         }
@@ -294,7 +296,8 @@ def round_started_handler(sender, experiment=None, **kwargs):
 
     if should_reset_resource_level(round_configuration, experiment):
         initial_resource_level = get_max_resource_level(round_configuration)
-        logger.debug("Resetting resource level for all groups in %s to %d", round_configuration, initial_resource_level)
+        logger.debug("Resetting resource level for all groups in %s to %d",
+                     round_configuration, initial_resource_level)
         for group in experiment.groups:
             # set resource level to initial default values
             existing_resource_level = get_resource_level_dv(group, round_data)
@@ -306,27 +309,35 @@ def round_started_handler(sender, experiment=None, **kwargs):
 @transaction.atomic
 def update_resource_level(experiment, group, round_data, regrowth_rate, max_resource_level=None):
     if max_resource_level is None:
-        max_resource_level = get_max_resource_level(round_data.round_configuration)
+        max_resource_level = get_max_resource_level(
+            round_data.round_configuration)
     current_resource_level_dv = get_resource_level_dv(group, round_data)
     current_resource_level = current_resource_level_dv.int_value
     group_harvest_dv = get_group_harvest_dv(group, round_data)
     regrowth_dv = get_regrowth_dv(group, round_data)
     total_harvest = get_total_group_harvest(group, round_data)
-    logger.debug("Harvest: total group harvest for playable round: %s", total_harvest)
+    logger.debug(
+        "Harvest: total group harvest for playable round: %s", total_harvest)
     if current_resource_level > 0 and total_harvest > 0:
-        group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level))
+        group.log("Harvest: removing %s from current resource level %s" %
+                  (total_harvest, current_resource_level))
         group_harvest_dv.update_int(total_harvest)
         current_resource_level = current_resource_level - total_harvest
-        resource_regrowth = calculate_regrowth(current_resource_level, regrowth_rate, max_resource_level)
-        group.log("Regrowth: adding %s to current resource level %s" % (resource_regrowth, current_resource_level))
+        resource_regrowth = calculate_regrowth(
+            current_resource_level, regrowth_rate, max_resource_level)
+        group.log("Regrowth: adding %s to current resource level %s" %
+                  (resource_regrowth, current_resource_level))
         regrowth_dv.update_int(resource_regrowth)
         # clamp resource
-        current_resource_level_dv.update_int(min(current_resource_level + resource_regrowth, max_resource_level))
+        current_resource_level_dv.update_int(
+            min(current_resource_level + resource_regrowth, max_resource_level))
     # XXX: transfer resource levels across chat and quiz rounds if they exist
     if experiment.has_next_round:
         # set group round data resource_level for each group + regrowth
-        group.log("Transferring resource level %s to next round" % current_resource_level_dv.int_value)
-        group.copy_to_next_round(current_resource_level_dv, group_harvest_dv, regrowth_dv)
+        group.log("Transferring resource level %s to next round" %
+                  current_resource_level_dv.int_value)
+        group.copy_to_next_round(
+            current_resource_level_dv, group_harvest_dv, regrowth_dv)
 
 
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)

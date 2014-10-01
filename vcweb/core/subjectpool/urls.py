@@ -9,7 +9,8 @@ from vcweb.core.subjectpool.views import (experimenter_index, manage_experiment_
 
 urlpatterns = [
     url(r'^$', experimenter_index, name='experimenter_index'),
-    url(r'^session/manage$', manage_experiment_session, name='manage_experiment_session'),
+    url(r'^session/manage$', manage_experiment_session,
+        name='manage_experiment_session'),
     url(r'^session/events$', get_session_events, name='session_events'),
     url(r'^session/detail/event/(?P<pk>\d+)$',
         manage_participant_attendance, name='session_event_detail'),

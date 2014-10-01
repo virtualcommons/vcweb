@@ -11,7 +11,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from vcweb.core.decorators import group_required
 from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.http import JsonResponse, dumps
-from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage, PermissionGroup)
+from vcweb.core.models import (
+    Experiment, ParticipantGroupRelationship, ChatMessage, PermissionGroup)
 from .models import (get_experiment_metadata, get_regrowth_rate, get_max_harvest_decision, get_cost_of_living,
                      get_resource_level, get_initial_resource_level, get_final_session_storage_queryset,
                      get_harvest_decision_dv, set_harvest_decision, can_observe_other_group, get_average_harvest,

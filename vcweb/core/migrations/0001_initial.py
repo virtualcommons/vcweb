@@ -18,7 +18,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ActivityLog',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('log_message', models.TextField()),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
             ],
@@ -29,12 +30,18 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Address',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('street1', models.CharField(max_length=256, verbose_name='Street')),
-                ('street2', models.CharField(max_length=256, verbose_name='Street')),
-                ('city', models.CharField(max_length=128, verbose_name='City', blank=True)),
-                ('state', models.CharField(max_length=128, verbose_name='State', blank=True)),
-                ('zipcode', models.CharField(max_length=8, verbose_name='Zip code', blank=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('street1', models.CharField(
+                    max_length=256, verbose_name='Street')),
+                ('street2', models.CharField(
+                    max_length=256, verbose_name='Street')),
+                ('city', models.CharField(
+                    max_length=128, verbose_name='City', blank=True)),
+                ('state', models.CharField(
+                    max_length=128, verbose_name='State', blank=True)),
+                ('zipcode', models.CharField(
+                    max_length=8, verbose_name='Zip code', blank=True)),
             ],
             options={
             },
@@ -43,7 +50,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='BookmarkedExperimentMetadata',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
             ],
             options={
@@ -54,8 +62,10 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Experiment',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('authentication_code', models.CharField(default=b'vcweb.auth.code', max_length=32)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('authentication_code', models.CharField(
+                    default=b'vcweb.auth.code', max_length=32)),
                 ('current_round_sequence_number', models.PositiveIntegerField(
                     default=1, help_text='One-based sequence number used to identify which round the experiment is currently running')),
                 ('current_repeated_round_sequence_number', models.PositiveIntegerField(
@@ -64,11 +74,14 @@ class Migration(migrations.Migration):
                     b'ACTIVE', 'Active, no round in progress'), (b'ROUND_IN_PROGRESS', 'Round in progress'), (b'COMPLETED', 'Completed')])),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
-                ('date_activated', models.DateTimeField(null=True, blank=True)),
-                ('duration', models.CharField(help_text='Duration of the experiment', max_length=32, blank=True)),
+                ('date_activated', models.DateTimeField(
+                    null=True, blank=True)),
+                ('duration', models.CharField(
+                    help_text='Duration of the experiment', max_length=32, blank=True)),
                 ('start_date', models.DateField(
                     help_text='Signifies that the experiment should activate automatically on the specified date.', null=True, blank=True)),
-                ('current_round_start_time', models.DateTimeField(null=True, blank=True)),
+                ('current_round_start_time',
+                 models.DateTimeField(null=True, blank=True)),
                 ('registration_email_subject', models.CharField(
                     help_text='email subject header on registration emails sent to a participant', max_length=128, blank=True)),
                 ('registration_email_text', models.TextField(blank=True)),
@@ -83,7 +96,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('activitylog_ptr', models.OneToOneField(
                     parent_link=True, auto_created=True, primary_key=True, serialize=False, to='core.ActivityLog')),
-                ('experiment', models.ForeignKey(related_name=b'activity_log_set', to='core.Experiment')),
+                ('experiment', models.ForeignKey(
+                    related_name=b'activity_log_set', to='core.Experiment')),
             ],
             options={
             },
@@ -92,12 +106,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ExperimentConfiguration',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(max_length=255)),
-                ('max_number_of_participants', models.PositiveIntegerField(default=0)),
+                ('max_number_of_participants',
+                 models.PositiveIntegerField(default=0)),
                 ('registration_email_subject', models.TextField(
                     help_text='Subject header for email registrations', blank=True)),
-                ('invitation_text', models.TextField(help_text='Text to send out via email invitations', blank=True)),
+                ('invitation_text', models.TextField(
+                    help_text='Text to send out via email invitations', blank=True)),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('is_public', models.BooleanField(default=False)),
@@ -123,9 +140,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Experimenter',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('failed_password_attempts', models.PositiveIntegerField(default=0)),
-                ('authentication_token', models.CharField(max_length=64, blank=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('failed_password_attempts',
+                 models.PositiveIntegerField(default=0)),
+                ('authentication_token', models.CharField(
+                    max_length=64, blank=True)),
                 ('approved', models.BooleanField(default=False)),
             ],
             options={
@@ -136,10 +156,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ExperimenterRequest',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
                 ('approved', models.BooleanField(default=False)),
-                ('user', models.OneToOneField(verbose_name='Django User', to=settings.AUTH_USER_MODEL)),
+                ('user', models.OneToOneField(
+                    verbose_name='Django User', to=settings.AUTH_USER_MODEL)),
             ],
             options={
             },
@@ -148,18 +170,21 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ExperimentMetadata',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('title', models.CharField(max_length=255)),
                 ('namespace', models.CharField(blank=True, max_length=255, unique=True,
                                                null=True, validators=[django.core.validators.RegexValidator(b'^[\\w_-]*$')])),
-                ('short_name', models.SlugField(max_length=32, unique=True, null=True, blank=True)),
+                ('short_name', models.SlugField(
+                    max_length=32, unique=True, null=True, blank=True)),
                 ('description', models.TextField(blank=True)),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('about_url', models.URLField(null=True, blank=True)),
                 ('logo_url', models.URLField(null=True, blank=True)),
                 ('active', models.BooleanField(default=True)),
-                ('default_configuration', models.ForeignKey(blank=True, to='core.ExperimentConfiguration', null=True)),
+                ('default_configuration', models.ForeignKey(
+                    blank=True, to='core.ExperimentConfiguration', null=True)),
             ],
             options={
                 'ordering': ['title', 'namespace'],
@@ -169,12 +194,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ExperimentParameterValue',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('string_value', models.TextField(blank=True)),
                 ('int_value', models.IntegerField(null=True, blank=True)),
                 ('float_value', models.FloatField(null=True, blank=True)),
                 ('boolean_value', models.NullBooleanField()),
-                ('date_created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('date_created', models.DateTimeField(
+                    auto_now_add=True, db_index=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('is_active', models.BooleanField(default=True)),
                 ('experiment_configuration', models.ForeignKey(
@@ -188,15 +215,18 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ExperimentSession',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
                 ('scheduled_date', models.DateTimeField()),
-                ('scheduled_end_date', models.DateTimeField(null=True, blank=True)),
+                ('scheduled_end_date', models.DateTimeField(
+                    null=True, blank=True)),
                 ('capacity', models.PositiveIntegerField(default=20)),
                 ('location', models.CharField(
                     help_text='Where will this experiment session be held?', max_length=128, blank=True)),
                 ('invitation_text', models.TextField(blank=True)),
-                ('creator', models.ForeignKey(related_name=b'experiment_session_set', to=settings.AUTH_USER_MODEL)),
+                ('creator', models.ForeignKey(
+                    related_name=b'experiment_session_set', to=settings.AUTH_USER_MODEL)),
                 ('experiment_metadata', models.ForeignKey(
                     related_name=b'experiment_session_set', to='core.ExperimentMetadata')),
             ],
@@ -208,10 +238,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Group',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('number', models.PositiveIntegerField()),
                 ('max_size', models.PositiveIntegerField(default=5)),
-                ('session_id', models.CharField(default=b'', max_length=64, blank=True)),
+                ('session_id', models.CharField(
+                    default=b'', max_length=64, blank=True)),
                 ('experiment', models.ForeignKey(to='core.Experiment')),
             ],
             options={
@@ -224,7 +256,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('activitylog_ptr', models.OneToOneField(
                     parent_link=True, auto_created=True, primary_key=True, serialize=False, to='core.ActivityLog')),
-                ('group', models.ForeignKey(related_name=b'activity_log_set', to='core.Group')),
+                ('group', models.ForeignKey(
+                    related_name=b'activity_log_set', to='core.Group')),
             ],
             options={
             },
@@ -233,11 +266,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='GroupCluster',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
                 ('name', models.CharField(max_length=64, blank=True)),
-                ('session_id', models.CharField(default=b'', max_length=64, blank=True)),
-                ('experiment', models.ForeignKey(related_name=b'group_cluster_set', to='core.Experiment')),
+                ('session_id', models.CharField(
+                    default=b'', max_length=64, blank=True)),
+                ('experiment', models.ForeignKey(
+                    related_name=b'group_cluster_set', to='core.Experiment')),
             ],
             options={
                 'ordering': ['date_created'],
@@ -247,15 +283,18 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='GroupClusterDataValue',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('string_value', models.TextField(blank=True)),
                 ('int_value', models.IntegerField(null=True, blank=True)),
                 ('float_value', models.FloatField(null=True, blank=True)),
                 ('boolean_value', models.NullBooleanField()),
-                ('date_created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('date_created', models.DateTimeField(
+                    auto_now_add=True, db_index=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('is_active', models.BooleanField(default=True)),
-                ('group_cluster', models.ForeignKey(related_name=b'data_value_set', to='core.GroupCluster')),
+                ('group_cluster', models.ForeignKey(
+                    related_name=b'data_value_set', to='core.GroupCluster')),
             ],
             options={
                 'abstract': False,
@@ -265,10 +304,13 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='GroupRelationship',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
-                ('cluster', models.ForeignKey(related_name=b'group_relationship_set', to='core.GroupCluster')),
-                ('group', models.ForeignKey(related_name=b'relationship_set', to='core.Group')),
+                ('cluster', models.ForeignKey(
+                    related_name=b'group_relationship_set', to='core.GroupCluster')),
+                ('group', models.ForeignKey(
+                    related_name=b'relationship_set', to='core.Group')),
             ],
             options={
                 'ordering': ['date_created'],
@@ -278,15 +320,18 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='GroupRoundDataValue',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('string_value', models.TextField(blank=True)),
                 ('int_value', models.IntegerField(null=True, blank=True)),
                 ('float_value', models.FloatField(null=True, blank=True)),
                 ('boolean_value', models.NullBooleanField()),
-                ('date_created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('date_created', models.DateTimeField(
+                    auto_now_add=True, db_index=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('is_active', models.BooleanField(default=True)),
-                ('group', models.ForeignKey(related_name=b'data_value_set', to='core.Group')),
+                ('group', models.ForeignKey(
+                    related_name=b'data_value_set', to='core.Group')),
             ],
             options={
                 'ordering': ['round_data', 'group', 'parameter'],
@@ -296,7 +341,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Institution',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(unique=True, max_length=255)),
                 ('acronym', models.CharField(max_length=16, blank=True)),
                 ('description', models.TextField(blank=True)),
@@ -312,9 +358,11 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Invitation',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
-                ('experiment_session', models.ForeignKey(to='core.ExperimentSession')),
+                ('experiment_session', models.ForeignKey(
+                    to='core.ExperimentSession')),
             ],
             options={
                 'ordering': ['experiment_session', 'date_created'],
@@ -324,12 +372,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='OstromlabFaqEntry',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('question', models.TextField(help_text='FAQ Question')),
                 ('answer', models.TextField(help_text='FAQ Answer')),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
-                ('contributor', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('contributor', models.ForeignKey(
+                    to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['question', '-date_created'],
@@ -339,22 +389,27 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Parameter',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('scope', models.CharField(default=b'round', max_length=32, choices=[(b'round', b'Round configuration data applicable to all groups for a given round'), (b'experiment', b'Experiment configuration data relevant to the entire experiment'), (
                     b'group', b'Group data for a given group in a given round'), (b'group_cluster', b'Group cluster data for a given group cluster in a given round'), (b'participant', b'Participant data for a given participant in a given round')])),
                 ('name', models.CharField(unique=True, max_length=255)),
-                ('display_name', models.CharField(default=b'', max_length=255, blank=True)),
-                ('description', models.CharField(default=b'', max_length=512, blank=True)),
+                ('display_name', models.CharField(
+                    default=b'', max_length=255, blank=True)),
+                ('description', models.CharField(
+                    default=b'', max_length=512, blank=True)),
                 ('type', models.CharField(max_length=32, choices=[(b'int', b'Integer value'), (b'string', b'String value'), (b'foreignkey', b'Foreign key'), (
                     b'float', b'Floating-point number'), (b'boolean', b'Boolean value (true/false)'), (b'enum', b'Enumeration')])),
                 ('class_name', models.CharField(
                     help_text=b'Model classname in the form of appname.modelname, e.g., "core.Experiment".  Only applicable for foreign key parameters.', max_length=64, blank=True)),
-                ('default_value_string', models.CharField(max_length=255, blank=True)),
+                ('default_value_string', models.CharField(
+                    max_length=255, blank=True)),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('enum_choices', models.TextField(blank=True)),
                 ('is_required', models.BooleanField(default=False)),
-                ('creator', models.ForeignKey(blank=True, to='core.Experimenter', null=True)),
+                ('creator', models.ForeignKey(
+                    blank=True, to='core.Experimenter', null=True)),
             ],
             options={
                 'ordering': ['name'],
@@ -364,12 +419,16 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Participant',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('failed_password_attempts', models.PositiveIntegerField(default=0)),
-                ('authentication_token', models.CharField(max_length=64, blank=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('failed_password_attempts',
+                 models.PositiveIntegerField(default=0)),
+                ('authentication_token', models.CharField(
+                    max_length=64, blank=True)),
                 ('can_receive_invitations', models.BooleanField(
                     default=False, help_text="Check this box if you'd like to opt-in and receive email invitations for upcoming experiments")),
-                ('gender', models.CharField(blank=True, max_length=1, choices=[(b'M', b'Male'), (b'F', b'Female')])),
+                ('gender', models.CharField(
+                    blank=True, max_length=1, choices=[(b'M', b'Male'), (b'F', b'Female')])),
                 ('birthdate', models.DateField(null=True, blank=True)),
                 ('major', models.CharField(max_length=128, blank=True)),
                 ('class_status', models.CharField(blank=True, max_length=32, choices=[(b'Freshman', b'Freshman'), (b'Sophomore', b'Sophomore'), (
@@ -382,7 +441,8 @@ class Migration(migrations.Migration):
                  (b'Fast food', b'Fast food'), (b'Haute cuisine', b'Haute cuisine'), (b'Asian', b'Asian'), (b'Mexican', b'Mexican'), (b'Other', b'Other')])),
                 ('favorite_movie_genre', models.CharField(blank=True, max_length=64, choices=[(b'Family', b'Family'), (b'Action', b'Action'), (b'Comedy', b'Comedy'), (b'Science Fiction', b'Science Fiction'), (b'Documentary', b'Documentary'), (
                     b'Cult', b'Cult'), (b'Sport', b'Sport'), (b'Musical', b'Musical'), (b'Horror', b'Horror'), (b'Foreign', b'Foreign'), (b'Romance', b'Romance'), (b'Independent', b'Independent'), (b'Drama', b'Drama')])),
-                ('address', models.ForeignKey(blank=True, to='core.Address', null=True)),
+                ('address', models.ForeignKey(
+                    blank=True, to='core.Address', null=True)),
             ],
             options={
                 'ordering': ['user'],
@@ -392,16 +452,22 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ParticipantExperimentRelationship',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('participant_identifier', models.CharField(max_length=32)),
-                ('sequential_participant_identifier', models.PositiveIntegerField()),
+                ('sequential_participant_identifier',
+                 models.PositiveIntegerField()),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
-                ('last_completed_round_sequence_number', models.PositiveIntegerField(default=0)),
-                ('current_location', models.CharField(max_length=64, blank=True)),
+                ('last_completed_round_sequence_number',
+                 models.PositiveIntegerField(default=0)),
+                ('current_location', models.CharField(
+                    max_length=64, blank=True)),
                 ('additional_data', models.TextField(blank=True)),
                 ('created_by', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
-                ('experiment', models.ForeignKey(related_name=b'participant_relationship_set', to='core.Experiment')),
-                ('participant', models.ForeignKey(related_name=b'experiment_relationship_set', to='core.Participant')),
+                ('experiment', models.ForeignKey(
+                    related_name=b'participant_relationship_set', to='core.Experiment')),
+                ('participant', models.ForeignKey(
+                    related_name=b'experiment_relationship_set', to='core.Participant')),
             ],
             options={
             },
@@ -410,14 +476,17 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ParticipantGroupRelationship',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('participant_number', models.PositiveIntegerField()),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
                 ('active', models.BooleanField(default=True)),
                 ('first_visit', models.BooleanField(default=True)),
-                ('notifications_since', models.DateTimeField(default=datetime.datetime.now, null=True, blank=True)),
+                ('notifications_since', models.DateTimeField(
+                    default=datetime.datetime.now, null=True, blank=True)),
                 ('survey_completed', models.BooleanField(default=False)),
-                ('group', models.ForeignKey(related_name=b'participant_group_relationship_set', to='core.Group')),
+                ('group', models.ForeignKey(
+                    related_name=b'participant_group_relationship_set', to='core.Group')),
                 ('participant', models.ForeignKey(
                     related_name=b'participant_group_relationship_set', to='core.Participant')),
             ],
@@ -429,12 +498,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ParticipantRoundDataValue',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('string_value', models.TextField(blank=True)),
                 ('int_value', models.IntegerField(null=True, blank=True)),
                 ('float_value', models.FloatField(null=True, blank=True)),
                 ('boolean_value', models.NullBooleanField()),
-                ('date_created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('date_created', models.DateTimeField(
+                    auto_now_add=True, db_index=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('is_active', models.BooleanField(default=True)),
                 ('submitted', models.BooleanField(default=False)),
@@ -480,11 +551,13 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ParticipantSignup',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
                 ('attendance', models.PositiveIntegerField(
                     default=3, max_length=1, choices=[(0, 'participated'), (1, 'turned away'), (2, 'absent'), (3, 'signed up')])),
-                ('invitation', models.ForeignKey(related_name=b'signup_set', to='core.Invitation')),
+                ('invitation', models.ForeignKey(
+                    related_name=b'signup_set', to='core.Invitation')),
             ],
             options={
                 'ordering': ['invitation__experiment_session'],
@@ -494,7 +567,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='RoundConfiguration',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('sequence_number', models.PositiveIntegerField(
                     help_text='Determines the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5')),
                 ('display_number', models.PositiveIntegerField(
@@ -512,7 +586,8 @@ class Migration(migrations.Migration):
                 ('template_id', models.CharField(
                     help_text='A HTML template ID to use in a single page app, e.g., KO template', max_length=128, blank=True)),
                 ('survey_url', models.URLField(null=True, blank=True)),
-                ('chat_enabled', models.BooleanField(default=False, help_text='Enable in-round communication')),
+                ('chat_enabled', models.BooleanField(
+                    default=False, help_text='Enable in-round communication')),
                 ('create_group_clusters', models.BooleanField(
                     default=False, help_text='Create relationships (clusters) of groups that can share group cluster data values')),
                 ('group_cluster_size', models.PositiveIntegerField(
@@ -538,12 +613,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='RoundData',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('repeating_round_sequence_number', models.PositiveIntegerField(
                     default=0, help_text='Sequence number used to disambiguate round data in repeating rounds')),
                 ('elapsed_time', models.PositiveIntegerField(default=0)),
                 ('experimenter_notes', models.TextField(blank=True)),
-                ('experiment', models.ForeignKey(related_name=b'round_data_set', to='core.Experiment')),
+                ('experiment', models.ForeignKey(
+                    related_name=b'round_data_set', to='core.Experiment')),
                 ('round_configuration', models.ForeignKey(
                     related_name=b'round_data_set', to='core.RoundConfiguration')),
             ],
@@ -555,12 +632,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='RoundParameterValue',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('string_value', models.TextField(blank=True)),
                 ('int_value', models.IntegerField(null=True, blank=True)),
                 ('float_value', models.FloatField(null=True, blank=True)),
                 ('boolean_value', models.NullBooleanField()),
-                ('date_created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('date_created', models.DateTimeField(
+                    auto_now_add=True, db_index=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('is_active', models.BooleanField(default=True)),
                 ('parameter', models.ForeignKey(to='core.Parameter')),
@@ -575,12 +654,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='SpoolParticipantStatistics',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(
+                    verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('absences', models.PositiveIntegerField(default=0)),
                 ('discharges', models.PositiveIntegerField(default=0)),
                 ('participations', models.PositiveIntegerField(default=0)),
                 ('invitations', models.PositiveIntegerField(default=0)),
-                ('participant', models.ForeignKey(related_name=b'spool_statistics_set', to='core.Participant')),
+                ('participant', models.ForeignKey(
+                    related_name=b'spool_statistics_set', to='core.Participant')),
             ],
             options={
             },
@@ -588,7 +669,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name='rounddata',
-            unique_together=set([('round_configuration', 'repeating_round_sequence_number', 'experiment')]),
+            unique_together=set(
+                [('round_configuration', 'repeating_round_sequence_number', 'experiment')]),
         ),
         migrations.AddField(
             model_name='participantrounddatavalue',
@@ -599,13 +681,15 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='participantrounddatavalue',
             name='participant_group_relationship',
-            field=models.ForeignKey(related_name=b'data_value_set', to='core.ParticipantGroupRelationship'),
+            field=models.ForeignKey(
+                related_name=b'data_value_set', to='core.ParticipantGroupRelationship'),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='participantrounddatavalue',
             name='round_data',
-            field=models.ForeignKey(related_name=b'participant_data_value_set', to='core.RoundData'),
+            field=models.ForeignKey(
+                related_name=b'participant_data_value_set', to='core.RoundData'),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -638,7 +722,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='participant',
             name='institution',
-            field=models.ForeignKey(blank=True, to='core.Institution', null=True),
+            field=models.ForeignKey(
+                blank=True, to='core.Institution', null=True),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -669,7 +754,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='grouprounddatavalue',
             name='round_data',
-            field=models.ForeignKey(related_name=b'group_data_value_set', to='core.RoundData'),
+            field=models.ForeignKey(
+                related_name=b'group_data_value_set', to='core.RoundData'),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -681,7 +767,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='groupclusterdatavalue',
             name='round_data',
-            field=models.ForeignKey(related_name=b'group_cluster_data_value_set', to='core.RoundData'),
+            field=models.ForeignKey(
+                related_name=b'group_cluster_data_value_set', to='core.RoundData'),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -705,7 +792,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='experimenter',
             name='institution',
-            field=models.ForeignKey(blank=True, to='core.Institution', null=True),
+            field=models.ForeignKey(
+                blank=True, to='core.Institution', null=True),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -718,13 +806,15 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='experimentconfiguration',
             name='creator',
-            field=models.ForeignKey(related_name=b'experiment_configuration_set', to='core.Experimenter'),
+            field=models.ForeignKey(
+                related_name=b'experiment_configuration_set', to='core.Experimenter'),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='experimentconfiguration',
             name='experiment_metadata',
-            field=models.ForeignKey(related_name=b'experiment_configuration_set', to='core.ExperimentMetadata'),
+            field=models.ForeignKey(
+                related_name=b'experiment_configuration_set', to='core.ExperimentMetadata'),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -761,13 +851,15 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='bookmarkedexperimentmetadata',
             name='experiment_metadata',
-            field=models.ForeignKey(related_name=b'bookmarked_experiment_metadata_set', to='core.ExperimentMetadata'),
+            field=models.ForeignKey(
+                related_name=b'bookmarked_experiment_metadata_set', to='core.ExperimentMetadata'),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='bookmarkedexperimentmetadata',
             name='experimenter',
-            field=models.ForeignKey(related_name=b'bookmarked_experiment_metadata_set', to='core.Experimenter'),
+            field=models.ForeignKey(
+                related_name=b'bookmarked_experiment_metadata_set', to='core.Experimenter'),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(

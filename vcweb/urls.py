@@ -62,7 +62,8 @@ def experiment_urls():
 
 urlpatterns += experiment_urls()
 # core urls catches everything else
-urlpatterns.append(url(r'', include('vcweb.core.urls', namespace='core', app_name='core')))
+urlpatterns.append(
+    url(r'', include('vcweb.core.urls', namespace='core', app_name='core')))
 
 
 if settings.DEBUG:

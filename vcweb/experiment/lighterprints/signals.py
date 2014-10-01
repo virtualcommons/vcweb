@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME, dispatch_uid=EXPERIMENT_METADATA_NAME)
 @transaction.atomic
 def round_ended_handler(sender, experiment=None, **kwargs):
-    logger.debug("ending lighter footprints round %s, sending summary emails", experiment)
+    logger.debug(
+        "ending lighter footprints round %s, sending summary emails", experiment)
     daily_update(experiment)
 
 

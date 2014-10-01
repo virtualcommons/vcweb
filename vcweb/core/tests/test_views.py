@@ -1,4 +1,5 @@
-from ..models import (Participant, ExperimentMetadata, Experiment, Invitation, ParticipantSignup, PermissionGroup)
+from ..models import (Participant, ExperimentMetadata,
+                      Experiment, Invitation, ParticipantSignup, PermissionGroup)
 from ..forms import LoginForm
 from ..views import ExperimenterDashboardViewModel
 from .common import BaseVcwebTest, SubjectPoolTest
@@ -25,10 +26,12 @@ class AuthTest(BaseVcwebTest):
 
     def test_invalid_password(self):
         experiment = self.experiment
-        self.assertFalse(self.login(username=experiment.experimenter.email, password='jibber jabber'))
+        self.assertFalse(
+            self.login(username=experiment.experimenter.email, password='jibber jabber'))
         response = self.post(self.login_url, {'email': experiment.experimenter.email,
                                               'password': 'jibber jabber'})
-        self.assertTrue(LoginForm.INVALID_AUTHENTICATION_MESSAGE in response.content)
+        self.assertTrue(
+            LoginForm.INVALID_AUTHENTICATION_MESSAGE in response.content)
 
     def test_experimenter_permissions(self):
         self.assertTrue(self.login_experimenter())
@@ -101,18 +104,22 @@ class ParticipantDashboardTest(BaseVcwebTest):
 class ExperimenterDashboardTest(BaseVcwebTest):
 
     def test_dashboard_view_model(self):
-        dashboard_view_model = ExperimenterDashboardViewModel(self.demo_experimenter.user)
+        dashboard_view_model = ExperimenterDashboardViewModel(
+            self.demo_experimenter.user)
         vmdict = dashboard_view_model.to_dict()
         self.assertFalse(vmdict['isAdmin'])
         self.assertEqual(vmdict['experimenterId'], self.demo_experimenter.pk)
         self.assertFalse(vmdict['runningExperiments'])
         self.experiment.activate()
-        dashboard_view_model = ExperimenterDashboardViewModel(self.experiment.experimenter.user)
+        dashboard_view_model = ExperimenterDashboardViewModel(
+            self.experiment.experimenter.user)
         vmdict = dashboard_view_model.to_dict()
         self.assertFalse(vmdict['isAdmin'])
-        self.assertEqual(vmdict['experimenterId'], self.experiment.experimenter.pk)
+        self.assertEqual(
+            vmdict['experimenterId'], self.experiment.experimenter.pk)
         self.assertTrue(vmdict['runningExperiments'])
-        self.assertEqual(self.experiment.status, vmdict['runningExperiments'][0]['status'])
+        self.assertEqual(
+            self.experiment.status, vmdict['runningExperiments'][0]['status'])
 
     def test_experimenter_dashboard(self):
         e = self.experiment
@@ -196,10 +203,14 @@ class CloneExperimentTest(BaseVcwebTest):
                              {'experiment_id': self.experiment.pk,
                               'action': 'clone'})
         experiment_json = json.loads(response.content)
-        cloned_experiment = Experiment.objects.get(pk=experiment_json['experiment']['pk'])
-        self.assertEqual(cloned_experiment.experiment_metadata, self.experiment.experiment_metadata)
-        self.assertEqual(cloned_experiment.experiment_configuration, self.experiment.experiment_configuration)
-        self.assertNotEqual(cloned_experiment.experimenter, self.experiment.experimenter)
+        cloned_experiment = Experiment.objects.get(
+            pk=experiment_json['experiment']['pk'])
+        self.assertEqual(
+            cloned_experiment.experiment_metadata, self.experiment.experiment_metadata)
+        self.assertEqual(
+            cloned_experiment.experiment_configuration, self.experiment.experiment_configuration)
+        self.assertNotEqual(
+            cloned_experiment.experimenter, self.experiment.experimenter)
         self.assertEqual(cloned_experiment.experimenter, experimenter)
 
 
@@ -244,7 +255,8 @@ class SubjectPoolViewTest(SubjectPoolTest):
         e = self.create_experimenter()
         self.assertTrue(self.login_experimenter(e))
 
-        response = self.get('/subject-pool/session/events?from=' + str(fro) + '&to=' + str(to) + '/')
+        response = self.get(
+            '/subject-pool/session/events?from=' + str(fro) + '&to=' + str(to) + '/')
         self.assertEqual(200, response.status_code)
 
     def test_manage_experiment_session(self):
@@ -298,21 +310,25 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertEqual(200, response.status_code)
 
         self.setup_invitations(x, es_pk_list)
-        invitation = Invitation.objects.filter(participant=participant).order_by('?')[0]
+        invitation = Invitation.objects.filter(
+            participant=participant).order_by('?')[0]
 
-        response = self.post(reverse('subjectpool:submit_experiment_session_signup'), {'invitation_pk': invitation.pk, 'experiment_metadata_pk': invitation.experiment_session.experiment_metadata.pk})
+        response = self.post(reverse('subjectpool:submit_experiment_session_signup'), {
+                             'invitation_pk': invitation.pk, 'experiment_metadata_pk': invitation.experiment_session.experiment_metadata.pk})
 
         self.assertEqual(302, response.status_code)
         self.assertTrue(self.dashboard_url in response['Location'])
 
         # test cancel session signup
         ps = ParticipantSignup.objects.get(invitation=invitation)
-        response = self.post(reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
+        response = self.post(
+            reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
         self.assertEqual(302, response.status_code)
         self.assertTrue(self.dashboard_url in response['Location'])
 
         # test canceling an already cancel session signup
-        response = self.post(reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
+        response = self.post(
+            reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
         self.assertEqual(302, response.status_code)
         self.assertTrue(self.dashboard_url in response['Location'])
 
@@ -320,7 +336,8 @@ class SubjectPoolViewTest(SubjectPoolTest):
         invitation.experiment_session.capacity = 0
         invitation.experiment_session.save()
 
-        response = self.post(reverse('subjectpool:submit_experiment_session_signup'), {'invitation_pk': invitation.pk, 'experiment_metadata_pk': invitation.experiment_session.experiment_metadata.pk})
+        response = self.post(reverse('subjectpool:submit_experiment_session_signup'), {
+                             'invitation_pk': invitation.pk, 'experiment_metadata_pk': invitation.experiment_session.experiment_metadata.pk})
 
         self.assertEqual(302, response.status_code)
         self.assertTrue('/subject-pool/signup/' in response['Location'])

@@ -15,7 +15,8 @@ def initial_boundary_effects_data(apps, schema_editor):
         description='The boundary effects experiment manipulates the resource flows and information connections between social groups and ecological resources. Developed by Dr. Tim Waring, University of Maine'
     )
     parameters = create_boundary_effects_parameters(apps, schema_editor)
-    demo_experimenter = Experimenter.objects.get(user__email=settings.DEMO_EXPERIMENTER_EMAIL)
+    demo_experimenter = Experimenter.objects.get(
+        user__email=settings.DEMO_EXPERIMENTER_EMAIL)
     boundary_experiment_metadata.parameters.add(*parameters)
     boundary_configuration = create_boundary_configuration(apps, schema_editor,
                                                            experiment_metadata=boundary_experiment_metadata,
@@ -31,7 +32,8 @@ def create_boundary_configuration(apps, schema_editor, experiment_metadata=None,
     ExperimentConfiguration = apps.get_model('core', 'ExperimentConfiguration')
     Parameter = apps.get_model('core', 'Parameter')
 
-    initial_resource_level = Parameter.objects.get(name='initial_resource_level')
+    initial_resource_level = Parameter.objects.get(
+        name='initial_resource_level')
     reset_resource_level = Parameter.objects.get(name='reset_resource_level')
     observe_other_group = Parameter.objects.get(name='observe_other_group')
     shared_resource = Parameter.objects.get(name='shared_resource')
@@ -86,10 +88,14 @@ def create_boundary_configuration(apps, schema_editor, experiment_metadata=None,
         initialize_data_values=True,
         duration=60
     )
-    rc.parameter_value_set.create(parameter=shared_resource, boolean_value=True)
-    rc.parameter_value_set.create(parameter=initial_resource_level, int_value=240)
-    rc.parameter_value_set.create(parameter=reset_resource_level, boolean_value=True)
-    rc.parameter_value_set.create(parameter=observe_other_group, boolean_value=True)
+    rc.parameter_value_set.create(
+        parameter=shared_resource, boolean_value=True)
+    rc.parameter_value_set.create(
+        parameter=initial_resource_level, int_value=240)
+    rc.parameter_value_set.create(
+        parameter=reset_resource_level, boolean_value=True)
+    rc.parameter_value_set.create(
+        parameter=observe_other_group, boolean_value=True)
     boundary_configuration.round_configuration_set.create(
         round_type='DEBRIEFING',
         template_id='TREATMENT_RESULTS',
@@ -111,9 +117,12 @@ def create_boundary_configuration(apps, schema_editor, experiment_metadata=None,
         initialize_data_values=True,
         duration=60
     )
-    rc.parameter_value_set.create(parameter=initial_resource_level, int_value=240)
-    rc.parameter_value_set.create(parameter=reset_resource_level, boolean_value=True)
-    rc.parameter_value_set.create(parameter=observe_other_group, boolean_value=False)
+    rc.parameter_value_set.create(
+        parameter=initial_resource_level, int_value=240)
+    rc.parameter_value_set.create(
+        parameter=reset_resource_level, boolean_value=True)
+    rc.parameter_value_set.create(
+        parameter=observe_other_group, boolean_value=False)
     boundary_configuration.round_configuration_set.create(
         round_type='DEBRIEFING',
         template_id='FINAL_DEBRIEFING',

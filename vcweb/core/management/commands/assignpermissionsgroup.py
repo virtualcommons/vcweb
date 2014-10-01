@@ -14,7 +14,8 @@ class Command(BaseCommand):
         for item in lst:
             item.user.groups = [group]
             item.user.save()
-            logger.debug("User %s assigned to %s permissions group.", item.user, group)
+            logger.debug(
+                "User %s assigned to %s permissions group.", item.user, group)
 
     def handle(self, *args, **options):
         # first make sure all permission groups exist
@@ -22,7 +23,8 @@ class Command(BaseCommand):
         for p in PermissionGroup:
             groups[p], created = Group.objects.get_or_create(name=p.value)
             if created:
-                logger.warning("creating groups but this should normally be done via data migration.")
+                logger.warning(
+                    "creating groups but this should normally be done via data migration.")
 
             # Adding permissions that are currently used in templates.
             # Need to revisit in future when more permissions are being used.
@@ -30,17 +32,24 @@ class Command(BaseCommand):
                 perms = Permission.objects.filter(content_type__name='user')
                 groups[p].permissions = perms
             elif p == PermissionGroup.experimenter:
-                perms = Permission.objects.filter(content_type__name='experiment')
+                perms = Permission.objects.filter(
+                    content_type__name='experiment')
                 groups[p].permissions = perms
 
-        participant_list = Participant.objects.select_related('user').exclude(user__email__regex=r'@mailinator.com$')
-        experimenter_list = Experimenter.objects.select_related('user').exclude(user__email__regex=r'@mailinator.com$')
+        participant_list = Participant.objects.select_related(
+            'user').exclude(user__email__regex=r'@mailinator.com$')
+        experimenter_list = Experimenter.objects.select_related(
+            'user').exclude(user__email__regex=r'@mailinator.com$')
         demo_participant_list = Participant.objects.select_related(
             'user').filter(user__email__regex=r'@mailinator.com$')
         demo_experimenter_list = Experimenter.objects.select_related(
             'user').filter(user__email__regex=r'@mailinator.com$')
 
-        self.assign_group(participant_list, groups[PermissionGroup.participant])
-        self.assign_group(demo_participant_list, groups[PermissionGroup.demo_participant])
-        self.assign_group(experimenter_list, groups[PermissionGroup.experimenter])
-        self.assign_group(demo_experimenter_list, groups[PermissionGroup.demo_experimenter])
+        self.assign_group(
+            participant_list, groups[PermissionGroup.participant])
+        self.assign_group(
+            demo_participant_list, groups[PermissionGroup.demo_participant])
+        self.assign_group(
+            experimenter_list, groups[PermissionGroup.experimenter])
+        self.assign_group(
+            demo_experimenter_list, groups[PermissionGroup.demo_experimenter])

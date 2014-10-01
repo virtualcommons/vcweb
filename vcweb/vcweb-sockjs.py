@@ -16,7 +16,8 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 import django
 django.setup()
 from django.conf import settings
-from vcweb.core.models import (Experiment, ParticipantExperimentRelationship, Experimenter, ChatMessage)
+from vcweb.core.models import (
+    Experiment, ParticipantExperimentRelationship, Experimenter, ChatMessage)
 
 # redefine logger
 import logging
@@ -450,8 +451,10 @@ def main(argv=None):
     # currently only allow one command-line argument, the port to run on.
     logging.getLogger().setLevel(logging.DEBUG)
     port = int(argv[1]) if (len(argv) > 1) else settings.WEBSOCKET_PORT
-    ParticipantRouter = SockJSRouter(ParticipantConnection, '%s/participant' % settings.WEBSOCKET_URI)
-    ExperimenterRouter = SockJSRouter(ExperimenterConnection, '%s/experimenter' % settings.WEBSOCKET_URI)
+    ParticipantRouter = SockJSRouter(
+        ParticipantConnection, '%s/participant' % settings.WEBSOCKET_URI)
+    ExperimenterRouter = SockJSRouter(
+        ExperimenterConnection, '%s/experimenter' % settings.WEBSOCKET_URI)
     urls = list(
         chain.from_iterable([ParticipantRouter.urls, ExperimenterRouter.urls, ]))
     app = web.Application(urls)

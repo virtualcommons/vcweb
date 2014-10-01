@@ -9,15 +9,18 @@ from django.shortcuts import get_object_or_404, render, redirect
 import unicodecsv
 
 from vcweb.core.decorators import group_required, ownership_required, is_participant
-from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
+from vcweb.core.forms import (
+    ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship,
                                ParticipantRoundDataValue, Like, PermissionGroup)
-from vcweb.core.views import (dumps, get_active_experiment, set_authentication_token, mimetypes)
+from vcweb.core.views import (
+    dumps, get_active_experiment, set_authentication_token, mimetypes)
 from .forms import ActivityForm
 from .models import (Activity, get_lighterprints_experiment_metadata, is_linear_public_good_game,
                      is_high_school_treatment, get_treatment_type, get_activity_performed_parameter, )
-from .services import (ActivityStatusList, GroupScores, do_activity, get_time_remaining, GroupActivity)
+from .services import (
+    ActivityStatusList, GroupScores, do_activity, get_time_remaining, GroupActivity)
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +32,8 @@ def perform_activity(request):
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
         participant_group_id = form.cleaned_data['participant_group_id']
-        logger.debug("%s request to perform activity %s", participant_group_id, activity_id)
+        logger.debug(
+            "%s request to perform activity %s", participant_group_id, activity_id)
         participant_group_relationship = get_object_or_404(
             ParticipantGroupRelationship.objects.select_related(
                 'participant__user', 'group__experiment'),
@@ -76,7 +80,8 @@ def post_chat_message(request):
         chat_message = ChatMessage.objects.create(
             value=message, participant_group_relationship=pgr)
         logger.debug("%s: %s", pgr.participant, chat_message)
-        # FIXME: can optimize by only retrieving the latest group activity since the last checkin time
+        # FIXME: can optimize by only retrieving the latest group activity
+        # since the last checkin time
         group_activity = GroupActivity(pgr)
         return JsonResponse({'success': True, 'viewModel': {'groupActivity': group_activity.all_activities}})
     return JsonResponse({'success': False, 'message': "Invalid chat message post"})
@@ -160,7 +165,8 @@ class HighSchoolViewModel(object):
         self.treatment_type = get_treatment_type(
             self.round_configuration).string_value
         self.experiment_configuration = self.experiment.experiment_configuration
-        self.group_scores = GroupScores(experiment, round_data, participant_group_relationship)
+        self.group_scores = GroupScores(
+            experiment, round_data, participant_group_relationship)
         self.activities = []
 
     @property
@@ -218,7 +224,8 @@ class HighSchoolViewModel(object):
 def download_payment_data(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     response = HttpResponse(content_type=mimetypes.types_map['.csv'])
-    response['Content-Disposition'] = 'attachment; filename=payment-%s' % experiment.data_file_name()
+    response[
+        'Content-Disposition'] = 'attachment; filename=payment-%s' % experiment.data_file_name()
     writer = unicodecsv.writer(response, encoding='utf-8')
     group_scores = GroupScores(experiment)
     writer.writerow(['Group', 'Participant', 'Username', 'Total Earnings'])
@@ -249,7 +256,8 @@ def get_view_model_dict(participant_group_relationship, activities=None, experim
     if round_data is None:
         round_data = experiment.current_round_data
     linear_public_good = is_linear_public_good_game(experiment_configuration)
-    group_scores = GroupScores(experiment, round_data, participant_group_relationship=participant_group_relationship)
+    group_scores = GroupScores(
+        experiment, round_data, participant_group_relationship=participant_group_relationship)
     total_participant_points = group_scores.total_participant_points
     group_data = group_scores.get_group_data_list()
     own_group_level = group_scores.get_group_level(own_group)
@@ -337,8 +345,10 @@ def mobile_participate(request, experiment_id=None):
 def participate(request, experiment_id=None):
     user = request.user
     if not is_participant(user):
-        logger.warning("%s trying to participate in experiment %s", user, experiment_id)
-        messages.warning(request, "You are not a participant and cannot participate in experiment %s." % experiment_id)
+        logger.warning(
+            "%s trying to participate in experiment %s", user, experiment_id)
+        messages.warning(
+            request, "You are not a participant and cannot participate in experiment %s." % experiment_id)
         return redirect('core:dashboard')
     participant = user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id,
@@ -349,7 +359,8 @@ def participate(request, experiment_id=None):
                                 participant=participant, group__experiment=experiment)
         treatment_type = get_treatment_type(experiment).string_value
         if treatment_type == 'HIGH_SCHOOL':
-            view_model = HighSchoolViewModel(pgr, experiment=experiment, round_configuration=round_configuration)
+            view_model = HighSchoolViewModel(
+                pgr, experiment=experiment, round_configuration=round_configuration)
             return render(request, view_model.template_name, {
                 'experiment': experiment,
                 'participant_group_relationship': pgr,

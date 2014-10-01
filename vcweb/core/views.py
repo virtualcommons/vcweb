@@ -11,7 +11,8 @@ from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordResetForm
 from django.core.urlresolvers import reverse
-from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
@@ -22,7 +23,8 @@ from django.views.generic.detail import SingleObjectMixin
 from contact_form.views import ContactFormView
 
 from .http import JsonResponse, dumps
-from .decorators import (anonymous_required, retry, is_participant, is_experimenter, ownership_required, group_required)
+from .decorators import (anonymous_required, retry, is_participant,
+                         is_experimenter, ownership_required, group_required)
 from .forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm, UpdateExperimentForm,
                     AsuRegistrationForm, ParticipantGroupIdForm, RegisterEmailListParticipantsForm,
                     RegisterTestParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm,
@@ -93,7 +95,8 @@ class ExperimenterDashboardViewModel(DashboardViewModel):
             experiment_status_dict[e.status].append(
                 e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
         self.pending_experiments = experiment_status_dict['INACTIVE']
-        self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+        self.running_experiments = experiment_status_dict[
+            'ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
         self.archived_experiments = experiment_status_dict['COMPLETED']
 
     def to_dict(self):
@@ -117,7 +120,8 @@ class ParticipantDashboardViewModel(DashboardViewModel):
             experiment_status_dict[e.status].append(
                 e.to_dict(attrs=('participant_url', 'start_date'), name=e.experiment_metadata.title))
         self.pending_experiments = experiment_status_dict['INACTIVE']
-        self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+        self.running_experiments = experiment_status_dict[
+            'ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
         upcoming_signups = ParticipantSignup.objects.upcoming(self.participant)
         self.show_end_dates = False
         self.signups = []
@@ -138,7 +142,8 @@ class ParticipantDashboardViewModel(DashboardViewModel):
 
 def create_dashboard_view_model(user):
     if user is None or not user.is_active:
-        logger.error("can't create dashboard view model from invalid user %s", user)
+        logger.error(
+            "can't create dashboard view model from invalid user %s", user)
         raise ValueError("invalid user: %s" % user)
     if is_experimenter(user):
         return ExperimenterDashboardViewModel(user)
@@ -170,7 +175,8 @@ def dashboard(request):
 # immediately.
 # FIXME: see https://github.com/virtualcommons/vcweb/issues/8
         if participant.should_update_profile:
-            # redirect to the profile page if this is a non-demo participant and their profile is incomplete
+            # redirect to the profile page if this is a non-demo participant
+            # and their profile is incomplete
             return redirect('core:profile')
         elif participant.has_pending_invitations:
             return redirect('subjectpool:experiment_session_signup')
@@ -228,6 +234,7 @@ def get_dashboard_view_model(request):
         'dashboardViewModelJson': create_dashboard_view_model(request.user).to_json()
     })
 
+
 def set_authentication_token(user, authentication_token=''):
     commons_user = None
     if is_participant(user):
@@ -237,7 +244,8 @@ def set_authentication_token(user, authentication_token=''):
     else:
         logger.error("Invalid user: %s", user)
         return
-    logger.debug("setting %s authentication_token=%s", commons_user, authentication_token)
+    logger.debug(
+        "setting %s authentication_token=%s", commons_user, authentication_token)
     commons_user.authentication_token = authentication_token
     commons_user.save()
 
@@ -320,6 +328,7 @@ class LoginView(AnonymousMixin, FormView):
     def get_success_url(self):
         next_url = self.get_next_url()
         if not next_url:
+            # if no next_url specified, redirect participants to their first active experiment if it exists.
             user = self.request.user
             if is_participant(user):
                 active_experiment = get_active_experiment(user.participant)
@@ -350,16 +359,20 @@ class RegistrationView(FormView, AnonymousMixin):
         experimenter_requested = form.cleaned_data['experimenter']
         institution, created = Institution.objects.get_or_create(
             name=institution_string)
-        user = User.objects.create_user(email, email, password, first_name=first_name, last_name=last_name)
+        user = User.objects.create_user(
+            email, email, password, first_name=first_name, last_name=last_name)
         if experimenter_requested:
-            experimenter_request = ExperimenterRequest.objects.create(user=user)
-            logger.debug("creating new experimenter request: %s", experimenter_request)
+            experimenter_request = ExperimenterRequest.objects.create(
+                user=user)
+            logger.debug(
+                "creating new experimenter request: %s", experimenter_request)
         participant = Participant.objects.create(
             user=user, institution=institution)
         logger.debug("Creating new participant: %s", participant)
         request = self.request
         # auth + login the newly created user
-        auth.login(request, auth.authenticate(username=email, password=password))
+        auth.login(
+            request, auth.authenticate(username=email, password=password))
         set_authentication_token(user, request.session.session_key)
         # FIXME: disabling auto registration, experiment configuration flags are not being set properly
         #        for experiment in Experiment.objects.public():
@@ -389,7 +402,8 @@ def update_profile(request):
             e = Experimenter.objects.get(pk=user.experimenter.pk)
 
             if institution_name:
-                institution, created = Institution.objects.get_or_create(name=institution_name)
+                institution, created = Institution.objects.get_or_create(
+                    name=institution_name)
                 e.institution = institution
             else:
                 e.institution = None
@@ -401,7 +415,8 @@ def update_profile(request):
             e.user.save()
             messages.info("Your profile has been updated.")
             return redirect('core:dashboard')
-        messages.warning(request, _("There were errors in your form submission. Please try again."))
+        messages.warning(
+            request, _("There were errors in your form submission. Please try again."))
         return render(request, 'accounts/profile.html', {'form': form})
     else:
         form = ParticipantAccountForm(request.POST or None)
@@ -412,14 +427,16 @@ def update_profile(request):
             with transaction.atomic():
                 p = Participant.objects.get(pk=user.participant.pk)
                 if institution_name:
-                    ins, created = Institution.objects.get_or_create(name=institution_name)
+                    ins, created = Institution.objects.get_or_create(
+                        name=institution_name)
                     p.institution = ins
                 else:
                     p.institution = None
                     logger.debug('Institution is empty')
                 if p.user.email != email:
                     if User.objects.filter(email=email).exists():
-                        messages.warning(request, _("That email is already taken."))
+                        messages.warning(
+                            request, _("That email is already taken."))
                         return render(request, 'accounts/profile.html', {'form': form})
                 for attr in (
                         'major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food', 'favorite_sport',
@@ -430,12 +447,12 @@ def update_profile(request):
                     setattr(p.user, attr, form.cleaned_data.get(attr))
                 p.save()
                 p.user.save()
-            messages.info(request, "Your account has been successfully updated. Thank you!")
+            messages.info(
+                request, "Your account has been successfully updated. Thank you!")
             return redirect('core:dashboard')
-        messages.info(request, _("Please fill out every field in this form to register. Thank you!"))
-        return render(request, 'accounts/profile.html', { 'form': form })
-
-
+        messages.info(
+            request, _("Please fill out every field in this form to register. Thank you!"))
+        return render(request, 'accounts/profile.html', {'form': form})
 
 
 @login_required
@@ -452,7 +469,8 @@ def update_account_profile(request):
             e = Experimenter.objects.get(pk=user.experimenter.pk)
 
             if institution_name:
-                institution, created = Institution.objects.get_or_create(name=institution_name)
+                institution, created = Institution.objects.get_or_create(
+                    name=institution_name)
                 e.institution = institution
             else:
                 e.institution = None
@@ -476,7 +494,7 @@ def update_account_profile(request):
                 'message': 'Profile updated successfully.'
             })
         return JsonResponse({'success': False,
-                                  'message': 'Something went wrong. Please try again.'})
+                             'message': 'Something went wrong. Please try again.'})
     else:
         form = ParticipantAccountForm(request.POST or None)
         if form.is_valid():
@@ -486,7 +504,8 @@ def update_account_profile(request):
             p = Participant.objects.get(pk=user.participant.pk)
 
             if institution_name:
-                ins, created = Institution.objects.get_or_create(name=institution_name)
+                ins, created = Institution.objects.get_or_create(
+                    name=institution_name)
                 p.institution = ins
             else:
                 p.institution = None
@@ -902,17 +921,21 @@ def update_experiment(request):
     form = UpdateExperimentForm(request.POST or None)
     user = request.user
     if form.is_valid():
-        experiment = get_object_or_404(Experiment, pk=form.cleaned_data['experiment_id'])
+        experiment = get_object_or_404(
+            Experiment, pk=form.cleaned_data['experiment_id'])
         action = form.cleaned_data['action']
         experimenter = request.user.experimenter
         if experimenter != experiment.experimenter:
-            logger.warn("user %s tried to invoke %s on %s", user, action, experiment)
-            raise PermissionDenied("You aren't authorized to perform this action on this experiment.")
+            logger.warn(
+                "user %s tried to invoke %s on %s", user, action, experiment)
+            raise PermissionDenied(
+                "You aren't authorized to perform this action on this experiment.")
         logger.debug(
             "experimenter %s invoking %s on %s", experimenter, action, experiment)
         try:
             response_tuples = experiment.invoke(action, experimenter)
-            logger.debug("invoking action %s: %s", action, str(response_tuples))
+            logger.debug(
+                "invoking action %s: %s", action, str(response_tuples))
             return JsonResponse({
                 'success': True,
                 'experiment': experiment.to_dict(include_round_data=True)
@@ -969,7 +992,8 @@ def completed_survey(request):
         pgr.save()
         success = True
     except ParticipantGroupRelationship.DoesNotExist:
-        logger.debug("No ParticipantGroupRelationship found with id %s", pgr_id)
+        logger.debug(
+            "No ParticipantGroupRelationship found with id %s", pgr_id)
     return JsonResponse({'success': success})
 
 
@@ -999,7 +1023,8 @@ def participant_ready(request):
 
 def _ready_participants_dict(experiment):
     number_of_ready_participants = experiment.number_of_ready_participants
-    all_participants_ready = (number_of_ready_participants == experiment.number_of_participants)
+    all_participants_ready = (
+        number_of_ready_participants == experiment.number_of_participants)
     return {
         'success': True,
         'number_of_ready_participants': number_of_ready_participants,
@@ -1129,51 +1154,61 @@ def get_cas_user(tree):
     6. CAS_RESPONSE_CALLBACKS - The call back function that is being called after the successful authentication by CAS
     """
     username = tree[0][0].text.lower()
-
+    logger.debug("cas tree: %s", tree)
     try:
-        User.objects.get(username=username)
+        return User.objects.get(username=username)
     except User.DoesNotExist:
-        try:
-            directory_profile = ASUWebDirectoryProfile(username)
-            logger.debug(
-                "found user profile %s (%s)", directory_profile, directory_profile.email)
+        return create_cas_participant(username, tree)
 
-            user = User.objects.get(username=directory_profile.email)
-            user.username = username
-            user.save()
-        except User.DoesNotExist:
-            # If this exception is thrown it means that User Logged in via CAS is a new user
-            logger.debug("No user found with username %s", username)
-            # Create vcweb Participant only if the user is an undergrad student
-            if directory_profile.is_undergraduate:
-                user = User.objects.create_user(username=username)
-                user.first_name = directory_profile.first_name
-                user.last_name = directory_profile.last_name
-                user.email = directory_profile.email
-                logger.debug("%s (%s)", directory_profile, user.email)
-                password = User.objects.make_random_password()
-                user.set_password(password)
-                institution = Institution.objects.get(name=settings.CAS_UNIVERSITY_NAME)
-                user.groups.add(PermissionGroup.participant.get_django_group())
-                user.save()
-                participant = Participant.objects.create(user=user, major=directory_profile.major,
-                                                         institution=institution, can_receive_invitations=True)
-                logger.debug(
-                    "CAS backend created participant %s from web directory", participant)
-            else:
-                logger.error(
-                    "CAS authenticated user %s is not an undergrad student", username)
-        except:
-            logger.error("ASU Web Directory is Down: Error retrieving user's info")
-            logger.debug("Creating user with username %s and random password", username)
 
-            user = User.objects.create_user(username=username)
+def create_cas_participant(username, cas_tree):
+    participants_group = PermissionGroup.participant.get_django_group()
+    institution = Institution.objects.get(name=settings.CAS_UNIVERSITY_NAME)
+    user = None
+    try:
+        directory_profile = ASUWebDirectoryProfile(username)
+        logger.debug("found user profile %s (%s)", directory_profile, directory_profile.email)
+# check existence of users who've manually registered via email or have been registered for experiments directly
+        user = User.objects.get(username=directory_profile.email)
+        user.username = username
+        user.save()
+        return user
+    except User.DoesNotExist:
+        # If this exception is thrown it means that User Logged in via CAS
+        # is a new user
+        logger.debug("No user found with username %s", username)
+        # Create vcweb Participant only if the user is an undergrad student
+        if directory_profile.is_undergraduate:
+            user = User.objects.create_user(username=username,
+                                            first_name=directory_profile.first_name,
+                                            last_name=directory_profile.last_name,
+                                            email=directory_profile.email,
+                                            )
+            logger.debug("%s (%s)", directory_profile, user.email)
             password = User.objects.make_random_password()
+            # FIXME: create function that emails user with password and a thank you for registering
             user.set_password(password)
-            institution = Institution.objects.get(name=settings.CAS_UNIVERSITY_NAME)
             user.groups.add(participants_group)
             user.save()
-            participant = Participant.objects.create(user=user, institution=institution)
+            participant = Participant.objects.create(user=user,
+                                                     major=directory_profile.major,
+                                                     institution=institution,
+                                                     can_receive_invitations=True)
+            logger.debug(
+                "CAS backend created participant %s from web directory", participant)
+        else:
+            logger.error(
+                "CAS authenticated user %s is not an undergrad student", username)
+    except:
+        logger.exception("ASU Web Directory Down: Error retrieving info for %s", username)
+        logger.debug("Creating user with username %s and random password", username)
+        user = User.objects.create_user(username=username)
+        password = User.objects.make_random_password()
+        user.set_password(password)
+        user.groups.add(participants_group)
+        user.save()
+        participant = Participant.objects.create(user=user, institution=institution, can_receive_invitations=True)
+    return user
 
 
 def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):
@@ -1190,8 +1225,8 @@ def update_experiment_param_value(request, pk):
     form = ExperimentParameterValueForm(request.POST or None, pk=pk)
     if form.is_valid():
         epv = form.save()
-        return JsonResponse({'success': True, 'experiment_param': epv.to_dict() })
-    return JsonResponse({'success': False, 'errors': form.errors })
+        return JsonResponse({'success': True, 'experiment_param': epv.to_dict()})
+    return JsonResponse({'success': False, 'errors': form.errors})
 
 
 @group_required(PermissionGroup.experimenter)
@@ -1199,8 +1234,8 @@ def update_round_param_value(request, pk):
     form = RoundParameterValueForm(request.POST or None, pk=pk)
     if form.is_valid():
         rpv = form.save()
-        return JsonResponse({'success': True, 'round_param': rpv.to_dict() })
-    return JsonResponse({'success': False, 'errors': form.errors })
+        return JsonResponse({'success': True, 'round_param': rpv.to_dict()})
+    return JsonResponse({'success': False, 'errors': form.errors})
 
 
 def sort_round_configurations(old_sequence_number, new_sequence_number, exp_config_pk):
@@ -1254,7 +1289,7 @@ def update_round_configuration(request, pk):
                                           rc.experiment_configuration.pk)
 
             rc.save()
-            return JsonResponse({ 'success': True, 'round_config': rc.to_dict() })
+            return JsonResponse({'success': True, 'round_config': rc.to_dict()})
 
     # Update request
     elif request_type == "update" and pk:
@@ -1266,7 +1301,7 @@ def update_round_configuration(request, pk):
                 sort_round_configurations(rc.sequence_number, form.cleaned_data.get('sequence_number'),
                                           rc.experiment_configuration.pk)
             rc.save()
-            return JsonResponse({ 'success': True, 'round_config': rc.to_dict() })
+            return JsonResponse({'success': True, 'round_config': rc.to_dict()})
 
     return JsonResponse({
         'success': False,
@@ -1284,7 +1319,7 @@ def update_experiment_configuration(request, pk):
             form.save()
             return JsonResponse(SUCCESS_DICT)
         else:
-            return JsonResponse({ 'success': False, 'message': form.errors })
+            return JsonResponse({'success': False, 'message': form.errors})
 
     except ExperimentConfiguration.DoesNotExist:
         return JsonResponse({
@@ -1389,4 +1424,3 @@ class AntiSpamContactFormView(ContactFormView):
 
     def form_valid(self, form):
         return super(AntiSpamContactFormView, self).form_valid(form)
-

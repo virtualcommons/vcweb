@@ -24,7 +24,8 @@ autocomplete_light.register(Institution, InstitutionAutocomplete)
 # Sets up autocomplete functionality for institution field on participant
 # account profile
 class ParticipantMajorAutocomplete(autocomplete_light.AutocompleteListBase):
-    participants = Participant.objects.order_by('major').distinct('major').values('major')
+    participants = Participant.objects.order_by(
+        'major').distinct('major').values('major')
     choices = participants.values_list('major', flat=True)
     search_fields = []
     autocomplete_js_attributes = {

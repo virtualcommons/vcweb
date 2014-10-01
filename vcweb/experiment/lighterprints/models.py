@@ -9,7 +9,8 @@ from model_utils.managers import PassThroughManager
 from mptt.models import (MPTTModel, TreeForeignKey, TreeManager)
 
 from vcweb.core import simplecache
-from vcweb.core.models import (ExperimentMetadata, GroupRoundDataValue, Parameter, User)
+from vcweb.core.models import (
+    ExperimentMetadata, GroupRoundDataValue, Parameter, User)
 
 
 logger = logging.getLogger(__name__)
@@ -119,7 +120,8 @@ class ActivityManager(TreeManager, PassThroughManager):
         round_configuration = round_data.round_configuration
         experiment_configuration = round_configuration.experiment_configuration
         unlocked_activities = []
-        treatment_type = get_treatment_type(experiment_configuration=experiment_configuration).string_value
+        treatment_type = get_treatment_type(
+            experiment_configuration=experiment_configuration).string_value
         if treatment_type != 'LEVEL_BASED':
             # find scheduled set of activities
             unlocked_activities = self.scheduled(round_configuration)
@@ -128,8 +130,10 @@ class ActivityManager(TreeManager, PassThroughManager):
             unlocked_activities = Activity.objects.unlocked(
                 level=get_footprint_level(participant_group_relationship.group, round_data))
         if activity in unlocked_activities:
-            # check for time availability. high school treatment doesn't have time requirements however.
-            currently_available = treatment_type == 'HIGH_SCHOOL' or self.is_available_now(activity)
+            # check for time availability. high school treatment doesn't have
+            # time requirements however.
+            currently_available = treatment_type == 'HIGH_SCHOOL' or self.is_available_now(
+                activity)
             if currently_available:
                 # finally, if it is currently available, make sure they haven't
                 # already performed it
@@ -164,7 +168,8 @@ class Activity(MPTTModel):
     last_modified = models.DateTimeField(default=datetime.now)
     # for the "in-the-wild" app, activities unlock other sets of activities in
     # a tree-like fashion
-    parent = TreeForeignKey('self', null=True, blank=True, related_name='children_set')
+    parent = TreeForeignKey(
+        'self', null=True, blank=True, related_name='children_set')
     is_public = models.BooleanField(default=False)
 
     objects = ActivityManager.for_queryset_class(ActivityQuerySet)()
@@ -312,7 +317,8 @@ def get_treatment_type(experiment=None, experiment_configuration=None, default_t
     # / leaderboard treatment
     if experiment_configuration is None:
         experiment_configuration = experiment.experiment_configuration
-    treatment_type = experiment_configuration.get_parameter_value(parameter=get_treatment_type_parameter())
+    treatment_type = experiment_configuration.get_parameter_value(
+        parameter=get_treatment_type_parameter())
     if treatment_type.string_value is None:
         # check if it's been globally defined via this round configuration's
         # experiment configuration

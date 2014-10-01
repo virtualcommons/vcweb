@@ -1,4 +1,5 @@
 {% extends "forms/base.html" %}
+{% load staticfiles %}
 {% load bootstrap3 %}
 {% block title %}Virtual Commons Web Login{% endblock %}
 {% block page %}
@@ -18,10 +19,7 @@
     </div>
     <div class="col-md-6">
         <div class="cas-login">
-            <p>
-                {% load staticfiles %}
-                <img src=" {% static "images/ASU/ASU_logo.jpg" %}" alt="ASU Logo" width="50%">
-            </p>
+            <p><img src="{% static 'images/ASU/ASU_logo.jpg' %}" alt="ASU Logo" width="50%"></p>
             <p>
             <a class='external' target='_blank' href='https://getprotected.asu.edu/services/auth'>CAS authentication</a> for ASU students
             </p>

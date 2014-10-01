@@ -27,7 +27,8 @@ from vcweb.core.models import (
     ExperimentSession, ExperimentMetadata, Invitation, send_email)
 from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.decorators import group_required, ownership_required
-from vcweb.core.models import (Participant, Institution, ParticipantSignup, PermissionGroup)
+from vcweb.core.models import (
+    Participant, Institution, ParticipantSignup, PermissionGroup)
 
 
 logger = logging.getLogger(__name__)

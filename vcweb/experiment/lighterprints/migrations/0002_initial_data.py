@@ -279,7 +279,8 @@ _activities = [
 
 def create_activities(apps, schema_editor):
     Activity = apps.get_model('lighterprints', 'Activity')
-    ActivityAvailability = apps.get_model('lighterprints', 'ActivityAvailability')
+    ActivityAvailability = apps.get_model(
+        'lighterprints', 'ActivityAvailability')
     Activity.objects.bulk_create(
         [Activity(**activity_dict) for activity_dict in _activities]
     )
@@ -444,7 +445,8 @@ def create_lighterprints_experiment_metadata(apps, schema_editor):
         namespace="lighterprints",
     )
     for parameter_dict in _parameters:
-        lighterprints_metadata.parameters.add(Parameter.objects.create(**parameter_dict))
+        lighterprints_metadata.parameters.add(
+            Parameter.objects.create(**parameter_dict))
 
 
 class Migration(migrations.Migration):

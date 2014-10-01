@@ -22,7 +22,9 @@ dumps = curry(json.dumps, cls=VcwebJSONEncoder)
 
 
 class JsonResponse(DjangoJsonResponse):
+
     """ Proxies django's JsonResponse with VcwebJSONEncoder and safe=False defaults """
 
     def __init__(self, dictionary, encoder=VcwebJSONEncoder, safe=False, **kwargs):
-        super(JsonResponse, self).__init__(dictionary, encoder=encoder, safe=safe, **kwargs)
+        super(JsonResponse, self).__init__(
+            dictionary, encoder=encoder, safe=safe, **kwargs)

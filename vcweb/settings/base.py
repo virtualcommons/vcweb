@@ -8,7 +8,8 @@ USE_TZ = False
 
 SITE_URL = 'http://localhost:8000'
 
-BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+BASE_DIR = os.path.dirname(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 
 DEMO_EXPERIMENTER_EMAIL = 'vcweb.demo@mailinator.com'
 DEFAULT_FROM_EMAIL = 'vcweb@asu.edu'
@@ -74,6 +75,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 )
 
 MIDDLEWARE_CLASSES = (
+    'raven.contrib.django.raven_compat.middleware.Sentry404CatchMiddleware',
+    'raven.contrib.django.raven_compat.middleware.SentryResponseErrorIdMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -152,7 +155,8 @@ STATICFILES_FINDERS = (
 )
 STATIC_URL = '/static/'
 STATIC_ROOT = '/var/www/vcweb/static/'
-STATICFILES_DIRS = (os.path.join(BASE_DIR, 'vcweb', 'static').replace('\\', '/'),)
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'vcweb', 'static').replace('\\', '/'),)
 
 #### Media file configuration (for user uploads etc) ####
 
@@ -259,7 +263,8 @@ CAS_RESPONSE_CALLBACKS = (
 )
 CAS_CUSTOM_FORBIDDEN = 'cas_error'
 
-# reset in local.py to enable more verbose logging (e.g., DISABLED_TEST_LOGLEVEL = logging.NOTSET)
+# reset in local.py to enable more verbose logging (e.g.,
+# DISABLED_TEST_LOGLEVEL = logging.NOTSET)
 DISABLED_TEST_LOGLEVEL = logging.WARNING
 
 TEST_RUNNER = 'vcweb.core.tests.runner.VcwebTestRunner'

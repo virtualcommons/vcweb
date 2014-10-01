@@ -100,7 +100,8 @@ class ExperimentTest(BaseVcwebTest):
         new_experimenter = self.create_experimenter()
         cloned_experiment = experiment.clone(new_experimenter)
         self.assertNotEqual(experiment, cloned_experiment)
-        self.assertEqual(experiment.experiment_configuration, cloned_experiment.experiment_configuration)
+        self.assertEqual(experiment.experiment_configuration,
+                         cloned_experiment.experiment_configuration)
         self.assertNotEqual(experimenter, cloned_experiment.experimenter)
         self.assertTrue(experiment.is_owner(experimenter.user))
         self.assertFalse(experiment.is_owner(new_experimenter.user))
@@ -123,7 +124,8 @@ class ExperimentTest(BaseVcwebTest):
         self.assertEqual(10, e.number_of_participants)
         self.assertEqual(2, len(e.groups))
         e.advance_to_next_round()
-        self.assertEqual(e.current_round_data.round_configuration, e.current_round)
+        self.assertEqual(
+            e.current_round_data.round_configuration, e.current_round)
         e.clear()
         self.assertEqual(0, e.number_of_participants)
         self.assertEqual(0, len(e.groups))
@@ -157,7 +159,8 @@ class ExperimentTest(BaseVcwebTest):
         while e.has_next_round:
             total_number_of_rounds += 1
             e.advance_to_next_round()
-        self.assertEqual(total_number_of_rounds, e.experiment_configuration.total_number_of_rounds)
+        self.assertEqual(
+            total_number_of_rounds, e.experiment_configuration.total_number_of_rounds)
         e.restart()
         self.assertTrue(e.is_active)
         self.assertEqual(10, e.number_of_participants)
@@ -238,10 +241,12 @@ class ExperimentTest(BaseVcwebTest):
         e.end_round()
         for group in e.groups:
             for parameter in group.parameters.all():
-                gdvs = current_round_data.group_data_value_set.filter(parameter=parameter, group=group)
+                gdvs = current_round_data.group_data_value_set.filter(
+                    parameter=parameter, group=group)
                 if gdvs.exists():
                     logger.debug("testing parameter %s", parameter)
-                    self.assertEqual(1, gdvs.count(), "Should only be a single group data value for parameter")
+                    self.assertEqual(
+                        1, gdvs.count(), "Should only be a single group data value for parameter")
             for parameter in e.parameters(Parameter.Scope.PARTICIPANT):
                 expected_size = group.size if parameter.name in (
                     'harvest_decision', 'participant_ready') else 0
@@ -264,8 +269,10 @@ class GroupTest(BaseVcwebTest):
                 logger.debug("testing against data value %s", data_value)
                 # XXX: pathological use of set_data_value, no point in doing it
                 # this way since typical usage would do a lookup by name.
-                g.set_data_value(parameter=data_value.parameter, value=test_data_value)
-                self.assertEqual(g.get_scalar_data_value(parameter=data_value.parameter), test_data_value)
+                g.set_data_value(
+                    parameter=data_value.parameter, value=test_data_value)
+                self.assertEqual(
+                    g.get_scalar_data_value(parameter=data_value.parameter), test_data_value)
 
     def test_copy_to_next_round(self):
         parameter = self.create_parameter(scope=Parameter.Scope.GROUP,
@@ -278,10 +285,12 @@ class GroupTest(BaseVcwebTest):
         while e.has_next_round:
             for g in e.groups:
                 if first_pass:
-                    data_value = g.set_data_value(parameter=parameter, value=test_data_value)
+                    data_value = g.set_data_value(
+                        parameter=parameter, value=test_data_value)
                 data_value = g.get_data_value(parameter=parameter)
                 self.assertEqual(data_value.int_value, test_data_value)
-                self.assertEqual(g.get_scalar_data_value(parameter=parameter), test_data_value)
+                self.assertEqual(
+                    g.get_scalar_data_value(parameter=parameter), test_data_value)
                 test_data_value += 1
                 data_value.update_int(test_data_value)
                 g.copy_to_next_round(data_value)
@@ -360,7 +369,8 @@ class RoundConfigurationTest(BaseVcwebTest):
 
     def test_round_parameters(self):
         e = self.experiment
-        p = self.create_parameter(scope='round', name='test_round_parameter', parameter_type='int')
+        p = self.create_parameter(
+            scope='round', name='test_round_parameter', parameter_type='int')
         self.assertTrue(p.pk > 0)
         self.assertEqual(p.value_field_name, 'int_value')
 
@@ -371,7 +381,8 @@ class RoundConfigurationTest(BaseVcwebTest):
             self.assertEqual(rp.value, 14)
             self.assertEqual(rp.int_value, 14)
 
-        # Parameter.type generates the value_field_name property by concatenating the name of the type with _value
+        # Parameter.type generates the value_field_name property by
+        # concatenating the name of the type with _value
         sample_values_for_type = {
             'int': 3, 'float': 3.0, 'string': 'ich bin ein ooga booga', 'boolean': True}
         for value_type in ('int', 'float', 'string', 'boolean'):
@@ -384,7 +395,8 @@ class RoundConfigurationTest(BaseVcwebTest):
             rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round,
                                                     value=sample_values_for_type[value_type])
             self.assertEqual(rp.value, sample_values_for_type[value_type])
-            self.assertEqual(getattr(rp, field_name), sample_values_for_type[value_type])
+            self.assertEqual(
+                getattr(rp, field_name), sample_values_for_type[value_type])
 
 
 class SubjectPoolInvitationTest(SubjectPoolTest):
@@ -453,10 +465,12 @@ class ParameterizedValueMixinTest(BaseVcwebTest):
         pv = None
         try:
             pv = cr.set_parameter_value(name='nonexistent_parameter')
-            self.fail("parameter value with nonexistent parameter should not be able to be set")
+            self.fail(
+                "parameter value with nonexistent parameter should not be able to be set")
         except Parameter.DoesNotExist:
             self.assertIsNone(pv)
-        parameter = self.create_parameter(name='existent_parameter', scope=Parameter.Scope.ROUND, parameter_type='int')
+        parameter = self.create_parameter(
+            name='existent_parameter', scope=Parameter.Scope.ROUND, parameter_type='int')
         pv = cr.set_parameter_value(parameter=parameter, value=17)
         self.assertIsNotNone(pv)
         self.assertFalse(type(pv) is DefaultValue)
@@ -469,10 +483,12 @@ class ParameterizedValueMixinTest(BaseVcwebTest):
         pv = None
         try:
             pv = cr.get_parameter_value(name='nonexistent_parameter')
-            self.fail("parameter value with nonexistent parameter should not be able to be retrieved")
+            self.fail(
+                "parameter value with nonexistent parameter should not be able to be retrieved")
         except Parameter.DoesNotExist:
             self.assertIsNone(pv)
-        parameter = self.create_parameter(name='existent_parameter', scope=Parameter.Scope.ROUND, parameter_type='int')
+        parameter = self.create_parameter(
+            name='existent_parameter', scope=Parameter.Scope.ROUND, parameter_type='int')
         pv = cr.get_parameter_value(parameter=parameter, default=17)
         self.assertIsNotNone(pv)
         self.assertFalse(type(pv) is DefaultValue)
@@ -484,16 +500,20 @@ class DataValueMixinTest(BaseVcwebTest):
     def test_set_data_value(self):
         e = self.experiment
         e.activate()
-        parameter = self.create_parameter(scope=Parameter.Scope.GROUP, name='test_data_value_parameter')
+        parameter = self.create_parameter(
+            scope=Parameter.Scope.GROUP, name='test_data_value_parameter')
         expected_test_value = 'test value'
         for g in e.groups:
             dv = None
             try:
-                dv = g.set_data_value(parameter_name='nonexistent_parameter', value=expected_test_value)
-                self.fail('data value with nonexistent parameter should not be able to be set')
+                dv = g.set_data_value(
+                    parameter_name='nonexistent_parameter', value=expected_test_value)
+                self.fail(
+                    'data value with nonexistent parameter should not be able to be set')
             except Parameter.DoesNotExist:
                 self.assertIsNone(dv)
-            dv = g.set_data_value(parameter=parameter, value=expected_test_value)
+            dv = g.set_data_value(
+                parameter=parameter, value=expected_test_value)
             self.assertIsNotNone(dv)
             self.assertFalse(type(dv) is DefaultValue)
             self.assertEqual(dv.string_value, expected_test_value)
@@ -501,16 +521,19 @@ class DataValueMixinTest(BaseVcwebTest):
     def test_get_data_value(self):
         e = self.experiment
         e.activate()
-        parameter = self.create_parameter(scope=Parameter.Scope.GROUP, name='test_data_value_parameter')
+        parameter = self.create_parameter(
+            scope=Parameter.Scope.GROUP, name='test_data_value_parameter')
         expected_test_value = 'test value'
         for g in e.groups:
             dv = None
             try:
                 dv = g.get_data_value(name='nonexistent_parameter')
-                self.fail('data value with nonexistent parameter should not be able to be retrieved')
+                self.fail(
+                    'data value with nonexistent parameter should not be able to be retrieved')
             except Parameter.DoesNotExist:
                 self.assertIsNone(dv)
-            dv = g.get_data_value(parameter=parameter, default=expected_test_value)
+            dv = g.get_data_value(
+                parameter=parameter, default=expected_test_value)
             self.assertIsNotNone(dv)
             self.assertFalse(type(dv) is DefaultValue)
             self.assertEqual(dv.string_value, expected_test_value)
@@ -538,12 +561,15 @@ class BookmarkedExperimentMetadataTest(BaseVcwebTest):
         bookmarks = ExperimentMetadata.objects.bookmarked(e)
         forestry = ExperimentMetadata.objects.get(namespace='forestry')
         bound = ExperimentMetadata.objects.get(namespace='bound')
-        lighterprints = ExperimentMetadata.objects.get(namespace='lighterprints')
+        lighterprints = ExperimentMetadata.objects.get(
+            namespace='lighterprints')
         self.assertEqual(ExperimentMetadata.objects.count(), bookmarks.count())
         for experiment_metadata in bookmarks:
             self.assertFalse(experiment_metadata.bookmarked)
-        BookmarkedExperimentMetadata.objects.create(experiment_metadata=forestry, experimenter=e)
-        BookmarkedExperimentMetadata.objects.create(experiment_metadata=bound, experimenter=e)
+        BookmarkedExperimentMetadata.objects.create(
+            experiment_metadata=forestry, experimenter=e)
+        BookmarkedExperimentMetadata.objects.create(
+            experiment_metadata=bound, experimenter=e)
         bookmarks = ExperimentMetadata.objects.bookmarked(e)
         self.assertEqual(ExperimentMetadata.objects.count(), bookmarks.count())
         for em in bookmarks:

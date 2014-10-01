@@ -6,7 +6,8 @@ import logging
 import random
 
 
-from vcweb.core.models import (GroupCluster, Experiment, ParticipantRoundDataValue)
+from vcweb.core.models import (
+    GroupCluster, Experiment, ParticipantRoundDataValue)
 from vcweb.core.tests import BaseVcwebTest
 
 from .models import (get_experiment_metadata, set_harvest_decision, GroupRelationship, get_resource_level_dv,
@@ -21,7 +22,8 @@ class BaseTest(BaseVcwebTest):
 
     def load_experiment(self, **kwargs):
         ''' returns the AB treatment configured in the boundary effects data migration '''
-        self.experiment = Experiment.objects.filter(experiment_metadata=get_experiment_metadata()).first().clone()
+        self.experiment = Experiment.objects.filter(
+            experiment_metadata=get_experiment_metadata()).first().clone()
 
     def create_harvest_decisions(self, value=10):
         for pgr in self.experiment.participant_group_relationships:
@@ -52,7 +54,8 @@ class GroupClusterTest(BaseTest):
             self.assertNotEqual(g, other_group)
         self.assertEqual(8, e.number_of_participants)
         self.assertEqual(2, len(e.groups))
-        self.assertEqual(len(e.groups), GroupRelationship.objects.filter(group__experiment=e).count())
+        self.assertEqual(
+            len(e.groups), GroupRelationship.objects.filter(group__experiment=e).count())
         self.assertEqual(len(e.groups) / e.current_round.group_cluster_size,
                          GroupCluster.objects.filter(experiment=e).count())
         # FIXME: assumes single group cluster
@@ -75,17 +78,21 @@ class MultipleHarvestDecisionTest(BaseTest):
             ParticipantRoundDataValue.objects.filter(
                 round_data=current_round_data,
                 parameter=get_harvest_decision_parameter()).update(is_active=True)
-        resource_levels = dict([(g, get_resource_level_dv(g, current_round_data)) for g in e.groups])
+        resource_levels = dict(
+            [(g, get_resource_level_dv(g, current_round_data)) for g in e.groups])
         e.advance_to_next_round()
         current_round_data = e.current_round_data
-        regrowth_rate = get_regrowth_rate(current_round_data.round_configuration)
-        max_resource_level = get_max_resource_level(current_round_data.round_configuration)
+        regrowth_rate = get_regrowth_rate(
+            current_round_data.round_configuration)
+        max_resource_level = get_max_resource_level(
+            current_round_data.round_configuration)
         for g in e.groups:
             dv = get_resource_level_dv(g, current_round_data)
             previous_round_resource_level = resource_levels[g]
             self.assertTrue(previous_round_resource_level.int_value >
                             dv.int_value, "Resource level should have decreased")
-            after_harvest = previous_round_resource_level.int_value - (final_harvest_decision * g.size)
+            after_harvest = previous_round_resource_level.int_value - \
+                (final_harvest_decision * g.size)
             regrowth = calculate_regrowth(
                 after_harvest, regrowth_rate, max_resource_level)
             expected_resource_level = after_harvest + regrowth
@@ -117,7 +124,8 @@ class ParticipantTest(BaseTest):
 
     def test_harvest_decision(self):
         self.experiment.activate()
-        max_harvest_decision = get_max_harvest_decision(self.experiment.experiment_configuration)
+        max_harvest_decision = get_max_harvest_decision(
+            self.experiment.experiment_configuration)
         for pgr in self.participant_group_relationships:
             self.login_participant(pgr.participant)
             response = self.get(self.experiment.participant_url)
@@ -134,7 +142,8 @@ class ParticipantTest(BaseTest):
             self.login_participant(participant)
             response = self.get(self.experiment.participant_url)
             self.assertEqual(response.status_code, 302)
-            self.assertTrue('dashboard' in response['Location'], 'inactive experiment should redirect to dashboard')
+            self.assertTrue('dashboard' in response[
+                            'Location'], 'inactive experiment should redirect to dashboard')
         self.experiment.activate()
         while self.experiment.has_next_round:
             for participant in self.participants:

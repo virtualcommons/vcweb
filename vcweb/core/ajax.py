@@ -1,4 +1,3 @@
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST, require_GET
 
@@ -16,8 +15,8 @@ def _get_experiment(request, pk):
         Experiment.objects.select_related('experimenter'), pk=pk)
     if request.user.experimenter == experiment.experimenter:
         return experiment
-    raise Experiment.DoesNotExist(
-        "Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter, pk))
+    raise Experiment.DoesNotExist("Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter,
+                                                                                           pk))
 
 
 @require_POST
@@ -36,17 +35,15 @@ def clone_experiment(request):
 @require_POST
 @group_required(PermissionGroup.experimenter)
 def create_experiment(request):
-    experiment_configuration_id = request.POST.get('experiment_configuration_id')
+    experiment_configuration_id = request.POST.get(
+        'experiment_configuration_id')
     experiment_configuration = get_object_or_404(ExperimentConfiguration.objects.select_related('experiment_metadata'),
                                                  pk=experiment_configuration_id)
     experimenter = request.user.experimenter
     authentication_code = 'test'
-    e = Experiment.objects.create(experimenter=experimenter,
-                                  authentication_code=authentication_code,
+    e = Experiment.objects.create(experimenter=experimenter, authentication_code=authentication_code,
                                   experiment_metadata=experiment_configuration.experiment_metadata,
-                                  experiment_configuration=experiment_configuration,
-                                  status=Experiment.Status.INACTIVE
-                                  )
+                                  experiment_configuration=experiment_configuration, status=Experiment.Status.INACTIVE)
     return JsonResponse({
         'success': True,
         'experiment': e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))
@@ -61,7 +58,8 @@ def is_email_available(request):
     '''
     email = request.GET.get("email").lower()
     current_user = request.user
-    success = (current_user.is_authenticated() and current_user.email == email) or not User.objects.filter(email=email).exists()
+    success = (current_user.is_authenticated() and current_user.email ==
+               email) or not User.objects.filter(email=email).exists()
     logger.debug("user %s checking if email %s is available? %s", current_user, email, success)
     return JsonResponse(success if success else "That email is not available, please select another.")
 
@@ -75,8 +73,7 @@ def save_experimenter_notes(request):
     current_experimenter_notes = current_round_data.experimenter_notes
     if notes != current_round_data.experimenter_notes:
         if current_experimenter_notes:
-            experiment.log("Replacing existing experimenter notes %s with %s" % (
-                current_experimenter_notes, notes))
+            experiment.log("Replacing existing experimenter notes %s with %s" % (current_experimenter_notes, notes))
         current_round_data.experimenter_notes = notes
         current_round_data.save()
         return JsonResponse({'success': True})
@@ -102,9 +99,7 @@ def get_round_data(request):
         cacheable=True) for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()]
     participant_data_values = [
         pdv.to_dict(include_email=True, cacheable=True)
-        for pdv in round_data.participant_data_value_set.select_related(
-            'participant_group_relationship__participant__user',
-            'parameter').exclude(parameter=get_chat_message_parameter())
+        for pdv in round_data.get_participant_data_values().exclude(parameter=get_chat_message_parameter())
     ]
     return JsonResponse({
         'groupDataValues': group_data_values,
@@ -118,8 +113,7 @@ def experiment_controller(request):
     action = request.POST.get('action')
     experimenter = request.user.experimenter
     experiment = _get_experiment(request, pk)
-    logger.debug(
-        "experimenter %s invoking %s on %s", experimenter, action, experiment)
+    logger.debug("experimenter %s invoking %s on %s", experimenter, action, experiment)
     try:
         response_tuples = experiment.invoke(action, experimenter)
         logger.debug("invoking action %s: %s", action, str(response_tuples))
@@ -128,8 +122,7 @@ def experiment_controller(request):
             'experiment': experiment.to_dict()
         })
     except AttributeError as e:
-        logger.warning(
-            "no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
+        logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
         return JsonResponse({
             'success': False,
             'message': 'Invalid experiment action %s' % action

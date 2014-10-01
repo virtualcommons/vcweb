@@ -16,11 +16,13 @@ logger = logging.getLogger(__name__)
 class BaseTest(BaseVcwebTest):
 
     def setUp(self, treatment_type='LEADERBOARD', **kwargs):
-        super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
+        super(BaseTest, self).setUp(
+            experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
         cache.clear()
         ec = self.experiment_configuration
         ec.has_daily_rounds = True
-        ec.set_parameter_value(parameter=get_treatment_type_parameter(), string_value=treatment_type)
+        ec.set_parameter_value(
+            parameter=get_treatment_type_parameter(), string_value=treatment_type)
         ec.save()
         ec.round_configuration_set.all().update(initialize_data_values=True)
 
@@ -44,7 +46,8 @@ class LevelBasedTest(BaseTest):
             self.assertTrue(self.client.login(username=participant.email, password='test'),
                             "%s failed to login" % participant)
             for activity in activities:
-                expected_success = activity.is_available_for(participant_group_relationship, rd)
+                expected_success = activity.is_available_for(
+                    participant_group_relationship, rd)
                 if expected_success:
                     performed_activities.add(activity)
                 response = self.post(self.reverse('lighterprints:perform_activity'), {
@@ -57,7 +60,8 @@ class LevelBasedTest(BaseTest):
         return performed_activities
 
     def setUp(self, **kwargs):
-        super(LevelBasedTest, self).setUp(treatment_type='LEVEL_BASED', **kwargs)
+        super(LevelBasedTest, self).setUp(
+            treatment_type='LEVEL_BASED', **kwargs)
 
 
 class LevelTreatmentTest(LevelBasedTest):
@@ -103,7 +107,8 @@ class UpdateLevelTest(LevelBasedTest):
         current_round_data = e.current_round_data
         self.assertTrue(is_level_based_experiment(e))
         # initialize participant carbon savings
-        level_one_activities = Activity.objects.filter(level=1).values_list('pk', flat=True)
+        level_one_activities = Activity.objects.filter(
+            level=1).values_list('pk', flat=True)
         for pgr in e.participant_group_relationships:
             for activity_pk in level_one_activities:
                 activity_performed = ParticipantRoundDataValue.objects.create(
@@ -116,17 +121,20 @@ class UpdateLevelTest(LevelBasedTest):
         group_scores = GroupScores(e, current_round_data, gs)
         logger.debug("group scores created for current round data")
         for group in gs:
-            self.assertEqual(get_footprint_level(group), 1, 'All participants should still be on level 1')
+            self.assertEqual(
+                get_footprint_level(group), 1, 'All participants should still be on level 1')
             self.assertEqual(group_scores.average_daily_points(group), 177)
         # manually invoking daily_update
         e.advance_to_next_round()
         group_scores = GroupScores(e, current_round_data, gs)
         for group in gs:
-            self.assertEqual(get_footprint_level(group), 2, 'All levels should have advanced to 2')
+            self.assertEqual(
+                get_footprint_level(group), 2, 'All levels should have advanced to 2')
             self.assertEqual(group_scores.average_daily_points(group), 177)
         group_scores = GroupScores(e, groups=gs)
         for group in gs:
-            self.assertEqual(get_footprint_level(group), 2, 'Footprint level should still be 2')
+            self.assertEqual(
+                get_footprint_level(group), 2, 'Footprint level should still be 2')
             self.assertEqual(0, group_scores.average_daily_points(group),
                              'average daily points should have been reset to 0')
 
@@ -139,7 +147,8 @@ class GroupActivityTest(LevelBasedTest):
         performed_activities = self.perform_activities()
         for pgr in e.participant_group_relationships:
             (group_activity, chat_messages) = get_group_activity(pgr)
-            self.assertEqual(len(group_activity), len(performed_activities) * pgr.group.size)
+            self.assertEqual(
+                len(group_activity), len(performed_activities) * pgr.group.size)
 
     def test_group_activity_email(self):
         e = self.experiment
@@ -147,7 +156,8 @@ class GroupActivityTest(LevelBasedTest):
         self.perform_activities()
         group_scores = GroupScores(e, e.current_round_data)
         for group in e.groups:
-            messages = group_scores.create_level_based_group_summary_emails(group, level=2)
+            messages = group_scores.create_level_based_group_summary_emails(
+                group, level=2)
             self.assertEqual(len(messages), group.size)
 
 
@@ -167,7 +177,8 @@ class ActivityTest(LevelBasedTest):
             for activity in activities:
                 logger.debug("participant %s performing activity %s", participant_group_relationship.participant,
                              activity)
-                expected_success = activity.is_available_for(participant_group_relationship, rd)
+                expected_success = activity.is_available_for(
+                    participant_group_relationship, rd)
                 response = self.post(self.reverse('lighterprints:perform_activity'), {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
@@ -210,15 +221,19 @@ class GroupScoreTest(LevelBasedTest):
         # expected average points per person is the straight sum of all activities in the performed activities because
         # every participant in the group has performed them
         logger.error("performed activities: %s", performed_activities)
-        expected_avg_points_per_person = sum([activity.points for activity in performed_activities])
+        expected_avg_points_per_person = sum(
+            [activity.points for activity in performed_activities])
         gs = e.groups
         group_scores = GroupScores(e, groups=gs)
         logger.error(group_scores.scores_dict)
         for group in gs:
-            self.assertEqual(group_scores.average_daily_points(group), expected_avg_points_per_person)
-            self.assertEqual(group_scores.total_daily_points(group), expected_avg_points_per_person * group.size)
+            self.assertEqual(
+                group_scores.average_daily_points(group), expected_avg_points_per_person)
+            self.assertEqual(group_scores.total_daily_points(
+                group), expected_avg_points_per_person * group.size)
             for pgr in group.participant_group_relationship_set.all():
-                self.assertEqual(get_individual_points(pgr, group_scores.round_data), expected_avg_points_per_person)
+                self.assertEqual(get_individual_points(
+                    pgr, group_scores.round_data), expected_avg_points_per_person)
         e.advance_to_next_round()
         group_scores = GroupScores(e, groups=gs)
         for group in gs:
@@ -233,4 +248,5 @@ class TestRoundEndedSignal(LevelBasedTest):
         self.assertEqual(self.experiment.current_round.sequence_number, 1)
         from vcweb.core.cron import system_daily_tick
         system_daily_tick()
-        self.assertEqual(self.reload_experiment().current_round.sequence_number, 2)
+        self.assertEqual(
+            self.reload_experiment().current_round.sequence_number, 2)

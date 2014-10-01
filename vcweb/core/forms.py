@@ -46,8 +46,7 @@ class BaseRegistrationForm(forms.Form):
 
     first_name = forms.CharField(widget=widgets.TextInput)
     last_name = forms.CharField(widget=widgets.TextInput)
-    email = forms.EmailField(widget=EmailInput, help_text=_(
-        'Please enter a valid email.  We will never share your email in any way, shape, or form.'))
+    email = forms.EmailField(widget=EmailInput, help_text=_('Please enter a valid email.  We will never share your email in any way, shape, or form.'))
     password = forms.CharField(widget=widgets.PasswordInput)
     confirm_password = forms.CharField(widget=widgets.PasswordInput)
     institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete),
@@ -93,7 +92,8 @@ class LoginForm(forms.Form):
         email_address = cleaned_data.get('email').lower()
         password = cleaned_data.get('password')
         if email_address and password:
-            self.user_cache = authenticate(username=email_address, password=password)
+            self.user_cache = authenticate(
+                username=email_address, password=password)
             if self.user_cache is None:
                 raise forms.ValidationError(
                     _(LoginForm.INVALID_AUTHENTICATION_MESSAGE), code='invalid')
@@ -108,7 +108,8 @@ class AsuRegistrationForm(forms.ModelForm):
 
     first_name = forms.CharField(widget=widgets.TextInput)
     last_name = forms.CharField(widget=widgets.TextInput)
-    email = forms.EmailField(widget=widgets.TextInput, help_text=_('We will never share your email.'))
+    email = forms.EmailField(
+        widget=widgets.TextInput, help_text=_('We will never share your email.'))
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
@@ -133,7 +134,8 @@ class ParticipantAccountForm(forms.ModelForm):
 
     first_name = forms.CharField(widget=widgets.TextInput)
     last_name = forms.CharField(widget=widgets.TextInput)
-    email = forms.EmailField(widget=widgets.TextInput, help_text=_('We will never share your email.'))
+    email = forms.EmailField(
+        widget=widgets.TextInput, help_text=_('We will never share your email.'))
     institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False,
                                   help_text=_('The primary institution, if any, you are affiliated with.'))
 
@@ -195,7 +197,8 @@ class ExperimenterAccountForm(forms.ModelForm):
 
     first_name = forms.CharField(widget=widgets.TextInput)
     last_name = forms.CharField(widget=widgets.TextInput)
-    email = forms.EmailField(widget=widgets.TextInput, help_text=_('We will never share your email.'))
+    email = forms.EmailField(
+        widget=widgets.TextInput, help_text=_('We will never share your email.'))
     institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False,
                                   help_text=_('The primary institution, if any, you are affiliated with.'))
 
@@ -240,11 +243,13 @@ class ExperimentParameterValueForm(forms.ModelForm):
     required_css_class = 'required'
 
     def __init__(self, post_dict=None, instance=None, pk=None, **kwargs):
-        if instance is None and pk is not None and  pk != '-1':
+        if instance is None and pk is not None and pk != '-1':
             instance = ExperimentParameterValue.objects.get(pk=pk)
-        super(ExperimentParameterValueForm, self).__init__(post_dict, instance=instance, **kwargs)
+        super(ExperimentParameterValueForm, self).__init__(
+            post_dict, instance=instance, **kwargs)
 
-        self.fields['parameter'].queryset = self.fields['parameter'].queryset.filter(scope='experiment')
+        self.fields['parameter'].queryset = self.fields[
+            'parameter'].queryset.filter(scope='experiment')
 
         for name, field in self.fields.items():
             if isinstance(field.widget, CheckboxInput):
@@ -263,7 +268,6 @@ class ExperimentParameterValueForm(forms.ModelForm):
         elif commit:
             epv.save()
         return epv
-
 
     class Meta:
         model = ExperimentParameterValue
@@ -302,7 +306,7 @@ class RoundParameterValueForm(forms.ModelForm):
     required_css_class = 'required'
 
     def __init__(self, post_dict=None, instance=None, pk=None, **kwargs):
-        if instance is None and pk is not None and  pk != '-1':
+        if instance is None and pk is not None and pk != '-1':
             instance = RoundParameterValue.objects.get(pk=pk)
         super(RoundParameterValueForm, self).__init__(post_dict, instance=instance, **kwargs)
 
@@ -325,7 +329,6 @@ class RoundParameterValueForm(forms.ModelForm):
             rpv.save()
         return rpv
 
-
     class Meta:
         model = RoundParameterValue
         exclude = ('last_modified', 'date_created')
@@ -343,8 +346,7 @@ class EmailListField(forms.CharField):
         lines = value.split('\n')
         #emails = email_separator_re.split(value)
         if not lines:
-            raise ValidationError(
-                _(u'You must enter at least one email address.'))
+            raise ValidationError(_(u'You must enter at least one email address.'))
         emails = []
         for line in lines:
             # check for emails in the form of Allen T Lee <allen.t.lee@asu.edu>
@@ -474,6 +476,7 @@ class BookmarkExperimentMetadataForm(forms.Form):
 
 
 class UpdateExperimentForm(forms.Form):
+    # FIXME: turn action into a Choices field
     action = forms.CharField(max_length=64)
     experiment_id = forms.IntegerField(widget=forms.HiddenInput)
 
@@ -490,8 +493,8 @@ class CommentForm(forms.Form):
 
 
 class LogMessageForm(forms.Form):
-    log_levels = [(getattr(logging, levelName), levelName) for levelName in
-                  ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')]
+    log_levels = [(getattr(logging, levelName), levelName) for levelName in ('DEBUG', 'INFO', 'WARNING', 
+                                                                             'ERROR', 'CRITICAL')]
     level = forms.ChoiceField(choices=log_levels)
     message = forms.CharField()
 
@@ -510,30 +513,10 @@ class SingleIntegerDecisionForm(forms.Form):
         required=False, widget=forms.widgets.HiddenInput)
 
 
-class QuizForm(forms.Form):
-    name_question = forms.CharField(
-        max_length=64, label=_("What is your name?"))
-
-    def __init__(self, *args, **kwargs):
-        quiz_questions = []
-        try:
-            quiz_questions = kwargs.pop('quiz_questions')
-        finally:
-            super(QuizForm, self).__init__(*args, **kwargs)
-            for quiz_question in quiz_questions:
-                self.fields['quiz_question_%d' % quiz_question.pk] = forms.CharField(
-                    label=quiz_question.label)
-
-    def extra_questions(self):
-        for name, value in self.cleaned_data.items():
-            if name.startswith('quiz_question_'):
-                yield (self.fields[name].label, value)
-
-
 class AntiSpamContactForm(ContactForm):
     timestamp = forms.IntegerField(widget=forms.HiddenInput)
     security_hash = forms.CharField(min_length=40, max_length=40, widget=forms.HiddenInput)
-    # Honeypot field
+    # honeypot 
     contact_number = forms.CharField(required=False, widget=forms.TextInput, label='')
 
     def __init__(self, *args, **kwargs):

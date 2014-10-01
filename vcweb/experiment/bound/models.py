@@ -318,9 +318,12 @@ def round_started_handler(sender, experiment=None, **kwargs):
     logger.debug("setting up round %s", round_configuration)
     # initialize group, group cluster, and participant data values
     experiment.initialize_data_values(
-        group_cluster_parameters=(get_regrowth_parameter(), get_resource_level_parameter()),
-        group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
-        participant_parameters=(get_storage_parameter(), get_player_status_parameter()),
+        group_cluster_parameters=(
+            get_regrowth_parameter(), get_resource_level_parameter()),
+        group_parameters=(get_regrowth_parameter(
+        ), get_group_harvest_parameter(), get_resource_level_parameter()),
+        participant_parameters=(
+            get_storage_parameter(), get_player_status_parameter()),
         defaults={
             get_storage_parameter(): 0,
             get_player_status_parameter(): True,
@@ -544,7 +547,8 @@ def update_participants(experiment, round_data, round_configuration):
         player_alive = player_status_dv.boolean_value
         if player_alive:
             harvest_decision = get_harvest_decision(pgr, round_data)
-            updated_storage = storage_dv.int_value + harvest_decision - cost_of_living
+            updated_storage = storage_dv.int_value + \
+                harvest_decision - cost_of_living
             if updated_storage < 0:
                 # player has "died"
                 player_status_dv.update_boolean(False)
@@ -594,7 +598,8 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                     prdvs.exclude(pk=prdv.pk).update(is_active=False)
 
             # FIXME: generify and merge update_shared_resource_level and
-            # update_resource_level to operate on "group-like" objects if possible
+            # update_resource_level to operate on "group-like" objects if
+            # possible
             if is_shared_resource_enabled(round_configuration):
                 for group_cluster in experiment.active_group_clusters:
                     update_shared_resource_level(

@@ -38,14 +38,17 @@ class DemoExperimenter(object):
         groups = {}
         for p in PermissionGroup:
             groups[p] = Group.objects.create(name=p)
-        demo_experimenter_user.groups.add(groups[PermissionGroup.demo_experimenter])
-        Experimenter.objects.create(user=demo_experimenter_user, approved=True, institution=asu)
+        demo_experimenter_user.groups.add(
+            groups[PermissionGroup.demo_experimenter])
+        Experimenter.objects.create(
+            user=demo_experimenter_user, approved=True, institution=asu)
 
     @staticmethod
     def rollback(apps, schema_editor):
         Experimenter = apps.get_model('core', 'Experimenter')
         User = apps.get_model('auth', 'User')
-        demo_experimenter_user = User.objects.get(username=settings.DEMO_EXPERIMENTER_EMAIL)
+        demo_experimenter_user = User.objects.get(
+            username=settings.DEMO_EXPERIMENTER_EMAIL)
         Experimenter.objects.get(user=demo_experimenter_user).delete()
         demo_experimenter_user.delete()
 
@@ -87,7 +90,8 @@ class InitialParticipantParameters(object):
     @staticmethod
     def rollback(apps, schema_editor):
         Parameter = apps.get_model('core', 'Parameter')
-        Parameter.objects.filter(name__in=('participant_ready', 'chat_message', 'like', 'comment')).delete()
+        Parameter.objects.filter(
+            name__in=('participant_ready', 'chat_message', 'like', 'comment')).delete()
 
 
 class Migration(migrations.Migration):
@@ -97,6 +101,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(DemoExperimenter.forward, DemoExperimenter.rollback),
-        migrations.RunPython(InitialParticipantParameters.forward, InitialParticipantParameters.rollback),
+        migrations.RunPython(
+            DemoExperimenter.forward, DemoExperimenter.rollback),
+        migrations.RunPython(
+            InitialParticipantParameters.forward, InitialParticipantParameters.rollback),
     ]

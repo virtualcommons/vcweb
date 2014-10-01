@@ -31,7 +31,8 @@ class BaseVcwebTest(TestCase):
             # better way to bootstrap tests
             experiment = Experiment.objects.first().clone()
         else:
-            experiment = self.create_new_experiment(experiment_metadata, **kwargs)
+            experiment = self.create_new_experiment(
+                experiment_metadata, **kwargs)
         if experimenter_password is None:
             experimenter_password = BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD
 
@@ -39,8 +40,10 @@ class BaseVcwebTest(TestCase):
         # currently associating all available Parameters with this
         # ExperimentMetadata
         if not experiment.experiment_metadata.parameters.exists():
-            experiment.experiment_metadata.parameters.add(*Parameter.objects.values_list('pk', flat=True))
-        experiment.experiment_configuration.round_configuration_set.exclude(sequence_number=1).update(duration=60)
+            experiment.experiment_metadata.parameters.add(
+                *Parameter.objects.values_list('pk', flat=True))
+        experiment.experiment_configuration.round_configuration_set.exclude(
+            sequence_number=1).update(duration=60)
         experiment.save()
         u = experiment.experimenter.user
         u.set_password(experimenter_password)
@@ -133,21 +136,26 @@ class BaseVcwebTest(TestCase):
                          test_email_suffix='asu.edu', **kwargs):
         if number_of_participants is None:
             # set default number of participants to max group size * 2
-            number_of_participants = self.experiment.experiment_configuration.max_group_size * 2
+            number_of_participants = self.experiment.experiment_configuration.max_group_size * \
+                2
         experiment = self.experiment
         if demo_participants:
             if experiment.participant_set.count() == 0:
-                logger.debug("no participants found. adding %d participants to %s", number_of_participants, experiment)
+                logger.debug(
+                    "no participants found. adding %d participants to %s", number_of_participants, experiment)
                 experiment.setup_test_participants(email_suffix=test_email_suffix,
                                                    count=number_of_participants, password='test')
         else:
             if participant_emails is None:
                 # generate participant emails
-                participant_emails = ['generated-test-%d@asu.edu' % index for index in range(0, number_of_participants)]
-            self.experiment.register_participants(emails=participant_emails, password='test')
+                participant_emails = [
+                    'generated-test-%d@asu.edu' % index for index in range(0, number_of_participants)]
+            self.experiment.register_participants(
+                emails=participant_emails, password='test')
             # XXX: should can_receive_invitations automatically be set to true in Experiment.register_participants
             # instead?
-            self.experiment.participant_set.update(can_receive_invitations=True)
+            self.experiment.participant_set.update(
+                can_receive_invitations=True)
 
     def setUp(self, **kwargs):
         self.client = Client()
@@ -159,7 +167,8 @@ class BaseVcwebTest(TestCase):
     @property
     def demo_experimenter(self):
         if getattr(self, '_demo_experimenter', None) is None:
-            self._demo_experimenter = Experimenter.objects.get(user__email=settings.DEMO_EXPERIMENTER_EMAIL)
+            self._demo_experimenter = Experimenter.objects.get(
+                user__email=settings.DEMO_EXPERIMENTER_EMAIL)
         return self._demo_experimenter
 
     def create_experimenter(self, email=None, password=None):
@@ -167,7 +176,8 @@ class BaseVcwebTest(TestCase):
             email = BaseVcwebTest.DEFAULT_EXPERIMENTER_EMAIL
         if password is None:
             password = BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD
-        u = User.objects.create_user(username=email, email=email, password=password)
+        u = User.objects.create_user(
+            username=email, email=email, password=password)
         u.groups.add(PermissionGroup.experimenter.get_django_group())
         return Experimenter.objects.create(user=u, approved=True)
 
@@ -306,7 +316,8 @@ class SubjectPoolTest(BaseVcwebTest):
 
     def setup_invitations(self, participants, es_pk_list):
         invitations = []
-        experiment_sessions = ExperimentSession.objects.filter(pk__in=es_pk_list)
+        experiment_sessions = ExperimentSession.objects.filter(
+            pk__in=es_pk_list)
         user = self.demo_experimenter.user
 
         for participant in participants:

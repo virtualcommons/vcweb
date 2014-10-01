@@ -4,7 +4,7 @@ import logging
 
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import user_passes_test
-from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.core.exceptions import PermissionDenied
 
 logger = logging.getLogger(__name__)
 
@@ -45,24 +45,24 @@ def is_participant(user):
     return hasattr(user, 'participant') and user.is_active
 
 
-def group_required(*permissions):
+def group_required(*permission_groups):
     """Requires user membership in at least one of the groups passed in."""
     def in_groups(u):
-        if u.is_authenticated() and ((hasattr(u, 'experimenter') and u.experimenter.approved) or (hasattr(u, 'participant') and u.is_active)):
-            group_names = [permission.value for permission in permissions]
-            return u.is_superuser or bool(u.groups.filter(name__in=group_names))
+        if u.is_authenticated() and (is_experimenter(u) or is_participant(u)):
+            group_names = [pgroup.value for pgroup in permission_groups]
+            return u.is_superuser or u.groups.filter(name__in=group_names).exists()
     return user_passes_test(in_groups)
 
 
 def create_user_decorator(view_function, is_valid_user, redirect_to='core:dashboard'):
+
     def decorator(fn):
         def _decorated_view(request, *args, **kwargs):
             if is_valid_user(request.user):
                 logger.debug('user was valid: %s', request.user)
                 return fn(request, *args, **kwargs)
             else:
-                logger.debug(
-                    'user was invalid, redirecting to %s', redirect_to)
+                logger.debug('user was invalid, redirecting to %s', redirect_to)
                 return redirect(redirect_to)
 
         _decorated_view.__name__ = fn.__name__
@@ -114,32 +114,31 @@ def retry(exceptiontocheck, tries=4, delay=3, backoff=2, logger=None):
     return deco_retry
 
 
-def ownership_required(model, attr_name='pk'):
-    """ Decorator to verify the ownership permission on the Object of provided Model and pk
+def ownership_required(model_class, attr_name='pk'):
+    """ Decorator to verify the ownership permission on the Object of provided model_class and pk
 
-    :param model: The name of a Model of which the object ownership permission needs to be checked
-    :param attr_name: The name by which pk attribute is binded in the url
-
+    :param model_class: Model class whose instance with pk we want to check object ownership permissions
+    :param attr_name: The name of the pk attribute bound incoming from a url pattern match
     """
     def decorator(view_function):
         def wrap(request, *args, **kwargs):
             pk = kwargs.get(attr_name, None)
 
             if pk is None:
-                raise RuntimeError('The decorator requires pk argument to be set (got {} instead)'.format(kwargs))
-            is_owner_func = getattr(model, 'is_owner', None)
+                raise RuntimeError('No pk argument was found in {}'.format(kwargs))
+            is_owner_func = getattr(model_class, 'is_owner', None)  # should return an unbound function
 
             if is_owner_func is None:
-                raise RuntimeError('The decorator requires model class {} to provide is_owner function)'.format(model))
+                raise RuntimeError('model class {} must define an is_owner instance method)'.format(model_class))
 
             try:
-                obj = model.objects.get(pk=pk)  # raises ObjectDoesNotExist
+                obj = model_class.objects.get(pk=pk)  # raises ObjectDoesNotExist
                 if obj.is_owner(request.user):
                     return view_function(request, *args, **kwargs)
-            except ObjectDoesNotExist:
-                pass
+            except model_class.DoesNotExist:
+                logger.error("No instance of %s found with pk %s", model_class, pk)
 
-            logger.warning("unauthorized access to %s Model by user %s", model, request.user)
+            logger.warning("unauthorized access to %s Model by user %s", model_class, request.user)
             raise PermissionDenied
         return wraps(view_function)(wrap)
     return decorator
