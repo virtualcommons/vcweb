@@ -31,7 +31,7 @@
                     <i class='fa-warning'></i> Chat is currently disabled.
                 </div>
             </div>
-            <form id="chat-form" class='form-inline' data-bind='submit: submitChatMessage' >
+            <form id="chat-form" class='form-horizontal' data-bind='submit: submitChatMessage' >
                 <div class='input-group'>
                     <span class='input-group-addon'><i id='chat-icon' class='text-info fa fa-comment'></i></span>
                     <input id='chatMessage' class="form-control" type="text" placeholder="Chat with your group">
@@ -393,23 +393,17 @@
     $(function() {
         function ExperimentModel(experimentModelJson) {
             var model = ko.mapping.fromJS(experimentModelJson);
-
             model.tour = ko.observable();
-
             model.harvestDecisionOptions = ko.computed(function() {
                 return ko.utils.range(0, model.maxHarvestDecision());
             });
-
             model.harvestDecisionFormId = function(numberOfTrees) {
                 numberOfTrees = numberOfTrees || model.harvestDecision();
                 return "harvest-decision-form" + numberOfTrees;
             }
             model.secondsLeft = ko.observable(0);
-
             model.currentInterval = ko.observable();
-
             model.selectedHarvestDecision = ko.observable(false);
-
             model.templateId = ko.computed(function() {
                 switch ( model.templateName() ) {
                     case 'PRACTICE':
@@ -418,13 +412,11 @@
                         return model.templateName();
                 }
             });
-
             model.setupTour = function() {
                 if (! model.showTour()) {
                     return;
                 }
                 model.tour(new Tour());
-
                 model.tour().addSteps([{
                     element: "#dashboard-last-harvest", title: "Last harvest",  placement: "right",
                     content: "Your last round's harvest decision will be displayed here.  Since this is the first practice round this is currently 0."
@@ -641,11 +633,9 @@
             }
             return model;
         }
-
         var experimentModel = new ExperimentModel($.parseJSON("{{ experimentModelJson|escapejs }}"));
-
-        var s = connect();
-        s.onmessage = function(message) {
+        ko.applyBindings(experimentModel);
+        connect().onmessage = function(message) {
             var data = $.parseJSON(message.data);
             switch (data.event_type) {
                 case 'chat':
@@ -666,7 +656,6 @@
             }
         };
         experimentModel.startRound();
-        ko.applyBindings(experimentModel);
     });
 </script>
 {% endblock %}

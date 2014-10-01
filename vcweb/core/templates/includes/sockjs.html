@@ -1,15 +1,11 @@
-<script type="text/javascript" src="https://d1fxtkz8shb9d2.cloudfront.net/sockjs-0.3.js"></script>
+<script type="text/javascript" src="//cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>
 <script type="text/javascript">
 var socket;
 var DEFAULT_PORT = {{WEBSOCKET_PORT|default_if_none:8882}};
 var DEFAULT_URI = "/participant";
-var MAX_FAILURES = 128;
-function connect(uri, port) {
-    var host = window.location.hostname;
-    var numFailures = 0;
+function connect(uri, host, port) {
     if ( !host ) {
-        console.log("Tried to connect to null host, defaulting to vcweb.asu.edu instead.");
-        host = "vcweb.asu.edu";
+        host = window.location.hostname;
     }
     if ( !uri ) {
         console.log("defaulting to " + DEFAULT_URI);
@@ -23,15 +19,12 @@ function connect(uri, port) {
         socket.send(createConnectionEvent());
     };
     socket.onmessage = function(e) {
-        console.log('received message', e.data);
+        console.log('default onmessage received event, you must override this method for custom websocket logic');
+        console.log(e.data);
     };
     socket.onclose = function() {
         console.log('sockjs connection closed.');
-        numFailures++;
-        if (numFailures < MAX_FAILURES) {
-            console.log("Trying to re-establish sockjs connection until " + numFailures + " exceeds " + MAX_FAILURES);
-            socket = new SockJS(sockjsServer);
-        }
+        Raven.captureMessage('sockjs connection closed for participant {{ participant_group_relationship.pk|default:request.user }} in experiment {{ experiment.pk|default:"None" }}');
     };
     return socket;
 }

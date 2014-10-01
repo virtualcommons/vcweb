@@ -389,8 +389,7 @@
             var experimentModel = new ExperimentModel(experimentModelJson);
             ko.applyBindings(experimentModel);
             // establish sockjs websocket connection
-            var s = connect("/experimenter");
-            s.onmessage = function(message) {
+            connect("/experimenter").onmessage = function(message) {
                 experiment_event = $.parseJSON(message.data);
                 switch (experiment_event.event_type) {
                     case 'update':

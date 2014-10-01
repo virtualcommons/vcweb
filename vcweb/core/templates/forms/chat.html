@@ -59,7 +59,7 @@ $(function() {
     var s = connect('/participant');
     s.onmessage = function(json_string) {
         var json = jQuery.parseJSON(json_string);
-        // FIXME: should switch to single page app model..?
+        // FIXME: should switch to single page app
         switch (json.message_type) {
             case 'chat':
                 chatMessagesViewModel.addChatMessage(json);
