@@ -1432,7 +1432,7 @@ def create_github_issue(data):
 
 class BugReportFormView(FormView):
     form_class = BugReportForm
-    template_name = 'forms/bug_form.html'
+    template_name = 'forms/bug-report.html'
     success_url = '/thanks/' # Not used. Kept it so Django doesn't throw error of success_url not provided
 
     def form_valid(self, form):
