@@ -8,8 +8,9 @@ Lighter Footprints Summary for {{ summary_date }}
 This particular experiment tests the effect of information on the outcomes of other groups (e.g., leaderboards).
 {% endif %}
 {% if linear_public_good %}
-In order to receive payment please visit Jen Fraser (Jen.Fraser@asu.edu) at Matthews Hall 102 on Monday (2-4pm),
-Wednesday (10am-3pm), or Friday (10am-3pm). You must pick up your payment by May 15. Be sure to bring your ASURITE Sun Card. 
+In order to receive payment please visit Jennifer Fraser (Jennifer.Fraser@asu.edu) at Matthews Hall 102 after Fall Break
+(e.g., starting on Oct. 15th) on Monday (2-4pm), Wednesday (10am-1pm), or Friday (10am-1pm). You must pick up your
+payment by October 31st. Be sure to bring your ASURITE Sun Card. 
 {% endif %}
 {% else %}
 You are a member of {{ group_name }}. To participate in this experiment, visit [{{experiment.full_participant_url}}]({{experiment.full_participant_url}}).
