@@ -350,8 +350,7 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona Stat
         affiliated_institution = None
 
     # Get excluded participants for the given parameters
-    excluded_participants = get_excluded_participants(
-        days_threshold, experiment_metadata_pk)
+    excluded_participants = get_excluded_participants(days_threshold, experiment_metadata_pk)
 
     criteria = dict(can_receive_invitations=True, user__is_active=True)
     if affiliated_institution:
