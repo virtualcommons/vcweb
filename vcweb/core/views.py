@@ -703,7 +703,8 @@ class RegisterEmailListView(BaseExperimentRegistrationView):
                      experiment)
         experiment.register_participants(emails=emails, institution=institution,
                                          password=experiment.authentication_code,
-                                         sender=sender, from_email=from_email, send_email=send_email)
+                                         sender=sender, from_email=from_email,
+                                         should_send_email=send_email)
         return valid
 
 

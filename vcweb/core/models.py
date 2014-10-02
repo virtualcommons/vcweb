@@ -928,7 +928,7 @@ class Experiment(models.Model):
         return subject
 
     @transaction.atomic
-    def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None, from_email=None, send_email=True):
+    def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None, from_email=None, should_send_email=True):
         number_of_participants = self.participant_set.count()
         email_messages = []
         registered_participants = []
@@ -983,7 +983,7 @@ class Experiment(models.Model):
             registered_participants.append((user, password))
             email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created,
                                                                  sender=sender, from_email=from_email))
-        if email_messages and send_email:
+        if email_messages and should_send_email:
             mail.get_connection().send_messages(email_messages)
         return registered_participants
 
@@ -3040,7 +3040,7 @@ def set_full_name(user, full_name):
     return updated
 
 
-def send_email(template, context, subject, from_email, to_email, bcc=None):
+def send_email(template=None, context=None, subject=None, from_email=None, to_email=None, bcc=None):
     """
     Utility function to send emails. Expects a plaintext markdown template and converts it into an HTML message as well.
     """
@@ -3066,13 +3066,12 @@ def send_reminder_emails(sender, start=None, **kwargs):
     tomorrow = date.today() + timedelta(days=1)
     start_date_time = datetime.combine(tomorrow, time.min)
     end_date_time = datetime.combine(tomorrow, time.max)
-    es_list = ExperimentSession.objects.filter(
-        scheduled_date__range=(start_date_time, end_date_time))
+    es_list = ExperimentSession.objects.filter(scheduled_date__range=(start_date_time, end_date_time))
     for es in es_list:
         participant_emails = ParticipantSignup.objects.filter(invitation__experiment_session=es).values_list(
             'invitation__participant__email', flat=True)
         logger.debug("subject pool sending reminder emails to %s", participant_emails)
-        send_email("subject-pool/email/reminder-email.txt", {"session": es}, "Reminder Email",
+        send_email("email/reminder-email.txt", {"session": es}, "Reminder Email",
                    settings.SERVER_EMAIL, participant_emails)
 
 

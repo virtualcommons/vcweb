@@ -52,8 +52,8 @@
                 {% endif %}
                 {% endif %}
                 <li class='{% active_re request "contact" %}'><a href='/contact'><i class='fa fa-bell-o'></i> Contact us</a></li>
-                <!-- li><a target='_blank' href='{{ issues_url }}'><i class='fa fa-bullhorn'></i> Report a bug</a></li --> 
-                <li><a href='#' id="report-issue" data-toggle="modal" data-target="#bugModal" ><i class='fa fa-bullhorn'></i> Report a bug</a></li>
+                <li><a target='_blank' href='{{ issues_url }}'><i class='fa fa-bullhorn'></i> Report a bug</a></li>
+                {% comment %} <li><a href='#' id="report-issue" data-toggle="modal" data-target="#bugModal" ><i class='fa fa-bullhorn'></i> Report a bug</a></li> {% endcomment %}
             </ul>
             {% endblock headerlinks %}
             {% block login %}
