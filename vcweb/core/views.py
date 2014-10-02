@@ -1415,9 +1415,11 @@ def unsubscribe(request):
     if is_participant(user) and user.participant.can_receive_invitations:
         successfully_unsubscribed = False
         if request.method == "POST":
-            user = request.user
-            user.participant.can_receive_invitations = False
-            user.participant.save(update_fields=['can_receive_invitations'])
+            user.is_active = False
+            user.save()
+            participant = user.participant
+            participant.can_receive_invitations = False
+            participant.save()
             successfully_unsubscribed = True
             return render(request, 'accounts/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
     return render(request, 'invalid_request.html',
