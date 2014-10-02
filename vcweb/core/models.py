@@ -2883,11 +2883,9 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
 
     def _experiment_metadata_criteria(self, criteria, experiment_metadata=None, experiment_metadata_pk=None):
         if experiment_metadata is not None:
-            criteria[
-                'invitation__experiment_session__experiment_metadata'] = experiment_metadata
+            criteria['invitation__experiment_session__experiment_metadata'] = experiment_metadata
         elif experiment_metadata_pk is not None:
-            criteria[
-                'invitation__experiment_session__experiment_metadata__pk'] = experiment_metadata_pk
+            criteria['invitation__experiment_session__experiment_metadata__pk'] = experiment_metadata_pk
         return criteria
 
     def registered(self, **kwargs):

@@ -37,14 +37,12 @@ logger = logging.getLogger(__name__)
 @group_required(PermissionGroup.experimenter)
 def experimenter_index(request):
     """
-    Returns by rendering the Subject Recruitment page with all the active experiment sessions and past experiment
+    Provides experimenter subject recruitment interface with all active experiment sessions and past experiment
     sessions.
     """
     experimenter = request.user.experimenter
     data = ExperimentSession.objects.filter(creator=request.user)
-    experiment_metadata_list = [
-        em.to_dict() for em in ExperimentMetadata.objects.bookmarked(experimenter)]
-
+    experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.bookmarked(experimenter)]
     session_list = [session.to_dict() for session in data]
     potential_participants_count = Participant.objects.active().count()
     session_data = {
@@ -53,9 +51,7 @@ def experimenter_index(request):
         'allEligibleParticipants': potential_participants_count,
         'potentialParticipantsCount': potential_participants_count,
     }
-
     form = SessionInviteForm()
-
     return render(request, "experimenter/subject-pool-index.html",
                   {"view_model_json": dumps(session_data), "form": form})
 
@@ -245,10 +241,8 @@ def send_invitations(request):
         affiliated_institution = form.cleaned_data.get(
             'affiliated_institution')
 
-        experiment_sessions = ExperimentSession.objects.filter(
-            pk__in=session_pk_list)
-        experiment_metadata_pk_list = experiment_sessions.values_list(
-            'experiment_metadata__pk', flat=True)
+        experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
+        experiment_metadata_pk_list = experiment_sessions.values_list('experiment_metadata__pk', flat=True)
 
         if len(set(experiment_metadata_pk_list)) == 1:
             # get the experiment metadata pk of any session, as all sessions selected by experimenter to send invitations
@@ -271,10 +265,8 @@ def send_invitations(request):
                     # participants, use them all
                     final_participants = potential_participants
                 else:
-                    final_participants = random.sample(
-                        potential_participants, invitation_count)
-                message = "Your invitations were sent to %s / %s participants." % (
-                    len(final_participants), invitation_count)
+                    final_participants = random.sample(potential_participants, invitation_count)
+                message = "Your invitations were sent to %s / %s participants." % (len(final_participants), invitation_count)
 
                 today = datetime.now()
                 invitations = []
@@ -282,13 +274,10 @@ def send_invitations(request):
                 for participant in final_participants:
                     recipient_list.append(participant.email)
                     for es in experiment_sessions:
-                        invitations.append(
-                            Invitation(participant=participant, experiment_session=es, date_created=today,
-                                       sender=user))
+                        invitations.append(Invitation(participant=participant, experiment_session=es, date_created=today, sender=user))
                 Invitation.objects.bulk_create(invitations)
 
-                plaintext_content, html_content = get_invitation_email_content(
-                    invitation_text, session_pk_list)
+                plaintext_content, html_content = get_invitation_email_content(invitation_text, session_pk_list)
 
                 msg = EmailMultiAlternatives(subject=invitation_subject, body=plaintext_content, from_email=from_email,
                                              to=[from_email], bcc=recipient_list)
@@ -500,12 +489,10 @@ def submit_experiment_session_signup(request):
 @ownership_required(ExperimentSession)
 def download_experiment_session(request, pk=None):
     user = request.user
-    experiment_session = get_object_or_404(
-        ExperimentSession.objects.select_related('creator'), pk=pk)
+    experiment_session = get_object_or_404(ExperimentSession.objects.select_related('creator'), pk=pk)
 
     if experiment_session.creator != user:
-        logger.error(
-            "unauthorized access to %s from %s", experiment_session, user)
+        logger.error("unauthorized access to %s from %s", experiment_session, user)
         raise PermissionDenied("You don't have access to this experiment.")
 
     response = HttpResponse(content_type=mimetypes.types_map['.csv'])
@@ -513,13 +500,12 @@ def download_experiment_session(request, pk=None):
     writer = unicodecsv.writer(response, encoding='utf-8')
     writer.writerow(["Participant list", experiment_session, experiment_session.location, experiment_session.capacity,
                      experiment_session.creator])
-    writer.writerow(
-        ['Email', 'Name', 'Username', 'Class Status', 'Attendance'])
+    writer.writerow(['Email', 'Name', 'Username', 'Class Status', 'Attendance'])
     for ps in ParticipantSignup.objects.select_related('invitation__participant').filter(
             invitation__experiment_session=experiment_session):
         participant = ps.invitation.participant
-        writer.writerow(
-            [participant.email, participant.full_name, participant.username, participant.class_status, ps.attendance])
+        writer.writerow([participant.email, participant.full_name, participant.username, participant.class_status,
+                         ps.attendance])
     return response
 
 
@@ -535,26 +521,19 @@ def experiment_session_signup(request):
     # invitation to user
     tomorrow = datetime.now() + timedelta(days=1)
 
-    active_experiment_sessions = ParticipantSignup.objects \
-        .select_related('invitation', 'invitation__experiment_session') \
-        .filter(invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.registered,
-                invitation__experiment_session__scheduled_date__gt=tomorrow)
+    active_experiment_sessions = ParticipantSignup.objects.select_related(
+        'invitation', 'invitation__experiment_session').filter(
+            invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.registered,
+            invitation__experiment_session__scheduled_date__gt=tomorrow)
 
     # Making sure that user don't see invitations for a experiment for which he has already participated
     # useful in cases when the experiment has lots of sessions spanning to lots of days. It avoids a user to participate
     # in another experiment session after attending one of the experiment session of same experiment in last couple
     # of days
-    participated_experiment_metadata = ParticipantSignup.objects \
-        .select_related('invitation', 'invitation__experiment_session',
-                        'invitation__experiment_session__experiment_metadata') \
-        .filter(invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.participated)
+    participated_signups = ParticipantSignup.objects.participated(invitation__participant=user.participant)
 
-    participated_experiment_metadata_pk_list = [ps.invitation.experiment_session.experiment_metadata.pk for ps in
-                                                participated_experiment_metadata]
-
-    active_invitation_pk_list = [
-        ps.invitation.pk for ps in active_experiment_sessions]
-
+    participated_experiment_metadata_pk_list = participated_signups.values_list('invitation__experiment_session__experiment_metadata_id', flat=True)
+    active_invitation_pk_list = [ps.invitation.pk for ps in active_experiment_sessions]
     invitations = Invitation.objects.select_related('experiment_session', 'experiment_session__experiment_metadata__pk') \
         .filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow) \
         .exclude(experiment_session__experiment_metadata__pk__in=participated_experiment_metadata_pk_list) \
