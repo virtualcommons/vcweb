@@ -12,6 +12,7 @@ Signup for an Experiment Session
             {% for exp in grouped_invitations %}
             <div class="callout callout-info">
                 <form method="POST" action='{% url "subjectpool:submit_experiment_session_signup" %}'>
+                    {% csrf_token %}
                 <input type="hidden" name="experiment_metadata_pk" value={{ exp.list.0.experiment_metadata_pk }}  />
                 <legend>Experiment Session Signup</legend>
                 <table class="table table-striped">

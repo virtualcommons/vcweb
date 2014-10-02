@@ -456,8 +456,7 @@ def submit_experiment_session_signup(request):
     user = request.user
     invitation_pk = request.POST.get('invitation_pk')
     experiment_metadata_pk = request.POST.get('experiment_metadata_pk')
-    invitation = Invitation.objects.select_related(
-        'experiment_session').get(pk=invitation_pk)
+    invitation = Invitation.objects.select_related('experiment_session').get(pk=invitation_pk)
 
     # lock on the experiment session to prevent concurrent participant signups for an experiment session
     # exceeding its capacity

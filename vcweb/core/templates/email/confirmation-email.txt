@@ -1,13 +1,16 @@
 Hi,
 
-You are currently signed up for an experiment session on **{{ session.scheduled_date }} - {{ session.scheduled_end_date }}**. 
+You have signed up for an experiment session on **{{ session.scheduled_date }} - {{ session.scheduled_end_date }}**.
 
 {% if session.is_online %}
 This is an online experiment. You will receive further instructions on how to participate from your experimenter before the experiment begins.
 {% else %}
-Please remember to be on time.
+    {% if session.location %}
+    The experiment will be conducted at {{ session.location }}.
+    {% endif %}
+    Please remember to be on time.
 {% endif %}
 
 Thanks for your participation!
 
-Team VCWEB
+team vcweb
