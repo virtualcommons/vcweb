@@ -456,12 +456,13 @@ class GroupActivity(object):
                 commented=prdv.pk in comment_target_ids,
                 parameter_name=parameter_name,
                 date_created=abbreviated_timesince(prdv.date_created),
+                dc=prdv.date_created,
             )
             self.all_activity[parameter_name].append(data)
 
     @property
     def all_activities(self):
-        return list(itertools.chain.from_iterable(self.all_activity.values()))
+        return sorted(itertools.chain.from_iterable(self.all_activity.values()), key=lambda x: x['dc'], reverse=True)
 
     @property
     def chat_messages(self):
