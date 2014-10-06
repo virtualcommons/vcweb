@@ -50,7 +50,7 @@ def group_required(*permission_groups):
     def in_groups(u):
         if u.is_authenticated() and (is_experimenter(u) or is_participant(u)):
             group_names = [pgroup.value for pgroup in permission_groups]
-            return u.is_superuser or u.groups.filter(name__in=group_names).exists()
+            return u.groups.filter(name__in=group_names).exists()
     return user_passes_test(in_groups)
 
 
