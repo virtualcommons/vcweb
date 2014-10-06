@@ -248,8 +248,7 @@ class ExperimentParameterValueForm(forms.ModelForm):
     def __init__(self, post_dict=None, instance=None, pk=None, **kwargs):
         if instance is None and pk is not None and pk != '-1':
             instance = ExperimentParameterValue.objects.get(pk=pk)
-        super(ExperimentParameterValueForm, self).__init__(
-            post_dict, instance=instance, **kwargs)
+        super(ExperimentParameterValueForm, self).__init__(post_dict, instance=instance, **kwargs)
 
         self.fields['parameter'].queryset = self.fields[
             'parameter'].queryset.filter(scope='experiment')

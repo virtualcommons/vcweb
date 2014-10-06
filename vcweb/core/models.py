@@ -2881,24 +2881,39 @@ class Invitation(models.Model):
 
 class ParticipantSignupQuerySet(models.query.QuerySet):
 
-    def _experiment_metadata_criteria(self, criteria, experiment_metadata=None, experiment_metadata_pk=None, **kwargs):
+    def _experiment_metadata_criteria(self, criteria,
+                                      experiment_metadata=None, experiment_metadata_pk=None,
+                                      experiment_session=None, experiment_session_pk=None, **kwargs):
         if experiment_metadata is not None:
             criteria['invitation__experiment_session__experiment_metadata'] = experiment_metadata
         elif experiment_metadata_pk is not None:
             criteria['invitation__experiment_session__experiment_metadata__pk'] = experiment_metadata_pk
+        if experiment_session is not None:
+            criteria['invitation__experiment_session'] = experiment_session
+        elif experiment_session_pk is not None:
+            criteria['invitation__experiment_session__pk'] = experiment_session_pk
         criteria.update(kwargs)
         return criteria
 
-    def registered(self, **kwargs):
+    def with_attendance(self, attendance, **kwargs):
+        criteria = self._experiment_metadata_criteria({'attendance': ParticipantSignup.ATTENDANCE.participated},
+                                                      **kwargs)
+        return self.filter(**criteria)
+
+    def registered_or_participated(self, **kwargs):
         criteria = self._experiment_metadata_criteria(
             {'attendance__in': (ParticipantSignup.ATTENDANCE.participated, ParticipantSignup.ATTENDANCE.registered)},
             **kwargs)
         return self.filter(**criteria)
 
+    def registered(self, **kwargs):
+        return self.with_attendance(ParticipantSignup.ATTENDANCE.registered, **kwargs)
+
     def participated(self, **kwargs):
-        criteria = self._experiment_metadata_criteria({'attendance': ParticipantSignup.ATTENDANCE.participated},
-                                                      **kwargs)
-        return self.filter(**criteria)
+        return self.with_attendance(ParticipantSignup.ATTENDANCE.participated, **kwargs)
+
+    def waitlist(self, **kwargs):
+        return self.with_attendance(ParticipantSignup.ATTENDANCE.waitlist, **kwargs)
 
     def upcoming(self, participant=None, **kwargs):
         criteria = dict(attendance=ParticipantSignup.ATTENDANCE.registered,
@@ -2913,15 +2928,15 @@ class ParticipantSignup(models.Model):
         (0, 'participated', _('participated')),
         (1, 'discharged', _('turned away')),
         (2, 'absent', _('absent')),
-        (3, 'registered', _('signed up')))
+        (3, 'registered', _('signed up')),
+        (4, 'waitlist', _('waitlisted')),
+    )
     """ Provides participated, discharged, absent, and initial attendance enum values """
     invitation = models.ForeignKey(Invitation, related_name='signup_set')
     date_created = models.DateTimeField(auto_now_add=True)
-    attendance = models.PositiveIntegerField(
-        max_length=1, choices=ATTENDANCE, default=ATTENDANCE.registered)
+    attendance = models.PositiveIntegerField(max_length=1, choices=ATTENDANCE, default=ATTENDANCE.registered)
 
-    objects = PassThroughManager.for_queryset_class(
-        ParticipantSignupQuerySet)()
+    objects = PassThroughManager.for_queryset_class(ParticipantSignupQuerySet)()
 
     def to_dict(self, signup_count=0):
         experiment_session = self.invitation.experiment_session

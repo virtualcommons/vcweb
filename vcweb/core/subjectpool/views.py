@@ -444,45 +444,40 @@ def submit_experiment_session_signup(request):
     """
     user = request.user
     invitation_pk = request.POST.get('invitation_pk')
-    experiment_metadata_pk = request.POST.get('experiment_metadata_pk')
-    invitation = Invitation.objects.select_related('experiment_session').get(pk=invitation_pk)
+    invitation = get_object_or_404(Invitation.objects.select_related('experiment_session'), pk=invitation_pk)
+    registered = False
+    waitlist = False
+    attendance = ParticipantSignup.ATTENDANCE.registered
+    message = ""
 
     # lock on the experiment session to prevent concurrent participant signups for an experiment session
     # exceeding its capacity
     with transaction.atomic():
-        signup_count = ParticipantSignup.objects.filter(
-            invitation__experiment_session__pk=invitation.experiment_session.pk).count()
+        signup_count = ParticipantSignup.objects.registered(experiment_session_pk=invitation.experiment_session_id).count()
         # verify for the vacancy in the selected experiment session before
         # creating participant signup entry
         if signup_count < invitation.experiment_session.capacity:
-            try:
-                ps = ParticipantSignup.objects.get(
-                    invitation__participant=user.participant,
-                    invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk,
-                    attendance=ParticipantSignup.ATTENDANCE.registered)
-            except ParticipantSignup.DoesNotExist:
-                ps = ParticipantSignup()
-
-            ps.invitation = invitation
-            ps.date_created = datetime.now()
-            ps.attendance = ParticipantSignup.ATTENDANCE.registered
-            ps.save()
-            success = True
+            registered = True
+            message = '''You are now registered for this experiment session. A confirmation email has been sent and you
+            should also receive a reminder email one day before the session. Thanks in advance for participating!'''
         else:
-            # No vacancy
-            success = False
+            # signups are full, check if waitlists are full
+            waitlist_count = ParticipantSignup.objects.waitlist(experiment_session_pk=invitation.experiment_session_id).count()
+            if waitlist_count < settings.SUBJECTPOOL_WAITLIST_SIZE:
+                waitlist = True
+                attendance = ParticipantSignup.ATTENDANCE.waitlist
+                message = """This experiment session is currently full, but you have been added to the waitlist. You may
+                still be able to participate in this experiment if other participants leave the experiment."""
+        ps, created = ParticipantSignup.objects.get_or_create(invitation=invitation, attendance=attendance)
+        logger.debug("updated participant signup %s - created? %s", ps, created)
 
-    if success:
-        messages.success(request, _(
-            "You are now registered for this experiment session. A confirmation email has been sent and you should also receive a reminder email one day before the session. Thanks in advance for participating!"))
-        chosen_session = ExperimentSession.objects.get(
-            pk=invitation.experiment_session.pk)
-        send_email("email/confirmation-email.txt", {'session': chosen_session}, "Confirmation Email",
+    if registered or waitlist:
+        messages.success(request, _(message))
+        send_email("email/confirmation-email.txt", {'session': invitation.experiment_session}, "Confirmation Email",
                    settings.SERVER_EMAIL, [user.email])
-        return redirect('core:dashboard')
     else:
-        messages.error(request, _("This session is currently full."))
-        return redirect('subjectpool:experiment_session_signup')
+        messages.error(request, _("This session is currently full. Please select a different session or try again later to see if any slots have opened up. Thank you for your interest!"))
+    return redirect('core:dashboard')
 
 
 @group_required(PermissionGroup.experimenter)
@@ -521,10 +516,9 @@ def experiment_session_signup(request):
     # invitation to user
     tomorrow = datetime.now() + timedelta(days=1)
 
-    active_experiment_sessions = ParticipantSignup.objects.select_related(
-        'invitation', 'invitation__experiment_session').filter(
-            invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.registered,
-            invitation__experiment_session__scheduled_date__gt=tomorrow)
+    active_experiment_sessions = ParticipantSignup.objects.select_related('invitation', 'invitation__experiment_session').filter(
+        invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.registered,
+        invitation__experiment_session__scheduled_date__gt=tomorrow)
 
     # Making sure that user don't see invitations for a experiment for which he has already participated
     # useful in cases when the experiment has lots of sessions spanning to lots of days. It avoids a user to participate

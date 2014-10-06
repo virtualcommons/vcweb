@@ -18,6 +18,8 @@ GITHUB_REPO = "vcweb"
 GITHUB_REPO_OWNER = "virtualcommons"
 GITHUB_ISSUE_LABELS = ["bug"]
 
+SUBJECT_POOL_WAITLIST_SIZE = 10
+
 DEMO_EXPERIMENTER_EMAIL = 'vcweb.demo@mailinator.com'
 DEFAULT_FROM_EMAIL = 'vcweb@asu.edu'
 SERVER_EMAIL = 'vcweb@asu.edu'
