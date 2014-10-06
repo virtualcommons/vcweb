@@ -71,7 +71,7 @@ class SessionInviteForm(forms.Form):
     number_of_people = forms.IntegerField(help_text=_(
         "Number of participants to invite to the selected experiment session(s)"), widget=NumberInput(attrs={'value': 0, 'class': 'input-mini'}))
     only_undergrad = forms.BooleanField(help_text=_(
-        "Limit to self-reported undergraduate students"), widget=CheckboxInput(attrs={'checked': True}))
+        "Limit to self-reported undergraduate students"), widget=CheckboxInput(attrs={'checked': True}), required=False)
     affiliated_institution = forms.CharField(required=False, widget=autocomplete_light.TextWidget(
         InstitutionAutocomplete, attrs={'value': 'Arizona State University'}))
     invitation_subject = forms.CharField(widget=widgets.TextInput())
