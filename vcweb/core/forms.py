@@ -283,10 +283,15 @@ class ExperimentParameterValueForm(forms.ModelForm):
 class RoundConfigurationForm(forms.ModelForm):
     required_css_class = 'required'
 
-    def __init__(self, *args, **kwargs):
-        super(RoundConfigurationForm, self).__init__(*args, **kwargs)
+    def __init__(self, post_dict=None, instance=None, pk=None, **kwargs):
+        self.old_sequence_number = None
+        if instance is None and pk is not None and pk != '-1':
+            instance = RoundConfiguration.objects.get(pk=pk)
+            self.old_sequence_number = instance.sequence_number
+        super(RoundConfigurationForm, self).__init__(post_dict, instance=instance, **kwargs)
+
         for name, field in self.fields.items():
-            if field.widget.__class__ == CheckboxInput:
+            if isinstance(field.widget, CheckboxInput):
                 field.widget.attrs['data-bind'] = 'checked: %s' % name
             else:
                 field.widget.attrs['data-bind'] = 'value: %s' % name
@@ -298,10 +303,29 @@ class RoundConfigurationForm(forms.ModelForm):
                     {'class': 'has-popover', 'data-content': help_text, 'data-placement': 'right',
                      'data-container': 'div.modal-dialog'})
 
+        if post_dict:
+            self.request_type = post_dict.get('request_type')
+
+    def save(self, commit=True):
+        rc = super(RoundConfigurationForm, self).save(commit=False)
+        rc.update_sequence_number(self.old_sequence_number)
+
+        if self.request_type == 'delete':
+            logger.warn("Deleting round parameter value %s", rc)
+            rc.delete()
+        elif commit:
+            rc.save()
+        return rc
+
+
     class Meta:
         model = RoundConfiguration
-        exclude = ('experiment_configuration', 'last_modified', 'date_created', 'template_filename', 'instructions',
+        exclude = ('last_modified', 'date_created', 'template_filename', 'instructions',
                    'debriefing', 'group_cluster_size')
+
+        widgets = {
+            'experiment_configuration': forms.HiddenInput
+        }
 
 
 class RoundParameterValueForm(forms.ModelForm):

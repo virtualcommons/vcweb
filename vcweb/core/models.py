@@ -1602,6 +1602,18 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
         survey_url = getattr(self, 'survey_url', None)
         return survey_url is not None and survey_url
 
+    @property
+    def display_label(self):
+        return u"Round %d" % self.round_number if self.is_regular_round else self.get_round_type_display()
+
+    @property
+    def sequence_label(self):
+        if self.is_repeating_round:
+            return u"%d of %d [x %d]" % (
+                self.sequence_number, self.experiment_configuration.final_sequence_number, self.repeat)
+        else:
+            return u"%d of %d" % (self.sequence_number, self.experiment_configuration.final_sequence_number)
+
     def make_survey_url(self, **kwargs):
         if self.is_survey_enabled and kwargs:
             query_parameters = urlencode(kwargs)
@@ -1623,17 +1635,35 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
                                                     round_number=self.display_number,
                                                     participant_id=participant_id)
 
-    @property
-    def display_label(self):
-        return u"Round %d" % self.round_number if self.is_regular_round else self.get_round_type_display()
+    def update_sequence_number(self, old_sequence_number):
+        logger.debug('Updating round configuration sequence numbers')
+        round_configs = RoundConfiguration.objects.filter(
+                experiment_configuration__pk=self.experiment_configuration.pk)
+        new_sequence_number = self.sequence_number
 
-    @property
-    def sequence_label(self):
-        if self.is_repeating_round:
-            return u"%d of %d [x %d]" % (
-                self.sequence_number, self.experiment_configuration.final_sequence_number, self.repeat)
+        if old_sequence_number:
+            for rc in round_configs:
+                current_sequence_number = rc.sequence_number
+                if old_sequence_number < current_sequence_number <= new_sequence_number:
+                    rc.sequence_number = current_sequence_number - 1
+                    rc.save()
+                elif new_sequence_number <= current_sequence_number <= old_sequence_number:
+                    rc.sequence_number = current_sequence_number + 1
+                    rc.save()
         else:
-            return u"%d of %d" % (self.sequence_number, self.experiment_configuration.final_sequence_number)
+            flag = True
+            for rc in round_configs:
+                current_sequence_number = rc.sequence_number
+                if new_sequence_number <= current_sequence_number and flag:
+                    if new_sequence_number == current_sequence_number:
+                        rc.sequence_number = current_sequence_number + 1
+                        rc.save()
+                        new_sequence_number += 1
+                    else:
+                        flag = False
+
+        logger.debug('Updating round configuration sequence number completed')
+
 
     def to_dict(self, **kwargs):
         return {

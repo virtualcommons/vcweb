@@ -223,8 +223,8 @@
 
     <script type="text/html" id="round-config-template">
         <form class="form-horizontal" data-bind="submit: $root.saveRoundConfig">
-            <input type="hidden" data-bind="value: pk">
-            {%  bootstrap_form round_config_form layout="horizontal" label_class="col-md-4" field_class="col-md-6"%}
+        {%  bootstrap_form round_config_form layout="horizontal" label_class="col-md-4" field_class="col-md-6"%} 
+        <input type="hidden" data-bind="value: pk" class="hidden-param">
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">Save</button>
             </div>
@@ -284,7 +284,7 @@
                 self.display_name = ko.observable(data.display_name);
                 self.pk = ko.observable(data.pk);
                 self.round_configuration = ko.observable(data.round_configuration || data.round_configuration_pk);
-                self.experiment_configuration = ko.observable(data.experiment_configuration || data.experiment_configuration_pk);
+                self.experiment_configuration = ko.observable(data.experiment_configuration);
                 self.parameter = ko.observable(data.parameter_pk);
                 self.string_value = ko.observable(data.string_value);
                 self.int_value = ko.observable(data.int_value);
@@ -306,6 +306,7 @@
                 self.children = ko.observableArray(data.children);
 
                 self.pk = ko.protectedObservable(data.pk);
+                self.experiment_configuration = ko.observable(data.experiment_configuration);
 		        self.round_type = ko.protectedObservable(data.round_type);
                 self.sequence_number = ko.protectedObservable(data.sequence_number)
                 self.display_number = ko.protectedObservable(data.display_number);
@@ -344,12 +345,13 @@
                 var mapping = {
                     'roundConfigList': {
                         create: function (options) {
+                            options.data.experiment_configuration = experiment_configuration_pk;
                             return new NodeModel(options.data);
                         }
                     },
                     'expParamValuesList': {
                         create: function (options) {
-                            options.data.experiment_configuration_pk = experiment_configuration_pk
+                            options.data.experiment_configuration = experiment_configuration_pk;
                             return new ParamViewModel(options.data);
                         }
                     }
@@ -422,7 +424,9 @@
                 }
 
                 model.addRoundConfig = function (data, event) {
-                    model.modalData(new NodeModel({'display_number': 0, 'duration': 0, repeat:'0', 'preserve_existing_groups': true}));
+                    var node = new NodeModel({'display_number': 0, 'duration': 0, repeat: 0, 
+                        'preserve_existing_groups': true, 'experiment_configuration': experiment_configuration_pk});
+                    model.modalData(node);
                     model.template("round-config-template");
                     model.activateModal(true);
                 }
@@ -434,18 +438,19 @@
                 }
 
                 model.removeRoundConfig = function(roundConfig) {
+                    var data = 'experiment_configuration='+roundConfig.experiment_configuration() +
+                               '&repeat='+ roundConfig.repeat() + '&round_type='+ roundConfig.round_type() +
+                               '&duration='+roundConfig.duration() + '&display_number=' + roundConfig.display_number() +
+                               '&sequence_number='+ roundConfig.sequence_number() +'&request_type=delete';
 
-                    $.ajax("/api/configuration/round/"+ roundConfig.pk(), {
-                        data: 'request_type=delete',
-                        type: "POST",
-                        success: function(result) {
+                    $.post("/api/configuration/round/"+ roundConfig.pk(), data)
+                        .done(function(result) {
                             if(result.success){
                                 model.roundConfigList.remove(roundConfig);
                             } else {
                                 // Error Message
                             }
-                        }
-                    });
+                        });
                 }
                 model.saveRoundParam = function(form) {
                     var form = $(form),
@@ -497,10 +502,8 @@
                         var match = ko.utils.arrayFirst(model.roundConfigList(), function (item) {
                             return parseInt(roundPk) === item.pk();
                         });
-                        $.ajax("/api/configuration/round/"+ roundPk, {
-                            data: formData + '&request_type=update',
-                            type: "POST",
-                            success: function(result) {
+                        $.post("/api/configuration/round/"+ roundPk, formData + '&request_type=update')
+                            .done(function(result) { 
                                 if(result.success){
                                     var old_sequence_number = match.sequence_number();
                                     var new_sequence_number = match.sequence_number.updateValue();
@@ -523,17 +526,12 @@
                                 } else {
                                     // Error Message
                                 }
-                            }
-                        });
+                            });
                     }
                     else {
                         // Create Request
-
-                        formData += '&experiment_config_pk=' + {{ experiment_config.pk }};
-                        $.ajax("/api/configuration/round/-1", {
-                            data: formData + '&request_type=create',
-                            type: "POST",
-                            success: function(result) {
+                        $.post("/api/configuration/round/-1", formData + '&request_type=create')
+                            .done(function(result) {
                                 if(result.success){
                                     var flag = true;
                                     var new_sequence_number = result.round_config.sequence_number;
@@ -558,8 +556,7 @@
                                 } else {
                                     // Error Message
                                 }
-                            }
-                        });
+                            });
                     }
                 }
 

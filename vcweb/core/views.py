@@ -1271,47 +1271,11 @@ def sort_round_configurations(old_sequence_number, new_sequence_number, exp_conf
 
 @group_required(PermissionGroup.experimenter)
 def update_round_configuration(request, pk):
-    # extract request type
-    request_type = request.POST.get('request_type')
-
-    # delete Request
-    if request_type == 'delete' and pk:
-        try:
-            RoundConfiguration.objects.get(pk=pk).delete()
-            return JsonResponse(SUCCESS_DICT)
-        except:
-            return JsonResponse(FAILURE_DICT)
-    # Create Request
-    elif request_type == 'create':
-        form = RoundConfigurationForm(request.POST or None)
-        if form.is_valid():
-            rc = form.save(commit=False)
-            exp_config_pk = request.POST.get('experiment_config_pk')
-            ec = ExperimentConfiguration.objects.get(pk=exp_config_pk)
-            rc.experiment_configuration = ec
-            if form.cleaned_data.get('sequence_number') != rc.sequence_number:
-                sort_round_configurations(rc.sequence_number, form.cleaned_data.get('sequence_number'),
-                                          rc.experiment_configuration.pk)
-
-            rc.save()
-            return JsonResponse({'success': True, 'round_config': rc.to_dict()})
-
-    # Update request
-    elif request_type == "update" and pk:
-        rc = RoundConfiguration.objects.get(pk=pk)
-        form = RoundConfigurationForm(request.POST or None, instance=rc)
-        if form.is_valid():
-            form.save(commit=False)
-            if form.cleaned_data.get('sequence_number') != rc.sequence_number:
-                sort_round_configurations(rc.sequence_number, form.cleaned_data.get('sequence_number'),
-                                          rc.experiment_configuration.pk)
-            rc.save()
-            return JsonResponse({'success': True, 'round_config': rc.to_dict()})
-
-    return JsonResponse({
-        'success': False,
-        'message': form.errors
-    })
+    form = RoundConfigurationForm(request.POST or None, pk=pk)
+    if form.is_valid():
+        rc = form.save()
+        return JsonResponse({'success': True, 'round_config': rc.to_dict()})
+    return JsonResponse({'success': False, 'errors': form.errors})
 
 
 @group_required(PermissionGroup.experimenter)
