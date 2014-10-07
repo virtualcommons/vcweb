@@ -2945,7 +2945,7 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
         return self.with_attendance(ParticipantSignup.ATTENDANCE.waitlist, **kwargs)
 
     def upcoming(self, participant=None, **kwargs):
-        criteria = dict(attendance=ParticipantSignup.ATTENDANCE.registered,
+        criteria = dict(attendance__in=[ParticipantSignup.ATTENDANCE.registered, ParticipantSignup.ATTENDANCE.waitlist],
                         invitation__experiment_session__scheduled_date__gt=datetime.now())
         if participant is not None:
             criteria.update(invitation__participant=participant)
@@ -2989,6 +2989,7 @@ class ParticipantSignup(models.Model):
             },
             'experiment_metadata_name': experiment_metadata.title,
             'experiment_metadata_pk': experiment_metadata.pk,
+            'attendance': self.get_attendance_display(),
             'pk': self.pk
         }
         return data

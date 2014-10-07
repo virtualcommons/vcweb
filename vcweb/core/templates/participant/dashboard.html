@@ -25,10 +25,11 @@ Participant Dashboard
             <div data-bind="template: { name: 'experimentTemplate', foreach: runningExperiments }"></div>
         </div>
         <div data-bind='if: signups().length > 0'>
-            <h4>You're currently signed up for the following upcoming experiments:</h4>
+            <h4>You're currently signed up / waitlisted for the following upcoming experiments:</h4>
             <table class='table table-bordered table-striped'>
                 <thead>
                     <tr>
+                        <th>Status</th>
                         <th>Start Date</th>
                         <th>Start Time</th>
                         <!-- ko if: showEndDates -->
@@ -41,6 +42,7 @@ Participant Dashboard
                 </thead>
                 <tbody data-bind='foreach: signups'>
                 <tr>
+                    <td data-bind='text: attendance'></td>
                     <td>
                         <span data-bind='text: $root.formatDate(invitation.scheduled_date())'></span>
                         <br>
