@@ -518,7 +518,7 @@ def experiment_session_signup(request):
     tomorrow = datetime.now() + timedelta(days=1)
 
     active_experiment_sessions = ParticipantSignup.objects.select_related('invitation', 'invitation__experiment_session').filter(
-        invitation__participant=user.participant, attendance=ParticipantSignup.ATTENDANCE.registered,
+        invitation__participant=user.participant, attendance__in=[ParticipantSignup.ATTENDANCE.registered,ParticipantSignup.ATTENDANCE.waitlist],
         invitation__experiment_session__scheduled_date__gt=tomorrow)
 
     # Making sure that user don't see invitations for a experiment for which he has already participated
@@ -557,4 +557,4 @@ def experiment_session_signup(request):
         messages.error(request, _(
             "All experiment sessions are full. Signups are first-come, first-serve. Please try again later, you are still eligible to participate in future experiments and may receive future invitations for this experiment."))
 
-    return render(request, "participant/experiment-session-signup.html", {"invitation_list": invitation_list})
+    return render(request, "participant/experiment-session-signup.html", {"invitation_list": invitation_list, 'waitlist_size': settings.SUBJECT_POOL_WAITLIST_SIZE })
