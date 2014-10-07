@@ -58,6 +58,7 @@ Participant Dashboard
                     <td>
                         <a class='btn btn-primary' href='{% url "subjectpool:experiment_session_signup" %}'>Edit</a>
                         <form method='POST' action='/subject-pool/signup/cancel/'>
+                            {% csrf_token %}
                             <input type='hidden' name='pk' id='id_pk' data-bind='value: pk'>
                             <button type='submit' class='btn btn-primary'>Cancel</button>
                         </form>
