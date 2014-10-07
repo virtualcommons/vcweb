@@ -463,7 +463,7 @@ def submit_experiment_session_signup(request):
         else:
             # signups are full, check if waitlists are full
             waitlist_count = ParticipantSignup.objects.waitlist(experiment_session_pk=invitation.experiment_session_id).count()
-            if waitlist_count < settings.SUBJECTPOOL_WAITLIST_SIZE:
+            if waitlist_count < settings.SUBJECT_POOL_WAITLIST_SIZE:
                 waitlist = True
                 attendance = ParticipantSignup.ATTENDANCE.waitlist
                 message = """This experiment session is currently full, but you have been added to the waitlist. You may
