@@ -239,10 +239,11 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.setup_participants()
         es_pk_list = self.setup_experiment_sessions()
 
-        response = self.post(reverse('subjectpool:send_invites'), {'number_of_people': 30, 'only_undergrad': 'on',
-                                                                   'affiliated_institution': 'Arizona State University',
-                                                                   'invitation_subject': 'Test', 'invitation_text': 'Testing',
-                                                                   'session_pk_list': str(es_pk_list[0])})
+        response = self.post(reverse('subjectpool:send_invites'),
+                             {'number_of_people': 30, 'only_undergrad': 'on',
+                              'affiliated_institution': 'Arizona State University',
+                              'invitation_subject': 'Test', 'invitation_text': 'Testing',
+                              'session_pk_list': str(es_pk_list[0])})
         self.assertEqual(200, response.status_code)
 
         response_dict = json.loads(response.content)
@@ -266,31 +267,33 @@ class SubjectPoolViewTest(SubjectPoolTest):
 
         # test create experiment session
         em = ExperimentMetadata.objects.order_by('?')[0]
-        response = self.post(reverse('subjectpool:manage_experiment_session'), {'pk': -1, 'experiment_metadata_pk': em.pk,
-                                                                                'start_date': '2014-09-23', 'start_hour': 2,
-                                                                                'start_min': 0, 'capacity': 10, 'location': 'Online',
-                                                                                'end_date': '2014-09-23', 'end_hour': 3, 'end_min': 0,
-                                                                                'request_type': 'create'})
+        response = self.post(reverse('subjectpool:manage_experiment_session'),
+                             {'pk': -1, 'experiment_metadata_pk': em.pk,
+                              'start_date': '2014-09-23', 'start_hour': 2,
+                              'start_min': 0, 'capacity': 10, 'location': 'Online',
+                              'end_date': '2014-09-23', 'end_hour': 3, 'end_min': 0,
+                              'request_type': 'create'})
         self.assertEqual(200, response.status_code)
 
         response_dict = json.loads(response.content)
         self.assertTrue(response_dict['success'])
 
         # test edit/update experiment session
-        response = self.post(reverse('subjectpool:manage_experiment_session'), {'pk': response_dict['session']['pk'],
-                                                                                'experiment_metadata_pk': em.pk,
-                                                                                'start_date': '2014-09-23', 'start_hour': 2,
-                                                                                'start_min': 0, 'capacity': 10, 'location': 'Online',
-                                                                                'end_date': '2014-09-23', 'end_hour': 4,
-                                                                                'end_min': 0, 'request_type': 'update'})
+        response = self.post(reverse('subjectpool:manage_experiment_session'),
+                             {'pk': response_dict['session']['pk'],
+                              'experiment_metadata_pk': em.pk,
+                              'start_date': '2014-09-23', 'start_hour': 2,
+                              'start_min': 0, 'capacity': 10, 'location': 'Online',
+                              'end_date': '2014-09-23', 'end_hour': 4,
+                              'end_min': 0, 'request_type': 'update'})
         self.assertEqual(200, response.status_code)
 
         response_dict = json.loads(response.content)
         self.assertTrue(response_dict['success'])
 
         # test delete experiment session
-        response = self.post(
-            reverse('subjectpool:manage_experiment_session'), {'pk': response_dict['session']['pk'], 'request_type': 'delete'})
+        response = self.post(reverse('subjectpool:manage_experiment_session'),
+                             {'pk': response_dict['session']['pk'], 'request_type': 'delete'})
         self.assertEqual(200, response.status_code)
 
         response_dict = json.loads(response.content)
@@ -310,25 +313,24 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertEqual(200, response.status_code)
 
         self.setup_invitations(x, es_pk_list)
-        invitation = Invitation.objects.filter(
-            participant=participant).order_by('?')[0]
+        invitation = Invitation.objects.filter(participant=participant).order_by('?')[0]
 
         response = self.post(reverse('subjectpool:submit_experiment_session_signup'), {
-                             'invitation_pk': invitation.pk, 'experiment_metadata_pk': invitation.experiment_session.experiment_metadata.pk})
+            'invitation_pk': invitation.pk,
+            'experiment_metadata_pk': invitation.experiment_session.experiment_metadata_id
+        })
 
         self.assertEqual(302, response.status_code)
         self.assertTrue(self.dashboard_url in response['Location'])
 
         # test cancel session signup
         ps = ParticipantSignup.objects.get(invitation=invitation)
-        response = self.post(
-            reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
+        response = self.post(reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
         self.assertEqual(302, response.status_code)
         self.assertTrue(self.dashboard_url in response['Location'])
 
         # test canceling an already cancel session signup
-        response = self.post(
-            reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
+        response = self.post(reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
         self.assertEqual(302, response.status_code)
         self.assertTrue(self.dashboard_url in response['Location'])
 
@@ -337,7 +339,11 @@ class SubjectPoolViewTest(SubjectPoolTest):
         invitation.experiment_session.save()
 
         response = self.post(reverse('subjectpool:submit_experiment_session_signup'), {
-                             'invitation_pk': invitation.pk, 'experiment_metadata_pk': invitation.experiment_session.experiment_metadata.pk})
-
+            'invitation_pk': invitation.pk,
+            'experiment_metadata_pk': invitation.experiment_session.experiment_metadata.pk
+        })
         self.assertEqual(302, response.status_code)
-        self.assertTrue('/subject-pool/signup/' in response['Location'])
+        self.assertTrue(reverse('core:dashboard') in response['Location'])
+        ps = ParticipantSignup.objects.waitlist(experiment_session_pk=invitation.experiment_session_id)
+        self.assertTrue(ps.exists())
+        self.assertEqual(ps[0].invitation, invitation)

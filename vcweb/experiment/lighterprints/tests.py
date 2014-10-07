@@ -220,12 +220,9 @@ class GroupScoreTest(LevelBasedTest):
         performed_activities = self.perform_activities()
         # expected average points per person is the straight sum of all activities in the performed activities because
         # every participant in the group has performed them
-        logger.error("performed activities: %s", performed_activities)
-        expected_avg_points_per_person = sum(
-            [activity.points for activity in performed_activities])
+        expected_avg_points_per_person = sum([activity.points for activity in performed_activities])
         gs = e.groups
         group_scores = GroupScores(e, groups=gs)
-        logger.error(group_scores.scores_dict)
         for group in gs:
             self.assertEqual(
                 group_scores.average_daily_points(group), expected_avg_points_per_person)

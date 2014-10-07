@@ -475,9 +475,10 @@ def submit_experiment_session_signup(request):
         messages.success(request, _(message))
         send_email("email/confirmation-email.txt", {'session': invitation.experiment_session}, "Confirmation Email",
                    settings.SERVER_EMAIL, [user.email])
+        return redirect('core:dashboard')
     else:
         messages.error(request, _("This session is currently full. Please select a different session or try again later to see if any slots have opened up. Thank you for your interest!"))
-    return redirect('core:dashboard')
+        return redirect('subjectpool:experiment_session_signup')
 
 
 @group_required(PermissionGroup.experimenter)

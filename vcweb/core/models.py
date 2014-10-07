@@ -2896,8 +2896,7 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
         return criteria
 
     def with_attendance(self, attendance, **kwargs):
-        criteria = self._experiment_metadata_criteria({'attendance': ParticipantSignup.ATTENDANCE.participated},
-                                                      **kwargs)
+        criteria = self._experiment_metadata_criteria({'attendance': attendance}, **kwargs)
         return self.filter(**criteria)
 
     def registered_or_participated(self, **kwargs):
