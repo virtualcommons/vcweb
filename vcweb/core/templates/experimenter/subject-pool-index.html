@@ -47,7 +47,7 @@ Experiment Session Management
                             <i class="fa fa-plus"></i>
                             Add Session
                         </button>
-                        <button data-bind="click: function() { $('#invite-form').toggle('fast'); }, enable: ifSelectedSessions" class="btn btn-primary">
+                        <button data-bind="click: function() { $('#invite-form').toggle('fast'); }, enable: inviteCount()" class="btn btn-primary">
                             <i class="fa fa-envelope"></i>
                             Create Invitations
                         </button>
@@ -105,8 +105,6 @@ Experiment Session Management
 
 {% block javascript %}
 {{ block.super }}
-    {% include "includes/jquery.validate.html" %}
-    {% include "autocomplete_light/static.html" %}
     <script src='{{ STATIC_URL }}js/bootstrap-datepicker.min.js'></script>
     <link rel="stylesheet" href='{{ STATIC_URL }}css/datepicker.css' />
     <script type= "text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
@@ -238,23 +236,22 @@ Experiment Session Management
     </script>
 
     <script type="text/javascript">
-
         var sessions_experiment_metadatas_object = $.parseJSON("{{ view_model_json | escapejs }}");
+
+        function createCalendar() {
+           return $('#calendar').calendar({
+                events_source:'session/events',
+                tmpl_path: '/static/tmpls/',
+                onAfterViewLoad: function(view) {
+                    $('.page-header h3').text(this.getTitle());
+                    $('.btn-group button').removeClass('active');
+                    $('button[data-calendar-view="' + view + '"]').addClass('active');
+                }
+            });
+        }
 
         $(function(){
             $('#invite-form').hide();
-
-            function createCalendar() {
-               return $('#calendar').calendar({
-                    events_source:'session/events',
-                    tmpl_path: '/static/tmpls/',
-                    onAfterViewLoad: function(view) {
-                        $('.page-header h3').text(this.getTitle());
-                        $('.btn-group button').removeClass('active');
-                        $('button[data-calendar-view="' + view + '"]').addClass('active');
-                    }
-                });
-            }
 
             var calendar = createCalendar();
 
@@ -272,8 +269,160 @@ Experiment Session Management
                 });
             });
 
+            function SessionListViewModel(sessions_experiment_metadatas_object) {
+                var session_mapping = {
+                    'session_list': {
+                        create: function (options) {
+                            return new SessionModel(options.data, { newSession: false });
+                        }
+                    }
+                };
+                var model = ko.mapping.fromJS(sessions_experiment_metadatas_object, session_mapping);
 
+                model.allHours = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
+                model.allMinutes = ['00', '15', '30', '45'];
 
+                model.inviteCount = ko.observable(0);
+                model.invite_experiment_metadata_pk = -1;
+
+                model.addInvite = function(data, event) {
+
+                    if( data.selected_experiment_metadata_pk() == model.invite_experiment_metadata_pk
+                            || model.invite_experiment_metadata_pk == -1 ) {
+                        var oldCount = model.inviteCount();
+                        if($(event.target).is(':checked')){
+                            model.invite_experiment_metadata_pk = data.selected_experiment_metadata_pk();
+                            model.inviteCount(oldCount + 1);
+                            $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) + 3 * data.capacity());
+                        } else {
+                            model.inviteCount(oldCount - 1);
+                            $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) - 3 * data.capacity());
+                            if(oldCount == 1) {
+                                model.invite_experiment_metadata_pk = -1;
+                                $('#invite-form').slideUp("slow");
+                                $('#invite-form form')[0].reset();
+                                $('#email-content').html("");
+                            }
+                        }
+                        return true;
+                    } else {
+                        bootbox.alert("You can not invite participants for a list of experiment sessions spanning more than one experiment", function() {});
+                        return false;
+                    }
+                };
+
+                model.activeSessions = ko.computed(function() {
+                    return ko.utils.arrayFilter(model.session_list(), function(session) {
+                        return session.active();
+                    });
+                });
+
+                model.pastSessions = ko.computed(function() {
+                    return ko.utils.arrayFilter(model.session_list(), function(session) {
+                        return !session.active();
+                    });
+                });
+
+                function bookmarked_experiment_metadata_list(bool) {
+                    return ko.utils.arrayFilter(sessions_experiment_metadatas_object.experiment_metadata_list,
+                        function(experiment_metadata) {
+                            return (experiment_metadata.bookmarked == bool);
+                    });
+                }
+
+                model.experiment_metadata_group = [
+                    { label: "bookmarked", experiment_metadata_list: bookmarked_experiment_metadata_list(true) },
+                    { label: "Other", experiment_metadata_list: bookmarked_experiment_metadata_list(false) }
+                ];
+
+                model.addSession = function() {
+                    var tom = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+
+                    var date = tom.getFullYear() + "-" +tom.getMonthFormatted() + "-" + tom.getDateFormatted();
+                    model.session_list.push(
+                        new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: date, endDate: date, capacity:10, invite_count: 0, location: ""}, { newSession: true })
+                    );
+                };
+
+                model.removeSession = function(session, event) {
+                    if(session.pk() == -1){
+                        model.session_list.remove(session);
+                        return;
+                    }
+                    bootbox.confirm("Delete this session? All associated invitations and signups will be removed.",
+                        function(result) {
+                            if (result) {
+                                var formData = $(event.target).parents("form").serialize() + '&request_type=delete';
+                                $.post("{% url 'subjectpool:manage_experiment_session' %}", formData)
+                                    .done(function(result) {
+                                        if(result.success){
+                                            model.session_list.remove(session);
+                                            calendar = createCalendar();
+                                        }
+                                    });
+                            }
+                    });
+                };
+
+                model.onInvite = function(formElement) {
+                    var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked')
+                                                               .map(function(){ return this.value }).get();
+                    var btn = $(formElement).find("#invite-btn");
+                    btn.button('loading..')
+                    if(session_pk_list.length) {
+                        var formData = $(formElement).serialize()  + '&session_pk_list='+ session_pk_list;
+                        $.post("{% url 'subjectpool:send_invites' %}", formData)
+                            .done(function(result) {
+                                if(result.success){
+                                    $('#invite-form').slideUp("slow");
+                                    $('#active-sessions').find('input[type=checkbox]:checked').removeAttr('checked');
+                                    model.inviteCount(0);
+                                    model.invite_experiment_metadata_pk = -1;
+                                    $("#error-messages").html('<div class="alert alert-success">' + result.message + '</strong></div>');
+                                    $('#invite-form form')[0].reset();
+                                    $('#email-content').html("");
+
+                                    ko.utils.arrayForEach(model.session_list(), function(session) {
+                                        if($.inArray(session.pk(), session_pk_list) >= 0 ){
+                                            session.invitesSent(session.invitesSent() + result.invitesCount);
+                                        }
+                                    });
+                                } else {
+                                    $("#error-messages").html('<div class="alert alert-danger"><strong>' + result.message + '</strong></div>');
+                                }
+                                $(window).scrollTop($('#error-messages').offset().top - 100);
+                            })
+                            .always(function () {
+                                btn.button('reset')
+                            });
+                    }
+                };
+                model.emailPreview = function(data, event) {
+                    var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked')
+                                                               .map( function(){ return this.value }).get();
+                    if(session_pk_list.length) {
+                        var formData = $("#invite-form form").serialize()  + '&session_pk_list='+ session_pk_list;
+                        $.post("{% url 'subjectpool:get_invitations_count' %}", formData)
+                            .done(function(result) {
+                                model.potentialParticipantsCount(result.invitesCount);
+                            });
+
+                        $.post("{% url 'subjectpool:invite_email_preview' %}", formData)
+                            .done(function(result) {
+                                $("#email-content").html(
+                                    '<fieldset class="scheduler-border"><legend class="scheduler-border">Email Preview</legend><div id="email-text"></div></fieldset>');
+                                if(result.success){
+                                    $("#email-text").html(result.content);
+                                } else {
+                                    $("#email-text").html(result.message);
+                                }
+                            });
+                    }
+                }
+                return model;
+            }
+
+            var model = new SessionListViewModel(sessions_experiment_metadatas_object)
 
             function SessionModel(sessionData, options) {
                 var self = this;
@@ -290,8 +439,9 @@ Experiment Session Management
                 self.invitesSent = ko.observable(sessionData.invite_count);
                 self.editable = ko.observable(options.newSession);
                 self.active = ko.computed( function() {
-                    var yesterdayTimestamp = new Date().getTime() - (24 * 60 * 60 * 1000);
-                    var sessionEndTimestamp = new Date(self.endDate()).getTime() + self.endHour() * 60 * 60 * 1000 + self.endMin() * 60 * 1000;
+                    var milliSecInHour = 60 * 60 * 1000, currentTime = new Date().getTime();
+                    var yesterdayTimestamp = currentTime - (24 * milliSecInHour);
+                    var sessionEndTimestamp = new Date(self.endDate()).getTime() + self.endHour() * milliSecInHour + self.endMin() * 60 * 1000;
                     return (self.pk() == -1 || (sessionEndTimestamp >= yesterdayTimestamp));
                 });
 
@@ -300,7 +450,6 @@ Experiment Session Management
                 };
 
                 self.onSave = function(formElement) {
-                    var formData;
                     var start_time = parseInt(formElement.elements["start_hour"].value);
                     var end_time = parseInt(formElement.elements["end_hour"].value);
                     var start_date = new Date(formElement.elements["start_date"].value);
@@ -314,203 +463,40 @@ Experiment Session Management
                         return;
                     }
                     experiment_session_old_pk = formElement.elements["pk"].value
-                    // FIXME: push this logic server-side instead
+                    var formData = $(formElement).serialize(); 
                     if(experiment_session_old_pk == -1){
-                        formData = $(formElement).serialize()  + '&request_type=create';
+                        formData += '&request_type=create';
                     } else {
-                        formData = $(formElement).serialize()  + '&request_type=update';
+                        formData += '&request_type=update';
                     }
-                    $.ajax("{% url 'subjectpool:manage_experiment_session' %}", {
-                        data: formData,
-                        type: "POST",
-                        success: function(result) {
+                    $.post("{% url 'subjectpool:manage_experiment_session' %}", formData)
+                        .done(function(result) {
                             if(result.success) {
                                 self.pk(result.session.pk);
                                 self.editable(false);
                                 calendar = createCalendar();
                                 if(experiment_session_old_pk == -1) {
-                                    $(formElement).find("input[type=checkbox]").prop('checked', true);
+                                    selected_experiment_metadata_pk = formElement.elements['experiment_metadata_pk'].value;
+                                    if(selected_experiment_metadata_pk == model.invite_experiment_metadata_pk
+                                        || model.invite_experiment_metadata_pk == -1 ) {
+                                        $(formElement).find("input[type=checkbox]").prop('checked', true);
+                                        model.invite_experiment_metadata_pk = selected_experiment_metadata_pk;
+                                        model.inviteCount(model.inviteCount() + 1);
+                                        $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) + 3 * formElement.elements['capacity'].value);
+                                    }
                                 }
                             } else {
                                 $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.errors+'</div>');
                                 $(window).scrollTop($('#error-messages').offset().top - 100);
                             }
-                        }
-                    });
-                };
-            }
-
-            function SessionListViewModel(sessions_experiment_metadatas_object) {
-                var session_mapping = {
-                    'session_list': {
-                        create: function (options) {
-                            return new SessionModel(options.data, { newSession: false });
-                        }
-                    }
-                };
-                var model = ko.mapping.fromJS(sessions_experiment_metadatas_object, session_mapping);
-
-                model.allHours = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
-                model.allMinutes = ['00', '15', '30', '45'];
-
-                model.inviteCount = ko.observable(0);
-                model.invite_experiment_metadata_pk_list = -1;
-
-                model.addInvite = function(data, event) {
-
-                    if( data.selected_experiment_metadata_pk() == model.invite_experiment_metadata_pk_list || model.invite_experiment_metadata_pk_list == -1 ) {
-                        var oldCount = model.inviteCount();
-                        if($(event.target).is(':checked')){
-                            model.invite_experiment_metadata_pk_list = data.selected_experiment_metadata_pk();
-                            model.inviteCount(oldCount + 1);
-                            $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) + 3 * data.capacity());
-                        } else {
-                            model.inviteCount(oldCount - 1);
-                            $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) - 3 * data.capacity());
-                            if(oldCount == 1) {
-                                model.invite_experiment_metadata_pk_list = -1;
-                                $('#invite-form').slideUp("slow");
-                                $('#invite-form form')[0].reset();
-                                $('#email-content').html("");
-                            }
-                        }
-                        return true;
-                    } else {
-                        bootbox.alert("You can not invite participants for a list of experiment sessions spanning to more than one experiment", function() {});
-                        return false;
-                    }
-                };
-
-                model.ifSelectedSessions = ko.computed(function() {
-                    return model.inviteCount() ? true : false;
-                });
-
-                model.activeSessions = ko.computed(function() {
-                    return ko.utils.arrayFilter(model.session_list(), function(session) {
-                        return session.active();
-                    });
-                });
-
-                model.pastSessions = ko.computed(function() {
-                    return ko.utils.arrayFilter(model.session_list(), function(session) {
-                        return !session.active();
-                    });
-                });
-
-                function bookmarked_experiment_metadata_list(bool) {
-                    return ko.utils.arrayFilter(sessions_experiment_metadatas_object.experiment_metadata_list, function(experiment_metadata) {
-                        return (experiment_metadata.bookmarked == bool);
-                    });
-                }
-
-                model.experiment_metadata_group = [
-                    { label: "bookmarked", experiment_metadata_list: bookmarked_experiment_metadata_list(true)},
-                    { label: "Other", experiment_metadata_list: bookmarked_experiment_metadata_list(false)}
-                ];
-
-                model.addSession = function() {
-                    var tom = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
-
-                    var date = tom.getFullYear() + "-" +tom.getMonthFormatted() + "-" + tom.getDateFormatted();
-                    model.session_list.push(
-                        new SessionModel({ pk: -1, experiment_metadata: {pk: -1}, startDate: date, endDate: date, capacity:10, invite_count: 0, location: ""}, { newSession: true})
-                    );
-                };
-
-                model.removeSession = function(session, event) {
-                    if(session.pk() != -1){
-                        bootbox.confirm("Delete this session? All associated invitations and signups will be removed.", function(result) {
-                            if (result) {
-                                var formData = $(event.target).parents("form").serialize();
-
-                                $.ajax("{% url 'subjectpool:manage_experiment_session' %}", {
-                                    type : "POST",
-                                    data : formData + '&request_type=delete',
-                                    success: function(result) {
-                                        if(result.success == true){
-                                            model.session_list.remove(session);
-                                            calendar = createCalendar();
-                                        }
-                                    }
-                                });
-                            }
                         });
-                    } else {
-                        model.session_list.remove(session);
-                    }
                 };
-
-                model.onInvite = function(formElement) {
-                    var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
-                    var btn = $(formElement).find("#invite-btn");
-                    btn.button('loading')
-                    if(session_pk_list.length) {
-                        var formData = $(formElement).serialize()  + '&session_pk_list='+ session_pk_list;
-                        $.ajax("{% url 'subjectpool:send_invites' %}", {
-                            type : "POST",
-                            data : formData,
-                            success: function(result) {
-                                if(result.success == true){
-                                    $('#invite-form').slideUp("slow");
-                                    $('#active-sessions').find('input[type=checkbox]:checked').removeAttr('checked');
-                                    model.inviteCount(0);
-                                    model.invite_experiment_metadata_pk_list = -1;
-                                    $("#error-messages").html('<div class="alert alert-success">' + result.message + '</strong></div>');
-                                    $('#invite-form form')[0].reset();
-                                    $('#email-content').html("");
-
-                                    ko.utils.arrayForEach(model.session_list(), function(session) {
-                                        if($.inArray(session.pk(), session_pk_list) >= 0 ){
-                                            session.invitesSent(session.invitesSent() + result.invitesCount);
-                                        }
-                                    });
-                                } else {
-                                    $("#error-messages").html('<div class="alert alert-danger"><strong>' + result.message + '</strong></div>');
-                                }
-                                $(window).scrollTop($('#error-messages').offset().top - 100);
-
-                            }
-                        }).always(function () {
-                            btn.button('reset')
-                        });
-                    }
-                };
-                model.emailPreview = function(data, event) {
-                    var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked').map( function(){ return this.value}).get();
-                    if(session_pk_list.length) {
-                        var formData = $("#invite-form form").serialize()  + '&session_pk_list='+ session_pk_list;
-                        $.ajax("{% url 'subjectpool:get_invitations_count' %}", {
-                            type : "POST",
-                            data : formData,
-                            success: function(result) {
-                                model.potentialParticipantsCount(result.invitesCount);
-                            }
-                        });
-
-                        $.ajax("{% url 'subjectpool:invite_email_preview' %}", {
-                            type : "POST",
-                            data : formData,
-                            success: function(result) {
-                                $("#email-content").html('<fieldset class="scheduler-border"><legend class="scheduler-border">Email Preview</legend><div id="email-text"></div></fieldset>');
-                                if(result.success == true){
-                                    $("#email-text").html(result.content);
-                                } else {
-                                    $("#email-text").html(result.message);
-                                }
-                            }
-                        });
-                    }
-                }
-                return model;
             }
 
             ko.bindingHandlers.datepicker = {
                 init: function(element, valueAccessor, allBindingsAccessor) {
-                //initialize datepicker with some optional options
-                    var options = {
-                        format: 'yyyy-mm-dd',
-                        startDate: '-d'
-                    };
+                    //initialize datepicker with some optional options
+                    var options = { format: 'yyyy-mm-dd', startDate: '-d' };
                     $(element).datepicker(options);
 
                     //when a user changes the date, update the view model
@@ -532,7 +518,7 @@ Experiment Session Management
                 }
             };
 
-            ko.applyBindings(new SessionListViewModel(sessions_experiment_metadatas_object));
+            ko.applyBindings(model);
         });
 
     </script>
