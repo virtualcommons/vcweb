@@ -317,7 +317,6 @@ class RoundConfigurationForm(forms.ModelForm):
             rc.save()
         return rc
 
-
     class Meta:
         model = RoundConfiguration
         exclude = ('last_modified', 'date_created', 'template_filename', 'instructions',
@@ -632,7 +631,9 @@ class AntiSpamForm(forms.Form):
 
 
 class AntiSpamContactForm(AntiSpamForm, ContactForm):
-    pass
+
+    def from_email(self):
+        return self.cleaned_data.get('email', settings.DEFAULT_FROM_EMAIL)
 
 
 class BugReportForm(AntiSpamForm):

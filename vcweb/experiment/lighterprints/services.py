@@ -169,8 +169,9 @@ class GroupScores(object):
             if participant_group_relationship and dv.participant_group_relationship == participant_group_relationship:
                 self.total_participant_points += activity_points
         if self.is_linear_public_good_game:
-            all_activities_performed_qs = ParticipantRoundDataValue.objects.for_experiment(experiment=self.experiment,
-                                                                                           parameter=get_activity_performed_parameter())
+            all_activities_performed_qs = ParticipantRoundDataValue.objects.for_experiment(
+                experiment=self.experiment,
+                parameter=get_activity_performed_parameter())
             for dv in all_activities_performed_qs:
                 activity_points = activity_points_cache[dv.int_value]
                 self.scores_dict[dv.participant_group_relationship.group][
@@ -178,11 +179,8 @@ class GroupScores(object):
         for group in self.groups:
             group_data_dict = self.scores_dict[group]
             group_size = group.size
-            group_data_dict['average_daily_points'] = group_data_dict[
-                'total_daily_points'] / group_size
-            group_data_dict['total_average_points'] = group_data_dict[
-                'total_points'] / group_size
-            logger.debug("group data dictionary: %s", group_data_dict)
+            group_data_dict['average_daily_points'] = group_data_dict['total_daily_points'] / group_size
+            group_data_dict['total_average_points'] = group_data_dict['total_points'] / group_size
 
     def average_daily_points(self, group):
         return self.scores_dict[group]['average_daily_points']
