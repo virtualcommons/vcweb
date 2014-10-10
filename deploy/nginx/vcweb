@@ -4,6 +4,7 @@ upstream django {
 
 server {
     listen      8081;
+    server_name vcweb.asu.edu;
     charset     utf-8;
     client_max_body_size 75M;
 
@@ -15,6 +16,14 @@ server {
         alias /var/www/vcweb/media;
     }
 
+    location /robots.txt {
+        alias /var/www/vcweb/static/robots.txt;
+    }
+
+    location /favicon.ico {
+        alias /var/www/vcweb/static/favicon.ico;
+    }
+
     location / {
         uwsgi_pass django;
         include /opt/vcweb/deploy/nginx/uwsgi_params;
@@ -22,4 +31,3 @@ server {
     access_log /opt/vcweb/logs/nginx/access.log
     error_log /opt/vcweb/logs/nginx/error.log
 }
-
