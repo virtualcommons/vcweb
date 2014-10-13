@@ -393,74 +393,6 @@ class AccountView(FormView):
 
 @login_required
 @group_required(PermissionGroup.experimenter, PermissionGroup.participant)
-def update_profile(request):
-    """ FIXME: reduce code duplication distinguishing between participant/experimenter """
-    user = request.user
-
-    if is_experimenter(user):
-        form = ExperimenterAccountForm(request.POST or None)
-        if form.is_valid():
-            # FIXME: replace with form.save(user.experimenter)
-            email = form.cleaned_data.get('email').lower()
-            institution_name = form.cleaned_data.get('institution')
-            e = Experimenter.objects.get(pk=user.experimenter.pk)
-
-            if institution_name:
-                institution, created = Institution.objects.get_or_create(
-                    name=institution_name)
-                e.institution = institution
-            else:
-                e.institution = None
-                logger.debug('Institution is empty')
-
-            for attr in ('first_name', 'last_name', 'email'):
-                setattr(e.user, attr, form.cleaned_data.get(attr))
-            e.save()
-            e.user.save()
-            messages.info("Your profile has been updated.")
-            return redirect('core:dashboard')
-        messages.warning(
-            request, _("There were errors in your form submission. Please try again."))
-        return render(request, 'accounts/profile.html', {'form': form})
-    else:
-        form = ParticipantAccountForm(request.POST or None)
-        if form.is_valid():
-            email = form.cleaned_data.get('email').lower()
-            institution_name = form.cleaned_data.get('institution')
-
-            with transaction.atomic():
-                p = Participant.objects.get(pk=user.participant.pk)
-                if institution_name:
-                    ins, created = Institution.objects.get_or_create(
-                        name=institution_name)
-                    p.institution = ins
-                else:
-                    p.institution = None
-                    logger.debug('Institution is empty')
-                if p.user.email != email:
-                    if User.objects.filter(email=email).exists():
-                        messages.warning(
-                            request, _("That email is already taken."))
-                        return render(request, 'accounts/profile.html', {'form': form})
-                for attr in (
-                        'major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food', 'favorite_sport',
-                        'favorite_color', 'favorite_movie_genre'):
-                    setattr(p, attr, form.cleaned_data.get(attr))
-
-                for attr in ('first_name', 'last_name', 'email'):
-                    setattr(p.user, attr, form.cleaned_data.get(attr))
-                p.save()
-                p.user.save()
-            messages.info(
-                request, "Your account has been successfully updated. Thank you!")
-            return redirect('core:dashboard')
-        messages.info(
-            request, _("Please fill out every field in this form to register. Thank you!"))
-        return render(request, 'accounts/profile.html', {'form': form})
-
-
-@login_required
-@group_required(PermissionGroup.experimenter, PermissionGroup.participant)
 def update_account_profile(request):
     """ FIXME: reduce code duplication distinguishing between participant/experimenter """
     user = request.user
@@ -1243,32 +1175,6 @@ def update_round_param_value(request, pk):
     return JsonResponse({'success': False, 'errors': form.errors})
 
 
-def sort_round_configurations(old_sequence_number, new_sequence_number, exp_config_pk):
-    logger.debug('sorting round configuration sequence numbers')
-    round_configs = RoundConfiguration.objects.filter(
-        experiment_configuration__pk=exp_config_pk)
-    if old_sequence_number:
-        for rc in round_configs:
-            current_sequence_number = rc.sequence_number
-            if old_sequence_number < current_sequence_number <= new_sequence_number:
-                rc.sequence_number = current_sequence_number - 1
-                rc.save()
-            elif new_sequence_number <= current_sequence_number <= old_sequence_number:
-                rc.sequence_number = current_sequence_number + 1
-                rc.save()
-    else:
-        flag = True
-        for rc in round_configs:
-            current_sequence_number = rc.sequence_number
-            if new_sequence_number <= current_sequence_number and flag:
-                if new_sequence_number == current_sequence_number:
-                    rc.sequence_number = current_sequence_number + 1
-                    rc.save()
-                    new_sequence_number += 1
-                else:
-                    flag = False
-
-
 @group_required(PermissionGroup.experimenter)
 def update_round_configuration(request, pk):
     form = RoundConfigurationForm(request.POST or None, pk=pk)
@@ -1281,22 +1187,15 @@ def update_round_configuration(request, pk):
 @group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentConfiguration)
 def update_experiment_configuration(request, pk):
-    try:
-        ec = ExperimentConfiguration.objects.get(pk=pk)
-        form = ExperimentConfigurationForm(request.POST or None, instance=ec)
-        if form.is_valid():
-            form.save()
-            return JsonResponse(SUCCESS_DICT)
-        else:
-            return JsonResponse({'success': False, 'message': form.errors})
-
-    except ExperimentConfiguration.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': "Experiment configuration with pk %d did not exist" % pk,
-        })
+    ec = ExperimentConfiguration.objects.get(pk=pk)
+    form = ExperimentConfigurationForm(request.POST or None, instance=ec)
+    if form.is_valid():
+        ec = form.save()
+        return JsonResponse(SUCCESS_DICT)
+    return JsonResponse({'success': False, 'errors': form.errors})
 
 
+# FIXME : Merge delete experiment config in update experiment
 @group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentConfiguration)
 def delete_experiment_configuration(request, pk):
@@ -1344,8 +1243,8 @@ def edit_experiment_configuration(request, pk):
 
     return render(request, 'experimenter/edit-configuration.html', {
         'json_data': dumps(json_data),
-        'experiment_config_form': ecf,
         'experiment_config': ec,
+        'experiment_config_form': ecf,
         'round_config_form': RoundConfigurationForm(),
         'round_param_form': RoundParameterValueForm(),
         'exp_param_form': ExperimentParameterValueForm(),
@@ -1409,7 +1308,7 @@ class BugReportFormView(FormView):
         if self.request.user:
             user_id = self.request.user.pk
         else:
-            user_id = NA
+            user_id = None
 
         context = {
             "issue_text":form.cleaned_data['body'],

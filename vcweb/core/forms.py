@@ -24,6 +24,7 @@ from contact_form.forms import ContactForm
 
 logger = logging.getLogger(__name__)
 
+email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
 
 class NumberInput(widgets.Input):
     input_type = 'number'
@@ -118,15 +119,13 @@ class AsuRegistrationForm(forms.ModelForm):
         instance = kwargs.get('instance')
         super(AsuRegistrationForm, self).__init__(*args, **kwargs)
         if instance is not None:
-            self.fields.keyOrder = ['first_name', 'last_name', 'email', 'gender', 'class_status', 'major',
-                                    'favorite_sport', 'favorite_food', 'favorite_color', 'favorite_movie_genre']
             for attr in ('first_name', 'last_name', 'email', 'major'):
                 self.fields[attr].initial = getattr(instance, attr)
 
     class Meta:
         model = Participant
-        fields = ['major', 'class_status', 'gender', 'favorite_sport', 'favorite_color', 'favorite_food',
-                  'favorite_movie_genre']
+        fields = ['first_name', 'last_name', 'email', 'gender', 'class_status', 'major', 'favorite_sport',
+                  'favorite_food', 'favorite_color', 'favorite_movie_genre']
         widgets = {
             'major': autocomplete_light.TextWidget(ParticipantMajorAutocomplete)
         }
@@ -146,25 +145,16 @@ class ParticipantAccountForm(forms.ModelForm):
         instance = kwargs.get('instance')
         super(ParticipantAccountForm, self).__init__(*args, **kwargs)
         if instance is not None:
-            self.fields.keyOrder = ['first_name', 'last_name', 'email', 'institution', 'can_receive_invitations',
-                                    'major', 'class_status', 'gender', 'favorite_sport', 'favorite_color',
-                                    'favorite_food', 'favorite_movie_genre']
-            self.fields['class_status'].label = 'Class Status'
-            self.fields[
-                'can_receive_invitations'].label = 'Receive invitations for experiments?'
-
-            for attr in ('first_name', 'last_name', 'email'):
+            for attr in ('first_name', 'last_name', 'email', 'institution'):
                 self.fields[attr].initial = getattr(instance, attr)
-
-            institution = instance.institution
-            if institution:
-                self.fields['institution'].initial = institution.name
 
     class Meta:
         model = Participant
-        fields = ['major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_sport', 'favorite_color',
-                  'favorite_food', 'favorite_movie_genre']
-
+        fields = ['first_name', 'last_name', 'email', 'gender', 'class_status', 'major', 'favorite_sport',
+                  'favorite_food', 'favorite_color', 'favorite_movie_genre']
+        labels = {
+            'can_receive_invitations': _('Receive invitations for experiments?')
+        }
         widgets = {
             'major': autocomplete_light.TextWidget(ParticipantMajorAutocomplete),
         }
@@ -173,8 +163,6 @@ class ParticipantAccountForm(forms.ModelForm):
         data = super(forms.ModelForm, self).clean()
         email_address = data.get('email')
         validate_email(email_address)
-        # raise forms.ValidationError(_("This email address is already in our system."))
-
         can_be_invited = data.get('can_receive_invitations')
         major = data.get('major')
         gender = data.get('gender')
@@ -207,31 +195,35 @@ class ExperimenterAccountForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
+        super(ExperimenterAccountForm, self).__init__(*args, **kwargs)
         if instance is not None:
-            super(ExperimenterAccountForm, self).__init__(*args, **kwargs)
-            self.fields.keyOrder = [
-                'first_name', 'last_name', 'email', 'institution', ]
-
-            for attr in ('first_name', 'last_name', 'email'):
+            for attr in ('first_name', 'last_name', 'email', 'institution'):
                 self.fields[attr].initial = getattr(instance, attr)
-
-            institution = instance.institution
-            if institution:
-                self.fields['institution'].initial = institution.name
-        else:
-            super(ExperimenterAccountForm, self).__init__(*args, **kwargs)
 
     class Meta:
         model = Experimenter
-        exclude = ('approved', 'institution',
-                   'failed_password_attempts', 'authentication_token', 'user')
-
-
-email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
+        fields = ['first_name', 'last_name', 'email',]
 
 
 class ExperimentConfigurationForm(forms.ModelForm):
     required_css_class = 'required'
+
+    def __init__(self, post_dict=None, instance=None, pk=None, **kwargs):
+        if instance is None and pk is not None and pk != '-1':
+            instance = ExperimentConfiguration.objects.get(pk=pk)
+        super(ExperimentConfigurationForm, self).__init__(post_dict, instance=instance, **kwargs)
+
+        if post_dict:
+            self.request_type = post_dict.get('request_type')
+
+    def save(self, commit=True):
+        ec = super(ExperimentConfigurationForm, self).save(commit=False)
+        if self.request_type == 'delete':
+            logger.warn("Deleting experiment configuration %s", ec)
+            ec.delete()
+        elif commit:
+            ec.save()
+        return ec
 
     class Meta:
         model = ExperimentConfiguration
@@ -265,7 +257,7 @@ class ExperimentParameterValueForm(forms.ModelForm):
     def save(self, commit=True):
         epv = super(ExperimentParameterValueForm, self).save(commit=False)
         if self.request_type == 'delete':
-            logger.warn("Deleting round parameter value %s", epv)
+            logger.warn("Deleting experiment parameter value %s", epv)
             epv.delete()
         elif commit:
             epv.save()
@@ -311,7 +303,7 @@ class RoundConfigurationForm(forms.ModelForm):
         rc.update_sequence_number(self.old_sequence_number)
 
         if self.request_type == 'delete':
-            logger.warn("Deleting round parameter value %s", rc)
+            logger.warn("Deleting round configuration %s", rc)
             rc.delete()
         elif commit:
             rc.save()
@@ -321,7 +313,6 @@ class RoundConfigurationForm(forms.ModelForm):
         model = RoundConfiguration
         exclude = ('last_modified', 'date_created', 'template_filename', 'instructions',
                    'debriefing', 'group_cluster_size')
-
         widgets = {
             'experiment_configuration': forms.HiddenInput
         }
