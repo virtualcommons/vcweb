@@ -33,6 +33,8 @@ from .models import (User, ChatMessage, Participant, ParticipantExperimentRelati
                      BookmarkedExperimentMetadata, OstromlabFaqEntry, Experimenter, ExperimentParameterValue,
                      RoundConfiguration, RoundParameterValue, ParticipantSignup, get_model_fields, PermissionGroup)
 
+from vcweb.redis_pubsub import RedisPubSub
+
 logger = logging.getLogger(__name__)
 
 mimetypes.init()
@@ -65,8 +67,8 @@ def handle_chat_message(request, pk):
         experiment.publish_to_participants(chat_message.to_json(), pgr.group)
         experiment.publish_to_experimenter(chat_message.to_json())
 
-        return JsonResponse(SUCCESS_JSON)
-    return JsonResponse(FAILURE_JSON)
+        return JsonResponse(SUCCESS_DICT)
+    return JsonResponse(FAILURE_DICT)
 
 
 class AnonymousMixin(object):
@@ -337,6 +339,7 @@ class LoginView(AnonymousMixin, FormView):
         user = form.user_cache
         auth.login(request, user)
         set_authentication_token(user, request.session.session_key)
+        RedisPubSub.get_redis_instance().set(user.id, request.session.session_key)
         return super(LoginView, self).form_valid(form)
 
     def get_next_url(self):
@@ -903,10 +906,10 @@ def update_participants(request, pk):
         logger.debug("Publishing to redis on channel experimenter_channel.{}".format(experiment.pk))
         experiment.publish_to_participants(create_message_event("", "update"))
         experiment.publish_to_experimenter(create_message_event("Updating all connected participants"))
-        return JsonResponse(SUCCESS_JSON)
+        return JsonResponse(SUCCESS_DICT)
     except Exception as e:
         logger.debug(e)
-        return JsonResponse(FAILURE_JSON)
+        return JsonResponse(FAILURE_DICT)
 
 
 def create_message_event(message, event_type='info'):

@@ -86,11 +86,11 @@ class ParticipantConnection(SockJSConnection):
     def on_message(self, msg):
         if not msg:
             return
-
         message_dict = json.loads(msg)
-        logger.debug("message: %s", message_dict)
 
-        if message_dict['event_type'] == 'connect':
+        logger.debug("message: %s", message_dict)
+        auth_token = RedisPubSub.get_redis_instance().get(message_dict['user_id'])
+        if message_dict['event_type'] == 'connect' and auth_token == message_dict['auth_token']:
             self.group = message_dict['participant_group']
             self.experiment = message_dict['experiment_id']
 
@@ -115,9 +115,11 @@ class ExperimenterConnection(SockJSConnection):
         if not msg:
             return
         message_dict = json.loads(msg)
-        logger.debug("message: %s", message_dict)
 
-        if message_dict['event_type'] == 'connect':
+        logger.debug("message: %s", message_dict)
+        auth_token = RedisPubSub.get_redis_instance().get(message_dict['user_id'])
+
+        if message_dict['event_type'] == 'connect' and auth_token == message_dict['auth_token']:
             # Subscribe to experiment specific 'broadcast' message channels
             self.experiment = message_dict['experiment_id']
             subscriber.subscribe([RedisPubSub.get_experimenter_channel(self.experiment)], self)
