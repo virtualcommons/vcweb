@@ -1247,8 +1247,7 @@ def update_round_configuration(request, pk):
 @group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentConfiguration)
 def update_experiment_configuration(request, pk):
-    ec = ExperimentConfiguration.objects.get(pk=pk)
-    form = ExperimentConfigurationForm(request.POST or None, instance=ec)
+    form = ExperimentConfigurationForm(request.POST or None, pk=pk)
     if form.is_valid():
         ec = form.save()
         return JsonResponse(SUCCESS_DICT)

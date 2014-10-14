@@ -267,33 +267,26 @@ class SubjectPoolViewTest(SubjectPoolTest):
 
         # test create experiment session
         em = ExperimentMetadata.objects.order_by('?')[0]
-        response = self.post(reverse('subjectpool:manage_experiment_session'),
-                             {'pk': -1, 'experiment_metadata_pk': em.pk,
-                              'start_date': '2014-09-23', 'start_hour': 2,
-                              'start_min': 0, 'capacity': 10, 'location': 'Online',
-                              'end_date': '2014-09-23', 'end_hour': 3, 'end_min': 0,
-                              'request_type': 'create'})
+        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]), {'experiment_metadata': em.pk,
+            'scheduled_date': '2014-09-23 2:0', 'capacity': 10, 'location': 'Online','scheduled_end_date': '2014-09-23 3:0'})
         self.assertEqual(200, response.status_code)
 
         response_dict = json.loads(response.content)
         self.assertTrue(response_dict['success'])
 
         # test edit/update experiment session
-        response = self.post(reverse('subjectpool:manage_experiment_session'),
-                             {'pk': response_dict['session']['pk'],
-                              'experiment_metadata_pk': em.pk,
-                              'start_date': '2014-09-23', 'start_hour': 2,
-                              'start_min': 0, 'capacity': 10, 'location': 'Online',
-                              'end_date': '2014-09-23', 'end_hour': 4,
-                              'end_min': 0, 'request_type': 'update'})
+        response = self.post(reverse('subjectpool:manage_experiment_session', args=[response_dict['session']['pk']]),
+                {'experiment_metadata': em.pk,'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
+                 'location': 'Online','scheduled_end_date': '2014-09-23 4:0'})
         self.assertEqual(200, response.status_code)
 
         response_dict = json.loads(response.content)
         self.assertTrue(response_dict['success'])
 
         # test delete experiment session
-        response = self.post(reverse('subjectpool:manage_experiment_session'),
-                             {'pk': response_dict['session']['pk'], 'request_type': 'delete'})
+        response = self.post(reverse('subjectpool:manage_experiment_session', args=[response_dict['session']['pk']]),
+                {'experiment_metadata': em.pk,'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
+                 'location': 'Online','scheduled_end_date': '2014-09-23 4:0', 'request_type': 'delete'})
         self.assertEqual(200, response.status_code)
 
         response_dict = json.loads(response.content)
