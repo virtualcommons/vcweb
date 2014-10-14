@@ -33,11 +33,13 @@ from .forms import (RegistrationForm, LoginForm, ParticipantAccountForm, Experim
                     AsuRegistrationForm, ParticipantGroupIdForm, RegisterEmailListParticipantsForm,
                     RegisterTestParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm,
                     ExperimentConfigurationForm, ExperimentParameterValueForm, RoundConfigurationForm,
-                    RoundParameterValueForm, AntiSpamContactForm, BugReportForm)
+                    RoundParameterValueForm, AntiSpamContactForm, BugReportForm, ChatForm)
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
                      ExperimentConfiguration, ExperimenterRequest, Experiment, Institution,
                      BookmarkedExperimentMetadata, OstromlabFaqEntry, Experimenter, ExperimentParameterValue,
                      RoundConfiguration, RoundParameterValue, ParticipantSignup, get_model_fields, PermissionGroup)
+
+from vcweb.redis_pubsub import RedisPubSub
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +47,34 @@ mimetypes.init()
 
 SUCCESS_DICT = {'success': True}
 FAILURE_DICT = {'success': False}
+
+
+@login_required
+def handle_chat_message(request, pk):
+    logger.debug("Experiment ID %s", pk)
+    experiment_id = pk
+    form = ChatForm(request.POST or None)
+    if form.is_valid():
+        participant_group_id = form.cleaned_data['participant_group_id']
+        message = form.cleaned_data['message']
+        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'),
+                                pk=participant_group_id)
+        if pgr.participant != request.user.participant:
+            logger.warning(
+                "authenticated user %s tried to post message %s as %s", request.user, message, pgr)
+            return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
+
+        experiment = Experiment.objects.get(pk=experiment_id)
+        current_round_data = experiment.current_round_data
+        chat_message = ChatMessage.objects.create(participant_group_relationship=pgr,
+                                                  string_value=message,
+                                                  round_data=current_round_data)
+        logger.debug("Publishing to redis on channel group_channel.{}".format(pgr.group))
+        experiment.publish_to_participants(chat_message.to_json(), pgr.group)
+        experiment.publish_to_experimenter(chat_message.to_json())
+
+        return JsonResponse(SUCCESS_DICT)
+    return JsonResponse(FAILURE_DICT)
 
 
 class AnonymousMixin(object):
@@ -320,6 +350,7 @@ class LoginView(AnonymousMixin, FormView):
         user = form.user_cache
         auth.login(request, user)
         set_authentication_token(user, request.session.session_key)
+        RedisPubSub.get_redis_instance().set(user.id, request.session.session_key)
         return super(LoginView, self).form_valid(form)
 
     def get_next_url(self):
@@ -871,19 +902,38 @@ def update_experiment(request):
             "experimenter %s invoking %s on %s", experimenter, action, experiment)
         try:
             response_tuples = experiment.invoke(action, experimenter)
-            logger.debug(
-                "invoking action %s: %s", action, str(response_tuples))
+            logger.debug("experiment.invoke %s -> %s", action, str(response_tuples))
+            logger.debug("Publishing to redis on channel experimenter_channel.{}".format(experiment.pk))
+            experiment.publish_to_participants(create_message_event("", "update"))
+            experiment.publish_to_experimenter(create_message_event("Updating all connected participants"))
+
             return JsonResponse({
                 'success': True,
                 'experiment': experiment.to_dict(include_round_data=True)
             })
         except AttributeError as e:
-            logger.warning(
-                "no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
+            logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
     return JsonResponse({
         'success': False,
         'message': 'Invalid update experiment request: %s' % form
     })
+
+
+@group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
+def update_participants(request, pk):
+    try:
+        experiment = Experiment.objects.get(pk=pk)
+        logger.debug("Publishing to redis on channel experimenter_channel.{}".format(experiment.pk))
+        experiment.publish_to_participants(create_message_event("", "update"))
+        experiment.publish_to_experimenter(create_message_event("Updating all connected participants"))
+        return JsonResponse(SUCCESS_DICT)
+    except Exception as e:
+        logger.debug(e)
+        return JsonResponse(FAILURE_DICT)
+
+
+def create_message_event(message, event_type='info'):
+    return dumps({'message': message, 'event_type': event_type})
 
 
 @login_required
@@ -953,6 +1003,16 @@ def participant_ready(request):
         experiment = pgr.group.experiment
         round_data = experiment.current_round_data
         pgr.set_participant_ready(round_data)
+
+        logger.debug("handling participant ready event for experiment %s", experiment)
+        message = "Participant %s is ready." % request.user.participant
+
+        experiment.publish_to_participants(create_message_event(message, "participant_ready"))
+
+        if experiment.all_participants_ready:
+            experiment.publish_to_experimenter(create_message_event(
+                "All participants are ready to move on to the next round."))
+
         return JsonResponse(_ready_participants_dict(experiment))
     else:
         return JsonResponse({'success': False, 'message': "Invalid form"})
@@ -1290,7 +1350,7 @@ def unsubscribe(request):
 
 
 def create_github_issue(data):
-    headers = {'Authorization': 'token '+ settings.GITHUB_ACCESS_TOKEN, 'Content-Type': 'application/json'}
+    headers = {'Authorization': 'token ' + settings.GITHUB_ACCESS_TOKEN, 'Content-Type': 'application/json'}
     issues_url = "{0}/{1}".format(settings.GITHUB_URL, "/".join(["repos", settings.GITHUB_REPO_OWNER, settings.GITHUB_REPO, "issues"]))
     logger.debug(json.dumps(data))
     return requests.post(issues_url, headers=headers, data=json.dumps(data))
@@ -1299,7 +1359,7 @@ def create_github_issue(data):
 class BugReportFormView(FormView):
     form_class = BugReportForm
     template_name = 'forms/bug-report.html'
-    success_url = '/thanks/' # Not used. Kept it so Django doesn't throw error of success_url not provided
+    success_url = '/thanks/'  # Not used. Kept it so Django doesn't throw error of success_url not provided
 
     def form_valid(self, form):
         response = super(BugReportFormView, self).form_valid(form)
@@ -1311,7 +1371,7 @@ class BugReportFormView(FormView):
             user_id = None
 
         context = {
-            "issue_text":form.cleaned_data['body'],
+            "issue_text": form.cleaned_data['body'],
             "user_id": user_id,
             "url": self.request.POST.get('url'),
         }

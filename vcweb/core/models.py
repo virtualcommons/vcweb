@@ -11,7 +11,6 @@ import logging
 import random
 import string
 
-
 from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
@@ -36,6 +35,7 @@ from . import signals, simplecache
 from .decorators import log_signal_errors
 from .http import dumps
 
+from vcweb.redis_pubsub import RedisPubSub
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,6 @@ logger = logging.getLogger(__name__)
 """
 Permissions Enum for Auth Permission Groups
 """
-
 
 class PermissionGroup(Enum):
     participant = 'Participants'
@@ -926,6 +925,16 @@ class Experiment(models.Model):
             if subject is None:
                 subject = 'VCWEB experiment registration for %s' % self.display_name
         return subject
+
+    def publish_to_participants(self, message, group=None):
+        redis_client = RedisPubSub.get_redis_instance()
+        if group is None:
+            redis_client.publish(RedisPubSub.get_participant_broadcast_channel(self.pk), message)
+        else:
+            redis_client.publish(RedisPubSub.get_participant_group_channel(group), message)
+
+    def publish_to_experimenter(self, message):
+        RedisPubSub.get_redis_instance().publish(RedisPubSub.get_experimenter_channel(self.pk), message)
 
     @transaction.atomic
     def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None, from_email=None, should_send_email=True):

@@ -474,7 +474,6 @@
                     participant_group_id: model.participantGroupId()
                 }, function(response) {
                     model.readyParticipants(response.number_of_ready_participants);
-                    getWebSocket().send(createReadyEvent(message));
                     model.activateTemplate("WAITING_ROOM");
                 });
                 scrollToTop();
@@ -582,7 +581,14 @@
                 var message = $('#chatMessage').val();
                 if (message) {
                     $('#chatMessage').val('');
-                    getWebSocket().send(createMessageEvent(message));
+                        $.post('/api/experiment/{{experiment.pk|default:-1}}/chat/submit',
+                                { participant_group_id: model.participantGroupId(), message: message },
+                            function(data) {
+                                if(!data.success) {
+                                    console.error("There was some error sending chat.")
+                                }
+                        });
+
                     $('#chatMessage').focus();
                 }
                 return false;
