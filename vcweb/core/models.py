@@ -2830,8 +2830,7 @@ class ExperimentSession(models.Model):
     capacity = models.PositiveIntegerField(default=20)
     creator = models.ForeignKey(User, related_name='experiment_session_set')
     # wire up with autocomplete
-    location = models.CharField(max_length=128, blank=True, help_text=_(
-        'Where will this experiment session be held?'))
+    location = models.CharField(max_length=128, help_text=_('Where will this experiment session be held?'))
     # FIXME: make this more re-usable or allow use of
     # ExperimentConfiguration.invitation_text as a fallback
     invitation_text = models.TextField(blank=True)

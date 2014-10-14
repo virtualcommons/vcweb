@@ -20,7 +20,7 @@ from django.utils.translation import ugettext_lazy as _
 import unicodecsv
 
 from vcweb.core.subjectpool.forms import (
-    SessionInviteForm, SessionForm, ParticipantAttendanceForm, CancelSignupForm)
+    SessionInviteForm, ExperimentSessionForm, ParticipantAttendanceForm, CancelSignupForm)
 from vcweb.core.views import mimetypes
 
 from vcweb.core.models import (
@@ -58,55 +58,13 @@ def experimenter_index(request):
 
 @group_required(PermissionGroup.experimenter)
 @transaction.atomic
-def manage_experiment_session(request):
-    """
-    Depending upon the type of request, this view method can be used to create, update or delete Experiment sessions.
-    """
-    user = request.user
-    form = SessionForm(request.POST or None)
+def manage_experiment_session(request, pk):
+    form = ExperimentSessionForm(request.POST or None, pk=pk, user=request.user)
     if form.is_valid():
-        # if the form is valid get the experiment_session pk
-        pk = form.cleaned_data.get('pk')
-        request_type = form.cleaned_data.get('request_type')
-
-        if request_type == 'delete':
-            es = ExperimentSession.objects.get(pk=pk)
-            es.delete()
-        else:
-            if request_type == 'create':
-                es = ExperimentSession()
-            elif request_type == 'update':
-                es = ExperimentSession.objects.get(pk=pk)
-
-            start_date = datetime.strptime(
-                form.cleaned_data.get('start_date'), "%Y-%m-%d")
-            start_time = time(int(form.cleaned_data.get('start_hour')), int(
-                form.cleaned_data.get('start_min')))
-            es.scheduled_date = datetime.combine(start_date, start_time)
-            end_date = datetime.strptime(
-                form.cleaned_data.get('end_date'), "%Y-%m-%d")
-            end_time = time(
-                int(form.cleaned_data.get('end_hour')), int(form.cleaned_data.get('end_min')))
-            es.scheduled_end_date = datetime.combine(end_date, end_time)
-            es.capacity = form.cleaned_data.get('capacity')
-            es.location = form.cleaned_data.get('location')
-            es.creator = user
-            es.date_created = datetime.now()
-            exp_pk = form.cleaned_data.get("experiment_metadata_pk")
-            es.experiment_metadata = ExperimentMetadata.objects.get(pk=exp_pk)
-            es.save()
-
-        return JsonResponse({
-            'success': True,
-            'session': es
-        })
-
-    error_list = [e for e in form.non_field_errors()]
-
-    return JsonResponse({
-        'success': False,
-        'errors': error_list
-    })
+        es = form.save()
+        return JsonResponse({ 'success': True, 'session': es })
+    error_list = [e for e in form.errors]
+    return JsonResponse({'success': False, 'errors': error_list })
 
 
 @group_required(PermissionGroup.experimenter)

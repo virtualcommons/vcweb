@@ -1,5 +1,7 @@
 import logging
 
+from datetime import datetime
+
 from django import forms
 from django.forms import widgets, CheckboxInput, ModelForm
 from django.utils.translation import ugettext_lazy as _
@@ -7,7 +9,7 @@ import autocomplete_light
 
 from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete
 from vcweb.core.forms import NumberInput
-from vcweb.core.models import (ParticipantSignup)
+from vcweb.core.models import (ParticipantSignup, ExperimentSession)
 
 
 logger = logging.getLogger(__name__)
@@ -29,42 +31,29 @@ class CancelSignupForm(forms.Form):
         return data
 
 
-class SessionForm(forms.Form):
-    pk = forms.IntegerField(widgets.TextInput())
-    experiment_metadata_pk = forms.IntegerField(
-        widgets.TextInput(), required=False)
-    start_date = forms.CharField(widget=widgets.TextInput(), required=False)
-    start_hour = forms.ChoiceField(choices=HOUR_CHOICES, required=False)
-    start_min = forms.ChoiceField(choices=MIN_CHOICES, required=False)
-    end_date = forms.CharField(widget=widgets.TextInput(), required=False)
-    end_hour = forms.ChoiceField(choices=HOUR_CHOICES, required=False)
-    end_min = forms.ChoiceField(choices=MIN_CHOICES, required=False)
-    capacity = forms.IntegerField(widget=widgets.TextInput(), required=False)
-    location = forms.CharField(widget=widgets.TextInput(), required=False)
-    request_type = forms.CharField(widget=widgets.TextInput())
+class ExperimentSessionForm(forms.ModelForm):
+    def __init__(self, post_dict=None, instance=None, pk=None, user=None, **kwargs):
+        if instance is None and pk is not None and pk != '-1':
+            instance = ExperimentSession.objects.get(pk=pk)
+        super(ExperimentSessionForm, self).__init__(post_dict, instance=instance, **kwargs)
+        self.user = user
+        if post_dict:
+            self.request_type = post_dict.get('request_type')
 
-    def clean(self):
-        data = super(SessionForm, self).clean()
-        pk = data.get('pk')
-        start_date = data.get('start_date')
-        end_date = data.get('end_date')
-        location = data.get('location')
-        request_type = data.get('request_type')
+    def save(self, commit=True):
+        es = super(ExperimentSessionForm, self).save(commit=False)
+        if self.request_type == 'delete':
+            logger.warn("Deleting experiment session %s", es)
+            es.delete()
+        elif commit:
+            es.creator = self.user
+            es.date_created = datetime.now()
+            es.save()
+        return es
 
-        if not pk:
-            logger.error("No experiment session pk found: %s", data)
-            raise forms.ValidationError(
-                _("No experiment session pk was found"))
-        else:
-            # logger.debug(data)
-            if request_type != 'delete':
-                if not start_date or not end_date:
-                    raise forms.ValidationError(
-                        _("Please enter a start and end date"))
-                if not location:
-                    raise forms.ValidationError(
-                        _("Please enter a location for the experiment session"))
-        return data
+    class Meta:
+        model = ExperimentSession
+        exclude = ('creator', 'date_created', 'invitation_text')
 
 
 class SessionInviteForm(forms.Form):

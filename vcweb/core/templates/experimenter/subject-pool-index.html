@@ -118,21 +118,19 @@ Experiment Session Management
             <form data-bind="submit: onSave" role="form" class="form-inline" style="margin-bottom:0">
                 {% csrf_token %}
                 <fieldset>
-                    <span class="hide">
-                        <input type="hidden" name="pk" data-bind="value: pk" />
-                    </span>
+                    <input type="hidden" data-bind="value: pk" name="pk" />
                     <table class="session-table table-condensed">
                         <tbody>
                             <tr>
                                 <td rowspan="2" data-bind="if: active">
                                     <div class="checkbox">
                                       <label>
-                                        <input type="checkbox" data-bind="value: pk, click: $root.addInvite, enable: !editable()">
+                                        <input type="checkbox" data-bind="value:pk, click: $root.addInvite, enable: !editable()">
                                       </label>
                                     </div>
                                 </td>
                                 <td>
-                                    <select class="form-control input-sm" name="experiment_metadata_pk" data-bind="foreach: $root.experiment_metadata_group, value: selected_experiment_metadata_pk, enable: editable">
+                                    <select class="form-control input-sm" name="experiment_metadata" data-bind="foreach: $root.experiment_metadata_group, value: selected_experiment_metadata, enable: editable">
                                         <optgroup data-bind="attr: {label: label}, foreach: experiment_metadata_list">
                                             <option data-bind="text: title, value:pk"></option>
                                         </optgroup>
@@ -283,22 +281,22 @@ Experiment Session Management
                 model.allMinutes = ['00', '15', '30', '45'];
 
                 model.inviteCount = ko.observable(0);
-                model.invite_experiment_metadata_pk = -1;
+                model.invite_experiment_metadata = -1;
 
                 model.addInvite = function(data, event) {
 
-                    if( data.selected_experiment_metadata_pk() == model.invite_experiment_metadata_pk
-                            || model.invite_experiment_metadata_pk == -1 ) {
+                    if( data.selected_experiment_metadata() == model.invite_experiment_metadata
+                            || model.invite_experiment_metadata == -1 ) {
                         var oldCount = model.inviteCount();
                         if($(event.target).is(':checked')){
-                            model.invite_experiment_metadata_pk = data.selected_experiment_metadata_pk();
+                            model.invite_experiment_metadata = data.selected_experiment_metadata();
                             model.inviteCount(oldCount + 1);
                             $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) + 3 * data.capacity());
                         } else {
                             model.inviteCount(oldCount - 1);
                             $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) - 3 * data.capacity());
                             if(oldCount == 1) {
-                                model.invite_experiment_metadata_pk = -1;
+                                model.invite_experiment_metadata = -1;
                                 $('#invite-form').slideUp("slow");
                                 $('#invite-form form')[0].reset();
                                 $('#email-content').html("");
@@ -352,15 +350,20 @@ Experiment Session Management
                     bootbox.confirm("Delete this session? All associated invitations and signups will be removed.",
                         function(result) {
                             if (result) {
-                                var formData = $(event.target).parents("form").serialize() + '&request_type=delete';
-                                $.post("{% url 'subjectpool:manage_experiment_session' %}", formData)
+                                var form = $(event.target).parents("form")[0];
+                                var scheduled_date = form.elements["start_date"].value + " " + form.elements["start_hour"].value + ":" + form.elements["start_min"].value;
+                                var formData = 'request_type=delete&location='+form.elements["location"].value+'&capacity='+form.elements['capacity'].value+'&scheduled_date='+scheduled_date+'&experiment_metadata='+form.elements['experiment_metadata'].value;
+                                $.post("session/manage/"+ session.pk(), formData)
                                     .done(function(result) {
                                         if(result.success){
                                             model.session_list.remove(session);
                                             calendar = createCalendar();
+                                        } else {
+                                            $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>Please enter valid '+result.errors+'</div>');
+                                            $(window).scrollTop($('#error-messages').offset().top - 100);
                                         }
                                     });
-                            }
+                            } 
                     });
                 };
 
@@ -377,7 +380,7 @@ Experiment Session Management
                                     $('#invite-form').slideUp("slow");
                                     $('#active-sessions').find('input[type=checkbox]:checked').removeAttr('checked');
                                     model.inviteCount(0);
-                                    model.invite_experiment_metadata_pk = -1;
+                                    model.invite_experiment_metadata = -1;
                                     $("#error-messages").html('<div class="alert alert-success">' + result.message + '</strong></div>');
                                     $('#invite-form form')[0].reset();
                                     $('#email-content').html("");
@@ -427,7 +430,7 @@ Experiment Session Management
             function SessionModel(sessionData, options) {
                 var self = this;
                 self.pk = ko.observable(sessionData.pk);
-                self.selected_experiment_metadata_pk = ko.observable(sessionData.experiment_metadata.pk);
+                self.selected_experiment_metadata = ko.observable(sessionData.experiment_metadata.pk);
                 self.startDate = ko.observable(sessionData.startDate);
                 self.startHour = ko.observable(sessionData.startHour);
                 self.startMin = ko.observable(sessionData.startMin);
@@ -450,43 +453,33 @@ Experiment Session Management
                 };
 
                 self.onSave = function(formElement) {
-                    var start_time = parseInt(formElement.elements["start_hour"].value);
-                    var end_time = parseInt(formElement.elements["end_hour"].value);
-                    var start_date = new Date(formElement.elements["start_date"].value);
-                    var end_date = new Date(formElement.elements["end_date"].value);
+                    var scheduled_date = formElement.elements["start_date"].value + " " + formElement.elements["start_hour"].value + ":" + formElement.elements["start_min"].value;
+                    var scheduled_end_date = formElement.elements["end_date"].value + " " + formElement.elements["end_hour"].value + ":" + formElement.elements["end_min"].value
 
-                    if(start_date > end_date){
-                        bootbox.alert("ERROR: End date cannot be earlier than the start date. Please choose a later end date.", function() {});
-                        return;
-                    } else if(+start_date == +end_date && start_time >= end_time) {
-                        bootbox.alert("ERROR: Scheduled end time cannot be earlier than the Start Time. Please choose a later end time.", function() {});
+                    if(+new Date(scheduled_date) >= +new Date(scheduled_end_date)){
+                        bootbox.alert("ERROR: End date cannot be earlier than or same as the start date. Please choose a later end date.", function() {});
                         return;
                     }
                     experiment_session_old_pk = formElement.elements["pk"].value
-                    var formData = $(formElement).serialize(); 
-                    if(experiment_session_old_pk == -1){
-                        formData += '&request_type=create';
-                    } else {
-                        formData += '&request_type=update';
-                    }
-                    $.post("{% url 'subjectpool:manage_experiment_session' %}", formData)
+                    var formData = $(formElement).serialize()+'&scheduled_date='+scheduled_date+'&scheduled_end_date='+scheduled_end_date;
+                    $.post("session/manage/"+ experiment_session_old_pk, formData)
                         .done(function(result) {
                             if(result.success) {
                                 self.pk(result.session.pk);
                                 self.editable(false);
                                 calendar = createCalendar();
                                 if(experiment_session_old_pk == -1) {
-                                    selected_experiment_metadata_pk = formElement.elements['experiment_metadata_pk'].value;
-                                    if(selected_experiment_metadata_pk == model.invite_experiment_metadata_pk
-                                        || model.invite_experiment_metadata_pk == -1 ) {
+                                    selected_experiment_metadata = formElement.elements['experiment_metadata'].value;
+                                    if(selected_experiment_metadata == model.invite_experiment_metadata
+                                        || model.invite_experiment_metadata == -1 ) {
                                         $(formElement).find("input[type=checkbox]").prop('checked', true);
-                                        model.invite_experiment_metadata_pk = selected_experiment_metadata_pk;
+                                        model.invite_experiment_metadata = selected_experiment_metadata;
                                         model.inviteCount(model.inviteCount() + 1);
                                         $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) + 3 * formElement.elements['capacity'].value);
                                     }
                                 }
                             } else {
-                                $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>'+result.errors+'</div>');
+                                $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>Please enter valid '+result.errors+'</div>');
                                 $(window).scrollTop($('#error-messages').offset().top - 100);
                             }
                         });
