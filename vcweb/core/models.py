@@ -2851,13 +2851,13 @@ class ExperimentSession(models.Model):
         scheduled_end_date = self.scheduled_end_date
         data = {
             "pk": self.pk,
-            "experiment_metadata": self.experiment_metadata,
-            "startDate": scheduled_date.date(),
-            "startHour": scheduled_date.time().hour,
-            "startMin": scheduled_date.time().minute,
-            "endDate": scheduled_end_date.date(),
-            "endHour": scheduled_end_date.time().hour,
-            "endMin": scheduled_end_date.time().minute,
+            "experiment_metadata": self.experiment_metadata.pk,
+            "start_date": scheduled_date.date(),
+            "start_hour": scheduled_date.time().hour,
+            "start_min": scheduled_date.time().minute,
+            "end_date": scheduled_end_date.date(),
+            "end_hour": scheduled_end_date.time().hour,
+            "end_min": scheduled_end_date.time().minute,
             "capacity": self.capacity,
             "location": self.location,
             "invite_count": Invitation.objects.filter(experiment_session=self).count()
