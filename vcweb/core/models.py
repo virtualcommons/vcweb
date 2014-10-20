@@ -2844,7 +2844,7 @@ class ExperimentSession(models.Model):
         return self.location and self.location.lower() in ('online', 'internet', 'network', 'remote', 'virtual')
 
     def is_owner(self, user):
-        return self.creator == user.experimenter or user.is_superuser
+        return self.creator == user or user.is_superuser
 
     def to_dict(self, **kwargs):
         scheduled_date = self.scheduled_date
