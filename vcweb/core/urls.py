@@ -10,8 +10,8 @@ from .ajax import (get_round_data, save_experimenter_notes,
                    create_experiment, clone_experiment, is_email_available)
 from .views import (dashboard, LoginView, LogoutView, monitor, RegisterEmailListView, RegisterTestParticipantsView,
                     completed_survey, toggle_bookmark_experiment_metadata, check_survey_completed, ParticipateView,
-                    download_data, download_participants, export_configuration, api_logger, participant_api_login,
-                    api_logout, participant_ready, check_ready_participants, get_dashboard_view_model,
+                    download_data, download_participants, export_configuration, participant_ready,
+                    check_ready_participants, get_dashboard_view_model,
                     update_experiment, update_round_configuration, edit_experiment_configuration,
                     delete_experiment_configuration, clone_experiment_configuration, unsubscribe,
                     update_round_param_value, update_experiment_param_value, update_experiment_configuration,
@@ -19,7 +19,7 @@ from .views import (dashboard, LoginView, LogoutView, monitor, RegisterEmailList
                     update_account_profile, handle_chat_message, update_participants,
                     )
 
-from vcweb.core.views import BugReportFormView
+#from vcweb.core.views import BugReportFormView
 
 logger = logging.getLogger(__name__)
 
@@ -83,34 +83,34 @@ urlpatterns = [
         save_experimenter_notes, name='save_experimenter_notes'),
     url(r'^api/experimenter/round-data',
         get_round_data, name='get_round_data'),
-    # match arbitrary experiment URL prefix fragments for logging / login /
-    # logout / accessing the dashboard view model
-    url(r'api/log/(?P<participant_group_id>\d+)$',
-        api_logger, name='api_logger'),
-    url(r'api/login', participant_api_login, name='participant_api_login'),
-    url(r'api/logout', api_logout, name='api_logout'),
     url(r'api/dashboard', get_dashboard_view_model,
         name='dashboard_view_model'),
     url(r'bug-report', RedirectView.as_view(url='https://bitbucket.org/virtualcommons/vcweb/issues/new'),
         name='report_issues'),
     #url(r'bug-report', BugReportFormView.as_view(), name='report_issues'),
+    # match arbitrary experiment URL prefix fragments for logging / login /
+    # logout / accessing the dashboard view model
+    #url(r'api/log/(?P<participant_group_id>\d+)$',
+    #    api_logger, name='api_logger'),
+    #url(r'api/login', participant_api_login, name='participant_api_login'),
+    #url(r'api/logout', api_logout, name='api_logout'),
 ]
 
 
-def foursquare_auth_dict(**kwargs):
-    return dict(kwargs, client_id=settings.FOURSQUARE_CONSUMER_KEY, client_secret=settings.FOURSQUARE_CONSUMER_SECRET,
-                v=settings.FOURSQUARE_CONSUMER_DATE_VERIFIED)
-
-
-def foursquare_url(url, **kwargs):
-    url = "%s?%s" % (url, urllib.urlencode(foursquare_auth_dict(**kwargs)))
-    logger.debug("%s", url)
-    return url
-
-
-def foursquare_venue_search_url(**kwargs):
-    return foursquare_url(settings.FOURSQUARE_VENUE_SEARCH_ENDPOINT, **kwargs)
-
-
-def foursquare_categories_url(**kwargs):
-    return foursquare_url(settings.FOURSQUARE_CATEGORIES_ENDPOINT, **kwargs)
+#def foursquare_auth_dict(**kwargs):
+#    return dict(kwargs, client_id=settings.FOURSQUARE_CONSUMER_KEY, client_secret=settings.FOURSQUARE_CONSUMER_SECRET,
+#                v=settings.FOURSQUARE_CONSUMER_DATE_VERIFIED)
+#
+#
+#def foursquare_url(url, **kwargs):
+#    url = "%s?%s" % (url, urllib.urlencode(foursquare_auth_dict(**kwargs)))
+#    logger.debug("%s", url)
+#    return url
+#
+#
+#def foursquare_venue_search_url(**kwargs):
+#    return foursquare_url(settings.FOURSQUARE_VENUE_SEARCH_ENDPOINT, **kwargs)
+#
+#
+#def foursquare_categories_url(**kwargs):
+#    return foursquare_url(settings.FOURSQUARE_CATEGORIES_ENDPOINT, **kwargs)

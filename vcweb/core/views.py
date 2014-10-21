@@ -23,17 +23,18 @@ from django.views.generic import FormView, TemplateView, ListView
 from django.views.generic.detail import SingleObjectMixin
 from django.template.loader import get_template
 from django.template import Context
+from django.views.decorators.http import require_GET, require_POST
 
 from contact_form.views import ContactFormView
 
 from .http import JsonResponse, dumps
 from .decorators import (anonymous_required, retry, is_participant,
                          is_experimenter, ownership_required, group_required)
-from .forms import (RegistrationForm, LoginForm, ParticipantAccountForm, ExperimenterAccountForm, UpdateExperimentForm,
+from .forms import (LoginForm, ParticipantAccountForm, ExperimenterAccountForm, UpdateExperimentForm,
                     AsuRegistrationForm, ParticipantGroupIdForm, RegisterEmailListParticipantsForm,
-                    RegisterTestParticipantsForm, LogMessageForm, BookmarkExperimentMetadataForm,
+                    RegisterTestParticipantsForm, BookmarkExperimentMetadataForm,
                     ExperimentConfigurationForm, ExperimentParameterValueForm, RoundConfigurationForm,
-                    RoundParameterValueForm, AntiSpamContactForm, BugReportForm, ChatForm)
+                    RoundParameterValueForm, AntiSpamContactForm, ChatForm)
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
                      ExperimentConfiguration, ExperimenterRequest, Experiment, Institution,
                      BookmarkedExperimentMetadata, OstromlabFaqEntry, Experimenter, ExperimentParameterValue,
@@ -50,6 +51,7 @@ FAILURE_DICT = {'success': False}
 
 
 @login_required
+@require_POST
 def handle_chat_message(request, pk):
     logger.debug("Experiment ID %s", pk)
     experiment_id = pk
@@ -185,11 +187,11 @@ def create_dashboard_view_model(user):
         return ParticipantDashboardViewModel(user)
 
 
-def has_model_permissions(entity, model, perms, app):
-    for p in perms:
-        if not entity.has_perm("%s.%s_%s" % (app, p, model.__name__)):
-            return False
-    return True
+#def has_model_permissions(entity, model, perms, app):
+#    for p in perms:
+#        if not entity.has_perm("%s.%s_%s" % (app, p, model.__name__)):
+#            return False
+#    return True
 
 
 def csrf_failure(request, reason=""):
@@ -198,6 +200,7 @@ def csrf_failure(request, reason=""):
 
 
 @login_required
+@require_GET
 def dashboard(request):
     """
     selects the appropriate dashboard template and data for participants and experimenters
@@ -205,9 +208,9 @@ def dashboard(request):
     user = request.user
     if is_participant(user):
         participant = user.participant
-# special case for if this participant needs to update their profile or if they have pending invitations to respond to
-# immediately.
-# FIXME: see https://github.com/virtualcommons/vcweb/issues/8
+        # special case for if this participant needs to update their profile or if they have pending invitations to respond to
+        # immediately.
+        # FIXME: see https://github.com/virtualcommons/vcweb/issues/8
         if participant.should_update_profile:
             # redirect to the profile page if this is a non-demo participant
             # and their profile is incomplete
@@ -222,13 +225,13 @@ def dashboard(request):
 
 @login_required
 @group_required(PermissionGroup.participant)
+@require_GET
 def cas_asu_registration(request):
     user = request.user
     if is_participant(user) and user.participant.should_update_profile:
         directory_profile = ASUWebDirectoryProfile(user.username)
         logger.debug("participant %s needs to update their profile, requested directory profile %s",
                      user, directory_profile)
-        # user.save()
         return render(request, 'accounts/asu_registration.html',
                       {'form': AsuRegistrationForm(instance=user.participant)})
     else:
@@ -236,6 +239,7 @@ def cas_asu_registration(request):
 
 
 @group_required(PermissionGroup.participant)
+@require_POST
 def cas_asu_registration_submit(request):
     form = AsuRegistrationForm(request.POST or None)
     if form.is_valid():
@@ -246,6 +250,7 @@ def cas_asu_registration_submit(request):
         for attr in ('gender', 'favorite_color', 'favorite_movie_genre', 'class_status', 'favorite_sport',
                      'favorite_food', 'class_status', 'major',):
             setattr(participant, attr, form.cleaned_data.get(attr))
+
         user.first_name = form.cleaned_data['first_name']
         user.last_name = form.cleaned_data['last_name']
         # Assign the user to participant permission group
@@ -262,6 +267,7 @@ def cas_asu_registration_submit(request):
 
 
 @login_required
+@require_GET
 def get_dashboard_view_model(request):
     return JsonResponse({
         'success': True,
@@ -300,45 +306,45 @@ def get_active_experiment(participant, experiment_metadata=None, **kwargs):
     return None
 
 
-def autocomplete_account(request, term):
-    candidates = []
-    if term in ('major', 'institution'):
-        candidates = ["Implement", "Me"]
-        return JsonResponse({'success': True, 'candidates': candidates})
-    else:
-        logger.debug("can't autocomplete unsupported term %s", term)
-        return JsonResponse({'success': False, 'message': "Unsupported autocomplete term %s" % term})
+#def autocomplete_account(request, term):
+#    candidates = []
+#    if term in ('major', 'institution'):
+#        candidates = ["Implement", "Me"]
+#        return JsonResponse({'success': True, 'candidates': candidates})
+#    else:
+#        logger.debug("can't autocomplete unsupported term %s", term)
+#        return JsonResponse({'success': False, 'message': "Unsupported autocomplete term %s" % term})
 
 
-def api_logout(request):
-    user = request.user
-    set_authentication_token(user)
-    auth.logout(request)
-    return JsonResponse(SUCCESS_DICT)
+#def api_logout(request):
+#    user = request.user
+#    set_authentication_token(user)
+#    auth.logout(request)
+#    return JsonResponse(SUCCESS_DICT)
 
-
-def participant_api_login(request):
-    # FIXME: assumes participant login
-    form = LoginForm(request.POST or None)
-    try:
-        if form.is_valid():
-            user = form.user_cache
-            logger.debug(
-                "user was authenticated as %s, attempting to login", user)
-            auth.login(request, user)
-            set_authentication_token(user, request.session.session_key)
-            participant = user.participant
-            # FIXME: defaulting to first active experiment... need to revisit
-            # this.
-            active_experiment = get_active_experiment(participant)
-            participant_group_relationship = active_experiment.get_participant_group_relationship(
-                participant)
-            return JsonResponse({'success': True, 'participant_group_id': participant_group_relationship.pk})
-        else:
-            logger.debug("invalid form %s", form)
-    except Exception as e:
-        logger.debug("Invalid login: %s", e)
-    return JsonResponse({'success': False, 'message': "Invalid login"})
+#@require_POST
+#def participant_api_login(request):
+#    # FIXME: assumes participant login
+#    form = LoginForm(request.POST or None)
+#    try:
+#        if form.is_valid():
+#            user = form.user_cache
+#            logger.debug(
+#                "user was authenticated as %s, attempting to login", user)
+#            auth.login(request, user)
+#            set_authentication_token(user, request.session.session_key)
+#            participant = user.participant
+#            # FIXME: defaulting to first active experiment... need to revisit
+#            # this.
+#            active_experiment = get_active_experiment(participant)
+#            participant_group_relationship = active_experiment.get_participant_group_relationship(
+#                participant)
+#            return JsonResponse({'success': True, 'participant_group_id': participant_group_relationship.pk})
+#        else:
+#            logger.debug("invalid form %s", form)
+#    except Exception as e:
+#        logger.debug("Invalid login: %s", e)
+#    return JsonResponse({'success': False, 'message': "Invalid login"})
 
 
 class LoginView(AnonymousMixin, FormView):
@@ -381,49 +387,50 @@ class LogoutView(TemplateView):
         return redirect('home')
 
 
-class RegistrationView(FormView, AnonymousMixin):
-    form_class = RegistrationForm
-    template_name = 'accounts/register.html'
+#class RegistrationView(FormView, AnonymousMixin):
+#    form_class = RegistrationForm
+#    template_name = 'accounts/register.html'
+#
+#    def form_valid(self, form):
+#        email = form.cleaned_data['email'].lower()
+#        password = form.cleaned_data['password']
+#        first_name = form.cleaned_data['first_name']
+#        last_name = form.cleaned_data['last_name']
+#        institution_string = form.cleaned_data['institution']
+#        experimenter_requested = form.cleaned_data['experimenter']
+#        institution, created = Institution.objects.get_or_create(
+#            name=institution_string)
+#        user = User.objects.create_user(
+#            email, email, password, first_name=first_name, last_name=last_name)
+#        if experimenter_requested:
+#            experimenter_request = ExperimenterRequest.objects.create(
+#                user=user)
+#            logger.debug(
+#                "creating new experimenter request: %s", experimenter_request)
+#        participant = Participant.objects.create(
+#            user=user, institution=institution)
+#        logger.debug("Creating new participant: %s", participant)
+#        request = self.request
+#        # auth + login the newly created user
+#        auth.login(
+#            request, auth.authenticate(username=email, password=password))
+#        set_authentication_token(user, request.session.session_key)
+#        # FIXME: disabling auto registration, experiment configuration flags are not being set properly
+#        #        for experiment in Experiment.objects.public():
+#        #            experiment.add_participant(participant)
+#        return super(RegistrationView, self).form_valid(form)
+#
+#    def get_success_url(self):
+#        return reverse('core:dashboard')
 
-    def form_valid(self, form):
-        email = form.cleaned_data['email'].lower()
-        password = form.cleaned_data['password']
-        first_name = form.cleaned_data['first_name']
-        last_name = form.cleaned_data['last_name']
-        institution_string = form.cleaned_data['institution']
-        experimenter_requested = form.cleaned_data['experimenter']
-        institution, created = Institution.objects.get_or_create(
-            name=institution_string)
-        user = User.objects.create_user(
-            email, email, password, first_name=first_name, last_name=last_name)
-        if experimenter_requested:
-            experimenter_request = ExperimenterRequest.objects.create(
-                user=user)
-            logger.debug(
-                "creating new experimenter request: %s", experimenter_request)
-        participant = Participant.objects.create(
-            user=user, institution=institution)
-        logger.debug("Creating new participant: %s", participant)
-        request = self.request
-        # auth + login the newly created user
-        auth.login(
-            request, auth.authenticate(username=email, password=password))
-        set_authentication_token(user, request.session.session_key)
-        # FIXME: disabling auto registration, experiment configuration flags are not being set properly
-        #        for experiment in Experiment.objects.public():
-        #            experiment.add_participant(participant)
-        return super(RegistrationView, self).form_valid(form)
 
-    def get_success_url(self):
-        return reverse('core:dashboard')
-
-
-class AccountView(FormView):
-    pass
+#class AccountView(FormView):
+#    pass
 
 
 @login_required
 @group_required(PermissionGroup.experimenter, PermissionGroup.participant)
+@require_POST
 def update_account_profile(request):
     """ FIXME: reduce code duplication distinguishing between participant/experimenter """
     user = request.user
@@ -509,6 +516,7 @@ def update_account_profile(request):
 
 
 @login_required
+@require_GET
 def account_profile(request):
     user = request.user
     if is_participant(user):
@@ -523,13 +531,6 @@ class ParticipantMixin(object):
     @method_decorator(group_required(PermissionGroup.participant))
     def dispatch(self, *args, **kwargs):
         return super(ParticipantMixin, self).dispatch(*args, **kwargs)
-
-
-"""
-experimenter views
-FIXME: add has_perms authorization to ensure that only experimenters can access
-these.
-"""
 
 
 class ExperimenterMixin(object):
@@ -590,6 +591,7 @@ class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, Templa
 
 
 @group_required(PermissionGroup.experimenter)
+@require_POST
 def toggle_bookmark_experiment_metadata(request):
     form = BookmarkExperimentMetadataForm(request.POST or None)
     if form.is_valid():
@@ -611,6 +613,7 @@ def toggle_bookmark_experiment_metadata(request):
 
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
 @ownership_required(Experiment)
+@require_GET
 def monitor(request, pk=None):
     experiment = get_object_or_404(Experiment.objects.select_related(
         'experiment_configuration', 'experimenter'), pk=pk)
@@ -738,6 +741,7 @@ class CsvDataExporter(DataExportMixin):
 
 
 @group_required(PermissionGroup.experimenter)
+@require_GET
 def export_configuration(request, pk=None, file_extension='.xml'):
     experiment = get_object_or_404(Experiment, pk=pk)
     if experiment.experimenter != request.user.experimenter:
@@ -755,6 +759,7 @@ def export_configuration(request, pk=None, file_extension='.xml'):
 
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
 @ownership_required(Experiment)
+@require_GET
 def download_participants(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     response = HttpResponse(content_type=mimetypes.types_map['.csv'])
@@ -771,6 +776,7 @@ def download_participants(request, pk=None):
 
 # FIXME: add data converter objects to write to csv, excel, etc.
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
+@require_GET
 @ownership_required(Experiment)
 def download_data(request, pk=None, file_type='csv'):
     experiment = get_object_or_404(Experiment, pk=pk)
@@ -843,6 +849,7 @@ def download_data(request, pk=None, file_type='csv'):
 
 @group_required(PermissionGroup.experimenter)
 @ownership_required(Experiment)
+@require_GET
 def download_data_excel(request, pk=None):
     import xlwt
 
@@ -885,6 +892,7 @@ def download_data_excel(request, pk=None):
 
 
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
+@require_POST
 def update_experiment(request):
     form = UpdateExperimentForm(request.POST or None)
     user = request.user
@@ -920,6 +928,7 @@ def update_experiment(request):
 
 
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
+@require_POST
 def update_participants(request, pk):
     try:
         experiment = Experiment.objects.get(pk=pk)
@@ -936,29 +945,31 @@ def create_message_event(message, event_type='info'):
     return dumps({'message': message, 'event_type': event_type})
 
 
-@login_required
-def api_logger(request, participant_group_id=None):
-    form = LogMessageForm(request.POST or None)
-    success = False
-    if form.is_valid():
-        try:
-            participant_group_relationship = ParticipantGroupRelationship.objects.get(
-                pk=participant_group_id)
-            level = form.cleaned_data['level']
-            message = form.cleaned_data['message']
-            logger.log(
-                level, "%s: %s", participant_group_relationship, message)
-            success = True
-        except ParticipantGroupRelationship.DoesNotExist:
-            logger.error(
-                "Couldn't locate a participant group relationship for request %s", request)
-    else:
-        logger.error(
-            "Failed to validate log message form %s (%s)", request, form)
-    return JsonResponse({'success': success})
+#@login_required
+#@require_POST
+#def api_logger(request, participant_group_id=None):
+#    form = LogMessageForm(request.POST or None)
+#    success = False
+#    if form.is_valid():
+#        try:
+#            participant_group_relationship = ParticipantGroupRelationship.objects.get(
+#                pk=participant_group_id)
+#            level = form.cleaned_data['level']
+#            message = form.cleaned_data['message']
+#            logger.log(
+#                level, "%s: %s", participant_group_relationship, message)
+#            success = True
+#        except ParticipantGroupRelationship.DoesNotExist:
+#            logger.error(
+#                "Couldn't locate a participant group relationship for request %s", request)
+#    else:
+#        logger.error(
+#            "Failed to validate log message form %s (%s)", request, form)
+#    return JsonResponse({'success': success})
 
 
 @group_required(PermissionGroup.participant)
+@require_GET
 def completed_survey(request):
     pgr_id = request.GET.get('pid', None)
     # FIXME: prevent manual pinging (check referrer + threaded data sent to
@@ -994,6 +1005,7 @@ def check_survey_completed(request, pk=None):
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
+@require_POST
 def participant_ready(request):
     form = ParticipantGroupIdForm(request.POST or None)
     if form.is_valid():
@@ -1030,6 +1042,7 @@ def _ready_participants_dict(experiment):
 
 
 @login_required
+@require_GET
 def check_ready_participants(request, pk=None):
     experiment = get_object_or_404(Experiment, pk=pk)
     return JsonResponse(_ready_participants_dict(experiment))
@@ -1165,7 +1178,7 @@ def create_cas_participant(username, cas_tree):
     try:
         directory_profile = ASUWebDirectoryProfile(username)
         logger.debug("found user profile %s (%s)", directory_profile, directory_profile.email)
-# check existence of users who've manually registered via email or have been registered for experiments directly
+        # check existence of users who've manually registered via email or have been registered for experiments directly
         user = User.objects.get(username=directory_profile.email)
         user.username = username
         user.save()
@@ -1208,16 +1221,17 @@ def create_cas_participant(username, cas_tree):
     return user
 
 
-def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):
-    form = PasswordResetForm({'email': email})
-    if form.is_valid():
-        # domain = socket.gethostbyname(socket.gethostname())
-        domain = "vcweb.asu.edu"
-        return form.save(from_email=from_email, email_template_name=template, domain_override=domain)
-    return None
+#def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):
+#    form = PasswordResetForm({'email': email})
+#    if form.is_valid():
+#        # domain = socket.gethostbyname(socket.gethostname())
+#        domain = "vcweb.asu.edu"
+#        return form.save(from_email=from_email, email_template_name=template, domain_override=domain)
+#    return None
 
 
 @group_required(PermissionGroup.experimenter)
+@require_POST
 def update_experiment_param_value(request, pk):
     form = ExperimentParameterValueForm(request.POST or None, pk=pk)
     if form.is_valid():
@@ -1227,6 +1241,7 @@ def update_experiment_param_value(request, pk):
 
 
 @group_required(PermissionGroup.experimenter)
+@require_POST
 def update_round_param_value(request, pk):
     form = RoundParameterValueForm(request.POST or None, pk=pk)
     if form.is_valid():
@@ -1236,6 +1251,7 @@ def update_round_param_value(request, pk):
 
 
 @group_required(PermissionGroup.experimenter)
+@require_POST
 def update_round_configuration(request, pk):
     form = RoundConfigurationForm(request.POST or None, pk=pk)
     if form.is_valid():
@@ -1246,6 +1262,7 @@ def update_round_configuration(request, pk):
 
 @group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentConfiguration)
+@require_POST
 def update_experiment_configuration(request, pk):
     form = ExperimentConfigurationForm(request.POST or None, pk=pk)
     if form.is_valid():
@@ -1271,6 +1288,7 @@ def delete_experiment_configuration(request, pk):
 
 @group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentConfiguration)
+@require_GET
 def edit_experiment_configuration(request, pk):
     ec = ExperimentConfiguration.objects.get(pk=pk)
     ecf = ExperimentConfigurationForm(instance=ec)
@@ -1317,6 +1335,7 @@ class OstromlabFaqList(ListView):
 
 
 @group_required(PermissionGroup.experimenter)
+@require_POST
 def clone_experiment_configuration(request):
     experiment_configuration_id = request.POST.get(
         'experiment_configuration_id')
@@ -1343,62 +1362,62 @@ def unsubscribe(request):
             participant.can_receive_invitations = False
             participant.save()
             successfully_unsubscribed = True
-            return render(request, 'accounts/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
+        return render(request, 'accounts/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
     return render(request, 'invalid_request.html',
                   {'message': "You aren't currently subscribed to our experiment session mailing list."})
 
 
-def create_github_issue(data):
-    headers = {'Authorization': 'token ' + settings.GITHUB_ACCESS_TOKEN, 'Content-Type': 'application/json'}
-    issues_url = "{0}/{1}".format(settings.GITHUB_URL, "/".join(["repos", settings.GITHUB_REPO_OWNER, settings.GITHUB_REPO, "issues"]))
-    logger.debug(json.dumps(data))
-    return requests.post(issues_url, headers=headers, data=json.dumps(data))
+#def create_github_issue(data):
+#    headers = {'Authorization': 'token ' + settings.GITHUB_ACCESS_TOKEN, 'Content-Type': 'application/json'}
+#    issues_url = "{0}/{1}".format(settings.GITHUB_URL, "/".join(["repos", settings.GITHUB_REPO_OWNER, settings.GITHUB_REPO, "issues"]))
+#    logger.debug(json.dumps(data))
+#    return requests.post(issues_url, headers=headers, data=json.dumps(data))
 
 
-class BugReportFormView(FormView):
-    form_class = BugReportForm
-    template_name = 'forms/bug-report.html'
-    success_url = '/thanks/'  # Not used. Kept it so Django doesn't throw error of success_url not provided
-
-    def form_valid(self, form):
-        response = super(BugReportFormView, self).form_valid(form)
-
-        # Creating Issue
-        if self.request.user:
-            user_id = self.request.user.pk
-        else:
-            user_id = None
-
-        context = {
-            "issue_text": form.cleaned_data['body'],
-            "user_id": user_id,
-            "url": self.request.POST.get('url'),
-        }
-        plaintext_template = get_template('github-issue.html')
-        c = Context(context)
-        plaintext_content = plaintext_template.render(c)
-
-        data = {
-            'title': form.cleaned_data['title'],
-            'body': plaintext_content,
-            'labels': settings.GITHUB_ISSUE_LABELS,
-        }
-
-        r = create_github_issue(data)
-
-        if(r.ok):
-            res = json.loads(r.text or r.content)
-            logger.debug("Issue created with response %s", res)
-            return self.render_to_json_response(SUCCESS_DICT)
-        else:
-            res = json.loads(r.text or r.content)
-            logger.debug("Issue creation failed with response %s", res)
-            return self.render_to_json_response(FAILURE_DICT)
-
-    def render_to_json_response(self, context, **response_kwargs):
-        data = dumps(context)
-        response_kwargs['content_type'] = 'application/json'
-        return HttpResponse(data, **response_kwargs)
+#class BugReportFormView(FormView):
+#    form_class = BugReportForm
+#    template_name = 'forms/bug-report.html'
+#    success_url = '/thanks/'  # Not used. Kept it so Django doesn't throw error of success_url not provided
+#
+#    def form_valid(self, form):
+#        response = super(BugReportFormView, self).form_valid(form)
+#
+#        # Creating Issue
+#        if self.request.user:
+#            user_id = self.request.user.pk
+#        else:
+#            user_id = None
+#
+#        context = {
+#            "issue_text": form.cleaned_data['body'],
+#            "user_id": user_id,
+#            "url": self.request.POST.get('url'),
+#        }
+#        plaintext_template = get_template('github-issue.html')
+#        c = Context(context)
+#        plaintext_content = plaintext_template.render(c)
+#
+#        data = {
+#            'title': form.cleaned_data['title'],
+#            'body': plaintext_content,
+#            'labels': settings.GITHUB_ISSUE_LABELS,
+#        }
+#
+#        r = create_github_issue(data)
+#
+#        if(r.ok):
+#            res = json.loads(r.text or r.content)
+#            logger.debug("Issue created with response %s", res)
+#            return self.render_to_json_response(SUCCESS_DICT)
+#        else:
+#            res = json.loads(r.text or r.content)
+#            logger.debug("Issue creation failed with response %s", res)
+#            return self.render_to_json_response(FAILURE_DICT)
+#
+#    def render_to_json_response(self, context, **response_kwargs):
+#        data = dumps(context)
+#        response_kwargs['content_type'] = 'application/json'
+#        return HttpResponse(data, **response_kwargs)
 
 
 class AntiSpamContactFormView(ContactFormView):

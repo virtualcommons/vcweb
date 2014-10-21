@@ -3,8 +3,9 @@ from time import mktime
 import itertools
 import logging
 import random
-
+import unicodecsv
 import markdown
+
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
 
@@ -17,7 +18,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.translation import ugettext_lazy as _
-import unicodecsv
+from django.views.decorators.http import require_GET, require_POST
 
 from vcweb.core.subjectpool.forms import (
     SessionInviteForm, ExperimentSessionForm, ParticipantAttendanceForm, CancelSignupForm)
@@ -35,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 @group_required(PermissionGroup.experimenter)
+@require_GET
 def experimenter_index(request):
     """
     Provides experimenter subject recruitment interface with all active experiment sessions and past experiment
@@ -57,6 +59,7 @@ def experimenter_index(request):
 
 
 @group_required(PermissionGroup.experimenter)
+@require_POST
 @transaction.atomic
 def manage_experiment_session(request, pk):
     form = ExperimentSessionForm(request.POST or None, pk=pk, user=request.user)
@@ -68,6 +71,7 @@ def manage_experiment_session(request, pk):
 
 
 @group_required(PermissionGroup.experimenter)
+@require_GET
 def get_session_events(request):
     """
     Returns the list of Experiment sessions that fall within the given range,
@@ -128,7 +132,8 @@ def datetime_to_timestamp(date):
     else:
         return ""
 
-
+@group_required(PermissionGroup.experimenter)
+@require_POST
 def get_invitations_count(request):
     """
     API endpoint that returns the potential participant count based on the selected experiment metadata and Institution
@@ -177,6 +182,7 @@ def get_invitation_email_content(custom_invitation_text, experiment_session_ids)
 
 
 @group_required(PermissionGroup.experimenter)
+@require_POST
 def send_invitations(request):
     """
     Sends out invitation emails to random participants which match the required invitation criteria,
@@ -262,6 +268,7 @@ def send_invitations(request):
 
 
 @group_required(PermissionGroup.experimenter)
+@require_POST
 def invite_email_preview(request):
     """
     Generates email Preview for the provided invitation details
@@ -374,6 +381,7 @@ def manage_participant_attendance(request, pk=None):
 
 
 @group_required(PermissionGroup.participant)
+@require_POST
 def cancel_experiment_session_signup(request):
     form = CancelSignupForm(request.POST or None)
     if form.is_valid():
@@ -396,6 +404,7 @@ def cancel_experiment_session_signup(request):
 
 
 @group_required(PermissionGroup.participant)
+@require_POST
 def submit_experiment_session_signup(request):
     """
     Enrolls the currently logged in user in the selected experiment session.
@@ -441,13 +450,10 @@ def submit_experiment_session_signup(request):
 
 @group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentSession)
+@require_GET
 def download_experiment_session(request, pk=None):
     user = request.user
     experiment_session = get_object_or_404(ExperimentSession.objects.select_related('creator'), pk=pk)
-
-    if experiment_session.creator != user:
-        logger.error("unauthorized access to %s from %s", experiment_session, user)
-        raise PermissionDenied("You don't have access to this experiment.")
 
     response = HttpResponse(content_type=mimetypes.types_map['.csv'])
     response['Content-Disposition'] = 'attachment; filename=participants.csv'
@@ -464,6 +470,7 @@ def download_experiment_session(request, pk=None):
 
 
 @group_required(PermissionGroup.participant)
+@require_GET
 def experiment_session_signup(request):
     """
     Returns and renders all the experiment session invitation that currently logged in participant has received

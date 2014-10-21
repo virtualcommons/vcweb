@@ -418,6 +418,8 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertEqual(200, response.status_code)
 
     def test_invitation_count(self):
+        e = self.create_experimenter()
+        self.assertTrue(self.login_experimenter(e))
         self.setup_participants()
         es_pk_list = self.setup_experiment_sessions()
         response = self.post(reverse('subjectpool:get_invitations_count'), {
