@@ -356,7 +356,7 @@ class LoginView(AnonymousMixin, FormView):
         user = form.user_cache
         auth.login(request, user)
         set_authentication_token(user, request.session.session_key)
-        RedisPubSub.get_redis_instance().set(user.id, request.session.session_key)
+        RedisPubSub.get_redis_instance().set(user.email + "_" + str(user.id), request.session.session_key)
         return super(LoginView, self).form_valid(form)
 
     def get_next_url(self):
