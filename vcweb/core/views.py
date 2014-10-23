@@ -53,12 +53,10 @@ FAILURE_DICT = {'success': False}
 @login_required
 @require_POST
 def handle_chat_message(request, pk):
-    logger.debug("Experiment ID %s", pk)
-    experiment_id = pk
     form = ChatForm(request.POST or None)
     if form.is_valid():
-        participant_group_id = form.cleaned_data['participant_group_id']
-        message = form.cleaned_data['message']
+        participant_group_id = form.cleaned_data.get('participant_group_id')
+        message = form.cleaned_data.get('message')
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'),
                                 pk=participant_group_id)
         if pgr.participant != request.user.participant:
@@ -66,7 +64,7 @@ def handle_chat_message(request, pk):
                 "authenticated user %s tried to post message %s as %s", request.user, message, pgr)
             return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
 
-        experiment = Experiment.objects.get(pk=experiment_id)
+        experiment = Experiment.objects.get(pk=pk)
         current_round_data = experiment.current_round_data
         chat_message = ChatMessage.objects.create(participant_group_relationship=pgr,
                                                   string_value=message,
@@ -253,8 +251,6 @@ def cas_asu_registration_submit(request):
 
         user.first_name = form.cleaned_data['first_name']
         user.last_name = form.cleaned_data['last_name']
-        # Assign the user to participant permission group
-        user.groups.add(PermissionGroup.participant.get_django_group())
         user.save()
         participant.save()
         messages.info(request,
@@ -1172,52 +1168,47 @@ def get_cas_user(tree):
 
 
 def create_cas_participant(username, cas_tree):
-    participants_group = PermissionGroup.participant.get_django_group()
-    institution = Institution.objects.get(name=settings.CAS_UNIVERSITY_NAME)
-    user = None
     try:
         directory_profile = ASUWebDirectoryProfile(username)
         logger.debug("found user profile %s (%s)", directory_profile, directory_profile.email)
-        # check existence of users who've manually registered via email or have been registered for experiments directly
+        # check existence of users who've manually registered via email
+        # or have been registered for experiments directly
         user = User.objects.get(username=directory_profile.email)
         user.username = username
         user.save()
-        return user
     except User.DoesNotExist:
-        # If this exception is thrown it means that User Logged in via CAS
-        # is a new user
+        # If this exception is thrown it means that User Logged in via CAS is a new user
         logger.debug("No user found with username %s", username)
         # Create vcweb Participant only if the user is an undergrad student
-        if directory_profile.is_undergraduate:
-            user = User.objects.create_user(username=username,
-                                            first_name=directory_profile.first_name,
-                                            last_name=directory_profile.last_name,
-                                            email=directory_profile.email,
-                                            )
-            logger.debug("%s (%s)", directory_profile, user.email)
-            password = User.objects.make_random_password()
-            # FIXME: create function that emails user with password and a thank you for registering
-            user.set_password(password)
-            user.groups.add(participants_group)
-            user.save()
-            participant = Participant.objects.create(user=user,
-                                                     major=directory_profile.major,
-                                                     institution=institution,
-                                                     can_receive_invitations=True)
-            logger.debug(
-                "CAS backend created participant %s from web directory", participant)
-        else:
-            logger.error(
-                "CAS authenticated user %s is not an undergrad student", username)
+        if not directory_profile.is_undergraduate:
+            logger.error("CAS authenticated user %s is not an undergrad student", username)
+            return None
+
+        user = create_cas_user_and_assign_group(username, first_name=directory_profile.first_name,
+                                                last_name=directory_profile.last_name, email=directory_profile.email,
+                                                major=directory_profile.major)
+        logger.debug("%s (%s)", directory_profile, user.email)
     except:
         logger.exception("ASU Web Directory Down: Error retrieving info for %s", username)
         logger.debug("Creating user with username %s and random password", username)
+        user = create_cas_user(username=username)
+    return user
+
+def create_cas_user_and_assign_group(username, first_name=None, last_name=None, email=None, major=None):
+    institution = Institution.objects.get(name=settings.CAS_UNIVERSITY_NAME)
+    if first_name:
+        user = User.objects.create_user(username=username, first_name=first_name, last_name=last_name, email=email)
+        participant = Participant.objects.create(user=user, major=major, institution=institution, can_receive_invitations=True)
+    else:
         user = User.objects.create_user(username=username)
-        password = User.objects.make_random_password()
-        user.set_password(password)
-        user.groups.add(participants_group)
-        user.save()
         participant = Participant.objects.create(user=user, institution=institution, can_receive_invitations=True)
+    logger.debug("CAS backend created participant %s from web directory", participant)
+    # FIXME: create function that emails user with password and a thank you for registering
+    password = User.objects.make_random_password()
+    user.set_password(password)
+    # Assign the user to participant permission group
+    user.groups.add(PermissionGroup.participant.get_django_group())
+    user.save()
     return user
 
 
