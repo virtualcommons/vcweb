@@ -406,8 +406,22 @@ class CommonsUser(models.Model):
         abstract = True
 
 
+class ExperimenterManager(PassThroughManager):
+    def create_demo_experimenter(self, email=None, user=None, password='vcweb_demo'):
+        if user is None:
+            if email is None:
+                raise ValueError("no email or user specified, cannot create demo experimenter.")
+            user = User.objects.create_user(username=email, email=email, password=password)
+            user.groups.add(PermissionGroup.demo_experimenter.get_django_group())
+        experimenter = Experimenter.objects.create(user=user, approved=True)
+        Experiment.objects.create_demo_experiments(experimenter=experimenter)
+# create demo experiments for demo experimenter
+        return experimenter
+
+
 class Experimenter(CommonsUser):
     approved = models.BooleanField(default=False)
+    objects = ExperimenterManager()
 
     @property
     def is_demo_experimenter(self):
@@ -435,6 +449,14 @@ class ExperimenterRequest(models.Model):
     user = models.OneToOneField(User, verbose_name=u'Django User', unique=True)
     date_created = models.DateTimeField(auto_now_add=True)
     approved = models.BooleanField(default=False)
+
+class ExperimentConfigurationQuerySet(models.query.QuerySet):
+    pass
+
+class ExperimentConfigurationManager(PassThroughManager):
+
+    def demo_configurations(self, **kwargs):
+        return self.filter(experiment_metadata__namespace__in=('lighterprints', 'forestry'), is_public=True, **kwargs)
 
 
 class ExperimentConfiguration(models.Model, ParameterValueMixin):
@@ -466,6 +488,8 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     has_daily_rounds = models.BooleanField(default=False, help_text=_(
         "This experiment configuration has rounds that start and end each day starting at midnight."))
     cached_final_sequence_number = 0
+
+    objects = ExperimentConfigurationManager.for_queryset_class(ExperimentConfigurationQuerySet)()
 
     @property
     def is_open(self):
@@ -558,6 +582,15 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
         ordering = ['experiment_metadata', 'creator', '-date_created']
 
 
+class ExperimentPassThroughManager(PassThroughManager):
+    
+    def create_demo_experiments(self, experimenter=None):
+        if experimenter is None:
+            raise ValueError("You were supposed to give me a demo experimenter to create demo experiments.")
+        for ec in ExperimentConfiguration.objects.demo_configurations():
+            Experiment.objects.create(experimenter=experimenter, experiment_configuration=ec,
+                                      experiment_metadata=ec.experiment_metadata, status=Experiment.Status.INACTIVE)
+
 class ExperimentQuerySet(models.query.QuerySet):
     ACTIVE_STATUSES = ('ACTIVE', 'ROUND_IN_PROGRESS')
 
@@ -610,13 +643,10 @@ class Experiment(models.Model):
     experimenter = models.ForeignKey(Experimenter)
     """ the user running this experiment """
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
-    """ the experiment metadata object that this experiment instance represents """
+    """ FIXME: delete this, redundant from experiment_configuration the experiment metadata object that this experiment instance represents """
     experiment_configuration = models.ForeignKey(ExperimentConfiguration)
     """ the configuration parameters in use for this experiment run. """
-    # FIXME: consider using django-model-utils but need to verify that it
-    # works with South - status = StatusField()
-    status = models.CharField(
-        max_length=32, choices=Status, default=Status.INACTIVE)
+    status = models.CharField(max_length=32, choices=Status, default=Status.INACTIVE)
     """ the status of an experiment can be either INACTIVE, ACTIVE, ROUND_IN_PROGRESS, or COMPLETED """
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -1786,8 +1816,7 @@ class Parameter(models.Model):
     enum_choices = models.TextField(blank=True)
     is_required = models.BooleanField(default=False)
 
-    objects = ParameterPassThroughManager.for_queryset_class(
-        ParameterQuerySet)()
+    objects = ParameterPassThroughManager.for_queryset_class(ParameterQuerySet)()
 
     @property
     def value_field_name(self):
@@ -2432,8 +2461,7 @@ class ParticipantExperimentRelationship(models.Model):
     # arbitrary JSON-encoded data
     additional_data = models.TextField(blank=True)
 
-    objects = PassThroughManager.for_queryset_class(
-        ParticipantExperimentRelationshipQuerySet)()
+    objects = PassThroughManager.for_queryset_class(ParticipantExperimentRelationshipQuerySet)()
 
     def __init__(self, *args, **kwargs):
         super(ParticipantExperimentRelationship, self).__init__(
@@ -2501,8 +2529,7 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
         default=datetime.now, null=True, blank=True)
     survey_completed = models.BooleanField(default=False)
 
-    objects = PassThroughManager.for_queryset_class(
-        ParticipantGroupRelationshipQuerySet)()
+    objects = PassThroughManager.for_queryset_class(ParticipantGroupRelationshipQuerySet)()
 
     @property
     def current_round_data(self):
@@ -2635,8 +2662,7 @@ class ParticipantRoundDataValue(ParameterizedValue):
     submitted = models.BooleanField(default=False)
     target_data_value = models.ForeignKey('ParticipantRoundDataValue', related_name='target_data_value_set',
                                           null=True, blank=True)
-    objects = PassThroughManager.for_queryset_class(
-        ParticipantRoundDataValueQuerySet)()
+    objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
 
     @property
     def owner(self):
@@ -2766,8 +2792,7 @@ class ChatMessage(ParticipantRoundDataValue):
 
 class Comment(ParticipantRoundDataValue):
 
-    objects = PassThroughManager.for_queryset_class(
-        ParticipantRoundDataValueQuerySet)()
+    objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
 
     def __init__(self, *args, **kwargs):
         kwargs['parameter'] = get_comment_parameter()
@@ -2786,8 +2811,7 @@ class Comment(ParticipantRoundDataValue):
 
 class Like(ParticipantRoundDataValue):
 
-    objects = PassThroughManager.for_queryset_class(
-        ParticipantRoundDataValueQuerySet)()
+    objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
 
     def __init__(self, *args, **kwargs):
         kwargs['parameter'] = get_like_parameter()

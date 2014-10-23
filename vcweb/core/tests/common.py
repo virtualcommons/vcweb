@@ -167,8 +167,7 @@ class BaseVcwebTest(TestCase):
     @property
     def demo_experimenter(self):
         if getattr(self, '_demo_experimenter', None) is None:
-            self._demo_experimenter = Experimenter.objects.get(
-                user__email=settings.DEMO_EXPERIMENTER_EMAIL)
+            self._demo_experimenter = Experimenter.objects.get(user__email=settings.DEMO_EXPERIMENTER_EMAIL)
         return self._demo_experimenter
 
     def create_experimenter(self, email=None, password=None):

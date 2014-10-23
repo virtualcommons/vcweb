@@ -279,7 +279,7 @@ def set_authentication_token(user, authentication_token=''):
         commons_user = user.experimenter
     else:
         logger.error("Invalid user: %s", user)
-        return
+        raise ValueError("User was not a participant or experimenter")
     logger.debug(
         "setting %s authentication_token=%s", commons_user, authentication_token)
     commons_user.authentication_token = authentication_token

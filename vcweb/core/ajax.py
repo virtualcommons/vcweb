@@ -35,15 +35,14 @@ def clone_experiment(request):
 @require_POST
 @group_required(PermissionGroup.experimenter)
 def create_experiment(request):
-    experiment_configuration_id = request.POST.get(
-        'experiment_configuration_id')
+    experiment_configuration_id = request.POST.get('experiment_configuration_id')
     experiment_configuration = get_object_or_404(ExperimentConfiguration.objects.select_related('experiment_metadata'),
                                                  pk=experiment_configuration_id)
     experimenter = request.user.experimenter
     authentication_code = 'test'
     e = Experiment.objects.create(experimenter=experimenter, authentication_code=authentication_code,
                                   experiment_metadata=experiment_configuration.experiment_metadata,
-                                  experiment_configuration=experiment_configuration, status=Experiment.Status.INACTIVE)
+                                  experiment_configuration=experiment_configuration)
     return JsonResponse({
         'success': True,
         'experiment': e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))
