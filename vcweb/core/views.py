@@ -5,24 +5,18 @@ import mimetypes
 import urllib2
 import xml.etree.ElementTree as ET
 import unicodecsv
-import requests
-import json
 
 from django.conf import settings
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import PasswordResetForm
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
-from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import FormView, TemplateView, ListView
 from django.views.generic.detail import SingleObjectMixin
-from django.template.loader import get_template
-from django.template import Context
 from django.views.decorators.http import require_GET, require_POST
 
 from contact_form.views import ContactFormView
@@ -36,9 +30,9 @@ from .forms import (LoginForm, ParticipantAccountForm, ExperimenterAccountForm, 
                     ExperimentConfigurationForm, ExperimentParameterValueForm, RoundConfigurationForm,
                     RoundParameterValueForm, AntiSpamContactForm, ChatForm)
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
-                     ExperimentConfiguration, ExperimenterRequest, Experiment, Institution,
-                     BookmarkedExperimentMetadata, OstromlabFaqEntry, Experimenter, ExperimentParameterValue,
-                     RoundConfiguration, RoundParameterValue, ParticipantSignup, get_model_fields, PermissionGroup)
+                     ExperimentConfiguration, Experiment, Institution, BookmarkedExperimentMetadata, OstromlabFaqEntry,
+                     Experimenter, ExperimentParameterValue, RoundConfiguration, RoundParameterValue, ParticipantSignup,
+                     get_model_fields, PermissionGroup)
 
 from vcweb.redis_pubsub import RedisPubSub
 
@@ -273,6 +267,7 @@ def get_dashboard_view_model(request):
 
 def set_authentication_token(user, authentication_token=''):
     commons_user = None
+    # FIXME: ugliness. see if we can refactor this
     if is_participant(user):
         commons_user = user.participant
     elif is_experimenter(user):
@@ -280,10 +275,9 @@ def set_authentication_token(user, authentication_token=''):
     else:
         logger.error("Invalid user: %s", user)
         raise ValueError("User was not a participant or experimenter")
-    logger.debug(
-        "setting %s authentication_token=%s", commons_user, authentication_token)
-    commons_user.authentication_token = authentication_token
-    commons_user.save()
+    logger.debug("setting %s authentication_token=%s", commons_user, authentication_token)
+    commons_user.update_authentication_token(authentication_token)
+    RedisPubSub.get_redis_instance().set("%s_%s" % (user.email, user.pk), authentication_token)
 
 
 def get_active_experiment(participant, experiment_metadata=None, **kwargs):
@@ -352,7 +346,6 @@ class LoginView(AnonymousMixin, FormView):
         user = form.user_cache
         auth.login(request, user)
         set_authentication_token(user, request.session.session_key)
-        RedisPubSub.get_redis_instance().set(user.email + "_" + str(user.id), request.session.session_key)
         return super(LoginView, self).form_valid(form)
 
     def get_next_url(self):
@@ -1194,6 +1187,7 @@ def create_cas_participant(username, cas_tree):
         user = create_cas_user(username=username)
     return user
 
+
 def create_cas_user_and_assign_group(username, first_name=None, last_name=None, email=None, major=None):
     institution = Institution.objects.get(name=settings.CAS_UNIVERSITY_NAME)
     if first_name:
@@ -1210,15 +1204,6 @@ def create_cas_user_and_assign_group(username, first_name=None, last_name=None, 
     user.groups.add(PermissionGroup.participant.get_django_group())
     user.save()
     return user
-
-
-#def reset_password(email, from_email='vcweb@asu.edu', template='registration/password_reset_email.html'):
-#    form = PasswordResetForm({'email': email})
-#    if form.is_valid():
-#        # domain = socket.gethostbyname(socket.gethostname())
-#        domain = "vcweb.asu.edu"
-#        return form.save(from_email=from_email, email_template_name=template, domain_override=domain)
-#    return None
 
 
 @group_required(PermissionGroup.experimenter)

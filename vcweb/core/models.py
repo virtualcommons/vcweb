@@ -395,6 +395,10 @@ class CommonsUser(models.Model):
     def is_authenticated(self):
         return self.user.is_authenticated()
 
+    def update_authentication_token(self, authentication_token):
+        self.authentication_token = authentication_token
+        self.save(update_fields=['authentication_token'])
+
     @property
     def is_superuser(self):
         return self.user.is_superuser
