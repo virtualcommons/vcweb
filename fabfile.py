@@ -30,7 +30,7 @@ env.database = 'default'
 env.deploy_parent_dir = '/opt/'
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
 env.git_url = 'https://github.com/virtualcommons/vcweb.git'
-env.webserver = 'nginx'
+env.services = 'nginx memcached redis supervisord'
 # FIXME: use django conf INSTALLED_APPS to introspect instead, similar to
 # experiment_urls
 env.docs_path = os.path.join(env.project_path, 'docs')
@@ -221,9 +221,9 @@ def _restart_command(systemd=True):
     FIXME: look into less drastic ways to reload the app and sockjs servers
     """
     if systemd:
-        cmd = 'systemctl restart %(webserver)s supervisord && systemctl status -l %(webserver)s supervisord'
+        cmd = 'systemctl restart %(services)s && systemctl status -l %(services)s'
     else:
-        cmd = 'service %(webserver)s restart && service supervisord restart'
+        cmd = ' && '.join(['service %s restart' % service for service in env.services.split()])
     return cmd % env
 
 
