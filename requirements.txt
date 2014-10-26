@@ -1,4 +1,4 @@
-Django==1.7
+Django==1.7.1
 Fabric==1.10.0
 Markdown==2.5
 Pillow==2.5.3
@@ -11,7 +11,7 @@ django-bootstrap3==4.11.0
 # virtualcommons forked django-cas
 git+http://git@github.com/virtualcommons/django-cas.git#egg=cas
 django-contact-form==1.0
-django-extensions==1.4.0
+django-extensions==1.4.4
 django-kronos==0.4
 django-localflavor==1.0
 django-model-utils==2.2
@@ -29,7 +29,7 @@ pylibmc==1.3.0
 python-coveralls==2.4.2
 python-memcached==1.53
 python-openid==2.2.5
-raven==5.0.0
+raven==5.1.1
 requests==2.4.1
 sh==1.09
 six==1.8.0
