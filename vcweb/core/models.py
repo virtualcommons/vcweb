@@ -587,7 +587,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
 
 
 class ExperimentPassThroughManager(PassThroughManager):
-    
+
     def create_demo_experiments(self, experimenter=None):
         if experimenter is None:
             raise ValueError("You were supposed to give me a demo experimenter to create demo experiments.")

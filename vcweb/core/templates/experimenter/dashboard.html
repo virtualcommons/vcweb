@@ -62,7 +62,6 @@
                     </div>
                     <div data-bind='template: { name: "experiment-controller-template", foreach: pendingExperiments }'></div>
                 </div>
-
                 <div class='tab-pane active' id='running'>
                     <div data-bind='if: runningExperiments().length === 0'>
                         <div class='alert alert-warning'>
@@ -109,6 +108,7 @@
 {{ block.super }}
 <script>
     var viewModelObject = $.parseJSON("{{ dashboardViewModelJson|escapejs }}");
+    var is_demo_experimenter = ("True" === "{{ user.experimenter.is_demo_experimenter }}")
 
     $(function() {
         preserveLastSelectedTab();
@@ -237,10 +237,12 @@
                  .done(deleteExperimentConfigurationCallback(configurationModel));
             };
             model.canClearExperiment = function(experimentModel) {
-                return experimentModel.status() === 'INACTIVE' && experimentModel.participantCount() > 0;
+                return !is_demo_experimenter && 
+                    experimentModel.status() === 'INACTIVE' && experimentModel.participantCount() > 0;
             };
             model.canRegisterParticipants = function(experimentModel) {
-                return ! experimentModel.isArchived() && (experimentModel.participantCount() === 0);
+                return !is_demo_experimenter && 
+                    !experimentModel.isArchived() && (experimentModel.participantCount() === 0);
             };
             return model;
         }

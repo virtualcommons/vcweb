@@ -891,7 +891,7 @@ def update_experiment(request):
             Experiment, pk=form.cleaned_data['experiment_id'])
         action = form.cleaned_data['action']
         experimenter = request.user.experimenter
-        if experimenter != experiment.experimenter:
+        if experimenter != experiment.experimenter or experimenter.is_demo_experimenter:
             logger.warn(
                 "user %s tried to invoke %s on %s", user, action, experiment)
             raise PermissionDenied(
