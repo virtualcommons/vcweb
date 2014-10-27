@@ -87,7 +87,7 @@
     <div class='btn-group'>
         <a class='btn btn-default' data-bind='attr: { href: monitor_url }'><i class='fa fa-search-plus'></i> monitor</a>
         <button class='btn btn-default' data-content='Creates a new copy of this experiment with the same configuration and no participants.'
-            data-bind='click: $root.cloneExperiment'><i class='fa fa-files-o'></i> clone</button>
+            data-bind='enable: $root.canClone($data), click: $root.cloneExperiment'><i class='fa fa-files-o'></i> clone</button>
         <button class='btn btn-default' data-content='Register participants for this experiment with actual email addresses'
             data-bind='enable: $root.canRegisterParticipants($data), click: $root.gotoExperimentUrl.bind($data, "register-email-list")'>
             <i class='fa fa-users'></i> register participants</button>
@@ -99,9 +99,9 @@
             data-bind='enable: $root.canClearExperiment($data), click: $root.clearExperiment' class='btn btn-default'>
             <i class='fa fa-trash-o'></i> clear out experiment</button>
         <button data-action='complete' data-content='Archive and mark this experiment as completed'
-            data-bind='disable: isArchived, click: $root.archive' class='btn btn-default'><i class='fa fa-floppy-o'></i> archive</button>
+            data-bind='enable: $root.canArchive($data), click: $root.archive' class='btn btn-default'><i class='fa fa-floppy-o'></i> archive</button>
         <button data-action='deactivate' data-content='Flag this experiment as inactive'
-            data-bind='disable: isArchived, click: $root.deactivate' class='btn btn-default'><i class='fa fa-power-off'></i> deactivate</button>
+            data-bind='enable: $root.canArchive($data), click: $root.deactivate' class='btn btn-default'><i class='fa fa-power-off'></i> deactivate</button>
     </div>
 </div>
 </script>
@@ -244,6 +244,12 @@
                 return !is_demo_experimenter && 
                     !experimentModel.isArchived() && (experimentModel.participantCount() === 0);
             };
+            model.canArchive = function(experimentModel) {
+                return !is_demo_experimenter && !experimentModel.isArchived();
+            }
+            model.canClone = function(experimentModel) {
+                return !is_demo_experimenter;
+            }
             return model;
         }
 

@@ -72,11 +72,13 @@
                     <li><a href='export/configuration.json'><i class='icon-pencil'></i> json</a></li>
                 </ul>
                 {% endcomment %}
+                {% if not user.experimenter.is_demo_experimenter %}
                 <div style="padding-top: 5px;" data-bind='ifnot: isArchived'>
                     <a class='btn btn-danger' data-bind='click: confirmExperimentControllerAction.bind($data, false)' data-action='complete' data-content='Mark this experiment as completed and archive it.'>
                         <i class='fa fa-floppy-o'></i> archive
                     </a>
                 </div>
+                {% endif %}
             </div>
         </div>
         <div class='panel-group'>
