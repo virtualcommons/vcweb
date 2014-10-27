@@ -5,6 +5,7 @@ import mimetypes
 import urllib2
 import xml.etree.ElementTree as ET
 import unicodecsv
+import uuid
 
 from django.conf import settings
 from django.contrib import auth, messages
@@ -1155,9 +1156,12 @@ def get_cas_user(tree):
     username = tree[0][0].text.lower()
     logger.debug("cas tree: %s", tree)
     try:
-        return User.objects.get(username=username)
+        user = User.objects.get(username=username)
     except User.DoesNotExist:
-        return create_cas_participant(username, tree)
+        user = create_cas_participant(username, tree)
+    if user:
+        set_authentication_token(user, uuid.uuid4().hex)
+    return user
 
 
 def create_cas_participant(username, cas_tree):

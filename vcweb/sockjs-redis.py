@@ -97,6 +97,9 @@ class ParticipantConnection(SockJSConnection):
             # Subscribe to 'experiment' and 'group' message channels
             subscriber.subscribe([RedisPubSub.get_participant_broadcast_channel(self.experiment),
                                   RedisPubSub.get_participant_group_channel(self.group)], self)
+        else:
+            logger.debug("Failed to connect due to auth_token mismatch. Found (%s) expected (%s)",
+                         auth_token, message_dict['auth_token'])
 
     def on_close(self):
         subscriber.unsubscribe(RedisPubSub.get_participant_broadcast_channel(self.experiment), self)
@@ -121,7 +124,6 @@ class ExperimenterConnection(SockJSConnection):
         logger.debug("message: %s", message_dict)
 
         auth_token = RedisPubSub.get_redis_instance().get(message_dict['email'] + "_" + str(message_dict['user_id']))
-        logger.info(auth_token)
         if message_dict['event_type'] == 'connect' and auth_token == message_dict['auth_token']:
             # Subscribe to experiment specific 'broadcast' message channels
             self.experiment = message_dict['experiment_id']
@@ -129,7 +131,9 @@ class ExperimenterConnection(SockJSConnection):
             # Send success message to experimenter
             self._send_message("Successfully connected to the Experiment", "info")
         else:
-            self._send_message("Failed to connect to the Experiment", "info")
+            self._send_message("Failed to connect to the Experiment due to auth_token mismatch", "info")
+            logger.debug("Failed to connect due to auth_token mismatch. Found (%s) expected (%s)",
+                         auth_token, message_dict['auth_token'])
 
     def on_close(self):
         subscriber.unsubscribe(RedisPubSub.get_experimenter_channel(self.experiment), self)
