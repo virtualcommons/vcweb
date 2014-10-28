@@ -328,6 +328,12 @@ legend.scheduler-border {
 .error-row {
     color: red;
 }
+
+.new-cloned-experiment-config {
+    background-color: lightyellow;
+    border-color: rgb(231, 231, 148);
+}
+
 /* Calendar Event colors */
 .event-color-1 {
   background-color: #1f77b4 !important;

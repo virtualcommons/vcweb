@@ -32,7 +32,7 @@
                                 <span data-bind='text: title'></span>
                                 <i style='cursor: pointer;' class="fa" data-bind='click: $root.toggleExperimentMetadataBookmark.bind($data), css: { "fa-star-o": ! bookmarked(), "fa-star text-gold": bookmarked}'></i>
                             </div>
-                            <div class="panel-body" data-bind='foreach: configurations'>
+                            <div class="panel-body" data-bind='foreach:{ data:  configurations, afterAdd: $root.highlightExperimentConfig }'>
                                 <div class='callout' data-bind='css: { "callout-info": $root.canEdit($data), "callout-warning": !$root.canEdit($data) }'>
                                     <h4><span data-bind='text: name'>configuration name</span>
                                         <span data-bind='if: treatment_id()'>
@@ -233,8 +233,13 @@
                  .done(clonedExperimentConfigurationCallback);
             };
             model.deleteExperimentConfiguration = function(configurationModel, Event) {
-                $.get("/api/configuration/" + configurationModel.pk() + "/delete")
-                 .done(deleteExperimentConfigurationCallback(configurationModel));
+                bootbox.confirm("Delete this Experiment Configuration?",
+                    function(result) {
+                        if (result) {
+                            $.get("/api/configuration/" + configurationModel.pk() + "/delete")
+                                .done(deleteExperimentConfigurationCallback(configurationModel));
+                        }
+                    });
             };
             model.canClearExperiment = function(experimentModel) {
                 return !is_demo_experimenter && 
@@ -249,6 +254,9 @@
             }
             model.canClone = function(experimentModel) {
                 return !is_demo_experimenter;
+            }
+            model.highlightExperimentConfig = function(elem) { 
+                $(elem).addClass('new-cloned-experiment-config');
             }
             return model;
         }
