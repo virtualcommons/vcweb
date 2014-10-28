@@ -1998,7 +1998,8 @@ class ExperimentParameterValue(ParameterizedValue):
         return {
             'display_name': u"{0}: {1}".format(self.parameter, self.value),
             'pk': self.pk,
-            'parameter_pk': self.parameter.pk,
+            'experiment_configuration': self.experiment_configuration.pk,
+            'parameter': self.parameter.pk,
             'parameter_name': self.parameter,
             'parameter_type': self.parameter.type,
             'string_value': self.string_value,

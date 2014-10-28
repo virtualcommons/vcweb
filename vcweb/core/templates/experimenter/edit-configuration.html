@@ -298,7 +298,6 @@
                 if(!data.children) data.children = [];
                 var model = ko.mapping.fromJS(data, mapping, self);
                 model.sequence_number = ko.protectedObservable(data.sequence_number)
-                
                 model.isExpanded = ko.observable(false);
                 model.display_name = function() {
                    return model.repeat() > 0 ? model.name() + ' ' + model.sequence_number() +
@@ -328,7 +327,6 @@
                     },
                     'expParamValuesList': {
                         create: function (options) {
-                            options.data.experiment_configuration = experiment_configuration_pk;
                             return new ParamViewModel(options.data);
                         }
                     }
@@ -346,7 +344,9 @@
                 }
 
                 model.addExpParam = function (data, event) {
-                    var temp = new ParamViewModel({'experiment_configuration': experiment_configuration_pk ,'is_active': true});
+                    var temp = new ParamViewModel({'experiment_configuration': experiment_configuration_pk ,'is_active': true, 
+                                                    'pk': null, 'parameter': null, 'string_value': null, 'boolean_value': null, 
+                                                    'float_value': null, 'int_value': null });
                     model.modalData(temp);
                     model.template("exp-param-template");
                     model.activateModal(true);
@@ -359,7 +359,7 @@
                 }
 
                 model.removeExpParam = function (expParam){
-                    var data = 'experiment_configuration='+ experiment_configuration_pk +
+                    var data = 'experiment_configuration='+ expParam.experiment_configuration() +
                                 '&parameter='+ expParam.parameter()+
                                 '&request_type=delete';
 
@@ -373,7 +373,9 @@
                         });
                 }
                 model.addRoundParam = function(roundConfig) {
-                    var temp = new ParamViewModel({'round_configuration': roundConfig.pk(), 'is_active': true, 'pk': -1, 'parameter': null, 'string_value': null, 'boolean_value': null, float_value: null, 'int_value': null });
+                    var temp = new ParamViewModel({'round_configuration': roundConfig.pk(), 'is_active': true, 'pk': null, 
+                                                   'parameter': null, 'string_value': null, 'boolean_value': null, 'float_value': null,
+                                                   'int_value': null });
                     model.modalData(temp);
                     model.template("round-param-template");
                     model.activateModal(true);
@@ -436,7 +438,7 @@
                         paramPk = parseInt(form.find("input[type='hidden'].hidden-param").val()),
                         formData = form.serialize();
 
-                    if (paramPk != -1) {
+                    if (paramPk) {
                         // Update Request
                         $.post("/api/configuration/round/param/" + paramPk, formData + '&request_type=update')
                             .done(function(result){
