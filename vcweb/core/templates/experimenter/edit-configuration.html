@@ -234,6 +234,7 @@
     <script type="text/javascript">
 
         var JSONdata = $.parseJSON("{{ json_data | escapejs }}");
+console.log(JSONdata);
         var experiment_configuration_pk = {{ experiment_config.pk }}
 
         $(function() {
@@ -280,52 +281,47 @@
             function ParamViewModel(data) {
                 var self = this;
                 var map = {'null':1, 'true': 2, 'false':3};
-
-                self.display_name = ko.observable(data.display_name);
-                self.pk = ko.observable(data.pk);
-                self.round_configuration = ko.observable(data.round_configuration || data.round_configuration_pk);
-                self.experiment_configuration = ko.observable(data.experiment_configuration);
-                self.parameter = ko.observable(data.parameter_pk);
-                self.string_value = ko.observable(data.string_value);
-                self.int_value = ko.observable(data.int_value);
-                self.float_value = ko.observable(data.float_value);
-                self.boolean_value = ko.observable(map[data.boolean_value]);
-                self.is_active = ko.observable(data.is_active);
+                data.boolean_value = map[data.boolean_value];
+                var model = ko.mapping.fromJS(data, {}, self);
             }
 
             // KO View Model for Round Configuration Accordion
             function NodeModel(data) {
                 var self = this;
-
-                self.isExpanded = ko.observable(false);
-                self.name = ko.protectedObservable(data.name);
-
-                self.display_name = function() {
-                   return self.repeat() > 0 ? self.name() + ' ' + self.sequence_number() + ' [x '+ self.repeat() +']': self.name() + ' ' + self.sequence_number();
+                var mapping = {
+                    'children': {
+                        create: function (options) {
+                            options.data.experiment_configuration = experiment_configuration_pk;
+                            return new ParamViewModel(options.data);
+                        }
+                    }
                 };
-                self.children = ko.observableArray(data.children);
-
-                self.pk = ko.protectedObservable(data.pk);
-                self.experiment_configuration = ko.observable(data.experiment_configuration);
-		        self.round_type = ko.protectedObservable(data.round_type);
-                self.sequence_number = ko.protectedObservable(data.sequence_number)
-                self.display_number = ko.protectedObservable(data.display_number);
-                self.duration = ko.protectedObservable(data.duration);
-                self.template_id = ko.protectedObservable(data.template_id);
-                self.survey_url = ko.protectedObservable(data.survey_url);
-                self.randomize_groups = ko.protectedObservable(data.randomize_groups);
-                self.preserve_existing_groups = ko.protectedObservable(data.preserve_existing_groups);
-                self.create_group_clusters = ko.protectedObservable(data.create_group_clusters);
-                self.session_id = ko.protectedObservable(data.session_id);
-                self.repeat = ko.protectedObservable(data.repeat);
-                self.initialize_data_values = ko.protectedObservable(data.initialize_data_values);
-                self.chat_enabled = ko.protectedObservable(data.chat_enabled);
-
-                self.toggleVisibility = function() {
-                    self.isExpanded(!self.isExpanded());
+                if(!data.children) data.children = [];
+                var model = ko.mapping.fromJS(data, mapping, self);
+                model.name = ko.protectedObservable(data.name);
+                model.pk = ko.protectedObservable(data.pk);
+                model.round_type = ko.protectedObservable(data.round_type);
+                model.sequence_number = ko.protectedObservable(data.sequence_number)
+                model.display_number = ko.protectedObservable(data.display_number);
+                model.duration = ko.protectedObservable(data.duration);
+                model.template_id = ko.protectedObservable(data.template_id);
+                model.survey_url = ko.protectedObservable(data.survey_url);
+                model.randomize_groups = ko.protectedObservable(data.randomize_groups);
+                model.preserve_existing_groups = ko.protectedObservable(data.preserve_existing_groups);
+                model.create_group_clusters = ko.protectedObservable(data.create_group_clusters);
+                model.session_id = ko.protectedObservable(data.session_id);
+                model.repeat = ko.protectedObservable(data.repeat);
+                model.initialize_data_values = ko.protectedObservable(data.initialize_data_values);
+                model.chat_enabled = ko.protectedObservable(data.chat_enabled);
+                model.isExpanded = ko.observable(false);
+                model.display_name = function() {
+                   return model.repeat() > 0 ? model.name() + ' ' + model.sequence_number() +
+                       ' [x '+ model.repeat() +']': model.name() + ' ' + model.sequence_number();
                 };
-
-                self.update = function(nodeObject) {
+                model.toggleVisibility = function() {
+                    model.isExpanded(!model.isExpanded());
+                };
+                model.update = function(nodeObject) {
                     var fields = [
                         "name", "round_type", "display_number", "sequence_number", "duration", "template_id",
                         "survey_url", "randomize_groups", "preserve_existing_groups", "create_group_clusters",
@@ -339,13 +335,12 @@
                     });
                 }
             }
+
             // KO View Model for whole Page
             function PageModel(data) {
-
                 var mapping = {
                     'roundConfigList': {
                         create: function (options) {
-                            options.data.experiment_configuration = experiment_configuration_pk;
                             return new NodeModel(options.data);
                         }
                     },
@@ -396,24 +391,24 @@
                         });
                 }
                 model.addRoundParam = function(roundConfig) {
-                    var temp = new ParamViewModel({'round_configuration': roundConfig.pk(), 'is_active': true});
+                    var temp = new ParamViewModel({'round_configuration': roundConfig.pk(), 'is_active': true, 'pk': -1, 'parameter': null, 'string_value': null, 'boolean_value': null, float_value: null, 'int_value': null });
                     model.modalData(temp);
                     model.template("round-param-template");
                     model.activateModal(true);
                 }
 
                 model.editRoundParam = function(roundParam) {
-                    model.modalData(new ParamViewModel(roundParam));
+                    model.modalData(roundParam);
                     model.template("round-param-template");
                     model.activateModal(true);
                 }
 
                 model.removeRoundParam = function(roundParam) {
-                    var data = 'round_configuration='+roundParam.round_configuration_pk +
-                               '&parameter='+ roundParam.parameter_pk+
+                    var data = 'round_configuration='+roundParam.round_configuration() +
+                               '&parameter='+ roundParam.parameter()+
                                '&request_type=delete';
 
-                    $.post("/api/configuration/round/param/"+ roundParam.pk, data)
+                    $.post("/api/configuration/round/param/"+ roundParam.pk(), data)
                         .done(function(result) {
                             if(result.success){
                                  $.each(model.roundConfigList(), function() { this.children.remove(roundParam) })
@@ -424,7 +419,7 @@
                 }
 
                 model.addRoundConfig = function (data, event) {
-                    var node = new NodeModel({'display_number': 0, 'duration': 0, repeat: 0, 
+                    var node = new NodeModel({'display_number': 0, 'duration': 0, 'repeat': 0, 'group_cluster_size': 0, 
                         'preserve_existing_groups': true, 'experiment_configuration': experiment_configuration_pk});
                     model.modalData(node);
                     model.template("round-config-template");
@@ -457,18 +452,18 @@
                         paramPk = parseInt(form.find("input[type='hidden'].hidden-param").val()),
                         formData = form.serialize();
 
-                    if (paramPk) {
+                    if (paramPk != -1) {
                         // Update Request
                         $.post("/api/configuration/round/param/" + paramPk, formData + '&request_type=update')
                             .done(function(result){
                                 if(result.success){
                                     var match = ko.utils.arrayFirst(model.roundConfigList(), function (roundConfig) {
                                         return ko.utils.arrayFirst(roundConfig.children(), function(roundParam){
-                                            return paramPk == roundParam.pk
+                                            return paramPk == roundParam.pk()
                                         });
                                     });
-                                    match.children.remove(function(roundParam) { return roundParam.pk == paramPk });
-                                    match.children.push(result.round_param);
+                                    match.children.remove(function(roundParam) { return roundParam.pk() == paramPk });
+                                    match.children.push(new ParamViewModel(result.round_param));
                                 } else {
                                     // Error Message
                                 }
@@ -483,7 +478,7 @@
                         $.post("/api/configuration/round/param/-1", formData + '&request_type=create')
                             .done(function(result){
                                 if(result.success){
-                                    match.children.push(result.round_param);
+                                    match.children.push(new ParamViewModel(result.round_param));
                                     model.hideModal();
                                 } else {
                                     // Error Message
@@ -535,19 +530,19 @@
                                 if(result.success){
                                     var flag = true;
                                     var new_sequence_number = result.round_config.sequence_number;
-                                        $.each(model.roundConfigList(), function() {
-                                            var current_sequence_number = this.sequence_number();
+                                    $.each(model.roundConfigList(), function() {
+                                        var current_sequence_number = this.sequence_number();
 
-                                            if( current_sequence_number >= new_sequence_number && flag){
-                                                if(new_sequence_number == current_sequence_number) {
-                                                    this.sequence_number(current_sequence_number + 1);
-                                                    this.sequence_number.commit();
-                                                    new_sequence_number++;
-                                                } else {
-                                                    flag = false;
-                                                }
+                                        if( current_sequence_number >= new_sequence_number && flag){
+                                            if(new_sequence_number == current_sequence_number) {
+                                                this.sequence_number(current_sequence_number + 1);
+                                                this.sequence_number.commit();
+                                                new_sequence_number++;
+                                            } else {
+                                                flag = false;
                                             }
-                                        });
+                                        }
+                                    });
                                     model.roundConfigList.push(new NodeModel(result.round_config));
                                     model.roundConfigList(model.roundConfigList().sort(function(left, right) {
                                         return left.sequence_number() < right.sequence_number() ? -1 : 1

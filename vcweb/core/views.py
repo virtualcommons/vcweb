@@ -1289,7 +1289,7 @@ def edit_experiment_configuration(request, pk):
     for round in round_config_list:
         round["children"] = []
         for param in round_param_values_list:
-            if round['pk'] == param['round_configuration_pk']:
+            if round['pk'] == param['round_configuration']:
                 # set the round params list as this round's children
                 round["children"].append(param)
 

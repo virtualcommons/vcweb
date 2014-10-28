@@ -312,7 +312,7 @@ class RoundConfigurationForm(forms.ModelForm):
     class Meta:
         model = RoundConfiguration
         exclude = ('last_modified', 'date_created', 'template_filename', 'instructions',
-                   'debriefing', 'group_cluster_size')
+                   'debriefing')
         widgets = {
             'experiment_configuration': forms.HiddenInput
         }

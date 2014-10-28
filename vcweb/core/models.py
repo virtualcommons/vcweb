@@ -1712,6 +1712,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
         return {
             'name': self.get_round_type_display(),
             'pk': self.pk,
+            'experiment_configuration': self.experiment_configuration.pk,
             'round_type': self.round_type,
             'display_number': self.display_number,
             'sequence_number': self.sequence_number,
@@ -1721,6 +1722,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
             'randomize_groups': self.randomize_groups,
             'preserve_existing_groups': self.preserve_existing_groups,
             'create_group_clusters': self.create_group_clusters,
+            'group_cluster_size': self.group_cluster_size,
             'session_id': self.session_id,
             'repeat': self.repeat,
             'initialize_data_values': self.initialize_data_values,
@@ -2025,13 +2027,13 @@ class RoundParameterValue(ParameterizedValue):
         return {
             'display_name': u"{0}: {1}".format(p, self.value),
             'pk': self.pk,
-            'parameter_pk': self.parameter.pk,
+            'parameter': self.parameter.pk,
             'string_value': self.string_value,
             'int_value': self.int_value,
             'float_value': self.float_value,
             'boolean_value': self.boolean_value,
             'is_active': self.is_active,
-            'round_configuration_pk': rc.pk
+            'round_configuration': rc.pk
         }
 
     def __unicode__(self):
