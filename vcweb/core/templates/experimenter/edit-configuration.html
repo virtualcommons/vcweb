@@ -234,7 +234,6 @@
     <script type="text/javascript">
 
         var JSONdata = $.parseJSON("{{ json_data | escapejs }}");
-console.log(JSONdata);
         var experiment_configuration_pk = {{ experiment_config.pk }}
 
         $(function() {
@@ -298,21 +297,8 @@ console.log(JSONdata);
                 };
                 if(!data.children) data.children = [];
                 var model = ko.mapping.fromJS(data, mapping, self);
-                model.name = ko.protectedObservable(data.name);
-                model.pk = ko.protectedObservable(data.pk);
-                model.round_type = ko.protectedObservable(data.round_type);
                 model.sequence_number = ko.protectedObservable(data.sequence_number)
-                model.display_number = ko.protectedObservable(data.display_number);
-                model.duration = ko.protectedObservable(data.duration);
-                model.template_id = ko.protectedObservable(data.template_id);
-                model.survey_url = ko.protectedObservable(data.survey_url);
-                model.randomize_groups = ko.protectedObservable(data.randomize_groups);
-                model.preserve_existing_groups = ko.protectedObservable(data.preserve_existing_groups);
-                model.create_group_clusters = ko.protectedObservable(data.create_group_clusters);
-                model.session_id = ko.protectedObservable(data.session_id);
-                model.repeat = ko.protectedObservable(data.repeat);
-                model.initialize_data_values = ko.protectedObservable(data.initialize_data_values);
-                model.chat_enabled = ko.protectedObservable(data.chat_enabled);
+                
                 model.isExpanded = ko.observable(false);
                 model.display_name = function() {
                    return model.repeat() > 0 ? model.name() + ' ' + model.sequence_number() +
@@ -322,11 +308,7 @@ console.log(JSONdata);
                     model.isExpanded(!model.isExpanded());
                 };
                 model.update = function(nodeObject) {
-                    var fields = [
-                        "name", "round_type", "display_number", "sequence_number", "duration", "template_id",
-                        "survey_url", "randomize_groups", "preserve_existing_groups", "create_group_clusters",
-                        "session_id", "repeat", "initialize_data_values", "chat_enabled"
-                    ];
+                    var fields = ["sequence_number"];
 
                     $.each(fields, function(index) {
                         var property = self[this];
@@ -420,7 +402,9 @@ console.log(JSONdata);
 
                 model.addRoundConfig = function (data, event) {
                     var node = new NodeModel({'display_number': 0, 'duration': 0, 'repeat': 0, 'group_cluster_size': 0, 
-                        'preserve_existing_groups': true, 'experiment_configuration': experiment_configuration_pk});
+                        'preserve_existing_groups': true, 'experiment_configuration': experiment_configuration_pk,
+                        'round_type': null, 'template_id': null, 'survey_url': null, 'chat_enabled': null, 'create_group_clusters': null,
+                        'randomize_groups': null, 'session_id': null, 'initialize_data_values': null, 'pk': null });
                     model.modalData(node);
                     model.template("round-config-template");
                     model.activateModal(true);
