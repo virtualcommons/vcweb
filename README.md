@@ -36,6 +36,20 @@ if you'd like to request an experimenter account.
 
 In order to participate in a vcweb experiment you must be invited to one by an experimenter. 
 
+### try it out
+
+You can try out the software as an experimenter by logging in to https://vcweb.asu.edu with the following credentials:
+
+* Email: vcweb@mailinator.com
+* Password: demo
+
+This experimenter has limited access to a single experiment, a Forestry Communication / No Communication setup. You can
+view the page by clicking on the "Monitor" button to connect to the experiment and view any generated data. There are
+10 demo participants registered with the experiment. Their credentials are listed below
+
+Email: s1asu@mailinator.com, s2asu@mailinator.com, ..., s10asu@mailinator.com
+Password: test 
+
 ### develop an experiment or contribute to the infrastructure
 [![Build Status](https://travis-ci.org/virtualcommons/vcweb.svg?branch=develop)](https://travis-ci.org/virtualcommons/vcweb)
 [![Coverage Status](https://coveralls.io/repos/virtualcommons/vcweb/badge.png?branch=develop)](https://coveralls.io/r/virtualcommons/vcweb?branch=develop)
