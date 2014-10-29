@@ -218,9 +218,9 @@
                 var model = ko.mapping.fromJS(data, mapping);
                 
                 var updateModal = function(action, template, data) {
-                    model.activateModal(action);
                     model.template(template);
                     model.modalData(data);
+                    model.activateModal(action);
                 }
 
                 model.template = ko.observable();

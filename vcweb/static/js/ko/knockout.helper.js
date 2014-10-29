@@ -44,7 +44,7 @@ ko.bindingHandlers.showModal = {
             $(element).modal('show');
             // this is to focus input field inside dialog
             $("input", element).focus();
-            $('.has-popover').popover({'trigger':'hover'});
+            $('.has-popover', element).popover({'trigger':'hover'});
         }
         else {
             $(element).modal('hide');
