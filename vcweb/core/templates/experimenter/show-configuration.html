@@ -1,0 +1,177 @@
+{% extends "experimenter/base.html" %}
+{% load bootstrap3 %}
+
+{% block page %}    
+    <div class="panel-group col-md-6" id="accordion">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" href="#collapseTwo">
+                        Experiment Configuration Metadata
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseTwo" class="panel-collapse">
+                <div class="panel-body">
+                    <table class="table table-striped">
+                        <tbody>
+                            {% for field in experiment_config_form %}
+                            <tr>
+                                <td>{{ field.label_tag }}</td>
+                                <td>{{ field.value }}</td>
+                            </tr>
+                            {% endfor %} 
+                            </tr>
+                        </tbody> 
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="panel-group col-md-6" id="accordion">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" href="#collapseTwo">
+                        Experiment Parameters
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseTwo" class="panel-collapse">
+                <div class="panel-body">
+                    <div data-bind='if: expParamValuesList().length == 0'>
+                        <div class="callout callout-warning">
+                            No experiment parameters found.
+                        </div>
+                    </div>
+                    <div id="tree">
+                        <ul data-bind="foreach: expParamValuesList">
+                            <li>
+                                <span class="tree-item fa" data-bind="css: 'fa-square-o'"></span>
+                                <span data-bind="text: display_name"></span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" href="#collapseThree">
+                        Round Configurations
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseThree" class="panel-collapse">
+                <div class="panel-body">
+                    <div data-bind='if: roundConfigList().length == 0'>
+                        <div class="callout callout-warning">
+                            No rounds have been configured yet for this experiment configuration.
+                        </div>
+                    </div>
+                    <div id="tree">
+                        <ul data-bind="foreach: roundConfigList">
+                            <li>
+                                <span class="tree-item fa" data-bind="
+                                    css: {
+                                        'fa-minus-square-o': isExpanded() && children().length > 0,
+                                        'fa-plus-square-o': !isExpanded() && children().length > 0,
+                                        'fa-square-o': children().length === 0,
+                                        'pointer-icon': children().length > 0
+                                    }, click: toggleVisibility
+                                    "></span>
+                                <span data-bind="text: display_name()"></span>
+                                <div data-bind="slideVisible: isExpanded">
+                                    <ul data-bind="foreach: children">
+                                        <li>
+                                            <span class="tree-item fa fa-square-o"></span>
+                                            <span data-bind="text: display_name"></span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock page %}
+{% block javascript %}
+{{ block.super }}
+    <script type="text/javascript">
+        var JSONdata = $.parseJSON("{{ json_data | escapejs }}");
+
+        $(function() {
+            // KO View Model for Experiment and Round Parameter
+            function ParamViewModel(data) {
+                var self = this;
+                var model = ko.mapping.fromJS(data, {}, self);
+            }
+
+            // KO View Model for Round Configuration Accordion
+            function NodeModel(data) {
+                var self = this;
+                var mapping = {
+                    'children': {
+                        create: function (options) {
+                            return new ParamViewModel(options.data);
+                        }
+                    }
+                };
+                var model = ko.mapping.fromJS(data, mapping, self);
+                model.isExpanded = ko.observable(false);
+                model.display_name = function() {
+                   return model.repeat() > 0 ? model.name() + ' ' + model.sequence_number() +
+                       ' [x '+ model.repeat() +']': model.name() + ' ' + model.sequence_number();
+                };
+                model.toggleVisibility = function() {
+                    model.isExpanded(!model.isExpanded());
+                };
+            }
+
+            // KO View Model for whole Page
+            function PageModel(data) {
+                var mapping = {
+                    'roundConfigList': {
+                        create: function (options) {
+                            return new NodeModel(options.data);
+                        }
+                    },
+                    'expParamValuesList': {
+                        create: function (options) {
+                            return new ParamViewModel(options.data);
+                        }
+                    }
+                };
+                var model = ko.mapping.fromJS(data, mapping);
+                return model;
+            }
+
+            var pageModel = new PageModel(JSONdata);
+            
+            ko.bindingHandlers.foreachprop = {
+                transformObject: function (obj) {
+                    var properties = [];
+                    for (var key in obj) {
+                        if (obj.hasOwnProperty(key)) {
+                            properties.push({ key: key, value: obj[key] });
+                        }
+                    }
+                    return properties;
+                },
+                init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+                    var value = ko.utils.unwrapObservable(valueAccessor()),
+                        properties = ko.bindingHandlers.foreachprop.transformObject(value);
+                    ko.applyBindingsToNode(element, { foreach: properties }, bindingContext);
+                    return { controlsDescendantBindings: true };
+                }
+            };
+
+            ko.applyBindings(pageModel);
+        });
+
+    </script>
+
+{% endblock javascript %}

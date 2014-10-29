@@ -261,19 +261,6 @@
             return model;
         }
 
-        ko.bindingHandlers.disableClick = {
-            init: function (element, valueAccessor) {
-                $(element).click(function(evt) {
-                    if(valueAccessor())
-                        evt.preventDefault();
-                });
-            },
-            update: function(element, valueAccessor) {
-                var value = ko.utils.unwrapObservable(valueAccessor());
-                ko.bindingHandlers.css.update(element, function() {return { disabled: value }; });
-            }
-        };
-
         var model = new DashboardViewModel(viewModelObject);
         ko.applyBindings(model);
     });

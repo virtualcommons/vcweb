@@ -1,119 +1,27 @@
 {% extends "experimenter/base.html" %}
 {% load bootstrap3 %}
-{% load tags %}
-
-{% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
-{% block head %}
-{{ block.super }}
-{% endblock %}
 
 {% block page %}
     <div id="error-messages"></div>
     <h2> Experiment Configuration</h2>
-    <form method="post" class="form-horizontal" data-bind="submit: $root.saveExperimentConfig">
-        {{ experiment_config_form.non_field_errors }}
-        <div class="col-md-6">
-            <div id="experiment_config_pk" style="display: none;">
-                {{experiment_config.pk}}
-            </div>
-            <div class="form-group">
-                <label class="col-md-4 control-label">Experiment metadata</label>
-                <div class="col-md-8">
-                    {{ experiment_config_form.experiment_metadata|addcss:"form-control input-sm" }}
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-md-4 control-label">Name</label>
-                <div class="col-md-8">
-                    {{ experiment_config_form.name|addcss:"form-control input-sm" }}
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-md-4 control-label">Treatment id</label>
-                <div class="col-md-8">
-                    {{ experiment_config_form.treatment_id|addcss:"form-control input-sm" }}
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-md-4 control-label">Registration email subject</label>
-                <div class="col-md-8">
-                    {{ experiment_config_form.registration_email_subject|addcss:"form-control input-sm" }}
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-md-4 control-label">Show up payment</label>
-                <div class="col-md-3">
-                    {{ experiment_config_form.show_up_payment|addcss:"form-control input-sm" }}
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-md-4 control-label">Maximum payment</label>
-                <div class="col-md-3">
-                    {{ experiment_config_form.maximum_payment|addcss:"form-control input-sm" }}
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label class="col-md-5 control-label">Max number of participants</label>
-                <div class="col-md-2">
-                    {{ experiment_config_form.max_number_of_participants|addcss:"form-control input-sm" }}
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-md-5 control-label">Max group size</label>
-                <div class="col-md-2">
-                    {{ experiment_config_form.max_group_size|addcss:"form-control input-sm" }}
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-md-5 control-label">Exchange rate</label>
-                <div class="col-md-2">
-                    {{ experiment_config_form.exchange_rate|addcss:"form-control input-sm" }}
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-md-5 control-label">Is Public</label>
-                <div class="col-md-7">
-                    <div class="checkbox">
-                        <label>{{ experiment_config_form.is_public }}</label>
-                    </div>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-md-5 control-label">Is experimenter driven</label>
-                <div class="col-md-7">
-                    <div class="checkbox">
-                        <label>{{ experiment_config_form.is_experimenter_driven }}</label>
-                    </div>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-md-5 control-label">Has daily rounds</label>
-                <div class="col-md-7">
-                    <div class="checkbox">
-                        <label>{{ experiment_config_form.has_daily_rounds }}</label>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <form method="post" class="form-horizontal col-md-5" data-bind="submit: $root.saveExperimentConfig">
+        {%  bootstrap_form experiment_config_form layout="horizontal" label_class="col-md-4" field_class="col-md-8" %}
         <div class="form-group">
             <div class="col-sm-offset-4">
-                <button type="submit" class="btn btn-default">Save</button>
+                <button type="submit" class="btn btn-primary">Save</button>
             </div>
         </div>
     </form>
-
-    <div class="panel-group" id="accordion">
+    <div class="panel-group col-md-7" id="accordion">
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h4 class="panel-title">
                     <a data-toggle="collapse" href="#collapseTwo">
-                        Experiment Parameter Value
+                        Experiment Parameters
                     </a>
                 </h4>
             </div>
-            <div id="collapseTwo" class="panel-collapse collapse">
+            <div id="collapseTwo" class="panel-collapse">
                 <div class="panel-body">
                     <div data-bind='if: expParamValuesList().length == 0'>
                         <div class="callout callout-warning">
@@ -121,16 +29,18 @@
                         </div>
                     </div>
                     <div id="tree">
-                            <ul data-bind="foreach: expParamValuesList">
-                                <li>
-                                    <span class="tree-item fa" data-bind="css: 'fa-square-o'"></span>
-                                    <span data-bind="text: display_name"></span>
-                                    <a href='#' data-bind='click: $root.editExpParam'><i class="fa fa-edit"></i></a>
-                                    <a href='#' data-bind='click: $root.removeExpParam'><i class="fa fa-times"></i></a>
-                                </li>
-                            </ul>
+                        <ul data-bind="foreach: expParamValuesList">
+                            <li>
+                                <span class="tree-item fa" data-bind="css: 'fa-square-o'"></span>
+                                <span data-bind="text: display_name"></span>
+                                <a href='#' data-bind='click: $root.editExpParam'><i class="fa fa-edit"></i></a>
+                                <a href='#' data-bind='click: $root.removeExpParam'><i class="fa fa-times"></i></a>
+                            </li>
+                        </ul>
                     </div>
-                    <button type="button" class="btn" data-bind="click: $root.addExpParam"><i class='fa fa-plus'></i> Add Experiment Parameter</button>
+                    <button type="button" class="btn" data-bind="click: $root.addExpParam"><i class='fa fa-plus'></i>
+                        Add Experiment Parameter
+                    </button>
                 </div>
             </div>
         </div>
@@ -138,11 +48,11 @@
             <div class="panel-heading">
                 <h4 class="panel-title">
                     <a data-toggle="collapse" href="#collapseThree">
-                        Round Configuration
+                        Round Configurations
                     </a>
                 </h4>
             </div>
-            <div id="collapseThree" class="panel-collapse collapse">
+            <div id="collapseThree" class="panel-collapse">
                 <div class="panel-body">
                     <div data-bind='if: roundConfigList().length == 0'>
                         <div class="callout callout-warning">
@@ -200,7 +110,6 @@
 {% endblock page %}
 {% block javascript %}
 {{ block.super }}
-
     <script type='text/html' id='round-param-template'>
         <form method="post" class="form-horizontal" data-bind="submit: $root.saveRoundParam">
             <input type="hidden" data-bind="value: pk" class="hidden-param">
@@ -232,50 +141,12 @@
     </script>
 
     <script type="text/javascript">
-
         var JSONdata = $.parseJSON("{{ json_data | escapejs }}");
         var experiment_configuration_pk = {{ experiment_config.pk }}
 
         $(function() {
-            //wrapper to an observable that requires accept/cancel
-            ko.protectedObservable = function(initialValue) {
-                //private variables
-                var _actualValue = ko.observable(initialValue),
-                    _tempValue = initialValue;
-
-                //computed observable that we will return
-                var result = ko.computed({
-                    //always return the actual value
-                    read: function() {
-                       return _actualValue();
-                    },
-                    //stored in a temporary spot until commit
-                    write: function(newValue) {
-                         _tempValue = newValue;
-                    }
-                });
-
-                //if different, commit temp value
-                result.commit = function() {
-                    if (_tempValue !== _actualValue()) {
-                         _actualValue(_tempValue);
-                    }
-                };
-
-                //return updatedValue
-                result.updateValue = function() {
-                    return _tempValue;
-                };
-
-                //force subscribers to take original
-                result.reset = function() {
-                    _actualValue.valueHasMutated();
-                    _tempValue = _actualValue();   //reset temp value
-                };
-
-                return result;
-            };
-
+            $('.has-popover').popover({'trigger':'hover'});
+ 
             // KO View Model for Experiment and Round Parameter
             function ParamViewModel(data) {
                 var self = this;
@@ -296,6 +167,7 @@
                     }
                 };
                 if(!data.children) data.children = [];
+    
                 var model = ko.mapping.fromJS(data, mapping, self);
                 model.sequence_number = ko.protectedObservable(data.sequence_number)
                 model.isExpanded = ko.observable(false);
@@ -417,7 +289,7 @@
                     model.template("round-config-template");
                     model.activateModal(true);
                 }
-
+ 
                 model.removeRoundConfig = function(roundConfig) {
                     var data = 'experiment_configuration='+roundConfig.experiment_configuration() +
                                '&repeat='+ roundConfig.repeat() + '&round_type='+ roundConfig.round_type() +
@@ -577,7 +449,7 @@
                 model.saveExperimentConfig = function(form) {
                     var form = $(form);
                     var formData = form.serialize();
-                    $.ajax("/api/configuration/experiment/" + {{ experiment_config.pk }}, {
+                    $.ajax("/api/configuration/experiment/" + experiment_configuration_pk , {
                         data: formData,
                         type: "POST",
                         success: function(result) {
@@ -591,37 +463,7 @@
                 }
                 return model;
             }
-
             var pageModel = new PageModel(JSONdata);
-
-            ko.bindingHandlers.showModal = {
-                update: function (element, valueAccessor) {
-                    var value = valueAccessor();
-                    if (ko.utils.unwrapObservable(value)) {
-                        $(element).modal('show');
-                        // this is to focus input field inside dialog
-                        $("input", element).focus();
-                        $('.has-popover').popover({'trigger':'hover'});
-                    }
-                    else {
-                        $(element).modal('hide');
-                    }
-                }
-            };
-
-            ko.bindingHandlers.slideVisible = {
-                init: function(element, valueAccessor) {
-                    // Initially set the element to be instantly visible/hidden depending on the value
-                    var value = valueAccessor();
-                    $(element).toggle(ko.unwrap(value)); // Use "unwrapObservable" so we can handle values that may or may not be observable
-                },
-                update: function(element, valueAccessor) {
-                    // Whenever the value subsequently changes, slowly fade the element in or out
-                    var value = valueAccessor();
-                    ko.unwrap(value) ? $(element).slideDown(200) : $(element).slideUp(200);
-                }
-            };
-
             ko.applyBindings(pageModel);
         });
 

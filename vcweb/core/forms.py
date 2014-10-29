@@ -216,6 +216,15 @@ class ExperimentConfigurationForm(forms.ModelForm):
         if post_dict:
             self.request_type = post_dict.get('request_type')
 
+        for name, field in self.fields.items():
+            help_text = field.help_text
+            field.help_text = None
+            if help_text != '':
+                field.widget.attrs.update(
+                    {'class': 'has-popover', 'data-content': help_text, 'data-placement': 'right',
+                     'data-container': 'body'})
+
+
     def save(self, commit=True):
         ec = super(ExperimentConfigurationForm, self).save(commit=False)
         if self.request_type == 'delete':
@@ -293,7 +302,7 @@ class RoundConfigurationForm(forms.ModelForm):
             if help_text != '':
                 field.widget.attrs.update(
                     {'class': 'has-popover', 'data-content': help_text, 'data-placement': 'right',
-                     'data-container': 'div.modal-dialog'})
+                     'data-container': 'body'})
 
         if post_dict:
             self.request_type = post_dict.get('request_type')
@@ -333,6 +342,7 @@ class RoundParameterValueForm(forms.ModelForm):
                 field.widget.attrs['data-bind'] = 'checked: %s' % name
             else:
                 field.widget.attrs['data-bind'] = 'value: %s' % name
+
         if post_dict:
             self.request_type = post_dict.get('request_type')
 

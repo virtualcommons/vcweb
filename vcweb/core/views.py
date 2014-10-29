@@ -1266,6 +1266,21 @@ def delete_experiment_configuration(request, pk):
     return JsonResponse(SUCCESS_DICT)
 
 
+@group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
+@ownership_required(ExperimentConfiguration)
+@require_GET
+def show_experiment_configuration(request, pk):
+    ec = ExperimentConfiguration.objects.get(pk=pk)
+    ecf = ExperimentConfigurationForm(instance=ec)
+
+    json_data = get_experiment_configuration_json_data(ec)
+    # json_data.update({ 'experimentConfigList': ec.to_dict() })
+    return render(request, 'experimenter/show-configuration.html', {
+        'json_data': dumps(json_data),
+        'experiment_config_form': ecf,
+    })
+
+
 @group_required(PermissionGroup.experimenter)
 @ownership_required(ExperimentConfiguration)
 @require_GET
@@ -1273,11 +1288,23 @@ def edit_experiment_configuration(request, pk):
     ec = ExperimentConfiguration.objects.get(pk=pk)
     ecf = ExperimentConfigurationForm(instance=ec)
 
+    json_data = get_experiment_configuration_json_data(ec)
+
+    return render(request, 'experimenter/edit-configuration.html', {
+        'json_data': dumps(json_data),
+        'experiment_config': ec,
+        'experiment_config_form': ecf,
+        'round_config_form': RoundConfigurationForm(),
+        'round_param_form': RoundParameterValueForm(),
+        'exp_param_form': ExperimentParameterValueForm(),
+    })
+
+
+def get_experiment_configuration_json_data(ec):
     epv = ExperimentParameterValue.objects.filter(experiment_configuration=ec)
     exp_param_values_list = [param.to_dict() for param in epv]
 
-    round_config = RoundConfiguration.objects.filter(
-        experiment_configuration=ec)
+    round_config = RoundConfiguration.objects.filter(experiment_configuration=ec)
     round_config_list = [round.to_dict() for round in round_config]
 
     round_param_values = RoundParameterValue.objects.select_related('round_configuration', 'parameter') \
@@ -1293,19 +1320,10 @@ def edit_experiment_configuration(request, pk):
                 # set the round params list as this round's children
                 round["children"].append(param)
 
-    json_data = {
+    return {
         'expParamValuesList': exp_param_values_list,
         'roundConfigList': round_config_list,
     }
-
-    return render(request, 'experimenter/edit-configuration.html', {
-        'json_data': dumps(json_data),
-        'experiment_config': ec,
-        'experiment_config_form': ecf,
-        'round_config_form': RoundConfigurationForm(),
-        'round_param_form': RoundParameterValueForm(),
-        'exp_param_form': ExperimentParameterValueForm(),
-    })
 
 
 class OstromlabFaqList(ListView):

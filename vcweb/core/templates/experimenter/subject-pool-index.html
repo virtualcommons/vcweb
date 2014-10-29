@@ -471,31 +471,6 @@ Experiment Session Management
                 };
             }
 
-            ko.bindingHandlers.datepicker = {
-                init: function(element, valueAccessor, allBindingsAccessor) {
-                    //initialize datepicker with some optional options
-                    var options = { format: 'yyyy-mm-dd', start_date: '-d' };
-                    $(element).datepicker(options);
-
-                    //when a user changes the date, update the view model
-                    ko.utils.registerEventHandler(element, "changeDate", function(event) {
-                        var value = valueAccessor();
-                        if (ko.isObservable(value) && event.date > new Date()) {
-                            value(event.date);
-                        }
-                    });
-                },
-                update: function(element, valueAccessor)   {
-                    var widget = $(element).data("datepicker");
-                    //when the view model is updated, update the widget
-                    if (widget) {
-                        widget.date = new Date(ko.utils.unwrapObservable(valueAccessor()));
-                        widget.setValue();
-                    }
-                    $('.datepicker').hide();
-                }
-            };
-
             ko.applyBindings(new SessionListViewModel(viewModelJson));
         });
 
