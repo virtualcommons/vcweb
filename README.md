@@ -47,8 +47,8 @@ This experimenter has limited access to a single experiment, a Forestry Communic
 view the page by clicking on the "Monitor" button to connect to the experiment and view any generated data. There are
 10 demo participants registered with the experiment. Their credentials are listed below
 
-Email: s1asu@mailinator.com, s2asu@mailinator.com, ..., s10asu@mailinator.com
-Password: test 
+* Email: s1asu@mailinator.com, s2asu@mailinator.com, ..., s10asu@mailinator.com
+* Password: test 
 
 ### develop an experiment or contribute to the infrastructure
 [![Build Status](https://travis-ci.org/virtualcommons/vcweb.svg?branch=develop)](https://travis-ci.org/virtualcommons/vcweb)
