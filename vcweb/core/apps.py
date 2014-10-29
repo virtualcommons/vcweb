@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 
 import logging
+import mimetypes
 
 logger = logging.getLogger(__name__)
 
@@ -11,3 +12,5 @@ class VcwebCoreConfig(AppConfig):
 
     def ready(self):
         logger.debug("vcweb core ready")
+        mimetypes.init()
+

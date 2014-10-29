@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 Permissions Enum for Auth Permission Groups
 """
 
+
 class PermissionGroup(Enum):
     participant = 'Participants'
     experimenter = 'Experimenters'
@@ -411,6 +412,7 @@ class CommonsUser(models.Model):
 
 
 class ExperimenterManager(PassThroughManager):
+
     def create_demo_experimenter(self, email=None, user=None, password='vcweb_demo'):
         if user is None:
             if email is None:
@@ -430,6 +432,9 @@ class Experimenter(CommonsUser):
     @property
     def is_demo_experimenter(self):
         return self.user.groups.filter(name=PermissionGroup.demo_experimenter).exists()
+
+    def is_valid(self, experimenter=None):
+        return self.approved and (experimenter is None or self == experimenter)
 
     class Meta:
         ordering = ['user']
@@ -454,8 +459,10 @@ class ExperimenterRequest(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     approved = models.BooleanField(default=False)
 
+
 class ExperimentConfigurationQuerySet(models.query.QuerySet):
     pass
+
 
 class ExperimentConfigurationManager(PassThroughManager):
 
@@ -594,6 +601,7 @@ class ExperimentPassThroughManager(PassThroughManager):
         for ec in ExperimentConfiguration.objects.demo_configurations():
             Experiment.objects.create(experimenter=experimenter, experiment_configuration=ec,
                                       experiment_metadata=ec.experiment_metadata, status=Experiment.Status.INACTIVE)
+
 
 class ExperimentQuerySet(models.query.QuerySet):
     ACTIVE_STATUSES = ('ACTIVE', 'ROUND_IN_PROGRESS')
@@ -1097,10 +1105,11 @@ class Experiment(models.Model):
                 user.save()
             user.groups.add(demo_participants_group)
             users.append(user)
-        return self.register_participants(users=users, institution=institution, password=password)
+        return self.register_participants(users=users, institution=institution, password=password,
+                                          should_send_email=False)
 
     @transaction.atomic
-    def initialize_data_values(self, group_parameters=[], participant_parameters=[], group_cluster_parameters=[],
+    def initialize_data_values(self, group_parameters=None, participant_parameters=None, group_cluster_parameters=None,
                                round_data=None, defaults=None):
         """
         FIXME: needs refactoring, replace get_or_create with creates and separate initialization of data values from copy_to_next_round semantics
@@ -1112,6 +1121,12 @@ class Experiment(models.Model):
         """
         if round_data is None:
             round_data = self.current_round_data
+        if group_parameters is None:
+            group_parameters = []
+        if participant_parameters is None:
+            participant_parameters = []
+        if group_cluster_parameters is None:
+            group_cluster_parameters = []
         round_configuration = round_data.round_configuration
         if not round_configuration.initialize_data_values:
             logger.debug(
@@ -1533,8 +1548,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     )
     PLAYABLE_ROUND_CONFIGURATIONS = (RoundType.PRACTICE, RoundType.REGULAR)
 
-    experiment_configuration = models.ForeignKey(
-        ExperimentConfiguration, related_name='round_configuration_set')
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configuration_set')
     sequence_number = models.PositiveIntegerField(
         help_text=_('Determines the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5'))
     display_number = models.PositiveIntegerField(
@@ -1681,7 +1695,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     def update_sequence_number(self, old_sequence_number):
         logger.debug('Updating round configuration sequence numbers')
         round_configs = RoundConfiguration.objects.filter(
-                experiment_configuration__pk=self.experiment_configuration.pk)
+            experiment_configuration__pk=self.experiment_configuration.pk)
         new_sequence_number = self.sequence_number
 
         if old_sequence_number:
@@ -1706,7 +1720,6 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
                         flag = False
 
         logger.debug('Updating round configuration sequence number completed')
-
 
     def to_dict(self, **kwargs):
         return {
@@ -2227,8 +2240,7 @@ class GroupCluster(models.Model, DataValueMixin):
     date_created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=64, blank=True)
     session_id = models.CharField(max_length=64, blank=True, default='')
-    experiment = models.ForeignKey(
-        Experiment, related_name='group_cluster_set')
+    experiment = models.ForeignKey(Experiment, related_name='group_cluster_set')
 
     objects = PassThroughManager.for_queryset_class(GroupClusterQuerySet)()
 

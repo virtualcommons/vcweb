@@ -539,21 +539,6 @@ class DataValueMixinTest(BaseVcwebTest):
             self.assertEqual(dv.string_value, expected_test_value)
 
 
-class GraphDatabaseTest(BaseVcwebTest):
-
-    def test_graph_database_init_and_shutdown(self):
-        from ..graph import get_graph_db, shutdown, VcwebGraphDatabase
-        db = get_graph_db()
-        for i in range(1, 10):
-            self.assertEqual(db, get_graph_db())
-        shutdown()
-        self.assertIsNone(VcwebGraphDatabase._db)
-        db = get_graph_db()
-        for i in range(1, 10):
-            self.assertEqual(db, get_graph_db())
-        shutdown()
-
-
 class BookmarkedExperimentMetadataTest(BaseVcwebTest):
 
     def test_bookmarks(self):
@@ -561,15 +546,12 @@ class BookmarkedExperimentMetadataTest(BaseVcwebTest):
         bookmarks = ExperimentMetadata.objects.bookmarked(e)
         forestry = ExperimentMetadata.objects.get(namespace='forestry')
         bound = ExperimentMetadata.objects.get(namespace='bound')
-        lighterprints = ExperimentMetadata.objects.get(
-            namespace='lighterprints')
+        lighterprints = ExperimentMetadata.objects.get(namespace='lighterprints')
         self.assertEqual(ExperimentMetadata.objects.count(), bookmarks.count())
         for experiment_metadata in bookmarks:
             self.assertFalse(experiment_metadata.bookmarked)
-        BookmarkedExperimentMetadata.objects.create(
-            experiment_metadata=forestry, experimenter=e)
-        BookmarkedExperimentMetadata.objects.create(
-            experiment_metadata=bound, experimenter=e)
+        BookmarkedExperimentMetadata.objects.create(experiment_metadata=forestry, experimenter=e)
+        BookmarkedExperimentMetadata.objects.create(experiment_metadata=bound, experimenter=e)
         bookmarks = ExperimentMetadata.objects.bookmarked(e)
         self.assertEqual(ExperimentMetadata.objects.count(), bookmarks.count())
         for em in bookmarks:
@@ -579,3 +561,14 @@ class BookmarkedExperimentMetadataTest(BaseVcwebTest):
         self.assertEqual(ExperimentMetadata.objects.count(), bookmarks.count())
         for experiment_metadata in bookmarks:
             self.assertFalse(experiment_metadata.bookmarked)
+
+class ExperimenterTest(BaseVcwebTest):
+
+    def test_is_valid(self):
+        e = self.demo_experimenter
+        ee = self.create_experimenter(email='vcwebtest@mailinator.com')
+        self.assertTrue(e.is_valid())
+        self.assertFalse(e.is_valid(ee))
+        self.assertFalse(ee.is_valid(e))
+        self.assertTrue(ee.is_valid())
+

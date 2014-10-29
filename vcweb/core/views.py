@@ -39,8 +39,6 @@ from vcweb.redis_pubsub import RedisPubSub
 
 logger = logging.getLogger(__name__)
 
-mimetypes.init()
-
 SUCCESS_DICT = {'success': True}
 FAILURE_DICT = {'success': False}
 
@@ -596,8 +594,7 @@ def toggle_bookmark_experiment_metadata(request):
                 bem.delete()
             return JsonResponse(SUCCESS_DICT)
         else:
-            logger.warn(
-                "Invalid toggle bookmark experiment metadata request: %s", request)
+            logger.warn("Invalid toggle bookmark experiment metadata request: %s", request)
     return JsonResponse(FAILURE_DICT)
 
 
@@ -1188,7 +1185,7 @@ def create_cas_participant(username, cas_tree):
     except:
         logger.exception("ASU Web Directory Down: Error retrieving info for %s", username)
         logger.debug("Creating user with username %s and random password", username)
-        user = create_cas_user(username=username)
+        user = create_cas_user_and_assign_group(username=username)
     return user
 
 
@@ -1201,7 +1198,7 @@ def create_cas_user_and_assign_group(username, first_name=None, last_name=None, 
         user = User.objects.create_user(username=username)
         participant = Participant.objects.create(user=user, institution=institution, can_receive_invitations=True)
     logger.debug("CAS backend created participant %s from web directory", participant)
-    # FIXME: create function that emails user with password and a thank you for registering
+    # FIXME: create function that emails user with password and a thank you for registering?
     password = User.objects.make_random_password()
     user.set_password(password)
     # Assign the user to participant permission group
@@ -1247,6 +1244,7 @@ def update_experiment_configuration(request, pk):
     form = ExperimentConfigurationForm(request.POST or None, pk=pk)
     if form.is_valid():
         ec = form.save()
+        logger.debug("updated experiment configuration: %s", ec)
         return JsonResponse(SUCCESS_DICT)
     return JsonResponse({'success': False, 'errors': form.errors})
 
@@ -1335,15 +1333,11 @@ class OstromlabFaqList(ListView):
 @group_required(PermissionGroup.experimenter)
 @require_POST
 def clone_experiment_configuration(request):
-    experiment_configuration_id = request.POST.get(
-        'experiment_configuration_id')
-    logger.debug(
-        "cloning experiment configuration %s", experiment_configuration_id)
-    experiment_configuration = get_object_or_404(
-        ExperimentConfiguration, pk=experiment_configuration_id)
+    experiment_configuration_id = request.POST.get('experiment_configuration_id')
+    logger.debug("cloning experiment configuration %s", experiment_configuration_id)
+    experiment_configuration = get_object_or_404(ExperimentConfiguration, pk=experiment_configuration_id)
     experimenter = request.user.experimenter
-    cloned_experiment_configuration = experiment_configuration.clone(
-        creator=experimenter)
+    cloned_experiment_configuration = experiment_configuration.clone(creator=experimenter)
     return JsonResponse({'success': True, 'experiment_configuration': cloned_experiment_configuration.to_dict()})
 
 

@@ -34,8 +34,7 @@ def is_experimenter(user, experimenter=None):
     returns true if user.experimenter exists and is an Experimenter instance.  If an experimenter is passed in as a
     keyword argument, adds the additional constraint that user.experimenter == experimenter
     """
-    return hasattr(user, 'experimenter') and user.experimenter.approved and (experimenter is None
-                                                                             or user.experimenter == experimenter)
+    return hasattr(user, 'experimenter') and user.experimenter.is_valid(experimenter)
 
 
 def is_participant(user):

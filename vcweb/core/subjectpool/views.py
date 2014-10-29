@@ -1,4 +1,4 @@
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 from time import mktime
 import itertools
 import logging
@@ -14,7 +14,6 @@ from django.template.loader import get_template
 from django.forms.models import modelformset_factory
 from django.conf import settings
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.translation import ugettext_lazy as _
@@ -65,9 +64,9 @@ def manage_experiment_session(request, pk):
     form = ExperimentSessionForm(request.POST or None, pk=pk, user=request.user)
     if form.is_valid():
         es = form.save()
-        return JsonResponse({ 'success': True, 'session': es })
+        return JsonResponse({'success': True, 'session': es})
     error_list = [e for e in form.errors]
-    return JsonResponse({'success': False, 'errors': error_list })
+    return JsonResponse({'success': False, 'errors': error_list})
 
 
 @group_required(PermissionGroup.experimenter)
@@ -131,6 +130,7 @@ def datetime_to_timestamp(date):
         return '{0}'.format(json_timestamp)
     else:
         return ""
+
 
 @group_required(PermissionGroup.experimenter)
 @require_POST
@@ -420,7 +420,8 @@ def submit_experiment_session_signup(request):
     # lock on the experiment session to prevent concurrent participant signups for an experiment session
     # exceeding its capacity
     with transaction.atomic():
-        signup_count = ParticipantSignup.objects.registered(experiment_session_pk=invitation.experiment_session_id).count()
+        participant_signups = ParticipantSignup.objects.select_for_update().registered(experiment_session_pk=invitation.experiment_session_id)
+        signup_count = participant_signups.count()
         # verify for the vacancy in the selected experiment session before
         # creating participant signup entry
         if signup_count < invitation.experiment_session.capacity:
@@ -452,7 +453,6 @@ def submit_experiment_session_signup(request):
 @ownership_required(ExperimentSession)
 @require_GET
 def download_experiment_session(request, pk=None):
-    user = request.user
     experiment_session = get_object_or_404(ExperimentSession.objects.select_related('creator'), pk=pk)
 
     response = HttpResponse(content_type=mimetypes.types_map['.csv'])
@@ -482,8 +482,9 @@ def experiment_session_signup(request):
     # invitation to user
     tomorrow = datetime.now() + timedelta(days=1)
 
+# FIXME: push hairy query into ParticipantSignupQuerySet
     active_experiment_sessions = ParticipantSignup.objects.select_related('invitation', 'invitation__experiment_session').filter(
-        invitation__participant=user.participant, attendance__in=[ParticipantSignup.ATTENDANCE.registered,ParticipantSignup.ATTENDANCE.waitlist],
+        invitation__participant=user.participant, attendance__in=[ParticipantSignup.ATTENDANCE.registered, ParticipantSignup.ATTENDANCE.waitlist],
         invitation__experiment_session__scheduled_date__gt=tomorrow)
 
     # Making sure that user don't see invitations for a experiment for which he has already participated
@@ -494,6 +495,7 @@ def experiment_session_signup(request):
 
     participated_experiment_metadata_pk_list = participated_signups.values_list('invitation__experiment_session__experiment_metadata_id', flat=True)
     active_invitation_pk_list = [ps.invitation.pk for ps in active_experiment_sessions]
+# FIXME: push hairy query into InvitationQuerySet
     invitations = Invitation.objects.select_related('experiment_session', 'experiment_session__experiment_metadata__pk') \
         .filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow) \
         .exclude(experiment_session__experiment_metadata__pk__in=participated_experiment_metadata_pk_list) \
@@ -520,6 +522,8 @@ def experiment_session_signup(request):
 
     if session_unavailable:
         messages.error(request, _(
-            "All experiment sessions are full. Signups are first-come, first-serve. Please try again later, you are still eligible to participate in future experiments and may receive future invitations for this experiment."))
+            """All experiment sessions are full. Signups are first-come, first-serve. Please try again later, you are
+            still eligible to participate in future experiments and may receive future invitations for this
+            experiment."""))
 
-    return render(request, "participant/experiment-session-signup.html", {"invitation_list": invitation_list, 'waitlist_size': settings.SUBJECT_POOL_WAITLIST_SIZE })
+    return render(request, "participant/experiment-session-signup.html", {"invitation_list": invitation_list, 'waitlist_size': settings.SUBJECT_POOL_WAITLIST_SIZE})

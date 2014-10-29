@@ -1,6 +1,6 @@
 Django==1.7.1
 Fabric==1.10.0
-Markdown==2.5
+Markdown==2.5.1
 Pillow==2.5.3
 PyYAML==3.11
 backports.ssl-match-hostname==3.4.0.2
