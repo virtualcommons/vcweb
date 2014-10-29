@@ -212,34 +212,34 @@ class DataValueMixin(object):
         return dv
 
 
-class NullCharField(models.CharField):
-    description = "CharField that stores nulls in the db but returns ''"
-    __metaclass__ = models.SubfieldBase
-
-    def __init__(self, *args, **kwargs):
-        kwargs['null'] = True
-        kwargs['blank'] = True
-        super(NullCharField, self).__init__(*args, **kwargs)
-
-    def deconstruct(self):
-        name, path, args, kwargs = super(NullCharField, self).deconstruct()
-        del kwargs['null']
-        del kwargs['blank']
-        return name, path, args, kwargs
-
-    def to_python(self, value):
-        if isinstance(value, models.CharField):
-            return value
-        elif value is None:
-            return u''
-        else:
-            return super(NullCharField, self).to_python(value)
-
-    def get_prep_value(self, value):
-        if value == '':
-            return None
-        else:
-            return super(NullCharField, self).get_prep_value(value)
+#class NullCharField(models.CharField):
+#    description = "CharField that stores nulls in the db but returns ''"
+#    __metaclass__ = models.SubfieldBase
+#
+#    def __init__(self, *args, **kwargs):
+#        kwargs['null'] = True
+#        kwargs['blank'] = True
+#        super(NullCharField, self).__init__(*args, **kwargs)
+#
+#    def deconstruct(self):
+#        name, path, args, kwargs = super(NullCharField, self).deconstruct()
+#        del kwargs['null']
+#        del kwargs['blank']
+#        return name, path, args, kwargs
+#
+#    def to_python(self, value):
+#        if isinstance(value, models.CharField):
+#            return value
+#        elif value is None:
+#            return u''
+#        else:
+#            return super(NullCharField, self).to_python(value)
+#
+#    def get_prep_value(self, value):
+#        if value == '':
+#            return None
+#        else:
+#            return super(NullCharField, self).get_prep_value(value)
 
 
 class ExperimentMetadataQuerySet(models.query.QuerySet):
@@ -421,7 +421,7 @@ class ExperimenterManager(PassThroughManager):
             user.groups.add(PermissionGroup.demo_experimenter.get_django_group())
         experimenter = Experimenter.objects.create(user=user, approved=True)
         Experiment.objects.create_demo_experiments(experimenter=experimenter)
-# create demo experiments for demo experimenter
+        # create demo experiments for demo experimenter
         return experimenter
 
 

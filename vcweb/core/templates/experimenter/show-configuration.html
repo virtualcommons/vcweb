@@ -1,5 +1,4 @@
 {% extends "experimenter/base.html" %}
-{% load bootstrap3 %}
 
 {% block page %}    
     <div class="panel-group col-md-6" id="accordion">
@@ -100,78 +99,55 @@
 {% endblock page %}
 {% block javascript %}
 {{ block.super }}
-    <script type="text/javascript">
-        var JSONdata = $.parseJSON("{{ json_data | escapejs }}");
+<script type="text/javascript">
+    var JSONdata = $.parseJSON("{{ json_data | escapejs }}");
 
-        $(function() {
-            // KO View Model for Experiment and Round Parameter
-            function ParamViewModel(data) {
-                var self = this;
-                var model = ko.mapping.fromJS(data, {}, self);
-            }
+    $(function() {
+        // KO View Model for Experiment and Round Parameter
+        var ParamViewModel = function(data) {
+            ko.mapping.fromJS(data, {}, this);
+        }
 
-            // KO View Model for Round Configuration Accordion
-            function NodeModel(data) {
-                var self = this;
-                var mapping = {
-                    'children': {
-                        create: function (options) {
-                            return new ParamViewModel(options.data);
-                        }
+        // KO View Model for Round Configuration Accordion
+        var NodeModel = function(data) {
+            var self = this;
+            var mapping = {
+                'children': {
+                    create: function (options) {
+                        return new ParamViewModel(options.data);
                     }
-                };
-                var model = ko.mapping.fromJS(data, mapping, self);
-                model.isExpanded = ko.observable(false);
-                model.display_name = function() {
-                   return model.repeat() > 0 ? model.name() + ' ' + model.sequence_number() +
-                       ' [x '+ model.repeat() +']': model.name() + ' ' + model.sequence_number();
-                };
-                model.toggleVisibility = function() {
-                    model.isExpanded(!model.isExpanded());
-                };
-            }
-
-            // KO View Model for whole Page
-            function PageModel(data) {
-                var mapping = {
-                    'roundConfigList': {
-                        create: function (options) {
-                            return new NodeModel(options.data);
-                        }
-                    },
-                    'expParamValuesList': {
-                        create: function (options) {
-                            return new ParamViewModel(options.data);
-                        }
-                    }
-                };
-                var model = ko.mapping.fromJS(data, mapping);
-                return model;
-            }
-
-            var pageModel = new PageModel(JSONdata);
-            
-            ko.bindingHandlers.foreachprop = {
-                transformObject: function (obj) {
-                    var properties = [];
-                    for (var key in obj) {
-                        if (obj.hasOwnProperty(key)) {
-                            properties.push({ key: key, value: obj[key] });
-                        }
-                    }
-                    return properties;
-                },
-                init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-                    var value = ko.utils.unwrapObservable(valueAccessor()),
-                        properties = ko.bindingHandlers.foreachprop.transformObject(value);
-                    ko.applyBindingsToNode(element, { foreach: properties }, bindingContext);
-                    return { controlsDescendantBindings: true };
                 }
             };
+            ko.mapping.fromJS(data, mapping, self);
 
-            ko.applyBindings(pageModel);
-        });
+            self.isExpanded = ko.observable(false);
+            self.display_name = function() {
+               return self.repeat() > 0 ? self.name() + ' ' + self.sequence_number() +
+                   ' [x '+ self.repeat() +']': self.name() + ' ' + self.sequence_number();
+            };
+            self.toggleVisibility = function() {
+                self.isExpanded(!model.isExpanded());
+            };
+        }
 
-    </script>
+        // KO View Model for whole Page
+        var PageModel = function(data) {
+            var mapping = {
+                'roundConfigList': {
+                    create: function (options) {
+                        return new NodeModel(options.data);
+                    }
+                },
+                'expParamValuesList': {
+                    create: function (options) {
+                        return new ParamViewModel(options.data);
+                    }
+                }
+            };
+            ko.mapping.fromJS(data, mapping, self);
+        }
 
+        ko.applyBindings(new PageModel(JSONdata));
+    });
+</script>
 {% endblock javascript %}

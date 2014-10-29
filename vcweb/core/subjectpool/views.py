@@ -65,8 +65,7 @@ def manage_experiment_session(request, pk):
     if form.is_valid():
         es = form.save()
         return JsonResponse({'success': True, 'session': es})
-    error_list = [e for e in form.errors]
-    return JsonResponse({'success': False, 'errors': error_list})
+    return JsonResponse({'success': False, 'errors': form.errors})
 
 
 @group_required(PermissionGroup.experimenter)
@@ -190,8 +189,6 @@ def send_invitations(request):
     """
     user = request.user
     form = SessionInviteForm(request.POST or None)
-    # Default Message
-    message = "Please fill in all the details of the invitation form"
 
     if form.is_valid():
         invitation_subject = form.cleaned_data.get('invitation_subject')
@@ -261,10 +258,7 @@ def send_invitations(request):
             })
     else:
         # Form is not valid
-        return JsonResponse({
-            'success': False,
-            'message': message
-        })
+        return JsonResponse({ 'success': False, 'errors': form.errors })
 
 
 @group_required(PermissionGroup.experimenter)

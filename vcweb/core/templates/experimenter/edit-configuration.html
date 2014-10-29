@@ -144,19 +144,27 @@
         var JSONdata = $.parseJSON("{{ json_data | escapejs }}");
         var experiment_configuration_pk = {{ experiment_config.pk }}
 
+        function displayFormError(errors) {
+            var content = "";
+            for(error in errors) {
+                content += '<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>Please enter valid '+ error +'</div>';
+            }
+            $("#error-messages").html(content);
+        }
+
         $(function() {
             $('.has-popover').popover({'trigger':'hover'});
  
             // KO View Model for Experiment and Round Parameter
-            function ParamViewModel(data) {
+            var ParamViewModel = function(data) {
                 var self = this;
                 var map = {'null':1, 'true': 2, 'false':3};
                 data.boolean_value = map[data.boolean_value];
-                var model = ko.mapping.fromJS(data, {}, self);
+                ko.mapping.fromJS(data, {}, self);
             }
 
             // KO View Model for Round Configuration Accordion
-            function NodeModel(data) {
+            var NodeModel = function(data) {
                 var self = this;
                 var mapping = {
                     'children': {
@@ -166,19 +174,23 @@
                         }
                     }
                 };
-                if(!data.children) data.children = [];
-    
-                var model = ko.mapping.fromJS(data, mapping, self);
-                model.sequence_number = ko.protectedObservable(data.sequence_number)
-                model.isExpanded = ko.observable(false);
-                model.display_name = function() {
-                   return model.repeat() > 0 ? model.name() + ' ' + model.sequence_number() +
-                       ' [x '+ model.repeat() +']': model.name() + ' ' + model.sequence_number();
+                data.children = data.children || [];
+ 
+                ko.mapping.fromJS(data, mapping, self);
+
+                // override sequence_number property to make it protectedObservable
+                self.sequence_number = ko.protectedObservable(data.sequence_number)
+
+                self.isExpanded = ko.observable(false);
+                self.display_name = function() {
+                   return self.repeat() > 0 ? self.name() + ' ' + self.sequence_number() +
+                       ' [x '+ self.repeat() +']': self.name() + ' ' + self.sequence_number();
                 };
-                model.toggleVisibility = function() {
-                    model.isExpanded(!model.isExpanded());
+                self.toggleVisibility = function() {
+                    self.isExpanded(!self.isExpanded());
                 };
-                model.update = function(nodeObject) {
+                self.update = function(nodeObject) {
+                    // protectedObservable fields
                     var fields = ["sequence_number"];
 
                     $.each(fields, function(index) {
@@ -190,7 +202,7 @@
             }
 
             // KO View Model for whole Page
-            function PageModel(data) {
+            var PageModel = function(data) {
                 var mapping = {
                     'roundConfigList': {
                         create: function (options) {
@@ -204,30 +216,30 @@
                     }
                 };
                 var model = ko.mapping.fromJS(data, mapping);
+                
+                var updateModal = function(action, template, data) {
+                    model.activateModal(action);
+                    model.template(template);
+                    model.modalData(data);
+                }
 
                 model.template = ko.observable();
                 model.activateModal = ko.observable(false);
                 model.modalData = ko.observable();
 
                 model.hideModal = function() {
-                    model.activateModal(false);
-                    model.template("");
-                    model.modalData("");
+                    updateModal(false, "", "");
                 }
 
                 model.addExpParam = function (data, event) {
                     var temp = new ParamViewModel({'experiment_configuration': experiment_configuration_pk ,'is_active': true, 
                                                     'pk': null, 'parameter': null, 'string_value': null, 'boolean_value': null, 
                                                     'float_value': null, 'int_value': null });
-                    model.modalData(temp);
-                    model.template("exp-param-template");
-                    model.activateModal(true);
+                    updateModal(true, "exp-param-template", temp);
                 }
 		
                 model.editExpParam = function (expParamModel){
-                    model.modalData(expParamModel);
-                    model.template("exp-param-template");
-                    model.activateModal(true);
+                    updateModal(true, "exp-param-template", expParamModel);
                 }
 
                 model.removeExpParam = function (expParam){
@@ -240,23 +252,20 @@
                             if (result.success){
                                 model.expParamValuesList.remove(expParam);
                             } else {
-                                // Error Message
+                                displayFormError(result.errors);
                             }
                         });
                 }
+                
                 model.addRoundParam = function(roundConfig) {
                     var temp = new ParamViewModel({'round_configuration': roundConfig.pk(), 'is_active': true, 'pk': null, 
                                                    'parameter': null, 'string_value': null, 'boolean_value': null, 'float_value': null,
                                                    'int_value': null });
-                    model.modalData(temp);
-                    model.template("round-param-template");
-                    model.activateModal(true);
+                    updateModal(true, "round-param-template", temp);
                 }
 
                 model.editRoundParam = function(roundParam) {
-                    model.modalData(roundParam);
-                    model.template("round-param-template");
-                    model.activateModal(true);
+                    updateModal(true, "round-param-template", roundParam);
                 }
 
                 model.removeRoundParam = function(roundParam) {
@@ -269,7 +278,7 @@
                             if(result.success){
                                  $.each(model.roundConfigList(), function() { this.children.remove(roundParam) })
                             } else {
-                                // Error Message
+                                displayFormError(result.errors);
                             }
                         });
                 }
@@ -279,15 +288,11 @@
                         'preserve_existing_groups': true, 'experiment_configuration': experiment_configuration_pk,
                         'round_type': null, 'template_id': null, 'survey_url': null, 'chat_enabled': null, 'create_group_clusters': null,
                         'randomize_groups': null, 'session_id': null, 'initialize_data_values': null, 'pk': null });
-                    model.modalData(node);
-                    model.template("round-config-template");
-                    model.activateModal(true);
+                    updateModal(true, "round-config-template", node);
                 }
 
                 model.editRoundConfig = function(data) {
-                    model.modalData(data);
-                    model.template("round-config-template");
-                    model.activateModal(true);
+                    updateModal(true, "round-config-template", data);
                 }
  
                 model.removeRoundConfig = function(roundConfig) {
@@ -300,8 +305,8 @@
                         .done(function(result) {
                             if(result.success){
                                 model.roundConfigList.remove(roundConfig);
-                            } else {
-                                // Error Message
+                            } else { 
+                                displayFormError(result.errors);
                             }
                         });
                 }
@@ -317,13 +322,14 @@
                                 if(result.success){
                                     var match = ko.utils.arrayFirst(model.roundConfigList(), function (roundConfig) {
                                         return ko.utils.arrayFirst(roundConfig.children(), function(roundParam){
-                                            return paramPk == roundParam.pk()
+                                            return paramPk == roundParam.pk();
                                         });
                                     });
                                     match.children.remove(function(roundParam) { return roundParam.pk() == paramPk });
                                     match.children.push(new ParamViewModel(result.round_param));
                                 } else {
                                     // Error Message
+                                    displayFormError(result.errors);
                                 }
                                 model.hideModal();
                             });
@@ -337,10 +343,11 @@
                             .done(function(result){
                                 if(result.success){
                                     match.children.push(new ParamViewModel(result.round_param));
-                                    model.hideModal();
                                 } else {
                                     // Error Message
+                                    displayFormError(result.errors);
                                 }
+                                model.hideModal();
                             });
                     }
                 }
@@ -375,13 +382,13 @@
                                     model.roundConfigList(model.roundConfigList().sort(function(left, right) {
                                         return left.sequence_number() < right.sequence_number() ? -1 : 1
                                     }));
-                                    model.hideModal();
                                 } else {
                                     // Error Message
+                                    displayFormError(result.errors);
                                 }
+                                model.hideModal();
                             });
-                    }
-                    else {
+                    } else {
                         // Create Request
                         $.post("/api/configuration/round/-1", formData + '&request_type=create')
                             .done(function(result) {
@@ -405,10 +412,11 @@
                                     model.roundConfigList(model.roundConfigList().sort(function(left, right) {
                                         return left.sequence_number() < right.sequence_number() ? -1 : 1
                                     }));
-                                    model.hideModal();
                                 } else {
                                     // Error Message
+                                    displayFormError(result.errors);
                                 }
+                                model.hideModal();
                             });
                     }
                 }
@@ -427,10 +435,11 @@
                             .done(function(result){
                                 if(result.success){
                                     match.display_name(result.experiment_param.display_name);
-                                    model.hideModal();
                                 } else {
                                     // Error Message
+                                    displayFormError(result.errors);
                                 }
+                                model.hideModal();
                             });
                     } else {
                         // Create Request
@@ -438,10 +447,11 @@
                             .done(function(result) {
                                 if(result.success){
                                     model.expParamValuesList.push(new ParamViewModel(result.experiment_param));
-                                    model.hideModal();
                                 } else {
                                     // Error Message
+                                    displayFormError(result.errors);
                                 }
+                                model.hideModal();
                             });
                     }
                 }
@@ -449,24 +459,19 @@
                 model.saveExperimentConfig = function(form) {
                     var form = $(form);
                     var formData = form.serialize();
-                    $.ajax("/api/configuration/experiment/" + experiment_configuration_pk , {
-                        data: formData,
-                        type: "POST",
-                        success: function(result) {
+                    $.post("/api/configuration/experiment/" + experiment_configuration_pk , formData,
+                        function(result) {
                             if(result.success){
-                                //TODO: Success Message
+                                // Success Message
                             } else {
-                                //TODO: Error Message
+                                // Error Message
+                                displayFormError(result.errors);
                             }
-                        }
-                    });
+                        });
                 }
                 return model;
             }
-            var pageModel = new PageModel(JSONdata);
-            ko.applyBindings(pageModel);
+            ko.applyBindings(new PageModel(JSONdata));
         });
-
     </script>
-
 {% endblock javascript %}

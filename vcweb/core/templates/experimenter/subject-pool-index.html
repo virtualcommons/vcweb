@@ -51,7 +51,7 @@ Experiment Session Management
                             <i class="fa fa-envelope"></i>
                             Create Invitations
                         </button>
-                        <div id="invite-form" class="clearfix">
+                        <div id="invite-form" class="clearfix" style="display: none;">
                             <form class="form-horizontal col-md-5" role="form" data-bind="submit: $root.onInvite">
                                 {%  bootstrap_form form layout="horizontal" label_class="col-md-5" field_class="col-md-7" %}
                                 <div class="form-group">
@@ -248,9 +248,15 @@ Experiment Session Management
             });
         }
 
-        $(function(){
-            $('#invite-form').hide();
+        function displayFormError(errors) {
+            var content = "";
+            for(error in errors) {
+                content += '<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>Please enter valid '+ error +'</div>';
+            }
+            $("#error-messages").html(content);
+        }
 
+        $(function(){
             var calendar = createCalendar();
 
             $('.btn-group button[data-calendar-nav]').each(function() {
@@ -293,13 +299,13 @@ Experiment Session Management
                             $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) + 3 * data.capacity());
                         } else {
                             model.inviteSessionCount(oldCount - 1);
+                            $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) - 3 * data.capacity());
                             if(oldCount == 1) {
                                 model.invite_experiment_metadata = -1;
                                 $('#invite-form').slideUp("slow");
                                 $('#invite-form form')[0].reset();
                                 $('#email-content').html("");
                             }
-                            $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) - 3 * data.capacity());
                         }
                         return true;
                     } else {
@@ -370,9 +376,7 @@ Experiment Session Management
                                     }
                                 }
                             } else {
-                                $("#error-messages").html(
-                                    '<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>Please enter valid '+result.errors+'</div>');
-                                $(window).scrollTop($('#error-messages').offset().top - 100);
+                                displayFormError(result.errors);
                             }
                         });
                 };
@@ -391,8 +395,7 @@ Experiment Session Management
                                             model.session_list.remove(session);
                                             calendar = createCalendar();
                                         } else {
-                                            $("#error-messages").html('<div class="alert alert-danger alert-dismissable alert-link"><button class=close data-dismiss=alert aria-hidden=true>&times;</button>Please enter valid '+result.errors+'</div>');
-                                            $(window).scrollTop($('#error-messages').offset().top - 100);
+                                            displayiFormError(result.errors);
                                         }
                                     });
                             } 
@@ -459,18 +462,18 @@ Experiment Session Management
 
             var SessionModel = function(data) {
                 var self = this;
-                var model = ko.mapping.fromJS(data, {}, self);
-                model.active = ko.computed( function() {
+                ko.mapping.fromJS(data, {}, self);
+                
+                self.active = ko.computed( function() {
                     var milliSecInHour = 60 * 60 * 1000, currentTime = new Date().getTime();
                     var yesterdayTimestamp = currentTime - (24 * milliSecInHour);
-                    var sessionEndTimestamp = new Date(model.end_date()).getTime() + model.end_hour() * milliSecInHour + model.end_min() * 60 * 1000;
+                    var sessionEndTimestamp = new Date(self.end_date()).getTime() + self.end_hour() * milliSecInHour + self.end_min() * 60 * 1000;
                     return (self.pk() == -1 || (sessionEndTimestamp >= yesterdayTimestamp));
                 });
-                model.makeEditable = function () {
+                self.makeEditable = function () {
                     self.isEditable(true);
                 };
             }
-
             ko.applyBindings(new SessionListViewModel(viewModelJson));
         });
 

@@ -30,12 +30,3 @@ def active_re(request, pattern):
         return 'active' if re.search(pattern, request.path) else 'inactive'
     return 'inactive'
 
-
-@register.filter
-def mkrange(value):
-    return range(value)
-
-
-@register.filter(name='addcss')
-def addcss(field, css):
-    return field.as_widget(attrs={"class": css})

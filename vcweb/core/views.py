@@ -728,14 +728,10 @@ class CsvDataExporter(DataExportMixin):
 
 
 @group_required(PermissionGroup.experimenter)
+@ownership_required(Experiment)
 @require_GET
 def export_configuration(request, pk=None, file_extension='.xml'):
     experiment = get_object_or_404(Experiment, pk=pk)
-    if experiment.experimenter != request.user.experimenter:
-        logger.warning(
-            "unauthorized access to %s by %s", experiment, request.user.experimenter)
-        raise PermissionDenied(
-            "You don't appear to have access to this experiment.")
     content_type = mimetypes.types_map[file_extension]
     response = HttpResponse(content_type=content_type)
     response[
