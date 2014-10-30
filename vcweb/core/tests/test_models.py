@@ -315,26 +315,24 @@ class GroupTest(BaseVcwebTest):
             self.assertEqual(g.size, count, "group size should be %i" % count)
 
 
-class ParticipantExperimentRelationshipTest(BaseVcwebTest):
+class ExperimentRegistrationTest(BaseVcwebTest):
 
-    def test_send_emails(self):
+    def test_registration(self):
         e = self.experiment.clone()
         institution = Institution.objects.get(pk=1)
         number_of_participants = 10
-        emails = ['test%s@asu.edu' %
-                  index for index in range(number_of_participants)]
-        e.register_participants(emails=emails, institution=institution,
-                                password='test')
+        emails = ['test%s@asu.edu' % index for index in range(number_of_participants)]
+        e.register_participants(emails=emails, institution=institution, password='test')
+
+
+class ParticipantExperimentRelationshipTest(BaseVcwebTest):
 
     def test_participant_identifier(self):
         """ exercises the generation of participant_identifier """
         e = self.experiment.clone()
         for p in self.participants:
-            per = ParticipantExperimentRelationship.objects.create(participant=p,
-                                                                   experiment=e, created_by=self.experimenter.user)
-            self.assertTrue(per.id > 0)
-            logger.debug("Participant identifier is %s - sequential id is %i", per.participant_identifier,
-                         per.sequential_participant_identifier)
+            per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=e,
+                                                                   created_by=self.experimenter.user)
             self.assertTrue(per.participant_identifier)
             self.assertTrue(per.sequential_participant_identifier > 0)
 

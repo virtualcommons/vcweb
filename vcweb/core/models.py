@@ -4,12 +4,11 @@ from email.utils import parseaddr
 from string import Template
 from urllib import urlencode
 from enum import Enum
-import base64
-import hashlib
 import itertools
 import logging
 import random
 import string
+import hashlib
 
 from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm
@@ -413,15 +412,15 @@ class CommonsUser(models.Model):
 
 class ExperimenterManager(PassThroughManager):
 
-    def create_demo_experimenter(self, email=None, user=None, password='vcweb_demo'):
+    def create_experimenter(self, email=None, user=None, password=None, demo_experimenter=True):
         if user is None:
             if email is None:
-                raise ValueError("no email or user specified, cannot create demo experimenter.")
+                raise ValueError("no email or user specified")
             user = User.objects.create_user(username=email, email=email, password=password)
-            user.groups.add(PermissionGroup.demo_experimenter.get_django_group())
+        permission_group = PermissionGroup.demo_experimenter if demo_experimenter else PermissionGroup.experimenter
+        user.groups.add(permission_group.get_django_group())
         experimenter = Experimenter.objects.create(user=user, approved=True)
         Experiment.objects.create_demo_experiments(experimenter=experimenter)
-        # create demo experiments for demo experimenter
         return experimenter
 
 
@@ -639,8 +638,7 @@ class Experiment(models.Model):
         ('ACTIVE', _('Active, no round in progress')),
         ('ROUND_IN_PROGRESS', _('Round in progress')),
         ('COMPLETED', _('Completed')))
-    authentication_code = models.CharField(
-        max_length=32, default="vcweb.auth.code")
+    authentication_code = models.CharField(max_length=32, default="vcweb.auth.code")
     """
     currently unused, but kept here in the event that we want to allow participants to authenticate with this
     authentication_code either in lieu or in addition to their own user password.
@@ -848,8 +846,7 @@ class Experiment(models.Model):
                 # XXX:  if we're looking for a previous repeating round and the current repeated
                 # round sequence number is 0 we need to clamp the repeated round sequence number to N - 1 where N is the
                 # number of repeats for that repeating round
-                current = round_configuration.repeat - \
-                    1 if current == 0 else current - 1
+                current = round_configuration.repeat - 1 if current == 0 else current - 1
             elif next_round:
                 current += 1
             ps.update(repeating_round_sequence_number=current)
@@ -984,8 +981,7 @@ class Experiment(models.Model):
         email_messages = []
         registered_participants = []
         if number_of_participants > 0:
-            logger.warning("This experiment %s already has %d participants - aborting", self,
-                           number_of_participants)
+            logger.warning("This experiment %s already has %d participants - aborting", self, number_of_participants)
             return
         if users is None:
             users = []
@@ -995,26 +991,18 @@ class Experiment(models.Model):
             participants_group = PermissionGroup.participant.get_django_group()
             for email_line in emails:
                 if not email_line:
-                    logger.debug(
-                        "invalid participant data: %s", email_line)
+                    logger.debug("invalid participant data: %s", email_line)
                     continue
-                # FIXME: parsing logic was already performed once in
-                # EmailListField.clean, redundant
+                # FIXME: parsing logic was already performed once in EmailListField.clean, this is redundant
                 (full_name, email_address) = parseaddr(email_line)
-                # lowercase all usernames/email addresses internally and
-                # strip all whitespace
+                # lowercase all usernames/email addresses internally and strip all whitespace
                 email_address = email_address.lower().strip()
                 full_name = full_name.strip()
-                try:
-                    u = User.objects.get(email=email_address)
-                except User.DoesNotExist:
-                    # FIXME: replace nested try/except with
-                    # Q(email=email_address) | Q(username=email_address)
-                    try:
-                        u = User.objects.get(username=email_address)
-                    except User.DoesNotExist:
-                        u = User.objects.create_user(
-                            username=email_address, email=email_address, password=password)
+                userqs = User.objects.select_for_update().filter(models.Q(email=email_address) | models.Q(username=email_address))
+                if userqs.exists():
+                    u = userqs[0]
+                else:
+                    u = User.objects.create_user(username=email_address, email=email_address, password=password)
                 updated = set_full_name(u, full_name)
                 if updated:
                     u.save()
@@ -1024,8 +1012,6 @@ class Experiment(models.Model):
             # FIXME: unsafe for concurrent usage, but only one experimenter
             # at a time should be invoking this
             (p, created) = Participant.objects.get_or_create(user=user)
-            # FIXME: instead of asking for the email suffix, just append
-            # the institution URL to keep it simpler?
             if institution and p.institution != institution:
                 p.institution = institution
                 p.save()
@@ -1078,12 +1064,11 @@ class Experiment(models.Model):
         return msg
 
 # FIXME: rename to setup_demo_participants
+    @transaction.atomic
     def setup_test_participants(self, count=20, institution=None, email_suffix='mailinator.com', username_suffix='asu',
                                 password=None):
         if password is None:
-            password = self.authentication_code
-            if password is None:
-                password = 'test'
+            password = 'test'
         number_of_participants = self.participant_set.count()
         if number_of_participants > 0:
             logger.warning(
@@ -1095,14 +1080,12 @@ class Experiment(models.Model):
 
         for i in xrange(1, count + 1):
             email_address = u's%d%s@%s' % (i, username_suffix, email_suffix)
-            try:
-                user = User.objects.get(username=email_address)
-            except User.DoesNotExist:
-                user = User.objects.create_user(
-                    username=email_address, email=email_address, password=password)
-                user.first_name = u'Student'
-                user.last_name = unicode(i)
-                user.save()
+            userqs = User.objects.select_for_update().filter(models.Q(email=email_address) | models.Q(username=email_address))
+            if userqs.exists():
+                user = userqs[0]
+            else:
+                user = User.objects.create_user(username=email_address, email=email_address, password=password,
+                                                first_name='Test Student', last_name=str(i))
             user.groups.add(demo_participants_group)
             users.append(user)
         return self.register_participants(users=users, institution=institution, password=password,
@@ -2376,10 +2359,8 @@ class Participant(CommonsUser):
     UNDERGRADUATE_CLASS_CHOICES = ('Freshman', 'Sophomore', 'Junior', 'Senior')
     can_receive_invitations = models.BooleanField(default=False, help_text=_(
         "Check this box if you'd like to opt-in and receive email invitations for upcoming experiments"))
-    groups = models.ManyToManyField(
-        Group, through='ParticipantGroupRelationship', related_name='participant_set')
-    experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship',
-                                         related_name='participant_set')
+    groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participant_set')
+    experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participant_set')
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
     birthdate = models.DateField(null=True, blank=True)
     major = models.CharField(max_length=128, blank=True)
@@ -2465,16 +2446,13 @@ class ParticipantExperimentRelationship(models.Model):
     """
     Many-to-many relationship entity storing a participant and the experiment they are participating in.
     """
-    participant = models.ForeignKey(
-        Participant, related_name='experiment_relationship_set')
-    participant_identifier = models.CharField(max_length=32)
+    participant = models.ForeignKey(Participant, related_name='experiment_relationship_set')
+    participant_identifier = models.CharField(max_length=64)
     sequential_participant_identifier = models.PositiveIntegerField()
-    experiment = models.ForeignKey(
-        Experiment, related_name='participant_relationship_set')
+    experiment = models.ForeignKey(Experiment, related_name='participant_relationship_set')
     date_created = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User)
-    last_completed_round_sequence_number = models.PositiveIntegerField(
-        default=0)
+    last_completed_round_sequence_number = models.PositiveIntegerField(default=0)
     # FIXME: deprecate & remove
     current_location = models.CharField(max_length=64, blank=True)
     # arbitrary JSON-encoded data
@@ -2483,8 +2461,7 @@ class ParticipantExperimentRelationship(models.Model):
     objects = PassThroughManager.for_queryset_class(ParticipantExperimentRelationshipQuerySet)()
 
     def __init__(self, *args, **kwargs):
-        super(ParticipantExperimentRelationship, self).__init__(
-            *args, **kwargs)
+        super(ParticipantExperimentRelationship, self).__init__(*args, **kwargs)
         if 'experiment' in kwargs:
             self.generate_identifier()
 
@@ -2495,12 +2472,9 @@ class ParticipantExperimentRelationship(models.Model):
         """
         if not self.participant_identifier:
             sha1 = hashlib.sha1()
-            sha1.update(
-                "%s%i%s" % (self.participant.user.email, self.experiment.pk, self.date_created))
-            self.participant_identifier = base64.urlsafe_b64encode(
-                sha1.digest())
-            self.sequential_participant_identifier = ParticipantExperimentRelationship.objects.filter(
-                experiment=self.experiment).count() + 1
+            sha1.update(self.participant.email)
+            self.participant_identifier = sha1.hexdigest()
+            self.sequential_participant_identifier = self.experiment.participant_set.count() + 1
         return self.participant_identifier
 
     def __unicode__(self):

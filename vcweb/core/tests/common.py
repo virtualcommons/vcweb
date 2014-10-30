@@ -141,21 +141,17 @@ class BaseVcwebTest(TestCase):
         experiment = self.experiment
         if demo_participants:
             if experiment.participant_set.count() == 0:
-                logger.debug(
-                    "no participants found. adding %d participants to %s", number_of_participants, experiment)
+                logger.debug("no participants found. adding %d participants to %s", number_of_participants, experiment)
                 experiment.setup_test_participants(email_suffix=test_email_suffix,
                                                    count=number_of_participants, password='test')
         else:
             if participant_emails is None:
                 # generate participant emails
-                participant_emails = [
-                    'generated-test-%d@asu.edu' % index for index in range(0, number_of_participants)]
-            self.experiment.register_participants(
-                emails=participant_emails, password='test')
+                participant_emails = ['test.%d@asu.edu' % index for index in range(0, number_of_participants)]
+            self.experiment.register_participants(emails=participant_emails, password='test')
             # XXX: should can_receive_invitations automatically be set to true in Experiment.register_participants
             # instead?
-            self.experiment.participant_set.update(
-                can_receive_invitations=True)
+            self.experiment.participant_set.update(can_receive_invitations=True)
 
     def setUp(self, **kwargs):
         self.client = Client()
