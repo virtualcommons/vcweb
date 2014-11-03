@@ -2347,6 +2347,22 @@ class ParticipantQuerySet(models.query.QuerySet):
     def active(self, *args, **kwargs):
         return self.filter(user__is_active=True, *args, **kwargs).exclude(user__email__contains=('mailinator.com'))
 
+    def invalid_participants(self, *args, **kwargs):
+        return self.filter(user__email__contains='mailinator.com')
+
+    def invitation_elgibile(self, only_undegrad=True, institution='Arizona State University'):
+        try:
+            affiliated_institution = Institution.objects.get(name=institution)
+        except Institution.DoesNotExist:
+            affiliated_institution = None
+
+        criteria = dict(can_receive_invitations=True, user__is_active=True)
+        if affiliated_institution:
+            criteria.update(institution=affiliated_institution)
+        if kwargs.get('only_undergrad'):
+            criteria.update(
+                class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES)
+        return self.filter(**criteria)
 
 class Participant(CommonsUser):
     GENDER_CHOICES = (('M', 'Male'), ('F', 'Female'),)
@@ -2895,6 +2911,10 @@ class InvitationQuerySet(models.query.QuerySet):
         if participant is not None:
             criteria.update(participant=participant)
         return self.select_related('experiment_session', 'participant').filter(**criteria)
+
+    def already_invited(self, experiment_metadata_pk=None, days_threshold=7):
+        last_week_date = datetime.now() - timedelta(days=days_threshold)
+        return self.filter(date_created__gt=last_week_date, experiment_session__experiment_metadata__pk=experiment_metadata_pk)
 
 
 class Invitation(models.Model):

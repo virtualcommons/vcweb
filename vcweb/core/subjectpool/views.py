@@ -77,13 +77,11 @@ def get_session_events(request):
     """
     from_date = request.GET.get('from', None)
     to_date = request.GET.get('to', None)
-    queryset = ExperimentSession.objects.select_related(
-        'experiment_metadata').filter()
+    criteria = dict()
     if to_date:
-        queryset = queryset.filter(
-            scheduled_end_date__gte=timestamp_to_datetime(from_date)
-        )
+       criteria.update(scheduled_end_date__gte=timestamp_to_datetime(from_date))
 
+    queryset = ExperimentSession.objects.select_related('experiment_metadata').filter(**criteria)
     objects_body = []
     for event in queryset:
         index = event.pk % 20  # for color selection
@@ -207,8 +205,7 @@ def send_invitations(request):
 
         if len(set(experiment_metadata_pk_list)) == 1:
             # get the experiment metadata pk of any session, as all sessions selected by experimenter to send invitations
-            # belong to same experiment metadata (This is ensured as it is a
-            # constraint)
+            # belong to same experiment metadata (This has to be ensured as it is a constraint)
             experiment_metadata_pk = experiment_metadata_pk_list[0]
 
             potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_institution,
@@ -286,51 +283,34 @@ def invite_email_preview(request):
         })
 
 
-def get_potential_participants(experiment_metadata_pk, institution="Arizona State University", days_threshold=7,
-                               only_undergrad=True):
+def get_potential_participants(experiment_metadata_pk):
     """
     Returns the pool of participants which match the required invitation criteria.
     """
-
-    try:
-        affiliated_institution = Institution.objects.get(name=institution)
-    except Institution.DoesNotExist:
-        affiliated_institution = None
-
     # Get excluded participants for the given parameters
-    excluded_participants = get_excluded_participants(days_threshold, experiment_metadata_pk)
-
-    criteria = dict(can_receive_invitations=True, user__is_active=True)
-    if affiliated_institution:
-        criteria.update(institution=affiliated_institution)
-    if only_undergrad:
-        criteria.update(
-            class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES)
-    return Participant.objects.filter(**criteria).exclude(pk__in=excluded_participants)
+    excluded_participants = get_excluded_participants(experiment_metadata_pk)
+    return Participant.objects.invitation_elgibile().exclude(pk__in=excluded_participants)
 
 
-def get_excluded_participants(days_threshold, experiment_metadata_pk):
+def get_excluded_participants(experiment_metadata_pk):
     """
     Returns the pool of participants which do not match the required invitation criteria.
     """
-    last_week_date = datetime.now() - timedelta(days=days_threshold)
     # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
     # given Experiment metadata
-    invited_in_last_threshold_days = Invitation.objects \
-        .filter(date_created__gt=last_week_date, experiment_session__experiment_metadata__pk=experiment_metadata_pk) \
-        .values_list('participant__pk', flat=True)
+    invited_in_last_threshold_days = Invitation.objects.already_invited(experiment_metadata_pk=experiment_metadata_pk) \
+            .values_list('participant__pk', flat=True)
 
     # signup_participants is the list of participants who has already participated in the
     # given Experiment Metadata(in the past or currently participating)
-    signup_participants = ParticipantSignup.objects.registered(
-        experiment_metadata_pk=experiment_metadata_pk).values_list('invitation__participant__pk', flat=True)
+    signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=experiment_metadata_pk) \
+            .values_list('invitation__participant__pk', flat=True)
 
-    mailinator_participants = Participant.objects.filter(user__email__contains='mailinator.com').values_list('pk',
-                                                                                                             flat=True)
+    invalid_participants = Participant.objects.invalid_participants().values_list('pk', flat=True)
     # returns a list of participant pks who have already received invitations in last threshold days, have already
     # participated in the same experiment, or have 'mailinator.com' in their
     # name
-    return list(set(itertools.chain(invited_in_last_threshold_days, signup_participants, mailinator_participants)))
+    return list(set(itertools.chain(invited_in_last_threshold_days, signup_participants, invalid_participants)))
 
 
 @group_required(PermissionGroup.experimenter)
