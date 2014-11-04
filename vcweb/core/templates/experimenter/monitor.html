@@ -19,6 +19,8 @@
             <a class='btn btn-danger' data-bind="click: confirmExperimentControllerAction.bind($data, true)"
                 data-action='restart' data-content='Restart the experiment from the beginning, clearing all group and participant data and returning to the first round.' data-original-title='Reset Experiment'>
                 <i class='fa fa-arrow-circle-up'></i> restart experiment</a>
+            <hr>
+            <a class='btn btn-primary' href="{% url 'core:show_experiment_configuration' experiment.experiment_configuration.pk %}"> view experiment configuration </a>
         </div>
         <div data-bind="ifnot: isActive() || isArchived()">
             <div data-bind="ifnot: hasParticipants">

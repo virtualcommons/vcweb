@@ -1268,7 +1268,7 @@ def show_experiment_configuration(request, pk):
     ecf = ExperimentConfigurationForm(instance=ec)
 
     json_data = get_experiment_configuration_json_data(ec)
-    # json_data.update({ 'experimentConfigList': ec.to_dict() })
+
     return render(request, 'experimenter/show-configuration.html', {
         'json_data': dumps(json_data),
         'experiment_config_form': ecf,
