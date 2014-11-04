@@ -283,13 +283,14 @@ def invite_email_preview(request):
         })
 
 
-def get_potential_participants(experiment_metadata_pk):
+def get_potential_participants(experiment_metadata_pk, institution="Arizona State University", only_undergrad=True):
     """
     Returns the pool of participants which match the required invitation criteria.
     """
     # Get excluded participants for the given parameters
     excluded_participants = get_excluded_participants(experiment_metadata_pk)
-    return Participant.objects.invitation_elgibile().exclude(pk__in=excluded_participants)
+    return Participant.objects.invitation_eligible(only_undergrad=only_undergrad, institution=institution) \
+            .exclude(pk__in=excluded_participants)
 
 
 def get_excluded_participants(experiment_metadata_pk):
