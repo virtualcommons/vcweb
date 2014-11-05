@@ -1295,16 +1295,17 @@ def edit_experiment_configuration(request, pk):
 
 
 def get_experiment_configuration_json_data(ec):
-    epv = ExperimentParameterValue.objects.filter(experiment_configuration=ec)
+    epv = ExperimentParameterValue.objects.select_related('experiment_configuration', 'parameter') \
+                                  .filter(experiment_configuration=ec)
     exp_param_values_list = [param.to_dict() for param in epv]
 
-    round_config = RoundConfiguration.objects.filter(experiment_configuration=ec)
+    round_config = RoundConfiguration.objects.select_related('experiment_configuration') \
+                                     .filter(experiment_configuration=ec)
     round_config_list = [round.to_dict() for round in round_config]
 
     round_param_values = RoundParameterValue.objects.select_related('round_configuration', 'parameter') \
         .filter(round_configuration__in=round_config)
-    round_param_values_list = [round_param.to_dict()
-                               for round_param in round_param_values]
+    round_param_values_list = [round_param.to_dict() for round_param in round_param_values]
 
     # Get the round parameter values for each round
     for round in round_config_list:

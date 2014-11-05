@@ -42,7 +42,7 @@ def experimenter_index(request):
     sessions.
     """
     experimenter = request.user.experimenter
-    data = ExperimentSession.objects.filter(creator=request.user)
+    data = ExperimentSession.objects.select_related('experiment_metadata').filter(creator=request.user)
     experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.bookmarked(experimenter)]
     session_list = [session.to_dict() for session in data]
     potential_participants_count = Participant.objects.active().count()
