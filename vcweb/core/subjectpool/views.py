@@ -197,8 +197,7 @@ def send_invitations(request):
 
         session_pk_list = request.POST.get('session_pk_list').split(",")
         invitation_count = form.cleaned_data.get('number_of_people')
-        affiliated_institution = form.cleaned_data.get(
-            'affiliated_institution')
+        affiliated_institution = form.cleaned_data.get('affiliated_institution')
 
         experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
         experiment_metadata_pk_list = experiment_sessions.values_list('experiment_metadata__pk', flat=True)
@@ -453,31 +452,13 @@ def experiment_session_signup(request):
     user = request.user
     session_unavailable = False
 
-    # If the Experiment Session is being conducted tomorrow then don't show
-    # invitation to user
-    tomorrow = datetime.now() + timedelta(days=1)
+    upcoming_sessions = ParticipantSignup.objects.upcoming(participant=user.participant)
 
-# FIXME: push hairy query into ParticipantSignupQuerySet
-    active_experiment_sessions = ParticipantSignup.objects.select_related('invitation', 'invitation__experiment_session').filter(
-        invitation__participant=user.participant, attendance__in=[ParticipantSignup.ATTENDANCE.registered, ParticipantSignup.ATTENDANCE.waitlist],
-        invitation__experiment_session__scheduled_date__gt=tomorrow)
-
-    # Making sure that user don't see invitations for a experiment for which he has already participated
-    # useful in cases when the experiment has lots of sessions spanning to lots of days. It avoids a user to participate
-    # in another experiment session after attending one of the experiment session of same experiment in last couple
-    # of days
-    participated_signups = ParticipantSignup.objects.participated(invitation__participant=user.participant)
-
-    participated_experiment_metadata_pk_list = participated_signups.values_list('invitation__experiment_session__experiment_metadata_id', flat=True)
-    active_invitation_pk_list = [ps.invitation.pk for ps in active_experiment_sessions]
-# FIXME: push hairy query into InvitationQuerySet
-    invitations = Invitation.objects.select_related('experiment_session', 'experiment_session__experiment_metadata__pk') \
-        .filter(participant=user.participant, experiment_session__scheduled_date__gt=tomorrow) \
-        .exclude(experiment_session__experiment_metadata__pk__in=participated_experiment_metadata_pk_list) \
-        .exclude(pk__in=active_invitation_pk_list)
+    invitations = Invitation.objects.upcoming(participant=user.participant) \
+                                    .exclude(pk__in=upcoming_sessions.values_list('invitation__pk', flat=True))
 
     invitation_list = []
-    for ps in active_experiment_sessions:
+    for ps in upcoming_sessions:
         signup_count = ParticipantSignup.objects.filter(
             invitation__experiment_session__pk=ps.invitation.experiment_session.pk).count()
         ps_dict = ps.to_dict(signup_count)
@@ -492,8 +473,7 @@ def experiment_session_signup(request):
             session_unavailable = False
         invitation_list.append(invite_dict)
 
-    invitation_list = sorted(
-        invitation_list, key=lambda use_key: use_key['invitation']['scheduled_date'])
+    invitation_list = sorted(invitation_list, key=lambda use_key: use_key['invitation']['scheduled_date'])
 
     if session_unavailable:
         messages.error(request, _(

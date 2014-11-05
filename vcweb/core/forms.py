@@ -124,14 +124,13 @@ class AsuRegistrationForm(forms.ModelForm):
 
     class Meta:
         model = Participant
-        fields = ['first_name', 'last_name', 'email', 'gender', 'class_status', 'major', 'favorite_sport',
-                  'favorite_food', 'favorite_color', 'favorite_movie_genre']
+        fields = ['first_name', 'last_name', 'email', 'gender', 'institution', 'can_receive_invitations', 'class_status',
+                  'major', 'favorite_sport', 'favorite_food', 'favorite_color', 'favorite_movie_genre']
         widgets = {
             'major': autocomplete_light.TextWidget(ParticipantMajorAutocomplete)
         }
 
-
-class ParticipantAccountForm(forms.ModelForm):
+class AccountForm(forms.ModelForm):
     required_css_class = 'required'
 
     first_name = forms.CharField(widget=widgets.TextInput)
@@ -143,15 +142,18 @@ class ParticipantAccountForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
-        super(ParticipantAccountForm, self).__init__(*args, **kwargs)
+        super(AccountForm, self).__init__(*args, **kwargs)
         if instance is not None:
             for attr in ('first_name', 'last_name', 'email', 'institution'):
                 self.fields[attr].initial = getattr(instance, attr)
 
+
+class ParticipantAccountForm(AccountForm):
+
     class Meta:
         model = Participant
-        fields = ['first_name', 'last_name', 'email', 'gender', 'class_status', 'major', 'favorite_sport',
-                  'favorite_food', 'favorite_color', 'favorite_movie_genre']
+        fields = ['first_name', 'last_name', 'email', 'gender', 'can_receive_invitations', 'class_status',
+                  'major', 'favorite_sport', 'favorite_food', 'favorite_color', 'favorite_movie_genre']
         labels = {
             'can_receive_invitations': _('Receive invitations for experiments?')
         }
@@ -183,22 +185,7 @@ class ParticipantAccountForm(forms.ModelForm):
         return data
 
 
-class ExperimenterAccountForm(forms.ModelForm):
-    required_css_class = 'required'
-
-    first_name = forms.CharField(widget=widgets.TextInput)
-    last_name = forms.CharField(widget=widgets.TextInput)
-    email = forms.EmailField(
-        widget=widgets.TextInput, help_text=_('We will never share your email.'))
-    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False,
-                                  help_text=_('The primary institution, if any, you are affiliated with.'))
-
-    def __init__(self, *args, **kwargs):
-        instance = kwargs.get('instance')
-        super(ExperimenterAccountForm, self).__init__(*args, **kwargs)
-        if instance is not None:
-            for attr in ('first_name', 'last_name', 'email', 'institution'):
-                self.fields[attr].initial = getattr(instance, attr)
+class ExperimenterAccountForm(AccountForm):
 
     class Meta:
         model = Experimenter

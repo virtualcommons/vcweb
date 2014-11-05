@@ -2910,7 +2910,16 @@ class InvitationQuerySet(models.query.QuerySet):
         criteria = dict(experiment_session__scheduled_date__gt=datetime.now())
         if participant is not None:
             criteria.update(participant=participant)
-        return self.select_related('experiment_session', 'participant').filter(**criteria)
+
+        # Making sure that user don't see invitations for a experiment for which he has already participated
+        # useful in cases when the experiment has lots of sessions spanning to lots of days. It avoids a user to participate
+        # in another experiment session after attending one of the experiment session of same experiment in last couple
+        # of days
+        participated_sessions = ParticipantSignup.objects.participated(invitation__participant=participant) \
+                                                 .values_list('invitation__experiment_session__experiment_metadata_id', flat=True)
+
+        return self.select_related('experiment_session', 'experiment_session__experiment_metadata__pk').filter(**criteria) \
+                   .exclude(experiment_session__experiment_metadata__pk__in=participated_sessions)
 
     def already_invited(self, experiment_metadata_pk=None, days_threshold=7):
         last_week_date = datetime.now() - timedelta(days=days_threshold)
