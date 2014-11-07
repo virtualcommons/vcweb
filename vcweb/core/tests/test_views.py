@@ -383,12 +383,13 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertEqual(302, response.status_code)
         self.assertTrue(self.dashboard_url in response['Location'])
 
-        # test canceling an already cancel session signup
+        # test canceling an already canceled session signup
         response = self.post(reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
         self.assertEqual(302, response.status_code)
         self.assertTrue(self.dashboard_url in response['Location'])
 
         # Test submit experiment session signup on zero capacity
+        # zero capacity experiment sessions shouldn't have any waitlist
         invitation.experiment_session.capacity = 0
         invitation.experiment_session.save()
 
@@ -397,10 +398,8 @@ class SubjectPoolViewTest(SubjectPoolTest):
             'experiment_metadata_pk': invitation.experiment_session.experiment_metadata.pk
         })
         self.assertEqual(302, response.status_code)
-        self.assertTrue(reverse('core:dashboard') in response['Location'])
         ps = ParticipantSignup.objects.waitlist(experiment_session_pk=invitation.experiment_session_id)
-        self.assertTrue(ps.exists())
-        self.assertEqual(ps[0].invitation, invitation)
+        self.assertFalse(ps.exists())
 
     def test_manage_participant_attendance(self):
         e = self.create_experimenter()
