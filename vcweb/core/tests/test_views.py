@@ -26,8 +26,7 @@ class AuthTest(BaseVcwebTest):
 
     def test_invalid_password(self):
         experiment = self.experiment
-        self.assertFalse(
-            self.login(username=experiment.experimenter.email, password='jibber jabber'))
+        self.assertFalse(self.login(username=experiment.experimenter.email, password='jibber jabber'))
         response = self.post(self.login_url, {'email': experiment.experimenter.email,
                                               'password': 'jibber jabber'})
         self.assertTrue(
@@ -289,14 +288,14 @@ class SubjectPoolViewTest(SubjectPoolTest):
         e = self.create_experimenter()
         self.assertTrue(self.login_experimenter(e))
         em = ExperimentMetadata.objects.order_by('?')[0]
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]), {'experiment_metadata': em.pk,
-            'scheduled_date': '2014-09-23 2:0', 'capacity': 10, 'location': 'Online','scheduled_end_date': '2014-09-23 3:0'})
+        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]),
+                             {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
         response_dict = json.loads(response.content)
-
+        # FIXME: make assertions on response_dict..
         fro = 1411000000000
         to = 1411500000000
-        response = self.get(
-            '/subject-pool/session/events?from=' + str(fro) + '&to=' + str(to) + '/')
+        response = self.get('/subject-pool/session/events?from=' + str(fro) + '&to=' + str(to) + '/')
         self.assertEqual(200, response.status_code)
 
     def test_downloading_experiment_session_data(self):
@@ -304,13 +303,14 @@ class SubjectPoolViewTest(SubjectPoolTest):
         e = self.create_experimenter()
         self.assertTrue(self.login_experimenter(e))
         em = ExperimentMetadata.objects.order_by('?')[0]
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]), {'experiment_metadata': em.pk,
-            'scheduled_date': '2014-09-23 2:0', 'capacity': 10, 'location': 'Online','scheduled_end_date': '2014-09-23 3:0'})
+        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]),
+                             {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
         response_dict = json.loads(response.content)
         es = ExperimentSession.objects.get(pk=response_dict['session']['pk'])
         es.creator = e.user
         es.save()
-        response = self.get('/subject-pool/session/'+ str(es.pk) +'/download/')
+        response = self.get('/subject-pool/session/' + str(es.pk) + '/download/')
         self.assertEqual(200, response.status_code)
 
     def test_manage_experiment_session(self):
@@ -320,8 +320,9 @@ class SubjectPoolViewTest(SubjectPoolTest):
 
         # test create experiment session
         em = ExperimentMetadata.objects.order_by('?')[0]
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]), {'experiment_metadata': em.pk,
-            'scheduled_date': '2014-09-23 2:0', 'capacity': 10, 'location': 'Online','scheduled_end_date': '2014-09-23 3:0'})
+        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]),
+                             {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
         self.assertEqual(200, response.status_code)
 
         response_dict = json.loads(response.content)
@@ -329,8 +330,8 @@ class SubjectPoolViewTest(SubjectPoolTest):
 
         # test edit/update experiment session
         response = self.post(reverse('subjectpool:manage_experiment_session', args=[response_dict['session']['pk']]),
-                {'experiment_metadata': em.pk,'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
-                 'location': 'Online','scheduled_end_date': '2014-09-23 4:0'})
+                             {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 4:0'})
         self.assertEqual(200, response.status_code)
 
         response_dict = json.loads(response.content)
@@ -338,7 +339,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
 
         # test incomplete form
         response = self.post(reverse('subjectpool:manage_experiment_session', args=[response_dict['session']['pk']]),
-                {'experiment_metadata': em.pk, 'request_type': 'delete'})
+                             {'experiment_metadata': em.pk, 'request_type': 'delete'})
         self.assertEqual(200, response.status_code)
 
         response = json.loads(response.content)
@@ -346,8 +347,8 @@ class SubjectPoolViewTest(SubjectPoolTest):
 
         # test delete experiment session
         response = self.post(reverse('subjectpool:manage_experiment_session', args=[response_dict['session']['pk']]),
-                {'experiment_metadata': em.pk,'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
-                 'location': 'Online','scheduled_end_date': '2014-09-23 4:0', 'request_type': 'delete'})
+                             {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 4:0', 'request_type': 'delete'})
         self.assertEqual(200, response.status_code)
 
         response = json.loads(response.content)
@@ -405,8 +406,9 @@ class SubjectPoolViewTest(SubjectPoolTest):
         e = self.create_experimenter()
         self.assertTrue(self.login_experimenter(e))
         em = ExperimentMetadata.objects.order_by('?')[0]
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]), {'experiment_metadata': em.pk,
-            'scheduled_date': '2014-09-23 2:0', 'capacity': 10, 'location': 'Online','scheduled_end_date': '2014-09-23 3:0'})
+        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]),
+                             {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
         response_dict = json.loads(response.content)
 
         es = ExperimentSession.objects.get(pk=response_dict['session']['pk'])
@@ -444,13 +446,14 @@ class SubjectPoolViewTest(SubjectPoolTest):
         e = self.create_experimenter()
         self.assertTrue(self.login_experimenter(e))
         em = ExperimentMetadata.objects.order_by('?')[0]
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]), {'experiment_metadata': em.pk,
-            'scheduled_date': '2014-09-23 2:0', 'capacity': 10, 'location': 'Online','scheduled_end_date': '2014-09-23 3:0'})
+        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]),
+                             {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
 
         # Test invalid form
         response = self.post(reverse('subjectpool:invite_email_preview'), {
             'invitation_subject': 'Test',
-            'invitation_text':'Test',
+            'invitation_text': 'Test',
         })
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
@@ -462,8 +465,8 @@ class SubjectPoolViewTest(SubjectPoolTest):
             'only_undergrad': 'on',
             'affiliated_institution': 'Arizona State University',
             'invitation_subject': 'Test',
-            'invitation_text':'Test',
-            'session_pk_list':46,
+            'invitation_text': 'Test',
+            'session_pk_list': 46,
         })
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)

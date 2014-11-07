@@ -829,8 +829,7 @@ class Experiment(models.Model):
         try:
             return RoundData.objects.select_related('round_configuration').get(experiment=self, **ps)
         except RoundData.DoesNotExist:
-            logger.error(
-                "No round data exists yet for round configuration %s", round_configuration)
+            logger.error("No round data exists yet for round configuration %s", round_configuration)
             return None
 
     @property
