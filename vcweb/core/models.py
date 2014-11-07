@@ -19,7 +19,7 @@ from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
 from django.core.validators import RegexValidator
 from django.db import models, transaction
-from django.db.models.aggregates import Max
+from django.db.models import Max, Sum
 from django.db.models.loading import get_model
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
@@ -211,41 +211,12 @@ class DataValueMixin(object):
         return dv
 
 
-#class NullCharField(models.CharField):
-#    description = "CharField that stores nulls in the db but returns ''"
-#    __metaclass__ = models.SubfieldBase
-#
-#    def __init__(self, *args, **kwargs):
-#        kwargs['null'] = True
-#        kwargs['blank'] = True
-#        super(NullCharField, self).__init__(*args, **kwargs)
-#
-#    def deconstruct(self):
-#        name, path, args, kwargs = super(NullCharField, self).deconstruct()
-#        del kwargs['null']
-#        del kwargs['blank']
-#        return name, path, args, kwargs
-#
-#    def to_python(self, value):
-#        if isinstance(value, models.CharField):
-#            return value
-#        elif value is None:
-#            return u''
-#        else:
-#            return super(NullCharField, self).to_python(value)
-#
-#    def get_prep_value(self, value):
-#        if value == '':
-#            return None
-#        else:
-#            return super(NullCharField, self).get_prep_value(value)
-
-
 class ExperimentMetadataQuerySet(models.query.QuerySet):
 
     def bookmarked(self, experimenter=None, **kwargs):
         if experimenter is not None:
-            bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).values_list('experiment_metadata', flat=True)
+            bem_pks = BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).values_list(
+                'experiment_metadata', flat=True)
             if bem_pks:
                 bem_pks_str = ','.join([str(x) for x in bem_pks])
                 return self.extra(select={'bookmarked': "id in (%s)" % bem_pks_str})
@@ -270,7 +241,8 @@ class ExperimentMetadata(models.Model):
     define and add a single ExperimentMetadata record for the experiment type that it represents.
     """
     title = models.CharField(max_length=255)
-    namespace = models.CharField(max_length=255, unique=True, null=True, blank=True, validators=[RegexValidator(r'^[\w_-]*$')])
+    namespace = models.CharField(max_length=255, unique=True, null=True, blank=True,
+                                 validators=[RegexValidator(r'^[\w_-]*$')])
     short_name = models.SlugField(max_length=32, unique=True, null=True, blank=True)
     description = models.TextField(blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -298,11 +270,11 @@ class ExperimentMetadata(models.Model):
         }
         if include_configurations:
             if configurations is None:
-                configurations = ExperimentConfiguration.objects.select_related('creator').filter(experiment_metadata=self)
+                configurations = self.experiment_configuration_set.select_related('creator')
             data['configurations'] = [ec.to_dict() for ec in configurations]
         if experimenter is not None:
-            data['bookmarked'] = BookmarkedExperimentMetadata.objects.filter(experiment_metadata=self,
-                                                                             experimenter=experimenter).exists()
+            data['bookmarked'] = BookmarkedExperimentMetadata.objects.filter(
+                experiment_metadata=self, experimenter=experimenter).exists()
         return data
 
     def natural_key(self):
@@ -488,9 +460,11 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     exchange_rate = models.DecimalField(null=True, blank=True, default=0.2, max_digits=6, decimal_places=2,
                                         help_text=_('Exchange rate of currency per in-game token, dollars per token'))
     show_up_payment = models.DecimalField(null=True, blank=True, default=5.0, max_digits=6, decimal_places=2,
-                                          help_text=_("Show up fee paid to an in-lab experiment participant for showing up"))
+                                          help_text=_(
+                                              "Show up fee paid to an in-lab experiment participant for showing up"))
     maximum_payment = models.DecimalField(null=True, blank=True, default=40.0, max_digits=6, decimal_places=2,
-                                          help_text=_("Maximum amount a participant expects to be paid for this experiment"))
+                                          help_text=_(
+                                              "Maximum amount a participant expects to be paid for this experiment"))
     treatment_id = models.CharField(blank=True, max_length=32, help_text=_(
         'Alphanumeric ID unique over the set of ExperimentConfigurations in a given ExperimentMetadata'))
     is_experimenter_driven = models.BooleanField(default=True, help_text=_(
@@ -511,7 +485,8 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     def total_number_of_rounds(self):
         number_of_rounds = self.round_configuration_set.count()
         repeating_rounds = self.round_configuration_set.filter(repeat__gt=0)
-        number_of_rounds = number_of_rounds - repeating_rounds.count() + sum(repeating_rounds.values_list('repeat', flat=True))
+        repeated_rounds = repeating_rounds.aggregate(Sum('repeat'))
+        number_of_rounds = number_of_rounds - repeating_rounds.count() + repeated_rounds['repeat']
         return number_of_rounds
 
     @property
@@ -653,7 +628,8 @@ class Experiment(models.Model):
     experimenter = models.ForeignKey(Experimenter)
     """ the user running this experiment """
     experiment_metadata = models.ForeignKey(ExperimentMetadata)
-    """ FIXME: delete this, redundant from experiment_configuration the experiment metadata object that this experiment instance represents """
+    """ FIXME: consider deleting experiment_metadata reference, experiment_configuration also has a linkage with an
+    experiment metadata object"""
     experiment_configuration = models.ForeignKey(ExperimentConfiguration)
     """ the configuration parameters in use for this experiment run. """
     status = models.CharField(max_length=32, choices=Status, default=Status.INACTIVE)
@@ -976,7 +952,8 @@ class Experiment(models.Model):
         RedisPubSub.get_redis_instance().publish(RedisPubSub.get_experimenter_channel(self.pk), message)
 
     @transaction.atomic
-    def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None, from_email=None, should_send_email=True):
+    def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None,
+                              from_email=None, should_send_email=True):
         number_of_participants = self.participant_set.count()
         email_messages = []
         registered_participants = []
@@ -998,7 +975,8 @@ class Experiment(models.Model):
                 # lowercase all usernames/email addresses internally and strip all whitespace
                 email_address = email_address.lower().strip()
                 full_name = full_name.strip()
-                userqs = User.objects.select_for_update().filter(models.Q(email=email_address) | models.Q(username=email_address))
+                userqs = User.objects.select_for_update().filter(
+                    models.Q(email=email_address) | models.Q(username=email_address))
                 if userqs.exists():
                     u = userqs[0]
                 else:
@@ -1080,7 +1058,8 @@ class Experiment(models.Model):
 
         for i in xrange(1, count + 1):
             email_address = u's%d%s@%s' % (i, username_suffix, email_suffix)
-            userqs = User.objects.select_for_update().filter(models.Q(email=email_address) | models.Q(username=email_address))
+            userqs = User.objects.select_for_update().filter(
+                models.Q(email=email_address) | models.Q(username=email_address))
             if userqs.exists():
                 user = userqs[0]
             else:
@@ -1095,12 +1074,14 @@ class Experiment(models.Model):
     def initialize_data_values(self, group_parameters=None, participant_parameters=None, group_cluster_parameters=None,
                                round_data=None, defaults=None):
         """
-        FIXME: needs refactoring, replace get_or_create with creates and separate initialization of data values from copy_to_next_round semantics
+        FIXME: needs refactoring, replace get_or_create with creates and separate initialization of data values from
+        copy_to_next_round semantics
         Issues:
-            Make it simpler for experiment devs to signal "I have these data values to initialize at the start of each round"
-            Overly complex logic, possible danger to use empty lists as initial keyword args but we only iterate over them (e.g., http://effbot.org/zone/default-values.htm)
-            get_or_create logic has the possibility for degenerate data (e.g., duplicate group round data values) that cause the rest
-            of the rounds to not run properly
+            Make it simpler for experiment devs to signal "I have these data values to initialize at the start of each
+            round" Overly complex logic, possible danger to use empty lists as initial keyword args but we only iterate
+            over them (e.g., http://effbot.org/zone/default-values.htm) get_or_create logic has the possibility for
+            degenerate data (e.g., duplicate group round data values) that cause the rest of the rounds to not run
+            properly
         """
         if round_data is None:
             round_data = self.current_round_data
@@ -1121,7 +1102,7 @@ class Experiment(models.Model):
             return
 
         logger.debug(
-            "round data %s initializing [participant params: %s]  [group parameters: %s] [group_cluster_parameters: %s] ",
+            "round data %s initializing [participant params: %s]  [group params: %s] [cluster params: %s] ",
             round_data,
             participant_parameters, group_parameters, group_cluster_parameters)
         parameter_defaults = defaultdict(dict)
@@ -1208,7 +1189,8 @@ class Experiment(models.Model):
                         logger.error("Cannot create a new set of groups because no session id has been set on %s.",
                                      round_configuration)
                         raise ValueError(
-                            "Cannot allocate new groups and preserve existing groups without an appropriate session id set on this round configuration %s" % round_configuration)
+                            "Cannot preserve existing groups without round_configuration.session id %s"
+                            % round_configuration)
             else:
                 logger.debug("deleting existing groups")
                 # FIXME: fairly expensive operation to log all group members
@@ -1238,7 +1220,7 @@ class Experiment(models.Model):
             group_cluster_size = round_configuration.group_cluster_size
             groups = list(gs)
             if len(groups) % group_cluster_size != 0:
-                logger.error("cannot create clusters with %s groups per cluster, we have %s groups which isn't evenly divisible.",
+                logger.error("cannot create clusters with %s groups per cluster with %s groups, not evenly divisible",
                              group_cluster_size, len(groups))
                 return
             random.shuffle(groups)
@@ -1362,20 +1344,14 @@ class Experiment(models.Model):
         self.save()
         # reset all survey completed flags on participant group relationships
         # within this experiment
-        ParticipantGroupRelationship.objects.for_experiment(
-            self).update(survey_completed=False)
-        self.log('Ending round with elapsed time %s' %
-                 self.current_round_elapsed_time)
-        sender = intern(self.experiment_metadata.namespace.encode(
-            'utf8')) if sender is None else sender
-        #sender = self.namespace.encode('utf-8')
-        logger.debug("sending round ended signal with sender %s", sender)
+        ParticipantGroupRelationship.objects.for_experiment(self).update(survey_completed=False)
+        sender = intern(self.experiment_metadata.namespace.encode('utf8')) if sender is None else sender
+        self.log('%s ending round with elapsed time %s' % (sender, self.current_round_elapsed_time))
         return signals.round_ended.send_robust(sender, experiment=self, round_configuration=self.current_round)
 
     def activate(self):
         if self.is_archived:
-            logger.debug(
-                "ignoring request to activate archived experiment %s", self)
+            logger.debug("ignoring request to activate archived experiment %s", self)
             return
         with transaction.atomic():
             if not self.is_active:
@@ -1474,10 +1450,9 @@ class Experiment(models.Model):
             experiment_dict['allRoundData'] = self.all_round_data()
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
             experiment_dict['messages'] = map(str, self.activity_log_set.order_by('-date_created')[:100])
-            experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes if self.is_round_in_progress else ''
+            experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes
             experiment_dict['groups'] = [group.to_dict() for group in self.groups]
-        # FIXME: intended to provide some way to include more experiment
-        # attributes at invocation time, may remove
+        # FIXME: intended to provide some way to include more experiment attributes at invocation time, may remove
         if attrs:
             experiment_dict.update([(attr, getattr(self, attr, None)) for attr in attrs])
         return experiment_dict
@@ -1559,15 +1534,15 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
     forestry/templates/forestry/quiz_2.html
     """
     template_filename = models.CharField(max_length=64, blank=True,
-                                         help_text=_('''The filename of the template to use to render when executing this round.
-                        This file should exist in your templates directory as your-experiment-namespace/template-name.html,
-                        e.g., if set to foo.html, vcweb will look for templates/forestry/foo.html'''))
+                                         help_text=_(
+                                             '''The filename of the template to use to render when executing this round.
+    This file should exist in your templates directory as your-experiment-namespace/template-name.html, e.g., if set to
+    foo.html, vcweb will look for templates/forestry/foo.html'''))
     template_id = models.CharField(max_length=128, blank=True,
                                    help_text=_('A HTML template ID to use in a single page app, e.g., KO template'))
     survey_url = models.URLField(null=True, blank=True)
     """ external survey url for qualtrics integration """
-    chat_enabled = models.BooleanField(
-        default=False, help_text=_("Enable in-round communication"))
+    chat_enabled = models.BooleanField(default=False, help_text=_("Enable in-round communication"))
     create_group_clusters = models.BooleanField(default=False, help_text=_(
         "Create relationships (clusters) of groups that can share group cluster data values"))
     group_cluster_size = models.PositiveIntegerField(null=True, blank=True, default=2,
@@ -1576,19 +1551,16 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
                                            help_text=_("Shuffle participants into new groups when the round begins?"))
     """ Should groups be randomized at the start of the round? """
     preserve_existing_groups = models.BooleanField(default=True, help_text=_(
-        "This option is only useful if randomize_groups is set to true.  If we are randomizing groups, should existing groups (if any) be preserved?"))
-    """ Should existing groups (if any) be preserved? """
-    session_id = models.CharField(max_length=64, blank=True,
-                                  default='',
-                                  help_text=_('''
-            Session id to associate with this round data and the groups in this experiment, useful for longer
-            multi-session experiments where group membership may change.  We don't want to destroy the old groups as
-            that information is still needed to determine payments, etc. Instead we need to create a new set of
-            Group/ParticipantGroupRelationship models that can live in conjunction with the existing
-            Group/ParticipantGroupRelationship models.
-            '''))
+        "When randomize_groups is set to true, archives any existing groups during randomization instead of deleting."))
+    """ Should existing groups, if any, be preserved? """
+    session_id = models.CharField(max_length=64, blank=True, default='', help_text=_(
+        ''' Session id to associate with this round data and the groups in this experiment, useful for longer
+    multi-session experiments where group membership may change.  We don't want to destroy the old groups as that
+    information is still needed to determine payments, etc. Instead we need to create a new set of
+    Group/ParticipantGroupRelationship models that can live in conjunction with the existing
+        Group/ParticipantGroupRelationship models. '''))
     repeat = models.PositiveIntegerField(default=0, help_text=_(
-        'If set to a positive integer n, this round will repeat itself n times with the same configuration and parameter values.'))
+        'This round will repeat n times with the same configuration and parameter values.'))
     initialize_data_values = models.BooleanField(default=False, help_text=_(
         "Re-initialize all group and participant parameters at the start of this round.  "))
 
@@ -1809,8 +1781,8 @@ class Parameter(models.Model):
     display_name = models.CharField(max_length=255, blank=True, default='')
     description = models.TextField(blank=True)
     type = models.CharField(max_length=32, choices=ParameterType)
-    class_name = models.CharField(max_length=64, blank=True,
-                                  help_text='Model classname in the form of appname.modelname, e.g., "core.Experiment".  Only applicable for foreign key parameters.')
+    class_name = models.CharField(max_length=64, blank=True, help_text=_(
+        'Signifies which model class a foreign key parameter is pointing to, "core.Experiment".'))
     default_value_string = models.CharField(max_length=255, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -2153,14 +2125,14 @@ class Group(models.Model, DataValueMixin):
         round_configuration_value = None
         try:
             if parameter is not None:
-                round_configuration_value = RoundParameterValue.objects.get(parameter=parameter,
-                                                                            round_configuration=current_round_configuration)
+                round_configuration_value = RoundParameterValue.objects.get(
+                    parameter=parameter, round_configuration=current_round_configuration)
             elif name is not None:
-                round_configuration_value = RoundParameterValue.objects.get(parameter__name=name,
-                                                                            round_configuration=current_round_configuration)
+                round_configuration_value = RoundParameterValue.objects.get(
+                    parameter__name=name,
+                    round_configuration=current_round_configuration)
             else:
-                logger.warn(
-                    "No parameter or parameter name specified: %s", **kwargs)
+                logger.warn("No parameter or parameter name specified: %s", **kwargs)
         except:
             logger.debug("no round configuration value found for parameter (%s, %s) in round: %s", parameter, name,
                          current_round_configuration)
@@ -2188,12 +2160,11 @@ class Group(models.Model, DataValueMixin):
 
     def add_participant(self, participant=None):
         """
-        Adds the given participant to this group or a new group if this group is is_full.
-        Returns the participant group relationship created by adding this participant or None if the participant is invalid.
+        Adds the given participant to this group or a new group if this group is is_full. Returns the participant
+        group relationship created by adding this participant or None if the participant is invalid.
         """
         if participant is None:
-            logger.warning(
-                "Trying to add invalid participant %s to group %s", participant, self)
+            logger.warning("Trying to add invalid participant %s to group %s", participant, self)
             return None
         # add the participant to this group if there is room, otherwise create
         # and add to a fresh group
@@ -2364,6 +2335,7 @@ class ParticipantQuerySet(models.query.QuerySet):
                 class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES)
         return self.filter(**criteria)
 
+
 class Participant(CommonsUser):
     GENDER_CHOICES = (('M', 'Male'), ('F', 'Female'),)
     CLASS_CHOICES = Choices('Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate', 'Other')
@@ -2376,7 +2348,9 @@ class Participant(CommonsUser):
     can_receive_invitations = models.BooleanField(default=False, help_text=_(
         "Check this box if you'd like to opt-in and receive email invitations for upcoming experiments"))
     groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participant_set')
-    experiments = models.ManyToManyField(Experiment, through='ParticipantExperimentRelationship', related_name='participant_set')
+    experiments = models.ManyToManyField(Experiment,
+                                         through='ParticipantExperimentRelationship',
+                                         related_name='participant_set')
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
     birthdate = models.DateField(null=True, blank=True)
     major = models.CharField(max_length=128, blank=True)
@@ -2649,7 +2623,8 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
                                                                                    **kwargs)
 
     def target_ids(self, participant_group_relationship):
-        return self.filter(participant_group_relationship=participant_group_relationship).values_list('target_data_value', flat=True)
+        return self.filter(participant_group_relationship=participant_group_relationship).values_list(
+            'target_data_value', flat=True)
 
 
 class ParticipantRoundDataValue(ParameterizedValue):
@@ -2876,6 +2851,10 @@ class ExperimentSession(models.Model):
     def is_online(self):
         return self.location and self.location.lower() in ('online', 'internet', 'network', 'remote', 'virtual')
 
+    @property
+    def waitlist_capacity(self):
+        return int(min(settings.SUBJECT_POOL_WAITLIST_SIZE, self.capacity * .20))
+
     def is_owner(self, user):
         return self.creator == user or user.is_superuser
 
@@ -2911,19 +2890,20 @@ class InvitationQuerySet(models.query.QuerySet):
         if participant is not None:
             criteria.update(participant=participant)
 
-        # Making sure that user don't see invitations for a experiment for which he has already participated
-        # useful in cases when the experiment has lots of sessions spanning to lots of days. It avoids a user to participate
-        # in another experiment session after attending one of the experiment session of same experiment in last couple
-        # of days
-        participated_sessions = ParticipantSignup.objects.participated(invitation__participant=participant) \
-                                                 .values_list('invitation__experiment_session__experiment_metadata_id', flat=True)
+        # Making sure that user don't see invitations for a experiment for which he has already participated useful in
+        # cases when the experiment has lots of sessions spanning to lots of days. It avoids a user to participate in
+        # another experiment session after attending one of the experiment session of same experiment in last couple of
+        # days
+        participated_sessions = ParticipantSignup.objects.participated(invitation__participant=participant).values_list(
+            'invitation__experiment_session__experiment_metadata_id', flat=True)
 
-        return self.select_related('experiment_session', 'experiment_session__experiment_metadata__pk').filter(**criteria) \
-                   .exclude(experiment_session__experiment_metadata__pk__in=participated_sessions)
+        return self.select_related('experiment_session__experiment_metadata').filter(**criteria).exclude(
+            experiment_session__experiment_metadata__pk__in=participated_sessions)
 
     def already_invited(self, experiment_metadata_pk=None, days_threshold=7):
         last_week_date = datetime.now() - timedelta(days=days_threshold)
-        return self.filter(date_created__gt=last_week_date, experiment_session__experiment_metadata__pk=experiment_metadata_pk)
+        return self.filter(date_created__gt=last_week_date,
+                           experiment_session__experiment_metadata__pk=experiment_metadata_pk)
 
 
 class Invitation(models.Model):

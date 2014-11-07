@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from time import mktime
 import itertools
 import logging
@@ -27,8 +27,7 @@ from vcweb.core.models import (
     ExperimentSession, ExperimentMetadata, Invitation, send_email)
 from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.decorators import group_required, ownership_required
-from vcweb.core.models import (
-    Participant, Institution, ParticipantSignup, PermissionGroup)
+from vcweb.core.models import (Participant, ParticipantSignup, PermissionGroup)
 
 
 logger = logging.getLogger(__name__)
@@ -79,7 +78,7 @@ def get_session_events(request):
     to_date = request.GET.get('to', None)
     criteria = dict()
     if to_date:
-       criteria.update(scheduled_end_date__gte=timestamp_to_datetime(from_date))
+        criteria.update(scheduled_end_date__gte=timestamp_to_datetime(from_date))
 
     queryset = ExperimentSession.objects.select_related('experiment_metadata').filter(**criteria)
     objects_body = []
@@ -203,8 +202,8 @@ def send_invitations(request):
         experiment_metadata_pk_list = experiment_sessions.values_list('experiment_metadata__pk', flat=True)
 
         if len(set(experiment_metadata_pk_list)) == 1:
-            # get the experiment metadata pk of any session, as all sessions selected by experimenter to send invitations
-            # belong to same experiment metadata (This has to be ensured as it is a constraint)
+            # get the experiment metadata pk of any session, as all sessions selected by experimenter to send
+            # invitations belong to same experiment metadata (This has to be ensured as it is a constraint)
             experiment_metadata_pk = experiment_metadata_pk_list[0]
 
             potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_institution,
@@ -223,7 +222,7 @@ def send_invitations(request):
                     final_participants = potential_participants
                 else:
                     final_participants = random.sample(potential_participants, invitation_count)
-                message = "Your invitations were sent to %s / %s participants." % (len(final_participants), invitation_count)
+                message = "Invitations were sent to %s / %s participants." % (len(final_participants), invitation_count)
 
                 today = datetime.now()
                 invitations = []
@@ -231,7 +230,10 @@ def send_invitations(request):
                 for participant in final_participants:
                     recipient_list.append(participant.email)
                     for es in experiment_sessions:
-                        invitations.append(Invitation(participant=participant, experiment_session=es, date_created=today, sender=user))
+                        invitations.append(Invitation(participant=participant,
+                                                      experiment_session=es,
+                                                      date_created=today,
+                                                      sender=user))
                 Invitation.objects.bulk_create(invitations)
 
                 plaintext_content, html_content = get_invitation_email_content(invitation_text, session_pk_list)
@@ -254,7 +256,7 @@ def send_invitations(request):
             })
     else:
         # Form is not valid
-        return JsonResponse({ 'success': False, 'errors': form.errors })
+        return JsonResponse({'success': False, 'errors': form.errors})
 
 
 @group_required(PermissionGroup.experimenter)
@@ -288,8 +290,8 @@ def get_potential_participants(experiment_metadata_pk, institution="Arizona Stat
     """
     # Get excluded participants for the given parameters
     excluded_participants = get_excluded_participants(experiment_metadata_pk)
-    return Participant.objects.invitation_eligible(only_undergrad=only_undergrad, institution=institution) \
-            .exclude(pk__in=excluded_participants)
+    return Participant.objects.invitation_eligible(
+        only_undergrad=only_undergrad, institution=institution).exclude(pk__in=excluded_participants)
 
 
 def get_excluded_participants(experiment_metadata_pk):
@@ -298,13 +300,13 @@ def get_excluded_participants(experiment_metadata_pk):
     """
     # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
     # given Experiment metadata
-    invited_in_last_threshold_days = Invitation.objects.already_invited(experiment_metadata_pk=experiment_metadata_pk) \
-            .values_list('participant__pk', flat=True)
+    invited_in_last_threshold_days = Invitation.objects.already_invited(
+        experiment_metadata_pk=experiment_metadata_pk).values_list('participant__pk', flat=True)
 
     # signup_participants is the list of participants who has already participated in the
     # given Experiment Metadata(in the past or currently participating)
-    signup_participants = ParticipantSignup.objects.registered(experiment_metadata_pk=experiment_metadata_pk) \
-            .values_list('invitation__participant__pk', flat=True)
+    signup_participants = ParticipantSignup.objects.registered(
+        experiment_metadata_pk=experiment_metadata_pk).values_list('invitation__participant__pk', flat=True)
 
     invalid_participants = Participant.objects.invalid_participants().values_list('pk', flat=True)
     # returns a list of participant pks who have already received invitations in last threshold days, have already
@@ -394,18 +396,20 @@ def submit_experiment_session_signup(request):
     # lock on the experiment session to prevent concurrent participant signups for an experiment session
     # exceeding its capacity
     with transaction.atomic():
-        participant_signups = ParticipantSignup.objects.select_for_update().registered(experiment_session_pk=invitation.experiment_session_id)
+        participant_signups = ParticipantSignup.objects.select_for_update().registered(
+            experiment_session_pk=invitation.experiment_session_id)
         signup_count = participant_signups.count()
         # verify for the vacancy in the selected experiment session before
         # creating participant signup entry
-        if signup_count < invitation.experiment_session.capacity:
+        experiment_session = invitation.experiment_session
+        if signup_count < experiment_session.capacity:
             registered = True
             message = '''You are now registered for this experiment session. A confirmation email has been sent and you
             should also receive a reminder email one day before the session. Thanks in advance for participating!'''
         else:
             # signups are full, check if waitlists are full
-            waitlist_count = ParticipantSignup.objects.waitlist(experiment_session_pk=invitation.experiment_session_id).count()
-            if waitlist_count < settings.SUBJECT_POOL_WAITLIST_SIZE:
+            wc = ParticipantSignup.objects.waitlist(experiment_session_pk=invitation.experiment_session_id).count()
+            if wc < experiment_session.waitlist_capacity:
                 waitlist = True
                 attendance = ParticipantSignup.ATTENDANCE.waitlist
                 message = """This experiment session is currently full, but you have been added to the waitlist. You may
@@ -419,7 +423,8 @@ def submit_experiment_session_signup(request):
                    settings.SERVER_EMAIL, [user.email])
         return redirect('core:dashboard')
     else:
-        messages.error(request, _("This session is currently full. Please select a different session or try again later to see if any slots have opened up. Thank you for your interest!"))
+        messages.error(request, _("""This session is currently full. Please select a different session or try again
+        later to see if any slots have opened up. Thank you for your interest!"""))
         return redirect('subjectpool:experiment_session_signup')
 
 
@@ -481,4 +486,6 @@ def experiment_session_signup(request):
             still eligible to participate in future experiments and may receive future invitations for this
             experiment."""))
 
-    return render(request, "participant/experiment-session-signup.html", {"invitation_list": invitation_list, 'waitlist_size': settings.SUBJECT_POOL_WAITLIST_SIZE})
+# FIXME: logic using waitlist_size should use ExperimentSession.waitlist_capacity instead
+    return render(request, "participant/experiment-session-signup.html",
+                  {"invitation_list": invitation_list, 'waitlist_size': settings.SUBJECT_POOL_WAITLIST_SIZE})
