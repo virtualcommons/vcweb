@@ -323,9 +323,11 @@ def manage_participant_attendance(request, pk=None):
     If request is GET, then the function will return the attendance formset. If request is POST then
     the function will update the Participant Attendance and return the updated formset.
     """
+    # FIXME: use get_object_or_404
     es = ExperimentSession.objects.get(pk=pk)
 
     invitations_sent = Invitation.objects.filter(experiment_session=es)
+    # FIXME: use es.to_dict() instead
     session_detail = dict(pk=es.pk, experiment_metadata=es.experiment_metadata, start_date=es.scheduled_date.date(),
                           start_time=es.scheduled_date.strftime('%I:%M %p'), end_date=es.scheduled_end_date.date(),
                           end_time=es.scheduled_end_date.strftime('%I:%M %p'), location=es.location,
@@ -335,22 +337,18 @@ def manage_participant_attendance(request, pk=None):
                                              exclude=('date_created',), extra=0)
 
     if request.method == "POST":
-        formset = attendanceformset(request.POST,
-                                    queryset=ParticipantSignup.objects.select_related(
-                                        'invitation__participant__user').
-                                    filter(invitation__in=invitations_sent))
+        formset = attendanceformset(request.POST, queryset=ParticipantSignup.objects.select_related(
+            'invitation__participant__user').filter(invitation__in=invitations_sent))
         if formset.is_valid():
-            messages.add_message(
-                request, messages.SUCCESS, 'Well done...Your changes were successfully saved.')
+            messages.success(request, 'Your changes were successfully saved.')
             if formset.has_changed():
                 formset.save()
         else:
-            messages.add_message(request, messages.ERROR,
-                                 'Something went wrong...Your changes were not saved. Please try again')
+            # FIXME: improve error messages back out to the user.
+            messages.error(request, 'Your changes were not saved. Please try again.')
     else:
-        formset = attendanceformset(
-            queryset=ParticipantSignup.objects.select_related('invitation__participant__user').
-            filter(invitation__in=invitations_sent))
+        formset = attendanceformset(queryset=ParticipantSignup.objects.select_related(
+            'invitation__participant__user').filter(invitation__in=invitations_sent))
 
     return render(request, 'experimenter/session_detail.html',
                   {'session_detail': session_detail, 'formset': formset})

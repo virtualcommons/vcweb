@@ -1,10 +1,9 @@
 from django.conf.urls import url
 
 from vcweb.core.subjectpool.views import (experimenter_index, manage_experiment_session, get_session_events,
-                                          manage_participant_attendance,
-                                          send_invitations, get_invitations_count, invite_email_preview,
-                                          experiment_session_signup, submit_experiment_session_signup,
-                                          cancel_experiment_session_signup,
+                                          manage_participant_attendance, send_invitations, get_invitations_count,
+                                          invite_email_preview, experiment_session_signup,
+                                          submit_experiment_session_signup, cancel_experiment_session_signup,
                                           download_experiment_session)
 
 urlpatterns = [
