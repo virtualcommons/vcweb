@@ -67,7 +67,7 @@ def manage_experiment_session(request, pk):
     return JsonResponse({'success': False, 'errors': form.errors})
 
 
-@group_required(PermissionGroup.experimenter)
+@group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
 @require_GET
 def get_session_events(request):
     """

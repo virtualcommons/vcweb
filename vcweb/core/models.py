@@ -485,8 +485,8 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     def total_number_of_rounds(self):
         number_of_rounds = self.round_configuration_set.count()
         repeating_rounds = self.round_configuration_set.filter(repeat__gt=0)
-        repeated_rounds = repeating_rounds.aggregate(Sum('repeat'))
-        number_of_rounds = number_of_rounds - repeating_rounds.count() + repeated_rounds['repeat']
+        repeated_rounds = repeating_rounds.aggregate(total=Sum('repeat'))
+        number_of_rounds = number_of_rounds - repeating_rounds.count() + repeated_rounds['total']
         return number_of_rounds
 
     @property
