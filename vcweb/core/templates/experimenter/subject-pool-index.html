@@ -163,8 +163,8 @@ Experiment Session Management
                                 <td>
                                     <input style="width: 70px;" class="form-control input-sm" name="capacity" type="number" min="2" data-bind ="value : capacity, enable: isEditable" />
 				                </td>
-                                <td data-bind="if: active" rowspan="2">
-                                    <div class="btn-group-vertical" data-bind = "visible: isEditable">
+                                <td data-bind="if: active" colspan="2">
+                                    <div class="btn-group" data-bind = "visible: isEditable">
                                         <button class="btn btn-success" data-bind="click: $root.saveSession">
                                             <i class="fa fa-floppy-o"></i>
                                         </button>
@@ -172,7 +172,7 @@ Experiment Session Management
                                             <i class="fa fa-trash-o"></i>
                                         </button>
                                     </div>
-                                    <div class="btn-group-vertical" data-bind = "visible: !isEditable()">
+                                    <div class="btn-group" data-bind = "visible: !isEditable()">
                                         <a class="btn btn-primary" data-bind="attr: {href: 'session/detail/event/'+ pk()} ">
                                             <i class="fa fa-eye"></i>
                                         </a>
@@ -185,7 +185,7 @@ Experiment Session Management
                                     </div>
                                 </td>
                                 <!-- ko ifnot: active -->
-                                <td rowspan="2">
+                                <td colspan="2">
                                     <div class="btn-group">
                                         <a class="btn btn-primary" data-bind="attr: {href: 'session/detail/event/'+ pk()}">
                                             <i class="fa fa-eye"></i>
@@ -225,6 +225,13 @@ Experiment Session Management
                                 <td>
                                     <span class="badge invite-badge" data-bind="text: invite_count">0</span>
                                 </td>
+                                <td>
+                                    <span class=" label label-info session-label">Signups:</span>
+                                </td>
+                                <td>
+                                    <span class="badge invite-badge" data-bind="text: signup_count">0</span>
+				                </td>
+
                             </tr>
                         </tbody>
                     </table>

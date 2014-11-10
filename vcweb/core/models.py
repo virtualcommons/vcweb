@@ -2871,7 +2871,8 @@ class ExperimentSession(models.Model):
             "end_min": scheduled_end_date.time().minute,
             "capacity": self.capacity,
             "location": self.location,
-            "invite_count": Invitation.objects.filter(experiment_session=self).count()
+            "invite_count": Invitation.objects.filter(experiment_session=self).count(),
+            "signup_count": ParticipantSignup.objects.filter(invitation__experiment_session=self).count(),
         }
         return data
 
