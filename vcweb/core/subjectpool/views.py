@@ -272,16 +272,10 @@ def invite_email_preview(request):
         session_pk_list = request.POST.get('session_pk_list').split(",")
         plaintext_content, html_content = get_invitation_email_content(
             invitation_text, session_pk_list)
-        return JsonResponse({
-            'success': True,
-            'content': html_content
-        })
+        return JsonResponse({'success': True, 'content': html_content})
     else:
         # Form is not Valid
-        return JsonResponse({
-            'success': False,
-            'message': message
-        })
+        return JsonResponse({'success': False, 'message': message})
 
 
 def get_potential_participants(experiment_metadata_pk, institution="Arizona State University", only_undergrad=True):
@@ -359,7 +353,7 @@ def cancel_experiment_session_signup(request):
                 "Invalid request: Participant %s tried to cancel signup %s", request.user.participant, signup)
             messages.error(request, _("You don't appear to be signed up for this session."))
     else:
-        messages.add_message(request, _("Sorry, we couldn't process your request"))
+        messages.error(request, _("Sorry, we couldn't process your request"))
     return redirect('core:dashboard')
 
 
