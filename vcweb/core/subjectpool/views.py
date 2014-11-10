@@ -323,16 +323,8 @@ def manage_participant_attendance(request, pk=None):
     If request is GET, then the function will return the attendance formset. If request is POST then
     the function will update the Participant Attendance and return the updated formset.
     """
-    # FIXME: use get_object_or_404
-    es = ExperimentSession.objects.get(pk=pk)
-
+    es = get_object_or_404(ExperimentSession.objects, pk=pk)
     invitations_sent = Invitation.objects.filter(experiment_session=es)
-    # FIXME: use es.to_dict() instead
-    session_detail = dict(pk=es.pk, experiment_metadata=es.experiment_metadata, start_date=es.scheduled_date.date(),
-                          start_time=es.scheduled_date.strftime('%I:%M %p'), end_date=es.scheduled_end_date.date(),
-                          end_time=es.scheduled_end_date.strftime('%I:%M %p'), location=es.location,
-                          capacity=es.capacity)
-
     attendanceformset = modelformset_factory(ParticipantSignup, form=ParticipantAttendanceForm,
                                              exclude=('date_created',), extra=0)
 
@@ -343,15 +335,12 @@ def manage_participant_attendance(request, pk=None):
             messages.success(request, 'Your changes were successfully saved.')
             if formset.has_changed():
                 formset.save()
-        else:
-            # FIXME: improve error messages back out to the user.
-            messages.error(request, 'Your changes were not saved. Please try again.')
     else:
         formset = attendanceformset(queryset=ParticipantSignup.objects.select_related(
             'invitation__participant__user').filter(invitation__in=invitations_sent))
 
     return render(request, 'experimenter/session_detail.html',
-                  {'session_detail': session_detail, 'formset': formset})
+                  {'session_detail': es, 'formset': formset})
 
 
 @group_required(PermissionGroup.participant)
@@ -484,6 +473,6 @@ def experiment_session_signup(request):
             still eligible to participate in future experiments and may receive future invitations for this
             experiment."""))
 
-# FIXME: logic using waitlist_size should use ExperimentSession.waitlist_capacity instead
+    # FIXME: logic using waitlist_size should use ExperimentSession.waitlist_capacity instead
     return render(request, "participant/experiment-session-signup.html",
                   {"invitation_list": invitation_list, 'waitlist_size': settings.SUBJECT_POOL_WAITLIST_SIZE})

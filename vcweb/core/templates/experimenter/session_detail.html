@@ -8,11 +8,11 @@
         <div id="session-detail" class="callout callout-info">
             <p><strong>Experiment: </strong>
             {{ session_detail.experiment_metadata.title }}
-            <p><strong>Date/Time: </strong> {{ session_detail.start_date }}, {{ session_detail.start_time }} -
-            {% if session_detail.end_date != session_detail.start_date %}
-            {{ session_detail.end_date }},
+            <p><strong>Date/Time: </strong> {{ session_detail.scheduled_date.date }}, {{ session_detail.scheduled_date.time }} -
+            {% if session_detail.scheduled_end_date.date != session_detail.scheduled_date.date %}
+            {{ session_detail.scheduled_end_date.date }},
             {% endif %}
-            {{ session_detail.end_time }}</p>
+            {{ session_detail.scheduled_end_date.time }}</p>
             <p><strong>Location: </strong> {{ session_detail.location }}</p>
             <p><strong>Capacity: </strong> {{ session_detail.capacity }}</p>
         </div>
@@ -21,6 +21,14 @@
                 <a target="_blank" href="/subject-pool/session/{{ session_detail.pk }}/download/">Download Registered Participants</a>
             {% endif %}
         </div>
+        {% for dict in formset.errors %}
+            {% for error in dict.values %}
+                <div class="alert alert-error">
+                    <strong>{{ error|escape }}</strong>
+                </div>
+            {% endfor %}
+        {% endfor %}
+
         <h3>Registered Participants</h3>
         <form method="POST" id="participant-info" class="form-inline">
             {% csrf_token %}
