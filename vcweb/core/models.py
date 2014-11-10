@@ -2932,6 +2932,7 @@ class Invitation(models.Model):
                 'scheduled_end_time': scheduled_end_date.strftime('%I:%M %p'),
                 'location': experiment_session.location,
                 'openings': experiment_session.capacity - signup_count,
+                'waitlist_size': experiment_session.waitlist_capacity,
                 'selected': False
             },
             'experiment_metadata_name': experiment_metadata.title,
@@ -3019,6 +3020,7 @@ class ParticipantSignup(models.Model):
                 'scheduled_end_time': scheduled_end_date.strftime('%I:%M %p'),
                 'location': experiment_session.location,
                 'openings': experiment_session.capacity - signup_count,
+                'waitlist_size': experiment_session.waitlist_capacity,
                 'selected': True
             },
             'experiment_metadata_name': experiment_metadata.title,

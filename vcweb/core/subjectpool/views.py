@@ -353,16 +353,13 @@ def cancel_experiment_session_signup(request):
         es = invitation.experiment_session
         if request.user.participant == invitation.participant:
             signup.delete()
-            messages.add_message(request, messages.SUCCESS,
-                                 _("You are no longer signed up for %s - thanks for letting us know!" % es))
+            messages.success(request, _("You are no longer signed up for %s - thanks for letting us know!" % es))
         else:
             logger.error(
                 "Invalid request: Participant %s tried to cancel signup %s", request.user.participant, signup)
-            messages.add_message(request, messages.ERROR, _(
-                "You don't appear to be signed up for this session."))
+            messages.error(request, _("You don't appear to be signed up for this session."))
     else:
-        messages.add_message(
-            request, messages.ERROR, _("Sorry, we couldn't process your request"))
+        messages.add_message(request, _("Sorry, we couldn't process your request"))
     return redirect('core:dashboard')
 
 
@@ -473,6 +470,4 @@ def experiment_session_signup(request):
             still eligible to participate in future experiments and may receive future invitations for this
             experiment."""))
 
-    # FIXME: logic using waitlist_size should use ExperimentSession.waitlist_capacity instead
-    return render(request, "participant/experiment-session-signup.html",
-                  {"invitation_list": invitation_list, 'waitlist_size': settings.SUBJECT_POOL_WAITLIST_SIZE})
+    return render(request, "participant/experiment-session-signup.html", {"invitation_list": invitation_list})

@@ -48,7 +48,7 @@ Signup for an Experiment Session
                         </thead>
                         <tbody>
                         {% for item in exp.list %}
-                            {% if item.invitation.openings|add:waitlist_size != 0 %}
+                            {% if item.invitation.openings|add:item.invitation.waitlist_size != 0 %}
                             <tr>
                                 <td>
                                     {% if item.invitation.selected == True %}
@@ -65,9 +65,9 @@ Signup for an Experiment Session
                                 <td><b> {{ item.invitation.scheduled_end_time }}</b></td>
                                 <td> {{ item.invitation.location }}</td>
                                 {% if item.invitation.openings <= 0 %}
-                                    <td style="color:red"> {{ item.invitation.openings|add:waitlist_size }} (waitlist)</td>
+                                    <td style="color:red"> {{ item.invitation.openings|add:item.invitation.waitlist_size }} (waitlist)</td>
                                 {% else %} 
-                                   <td>{{ item.invitation.openings }} (+ {{waitlist_size}} waitlist)</td>
+                                   <td>{{ item.invitation.openings }} (+ {{item.invitation.waitlist_size}} waitlist)</td>
                                 {% endif %}
                             </tr>
                             {% else %}
@@ -86,7 +86,7 @@ Signup for an Experiment Session
                                 {% endif %}
                                 <td><b> {{ item.invitation.scheduled_end_time }}</b></td>
                                 <td> {{ item.invitation.location }}</td>
-                                <td> {{ item.invitation.openings|add:waitlist_size }}</td>
+                                <td> {{ item.invitation.openings|add:item.invitation.waitlist_size }}</td>
                             </tr>
                         {% endif %}
                         {% endfor %}
