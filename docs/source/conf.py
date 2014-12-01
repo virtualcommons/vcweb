@@ -13,6 +13,8 @@
 
 import sys
 import os
+from datetime import date
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -45,7 +47,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'vcweb'
-copyright = u'2013, Arizona Board of Regents'
+current_year = date.today().year
+copyright = u'2011-%s, Arizona Board of Regents' % current_year
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -182,7 +185,7 @@ htmlhelp_basename = 'vcwebdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'vcweb.tex', u'vcweb Documentation',
+    ('index', 'vcweb.tex', u'vcweb documentation',
      u'Allen Lee', 'manual'),
 ]
 
@@ -215,7 +218,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'vcweb', u'vcweb Documentation',
+    ('index', 'vcweb', u'vcweb documentation',
      [u'Allen Lee'], 1)
 ]
 

@@ -6,6 +6,7 @@ from urllib import urlencode
 from enum import Enum
 import itertools
 import logging
+import markdown
 import random
 import string
 import hashlib
@@ -28,7 +29,6 @@ from django.template.loader import select_template, get_template
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
 from model_utils.managers import PassThroughManager
-import markdown
 
 from . import signals, simplecache
 from .decorators import log_signal_errors
@@ -1111,8 +1111,7 @@ class Experiment(models.Model):
         # { footprint-level-parameter: 1, resource-level-parameter: 100 }
         for parameter in itertools.chain(participant_parameters, group_parameters, group_cluster_parameters):
             if parameter in defaults:
-                parameter_defaults[parameter] = {
-                    parameter.value_field_name: defaults[parameter]}
+                parameter_defaults[parameter] = {parameter.value_field_name: defaults[parameter]}
         if parameter_defaults:
             logger.debug(
                 "setting default values for parameters: %s", parameter_defaults)

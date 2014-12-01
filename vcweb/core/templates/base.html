@@ -14,15 +14,18 @@
 {% url 'subjectpool:experimenter_index' as subjectpool %}
 <!DOCTYPE html>
 <html lang="en">
-{% with jquery_version="1.11.1" bootstrap_version="3.3.1" fontawesome_version="4.2.0" knockout_version="3.2.0" ravenjs_version="1.1.16" %}
+{% with jquery_version="1.11.1" bootstrap_version="3.3.1" bootswatch_version="3.3.0" fontawesome_version="4.2.0" knockout_version="3.2.0" ravenjs_version="1.1.16" %}
 <head>
 {% block head %}
 <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name='viewport' content='width=device-width, initial-scale=1'>
+{% comment %}
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootswatch/{{bootswatch_version}}/spacelab/bootstrap.min.css">
+{% endcomment %}
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/{{bootstrap_version}}/css/bootstrap.min.css">
 <link rel='stylesheet' href="//maxcdn.bootstrapcdn.com/font-awesome/{{fontawesome_version}}/css/font-awesome.min.css">
-<link rel="stylesheet" href="{% static 'css/style.css' %}" media="screen" />
+<link rel="stylesheet" href="{% static 'css/style.css' %}" media="screen">
 <link href='//fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
 {% endblock %}
 </head>
@@ -39,7 +42,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class='navbar-brand {% active request home %}' href='{{ home }}'><img class='logo' src='{% static "images/vcweb-logo.png" %}' width='30' height='23' alt='vcweb logo'/>virtual commons</a>
+            <a class='navbar-brand {% active request home %}' href='{{ home }}'><img class='pull-left' src='{% static "images/vcweb-logo.png" %}' width='30' height='23' alt='the virtual commons'>virtual commons </a>
         </div>
         <div class="collapse navbar-collapse" role='navigation'>
             <ul class='nav navbar-nav'>
@@ -93,10 +96,9 @@
         </div>
     </noscript>
     {% if DEBUG %}
-    <div class='alert alert-danger alert-block'>
+    <div class='alert alert-danger alert-block devserver'>
         <h2>Development Server</h2>
-        <i class='fa fa-exclamation-triangle fa-2x'></i>You are accessing a <b>development version</b> of vcweb. We
-        periodically cleanse the database so any data you generate on this site should be considered transient.
+        <i class='fa fa-exclamation-triangle fa-2x'></i>You are accessing a <b>development version</b> of vcweb. We periodically cleanse the database so any data you generate on this site should be considered transient.
     </div>
     {% endif %}
     {% if messages %}
@@ -140,7 +142,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                    <h4 class="modal-title">Report Bug</h4>
+                    <h4 class="modal-title" id='bugModalLabel'>Report Bug</h4>
                 </div>
                 <div class="modal-body"></div>
             </div><!-- /.modal-content -->

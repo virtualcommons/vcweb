@@ -5,7 +5,6 @@ from fabric.contrib import django
 from fabric.contrib.project import rsync_project
 import sys
 import os
-import shutil
 import logging
 
 logger = logging.getLogger(__name__)
@@ -60,17 +59,7 @@ django.project(env.project_name)
 from django.conf import settings as vcweb_settings
 
 
-"""
-this currently only works for sqlite3 development database.  do it by hand with
-postgres a few times to figure out what to automate.
-"""
-syncdb_commands = [
-    '%(python)s manage.py syncdb --noinput --database=%(database)s' % env,
-    '%(python)s manage.py migrate' % env,
-]
-
-
-@hosts('dev.commons.asu.edu')
+@hosts('vcweb-dev.asu.edu')
 @task
 def docs(remote_path='/home/www/dev.commons.asu.edu/vcweb/'):
     with lcd(env.docs_path):
@@ -79,50 +68,12 @@ def docs(remote_path='/home/www/dev.commons.asu.edu/vcweb/'):
     execute(coverage)
     rsync_project(local_dir='htmlcov/', remote_dir=os.path.join(remote_path, 'coverage'), delete=True)
     with cd(remote_path):
-        run('find . -type d -exec chmod a+rx {} \; && chmod -R a+r .')
+        sudo('find . -type d -exec chmod a+rx {} \; && chmod -R a+r . && chown -R alllee:commons .')
 
 
 @task
-def testdata():
-    syncdb()
-    with cd(env.project_path):
-        _virtualenv(
-            local, '%(python)s manage.py loaddata %(test_fixtures)s' % env)
-
-
-@task
-def migrate():
-    local("%(python)s manage.py migrate" % env, capture=False)
-
-
-@task
-def clean_update():
-    local("hg pull --rebase && hg up -C")
-
-
-@task
-def cu():
-    execute(clean_update)
-    execute(migrate)
-
-
-@task
-def psh():
-    execute(shell)
-
-
-@task
-def shell():
+def sh():
     dj('shell_plus')
-
-
-@task
-def syncdb(**kwargs):
-    with cd(env.project_path):
-        if os.path.exists(vcweb_settings.DATA_DIR):
-            shutil.rmtree(vcweb_settings.DATA_DIR)
-        os.mkdir(vcweb_settings.DATA_DIR)
-        _virtualenv(local, *syncdb_commands, **kwargs)
 
 
 def dj(command, **kwargs):
@@ -138,11 +89,6 @@ def _virtualenv(executor, *commands, **kwargs):
     env.command = ' && '.join(commands)
     with prefix('. %(virtualenv_path)s/bin/activate' % env):
         executor('%(command)s' % env, **kwargs)
-
-
-@task
-def host_type():
-    run('uname -a')
 
 
 @roles('localhost')
@@ -172,14 +118,6 @@ def sockjs(ip="127.0.0.1", port=None):
         port = vcweb_settings.WEBSOCKET_PORT
     _virtualenv(
         local, "{python} vcweb/sockjs-redis.py {port}".format(python=env.python, port=port), capture=False)
-
-
-@task
-def tornadio(ip="127.0.0.1", port=None):
-    if port is None:
-        port = vcweb_settings.WEBSOCKET_PORT
-    _virtualenv(
-        local, "{python} vcweb/vcwebio.py {port}".format(python=env.python, port=port), capture=False)
 
 
 @task
