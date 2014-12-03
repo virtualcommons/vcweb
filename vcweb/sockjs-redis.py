@@ -3,7 +3,6 @@ import os
 import sys
 import json
 import logging
-import redis
 import tornadoredis
 import tornadoredis.pubsub
 
@@ -19,12 +18,11 @@ from redis_pubsub import RedisPubSub
 
 from django.conf import settings
 
-sys.path.append(
-    path.abspath(path.join(path.dirname(path.abspath(__file__)), '..')))
-os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings.local'
+sys.path.append(path.abspath(path.join(path.dirname(path.abspath(__file__)), '..')))
+os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
-TORNADO_LOG_FILENAME = "vcweb-tornado.log"
-TORNADO_LOG = path.join(settings.LOG_DIRECTORY, TORNADO_LOG_FILENAME)
+LOG_FILENAME = "sockjs-redis.log"
+TORNADO_LOG = path.join(settings.LOG_DIRECTORY, LOG_FILENAME)
 
 DEFAULT_WEBSOCKET_PORT = 8882
 
@@ -41,11 +39,6 @@ dictConfig({
         }
     },
     'loggers': {
-        'vcweb': {
-            'level': 'DEBUG',
-            'handlers': ['tornado.file', 'console'],
-            'propagate': False,
-        },
         'sockjs.vcweb': {
             'level': 'DEBUG',
             'handlers': ['tornado.file', 'console'],
@@ -74,14 +67,27 @@ logger = logging.getLogger('sockjs.vcweb')
 # Create the tornadoredis.Client instance and use it for redis channel subscriptions
 subscriber = tornadoredis.pubsub.SockJSSubscriber(tornadoredis.Client())
 
-"""
-Participant sockjs connection class.
-"""
-# sockjs-tornado will create new instance for every connected client.
-class ParticipantConnection(SockJSConnection):
+
+class RedisSockJSConnection(SockJSConnection):
 
     def on_open(self, request):
-        logger.debug("opening connection %s", request)
+        logger.debug("opening connection for %s", request)
+
+    def _send_message(self, message, event_type):
+        self.send(json.dumps({'message': message, 'event_type': event_type}))
+
+    def info(self, message):
+        self._send_message(message, 'info')
+
+    def error(self, message):
+        self._send_message(message, 'error')
+
+
+# sockjs-tornado creates a new instance for every connected client.
+class ParticipantConnection(RedisSockJSConnection):
+    """
+    sockjs connection for participants
+    """
 
     def on_message(self, msg):
         if not msg:
@@ -98,6 +104,7 @@ class ParticipantConnection(SockJSConnection):
             subscriber.subscribe([RedisPubSub.get_participant_broadcast_channel(self.experiment),
                                   RedisPubSub.get_participant_group_channel(self.group)], self)
         else:
+            self.error("Failed to authenticate with the real-time server. Please try signing out and signing back in.")
             logger.debug("Failed to connect due to auth_token mismatch. Found (%s) expected (%s)",
                          auth_token, message_dict['auth_token'])
 
@@ -106,32 +113,25 @@ class ParticipantConnection(SockJSConnection):
         subscriber.unsubscribe(RedisPubSub.get_participant_group_channel(self.group), self)
 
 
-"""
-Experimenter sockjs connection class.
-"""
-class ExperimenterConnection(SockJSConnection):
-
-    def on_open(self, request):
-        logger.debug("opening connection %s", request)
-
-    def _send_message(self, message, event_type):
-        self.send(json.dumps({'message': message, 'event_type': event_type}))
+class ExperimenterConnection(RedisSockJSConnection):
+    """
+    sockjs connection for experimenters
+    """
 
     def on_message(self, msg):
         if not msg:
             return
         message_dict = json.loads(msg)
         logger.debug("message: %s", message_dict)
-
         auth_token = RedisPubSub.get_redis_instance().get(message_dict['email'] + "_" + str(message_dict['user_id']))
         if message_dict['event_type'] == 'connect' and auth_token == message_dict['auth_token']:
             # Subscribe to experiment specific 'broadcast' message channels
             self.experiment = message_dict['experiment_id']
             subscriber.subscribe([RedisPubSub.get_experimenter_channel(self.experiment)], self)
             # Send success message to experimenter
-            self._send_message("Successfully connected to the Experiment", "info")
+            self.info("Real-time connection enabled")
         else:
-            self._send_message("Failed to connect to the Experiment due to auth_token mismatch", "info")
+            self.info("Authentication failed for real-time connection, please try signing out and signing back in.")
             logger.debug("Failed to connect due to auth_token mismatch. Found (%s) expected (%s)",
                          auth_token, message_dict['auth_token'])
 
@@ -147,7 +147,7 @@ def main(argv=None):
     port = int(argv[1]) if (len(argv) > 1) else settings.WEBSOCKET_PORT
     ParticipantRouter = SockJSRouter(ParticipantConnection, '%s/participant' % settings.WEBSOCKET_URI)
     ExperimenterRouter = SockJSRouter(ExperimenterConnection, '%s/experimenter' % settings.WEBSOCKET_URI)
-    urls = list(chain.from_iterable([ParticipantRouter.urls, ExperimenterRouter.urls, ]))
+    urls = list(chain.from_iterable([ParticipantRouter.urls, ExperimenterRouter.urls]))
     app = web.Application(urls)
     logger.info("starting sockjs server on port %s", port)
     app.listen(port)

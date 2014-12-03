@@ -19,12 +19,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.http import require_GET, require_POST
 
-from vcweb.core.subjectpool.forms import (
-    SessionInviteForm, ExperimentSessionForm, ParticipantAttendanceForm, CancelSignupForm)
+from .forms import (SessionInviteForm, ExperimentSessionForm,
+                    ParticipantAttendanceForm, CancelSignupForm)
 from vcweb.core.views import mimetypes
 
-from vcweb.core.models import (
-    ExperimentSession, ExperimentMetadata, Invitation, send_email)
+from vcweb.core.models import (ExperimentSession, ExperimentMetadata, Invitation, send_email)
 from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.decorators import group_required, ownership_required
 from vcweb.core.models import (Participant, ParticipantSignup, PermissionGroup)
@@ -138,8 +137,7 @@ def get_invitations_count(request):
     session_pk_list = request.POST.get('session_pk_list').split(",")
     affiliated_institution = request.POST.get('affiliated_institution')
 
-    experiment_sessions = ExperimentSession.objects.filter(
-        pk__in=session_pk_list)
+    experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
     experiment_metadata_pk_list = experiment_sessions.values_list(
         'experiment_metadata__pk', flat=True)
 
