@@ -3,7 +3,6 @@ from ..models import (Participant, ExperimentMetadata, ExperimentSession,
 from ..forms import LoginForm
 from ..views import ExperimenterDashboardViewModel
 from .common import BaseVcwebTest, SubjectPoolTest
-from django.core.urlresolvers import reverse
 
 import random
 import json
@@ -193,26 +192,6 @@ class ArchiveApiTest(BaseVcwebTest):
         self.assertFalse(self.experiment.is_active)
 
 
-class CloneExperimentTest(BaseVcwebTest):
-
-    def test_clone(self):
-        experimenter = self.create_experimenter()
-        self.assertTrue(self.login_experimenter(experimenter))
-        response = self.post(reverse('core:clone_experiment'),
-                             {'experiment_id': self.experiment.pk,
-                              'action': 'clone'})
-        experiment_json = json.loads(response.content)
-        cloned_experiment = Experiment.objects.get(
-            pk=experiment_json['experiment']['pk'])
-        self.assertEqual(
-            cloned_experiment.experiment_metadata, self.experiment.experiment_metadata)
-        self.assertEqual(
-            cloned_experiment.experiment_configuration, self.experiment.experiment_configuration)
-        self.assertNotEqual(
-            cloned_experiment.experimenter, self.experiment.experimenter)
-        self.assertEqual(cloned_experiment.experimenter, experimenter)
-
-
 class CheckEmailTest(BaseVcwebTest):
 
     def test_email_available(self):
@@ -228,7 +207,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         e = self.create_experimenter()
         self.assertTrue(self.login_experimenter(e))
 
-        response = self.get(reverse('subjectpool:experimenter_index'))
+        response = self.get(self.reverse('subjectpool:experimenter_index'))
         self.assertEqual(200, response.status_code)
 
     def test_send_invitations(self):
@@ -236,7 +215,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertTrue(self.login_experimenter(e))
 
         # Test Invalid form
-        response = self.post(reverse('subjectpool:send_invites'),
+        response = self.post(self.reverse('subjectpool:send_invites'),
                              {'number_of_people': 30, 'only_undergrad': 'on'})
         self.assertEqual(200, response.status_code)
 
@@ -247,7 +226,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         es_pk_list = self.setup_experiment_sessions()
 
         # Test with experiment sessions from from more than one experiment metadata
-        response = self.post(reverse('subjectpool:send_invites'),
+        response = self.post(self.reverse('subjectpool:send_invites'),
                              {'number_of_people': 30, 'only_undergrad': 'on',
                               'affiliated_institution': 'Arizona State University',
                               'invitation_subject': 'Test', 'invitation_text': 'Testing',
@@ -259,7 +238,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertFalse(response_dict['success'])
 
         # Test without participants
-        response = self.post(reverse('subjectpool:send_invites'),
+        response = self.post(self.reverse('subjectpool:send_invites'),
                              {'number_of_people': 30, 'only_undergrad': 'on',
                               'affiliated_institution': 'Arizona State University',
                               'invitation_subject': 'Test', 'invitation_text': 'Testing',
@@ -273,7 +252,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         # Test with participants
         self.setup_participants()
 
-        response = self.post(reverse('subjectpool:send_invites'),
+        response = self.post(self.reverse('subjectpool:send_invites'),
                              {'number_of_people': 30, 'only_undergrad': 'on',
                               'affiliated_institution': 'Arizona State University',
                               'invitation_subject': 'Test', 'invitation_text': 'Testing',
@@ -288,7 +267,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         e = self.create_experimenter()
         self.assertTrue(self.login_experimenter(e))
         em = ExperimentMetadata.objects.order_by('?')[0]
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]),
+        response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[-1]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
                               'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
         response_dict = json.loads(response.content)
@@ -303,7 +282,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         e = self.create_experimenter()
         self.assertTrue(self.login_experimenter(e))
         em = ExperimentMetadata.objects.order_by('?')[0]
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]),
+        response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[-1]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
                               'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
         response_dict = json.loads(response.content)
@@ -320,7 +299,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
 
         # test create experiment session
         em = ExperimentMetadata.objects.order_by('?')[0]
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]),
+        response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[-1]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
                               'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
         self.assertEqual(200, response.status_code)
@@ -329,7 +308,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertTrue(response_dict['success'])
 
         # test edit/update experiment session
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[response_dict['session']['pk']]),
+        response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[response_dict['session']['pk']]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
                               'location': 'Online', 'scheduled_end_date': '2014-09-23 4:0'})
         self.assertEqual(200, response.status_code)
@@ -338,7 +317,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertTrue(response_dict['success'])
 
         # test incomplete form
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[response_dict['session']['pk']]),
+        response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[response_dict['session']['pk']]),
                              {'experiment_metadata': em.pk, 'request_type': 'delete'})
         self.assertEqual(200, response.status_code)
 
@@ -346,7 +325,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertFalse(response['success'])
 
         # test delete experiment session
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[response_dict['session']['pk']]),
+        response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[response_dict['session']['pk']]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
                               'location': 'Online', 'scheduled_end_date': '2014-09-23 4:0', 'request_type': 'delete'})
         self.assertEqual(200, response.status_code)
@@ -364,13 +343,13 @@ class SubjectPoolViewTest(SubjectPoolTest):
         participant = Participant.objects.get(pk=random.choice(pk_list))
         self.assertTrue(self.login_participant(participant))
 
-        response = self.get(reverse('subjectpool:experiment_session_signup'))
+        response = self.get(self.reverse('subjectpool:experiment_session_signup'))
         self.assertEqual(200, response.status_code)
 
         self.setup_invitations(x, es_pk_list)
         invitation = Invitation.objects.filter(participant=participant).order_by('?')[0]
 
-        response = self.post(reverse('subjectpool:submit_experiment_session_signup'), {
+        response = self.post(self.reverse('subjectpool:submit_experiment_session_signup'), {
             'invitation_pk': invitation.pk,
             'experiment_metadata_pk': invitation.experiment_session.experiment_metadata_id
         })
@@ -380,12 +359,12 @@ class SubjectPoolViewTest(SubjectPoolTest):
 
         # test cancel session signup
         ps = ParticipantSignup.objects.get(invitation=invitation)
-        response = self.post(reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
+        response = self.post(self.reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
         self.assertEqual(302, response.status_code)
         self.assertTrue(self.dashboard_url in response['Location'])
 
         # test canceling an already canceled session signup
-        response = self.post(reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
+        response = self.post(self.reverse('subjectpool:cancel_experiment_session_signup'), {'pk': ps.pk})
         self.assertEqual(302, response.status_code)
         self.assertTrue(self.dashboard_url in response['Location'])
 
@@ -394,7 +373,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         invitation.experiment_session.capacity = 0
         invitation.experiment_session.save()
 
-        response = self.post(reverse('subjectpool:submit_experiment_session_signup'), {
+        response = self.post(self.reverse('subjectpool:submit_experiment_session_signup'), {
             'invitation_pk': invitation.pk,
             'experiment_metadata_pk': invitation.experiment_session.experiment_metadata.pk
         })
@@ -406,7 +385,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         e = self.create_experimenter()
         self.assertTrue(self.login_experimenter(e))
         em = ExperimentMetadata.objects.order_by('?')[0]
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]),
+        response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[-1]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
                               'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
         response_dict = json.loads(response.content)
@@ -415,7 +394,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         es.creator = e.user
         es.save()
 
-        response = self.get(reverse('subjectpool:session_event_detail', args=[es.pk]))
+        response = self.get(self.reverse('subjectpool:session_event_detail', args=[es.pk]))
         self.assertEqual(200, response.status_code)
 
     def test_invitation_count(self):
@@ -423,7 +402,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertTrue(self.login_experimenter(e))
         self.setup_participants()
         es_pk_list = self.setup_experiment_sessions()
-        response = self.post(reverse('subjectpool:get_invitations_count'), {
+        response = self.post(self.reverse('subjectpool:get_invitations_count'), {
             'session_pk_list': es_pk_list,
             'affiliated_institution': 'Arizona State University',
             'only_undergrad': True
@@ -433,7 +412,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertTrue(response_dict['success'])
 
         # test invalid experiment sessions
-        response = self.post(reverse('subjectpool:get_invitations_count'), {
+        response = self.post(self.reverse('subjectpool:get_invitations_count'), {
             'session_pk_list': [-1],
             'affiliated_institution': 'Arizona State University',
             'only_undergrad': True
@@ -446,12 +425,12 @@ class SubjectPoolViewTest(SubjectPoolTest):
         e = self.create_experimenter()
         self.assertTrue(self.login_experimenter(e))
         em = ExperimentMetadata.objects.order_by('?')[0]
-        response = self.post(reverse('subjectpool:manage_experiment_session', args=[-1]),
+        response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[-1]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
                               'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
 
         # Test invalid form
-        response = self.post(reverse('subjectpool:invite_email_preview'), {
+        response = self.post(self.reverse('subjectpool:invite_email_preview'), {
             'invitation_subject': 'Test',
             'invitation_text': 'Test',
         })
@@ -460,7 +439,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertFalse(response_dict['success'])
 
         # Test valid form
-        response = self.post(reverse('subjectpool:invite_email_preview'), {
+        response = self.post(self.reverse('subjectpool:invite_email_preview'), {
             'number_of_people': 30,
             'only_undergrad': 'on',
             'affiliated_institution': 'Arizona State University',

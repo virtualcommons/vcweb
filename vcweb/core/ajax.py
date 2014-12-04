@@ -38,8 +38,8 @@ def create_experiment(request):
     experiment_configuration_id = request.POST.get('experiment_configuration_id')
     experiment_configuration = get_object_or_404(ExperimentConfiguration.objects.select_related('experiment_metadata'),
                                                  pk=experiment_configuration_id)
+    authentication_code = request.POST.get('authentication_code', 'test')
     experimenter = request.user.experimenter
-    authentication_code = 'test'
     e = Experiment.objects.create(experimenter=experimenter, authentication_code=authentication_code,
                                   experiment_metadata=experiment_configuration.experiment_metadata,
                                   experiment_configuration=experiment_configuration)
@@ -104,25 +104,3 @@ def get_round_data(request):
         'groupDataValues': group_data_values,
         'participantDataValues': participant_data_values
     })
-
-
-#@group_required(PermissionGroup.experimenter)
-#def experiment_controller(request):
-#    pk = request.POST.get('pk')
-#    action = request.POST.get('action')
-#    experimenter = request.user.experimenter
-#    experiment = _get_experiment(request, pk)
-#    logger.debug("experimenter %s invoking %s on %s", experimenter, action, experiment)
-#    try:
-#        response_tuples = experiment.invoke(action, experimenter)
-#        logger.debug("invoking action %s: %s", action, str(response_tuples))
-#        return JsonResponse({
-#            'success': True,
-#            'experiment': experiment.to_dict()
-#        })
-#    except AttributeError as e:
-#        logger.warning("no attribute %s on experiment %s (%s)", action, experiment.status_line, e)
-#        return JsonResponse({
-#            'success': False,
-#            'message': 'Invalid experiment action %s' % action
-#        })

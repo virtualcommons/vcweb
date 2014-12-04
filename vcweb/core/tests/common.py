@@ -158,6 +158,7 @@ class BaseVcwebTest(TestCase):
         self.factory = RequestFactory()
         self.load_experiment(**kwargs)
         self.add_participants(**kwargs)
+        self.logger = logger
         logging.disable(settings.DISABLED_TEST_LOGLEVEL)
 
     @property
