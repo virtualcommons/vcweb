@@ -189,13 +189,17 @@ class BaseVcwebTest(TestCase):
         self.experiment = Experiment.objects.get(pk=self.experiment.pk)
         return self.experiment
 
-    def post(self, *args, **kwargs):
-        response = self.client.post(*args, **kwargs)
+    def post(self, url, *args, **kwargs):
+        if ':' in url:
+            url = self.reverse(url)
+        response = self.client.post(url, *args, **kwargs)
         self.reload_experiment()
         return response
 
-    def get(self, *args, **kwargs):
-        return self.client.get(*args, **kwargs)
+    def get(self, url, *args, **kwargs):
+        if ':' in url:
+            url = self.reverse(url)
+        return self.client.get(url, *args, **kwargs)
 
     def all_data_rounds(self):
         e = self.experiment

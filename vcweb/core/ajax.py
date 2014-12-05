@@ -67,14 +67,16 @@ def is_email_available(request):
 def save_experimenter_notes(request):
     experiment_id = request.POST.get('experiment_id')
     notes = request.POST.get('notes')
+    round_data = request.POST.get('round_data_id', None)
     experiment = _get_experiment(request, experiment_id)
-    current_round_data = experiment.current_round_data
-    current_experimenter_notes = current_round_data.experimenter_notes
-    if notes != current_round_data.experimenter_notes:
+    if round_data is None:
+        round_data = experiment.current_round_data
+    current_experimenter_notes = round_data.experimenter_notes
+    if notes != round_data.experimenter_notes:
         if current_experimenter_notes:
             experiment.log("Replacing existing experimenter notes %s with %s" % (current_experimenter_notes, notes))
-        current_round_data.experimenter_notes = notes
-        current_round_data.save()
+        round_data.experimenter_notes = notes
+        round_data.save()
         return JsonResponse({'success': True})
     else:
         return JsonResponse({
@@ -94,8 +96,10 @@ def get_round_data(request):
     # a hot spot..
     pk = request.GET.get('pk')
     round_data = get_object_or_404(RoundData, pk=pk)
-    group_data_values = [gdv.to_dict(
-        cacheable=True) for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()]
+    group_data_values = [
+        gdv.to_dict(cacheable=True)
+        for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()
+    ]
     participant_data_values = [
         pdv.to_dict(include_email=True, cacheable=True)
         for pdv in round_data.get_participant_data_values().exclude(parameter=get_chat_message_parameter())

@@ -36,3 +36,28 @@ class CloneExperimentTest(BaseVcwebTest):
         self.assertEqual(cloned_experiment.experiment_configuration, self.experiment.experiment_configuration)
         self.assertNotEqual(cloned_experiment.experimenter, self.experiment.experimenter)
         self.assertEqual(cloned_experiment.experimenter, experimenter)
+
+
+class SaveExperimentNoteTest(BaseVcwebTest):
+
+    def test_current_round(self):
+        experimenter = self.experimenter
+        e = self.experiment
+        e.activate()
+        self.assertTrue(self.login_experimenter(experimenter))
+        note = "Some harrowing detail about the current round"
+        response = self.post('core:save_experimenter_notes',
+                             {'experiment_id': self.experiment.pk, 'notes': note})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(json.loads(response.content)['success'])
+        self.assertEqual(e.current_round_data.experimenter_notes, note)
+        e.advance_to_next_round()
+        self.assertFalse(e.current_round_data.experimenter_notes)
+        second_note = "Second round note"
+        response = self.post('core:save_experimenter_notes',
+                             {'experiment_id': self.experiment.pk, 'notes': second_note})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(json.loads(response.content)['success'])
+        self.assertEqual(e.current_round_data.experimenter_notes, second_note)
+        # make sure that the previous note still exists
+        self.assertEqual(e.get_round_data(e.previous_round).experimenter_notes, note)
