@@ -1,10 +1,9 @@
 import redis
 
-"""
-Singleton class for Redis Client
-"""
 
 class RedisPubSub(object):
+    """ Singleton class for Redis Client """
+
     __instance = None
 
     @classmethod

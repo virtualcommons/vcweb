@@ -1,13 +1,20 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST, require_GET
 
 from .decorators import group_required
-from .http import JsonResponse
-from .models import (Experiment, RoundData, get_chat_message_parameter, ExperimentConfiguration, User, PermissionGroup)
+from .forms import ChatForm, ParticipantGroupIdForm
+from .http import JsonResponse, dumps
+from .models import (Experiment, RoundData, get_chat_message_parameter, ExperimentConfiguration, User, PermissionGroup,
+                     ParticipantGroupRelationship, ChatMessage)
 
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+SUCCESS_DICT = {'success': True}
+FAILURE_DICT = {'success': False}
 
 
 def _get_experiment(request, pk):
@@ -108,3 +115,75 @@ def get_round_data(request):
         'groupDataValues': group_data_values,
         'participantDataValues': participant_data_values
     })
+
+
+@login_required
+@require_POST
+def handle_chat_message(request, pk):
+    form = ChatForm(request.POST or None)
+    if form.is_valid():
+        participant_group_id = form.cleaned_data.get('participant_group_id')
+        message = form.cleaned_data.get('message')
+        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'),
+                                pk=participant_group_id)
+        if pgr.participant != request.user.participant:
+            logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, pgr)
+            return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
+
+        experiment = Experiment.objects.get(pk=pk)
+        current_round_data = experiment.current_round_data
+        chat_message = ChatMessage.objects.create(participant_group_relationship=pgr,
+                                                  string_value=message,
+                                                  round_data=current_round_data)
+        logger.debug("Publishing to redis on channel group_channel.{}".format(pgr.group))
+        experiment.publish_to_participants(chat_message.to_json(), pgr.group)
+        experiment.publish_to_experimenter(chat_message.to_json())
+        return JsonResponse(SUCCESS_DICT)
+    return JsonResponse(FAILURE_DICT)
+
+
+@login_required
+@require_GET
+def check_ready_participants(request, pk=None):
+    experiment = get_object_or_404(Experiment, pk=pk)
+    return JsonResponse(_ready_participants_dict(experiment))
+
+
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
+@require_POST
+def participant_ready(request):
+    form = ParticipantGroupIdForm(request.POST or None)
+    if form.is_valid():
+        participant_group_id = form.cleaned_data.get('participant_group_id')
+        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group__experiment'),
+                                pk=participant_group_id)
+        experiment = pgr.group.experiment
+        round_data = experiment.current_round_data
+        pgr.set_participant_ready(round_data)
+
+        logger.debug("handling participant ready event for experiment %s", experiment)
+        message = "Participant %s is ready." % request.user.participant
+
+        experiment.publish_to_participants(create_message_event(message, "participant_ready"))
+
+        if experiment.all_participants_ready:
+            experiment.publish_to_experimenter(create_message_event(
+                "All participants are ready to move on to the next round."))
+
+        return JsonResponse(_ready_participants_dict(experiment))
+    else:
+        return JsonResponse({'success': False, 'message': "Invalid form"})
+
+
+def _ready_participants_dict(experiment):
+    number_of_ready_participants = experiment.number_of_ready_participants
+    all_participants_ready = (number_of_ready_participants == experiment.number_of_participants)
+    return {
+        'success': True,
+        'number_of_ready_participants': number_of_ready_participants,
+        'all_participants_ready': all_participants_ready
+    }
+
+
+def create_message_event(message, event_type='info'):
+    return dumps({'message': message, 'event_type': event_type})

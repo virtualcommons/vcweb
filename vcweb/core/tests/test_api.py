@@ -1,4 +1,4 @@
-from ..models import ExperimentConfiguration, Experiment
+from ..models import ExperimentConfiguration, Experiment, ChatMessage
 from .common import BaseVcwebTest
 import json
 from datetime import datetime
@@ -12,7 +12,6 @@ class CreateExperimentTest(BaseVcwebTest):
         ec = ExperimentConfiguration.objects.first()
         before_experiment_creation = datetime.now()
         json_response = self.post(self.reverse('core:create_experiment'), {'experiment_configuration_id': ec.pk})
-        self.logger.error("json response: %s", json_response)
         response = json.loads(json_response.content)
         self.assertTrue(response['success'])
         experiment_dict = response['experiment']
@@ -61,3 +60,18 @@ class SaveExperimentNoteTest(BaseVcwebTest):
         self.assertEqual(e.current_round_data.experimenter_notes, second_note)
         # make sure that the previous note still exists
         self.assertEqual(e.get_round_data(e.previous_round).experimenter_notes, note)
+
+
+class HandleChatMessageTest(BaseVcwebTest):
+
+    def test(self):
+        e = self.experiment
+        e.activate()
+        for pgr in e.participant_group_relationships:
+            self.assertTrue(self.login_participant(pgr.participant))
+            response = self.post(self.reverse('core:handle_chat_message', args=(e.pk,)),
+                                 {'participant_group_id': pgr.pk, 'message': "Chat message from %s" % pgr})
+            self.assertEqual(200, response.status_code)
+            self.assertTrue(json.loads(response.content)['success'])
+            self.assertEqual(ChatMessage.objects.get(participant_group_relationship=pgr).string_value,
+                             'Chat message from %s' % pgr)

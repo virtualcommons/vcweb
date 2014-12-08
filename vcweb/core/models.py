@@ -2637,10 +2637,8 @@ class ParticipantRoundDataValue(ParameterizedValue):
                 'participant_group_relationship'].current_round_data
         super(ParticipantRoundDataValue, self).__init__(*args, **kwargs)
 
-    round_data = models.ForeignKey(
-        RoundData, related_name='participant_data_value_set')
-    participant_group_relationship = models.ForeignKey(
-        ParticipantGroupRelationship, related_name='data_value_set')
+    round_data = models.ForeignKey(RoundData, related_name='participant_data_value_set')
+    participant_group_relationship = models.ForeignKey(ParticipantGroupRelationship, related_name='data_value_set')
     submitted = models.BooleanField(default=False)
     target_data_value = models.ForeignKey('ParticipantRoundDataValue', related_name='target_data_value_set',
                                           null=True, blank=True)
