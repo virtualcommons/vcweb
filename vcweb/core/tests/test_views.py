@@ -402,21 +402,13 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.assertTrue(self.login_experimenter(e))
         self.setup_participants()
         es_pk_list = self.setup_experiment_sessions()
-        response = self.post(self.reverse('subjectpool:get_invitations_count'), {
-            'session_pk_list': es_pk_list,
-            'affiliated_institution': 'Arizona State University',
-            'only_undergrad': True
-        })
+        response = self.get(self.reverse('subjectpool:get_invitations_count') +'?session_pk_list='+ ",".join(map(str, es_pk_list)) + '&number_of_people=30&only_undergrad=on&affiliated_institution=Arizona+State+University&invitation_subject=Text&invitation_text=Text')
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
         self.assertTrue(response_dict['success'])
 
         # test invalid experiment sessions
-        response = self.post(self.reverse('subjectpool:get_invitations_count'), {
-            'session_pk_list': [-1],
-            'affiliated_institution': 'Arizona State University',
-            'only_undergrad': True
-        })
+        response = self.get(self.reverse('subjectpool:get_invitations_count')+'?session_pk_list=-1&affiliated_institution=Arizona State University&only_undergrad=True&invitation_text=Test&invitation_subject=Test')
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
         self.assertFalse(response_dict['success'])
@@ -428,25 +420,16 @@ class SubjectPoolViewTest(SubjectPoolTest):
         response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[-1]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
                               'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
+        response_dict_session = json.loads(response.content)
 
         # Test invalid form
-        response = self.post(self.reverse('subjectpool:invite_email_preview'), {
-            'invitation_subject': 'Test',
-            'invitation_text': 'Test',
-        })
+        response = self.get(self.reverse('subjectpool:invite_email_preview') + '?invitation_subject=Test&invitation_text&Test')
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
         self.assertFalse(response_dict['success'])
 
         # Test valid form
-        response = self.post(self.reverse('subjectpool:invite_email_preview'), {
-            'number_of_people': 30,
-            'only_undergrad': 'on',
-            'affiliated_institution': 'Arizona State University',
-            'invitation_subject': 'Test',
-            'invitation_text': 'Test',
-            'session_pk_list': 46,
-        })
+        response = self.get(self.reverse('subjectpool:invite_email_preview') + '?number_of_people=30&only_undergrad=on&affiliated_institution=Arizona+State+University&invitation_subject=Text&invitation_text=Text&session_pk_list='+str(response_dict_session['session']['pk']))
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
         self.assertTrue(response_dict['success'])
