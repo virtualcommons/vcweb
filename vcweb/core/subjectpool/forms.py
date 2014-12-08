@@ -62,8 +62,8 @@ class SessionInviteForm(forms.Form):
     only_undergrad = forms.BooleanField(help_text=_(
         "Limit to self-reported undergraduate students"), widget=CheckboxInput(attrs={'checked': True}), required=False)
 
-#    GENDER_CHOICES = (('M', 'Male'), ('F', 'Female'),)
-#    gender = forms.ChoiceField(choices=GENDER_CHOICES)
+    GENDER_CHOICES = (('A', 'All'), ('M', 'Male'), ('F', 'Female'),)
+    gender = forms.ChoiceField(choices=GENDER_CHOICES)
     affiliated_institution = forms.CharField(required=False, widget=autocomplete_light.TextWidget(
         InstitutionAutocomplete, attrs={'value': 'Arizona State University'}))
     invitation_subject = forms.CharField(widget=widgets.TextInput())

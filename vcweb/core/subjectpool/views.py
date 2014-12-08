@@ -142,7 +142,8 @@ def get_invitations_count(request):
             # As all sessions selected by experimenter to send invitations belong to same experiment metadata
             # get the experiment metadata pk of any session (This is ensured as it is a constraint)
             potential_participants = get_potential_participants(experiment_metadata[0],
-                    form.cleaned_data.get('affiliated_institution'), only_undergrad=form.cleaned_data.get('only_undergrad'))
+                    gender=form.cleaned_data.get('gender'), institution=form.cleaned_data.get('affiliated_institution'),
+                    only_undergrad=form.cleaned_data.get('only_undergrad'))
             return JsonResponse({ 'success': True, 'invitesCount': len(potential_participants)})
     return JsonResponse({ 'success': False, 'invitesCount': 0, 'errors': form.errors})
 
@@ -189,8 +190,9 @@ def send_invitations(request):
             # invitations belong to same experiment metadata (This has to be ensured as it is a constraint)
             experiment_metadata_pk = experiment_metadata_pk_list[0]
 
-            potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_institution,
-                                                                only_undergrad=form.cleaned_data.get('only_undergrad'))
+            potential_participants = get_potential_participants(experiment_metadata_pk, institution=affiliated_institution,
+                                                                only_undergrad=form.cleaned_data.get('only_undergrad'),
+                                                                gender=form.cleaned_data.get('gender'))
             potential_participants_count = len(potential_participants)
 
             final_participants = None
@@ -258,14 +260,15 @@ def invite_email_preview(request):
     return JsonResponse({'success': False, 'message': message})
 
 
-def get_potential_participants(experiment_metadata_pk, institution="Arizona State University", only_undergrad=True):
+def get_potential_participants(experiment_metadata_pk, institution="Arizona State University", gender='A', only_undergrad=True):
     """
     Returns the pool of participants which match the required invitation criteria.
     """
     # Get excluded participants for the given parameters
     excluded_participants = get_excluded_participants(experiment_metadata_pk)
+    logger.debug(gender)
     return Participant.objects.invitation_eligible(
-        only_undergrad=only_undergrad, institution=institution).exclude(pk__in=excluded_participants)
+        only_undergrad=only_undergrad, gender=gender, institution=institution).exclude(pk__in=excluded_participants)
 
 
 def get_excluded_participants(experiment_metadata_pk):

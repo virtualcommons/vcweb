@@ -2319,7 +2319,7 @@ class ParticipantQuerySet(models.query.QuerySet):
     def invalid_participants(self, *args, **kwargs):
         return self.filter(user__email__contains='mailinator.com')
 
-    def invitation_eligible(self, only_undergrad=True, institution='Arizona State University'):
+    def invitation_eligible(self, only_undergrad=True, gender='A', institution='Arizona State University'):
         try:
             affiliated_institution = Institution.objects.get(name=institution)
         except Institution.DoesNotExist:
@@ -2331,6 +2331,8 @@ class ParticipantQuerySet(models.query.QuerySet):
         if only_undergrad:
             criteria.update(
                 class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES)
+        if gender != 'A':
+            criteria.update(gender=gender)
         return self.filter(**criteria)
 
 
