@@ -128,38 +128,23 @@ def datetime_to_timestamp(date):
 
 
 @group_required(PermissionGroup.experimenter)
-@require_POST
+@require_GET
 def get_invitations_count(request):
     """
     API endpoint that returns the potential participant count based on the selected experiment metadata and Institution
     """
 
-    session_pk_list = request.POST.get('session_pk_list').split(",")
-    affiliated_institution = request.POST.get('affiliated_institution')
-
-    experiment_sessions = ExperimentSession.objects.filter(pk__in=session_pk_list)
-    experiment_metadata_pk_list = experiment_sessions.values_list(
-        'experiment_metadata__pk', flat=True)
-
-    if len(set(experiment_metadata_pk_list)) == 1:
-        # As all sessions selected by experimenter to send invitations belong to same experiment metadata
-        # get the experiment metadata pk of any session (This is ensured as it
-        # is a constraint)
-        experiment_metadata_pk = experiment_metadata_pk_list[0]
-
-        only_undergrad = request.POST.get('only_undergrad')
-
-        potential_participants = get_potential_participants(experiment_metadata_pk, affiliated_institution,
-                                                            only_undergrad=only_undergrad)
-        return JsonResponse({
-            'success': True,
-            'invitesCount': len(potential_participants)
-        })
-    else:
-        return JsonResponse({
-            'success': False,
-            'invitesCount': 0
-        })
+    form = SessionInviteForm(request.GET or None)
+    if form.is_valid():
+        session_pk_list = request.GET.get('session_pk_list').split(",")
+        experiment_metadata = ExperimentSession.objects.filter(pk__in=session_pk_list).values_list('experiment_metadata__pk', flat=True)
+        if len(set(experiment_metadata)) == 1:
+            # As all sessions selected by experimenter to send invitations belong to same experiment metadata
+            # get the experiment metadata pk of any session (This is ensured as it is a constraint)
+            potential_participants = get_potential_participants(experiment_metadata[0],
+                    form.cleaned_data.get('affiliated_institution'), only_undergrad=form.cleaned_data.get('only_undergrad'))
+            return JsonResponse({ 'success': True, 'invitesCount': len(potential_participants)})
+    return JsonResponse({ 'success': False, 'invitesCount': 0, 'errors': form.errors})
 
 
 def get_invitation_email_content(custom_invitation_text, experiment_session_ids):
@@ -258,22 +243,19 @@ def send_invitations(request):
 
 
 @group_required(PermissionGroup.experimenter)
-@require_POST
+@require_GET
 def invite_email_preview(request):
     """
     Generates email Preview for the provided invitation details
     """
-    form = SessionInviteForm(request.POST or None)
+    form = SessionInviteForm(request.GET or None)
     message = "Please fill in all the form fields to preview the invitation email."
     if form.is_valid():
-        invitation_text = form.cleaned_data.get('invitation_text')
-        session_pk_list = request.POST.get('session_pk_list').split(",")
+        session_pk_list = request.GET.get('session_pk_list').split(",")
         plaintext_content, html_content = get_invitation_email_content(
-            invitation_text, session_pk_list)
+                form.cleaned_data.get('invitation_text'), session_pk_list)
         return JsonResponse({'success': True, 'content': html_content})
-    else:
-        # Form is not Valid
-        return JsonResponse({'success': False, 'message': message})
+    return JsonResponse({'success': False, 'message': message})
 
 
 def get_potential_participants(experiment_metadata_pk, institution="Arizona State University", only_undergrad=True):

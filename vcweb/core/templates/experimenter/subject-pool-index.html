@@ -162,8 +162,9 @@ Experiment Session Management
                                 </td>
                                 <td>
                                     <input style="width: 70px;" class="form-control input-sm" name="capacity" type="number" min="2" data-bind ="value : capacity, enable: isEditable" />
-				                </td>
-                                <td data-bind="if: active" colspan="2">
+				                </td> 
+                                <!-- ko if: active -->
+                                <td colspan="2">
                                     <div class="btn-group" data-bind = "visible: isEditable">
                                         <button class="btn btn-success" data-bind="click: $root.saveSession">
                                             <i class="fa fa-floppy-o"></i>
@@ -184,8 +185,9 @@ Experiment Session Management
                                         </button>
                                     </div>
                                 </td>
+                                <!-- /ko -->
                                 <!-- ko ifnot: active -->
-                                <td colspan="2">
+                                <td data-bind="ifnot: active" colspan="2">
                                     <div class="btn-group">
                                         <a class="btn btn-primary" data-bind="attr: {href: 'session/detail/event/'+ pk()}">
                                             <i class="fa fa-eye"></i>
@@ -349,7 +351,7 @@ Experiment Session Management
                     var tom = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
                     var date = tom.getFullYear() + "-" +tom.getMonthFormatted() + "-" + tom.getDateFormatted();
                     model.session_list.push(
-                        new SessionModel({ pk: -1, experiment_metadata: -1, start_date: date, end_date: date, start_hour: '00', start_min: 0, end_hour: '00', end_min: 0, capacity:10, invite_count: 0, location: "Online", isEditable: true})
+                        new SessionModel({ pk: -1, experiment_metadata: -1, start_date: date, end_date: date, start_hour: '00', start_min: 0, end_hour: '00', end_min: 0, capacity:10, invite_count: 0, location: "Online", isEditable: true, signup_count: 0})
                     );
                 };
 
@@ -448,12 +450,12 @@ Experiment Session Management
                                                                .map( function(){ return this.value }).get();
                     if(session_pk_list.length) {
                         var formData = $("#invite-form form").serialize()  + '&session_pk_list='+ session_pk_list;
-                        $.post("{% url 'subjectpool:get_invitations_count' %}", formData)
+                        $.get("{% url 'subjectpool:get_invitations_count' %}?" + formData)
                             .done(function(result) {
                                 model.potentialParticipantsCount(result.invitesCount);
                             });
 
-                        $.post("{% url 'subjectpool:invite_email_preview' %}", formData)
+                        $.get("{% url 'subjectpool:invite_email_preview' %}?" + formData)
                             .done(function(result) {
                                 $("#email-content").html(
                                     '<fieldset class="scheduler-border"><legend class="scheduler-border">Email Preview</legend><div id="email-text"></div></fieldset>');
@@ -483,6 +485,5 @@ Experiment Session Management
             }
             ko.applyBindings(new SessionListViewModel(viewModelJson));
         });
-
     </script>
 {% endblock %}
