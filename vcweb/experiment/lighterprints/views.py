@@ -74,14 +74,11 @@ def post_chat_message(request):
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'),
                                 pk=participant_group_id)
         if pgr.participant != request.user.participant:
-            logger.warning(
-                "authenticated user %s tried to post message %s as %s", request.user, message, pgr)
+            logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, pgr)
             return JsonResponse({'success': False, 'message': "Invalid request"})
-        chat_message = ChatMessage.objects.create(
-            value=message, participant_group_relationship=pgr)
+        chat_message = ChatMessage.objects.create(value=message, participant_group_relationship=pgr)
         logger.debug("%s: %s", pgr.participant, chat_message)
-        # FIXME: can optimize by only retrieving the latest group activity
-        # since the last checkin time
+        # FIXME: optimize, only retrieving the latest group activity since the last checkin time
         group_activity = GroupActivity(pgr)
         return JsonResponse({'success': True, 'viewModel': {'groupActivity': group_activity.all_activities}})
     return JsonResponse({'success': False, 'message': "Invalid chat message post"})

@@ -3,7 +3,7 @@ import logging
 
 from django.core.cache import cache
 from vcweb.core.tests import BaseVcwebTest
-from vcweb.core.models import ParticipantRoundDataValue
+from vcweb.core.models import ParticipantRoundDataValue, ChatMessage, Like, Comment
 from .models import (Activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter,
                      get_footprint_level, get_performed_activity_ids, get_treatment_type_parameter,
                      is_scheduled_activity_experiment, is_level_based_experiment, is_high_school_treatment)
@@ -161,9 +161,9 @@ class GroupActivityTest(LevelBasedTest):
             self.assertEqual(len(messages), group.size)
 
 
-class ActivityTest(LevelBasedTest):
+class PerformActivityTest(LevelBasedTest):
 
-    def test_view(self):
+    def test_comments_likes(self):
         logger.debug("testing do activity view")
         e = self.experiment
         e.activate()
@@ -173,13 +173,11 @@ class ActivityTest(LevelBasedTest):
         for participant_group_relationship in e.participant_group_relationships:
             logger.debug("all available activities: %s", activities)
             participant = participant_group_relationship.participant
-            self.client.login(username=participant.email, password='test')
+            self.login_participant(participant, password='test')
             for activity in activities:
-                logger.debug("participant %s performing activity %s", participant_group_relationship.participant,
-                             activity)
-                expected_success = activity.is_available_for(
-                    participant_group_relationship, rd)
-                response = self.post(self.reverse('lighterprints:perform_activity'), {
+                logger.debug("participant %s performing activity %s", participant, activity)
+                expected_success = activity.is_available_for(participant_group_relationship, rd)
+                response = self.post('lighterprints:perform_activity', {
                     'participant_group_id': participant_group_relationship.id,
                     'activity_id': activity.pk
                 })
@@ -196,20 +194,44 @@ class ActivityTest(LevelBasedTest):
                 json_object = json.loads(response.content)
                 self.assertFalse(json_object['success'])
 
-            performed_activity_ids = get_performed_activity_ids(
-                participant_group_relationship)
-            text = "This is a harrowing comment"
-            for activity_id in performed_activity_ids:
-                logger.debug("posting comment on id %s", activity_id)
-                response = self.post(self.reverse('lighterprints:post_comment'), {
+            # test comments on performed activities
+            performed_activity_ids = get_performed_activity_ids(participant_group_relationship)
+            text = "This is a harrowing comment by %s" % participant_group_relationship
+            self.assertFalse(Like.objects.filter(
+                participant_group_relationship=participant_group_relationship).exists())
+            self.assertFalse(Comment.objects.filter(
+                participant_group_relationship=participant_group_relationship).exists())
+            for performed_activity_id in performed_activity_ids:
+                # test comment posting on performed activities
+                response = self.post('lighterprints:post_comment', {
                     'participant_group_id': participant_group_relationship.pk,
                     'message': text,
-                    'target_id': activity_id
+                    'target_id': performed_activity_id
                 })
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
-                self.assertTrue(json_object)
-                self.assertIsNotNone(json_object['viewModel'])
+                self.assertTrue(json_object['success'])
+                c = Comment.objects.get(participant_group_relationship__pk=participant_group_relationship.pk,
+                                        target_data_value__id=performed_activity_id)
+                self.assertEqual(c.string_value, text)
+                # test likes on comment and performed activities
+                response = self.post('lighterprints:like', {
+                    'participant_group_id': participant_group_relationship.pk,
+                    'target_id': c.pk
+                })
+                self.assertEqual(response.status_code, 200)
+                self.assertTrue(json.loads(response.content)['success'])
+                self.assertTrue(Like.objects.filter(participant_group_relationship=participant_group_relationship,
+                                                    target_data_value__id=c.pk).exists())
+
+                response = self.post('lighterprints:like', {
+                    'participant_group_id': participant_group_relationship.pk,
+                    'target_id': performed_activity_id
+                })
+                self.assertEqual(response.status_code, 200)
+                self.assertTrue(json.loads(response.content)['success'])
+                self.assertTrue(Like.objects.filter(participant_group_relationship=participant_group_relationship,
+                                                    target_data_value__id=performed_activity_id).exists())
 
 
 class GroupScoreTest(LevelBasedTest):
@@ -224,10 +246,8 @@ class GroupScoreTest(LevelBasedTest):
         gs = e.groups
         group_scores = GroupScores(e, groups=gs)
         for group in gs:
-            self.assertEqual(
-                group_scores.average_daily_points(group), expected_avg_points_per_person)
-            self.assertEqual(group_scores.total_daily_points(
-                group), expected_avg_points_per_person * group.size)
+            self.assertEqual(group_scores.average_daily_points(group), expected_avg_points_per_person)
+            self.assertEqual(group_scores.total_daily_points(group), expected_avg_points_per_person * group.size)
             for pgr in group.participant_group_relationship_set.all():
                 self.assertEqual(get_individual_points(
                     pgr, group_scores.round_data), expected_avg_points_per_person)
@@ -245,5 +265,32 @@ class TestRoundEndedSignal(LevelBasedTest):
         self.assertEqual(self.experiment.current_round.sequence_number, 1)
         from vcweb.core.cron import system_daily_tick
         system_daily_tick()
-        self.assertEqual(
-            self.reload_experiment().current_round.sequence_number, 2)
+        self.assertEqual(self.reload_experiment().current_round.sequence_number, 2)
+
+
+class ChatMessageTest(LevelBasedTest):
+
+    def test_chat_and_likes(self):
+        self.experiment.activate()
+        for pgr in self.experiment.participant_group_relationships:
+            message = "Chat message from %s" % pgr
+            self.login_participant(pgr.participant)
+            response = self.post('lighterprints:post_chat',
+                                 {'participant_group_id': pgr.pk, 'message': message})
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(json.loads(response.content)['success'])
+            self.assertEqual(ChatMessage.objects.get(participant_group_relationship=pgr).string_value, message)
+
+
+class LikeTest(LevelBasedTest):
+
+    def test(self):
+        self.experiment.activate()
+        for pgr in self.experiment.participant_group_relationships:
+            message = "Chat message from %s" % pgr
+            self.login_participant(pgr.participant)
+            response = self.post('lighterprints:post_chat',
+                                 {'participant_group_id': pgr.pk, 'message': message})
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(json.loads(response.content)['success'])
+            self.assertEqual(ChatMessage.objects.get(participant_group_relationship=pgr).string_value, message)
