@@ -430,8 +430,7 @@ Experiment Session Management
                                     $('#email-content').html("");
 
                                     ko.utils.arrayForEach(model.session_list(), function(session) {
-                                        if($.inArray(session.pk() +"", session_pk_list) == 0){
-                                            console.log(session.invite_count())
+                                        if($.inArray(session.pk() +"", session_pk_list) != -1){
                                             session.invite_count(session.invite_count() + result.invitesCount);
                                         }
                                     });
