@@ -65,13 +65,12 @@ ko.bindingHandlers.slideVisible = {
     }
 };
 
-
 ko.bindingHandlers.datepicker = {
     init: function(element, valueAccessor, allBindingsAccessor) {
         //initialize datepicker with some optional options
-        var options = { format: 'yyyy-mm-dd', start_date: '-d' };
-        $(element).datepicker(options);
-
+        var options = { pickTime: false };
+        $(element).datetimepicker(options);
+	
         //when a user changes the date, update the view model
         ko.utils.registerEventHandler(element, "changeDate", function(event) {
             var value = valueAccessor();
@@ -79,6 +78,12 @@ ko.bindingHandlers.datepicker = {
                 value(event.date);
             }
         });
+	ko.utils.registerEventHandler(element, "dp.change", function(event) {
+		if($(element).hasClass("date-start")) {
+		    $(element).parents("tbody").find(".date-end").data("DateTimePicker").setMinDate(event.date);
+		    $(element).parents("tbody").find(".date-end").data("DateTimePicker").setDate(event.date);
+		}
+	});
     },
     update: function(element, valueAccessor)   {
         var widget = $(element).data("datepicker");
@@ -87,9 +92,11 @@ ko.bindingHandlers.datepicker = {
             widget.date = new Date(ko.utils.unwrapObservable(valueAccessor()));
             widget.setValue();
         }
-        $('.datepicker').hide();
+       // $('.datepicker').hide();
     }
 };
+
+
 
 ko.bindingHandlers.disableClick = {
     init: function (element, valueAccessor) {
