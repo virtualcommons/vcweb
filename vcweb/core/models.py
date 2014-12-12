@@ -2319,7 +2319,23 @@ class ParticipantQuerySet(models.query.QuerySet):
     def invalid_participants(self, *args, **kwargs):
         return self.filter(user__email__contains='mailinator.com')
 
-    def invitation_eligible(self, only_undergrad=True, gender='A', institution='Arizona State University'):
+    def invitation_eligible(self, experiment_metadata, only_undergrad=True, gender='A', institution='Arizona State University'):
+
+        # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
+        # given Experiment metadata
+        invited_in_last_threshold_days = Invitation.objects.already_invited(
+            experiment_metadata_pk=experiment_metadata).values_list('participant__pk', flat=True)
+
+        # signup_participants is the list of participants who has already participated in the
+        # given Experiment Metadata(in the past or currently participating)
+        signup_participants = ParticipantSignup.objects.registered(
+            experiment_metadata_pk=experiment_metadata).values_list('invitation__participant__pk', flat=True)
+
+        invalid_participants = self.invalid_participants().values_list('pk', flat=True)
+        # a list of participant pks who have already received invitations in last threshold days, have already
+        # participated in the same experiment, or have 'mailinator.com' in their name
+        ineligible_participants = list(set(itertools.chain(invited_in_last_threshold_days, signup_participants, invalid_participants)))
+
         try:
             affiliated_institution = Institution.objects.get(name=institution)
         except Institution.DoesNotExist:
@@ -2333,7 +2349,8 @@ class ParticipantQuerySet(models.query.QuerySet):
                 class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES)
         if gender != 'A':
             criteria.update(gender=gender)
-        return self.filter(**criteria)
+        return self.filter(**criteria).exclude(pk__in=ineligible_participants)
+
 
 
 class Participant(CommonsUser):

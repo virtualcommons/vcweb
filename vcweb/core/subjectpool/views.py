@@ -141,7 +141,7 @@ def get_invitations_count(request):
         if len(set(experiment_metadata)) == 1:
             # As all sessions selected by experimenter to send invitations belong to same experiment metadata
             # get the experiment metadata pk of any session (This is ensured as it is a constraint)
-            potential_participants = get_potential_participants(experiment_metadata[0],
+            potential_participants = Participant.objects.invitation_eligible(experiment_metadata[0],
                     gender=form.cleaned_data.get('gender'), institution=form.cleaned_data.get('affiliated_institution'),
                     only_undergrad=form.cleaned_data.get('only_undergrad'))
             return JsonResponse({ 'success': True, 'invitesCount': len(potential_participants)})
@@ -190,10 +190,10 @@ def send_invitations(request):
             # invitations belong to same experiment metadata (This has to be ensured as it is a constraint)
             experiment_metadata_pk = experiment_metadata_pk_list[0]
 
-            potential_participants = get_potential_participants(experiment_metadata_pk, institution=affiliated_institution,
+            potential_participants = Participant.objects.invitation_eligible(experiment_metadata_pk, institution=affiliated_institution,
                                                                 only_undergrad=form.cleaned_data.get('only_undergrad'),
                                                                 gender=form.cleaned_data.get('gender'))
-            potential_participants_count = len(potential_participants)
+            potential_participants_count = potential_participants.count()
 
             final_participants = None
 
@@ -258,38 +258,6 @@ def invite_email_preview(request):
                 form.cleaned_data.get('invitation_text'), session_pk_list)
         return JsonResponse({'success': True, 'content': html_content})
     return JsonResponse({'success': False, 'message': message})
-
-
-def get_potential_participants(experiment_metadata_pk, institution="Arizona State University", gender='A', only_undergrad=True):
-    """
-    Returns the pool of participants which match the required invitation criteria.
-    """
-    # Get excluded participants for the given parameters
-    excluded_participants = get_excluded_participants(experiment_metadata_pk)
-    logger.debug(gender)
-    return Participant.objects.invitation_eligible(
-        only_undergrad=only_undergrad, gender=gender, institution=institution).exclude(pk__in=excluded_participants)
-
-
-def get_excluded_participants(experiment_metadata_pk):
-    """
-    Returns the pool of participants which do not match the required invitation criteria.
-    """
-    # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
-    # given Experiment metadata
-    invited_in_last_threshold_days = Invitation.objects.already_invited(
-        experiment_metadata_pk=experiment_metadata_pk).values_list('participant__pk', flat=True)
-
-    # signup_participants is the list of participants who has already participated in the
-    # given Experiment Metadata(in the past or currently participating)
-    signup_participants = ParticipantSignup.objects.registered(
-        experiment_metadata_pk=experiment_metadata_pk).values_list('invitation__participant__pk', flat=True)
-
-    invalid_participants = Participant.objects.invalid_participants().values_list('pk', flat=True)
-    # returns a list of participant pks who have already received invitations in last threshold days, have already
-    # participated in the same experiment, or have 'mailinator.com' in their
-    # name
-    return list(set(itertools.chain(invited_in_last_threshold_days, signup_participants, invalid_participants)))
 
 
 @group_required(PermissionGroup.experimenter)

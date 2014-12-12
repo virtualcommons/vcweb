@@ -9,8 +9,6 @@ from django.test.client import RequestFactory, Client
 from ..models import (Experiment, Experimenter, ExperimentConfiguration, RoundConfiguration, Parameter, Group, User,
                       PermissionGroup, Participant, ParticipantSignup, Institution, ExperimentSession, Invitation)
 
-from ..subjectpool.views import get_potential_participants
-
 import logging
 
 logger = logging.getLogger(__name__)
@@ -280,8 +278,7 @@ class SubjectPoolTest(BaseVcwebTest):
         return es_pk
 
     def get_final_participants(self):
-        potential_participants = get_potential_participants(
-            self.experiment_metadata.pk, "Arizona State University")
+        potential_participants = Participant.objects.invitation_eligible(self.experiment_metadata.pk)
         potential_participants_count = len(potential_participants)
         # logger.debug(potential_participants)
         no_of_invitations = 50
