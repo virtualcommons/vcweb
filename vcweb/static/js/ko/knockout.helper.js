@@ -68,35 +68,22 @@ ko.bindingHandlers.slideVisible = {
 ko.bindingHandlers.datepicker = {
     init: function(element, valueAccessor, allBindingsAccessor) {
         //initialize datepicker with some optional options
-        var options = { pickTime: false };
+	var options = { minDate: moment(), sideBySide: true };
         $(element).datetimepicker(options);
-	
-        //when a user changes the date, update the view model
-        ko.utils.registerEventHandler(element, "changeDate", function(event) {
-            var value = valueAccessor();
-            if (ko.isObservable(value) && event.date > new Date()) {
-                value(event.date);
-            }
-        });
+
+	ko.utils.registerEventHandler(element, "dp.show", function(event) {
+		var value = ko.utils.unwrapObservable(valueAccessor());
+		$(element).data("DateTimePicker").setDate(value);
+	});	
+
 	ko.utils.registerEventHandler(element, "dp.change", function(event) {
-		if($(element).hasClass("date-start")) {
-		    $(element).parents("tbody").find(".date-end").data("DateTimePicker").setMinDate(event.date);
-		    $(element).parents("tbody").find(".date-end").data("DateTimePicker").setDate(event.date);
-		}
+	    if($(element).hasClass("date-start")) {
+		$(element).parents("tbody").find(".date-end").data("DateTimePicker").setMinDate(event.date);
+		$(element).parents("tbody").find(".date-end").data("DateTimePicker").setDate(event.date);
+	    }
 	});
-    },
-    update: function(element, valueAccessor)   {
-        var widget = $(element).data("datepicker");
-        //when the view model is updated, update the widget
-        if (widget) {
-            widget.date = new Date(ko.utils.unwrapObservable(valueAccessor()));
-            widget.setValue();
-        }
-       // $('.datepicker').hide();
     }
 };
-
-
 
 ko.bindingHandlers.disableClick = {
     init: function (element, valueAccessor) {
