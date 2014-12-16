@@ -656,6 +656,9 @@
                         experimentModel.readyParticipants(response.number_of_ready_participants);
                     });
                     break;
+                case 'info':
+                    console.log("INFO: " + message);
+                    break;
                 default:
                     console.debug("unhandled message:" + message);
                     break;

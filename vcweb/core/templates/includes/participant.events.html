@@ -7,14 +7,15 @@ function createMessageEvent(payload, event_type) {
         event_type = "chat";
     }
     return JSON.stringify({
-        "event_type": event_type,
-        "user_id": {{ request.user.pk }},
-        "auth_token": "{{ request.user.participant.authentication_token }}",
-        "experiment_id": {{experiment.pk|default:-1}},
+        event_type: event_type,
+        user_id: {{ request.user.pk }},
+        auth_token: "{{ request.user.participant.authentication_token }}",
+        email: "{{ request.user.email }}",
+        experiment_id: {{experiment.pk|default:-1}},
         {% if participant_group_relationship %}
-            "participant_group": "{{participant_group_relationship.group|default:-1}}",
+            participant_group: "{{participant_group_relationship.group|default:-1}}",
         {% endif %}
-        "message": payload
+        message: payload
     });
 }
 </script>

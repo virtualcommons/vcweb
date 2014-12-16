@@ -7,12 +7,12 @@ function createMessageEvent(message, event_type) {
         event_type = "experimenter";
     }
     return JSON.stringify({
-        "event_type": event_type,
-        "experiment_id": {{experiment.pk}},
-        "user_id": {{ request.user.pk }},
-        "email": "{{ request.user.email }}",
-        "auth_token": "{{ request.user.experimenter.authentication_token }}",
-        "message": message
+        event_type: event_type,
+        experiment_id: {{experiment.pk}},
+        user_id: {{ request.user.pk }},
+        email: "{{ request.user.email }}",
+        auth_token: "{{ request.user.experimenter.authentication_token }}",
+        message: message
     });
 }
 </script>

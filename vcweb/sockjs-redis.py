@@ -94,12 +94,36 @@ class RedisSockJSConnection(SockJSConnection):
     def is_connection_event(self, message_dict):
         return message_dict['event_type'] == 'connect'
 
-    def is_authenticated(self, message_dict):
-        return self.get_auth_token(message_dict) == message_dict.get('auth_token')
+    def is_valid(self, auth_token):
+        valid = self.get_auth_token() == auth_token
+        logger.debug("checking validity of %s: %s", auth_token, valid)
+        return valid
 
-    def get_auth_token(self, message_dict):
-        key = message_dict['email'] + "_" + message_dict['user_id']
+    def get_auth_token(self):
+        key = "%s_%s" % (self.email, self.user_id)
         return RedisPubSub.get_redis_instance().get(key)
+
+    def on_message(self, message):
+        if not message:
+            logger.warn("Received empty message")
+            return
+        message_dict = json.loads(message)
+        self.email = message_dict['email']
+        self.user_id = message_dict['user_id']
+        logger.debug("message: %s", message_dict)
+        auth_token = message_dict.get('auth_token')
+        if self.is_connection_event(message_dict) and self.is_valid(auth_token):
+            self.initialize(message_dict)
+            subscriber.subscribe(self.redis_channels, self)
+            self.info("Real-time connection enabled")
+        else:
+            self.info("Failed to authenticate with the real-time server. Please try signing out and signing back in.")
+            logger.debug("Failed to connect due to auth_token mismatch. Found (%s) expected (%s)",
+                         auth_token, self.get_auth_token(message_dict))
+
+    def on_close(self):
+        for channel in self.redis_channels:
+            subscriber.unsubscribe(channel, self)
 
 
 # sockjs-tornado creates a new instance for every connected client.
@@ -108,28 +132,14 @@ class ParticipantConnection(RedisSockJSConnection):
     sockjs connection for participants
     """
 
-    def on_message(self, msg):
-        if not msg:
-            return
-        message_dict = json.loads(msg)
-        logger.debug("message: %s", message_dict)
+    def initialize(self, message_dict):
+        self.group = message_dict['participant_group']
+        self.experiment = message_dict['experiment_id']
 
-        auth_token = self.get_auth_token(message_dict)
-        if self.is_authenticated(message_dict):
-            self.group = message_dict['participant_group']
-            self.experiment = message_dict['experiment_id']
-            # Subscribe to 'experiment' and 'group' message channels
-            subscriber.subscribe([RedisPubSub.get_participant_broadcast_channel(self.experiment),
-                                  RedisPubSub.get_participant_group_channel(self.group)],
-                                 self)
-        else:
-            self.error("Failed to authenticate with the real-time server. Please try signing out and signing back in.")
-            logger.debug("Failed to connect due to auth_token mismatch. Found (%s) expected (%s)",
-                         auth_token, message_dict['auth_token'])
-
-    def on_close(self):
-        subscriber.unsubscribe(RedisPubSub.get_participant_broadcast_channel(self.experiment), self)
-        subscriber.unsubscribe(RedisPubSub.get_participant_group_channel(self.group), self)
+    @property
+    def redis_channels(self):
+        return (RedisPubSub.get_participant_broadcast_channel(self.experiment),
+                RedisPubSub.get_participant_group_channel(self.group))
 
 
 class ExperimenterConnection(RedisSockJSConnection):
@@ -137,25 +147,12 @@ class ExperimenterConnection(RedisSockJSConnection):
     sockjs connection for experimenters.
     """
 
-    def on_message(self, msg):
-        if not msg:
-            return
-        message_dict = json.loads(msg)
-        logger.debug("message: %s", message_dict)
-        auth_token = self.get_auth_token(message_dict)
-        if self.is_authenticated(message_dict):
-            # Subscribe to experiment specific 'broadcast' message channels
-            self.experiment = message_dict['experiment_id']
-            subscriber.subscribe([RedisPubSub.get_experimenter_channel(self.experiment)], self)
-            # Send success message to experimenter
-            self.info("Real-time connection enabled")
-        else:
-            self.info("Authentication failed for real-time connection, please try signing out and signing back in.")
-            logger.debug("Failed to connect due to auth_token mismatch. Found (%s) expected (%s)",
-                         auth_token, message_dict['auth_token'])
+    def initialize(self, message_dict):
+        self.experiment = message_dict['experiment_id']
 
-    def on_close(self):
-        subscriber.unsubscribe(RedisPubSub.get_experimenter_channel(self.experiment), self)
+    @property
+    def redis_channels(self):
+        return [RedisPubSub.get_experimenter_channel(self.experiment)]
 
 
 def main(argv=None):
