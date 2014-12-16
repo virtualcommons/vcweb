@@ -98,9 +98,9 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'vcweb.urls'
 
 # cookie storage vs session storage of django messages
-#MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
+# MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
-
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
@@ -167,9 +167,7 @@ STATIC_ROOT = '/var/www/vcweb/static/'
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'vcweb', 'static').replace('\\', '/'),)
 
-#### Media file configuration (for user uploads etc) ####
-
-# Absolute path to the directory that holds media.
+# Absolute path to the directory that holds media (user uploads).
 # Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT = os.path.join(STATIC_ROOT, 'media')
 
