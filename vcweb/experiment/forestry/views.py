@@ -123,10 +123,8 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
                                                                                    current_round_data, ec)
     experiment_model_dict['templateName'] = current_round.template_name
     experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
-    experiment_model_dict[
-        'showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
-    experiment_model_dict[
-        'participantGroupId'] = participant_group_relationship.pk
+    experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
+    experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
 
     # instructions round parameters
     if current_round.is_instructions_round:

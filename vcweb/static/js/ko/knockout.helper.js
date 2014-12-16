@@ -97,4 +97,3 @@ ko.bindingHandlers.disableClick = {
         ko.bindingHandlers.css.update(element, function() {return { disabled: value }; });
     }
 };
-

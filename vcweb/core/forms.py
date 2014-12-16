@@ -10,7 +10,6 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm
-from django.contrib.auth.models import User
 from django.core.validators import validate_email
 from django.forms import widgets, ValidationError, CheckboxInput
 from django.forms.util import ErrorDict
@@ -25,6 +24,7 @@ from contact_form.forms import ContactForm
 logger = logging.getLogger(__name__)
 
 email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
+
 
 class NumberInput(widgets.Input):
     input_type = 'number'
@@ -42,40 +42,43 @@ class URLInput(widgets.Input):
     input_type = 'url'
 
 
-#class BaseRegistrationForm(forms.Form):
-#    required_css_class = 'required'
-#
-#    first_name = forms.CharField(widget=widgets.TextInput)
-#    last_name = forms.CharField(widget=widgets.TextInput)
-#    email = forms.EmailField(widget=EmailInput, help_text=_('Please enter a valid email.'))
-#    password = forms.CharField(widget=widgets.PasswordInput)
-#    confirm_password = forms.CharField(widget=widgets.PasswordInput)
-#    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete),
-#                                  help_text=_('The primary institution, if any, you are affiliated with.'))
-#
-#    def clean_email(self):
-#        email_address = self.cleaned_data.get('email', '').lower()
-#        if not email_address:
-#            raise ValidationError(_("Please enter a valid email address."))
-#        try:
-#            User.objects.get(email=email_address)
-#        except User.DoesNotExist:
-#            return email_address
-#        raise forms.ValidationError(_("This email address is already registered in our system."),
-#                                    code='already-registered')
-#
-#    def clean(self):
-#        cleaned_data = super(BaseRegistrationForm, self).clean()
-#        pw = cleaned_data['password']
-#        confirm_pw = cleaned_data['confirm_password']
-#        if pw == confirm_pw:
-#            return cleaned_data
-#        raise forms.ValidationError(_("Please make sure your passwords match."), code='invalid')
+"""
+XXX: open registration currently disabled.
 
+class BaseRegistrationForm(forms.Form):
+    required_css_class = 'required'
 
-#class RegistrationForm(BaseRegistrationForm):
-#    experimenter = forms.BooleanField(required=False,
-#                                      help_text=_('Check this box if you would like to request experimenter access.'))
+    first_name = forms.CharField(widget=widgets.TextInput)
+    last_name = forms.CharField(widget=widgets.TextInput)
+    email = forms.EmailField(widget=EmailInput, help_text=_('Please enter a valid email.'))
+    password = forms.CharField(widget=widgets.PasswordInput)
+    confirm_password = forms.CharField(widget=widgets.PasswordInput)
+    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete),
+                                  help_text=_('The primary institution, if any, you are affiliated with.'))
+
+    def clean_email(self):
+        email_address = self.cleaned_data.get('email', '').lower()
+        if not email_address:
+            raise ValidationError(_("Please enter a valid email address."))
+        try:
+            User.objects.get(email=email_address)
+        except User.DoesNotExist:
+            return email_address
+        raise forms.ValidationError(_("This email address is already registered in our system."),
+                                    code='already-registered')
+
+    def clean(self):
+        cleaned_data = super(BaseRegistrationForm, self).clean()
+        pw = cleaned_data['password']
+        confirm_pw = cleaned_data['confirm_password']
+        if pw == confirm_pw:
+            return cleaned_data
+        raise forms.ValidationError(_("Please make sure your passwords match."), code='invalid')
+
+class RegistrationForm(BaseRegistrationForm):
+    experimenter = forms.BooleanField(required=False,
+                                      help_text=_('Check this box if you would like to request experimenter access.'))
+"""
 
 
 class VcwebPasswordResetForm(PasswordResetForm):
@@ -124,11 +127,12 @@ class AsuRegistrationForm(forms.ModelForm):
 
     class Meta:
         model = Participant
-        fields = ['first_name', 'last_name', 'email', 'gender', 'institution', 'can_receive_invitations', 'class_status',
-                  'major', 'favorite_sport', 'favorite_food', 'favorite_color', 'favorite_movie_genre']
+        fields = ['first_name', 'last_name', 'email', 'gender', 'institution', 'can_receive_invitations',
+                  'class_status', 'major', 'favorite_sport', 'favorite_food', 'favorite_color', 'favorite_movie_genre']
         widgets = {
             'major': autocomplete_light.TextWidget(ParticipantMajorAutocomplete)
         }
+
 
 class AccountForm(forms.ModelForm):
     required_css_class = 'required'
@@ -189,7 +193,7 @@ class ExperimenterAccountForm(AccountForm):
 
     class Meta:
         model = Experimenter
-        fields = ['first_name', 'last_name', 'email',]
+        fields = ['first_name', 'last_name', 'email']
 
 
 class ExperimentConfigurationForm(forms.ModelForm):
@@ -210,7 +214,6 @@ class ExperimentConfigurationForm(forms.ModelForm):
                 field.widget.attrs.update(
                     {'class': 'has-popover', 'data-content': help_text, 'data-placement': 'right',
                      'data-container': 'body'})
-
 
     def save(self, commit=True):
         ec = super(ExperimentConfigurationForm, self).save(commit=False)
@@ -357,7 +360,7 @@ class EmailListField(forms.CharField):
     def clean(self, value):
         super(EmailListField, self).clean(value)
         lines = value.split('\n')
-        #emails = email_separator_re.split(value)
+        # emails = email_separator_re.split(value)
         if not lines:
             raise ValidationError(_(u'You must enter at least one email address.'))
         emails = []
@@ -446,8 +449,7 @@ class RegisterExcelParticipantsForm(RegisterParticipantsForm):
 class ChatForm(forms.Form):
     message = forms.CharField()
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
-    target_participant_group_id = forms.IntegerField(
-        widget=forms.HiddenInput, required=False)
+    target_participant_group_id = forms.IntegerField(widget=forms.HiddenInput, required=False)
 
     def clean_message(self):
         return self.cleaned_data['message']
@@ -455,6 +457,7 @@ class ChatForm(forms.Form):
 
 class ParticipantGroupIdForm(forms.Form):
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
+    message = forms.CharField(required=False)
 
 
 class GeoCheckinForm(forms.Form):
@@ -506,45 +509,12 @@ class CommentForm(forms.Form):
     participant_group_id = forms.IntegerField(widget=forms.HiddenInput)
 
 
-#class LogMessageForm(forms.Form):
-#    log_levels = [(getattr(logging, levelName), levelName) for levelName in ('DEBUG', 'INFO', 'WARNING',
-#                                                                             'ERROR', 'CRITICAL')]
-#    level = forms.ChoiceField(choices=log_levels)
-#    message = forms.CharField()
-#
-#    def clean_level(self):
-#        level = int(self.cleaned_data['level'])
-#        if level in dict(self.log_levels):
-#            return level
-#        raise ValidationError(_("invalid log level %s" % level))
-
-
 class SingleIntegerDecisionForm(forms.Form):
     integer_decision = forms.IntegerField(required=True, min_value=0)
     participant_group_id = forms.IntegerField(
         required=True, widget=forms.widgets.HiddenInput)
     submitted = forms.BooleanField(
         required=False, widget=forms.widgets.HiddenInput)
-
-
-#class QuizForm(forms.Form):
-#    name_question = forms.CharField(
-#        max_length=64, label=_("What is your name?"))
-#
-#    def __init__(self, *args, **kwargs):
-#        quiz_questions = []
-#        try:
-#            quiz_questions = kwargs.pop('quiz_questions')
-#        finally:
-#            super(QuizForm, self).__init__(*args, **kwargs)
-#            for quiz_question in quiz_questions:
-#                self.fields['quiz_question_%d' % quiz_question.pk] = forms.CharField(
-#                    label=quiz_question.label)
-#
-#    def extra_questions(self):
-#        for name, value in self.cleaned_data.items():
-#            if name.startswith('quiz_question_'):
-#                yield (self.fields[name].label, value)
 
 
 class AntiSpamForm(forms.Form):
@@ -624,10 +594,10 @@ class AntiSpamContactForm(AntiSpamForm, ContactForm):
         return self.cleaned_data.get('email', settings.DEFAULT_FROM_EMAIL)
 
 
-#class BugReportForm(AntiSpamForm):
-#
-#    def __init__(self, *args, **kwargs):
-#        super(BugReportForm, self).__init__(*args, **kwargs)
-#
-#    title = forms.CharField(max_length=512)
-#    body = forms.CharField(widget=forms.Textarea, label=u'Description')
+class BugReportForm(AntiSpamForm):
+
+    def __init__(self, *args, **kwargs):
+        super(BugReportForm, self).__init__(*args, **kwargs)
+
+    title = forms.CharField(max_length=512)
+    body = forms.CharField(widget=forms.Textarea, label=u'Description')

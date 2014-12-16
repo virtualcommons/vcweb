@@ -159,11 +159,13 @@
     <script src='{% static "js/ko/knockout.mapping.min.js" %}'></script>
     <script src='{% static "js/ko/knockout.helper.js" %}'></script>
     <script src='{% static "js/common.js" %}'></script>
+    {% if not DEBUG %}
     <script src="//cdn.ravenjs.com/{{ravenjs_version}}/jquery,native/raven.min.js"></script>
     <script>
         var options = { tags: { git_commit: '{{ REVISION }}'} }
         Raven.config('{% sentry_public_dsn %}', options).install();
     </script>
+    {% endif %}
     <script>
         (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -171,25 +173,6 @@
          })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
         ga('create', 'UA-321755-10', 'auto');
         ga('send', 'pageview');
-    </script>
-    <script>
-        $("#report-issue").click(function(e) {
-            e.preventDefault(); 
-            $.get('/bug-report')
-                .done( function(data) {
-                    $("#bugModal .modal-body").html(data);
-                });
-        });
-        $("#bugModal").on('submit', '#bug-form', function(e) {
-            e.preventDefault();
-            var data = $("#bugModal form").serialize() + "&url="+window.location;
-            $.post('/bug-report', data)
-                 .done(function(data) {
-                    if(data.success) {
-                        $('#bugModal').modal('hide');
-                    }
-                }); 
-        });
     </script>
     {% block javascript %}
     {% endblock %}

@@ -406,13 +406,13 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
         <div class='row'>
         <h3>My Status</h3>
             <div class='alert alert-warning bound-status-dashboard col-md-2'>
-                <h4 id="dashboard-last-harvest">Last Harvest <i class='fa fa-info-circle' data-content="The number of trees you harvested last round."></i> </h4>
+                <h4 id="dashboard-last-harvest">Last Harvest <i class='fa fa-info-circle' data-toggle='popover' data-content="The number of trees you harvested last round."></i> </h4>
                 <p>
                 <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span></strong>
                 </p>
             </div>
             <div class='alert alert-warning bound-status-dashboard col-md-2'>
-                <h4 id='dashboard-storage'>Savings <i class='fa fa-info-circle' data-bind='attr: {"data-content": "You need at least " + costOfLiving() + " trees to survive each round."}'></i> </h4>
+                <h4 id='dashboard-storage'>Savings <i class='fa fa-info-circle' data-toggle='popover' data-bind='attr: {"data-content": "You need at least " + costOfLiving() + " trees to survive each round."}'></i> </h4>
                 <p>
                 <strong><span data-bind='text: clampedStorage'></span></strong>
                 </p>
@@ -568,7 +568,7 @@ clicking "Ok, I'm Ready" until the 1-minute time limit is up.
     </div>
 </script>
 {% include "includes/bootstrap-tour.html" %}
-<script type="text/javascript">
+<script>
 // set up youtube player for video intro tutorial
 var youtubePlayer;
 function onYouTubeIframeAPIReady() {
@@ -617,6 +617,15 @@ function onYouTubeIframeAPIReady() {
             model.totalEarnings = ko.computed(function() {
                 return formatCurrency(model.clampedStorage() * model.exchangeRate());
             });
+            model.isPlayableRound = ko.computed(function() {
+                    switch (model.templateName()) {
+                    case 'PRACTICE':
+                    case 'REGULAR':
+                        return true;
+                    default:
+                        return false;
+                    }
+            });
             model.templateId = ko.computed(function() {
                 switch ( model.templateName() ) {
                     case 'PRACTICE':
@@ -629,8 +638,8 @@ function onYouTubeIframeAPIReady() {
                 if (! model.showTour()) {
                     return;
                 }
-                model.tour(new Tour());
-                model.tour().addSteps([{
+                var tour = new Tour({name: "bound-" + {{ experiment.pk }}, steps: [
+                {
                     element: "#dashboard-last-harvest", title: "Last harvest",  placement: "right",
                     content: "Your last round's harvest decision will be displayed here.  Since this is the first practice round this is currently 0."
                 },
@@ -649,8 +658,11 @@ function onYouTubeIframeAPIReady() {
                 {
                     element: "#harvest-decision-td-10", title: "Harvest Decision", placement: "bottom",
                     content: "Click on the number of trees you'd like to harvest here.  For the purposes of this practice round, please select 10 now and click the 'Ok, I'm ready' button."
-                }]);
-                model.tour().restart();
+                }]
+                });
+                tour.init();
+                tour.restart();
+                model.tour(tour);
             }
             model.endTour = function() {
                 var tour = model.tour();
@@ -707,10 +719,11 @@ function onYouTubeIframeAPIReady() {
                 return (model.readyParticipants() / model.participantCount()) * 100;
             });
             model.participantReady = function(message) {
-                $.post('/experiment/participant-ready', { participant_group_id: model.participantGroupId() }, function(response) {
-                    model.readyParticipants(response.number_of_ready_participants);
-                    model.activateTemplate("WAITING_ROOM");
-                });
+                $.post('{% url "core:participant_ready" %}', { participant_group_id: model.participantGroupId() },
+                        function(response) {
+                            model.readyParticipants(response.number_of_ready_participants);
+                            model.activateTemplate("WAITING_ROOM");
+                        });
                 scrollToTop();
             }
             model.numberOfTreesPerRow = ko.observable(10);
@@ -764,10 +777,10 @@ function onYouTubeIframeAPIReady() {
             };
             model.startRound = function() {
                 model.initializeChat();
-                if (model.templateId() != "REGULAR") {
+                if (! model.isPlayableRound()) {
                     return;
                 }
-                model.setupTour();
+                // model.setupTour();
                 if (! model.alive()) {
                     model.secondsLeft(0);
                     model.clearCurrentInterval();
@@ -795,7 +808,8 @@ function onYouTubeIframeAPIReady() {
                 return model.submitHarvestDecisionEnabled() && (model.harvestDecision() >= numberOfTrees);
             }
             model.submitDecision = function() {
-                model.endTour();
+                // FIXME: re-enable tour once we figure out what the bad interaction is, see https://github.com/virtualcommons/vcweb/issues/69
+                // model.endTour();
                 $.post('submit-harvest-decision', { participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true }, 
                 function(response) {
                     // hide selection, disable chat, show waiting room
@@ -823,14 +837,12 @@ function onYouTubeIframeAPIReady() {
                 return false;
             }
             model.submitChatMessage = function(data, evt) {
-                console.log("submitting chat message");
                 var message = $('#chatMessage').val();
                 if (message) {
                     $('#chatMessage').val('');
-                    $.post('/api/experiment/{{experiment.pk|default:-1}}/chat/submit',
-                            { participant_group_id: model.participantGroupId(), message: message },
+                    $.post('/api/experiment/{{experiment.pk|default:-1}}/chat', { participant_group_id: model.participantGroupId(), message: message },
                         function(data) {
-                            if(!data.success) {
+                            if (!data.success) {
                                 console.error("There was some error sending chat.")
                             }
                         });
@@ -898,7 +910,7 @@ function onYouTubeIframeAPIReady() {
                             break;
                     }
                 }
-                $('[data-content]').popover({placement: 'top', trigger: 'hover'});
+                $('[data-toggle="popover"]').popover({placement: 'top', trigger: 'hover'});
             }
             return model;
         }

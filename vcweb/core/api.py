@@ -165,6 +165,7 @@ def participant_ready(request):
         message = "Participant %s is ready." % request.user.participant
 
         experiment.publish_to_participants(create_message_event(message, "participant_ready"))
+        experiment.publish_to_experimenter(create_message_event(message))
 
         if experiment.all_participants_ready:
             experiment.publish_to_experimenter(create_message_event(

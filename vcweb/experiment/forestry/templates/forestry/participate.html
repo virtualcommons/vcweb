@@ -233,13 +233,13 @@
         <div class='row'>
         <h3>My Status</h3>
             <div class='alert alert-warning forestry-status-dashboard col-md-2'>
-                <h4 id="dashboard-last-harvest">Last Harvest <i class='fa fa-info-circle' data-content="The number of trees you harvested last round."></i> </h4>
+                <h4 id="dashboard-last-harvest">Last Harvest <i class='fa fa-info-circle' data-toggle='popover' data-content="The number of trees you harvested last round."></i> </h4>
                 <p>
                 <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span></strong>
                 </p>
             </div>
             <div class='alert alert-warning forestry-status-dashboard col-md-2'>
-                <h4 id='dashboard-time'><i class='fa fa-clock-o'></i> Time</h4>
+                <h4 id='dashboard-time'><i class='fa fa-clock-o' data-toggle='popover' data-content="Seconds left before this round ends."></i> Time</h4>
                 <p>
                 <strong data-bind='css: { "text-error": secondsLeft() < warningCountdownTime(), "text-info": secondsLeft() > warningCountdownTime()}'>
                     <span data-bind='text: secondsLeft'></span>
@@ -377,19 +377,9 @@
         </tr>
     </table>
 </script>
-
-<script type='text/html' id='harvest-decision-select-template'>
-    <div class='input-prepend'>
-        <span class='add-on'></span>
-        <input id='participantGroupId' type='hidden' name='participant_group_id' data-bind='value: participantGroupId'/>
-        <input id='harvestDecisionTextInput' type='hidden' name='integer_decision' data-bind='value: harvestDecision'>
-        <select id='harvestDecisionSelect' name='harvest_decision' required="required" form="vcweb-form" data-bind='options: harvestDecisionOptions, value: harvestDecision'>
-        </select>
-    </div>
-</script>
-
 {% include "includes/bootstrap-tour.html" %}
 <script type="text/javascript">
+    var global;
     $(function() {
         function ExperimentModel(experimentModelJson) {
             var model = ko.mapping.fromJS(experimentModelJson);
@@ -404,6 +394,15 @@
             model.secondsLeft = ko.observable(0);
             model.currentInterval = ko.observable();
             model.selectedHarvestDecision = ko.observable(false);
+            model.isPlayableRound = ko.computed(function() {
+                    switch (model.templateName()) {
+                    case 'PRACTICE':
+                    case 'REGULAR':
+                        return true;
+                    default:
+                        return false;
+                    }
+            });
             model.templateId = ko.computed(function() {
                 switch ( model.templateName() ) {
                     case 'PRACTICE':
@@ -413,11 +412,13 @@
                 }
             });
             model.setupTour = function() {
-                if (! model.showTour()) {
+                if (! model.showTour() || model.tour()) {
                     return;
                 }
-                model.tour(new Tour());
-                model.tour().addSteps([{
+                console.debug("setting up tour");
+                var tour = new Tour({name: "forestry-" + {{ experiment.pk }},
+                steps: [
+                {
                     element: "#dashboard-last-harvest", title: "Last harvest",  placement: "right",
                     content: "Your last round's harvest decision will be displayed here.  Since this is the first practice round this is currently 0."
                 },
@@ -430,10 +431,12 @@
                     content: "When chat is enabled, you can communicate with your group by typing messages into this box and hitting the enter key."
                 },
                 {
-                    element: "#harvest-decision-td-5", title: "Harvest Decision", placement: "bottom",
+                    element: "#harvest-decision-td-3", title: "Harvest Decision", placement: "bottom",
                     content: "Click on the number of trees you'd like to harvest here.  For the purposes of this practice round, please select 5 now and click the 'Ok, I'm ready' button."
-                }]);
-                model.tour().restart();
+                }]});
+                tour.init();
+                model.tour(tour);
+                tour.restart();
             }
             model.endTour = function() {
                 var tour = model.tour();
@@ -470,7 +473,7 @@
             });
 
             model.participantReady = function(message) {
-                $.post('/experiment/participant-ready', {
+                $.post('{% url "core:participant_ready" %}', {
                     participant_group_id: model.participantGroupId()
                 }, function(response) {
                     model.readyParticipants(response.number_of_ready_participants);
@@ -522,13 +525,11 @@
             };
             model.startRound = function() {
                 model.initializeChat();
-                if (model.templateId() != "REGULAR") {
+                if (! model.isPlayableRound()) {
                     return;
                 }
-                model.setupTour();
-
-                console.debug("starting round, checking time remaining: " + model.timeRemaining());
-
+                // model.setupTour();
+                console.debug("starting playable round, checking time remaining: " + model.timeRemaining());
                 if (model.timeRemaining() > 0) {
                     console.debug("setting seconds left to: " + model.timeRemaining());
 
@@ -550,7 +551,9 @@
                 return model.submitHarvestDecisionEnabled() && (model.harvestDecision() >= numberOfTrees);
             }
             model.submitDecision = function() {
-                model.endTour();
+                console.debug("submitting decision");
+                // FIXME: re-enable tour once we figure out what the bad interaction is, see https://github.com/virtualcommons/vcweb/issues/69
+                // model.endTour();
                 $.post('submit-harvest-decision', {participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true },
                 function(response) {
                     // hide selection, disable chat, show waiting room
@@ -560,6 +563,7 @@
                     model.secondsLeft(0);
                     model.disableChatForm();
                     scrollToTop();
+                    console.debug("submitted harvest decision");
                 });
             }
             model.selectDecision = function(numberOfTrees) {
@@ -577,11 +581,10 @@
                 return false;
             }
             model.submitChatMessage = function(data, evt) {
-                console.log("submitting chat message");
                 var message = $('#chatMessage').val();
                 if (message) {
                     $('#chatMessage').val('');
-                        $.post('/api/experiment/{{experiment.pk|default:-1}}/chat/submit',
+                        $.post('/api/experiment/{{experiment.pk|default:-1}}/chat',
                                 { participant_group_id: model.participantGroupId(), message: message },
                             function(data) {
                                 if(!data.success) {
@@ -665,6 +668,7 @@
             }
         };
         experimentModel.startRound();
+        global=experimentModel;
     });
 </script>
 {% endblock %}
