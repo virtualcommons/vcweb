@@ -70,6 +70,15 @@ subscriber = tornadoredis.pubsub.SockJSSubscriber(tornadoredis.Client())
 
 class RedisSockJSConnection(SockJSConnection):
 
+    """
+    Base class for redis sockjs connections.
+
+    on_message is only used on initial connect to establish a push connection from the sockjs server, all other
+    communication should be mediated through Django endpoints. A typical real-time request involves a page submitting a
+    request to Django, Django notifies the appropriate experiment redis channels, and our sockjs process (pub-subbed
+    with Redis) dispatches the json messages as they were received to connected clients.
+    """
+
     def on_open(self, request):
         logger.debug("opening connection for %s", request)
 
@@ -81,6 +90,16 @@ class RedisSockJSConnection(SockJSConnection):
 
     def error(self, message):
         self._send_message(message, 'error')
+
+    def is_connection_event(self, message_dict):
+        return message_dict['event_type'] == 'connect'
+
+    def is_authenticated(self, message_dict):
+        return self.get_auth_token(message_dict) == message_dict.get('auth_token')
+
+    def get_auth_token(self, message_dict):
+        key = message_dict['email'] + "_" + message_dict['user_id']
+        return RedisPubSub.get_redis_instance().get(key)
 
 
 # sockjs-tornado creates a new instance for every connected client.
@@ -95,14 +114,14 @@ class ParticipantConnection(RedisSockJSConnection):
         message_dict = json.loads(msg)
         logger.debug("message: %s", message_dict)
 
-        auth_token = RedisPubSub.get_redis_instance().get(message_dict['user_id'])
-        if message_dict['event_type'] == 'connect' and auth_token == message_dict['auth_token']:
+        auth_token = self.get_auth_token(message_dict)
+        if self.is_authenticated(message_dict):
             self.group = message_dict['participant_group']
             self.experiment = message_dict['experiment_id']
-
             # Subscribe to 'experiment' and 'group' message channels
             subscriber.subscribe([RedisPubSub.get_participant_broadcast_channel(self.experiment),
-                                  RedisPubSub.get_participant_group_channel(self.group)], self)
+                                  RedisPubSub.get_participant_group_channel(self.group)],
+                                 self)
         else:
             self.error("Failed to authenticate with the real-time server. Please try signing out and signing back in.")
             logger.debug("Failed to connect due to auth_token mismatch. Found (%s) expected (%s)",
@@ -115,7 +134,7 @@ class ParticipantConnection(RedisSockJSConnection):
 
 class ExperimenterConnection(RedisSockJSConnection):
     """
-    sockjs connection for experimenters
+    sockjs connection for experimenters.
     """
 
     def on_message(self, msg):
@@ -123,8 +142,8 @@ class ExperimenterConnection(RedisSockJSConnection):
             return
         message_dict = json.loads(msg)
         logger.debug("message: %s", message_dict)
-        auth_token = RedisPubSub.get_redis_instance().get(message_dict['email'] + "_" + str(message_dict['user_id']))
-        if message_dict['event_type'] == 'connect' and auth_token == message_dict['auth_token']:
+        auth_token = self.get_auth_token(message_dict)
+        if self.is_authenticated(message_dict):
             # Subscribe to experiment specific 'broadcast' message channels
             self.experiment = message_dict['experiment_id']
             subscriber.subscribe([RedisPubSub.get_experimenter_channel(self.experiment)], self)
