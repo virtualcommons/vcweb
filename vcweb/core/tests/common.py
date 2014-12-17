@@ -278,27 +278,26 @@ class SubjectPoolTest(BaseVcwebTest):
         return es_pk
 
     def get_final_participants(self):
-        potential_participants = Participant.objects.invitation_eligible(self.experiment_metadata.pk)
+        potential_participants = Participant.objects.invitation_eligible(self.experiment_metadata.pk,
+                                                                         institution_name='Arizona State University')
         potential_participants_count = len(potential_participants)
         # logger.debug(potential_participants)
-        no_of_invitations = 50
+        number_of_invitations = 50
 
-        if potential_participants_count == 0:
-            final_participants = []
-        else:
-            if potential_participants_count < no_of_invitations:
+        final_participants = []
+        if potential_participants_count > 0:
+            if potential_participants_count < number_of_invitations:
                 final_participants = potential_participants
             else:
-                final_participants = random.sample(potential_participants,
-                                                   no_of_invitations)
+                final_participants = random.sample(potential_participants, number_of_invitations)
         return final_participants
 
     def setup_participant_signup(self, participant_list, es_pk_list):
         participant_list = participant_list[:25]
 
         for person in participant_list:
-            inv = Invitation.objects.filter(
-                participant=person, experiment_session__pk__in=es_pk_list).order_by('?')[:1]
+            inv = Invitation.objects.filter(participant=person,
+                                            experiment_session__pk__in=es_pk_list).order_by('?')[:1]
             ps = ParticipantSignup()
             ps.invitation = inv[0]
             year = date.today().year
@@ -313,8 +312,7 @@ class SubjectPoolTest(BaseVcwebTest):
 
     def setup_invitations(self, participants, es_pk_list):
         invitations = []
-        experiment_sessions = ExperimentSession.objects.filter(
-            pk__in=es_pk_list)
+        experiment_sessions = ExperimentSession.objects.filter(pk__in=es_pk_list)
         user = self.demo_experimenter.user
 
         for participant in participants:

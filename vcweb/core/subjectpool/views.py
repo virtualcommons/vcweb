@@ -1,6 +1,5 @@
 from datetime import datetime
 from time import mktime
-import itertools
 import logging
 import random
 import unicodecsv
@@ -137,15 +136,18 @@ def get_invitations_count(request):
     form = SessionInviteForm(request.GET or None)
     if form.is_valid():
         session_pk_list = request.GET.get('session_pk_list').split(",")
-        experiment_metadata = ExperimentSession.objects.filter(pk__in=session_pk_list).values_list('experiment_metadata__pk', flat=True)
-        if len(set(experiment_metadata)) == 1:
+        experiment_metadata_ids = ExperimentSession.objects.filter(pk__in=session_pk_list).values_list(
+            'experiment_metadata__pk', flat=True)
+        if len(set(experiment_metadata_ids)) == 1:
             # As all sessions selected by experimenter to send invitations belong to same experiment metadata
             # get the experiment metadata pk of any session (This is ensured as it is a constraint)
-            potential_participants = Participant.objects.invitation_eligible(experiment_metadata[0],
-                    gender=form.cleaned_data.get('gender'), institution=form.cleaned_data.get('affiliated_institution'),
-                    only_undergrad=form.cleaned_data.get('only_undergrad'))
-            return JsonResponse({ 'success': True, 'invitesCount': len(potential_participants)})
-    return JsonResponse({ 'success': False, 'invitesCount': 0, 'errors': form.errors})
+            potential_participants = Participant.objects.invitation_eligible(
+                experiment_metadata_ids[0],
+                gender=form.cleaned_data.get('gender'),
+                institution_name=form.cleaned_data.get('affiliated_institution'),
+                only_undergrad=form.cleaned_data.get('only_undergrad'))
+            return JsonResponse({'success': True, 'invitesCount': len(potential_participants)})
+    return JsonResponse({'success': False, 'invitesCount': 0, 'errors': form.errors})
 
 
 def get_invitation_email_content(custom_invitation_text, experiment_session_ids):
@@ -190,9 +192,11 @@ def send_invitations(request):
             # invitations belong to same experiment metadata (This has to be ensured as it is a constraint)
             experiment_metadata_pk = experiment_metadata_pk_list[0]
 
-            potential_participants = Participant.objects.invitation_eligible(experiment_metadata_pk, institution=affiliated_institution,
-                                                                only_undergrad=form.cleaned_data.get('only_undergrad'),
-                                                                gender=form.cleaned_data.get('gender'))
+            potential_participants = Participant.objects.invitation_eligible(
+                experiment_metadata_pk,
+                institution_name=affiliated_institution,
+                only_undergrad=form.cleaned_data.get('only_undergrad'),
+                gender=form.cleaned_data.get('gender'))
             potential_participants_count = potential_participants.count()
 
             final_participants = None
@@ -254,8 +258,8 @@ def invite_email_preview(request):
     message = "Please fill in all the form fields to preview the invitation email."
     if form.is_valid():
         session_pk_list = request.GET.get('session_pk_list').split(",")
-        plaintext_content, html_content = get_invitation_email_content(
-                form.cleaned_data.get('invitation_text'), session_pk_list)
+        plaintext_content, html_content = get_invitation_email_content(form.cleaned_data.get('invitation_text'),
+                                                                       session_pk_list)
         return JsonResponse({'success': True, 'content': html_content})
     return JsonResponse({'success': False, 'message': message})
 
