@@ -31,3 +31,4 @@ RAVEN_CONFIG = {
 SITE_URL = 'https://vcweb.asu.edu'
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+WEBSOCKET_SSL = True

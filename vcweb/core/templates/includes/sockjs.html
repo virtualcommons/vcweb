@@ -11,11 +11,11 @@ function connect(uri, host, port) {
         console.log("defaulting to " + DEFAULT_URI);
         uri = DEFAULT_URI;
     }
-    {% if DEBUG %}
+    {% if WEBSOCKET_SSL %}
+    var sockjsServer = "https://" + host + "/websocket" + uri;
+    {% else %}
     port = port || DEFAULT_PORT;
     var sockjsServer = "http://" + host + ":" + port +"/websocket" + uri;
-    {% else %}
-    var sockjsServer = "https://" + host + "/websocket" + uri;
     {% endif %}
     console.log("Establishing connection to " + sockjsServer);
     socket = new SockJS(sockjsServer);

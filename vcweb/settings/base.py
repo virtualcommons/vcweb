@@ -144,6 +144,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + VCWEB_APPS
 LOGIN_REDIRECT_URL = '/dashboard'
 
 # websockets configuration
+WEBSOCKET_SSL = False
 WEBSOCKET_PORT = 8882
 WEBSOCKET_URI = '/websocket'
 
