@@ -561,7 +561,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
             return serializers.serialize(output_format, all_objects, **kwargs)
 
     def __unicode__(self):
-        return u"%s %s" % (self.name, self.experiment_metadata)
+        return self.name
 
     class Meta:
         ordering = ['experiment_metadata', 'creator', '-date_created']
@@ -1069,6 +1069,16 @@ class Experiment(models.Model):
         return self.register_participants(users=users, institution=institution, password=password,
                                           should_send_email=False)
 
+    def should_initialize_data_values(self, round_configuration=None):
+        if round_configuration is None:
+            round_configuration = self.current_round_configuration
+        """
+        Returns true iff this round configuration has initialize_data_values set on it and it is not a repeating round
+        past the first repeating round (e.g., repeat #0 should initialize data values, but repeat #1-5 should not)
+        """
+        return round_configuration.initialize_data_values and not (round_configuration.is_repeating_round and
+                                                                   self.current_repeated_round_sequence_number > 0)
+
     @transaction.atomic
     def initialize_data_values(self, group_parameters=None, participant_parameters=None, group_cluster_parameters=None,
                                round_data=None, defaults=None):
@@ -1076,34 +1086,29 @@ class Experiment(models.Model):
         FIXME: needs refactoring, replace get_or_create with creates and separate initialization of data values from
         copy_to_next_round semantics
         Issues:
-            Make it simpler for experiment devs to signal "I have these data values to initialize at the start of each
-            round" Overly complex logic, possible danger to use empty lists as initial keyword args but we only iterate
-            over them (e.g., http://effbot.org/zone/default-values.htm) get_or_create logic has the possibility for
-            degenerate data (e.g., duplicate group round data values) that cause the rest of the rounds to not run
-            properly
+            1. Make it simpler for experiment devs to signal "I have these data values to initialize at the start of each
+            round"
+            2. get_or_create logic has the possibility for degenerate data (e.g., duplicate group round data values) that
+            cause the rest of the rounds to not run properly
         """
         if round_data is None:
             round_data = self.current_round_data
+
+        round_configuration = round_data.round_configuration
+
+        if not self.should_initialize_data_values(round_configuration):
+            logger.debug("ignoring round data initialization for %s", round_configuration)
+            return
+
         if group_parameters is None:
             group_parameters = []
         if participant_parameters is None:
             participant_parameters = []
         if group_cluster_parameters is None:
             group_cluster_parameters = []
-        round_configuration = round_data.round_configuration
-        if not round_configuration.initialize_data_values:
-            logger.debug(
-                "Aborting, round configuration isn't set to initialize data values")
-            return
-        elif round_configuration.is_repeating_round and self.current_repeated_round_sequence_number > 0:
-            logger.debug(
-                "ignoring for repeating round %d", self.current_repeated_round_sequence_number)
-            return
 
-        logger.debug(
-            "round data %s initializing [participant params: %s]  [group params: %s] [cluster params: %s] ",
-            round_data,
-            participant_parameters, group_parameters, group_cluster_parameters)
+        logger.debug("round data %s initializing [participant params: %s]  [group params: %s] [cluster params: %s] ",
+                     round_data, participant_parameters, group_parameters, group_cluster_parameters)
         parameter_defaults = defaultdict(dict)
         if defaults is None:
             defaults = {}
@@ -1113,23 +1118,22 @@ class Experiment(models.Model):
             if parameter in defaults:
                 parameter_defaults[parameter] = {parameter.value_field_name: defaults[parameter]}
         if parameter_defaults:
-            logger.debug(
-                "setting default values for parameters: %s", parameter_defaults)
+            logger.debug("setting default values for parameters: %s", parameter_defaults)
         # create group cluster parameter data values
         if group_cluster_parameters:
             for group_cluster in self.active_group_clusters:
                 for parameter in group_cluster_parameters:
-                    gcdv, created = GroupClusterDataValue.objects.get_or_create(round_data=round_data,
-                                                                                parameter=parameter,
-                                                                                group_cluster=group_cluster,
-                                                                                defaults=parameter_defaults[parameter])
+                    gcdv, created = round_data.group_cluster_data_value_set.get_or_create(
+                        group_cluster=group_cluster,
+                        parameter=parameter,
+                        defaults=parameter_defaults[parameter])
                     logger.debug("gcdv: %s (%s)", gcdv, created)
         for group in self.groups:
             for parameter in group_parameters:
-                group_data_value, created = GroupRoundDataValue.objects.get_or_create(round_data=round_data,
-                                                                                      group=group, parameter=parameter,
-                                                                                      defaults=parameter_defaults[
-                                                                                          parameter])
+                group_data_value, created = round_data.group_data_value_set.get_or_create(
+                    group=group,
+                    parameter=parameter,
+                    defaults=parameter_defaults[parameter])
                 logger.debug("grdv: %s (%s)", group_data_value, created)
             if participant_parameters:
                 for pgr in group.participant_group_relationship_set.all():
@@ -1144,8 +1148,7 @@ class Experiment(models.Model):
         if log_message:
             message = "%s: %s" % (self, log_message)
             logger.debug(message, *args)
-            self.activity_log_set.create(
-                round_configuration=self.current_round, log_message=message)
+            self.activity_log_set.create(round_configuration=self.current_round, log_message=message)
 
     def configuration_file_name(self, file_ext='.xml'):
         if not file_ext.startswith('.'):
@@ -1631,8 +1634,8 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
             separator = '?'
             if separator in survey_url:
                 separator = '&'
-            return "{0}{1}{2}".format(survey_url, separator, query_parameters)
-        return self.survey_url
+                return "{0}{1}{2}".format(survey_url, separator, query_parameters)
+            return self.survey_url
 
     def get_debriefing(self, participant_id=None, **kwargs):
         return self.templatize(self.debriefing, participant_id, kwargs)
@@ -1700,8 +1703,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
                                  self.session_id)
 
     class Meta:
-        ordering = [
-            'experiment_configuration', 'sequence_number', 'date_created']
+        ordering = ['experiment_configuration', 'sequence_number', 'date_created']
 
 
 class ParameterQuerySet(models.query.QuerySet):
@@ -2231,8 +2233,7 @@ class RoundData(models.Model):
     chat_messages (ChatMessage)
     """
     experiment = models.ForeignKey(Experiment, related_name='round_data_set')
-    round_configuration = models.ForeignKey(
-        RoundConfiguration, related_name='round_data_set')
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='round_data_set')
     repeating_round_sequence_number = models.PositiveIntegerField(
         default=0,
         help_text=_("Sequence number used to disambiguate round data in repeating rounds"))
@@ -2265,21 +2266,17 @@ class RoundData(models.Model):
 
     class Meta:
         ordering = ['round_configuration', 'repeating_round_sequence_number']
-        unique_together = (
-            ('round_configuration', 'repeating_round_sequence_number', 'experiment'),)
+        unique_together = (('round_configuration', 'repeating_round_sequence_number', 'experiment'),)
 
 
 class GroupClusterDataValue(ParameterizedValue):
-    group_cluster = models.ForeignKey(
-        GroupCluster, related_name='data_value_set')
-    round_data = models.ForeignKey(
-        RoundData, related_name='group_cluster_data_value_set')
+    group_cluster = models.ForeignKey(GroupCluster, related_name='data_value_set')
+    round_data = models.ForeignKey(RoundData, related_name='group_cluster_data_value_set')
 
 
 class GroupRoundDataValue(ParameterizedValue):
     group = models.ForeignKey(Group, related_name='data_value_set')
-    round_data = models.ForeignKey(
-        RoundData, related_name='group_data_value_set')
+    round_data = models.ForeignKey(RoundData, related_name='group_data_value_set')
 
     def to_dict(self, **kwargs):
         data = super(GroupRoundDataValue, self).to_dict(**kwargs)
@@ -2319,38 +2316,35 @@ class ParticipantQuerySet(models.query.QuerySet):
     def invalid_participants(self, *args, **kwargs):
         return self.filter(user__email__contains='mailinator.com')
 
-    def invitation_eligible(self, experiment_metadata, only_undergrad=True, gender='A', institution='Arizona State University'):
-
+    def invitation_eligible(self, experiment_metadata_pk, only_undergrad=True, gender=None, institution_name=None):
         # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
         # given Experiment metadata
         invited_in_last_threshold_days = Invitation.objects.already_invited(
-            experiment_metadata_pk=experiment_metadata).values_list('participant__pk', flat=True)
+            experiment_metadata_pk=experiment_metadata_pk).values_list('participant__pk', flat=True)
 
         # signup_participants is the list of participants who has already participated in the
         # given Experiment Metadata(in the past or currently participating)
         signup_participants = ParticipantSignup.objects.registered(
-            experiment_metadata_pk=experiment_metadata).values_list('invitation__participant__pk', flat=True)
+            experiment_metadata_pk=experiment_metadata_pk).values_list('invitation__participant__pk', flat=True)
 
         invalid_participants = self.invalid_participants().values_list('pk', flat=True)
         # a list of participant pks who have already received invitations in last threshold days, have already
         # participated in the same experiment, or have 'mailinator.com' in their name
-        ineligible_participants = list(set(itertools.chain(invited_in_last_threshold_days, signup_participants, invalid_participants)))
-
-        try:
-            affiliated_institution = Institution.objects.get(name=institution)
-        except Institution.DoesNotExist:
-            affiliated_institution = None
+        ineligible_participants = list(set(itertools.chain(invited_in_last_threshold_days,
+                                                           signup_participants, invalid_participants)))
 
         criteria = dict(can_receive_invitations=True, user__is_active=True)
-        if affiliated_institution:
-            criteria.update(institution=affiliated_institution)
+        if institution_name is not None:
+            try:
+                affiliated_institution = Institution.objects.get(name=institution_name)
+                criteria.update(institution=affiliated_institution)
+            except Institution.DoesNotExist:
+                logger.warning("Tried to invite generate invitations for unknown institution: %s", institution_name)
         if only_undergrad:
-            criteria.update(
-                class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES)
-        if gender != 'A':
+            criteria.update(class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES)
+        if gender is not None:
             criteria.update(gender=gender)
         return self.filter(**criteria).exclude(pk__in=ineligible_participants)
-
 
 
 class Participant(CommonsUser):
@@ -2581,21 +2575,11 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
         ordering = ['group', 'participant_number']
 
 
-""" FIXME: disabled for the interim, lighter footprints is using GroupClusters instead
-class ParticipantGroupEdge(models.Model):
-    DIRECTION = Choices('forward', 'bidirectional')
-    first = models.ForeignKey(ParticipantGroupRelationship, related_name='first_edge_set')
-    second = models.ForeignKey(ParticipantGroupRelationship, related_name='second_edge_set')
-    direction = models.CharField(choices=DIRECTION, default=DIRECTION.bidirectional, max_length=16)
-"""
-
-
 class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
 
     def for_participant(self, participant_group_relationship=None, **kwargs):
         if participant_group_relationship is None:
-            raise ValueError(
-                "Must specify a participant_group_relationship keyword in this query")
+            raise ValueError("participant_group_relationship parameter is required")
         return self.select_related(
             'parameter',
             'participant_group_relationship__participant__user',
@@ -2607,15 +2591,13 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
 
     def for_round(self, round_data=None, **kwargs):
         if round_data is None:
-            raise ValueError("Must specify a round data object in this query")
-        return self.select_related(
-            'parameter',
-            'participant_group_relationship__group'
-        ).filter(round_data=round_data, is_active=True, **kwargs)
+            raise ValueError("round data parameter is required")
+        return self.select_related('parameter', 'participant_group_relationship__group').filter(
+            round_data=round_data, is_active=True, **kwargs)
 
     def for_group(self, group=None, ordered=True, order_by='-date_created', **kwargs):
         if group is None:
-            raise ValueError("Must specify a group in this query")
+            raise ValueError("group parameter is required")
         qs = self.select_related(
             'parameter',
             'participant_group_relationship__participant__user',
@@ -2634,10 +2616,8 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
     def for_experiment(self, experiment=None, **kwargs):
         if experiment is None:
             raise ValueError("Must specify an experiment for this query")
-        return self.select_related('parameter',
-                                   'participant_group_relationship__group').filter(round_data__experiment=experiment,
-                                                                                   is_active=True,
-                                                                                   **kwargs)
+        return self.select_related('parameter', 'participant_group_relationship__group').filter(
+            round_data__experiment=experiment, is_active=True, **kwargs)
 
     def target_ids(self, participant_group_relationship):
         return self.filter(participant_group_relationship=participant_group_relationship).values_list(
@@ -2686,31 +2666,24 @@ class ParticipantRoundDataValue(ParameterizedValue):
     def to_dict(self, cacheable=False, include_email=False):
         data = super(ParticipantRoundDataValue, self).to_dict(cacheable)
         pgr = self.participant_group_relationship
-        data.update({
-            'participant_group_id': pgr.pk,
-            'participant_name': pgr.full_name,
-            'participant_number': pgr.participant_number,
-        })
+        data.update(participant_group_id=pgr.pk,
+                    participant_name=pgr.full_name,
+                    participant_number=pgr.participant_number)
         if include_email:
             data['participant_email'] = pgr.participant.email
         tdv = self.target_data_value
         if tdv is not None:
-            data.update(
-                target_data_value=unicode(
-                    tdv.cached_value if cacheable else tdv.value),
-                target_parameter_name=tdv.parameter.name
-            )
+            data.update(target_data_value=unicode(tdv.cached_value if cacheable else tdv.value),
+                        target_parameter_name=tdv.parameter.name)
         return data
 
     def __unicode__(self):
-        return u"{0} : {1} pgr:{2} ({3})".format(self.parameter, self.value, self.participant_group_relationship,
-                                                 self.round_data.experiment)
+        return u"{0}:{1} pgr:{2} ({3})".format(self.parameter, self.value, self.participant_group_relationship,
+                                               self.round_data.experiment)
 
     class Meta:
-        ordering = ['-date_created', 'round_data',
-                    'participant_group_relationship', 'parameter']
-        # FIXME: can't use this currently as it forbids multiple ChatMessages
-        # unique_together = (('parameter', 'participant_group_relationship'),)
+        # FIXME: consider removing default ordering and apply as necessary
+        ordering = ['-date_created', 'round_data', 'participant_group_relationship', 'parameter']
 
 
 class ChatMessageQuerySet(models.query.QuerySet):
@@ -2730,13 +2703,13 @@ class ChatMessageQuerySet(models.query.QuerySet):
         ).filter(parameter=get_chat_message_parameter(), participant_group_relationship__group=group,
                  **kwargs).order_by('-date_created')
 
-    def message_all(self, experiment, message, round_data=None, **kwargs):
+    def broadcast(self, experiment, message, round_data=None, **kwargs):
         if round_data is None:
             round_data = experiment.current_round_data
-        for participant_group_relationship in experiment.participant_group_relationships:
-            ChatMessage.objects.create(participant_group_relationship=participant_group_relationship,
-                                       string_value=message,
-                                       round_data=round_data)
+        ChatMessage.objects.bulk_create([
+            ChatMessage(participant_group_relationship=pgr, string_value=message, round_data=round_data)
+            for pgr in experiment.participant_group_relationships
+        ])
 
 
 class ChatMessage(ParticipantRoundDataValue):
