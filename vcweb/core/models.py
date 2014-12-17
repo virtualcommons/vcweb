@@ -1987,14 +1987,13 @@ class RoundParameterValue(ParameterizedValue):
     """
     Represents a specific piece of round configuration data.
     """
-    round_configuration = models.ForeignKey(
-        RoundConfiguration, related_name='parameter_value_set')
+    round_configuration = models.ForeignKey(RoundConfiguration, related_name='parameter_value_set')
 
     def to_dict(self, **kwargs):
         rc = self.round_configuration
         p = self.parameter
         return {
-            'display_name': u"{0}: {1}".format(p, self.value),
+            'display_name': u"{0}: {1}".format(p.label, self.value),
             'pk': self.pk,
             'parameter': self.parameter.pk,
             'string_value': self.string_value,

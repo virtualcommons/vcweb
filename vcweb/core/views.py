@@ -258,47 +258,6 @@ def get_active_experiment(participant, experiment_metadata=None, **kwargs):
     return None
 
 
-#def autocomplete_account(request, term):
-#    candidates = []
-#    if term in ('major', 'institution'):
-#        candidates = ["Implement", "Me"]
-#        return JsonResponse({'success': True, 'candidates': candidates})
-#    else:
-#        logger.debug("can't autocomplete unsupported term %s", term)
-#        return JsonResponse({'success': False, 'message': "Unsupported autocomplete term %s" % term})
-
-
-#def api_logout(request):
-#    user = request.user
-#    set_authentication_token(user)
-#    auth.logout(request)
-#    return JsonResponse(SUCCESS_DICT)
-
-#@require_POST
-#def participant_api_login(request):
-#    # FIXME: assumes participant login
-#    form = LoginForm(request.POST or None)
-#    try:
-#        if form.is_valid():
-#            user = form.user_cache
-#            logger.debug(
-#                "user was authenticated as %s, attempting to login", user)
-#            auth.login(request, user)
-#            set_authentication_token(user, request.session.session_key)
-#            participant = user.participant
-#            # FIXME: defaulting to first active experiment... need to revisit
-#            # this.
-#            active_experiment = get_active_experiment(participant)
-#            participant_group_relationship = active_experiment.get_participant_group_relationship(
-#                participant)
-#            return JsonResponse({'success': True, 'participant_group_id': participant_group_relationship.pk})
-#        else:
-#            logger.debug("invalid form %s", form)
-#    except Exception as e:
-#        logger.debug("Invalid login: %s", e)
-#    return JsonResponse({'success': False, 'message': "Invalid login"})
-
-
 class LoginView(AnonymousMixin, FormView):
     form_class = LoginForm
     template_name = 'accounts/login.html'
@@ -338,80 +297,74 @@ class LogoutView(TemplateView):
         return redirect('home')
 
 
-#class RegistrationView(FormView, AnonymousMixin):
-#    form_class = RegistrationForm
-#    template_name = 'accounts/register.html'
-#
-#    def form_valid(self, form):
-#        email = form.cleaned_data['email'].lower()
-#        password = form.cleaned_data['password']
-#        first_name = form.cleaned_data['first_name']
-#        last_name = form.cleaned_data['last_name']
-#        institution_string = form.cleaned_data['institution']
-#        experimenter_requested = form.cleaned_data['experimenter']
-#        institution, created = Institution.objects.get_or_create(
-#            name=institution_string)
-#        user = User.objects.create_user(
-#            email, email, password, first_name=first_name, last_name=last_name)
-#        if experimenter_requested:
-#            experimenter_request = ExperimenterRequest.objects.create(
-#                user=user)
-#            logger.debug(
-#                "creating new experimenter request: %s", experimenter_request)
-#        participant = Participant.objects.create(
-#            user=user, institution=institution)
-#        logger.debug("Creating new participant: %s", participant)
-#        request = self.request
-#        # auth + login the newly created user
-#        auth.login(
-#            request, auth.authenticate(username=email, password=password))
-#        set_authentication_token(user, request.session.session_key)
-#        # FIXME: disabling auto registration, experiment configuration flags are not being set properly
-#        #        for experiment in Experiment.objects.public():
-#        #            experiment.add_participant(participant)
-#        return super(RegistrationView, self).form_valid(form)
-#
-#    def get_success_url(self):
-#        return reverse('core:dashboard')
+"""
+Open registration currently disabled.
 
+class RegistrationView(FormView, AnonymousMixin):
+    form_class = RegistrationForm
+    template_name = 'accounts/register.html'
 
-#class AccountView(FormView):
-#    pass
+    def form_valid(self, form):
+        email = form.cleaned_data['email'].lower()
+        password = form.cleaned_data['password']
+        first_name = form.cleaned_data['first_name']
+        last_name = form.cleaned_data['last_name']
+        institution_string = form.cleaned_data['institution']
+        experimenter_requested = form.cleaned_data['experimenter']
+        institution, created = Institution.objects.get_or_create(
+            name=institution_string)
+        user = User.objects.create_user(
+            email, email, password, first_name=first_name, last_name=last_name)
+        if experimenter_requested:
+            experimenter_request = ExperimenterRequest.objects.create(
+                user=user)
+            logger.debug(
+                "creating new experimenter request: %s", experimenter_request)
+        participant = Participant.objects.create(
+            user=user, institution=institution)
+        logger.debug("Creating new participant: %s", participant)
+        request = self.request
+        # auth + login the newly created user
+        auth.login(
+            request, auth.authenticate(username=email, password=password))
+        set_authentication_token(user, request.session.session_key)
+        # FIXME: disabling auto registration, experiment configuration flags are not being set properly
+        #        for experiment in Experiment.objects.public():
+        #            experiment.add_participant(participant)
+        return super(RegistrationView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('core:dashboard')
+"""
 
 
 @login_required
 @group_required(PermissionGroup.experimenter, PermissionGroup.participant)
 @require_POST
 def update_account_profile(request):
-    """ FIXME: reduce code duplication distinguishing between participant/experimenter """
+    # FIXME: refactor, perhaps split into update experimenter / update participant and reduce code duplication via CBV
     user = request.user
-
     if is_experimenter(user):
         form = ExperimenterAccountForm(request.POST or None)
         if form.is_valid():
             email = form.cleaned_data.get('email').lower()
             institution_name = form.cleaned_data.get('institution')
-            e = Experimenter.objects.get(pk=user.experimenter.pk)
-
+            e = user.experimenter
             if institution_name:
-                institution, created = Institution.objects.get_or_create(
-                    name=institution_name)
+                institution, created = Institution.objects.get_or_create(name=institution_name)
                 e.institution = institution
             else:
                 e.institution = None
                 logger.debug('Institution is empty')
 
-            if e.user.email != email:
-                users = User.objects.filter(email=email)
-                if users.count() > 0:
+            if user.email != email:
+                if User.objects.filter(email=email).exists():
                     return JsonResponse({
                         'success': False,
                         'message': 'This email is already registered with our system, please try another.'
                     })
-
             for attr in ('first_name', 'last_name', 'email'):
                 setattr(e.user, attr, form.cleaned_data.get(attr))
-
             e.save()
             e.user.save()
             return JsonResponse({
@@ -425,33 +378,26 @@ def update_account_profile(request):
         if form.is_valid():
             email = form.cleaned_data.get('email').lower()
             institution_name = form.cleaned_data.get('institution')
-
-            p = Participant.objects.get(pk=user.participant.pk)
-
+            p = user.participant
             if institution_name:
-                ins, created = Institution.objects.get_or_create(
-                    name=institution_name)
+                ins, created = Institution.objects.get_or_create(name=institution_name)
                 p.institution = ins
             else:
                 p.institution = None
                 logger.debug('Institution is empty')
 
-            if p.user.email != email:
-                users = User.objects.filter(email=email)
-                if users.count() > 0:
+            if user.email != email:
+                if User.objects.filter(email=email).exists():
                     return JsonResponse({
                         'success': False,
                         'message': 'This email is already registered with our system, please try another.'
                     })
-
-            for attr in (
-                    'major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food', 'favorite_sport',
-                    'favorite_color', 'favorite_movie_genre'):
+            for attr in ('major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food',
+                         'favorite_sport', 'favorite_color', 'favorite_movie_genre'):
                 setattr(p, attr, form.cleaned_data.get(attr))
 
             for attr in ('first_name', 'last_name', 'email'):
                 setattr(p.user, attr, form.cleaned_data.get(attr))
-
             p.save()
             p.user.save()
 
@@ -887,29 +833,6 @@ def update_participants(request, pk):
         return JsonResponse(FAILURE_DICT)
 
 
-#@login_required
-#@require_POST
-#def api_logger(request, participant_group_id=None):
-#    form = LogMessageForm(request.POST or None)
-#    success = False
-#    if form.is_valid():
-#        try:
-#            participant_group_relationship = ParticipantGroupRelationship.objects.get(
-#                pk=participant_group_id)
-#            level = form.cleaned_data['level']
-#            message = form.cleaned_data['message']
-#            logger.log(
-#                level, "%s: %s", participant_group_relationship, message)
-#            success = True
-#        except ParticipantGroupRelationship.DoesNotExist:
-#            logger.error(
-#                "Couldn't locate a participant group relationship for request %s", request)
-#    else:
-#        logger.error(
-#            "Failed to validate log message form %s (%s)", request, form)
-#    return JsonResponse({'success': success})
-
-
 @group_required(PermissionGroup.participant)
 @require_GET
 def completed_survey(request):
@@ -1176,10 +1099,10 @@ def delete_experiment_configuration(request, pk):
 
 
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
-@ownership_required(ExperimentConfiguration)
+# @ownership_required(ExperimentConfiguration)
 @require_GET
 def show_experiment_configuration(request, pk):
-    ec = ExperimentConfiguration.objects.get(pk=pk)
+    ec = get_object_or_404(ExperimentConfiguration, pk=pk)
     ecf = ExperimentConfigurationForm(instance=ec)
 
     json_data = get_experiment_configuration_json_data(ec)
@@ -1210,16 +1133,16 @@ def edit_experiment_configuration(request, pk):
 
 
 def get_experiment_configuration_json_data(ec):
-    epv = ExperimentParameterValue.objects.select_related('experiment_configuration', 'parameter') \
-                                  .filter(experiment_configuration=ec)
+    epv = ExperimentParameterValue.objects.select_related('experiment_configuration', 'parameter').filter(
+        experiment_configuration=ec)
     exp_param_values_list = [param.to_dict() for param in epv]
 
-    round_config = RoundConfiguration.objects.select_related('experiment_configuration') \
-                                     .filter(experiment_configuration=ec)
-    round_config_list = [round.to_dict() for round in round_config]
+    round_config = RoundConfiguration.objects.select_related('experiment_configuration').filter(
+        experiment_configuration=ec)
+    round_config_list = [r.to_dict() for r in round_config]
 
-    round_param_values = RoundParameterValue.objects.select_related('round_configuration', 'parameter') \
-        .filter(round_configuration__in=round_config)
+    round_param_values = RoundParameterValue.objects.select_related('round_configuration', 'parameter').filter(
+        round_configuration__in=round_config)
     round_param_values_list = [round_param.to_dict() for round_param in round_param_values]
 
     # Get the round parameter values for each round
