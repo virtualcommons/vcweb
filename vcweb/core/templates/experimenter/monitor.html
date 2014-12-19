@@ -267,16 +267,17 @@
                  });
             };
             model.loadRoundData = function(localModel) {
-                console.debug("loading round data for round data with pk: " + localModel.pk());
+                console.debug("loading round data with pk: " + localModel.pk());
                 console.debug(localModel);
                 if (localModel.participantDataValues().length > 0 || localModel.groupDataValues() > 0) {
                     console.debug("assuming round data has already been loaded");
                     return;
                 }
-                $.get("/api/experimenter/round-data", { pk: localModel.pk() })
+                $.get('{% url "core:get_round_data" %}', { pk: localModel.pk() })
                  .done(function(response) {
                      localModel.groupDataValues(response.groupDataValues);
                      localModel.participantDataValues(response.participantDataValues);
+                     console.log(response.groupDataValues);
                  })
                  .fail(function(response) {
                      console.debug("unable to get round data for " + localModel.pk());

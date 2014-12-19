@@ -97,12 +97,13 @@ def get_experiment_model(request, pk):
     return _get_experiment(request, pk).to_json()
 
 
-@group_required(PermissionGroup.experimenter)
+@group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
 def get_round_data(request):
     # FIXME: naively implemented performance wise, revisit if this turns into
     # a hot spot..
     pk = request.GET.get('pk')
-    round_data = get_object_or_404(RoundData, pk=pk)
+    round_data = get_object_or_404(RoundData.objects.select_related('experiment__experimenter'), pk=pk,
+                                   experiment__experimenter__pk=request.user.experimenter.pk)
     group_data_values = [
         gdv.to_dict(cacheable=True)
         for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()

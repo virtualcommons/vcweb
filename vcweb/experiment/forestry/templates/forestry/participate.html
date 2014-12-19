@@ -554,7 +554,7 @@
                 console.debug("submitting decision");
                 // FIXME: re-enable tour once we figure out what the bad interaction is, see https://github.com/virtualcommons/vcweb/issues/69
                 // model.endTour();
-                $.post('submit-harvest-decision', {participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true },
+                $.post('{% url "forestry:submit_decision" experiment.pk %}', {participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true },
                 function(response) {
                     // hide selection, disable chat, show waiting room
                     model.participantReady(response.message);
@@ -574,7 +574,7 @@
                 var formId = "#" + model.harvestDecisionFormId(numberOfTrees)
                 var form = $(formId);
                 var formData = form.serialize();
-                $.post('submit-harvest-decision', formData, function(response) {
+                $.post('{% url "forestry:submit_decision" experiment.pk %}', formData, function(response) {
                     model.selectedHarvestDecision(true);
                     model.harvestDecision(numberOfTrees);
                 });

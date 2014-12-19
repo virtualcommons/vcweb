@@ -22,8 +22,7 @@ logger = logging.getLogger(__name__)
 def participate(request, experiment_id=None):
     participant = request.user.participant
 
-    logger.debug(
-        "handling participate request for %s and experiment %s", participant, experiment_id)
+    logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
 
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
                                    pk=experiment_id)
@@ -41,21 +40,19 @@ def participate(request, experiment_id=None):
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
-def submit_harvest_decision(request, experiment_id=None):
+def submit_decision(request, experiment_id=None):
     form = SingleIntegerDecisionForm(request.POST or None)
     experiment = get_object_or_404(Experiment, pk=experiment_id)
     if form.is_valid():
         participant_group_id = form.cleaned_data['participant_group_id']
-        pgr = get_object_or_404(
-            ParticipantGroupRelationship, pk=participant_group_id)
+        pgr = get_object_or_404(ParticipantGroupRelationship, pk=participant_group_id)
         harvest_decision = form.cleaned_data['integer_decision']
         submitted = form.cleaned_data['submitted']
         logger.debug("pgr %s harvested %s - final submission? %s",
                      pgr, harvest_decision, submitted)
         with transaction.atomic():
             round_data = experiment.current_round_data
-            set_harvest_decision(
-                pgr, harvest_decision, round_data, submitted=submitted)
+            set_harvest_decision(pgr, harvest_decision, round_data, submitted=submitted)
             message = "%s harvested %s trees"
             experiment.log(message % (pgr.participant, harvest_decision))
             response_dict = {
