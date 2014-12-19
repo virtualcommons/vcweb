@@ -1,18 +1,15 @@
 import logging
 
-from django.http import Http404
 from django.db import transaction
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 
 from vcweb.core.decorators import group_required
 from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.forms import SingleIntegerDecisionForm
-from vcweb.core.models import (
-    Experiment, ChatMessage, ParticipantGroupRelationship, RoundConfiguration, PermissionGroup)
-from vcweb.experiment.forestry.models import (get_experiment_metadata, get_max_allowed_harvest_decision,
-                                              get_resource_level, get_initial_resource_level, get_harvest_decision_dv,
-                                              get_regrowth_dv, set_harvest_decision, get_average_harvest, GroupData,
-                                              can_view_group_results)
+from vcweb.core.models import (Experiment, ChatMessage, ParticipantGroupRelationship, RoundConfiguration, PermissionGroup)
+from .models import (get_experiment_metadata, get_max_allowed_harvest_decision, get_resource_level,
+                     get_initial_resource_level, get_harvest_decision_dv, get_regrowth_dv, set_harvest_decision,
+                     get_average_harvest, GroupData, can_view_group_results)
 
 
 logger = logging.getLogger(__name__)
@@ -21,15 +18,13 @@ logger = logging.getLogger(__name__)
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def participate(request, experiment_id=None):
     participant = request.user.participant
-
-    logger.debug("handling participate request for %s and experiment %s", participant, experiment_id)
-
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
                                    pk=experiment_id)
     pgr = experiment.get_participant_group_relationship(participant)
 
-    if experiment.experiment_metadata != get_experiment_metadata() or pgr.participant != request.user.participant:
-        raise Http404
+    if experiment.experiment_metadata != get_experiment_metadata():
+        # redirect to appropriate experiment page
+        return redirect('core:dashboard')
 
     return render(request, experiment.participant_template, {
         'experiment': experiment,
@@ -108,11 +103,9 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     current_round = experiment.current_round
     current_round_data = experiment.current_round_data
     previous_round = experiment.previous_round
-    previous_round_data = experiment.get_round_data(
-        round_configuration=previous_round, previous_round=True)
+    previous_round_data = experiment.get_round_data(round_configuration=previous_round, previous_round=True)
 
-    experiment_model_dict = experiment.to_dict(
-        include_round_data=False, default_value_dict=experiment_model_defaults)
+    experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
 
     experiment_model_dict['timeRemaining'] = experiment.time_remaining
     experiment_model_dict['sessionId'] = current_round.session_id
@@ -140,16 +133,13 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['resourceLevel'] = own_resource_level
 
         # Create GroupData object to access group members data
-        gd = GroupData(
-            participant_group_relationship, previous_round_data, current_round_data)
+        gd = GroupData(participant_group_relationship, previous_round_data, current_round_data)
 
         experiment_model_dict.update(gd.get_own_data())
         # Data of all the players in the same group of current logged in
         # participant
         experiment_model_dict['groupData'] = gd.get_group_data()
-
-        regrowth = experiment_model_dict['regrowth'] = get_regrowth_dv(
-            own_group, current_round_data).int_value
+        regrowth = experiment_model_dict['regrowth'] = get_regrowth_dv(own_group, current_round_data).int_value
         logger.debug("The regrowth is %s", regrowth)
 
         experiment_model_dict['myGroup'] = {
@@ -169,8 +159,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
                 rounds = experiment.round_data_set.filter(
                     round_configuration__round_type=RoundConfiguration.RoundType.REGULAR)
 
-            experiment_model_dict['totalEarnings'] = gd.get_own_earnings(
-                rounds, ec.exchange_rate)
+            experiment_model_dict['totalEarnings'] = gd.get_own_earnings(rounds, ec.exchange_rate)
 
             if can_view_group_results(current_round):
                 experiment_model_dict['groupEarnings'] = gd.get_group_earnings(
@@ -180,8 +169,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     # or the previous round was a data round
     if previous_round.is_playable_round or current_round.is_playable_round:
 
-        harvest_decision = get_harvest_decision_dv(
-            participant_group_relationship, current_round_data)
+        harvest_decision = get_harvest_decision_dv(participant_group_relationship, current_round_data)
         experiment_model_dict['submitted'] = harvest_decision.submitted
 
         if harvest_decision.submitted:

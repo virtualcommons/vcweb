@@ -229,7 +229,7 @@
 </script>
 <script type='text/html' id='REGULAR'>
 <div class='row'>
-    <div class='col-md-7'>
+    <div class='col-md-5'>
         <div class='row'>
         <h3>My Status</h3>
             <div class='alert alert-warning forestry-status-dashboard col-md-2'>
@@ -248,7 +248,7 @@
             </div>
         </div>
     </div>
-    <div class='col-md-5'>
+    <div class='col-md-7'>
         <h3>Group Status</h3>
         <table class='table table-bordered table-condensed group-status'>
             <colgroup>
@@ -269,6 +269,12 @@
                 <td>Last harvest</td>
                 <!-- ko foreach: groupData -->
                 <td data-bind='text: lastHarvestDecision, css: { "current-player": id() === $root.participantGroupId() }'></td>
+                <!-- /ko -->
+            </tr>
+            <tr>
+                <td>Total harvest</td>
+                <!-- ko foreach: groupData -->
+                <td data-bind='text: totalHarvest, css: { "current-player": id() === $root.participantGroupId() }'></td>
                 <!-- /ko -->
             </tr>
             </tbody>
@@ -352,6 +358,7 @@
         <tbody>
             <tr><td>forest</td><td><strong class='badge badge-success' data-bind='text:resourceLevel'></strong> trees</td></tr>
             <tr><td>average harvest</td><td data-bind='text:averageHarvest().toFixed(1)'></td></tr>
+            <tr><td>regrowth</td><td data-bind='text:regrowth'></td></tr>
         </tbody>
     </table>
 </div>

@@ -5,8 +5,7 @@ from django.db import models, transaction
 from django.dispatch import receiver
 
 from vcweb.core import signals, simplecache
-from vcweb.core.models import (
-    ExperimentMetadata, Parameter, ParticipantRoundDataValue, ParticipantGroupRelationship)
+from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue,)
 
 
 logger = logging.getLogger(__name__)
@@ -134,9 +133,9 @@ def get_total_experiment_harvest(pgr, debriefing_session_round_data):
 
 
 def get_total_group_harvest(group, round_data):
-    q = ParticipantRoundDataValue.objects.for_group(group=group, parameter=get_harvest_decision_parameter(),
-                                                    round_data=round_data) \
-        .aggregate(total_harvest=models.Sum('int_value'))
+    q = ParticipantRoundDataValue.objects.for_group(
+        group=group, parameter=get_harvest_decision_parameter(), round_data=round_data).aggregate(
+            total_harvest=models.Sum('int_value'))
     return _zero_if_none(q['total_harvest'])
 
 
@@ -145,19 +144,25 @@ class GroupData(object):
     def __init__(self, self_pgr, previous_round_data, current_round_data):
         self.pgr = self_pgr
         self.group = self_pgr.group
-        self.pgr_list = ParticipantGroupRelationship.objects.filter(
-            group=self.group)
         self.player_dict = defaultdict(lambda: defaultdict(lambda: None))
 
-        prdvs = ParticipantRoundDataValue.objects.for_group(group=self.group,
-                                                            parameter=get_harvest_decision_parameter(),
-                                                            round_data__in=[previous_round_data, current_round_data])
+        prdvs = ParticipantRoundDataValue.objects.for_group(
+            group=self.group,
+            parameter=get_harvest_decision_parameter(),
+            round_data__in=[previous_round_data, current_round_data])
 
-        # Converting django ORM object to dictionary so that it can be indexed
-        # easily to get parameter values
+        # Converting django ORM object to dictionary to retrieve data by parameter
         for prdv in prdvs:
-            self.player_dict[prdv.participant_group_relationship][
-                prdv.parameter] = prdv
+            self.player_dict[prdv.participant_group_relationship][prdv.parameter] = prdv
+        self.group_data = [
+            {
+                'id': pgr.pk,
+                'number': pgr.participant_number,
+                'lastHarvestDecision': self.get_last_harvest_decision(pgr),
+                'totalHarvest': self.total_harvest(pgr),
+            }
+            for pgr in self.group.participant_group_relationship_set.all()
+        ]
 
     def get_last_harvest_decision(self, pgr):
         try:
@@ -165,24 +170,24 @@ class GroupData(object):
         except:
             return 0
 
+    def total_harvest(self, pgr):
+        q = ParticipantRoundDataValue.objects.for_participant(
+            participant_group_relationship=pgr,
+            parameter=get_harvest_decision_parameter()).exclude(
+                round_data__round_configuration__round_type='PRACTICE').aggregate(total=models.Sum('int_value'))
+        return _zero_if_none(q['total'])
+
     def get_group_data(self):
-        group_data = []
-        for pgr in self.pgr_list:
-            group_data.append({
-                'id': pgr.pk,
-                'number': pgr.participant_number,
-                'lastHarvestDecision': self.get_last_harvest_decision(pgr)
-            })
-        return group_data
+        return self.group_data
 
     def get_own_data(self):
-        own_data = {
-            'lastHarvestDecision': self.get_last_harvest_decision(self.pgr)}
-        return own_data
+        for player_data in self.group_data:
+            if player_data['id'] == self.pgr.pk:
+                return player_data
 
     def get_group_earnings(self, round_list, exchange_rate):
         group_data = []
-        for pgr in self.pgr_list:
+        for pgr in self.group.participant_group_relationship_set.all():
             if pgr != self.pgr:
                 group_data.append({
                     'number': pgr.participant_number,

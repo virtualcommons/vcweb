@@ -2149,8 +2149,7 @@ class Group(models.Model, DataValueMixin):
         return criteria
 
     def get_participant_data_values(self, **kwargs):
-        criteria = self._criteria(
-            participant_group_relationship__group=self, **kwargs)
+        criteria = self._criteria(participant_group_relationship__group=self, **kwargs)
         return ParticipantRoundDataValue.objects.filter(**criteria)
 
     def create_next_group(self):

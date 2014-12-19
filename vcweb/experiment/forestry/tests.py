@@ -1,8 +1,7 @@
 import logging
 import random
 
-from vcweb.core.models import (
-    GroupRoundDataValue, ParticipantExperimentRelationship)
+from vcweb.core.models import (GroupRoundDataValue, ParticipantExperimentRelationship, ParticipantGroupRelationship)
 from vcweb.core.tests import BaseVcwebTest
 from .models import *
 
@@ -112,7 +111,8 @@ class ForestryParametersTest(BaseVcwebTest):
             # single participant data parameter, harvest decisions
             for pgr in group.participant_group_relationship_set.all():
                 prdv = ParticipantRoundDataValue.objects.get(
-                    participant_group_relationship=pgr, round_data=round_data, parameter=get_harvest_decision_parameter())
+                    participant_group_relationship=pgr, round_data=round_data,
+                    parameter=get_harvest_decision_parameter())
                 self.assertTrue(prdv)
                 self.assertEqual(
                     prdv.parameter, get_harvest_decision_parameter())
@@ -236,8 +236,8 @@ class ForestryParametersTest(BaseVcwebTest):
         for p in self.participants:
             participant_data_values = round_data.participant_data_value_set.filter(
                 participant_group_relationship__participant=p)
-            self.assertEqual(participant_data_values.count(
-            ), 2, "should only be 2 participant data values present, harvest decision and participant is ready %s" % participant_data_values)
+            self.assertEqual(participant_data_values.count(), 2,
+                             "expected harvest_decision and participant_ready: %s" % participant_data_values)
             pexpr = e.get_participant_experiment_relationship(p)
             for dv in participant_data_values.filter(parameter__type='int'):
                 self.assertEqual(
