@@ -1429,8 +1429,7 @@ class Experiment(models.Model):
 
     def to_dict(self, include_round_data=False, default_value_dict=None, attrs=None, *args, **kwargs):
         experiment_dict = dict(default_value_dict or {}, **kwargs)
-        start_time = self.current_round_start_time.strftime(
-            '%c') if self.current_round_start_time else 'N/A'
+        start_time = self.current_round_start_time.strftime('%c') if self.current_round_start_time else 'N/A'
         experiment_dict.update({
             'roundStatusLabel': self.status_label,
             'roundSequenceLabel': self.sequence_label,
@@ -2509,16 +2508,13 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
     # FIXME: should also add a participant_identifier field here in case we
     # want to use something other than numbers..?
     participant_number = models.PositiveIntegerField()
-    participant = models.ForeignKey(
-        Participant, related_name='participant_group_relationship_set')
-    group = models.ForeignKey(
-        Group, related_name='participant_group_relationship_set')
+    participant = models.ForeignKey(Participant, related_name='participant_group_relationship_set')
+    group = models.ForeignKey(Group, related_name='participant_group_relationship_set')
     round_joined = models.ForeignKey(RoundConfiguration)
     date_created = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
     first_visit = models.BooleanField(default=True)
-    notifications_since = models.DateTimeField(
-        default=datetime.now, null=True, blank=True)
+    notifications_since = models.DateTimeField(default=datetime.now, null=True, blank=True)
     survey_completed = models.BooleanField(default=False)
 
     objects = PassThroughManager.for_queryset_class(ParticipantGroupRelationshipQuerySet)()

@@ -32,23 +32,14 @@ def perform_activity(request):
     if form.is_valid():
         activity_id = form.cleaned_data['activity_id']
         participant_group_id = form.cleaned_data['participant_group_id']
-        logger.debug(
-            "%s request to perform activity %s", participant_group_id, activity_id)
+        logger.debug("%s request to perform activity %s", participant_group_id, activity_id)
         participant_group_relationship = get_object_or_404(
-            ParticipantGroupRelationship.objects.select_related(
-                'participant__user', 'group__experiment'),
+            ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'),
             pk=participant_group_id)
-        #        latitude = form.cleaned_data['latitude']
-        #        longitude = form.cleaned_data['longitude']
         if participant_group_relationship.participant == request.user.participant:
             activity = get_object_or_404(Activity, pk=activity_id)
             performed_activity = do_activity(activity=activity,
                                              participant_group_relationship=participant_group_relationship)
-            # perform checkin logic here, query foursquare API for nearest "green" venu
-            #            logger.debug("searching venues at %s,%s", latitude, longitude)
-            #            venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
-            #                    categoryId=','.join(get_foursquare_category_ids()))
-            #            logger.debug("Found venues: %s", venues)
             if performed_activity is not None:
                 participant_group_relationship.set_first_visit()
                 return JsonResponse({
@@ -58,10 +49,9 @@ def perform_activity(request):
             else:
                 message = "Activity was not available at this time"
         else:
-            message = "Unauthorized access: %s" % participant_group_relationship
+            message = "Unauthorized access logged for %s" % participant_group_relationship
             logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id,
                            participant_group_relationship)
-    logger.warning(message)
     return JsonResponse({'success': False, 'response': message})
 
 
@@ -144,57 +134,24 @@ def post_comment(request):
 
 class LighterprintsViewModel(object):
 
-    def __init__(self, participant_group_relationship, experiment=None, round_data=None):
-        self.participant_group_relationship = participant_group_relationship
-        self.group = participant_group_relationship.group
-        self.experiment = self.group.experiment if experiment is None else experiment
-        self.round_data = self.experiment.current_round_data if round_data is None else round_data
-
-
-class HighSchoolViewModel(object):
-
     def __init__(self, participant_group_relationship, experiment=None, round_configuration=None, round_data=None):
         self.participant_group_relationship = participant_group_relationship
         self.group = participant_group_relationship.group
         self.experiment = self.group.experiment if experiment is None else experiment
         self.round_data = self.experiment.current_round_data if round_data is None else round_data
         self.round_configuration = self.experiment.current_round if round_configuration is None else round_configuration
-        self.treatment_type = get_treatment_type(
-            self.round_configuration).string_value
+        self.treatment_type = get_treatment_type(self.round_configuration).string_value
         self.experiment_configuration = self.experiment.experiment_configuration
-        self.group_scores = GroupScores(
-            experiment, round_data, participant_group_relationship)
+        self.group_scores = GroupScores(experiment, round_data, participant_group_relationship)
         self.activities = []
 
-    @property
-    def activities(self):
-        if not self.activities:
-            self.activities = []
-            completed_activity_pks = self.participant_group_relationship.data_value_set.filter(
-                parameter=get_activity_performed_parameter(),
-                round_data=self.round_data).values_list('int_value', flat=True)
-            scheduled_activity_pks = Activity.objects.scheduled(
-                self.round_configuration).values_list('pk', flat=True)
-            for activity in Activity.objects.all():
-                activity_dict = activity.to_dict()
-                status = 'locked'
-                if activity.pk in completed_activity_pks:
-                    status = 'completed'
-                elif activity.pk in scheduled_activity_pks:
-                    status = 'available'
-                activity_dict['status'] = status
-                activity_dict['availableNow'] = status == 'available'
-                activity_dict['availabilities'] = []
-                self.activities.append(activity_dict)
-        return self.activities
-
-    def to_json(self):
+    def to_dict(self):
         (hours_left, minutes_left) = get_time_remaining()
         participant_group_relationship = self.participant_group_relationship
         own_group = participant_group_relationship.group
         group_scores = self.group_scores
         group_activity = GroupActivity(participant_group_relationship)
-        return dumps({
+        return {
             'activities': self.activities,
             'quizCompleted': participant_group_relationship.survey_completed,
             'hasLeaderboard': True,
@@ -209,7 +166,57 @@ class HighSchoolViewModel(object):
             'groupName': own_group.name,
             'totalPoints': group_scores.total_participant_points,
             'surveyUrl': self.round_configuration.make_survey_url(pid=participant_group_relationship.pk),
-        })
+        }
+
+    def to_json(self):
+        return dumps(self.to_dict())
+
+
+class HighSchoolViewModel(LighterprintsViewModel):
+
+    @property
+    def activities(self):
+        if not self.activities:
+            self.activities = []
+            completed_activity_pks = self.participant_group_relationship.data_value_set.filter(
+                parameter=get_activity_performed_parameter(),
+                round_data=self.round_data).values_list('int_value', flat=True)
+            scheduled_activity_pks = Activity.objects.scheduled(self.round_configuration).values_list('pk', flat=True)
+            for activity in Activity.objects.all():
+                activity_dict = activity.to_dict()
+                status = 'locked'
+                if activity.pk in completed_activity_pks:
+                    status = 'completed'
+                elif activity.pk in scheduled_activity_pks:
+                    status = 'available'
+                activity_dict['status'] = status
+                activity_dict['availableNow'] = status == 'available'
+                activity_dict['availabilities'] = []
+                self.activities.append(activity_dict)
+        return self.activities
+
+    def to_dict(self):
+        (hours_left, minutes_left) = get_time_remaining()
+        participant_group_relationship = self.participant_group_relationship
+        own_group = participant_group_relationship.group
+        group_scores = self.group_scores
+        group_activity = GroupActivity(participant_group_relationship)
+        return {
+            'activities': self.activities,
+            'quizCompleted': participant_group_relationship.survey_completed,
+            'hasLeaderboard': True,
+            'participantGroupId': participant_group_relationship.pk,
+            'groupData': group_scores.get_group_data_list(),
+            'hoursLeft': hours_left,
+            'minutesLeft': minutes_left,
+            'firstVisit': participant_group_relationship.first_visit,
+            'averagePoints': group_scores.average_daily_points(own_group),
+            'pointsToNextLevel': group_scores.get_points_goal(own_group),
+            'groupActivity': group_activity.all_activities,
+            'groupName': own_group.name,
+            'totalPoints': group_scores.total_participant_points,
+            'surveyUrl': self.round_configuration.make_survey_url(pid=participant_group_relationship.pk),
+        }
 
     @property
     def template_name(self):
@@ -234,8 +241,8 @@ def download_payment_data(request, pk=None):
     return response
 
 
-def get_view_model_dict(participant_group_relationship, activities=None, experiment=None, round_configuration=None,
-                        round_data=None):
+def get_view_model_dict(participant_group_relationship, activities=None, experiment=None,
+                        round_configuration=None, round_data=None):
     """
     FIXME: replace with view model class that stitches together ActivityStatusList and GroupScores appropriately and
     handles conditional switches between the different experiment types (scheduled activities, level based, high school)
@@ -247,7 +254,7 @@ def get_view_model_dict(participant_group_relationship, activities=None, experim
         round_configuration = experiment.current_round
     experiment_configuration = round_configuration.experiment_configuration
     if is_high_school_treatment(experiment_configuration=experiment_configuration):
-        return HighSchoolViewModel(participant_group_relationship, experiment, round_configuration).to_json()
+        return HighSchoolViewModel(participant_group_relationship, experiment, round_configuration).to_dict()
     if activities is None:
         activities = Activity.objects.all()
     if round_data is None:
@@ -269,7 +276,7 @@ def get_view_model_dict(participant_group_relationship, activities=None, experim
         'groupData': group_data,
         'hoursLeft': hours_left,
         'minutesLeft': minutes_left,
-        'firstVisit': participant_group_relationship.set_first_visit(),
+        'firstVisit': participant_group_relationship.first_visit,
         # FIXME: extract this from groupData instead..
         'groupLevel': own_group_level,
         'linearPublicGood': linear_public_good,
@@ -292,16 +299,13 @@ def get_view_model(request, participant_group_id=None):
         participant_group_id = request.GET.get('participant_group_id')
     # FIXME: replace with
     # ParticipantGroupRelationship.objects.fetch(pk=participant_group_id)
-    pgr = get_object_or_404(
-        ParticipantGroupRelationship.objects.select_related(
-            'participant__user', 'group__experiment'),
-        pk=participant_group_id)
+    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'),
+                            pk=participant_group_id)
     if pgr.participant != request.user.participant:
         # security check to ensure that the authenticated participant is the same as the participant whose data is
         # being requested
-        logger.warning(
-            "user %s tried to access view model for %s", request.user.participant, pgr)
-        raise PermissionDenied("Access denied.")
+        logger.warning("user %s tried to access view model for %s", request.user.participant, pgr)
+        raise PermissionDenied("You don't appear to have permission to access this experiment. Please try signing out and signing back in again.")
     view_model = get_view_model_dict(pgr, experiment=pgr.group.experiment)
     return JsonResponse(dumps({'success': True, 'view_model_json': view_model}))
 
@@ -356,8 +360,7 @@ def participate(request, experiment_id=None):
                                 participant=participant, group__experiment=experiment)
         treatment_type = get_treatment_type(experiment).string_value
         if treatment_type == 'HIGH_SCHOOL':
-            view_model = HighSchoolViewModel(
-                pgr, experiment=experiment, round_configuration=round_configuration)
+            view_model = HighSchoolViewModel(pgr, experiment=experiment, round_configuration=round_configuration)
             return render(request, view_model.template_name, {
                 'experiment': experiment,
                 'participant_group_relationship': pgr,
