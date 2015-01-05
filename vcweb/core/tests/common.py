@@ -294,35 +294,30 @@ class SubjectPoolTest(BaseVcwebTest):
 
     def setup_participant_signup(self, participant_list, es_pk_list):
         participant_list = participant_list[:25]
+        today = date.today()
 
         for person in participant_list:
             inv = Invitation.objects.filter(participant=person,
                                             experiment_session__pk__in=es_pk_list).order_by('?')[:1]
             ps = ParticipantSignup()
             ps.invitation = inv[0]
-            year = date.today().year
-            month = date.today().month - 1
-            day = random.choice(range(1, 30))
-            random_date = datetime(year, month, day)
-            ps.date_created = random_date
-            # logger.debug(random_date)
             ps.attendance = random.choice([0, 1, 2, 3])
-            # logger.debug(ps.attendance)
             ps.save()
 
     def setup_invitations(self, participants, es_pk_list):
         invitations = []
         experiment_sessions = ExperimentSession.objects.filter(pk__in=es_pk_list)
         user = self.demo_experimenter.user
+        today = date.today()
+        year = today.year
+        month = today.month
 
         for participant in participants:
             # recipient_list.append(participant.email)
             for es in experiment_sessions:
-                year = date.today().year
-                month = date.today().month - 1
                 day = random.choice(range(1, 30))
+# FIXME: what is the point of setting date_created to random dates in this month & year?
                 random_date = datetime(year, month, day)
                 invitations.append(Invitation(participant=participant, experiment_session=es, date_created=random_date,
                                               sender=user))
-
         Invitation.objects.bulk_create(invitations)
