@@ -9,18 +9,15 @@ from django.shortcuts import get_object_or_404, render, redirect
 import unicodecsv
 
 from vcweb.core.decorators import group_required, ownership_required, is_participant
-from vcweb.core.forms import (
-    ChatForm, CommentForm, LikeForm, GeoCheckinForm, LoginForm)
+from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, LoginForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship,
                                ParticipantRoundDataValue, Like, PermissionGroup)
-from vcweb.core.views import (
-    dumps, get_active_experiment, set_authentication_token, mimetypes)
+from vcweb.core.views import (dumps, get_active_experiment, set_authentication_token, mimetypes)
 from .forms import ActivityForm
 from .models import (Activity, get_lighterprints_experiment_metadata, is_linear_public_good_game,
                      is_high_school_treatment, get_treatment_type, get_activity_performed_parameter, )
-from .services import (
-    ActivityStatusList, GroupScores, do_activity, get_time_remaining, GroupActivity)
+from .services import (ActivityStatusList, GroupScores, do_activity, get_time_remaining, GroupActivity)
 
 
 logger = logging.getLogger(__name__)
@@ -134,7 +131,8 @@ def post_comment(request):
 
 class LighterprintsViewModel(object):
 
-    def __init__(self, participant_group_relationship, experiment=None, round_configuration=None, round_data=None):
+    def __init__(self, participant_group_relationship, experiment=None, round_configuration=None, round_data=None,
+                 activities=None):
         self.participant_group_relationship = participant_group_relationship
         self.group = participant_group_relationship.group
         self.experiment = self.group.experiment if experiment is None else experiment
@@ -142,8 +140,27 @@ class LighterprintsViewModel(object):
         self.round_configuration = self.experiment.current_round if round_configuration is None else round_configuration
         self.treatment_type = get_treatment_type(self.round_configuration).string_value
         self.experiment_configuration = self.experiment.experiment_configuration
-        self.group_scores = GroupScores(experiment, round_data, participant_group_relationship)
-        self.activities = []
+        self.group_scores = GroupScores(self.experiment, self.round_data,
+                                        participant_group_relationship=self.participant_group_relationship)
+        self.total_participant_points = self.group_scores.total_participant_points
+        if activities is None:
+            activities = Activity.objects.all()
+        self.activity_status_list = ActivityStatusList(participant_group_relationship,
+                                                       activities,
+                                                       self.round_configuration,
+                                                       group_level=self.own_group_level)
+
+    @property
+    def linear_public_good(self):
+        return is_linear_public_good_game(self.experiment_configuration)
+
+    @property
+    def own_group(self):
+        return self.participant_group_relationship.group
+
+    @property
+    def own_group_level(self):
+        return self.group_scores.get_group_level(self.own_group)
 
     def to_dict(self):
         (hours_left, minutes_left) = get_time_remaining()
@@ -151,21 +168,28 @@ class LighterprintsViewModel(object):
         own_group = participant_group_relationship.group
         group_scores = self.group_scores
         group_activity = GroupActivity(participant_group_relationship)
+        group_data = group_scores.get_group_data_list()
+        own_group_level = group_scores.get_group_level(own_group)
         return {
-            'activities': self.activities,
-            'quizCompleted': participant_group_relationship.survey_completed,
-            'hasLeaderboard': True,
             'participantGroupId': participant_group_relationship.pk,
-            'groupData': group_scores.get_group_data_list(),
+            'completed': group_scores.is_completed(own_group),
+            'hasLeaderboard': group_scores.has_leaderboard,
+            'groupData': group_data,
             'hoursLeft': hours_left,
             'minutesLeft': minutes_left,
             'firstVisit': participant_group_relationship.first_visit,
+            # FIXME: extract this from groupData instead..
+            'groupLevel': own_group_level,
+            'linearPublicGood': self.linear_public_good,
+            'totalDailyEarnings': "{0:.2f}".format(group_scores.daily_earnings(own_group)),
+            'totalEarnings': "{0:.2f}".format(group_scores.total_earnings(own_group)),
             'averagePoints': group_scores.average_daily_points(own_group),
             'pointsToNextLevel': group_scores.get_points_goal(own_group),
+            'hasScheduledActivities': group_scores.has_scheduled_activities,
             'groupActivity': group_activity.all_activities,
             'groupName': own_group.name,
-            'totalPoints': group_scores.total_participant_points,
-            'surveyUrl': self.round_configuration.make_survey_url(pid=participant_group_relationship.pk),
+            'activities': self.activity_status_list.activity_dict_list,
+            'totalPoints': self.total_participant_points,
         }
 
     def to_json(self):
@@ -236,8 +260,7 @@ def download_payment_data(request, pk=None):
     for pgr in experiment.participant_group_relationships:
         participant = pgr.participant
         group = pgr.group
-        writer.writerow(
-            [group, participant.email, participant.username, group_scores.total_earnings(group)])
+        writer.writerow([group, participant.email, participant.username, group_scores.total_earnings(group)])
     return response
 
 
@@ -255,41 +278,8 @@ def get_view_model_dict(participant_group_relationship, activities=None, experim
     experiment_configuration = round_configuration.experiment_configuration
     if is_high_school_treatment(experiment_configuration=experiment_configuration):
         return HighSchoolViewModel(participant_group_relationship, experiment, round_configuration).to_dict()
-    if activities is None:
-        activities = Activity.objects.all()
-    if round_data is None:
-        round_data = experiment.current_round_data
-    linear_public_good = is_linear_public_good_game(experiment_configuration)
-    group_scores = GroupScores(
-        experiment, round_data, participant_group_relationship=participant_group_relationship)
-    total_participant_points = group_scores.total_participant_points
-    group_data = group_scores.get_group_data_list()
-    own_group_level = group_scores.get_group_level(own_group)
-    activity_status_list = ActivityStatusList(participant_group_relationship, activities, round_configuration,
-                                              group_level=own_group_level)
-    group_activity = GroupActivity(participant_group_relationship)
-    (hours_left, minutes_left) = get_time_remaining()
-    return {
-        'participantGroupId': participant_group_relationship.pk,
-        'completed': group_scores.is_completed(own_group),
-        'hasLeaderboard': group_scores.has_leaderboard,
-        'groupData': group_data,
-        'hoursLeft': hours_left,
-        'minutesLeft': minutes_left,
-        'firstVisit': participant_group_relationship.first_visit,
-        # FIXME: extract this from groupData instead..
-        'groupLevel': own_group_level,
-        'linearPublicGood': linear_public_good,
-        'totalDailyEarnings': "{0:.2f}".format(group_scores.daily_earnings(own_group)),
-        'totalEarnings': "{0:.2f}".format(group_scores.total_earnings(own_group)),
-        'averagePoints': group_scores.average_daily_points(own_group),
-        'pointsToNextLevel': group_scores.get_points_goal(own_group),
-        'hasScheduledActivities': group_scores.has_scheduled_activities,
-        'groupActivity': group_activity.all_activities,
-        'groupName': own_group.name,
-        'activities': activity_status_list.activity_dict_list,
-        'totalPoints': total_participant_points,
-    }
+    else:
+        return LighterprintsViewModel(participant_group_relationship, experiment, round_configuration).to_dict()
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
@@ -299,47 +289,16 @@ def get_view_model(request, participant_group_id=None):
         participant_group_id = request.GET.get('participant_group_id')
     # FIXME: replace with
     # ParticipantGroupRelationship.objects.fetch(pk=participant_group_id)
-    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'),
+    pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user',
+                                                                                'group__experiment'),
                             pk=participant_group_id)
     if pgr.participant != request.user.participant:
         # security check to ensure that the authenticated participant is the same as the participant whose data is
         # being requested
         logger.warning("user %s tried to access view model for %s", request.user.participant, pgr)
-        raise PermissionDenied("You don't appear to have permission to access this experiment. Please try signing out and signing back in again.")
+        raise PermissionDenied("You don't appear to have permission to access this experiment.")
     view_model = get_view_model_dict(pgr, experiment=pgr.group.experiment)
     return JsonResponse(dumps({'success': True, 'view_model_json': view_model}))
-
-
-# FIXME: push this into core api/login if possible
-def mobile_login(request):
-    form = LoginForm(request.POST or None)
-    try:
-        if form.is_valid():
-            user = form.user_cache
-            logger.debug(
-                "user was authenticated as %s, attempting to login", user)
-            auth.login(request, user)
-            set_authentication_token(user, request.session.session_key)
-            return redirect('lighterprints:mobile_participate')
-    except Exception as e:
-        logger.debug("Invalid login: %s", e)
-    return render(request, 'lighterprints/mobile/login.html')
-
-
-@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
-def mobile_participate(request, experiment_id=None):
-    participant = request.user.participant
-    experiment = get_active_experiment(
-        participant, experiment_metadata=get_lighterprints_experiment_metadata())
-    pgr = experiment.get_participant_group_relationship(participant)
-    all_activities = Activity.objects.all()
-    view_model = get_view_model_dict(pgr, all_activities, experiment)
-    return render(request, 'lighterprints/mobile/index.html', {
-        'experiment': experiment,
-        'participant_group_relationship': pgr,
-        'view_model_json': dumps(view_model),
-        'all_activities': all_activities,
-    })
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
@@ -382,24 +341,32 @@ def participate(request, experiment_id=None):
         return render(request, 'lighterprints/inactive.html', {'experiment': experiment, 'upcoming': upcoming})
 
 
+# FIXME: push this into core api/login if possible
+def mobile_login(request):
+    form = LoginForm(request.POST or None)
+    try:
+        if form.is_valid():
+            user = form.user_cache
+            logger.debug("user was authenticated as %s, attempting to login", user)
+            auth.login(request, user)
+            set_authentication_token(user, request.session.session_key)
+            return redirect('lighterprints:mobile_participate')
+    except Exception as e:
+        logger.debug("Invalid login: %s", e)
+    return render(request, 'lighterprints/mobile/login.html')
+
+
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
-def checkin(request):
-    form = GeoCheckinForm(request.POST or None)
-    if form.is_valid():
-        participant_group_id = form.cleaned_data['participant_group_id']
-        latitude = form.cleaned_data['latitude']
-        longitude = form.cleaned_data['longitude']
-        participant_group_relationship = get_object_or_404(
-            ParticipantGroupRelationship.objects.select_related('group', 'participant__user'), pk=participant_group_id)
-        logger.debug("%s checking at at (%s, %s)",
-                     participant_group_relationship, latitude, longitude)
-        if request.user.participant == participant_group_relationship.participant:
-            # perform checkin logic here, query foursquare API for nearest "green" venu
-            #            venues = foursquare_venue_search(latitude=latitude, longitude=longitude,
-            #                    categoryId=','.join(get_foursquare_category_ids()))
-            #            logger.debug("Found venues: %s", venues)
-            return JsonResponse(dumps({'success': True}))
-        else:
-            logger.warning("authenticated user %s tried to checkin at (%s, %s) for %s", request.user, latitude,
-                           longitude, participant_group_relationship)
-    return JsonResponse(dumps({'success': False, 'message': 'Invalid request'}))
+def mobile_participate(request, experiment_id=None):
+    participant = request.user.participant
+    experiment = get_active_experiment(
+        participant, experiment_metadata=get_lighterprints_experiment_metadata())
+    pgr = experiment.get_participant_group_relationship(participant)
+    all_activities = Activity.objects.all()
+    view_model = get_view_model_dict(pgr, all_activities, experiment)
+    return render(request, 'lighterprints/mobile/index.html', {
+        'experiment': experiment,
+        'participant_group_relationship': pgr,
+        'view_model_json': dumps(view_model),
+        'all_activities': all_activities,
+    })
