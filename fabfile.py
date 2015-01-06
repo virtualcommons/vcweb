@@ -1,4 +1,4 @@
-from fabric.api import local, run, sudo, cd, env, lcd, execute, hosts, roles, task
+from fabric.api import local, sudo, cd, env, lcd, execute, hosts, roles, task
 from fabric.context_managers import prefix
 from fabric.contrib.console import confirm
 from fabric.contrib import django
@@ -197,8 +197,8 @@ def deploy(vcs_branch_dict):
                 'chmod -R g+rw logs/',
                 user=env.deploy_user, pty=True)
             env.static_root = vcweb_settings.STATIC_ROOT
-            _virtualenv(run, '%(python)s manage.py collectstatic' % env)
-            _virtualenv(run, '%(python)s manage.py installtasks' % env)
+            _virtualenv(sudo, '%(python)s manage.py collectstatic' % env, user=env.deploy_user)
+            _virtualenv(sudo, '%(python)s manage.py installtasks' % env, user=env.deploy_user)
             sudo_chain(
                 'chmod -R ug+rw .',
                 'find %(static_root)s %(virtualenv_path)s -type d -exec chmod a+x {} \;' % env,
