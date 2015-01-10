@@ -5,12 +5,12 @@ import logging
 from django.core.cache import cache
 from django.db import models
 from django.db.models import Sum
+from django.utils.translation import ugettext_lazy as _
 from model_utils.managers import PassThroughManager
 from mptt.models import (MPTTModel, TreeForeignKey, TreeManager)
 
 from vcweb.core import simplecache
-from vcweb.core.models import (
-    ExperimentMetadata, GroupRoundDataValue, Parameter, User)
+from vcweb.core.models import (ExperimentMetadata, GroupRoundDataValue, Parameter, User)
 
 
 logger = logging.getLogger(__name__)
@@ -39,19 +39,28 @@ def get_activity_availability_cache():
     return aac
 
 
-def is_level_based_experiment(experiment=None, experiment_configuration=None):
-    return get_treatment_type(experiment,
-                              experiment_configuration).string_value == 'LEVEL_BASED'
+def is_level_based_experiment(experiment=None, treatment_type=None, experiment_configuration=None):
+    if treatment_type is None:
+        treatment_type = get_treatment_type(experiment, experiment_configuration).string_value
+    return treatment_type == 'LEVEL_BASED'
 
 
-def is_scheduled_activity_experiment(experiment=None, experiment_configuration=None):
-    return get_treatment_type(experiment,
-                              experiment_configuration).string_value != 'LEVEL_BASED'
+def is_scheduled_activity_experiment(experiment=None, treatment_type=None, experiment_configuration=None):
+    if treatment_type is None:
+        treatment_type = get_treatment_type(experiment, experiment_configuration).string_value
+    return treatment_type != 'LEVEL_BASED'
 
 
-def is_high_school_treatment(experiment=None, experiment_configuration=None):
-    return get_treatment_type(experiment,
-                              experiment_configuration).string_value == 'HIGH_SCHOOL'
+def is_high_school_treatment(experiment=None, treatment_type=None, experiment_configuration=None):
+    if treatment_type is None:
+        treatment_type = get_treatment_type(experiment, experiment_configuration).string_value
+    return treatment_type == 'HIGH_SCHOOL'
+
+
+def is_neighborhood_treatment(experiment=None, treatment_type=None, experiment_configuration=None):
+    if treatment_type is None:
+        treatment_type = get_treatment_type(experiment, experiment_configuration).string_value
+    return treatment_type == 'NEIGBORHOOD'
 
 
 def has_leaderboard(round_configuration=None, treatment_type=None):
@@ -156,11 +165,14 @@ class Activity(MPTTModel):
     personal_benefits = models.TextField(null=True, blank=True)
     # FIXME: allow for experiment-configurable levels?
     level = models.PositiveIntegerField(default=1)
-    group_activity = models.BooleanField(default=False,
-                                         help_text='Whether or not this activity has beneficial group effect multipliers, e.g., ride sharing')
+    group_activity = models.BooleanField(
+        default=False,
+        help_text=_('''Activity with shared group effect multipliers, e.g., ride sharing'''))
     # currently unused
-    cooldown = models.PositiveIntegerField(default=1, null=True, blank=True,
-                                           help_text='How much time, in hours, must elapse before this activity can become available again')
+    cooldown = models.PositiveIntegerField(
+        default=1, null=True, blank=True,
+        help_text=_('''How much time must elapse before this activity becomes available again. Duration currently
+                    interpreted in 1h intervals'''))
     icon = models.ImageField(upload_to='lighterprints/activity-icons/')
     # for user submitted activities
     creator = models.ForeignKey(User, null=True, blank=True)
@@ -168,8 +180,7 @@ class Activity(MPTTModel):
     last_modified = models.DateTimeField(default=datetime.now)
     # for the "in-the-wild" app, activities unlock other sets of activities in
     # a tree-like fashion
-    parent = TreeForeignKey(
-        'self', null=True, blank=True, related_name='children_set')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children_set')
     is_public = models.BooleanField(default=False)
 
     objects = ActivityManager.for_queryset_class(ActivityQuerySet)()
@@ -195,17 +206,21 @@ class Activity(MPTTModel):
             if self.available_all_day:
                 cv = 'all day'
             else:
-                cv = ','.join(
-                    [availability.time_slot for availability in self.availability_set.all()])
+                cv = ','.join([availability.time_slot for availability in self.availability_set.all()])
             cache.set(ck, cv)
         return cv
 
     def is_available_for(self, participant_group_relationship, round_data):
         return Activity.objects.is_activity_available(self, participant_group_relationship, round_data)
 
-    def to_dict(self, attrs=(
-            'pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level', 'icon_url',
-            'icon_name', 'personal_benefits', 'points', 'time_slots')):
+    @property
+    def default_attrs(self):
+        return ('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level',
+                'icon_url', 'icon_name', 'personal_benefits', 'points', 'time_slots')
+
+    def to_dict(self, attrs=None):
+        if attrs is None:
+            attrs = self.default_attrs
         ck = 'activity.%s' % self.pk
         cv = cache.get(ck)
         if cv is None:

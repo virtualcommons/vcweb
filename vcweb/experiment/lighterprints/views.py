@@ -178,7 +178,7 @@ class LighterprintsViewModel(object):
             'hoursLeft': hours_left,
             'minutesLeft': minutes_left,
             'firstVisit': participant_group_relationship.first_visit,
-            # FIXME: extract this from groupData instead..
+            # FIXME: extract this from groupData, store & use group id as a key
             'groupLevel': own_group_level,
             'linearPublicGood': self.linear_public_good,
             'totalDailyEarnings': "{0:.2f}".format(group_scores.daily_earnings(own_group)),
@@ -194,6 +194,20 @@ class LighterprintsViewModel(object):
 
     def to_json(self):
         return dumps(self.to_dict())
+
+
+class NeighborhoodViewModel(LighterprintsViewModel):
+
+    @property
+    def is_neighborhood_treatment(self):
+        return self.treatment_type == 'NEIGHBORHOOD'
+
+    def to_dict(self):
+        d = super(NeighborhoodViewModel, self).to_dict()
+        d.update({
+            'showGroupClusterData': self.is_neighborhood_treatment,
+        })
+        return d
 
 
 class HighSchoolViewModel(LighterprintsViewModel):

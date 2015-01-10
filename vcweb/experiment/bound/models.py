@@ -5,16 +5,13 @@ from django.db import models, transaction
 from django.dispatch import receiver
 
 from vcweb.core import signals, simplecache
-from vcweb.core.models import (
-    DefaultValue, ExperimentMetadata, Parameter, ParticipantRoundDataValue, GroupRelationship, RoundConfiguration,
-    get_participant_ready_parameter
-)
+from vcweb.core.models import (DefaultValue, ExperimentMetadata, Parameter, ParticipantRoundDataValue,
+                               GroupRelationship, RoundConfiguration, get_participant_ready_parameter)
 from vcweb.experiment.forestry.models import (
     get_harvest_decision_parameter, get_harvest_decision, get_group_harvest_parameter,
-    get_reset_resource_level_parameter, get_regrowth_parameter,
-    get_initial_resource_level_parameter, get_resource_level_parameter,
-    get_resource_level_dv as get_unshared_resource_level_dv, get_group_harvest_dv, get_regrowth_dv,
-    get_harvest_decision_dv, set_harvest_decision, set_resource_level,)
+    get_reset_resource_level_parameter, get_regrowth_parameter, get_initial_resource_level_parameter,
+    get_resource_level_parameter, get_resource_level_dv as get_unshared_resource_level_dv, get_group_harvest_dv,
+    get_regrowth_dv, get_harvest_decision_dv, set_harvest_decision, set_resource_level,)
 
 
 logger = logging.getLogger(__name__)
@@ -169,8 +166,7 @@ def get_shared_resource_level_dv(group=None, round_data=None, cluster=None):
     if round_data is None:
         round_data = group.current_round_data
     if cluster is None:
-        group_relationship = GroupRelationship.objects.select_related(
-            'group_cluster').get(group=group)
+        group_relationship = GroupRelationship.objects.select_related('group_cluster').get(group=group)
         cluster = group_relationship.cluster
     return cluster.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data)
 
@@ -205,7 +201,7 @@ def get_final_session_storage_queryset(experiment, participant):
         participant_group_relationship__participant=participant,
         parameter=get_storage_parameter(),
         round_data__in=debriefing_session_round_data).order_by('date_created')
-    # FIXME: assumes only 2 sessions
+    # NOTE: assumes only 2 sessions
     if len(session_storages) == 2:
         return session_storages
     else:
@@ -318,12 +314,9 @@ def round_started_handler(sender, experiment=None, **kwargs):
     logger.debug("setting up round %s", round_configuration)
     # initialize group, group cluster, and participant data values
     experiment.initialize_data_values(
-        group_cluster_parameters=(
-            get_regrowth_parameter(), get_resource_level_parameter()),
-        group_parameters=(get_regrowth_parameter(
-        ), get_group_harvest_parameter(), get_resource_level_parameter()),
-        participant_parameters=(
-            get_storage_parameter(), get_player_status_parameter()),
+        group_cluster_parameters=(get_regrowth_parameter(), get_resource_level_parameter()),
+        group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
+        participant_parameters=(get_storage_parameter(), get_player_status_parameter()),
         defaults={
             get_storage_parameter(): 0,
             get_player_status_parameter(): True,
@@ -366,9 +359,8 @@ def round_started_handler(sender, experiment=None, **kwargs):
         #             ParticipantRoundDataValue.objects.filter(parameter=get_storage_parameter(),
         #                     participant_group_relationship__pk__in=participant_group_relationship_pks,
         #                     round_data=round_data).update(int_value=0)
-        # FIXME: this is redundant if the resource is depleted, clean up this logic
-        # next, check for dead participants and set their ready and harvest
-        # decision flags
+        # FIXME: redundant when resource is depleted, needs refactor
+        # check for dead participants and set their ready and harvest decision flags
         deceased_participants = ParticipantRoundDataValue.objects.filter(
             parameter=get_player_status_parameter(),
             round_data=round_data,
@@ -377,17 +369,21 @@ def round_started_handler(sender, experiment=None, **kwargs):
 
 
 def _zero_harvest_decisions(participant_group_relationship_ids, round_data):
-    # FIXME: possible performance issue, generates two queries per participant
-    parameters = (
-        get_harvest_decision_parameter(), get_participant_ready_parameter())
-    data_values = ParticipantRoundDataValue.objects.filter(round_data=round_data,
-                                                           participant_group_relationship__pk__in=participant_group_relationship_ids,
-                                                           parameter__in=parameters)
+    data_values = ParticipantRoundDataValue.objects.with_parameter(
+        get_harvest_decision_parameter(), round_data=round_data,
+        participant_group_relationship__pk__in=participant_group_relationship_ids)
+    data_values.update(int_value=0, submitted=True)
+    data_values = ParticipantRoundDataValue.objects.with_parameter(
+        get_participant_ready_parameter(), round_data=round_data,
+        participant_group_relationship__pk__in=participant_group_relationship_ids)
+    data_values.update(boolean_value=True)
+    '''
     for dv in data_values:
         if dv.parameter == get_harvest_decision_parameter():
             dv.update_int(0, submitted=True)
         elif dv.parameter == get_participant_ready_parameter():
             dv.update_boolean(True)
+    '''
 
 
 def adjust_harvest_decisions(current_resource_level, group, round_data, total_harvest, group_size=0):

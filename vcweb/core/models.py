@@ -2199,6 +2199,10 @@ class GroupCluster(models.Model, DataValueMixin):
     def size(self):
         return self.group_relationship_set.count()
 
+    @property
+    def groups(self):
+        return Group.objects.filter(pk__in=(self.group_relationship_set.values_list('group', flat=True)))
+
     def add(self, group):
         return GroupRelationship.objects.create(cluster=self, group=group)
 
@@ -2211,8 +2215,7 @@ class GroupCluster(models.Model, DataValueMixin):
 
 class GroupRelationship(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
-    cluster = models.ForeignKey(
-        GroupCluster, related_name='group_relationship_set')
+    cluster = models.ForeignKey(GroupCluster, related_name='group_relationship_set')
     group = models.ForeignKey(Group, related_name='relationship_set')
 
     def __unicode__(self):
@@ -2606,6 +2609,9 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
         if names is not None:
             kwargs.update(parameter__name__in=names)
         return self.filter(**kwargs)
+
+    def with_parameter(self, parameter, **kwargs):
+        return self.filter(parameter=parameter, **kwargs)
 
     def for_experiment(self, experiment=None, **kwargs):
         if experiment is None:

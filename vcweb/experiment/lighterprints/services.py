@@ -127,16 +127,14 @@ class GroupScores(object):
         self.groups = groups
         self.experiment_configuration = experiment_configuration
         self.exchange_rate = float(experiment_configuration.exchange_rate)
-        self.is_linear_public_good_game = is_linear_public_good_game(
-            experiment_configuration)
+        self.is_linear_public_good_game = is_linear_public_good_game(experiment_configuration)
         self.number_of_groups = len(groups)
         # { group : {average_daily_points, total_daily_points} }
         self.group_rankings = None
         self.total_participant_points = 0
         # establish date range
         self.round_configuration = self.round_data.round_configuration
-        self.treatment_type = get_treatment_type(
-            experiment_configuration=experiment_configuration).string_value
+        self.treatment_type = get_treatment_type(experiment_configuration=experiment_configuration).string_value
         self.initialize_scores(participant_group_relationship)
 
     # FIXME: refactor this logic strewn across models.py and services.py
@@ -153,8 +151,32 @@ class GroupScores(object):
         return self.treatment_type == 'HIGH_SCHOOL'
 
     @property
+    def is_neighborhood_treatment(self):
+        return self.treatment_type == 'NEIGHBORHOOD'
+
+    @property
     def has_leaderboard(self):
         return self.treatment_type == 'LEADERBOARD'
+
+    def linear_public_good_configuration_check(self, activity_points_cache):
+        if self.is_linear_public_good_game:
+            all_activities_performed_qs = ParticipantRoundDataValue.objects.for_experiment(
+                experiment=self.experiment,
+                parameter=get_activity_performed_parameter())
+            for dv in all_activities_performed_qs:
+                activity_points = activity_points_cache[dv.int_value]
+                self.scores_dict[dv.participant_group_relationship.group]['total_points'] += activity_points
+
+    def neighborhood_treatment_initialization_check(self):
+        if self.is_neighborhood_treatment:
+            for gc in self.group_clusters:
+                total_cluster_points = 0
+                groups = list(gc.groups)
+                for group in groups:
+                    total_cluster_points += self.scores_dict[group]['total_points']
+                for group in groups:
+                    group_data_dict = self.scores_dict[group]
+                    group_data_dict['total_cluster_points'] = total_cluster_points
 
     def initialize_scores(self, participant_group_relationship):
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
@@ -163,23 +185,18 @@ class GroupScores(object):
             parameter=get_activity_performed_parameter(), round_data=self.round_data)
         for dv in activities_performed_qs:
             activity_points = activity_points_cache[dv.int_value]
-            self.scores_dict[dv.participant_group_relationship.group][
-                'total_daily_points'] += activity_points
+            self.scores_dict[dv.participant_group_relationship.group]['total_daily_points'] += activity_points
             if participant_group_relationship and dv.participant_group_relationship == participant_group_relationship:
                 self.total_participant_points += activity_points
-        if self.is_linear_public_good_game:
-            all_activities_performed_qs = ParticipantRoundDataValue.objects.for_experiment(
-                experiment=self.experiment,
-                parameter=get_activity_performed_parameter())
-            for dv in all_activities_performed_qs:
-                activity_points = activity_points_cache[dv.int_value]
-                self.scores_dict[dv.participant_group_relationship.group][
-                    'total_points'] += activity_points
+
+        self.linear_public_good_configuration_check(activity_points_cache)
         for group in self.groups:
             group_data_dict = self.scores_dict[group]
             group_size = group.size
             group_data_dict['average_daily_points'] = group_data_dict['total_daily_points'] / group_size
             group_data_dict['total_average_points'] = group_data_dict['total_points'] / group_size
+
+        self.neighborhood_treatment_initialization_check()
 
     def average_daily_points(self, group):
         return self.scores_dict[group]['average_daily_points']
