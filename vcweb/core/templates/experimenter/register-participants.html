@@ -2,7 +2,6 @@
 
 {% block head %}
 {{ block.super }}
-<link rel="stylesheet" href='{{ STATIC_URL }}css/datepicker.css' />
 {% endblock head %}
 
 {% block title %}Register participants{% endblock %}
@@ -20,11 +19,11 @@
 {% endblock form %}
 {% block javascript %}
 {{ block.super }}
-<script src='{{ STATIC_URL }}js/bootstrap-datepicker.min.js'></script>
+{% include "includes/bootstrap-datetimepicker.html" %}
 <script type='text/javascript'>
     $(function() {
         $('#vcweb-form').validate();
-        $('#id_start_date').datepicker({ startDate: '+0d' });
+        $('#id_start_date').datetimepicker({ startDate: '+0d', pickTime: false });
     });
 </script>
 {% endblock %}

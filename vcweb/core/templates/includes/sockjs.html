@@ -28,7 +28,9 @@ function connect(uri, host, port) {
     };
     socket.onclose = function() {
         console.log('sockjs connection closed.');
-        Raven.captureMessage('sockjs connection closed for participant {{ participant_group_relationship.pk|default:request.user }} in experiment {{ experiment.pk|default:"None" }}');
+        if (typeof Raven !== 'undefined') {
+            Raven.captureMessage('sockjs connection closed for participant {{ participant_group_relationship.pk|default:request.user }} in experiment {{ experiment.pk|default:"None" }}');
+        }
     };
     return socket;
 }

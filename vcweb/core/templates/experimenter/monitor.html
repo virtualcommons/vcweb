@@ -48,7 +48,7 @@
             Round started on: <span data-bind='text:currentRoundStartTime'></span><br>
             Time remaining: <span data-bind='text: timeRemainingText'></span><br>
             {% comment %}
-            FIXME: embed form in each round data object instead?
+            FIXME: embed experimenter notes form in each round data along with the current round
             {% endcomment %}
             <form id="experimenterNotesForm" role='form'>
                 {% csrf_token %}

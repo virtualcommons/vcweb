@@ -103,9 +103,7 @@
 
 {% block javascript %}
 {{ block.super }}
-    <script src='{{ STATIC_URL }}js/moment.js'></script>
-    <script src='{{ STATIC_URL }}js/bootstrap-datetimepicker.min.js'></script>
-    <link rel="stylesheet" href='{{ STATIC_URL }}css/bootstrap-datetimepicker.min.css' />
+    {% include "includes/bootstrap-datetimepicker.html" %}
     <script type= "text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/calendar.js"></script>
     <link rel="stylesheet" href="{{ STATIC_URL }}css/calendar.css">
