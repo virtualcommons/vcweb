@@ -425,11 +425,18 @@ _parameters = [
         "description": "Lighter Footprints Treatment Type to distinguish between the different Lighter Footprints Experiments"
     },
     {
-        'display_name': 'Lighter Footprints Linear Public Good Toggle',
+        'display_name': 'Lighter Footprints Linear Public Good',
         "name": "lfp_linear_public_good",
         "description": '''Boolean toggle signifying whether or not this experiment is a linear public good experiment
         where each participant's payoff is entirely dependent on their contributions as opposed to surpassing a threshold or
         advancing in level.''',
+        "type": "boolean",
+        "scope": "experiment",
+    },
+    {
+        'display_name': 'Display leaderboard?',
+        "name": "leaderboard",
+        "description": 'True if we should display a leaderboard ranking progress across all groups in the experiment.',
         "type": "boolean",
         "scope": "experiment",
     },

@@ -24,7 +24,7 @@ def get_activity_points_cache():
     if activity_points_cache is None:
         activity_points_cache = dict(
             [(a.pk, a.points) for a in Activity.objects.all()])
-        #cache.set(cv, activity_points_cache, timedelta(days=1).total_seconds())
+        # cache.set(cv, activity_points_cache, timedelta(days=1).total_seconds())
         cache.set(cv, activity_points_cache, 86400)
     return activity_points_cache
 
@@ -60,13 +60,7 @@ def is_high_school_treatment(experiment=None, treatment_type=None, experiment_co
 def is_neighborhood_treatment(experiment=None, treatment_type=None, experiment_configuration=None):
     if treatment_type is None:
         treatment_type = get_treatment_type(experiment, experiment_configuration).string_value
-    return treatment_type == 'NEIGBORHOOD'
-
-
-def has_leaderboard(round_configuration=None, treatment_type=None):
-    if treatment_type is None:
-        treatment_type = get_treatment_type(round_configuration).string_value
-    return 'LEADERBOARD' == treatment_type
+    return 'NEIGBORHOOD' in treatment_type
 
 
 class ActivityQuerySet(models.query.QuerySet):
@@ -111,7 +105,7 @@ class ActivityQuerySet(models.query.QuerySet):
 class ActivityManager(TreeManager, PassThroughManager):
 
     def already_performed(self, activity, participant_group_relationship, round_data):
-        #today = datetime.combine(date.today(), time())
+        # today = datetime.combine(date.today(), time())
         return participant_group_relationship.data_value_set.filter(
             parameter=get_activity_performed_parameter(),
             int_value=activity.pk,
@@ -171,8 +165,7 @@ class Activity(MPTTModel):
     # currently unused
     cooldown = models.PositiveIntegerField(
         default=1, null=True, blank=True,
-        help_text=_('''How much time must elapse before this activity becomes available again. Duration currently
-                    interpreted in 1h intervals'''))
+        help_text=_('''How much time must elapse before this activity becomes available again, in 1h intervals'''))
     icon = models.ImageField(upload_to='lighterprints/activity-icons/')
     # for user submitted activities
     creator = models.ForeignKey(User, null=True, blank=True)
@@ -271,6 +264,11 @@ def get_linear_public_good_parameter():
 
 
 @simplecache
+def get_leaderboard_parameter():
+    return Parameter.objects.for_experiment(name='leaderboard')
+
+
+@simplecache
 def get_available_activity_parameter():
     return Parameter.objects.for_round(name='available_activity')
 
@@ -300,8 +298,16 @@ def get_treatment_type_parameter():
     return Parameter.objects.get(name='lfp_treatment_type')
 
 
-def is_linear_public_good_game(experiment_configuration, default=False):
+def is_linear_public_good_experiment(experiment_configuration, default=False):
+    """
+    linear public good experiment: earnings depend on group average points, e.g., group average points * $.02
+    """
     return experiment_configuration.get_parameter_value(parameter=get_linear_public_good_parameter(),
+                                                        default=default).boolean_value
+
+
+def has_leaderboard(experiment_configuration, default=False):
+    return experiment_configuration.get_parameter_value(parameter=get_leaderboard_parameter(),
                                                         default=default).boolean_value
 
 
@@ -326,20 +332,13 @@ def get_experiment_completed_dv(group, round_data=None):
 
 def get_treatment_type(experiment=None, experiment_configuration=None, default_treatment_type='LEADERBOARD', **kwargs):
     """
-    possible treatment types: LEADERBOARD / NO_LEADERBOARD / HIGH_SCHOOL / LEVEL_BASED
+    possible treatment types:
+    SCHEDULED_ACTIVITY / HIGH_SCHOOL / LEVEL_BASED / NEIGHBORHOOD
     """
-    # XXX: if there is no treatment type we default to the compare other group
-    # / leaderboard treatment
     if experiment_configuration is None:
         experiment_configuration = experiment.experiment_configuration
-    treatment_type = experiment_configuration.get_parameter_value(
-        parameter=get_treatment_type_parameter())
-    if treatment_type.string_value is None:
-        # check if it's been globally defined via this round configuration's
-        # experiment configuration
-        treatment_type = experiment_configuration.get_parameter_value(
-            parameter=get_treatment_type_parameter(),
-            default=default_treatment_type)
+    treatment_type = experiment_configuration.get_parameter_value(parameter=get_treatment_type_parameter(),
+                                                                  default=default_treatment_type)
     return treatment_type
 
 

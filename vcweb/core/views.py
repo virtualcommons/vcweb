@@ -31,7 +31,7 @@ from .forms import (LoginForm, ParticipantAccountForm, ExperimenterAccountForm, 
                     RoundConfigurationForm, RoundParameterValueForm, AntiSpamContactForm)
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
                      ExperimentConfiguration, Experiment, Institution, BookmarkedExperimentMetadata, OstromlabFaqEntry,
-                     Experimenter, ExperimentParameterValue, RoundConfiguration, RoundParameterValue, ParticipantSignup,
+                     ExperimentParameterValue, RoundConfiguration, RoundParameterValue, ParticipantSignup,
                      get_model_fields, PermissionGroup)
 
 from ..redis_pubsub import RedisPubSub
@@ -313,13 +313,10 @@ class RegistrationView(FormView, AnonymousMixin):
         experimenter_requested = form.cleaned_data['experimenter']
         institution, created = Institution.objects.get_or_create(
             name=institution_string)
-        user = User.objects.create_user(
-            email, email, password, first_name=first_name, last_name=last_name)
+        user = User.objects.create_user(email, email, password, first_name=first_name, last_name=last_name)
         if experimenter_requested:
-            experimenter_request = ExperimenterRequest.objects.create(
-                user=user)
-            logger.debug(
-                "creating new experimenter request: %s", experimenter_request)
+            experimenter_request = ExperimenterRequest.objects.create(user=user)
+            logger.debug("creating new experimenter request: %s", experimenter_request)
         participant = Participant.objects.create(
             user=user, institution=institution)
         logger.debug("Creating new participant: %s", participant)
@@ -328,9 +325,6 @@ class RegistrationView(FormView, AnonymousMixin):
         auth.login(
             request, auth.authenticate(username=email, password=password))
         set_authentication_token(user, request.session.session_key)
-        # FIXME: disabling auto registration, experiment configuration flags are not being set properly
-        #        for experiment in Experiment.objects.public():
-        #            experiment.add_participant(participant)
         return super(RegistrationView, self).form_valid(form)
 
     def get_success_url(self):
@@ -798,8 +792,7 @@ def update_experiment(request):
                 "user %s tried to invoke %s on %s", user, action, experiment)
             raise PermissionDenied(
                 "You aren't authorized to perform this action on this experiment.")
-        logger.debug(
-            "experimenter %s invoking %s on %s", experimenter, action, experiment)
+        logger.debug("experimenter %s invoking %s on %s", experimenter, action, experiment)
         try:
             response_tuples = experiment.invoke(action, experimenter)
             logger.debug("experiment.invoke %s -> %s", action, str(response_tuples))
@@ -977,12 +970,12 @@ def get_cas_user(tree):
 
     Following settings are important and required by the VCWEB and are university specific
 
-    1. CAS_UNIVERSITY_NAME - The university name of the CAS provider
-    2. CAS_UNIVERSITY_URL - The web url of the University
-    3. WEB_DIRECTORY_URL - The web Url provided by the university to get the details about the user
-    4. CAS_SERVER_URL - The CAS Url used by the university to centrally authorize users
-    5. CAS_REDIRECT_URL - The redirect url holds the relative url to which the user should be re-directed by successful authentication
-    6. CAS_RESPONSE_CALLBACKS - The call back function that is being called after the successful authentication by CAS
+    1. CAS_UNIVERSITY_NAME - Institutional CAS provider name
+    2. CAS_UNIVERSITY_URL - Institutional CAS provider URL
+    3. WEB_DIRECTORY_URL - Web directory service URL providing basic user details based on institutional username
+    4. CAS_SERVER_URL - CAS URL provided by the institution to centrally authenticate users
+    5. CAS_REDIRECT_URL - The relative url where the user should be re-directed after successful authentication
+    6. CAS_RESPONSE_CALLBACKS - Callback invoked after successful authentication by CAS
     """
     username = tree[0][0].text.lower()
     logger.debug("cas tree: %s", tree)
@@ -1027,7 +1020,8 @@ def create_cas_user_and_assign_group(username, first_name=None, last_name=None, 
     institution = Institution.objects.get(name=settings.CAS_UNIVERSITY_NAME)
     if first_name:
         user = User.objects.create_user(username=username, first_name=first_name, last_name=last_name, email=email)
-        participant = Participant.objects.create(user=user, major=major, institution=institution, can_receive_invitations=True)
+        participant = Participant.objects.create(user=user, major=major,
+                                                 institution=institution, can_receive_invitations=True)
     else:
         user = User.objects.create_user(username=username)
         participant = Participant.objects.create(user=user, institution=institution, can_receive_invitations=True)
@@ -1194,57 +1188,59 @@ def unsubscribe(request):
                   {'message': "You aren't currently subscribed to our experiment session mailing list."})
 
 
-#def create_github_issue(data):
-#    headers = {'Authorization': 'token ' + settings.GITHUB_ACCESS_TOKEN, 'Content-Type': 'application/json'}
-#    issues_url = "{0}/{1}".format(settings.GITHUB_URL, "/".join(["repos", settings.GITHUB_REPO_OWNER, settings.GITHUB_REPO, "issues"]))
-#    logger.debug(json.dumps(data))
-#    return requests.post(issues_url, headers=headers, data=json.dumps(data))
+"""
+def create_github_issue(data):
+    headers = {'Authorization': 'token ' + settings.GITHUB_ACCESS_TOKEN, 'Content-Type': 'application/json'}
+    issues_url = "{0}/{1}".format(settings.GITHUB_URL,
+                                  "/".join(["repos", settings.GITHUB_REPO_OWNER, settings.GITHUB_REPO, "issues"]))
+    logger.debug(json.dumps(data))
+    return requests.post(issues_url, headers=headers, data=json.dumps(data))
 
+class BugReportFormView(FormView):
+    form_class = BugReportForm
+    template_name = 'forms/bug-report.html'
+    success_url = '/thanks/'  # Not used. Kept it so Django doesn't throw error of success_url not provided
 
-#class BugReportFormView(FormView):
-#    form_class = BugReportForm
-#    template_name = 'forms/bug-report.html'
-#    success_url = '/thanks/'  # Not used. Kept it so Django doesn't throw error of success_url not provided
-#
-#    def form_valid(self, form):
-#        response = super(BugReportFormView, self).form_valid(form)
-#
-#        # Creating Issue
-#        if self.request.user:
-#            user_id = self.request.user.pk
-#        else:
-#            user_id = None
-#
-#        context = {
-#            "issue_text": form.cleaned_data['body'],
-#            "user_id": user_id,
-#            "url": self.request.POST.get('url'),
-#        }
-#        plaintext_template = get_template('github-issue.html')
-#        c = Context(context)
-#        plaintext_content = plaintext_template.render(c)
-#
-#        data = {
-#            'title': form.cleaned_data['title'],
-#            'body': plaintext_content,
-#            'labels': settings.GITHUB_ISSUE_LABELS,
-#        }
-#
-#        r = create_github_issue(data)
-#
-#        if(r.ok):
-#            res = json.loads(r.text or r.content)
-#            logger.debug("Issue created with response %s", res)
-#            return self.render_to_json_response(SUCCESS_DICT)
-#        else:
-#            res = json.loads(r.text or r.content)
-#            logger.debug("Issue creation failed with response %s", res)
-#            return self.render_to_json_response(FAILURE_DICT)
-#
-#    def render_to_json_response(self, context, **response_kwargs):
-#        data = dumps(context)
-#        response_kwargs['content_type'] = 'application/json'
-#        return HttpResponse(data, **response_kwargs)
+    def form_valid(self, form):
+        response = super(BugReportFormView, self).form_valid(form)
+
+        # Creating Issue
+        if self.request.user:
+            user_id = self.request.user.pk
+        else:
+            user_id = None
+
+        context = {
+            "issue_text": form.cleaned_data['body'],
+            "user_id": user_id,
+            "url": self.request.POST.get('url'),
+        }
+        plaintext_template = get_template('github-issue.html')
+        c = Context(context)
+        plaintext_content = plaintext_template.render(c)
+
+        data = {
+            'title': form.cleaned_data['title'],
+            'body': plaintext_content,
+            'labels': settings.GITHUB_ISSUE_LABELS,
+        }
+
+        r = create_github_issue(data)
+
+        if(r.ok):
+            res = json.loads(r.text or r.content)
+            logger.debug("Issue created with response %s", res)
+            return self.render_to_json_response(SUCCESS_DICT)
+        else:
+            res = json.loads(r.text or r.content)
+            logger.debug("Issue creation failed with response %s", res)
+            return self.render_to_json_response(FAILURE_DICT)
+
+    def render_to_json_response(self, context, **response_kwargs):
+        data = dumps(context)
+        response_kwargs['content_type'] = 'application/json'
+        return HttpResponse(data, **response_kwargs)
+"""
 
 
 class AntiSpamContactFormView(ContactFormView):

@@ -11,10 +11,9 @@ from django.template.loader import select_template
 from django.utils.timesince import timesince
 
 
-from vcweb.core.models import (
-    ParticipantRoundDataValue, ChatMessage, Like, Comment)
-from .models import (Activity, is_scheduled_activity_experiment, get_activity_availability_cache,
-                     get_activity_performed_parameter, ActivityAvailability, is_linear_public_good_game,
+from vcweb.core.models import (ParticipantRoundDataValue, ChatMessage, Like, Comment)
+from .models import (Activity, is_scheduled_activity_experiment, get_activity_availability_cache, has_leaderboard,
+                     get_activity_performed_parameter, ActivityAvailability, is_linear_public_good_experiment,
                      get_activity_points_cache, get_footprint_level, get_group_threshold, get_experiment_completed_dv,
                      get_footprint_level_dv, get_treatment_type)
 
@@ -114,8 +113,8 @@ class ActivityStatusList(object):
 
 class GroupScores(object):
 
-    def __init__(self, experiment, round_data=None, groups=None, participant_group_relationship=None,
-                 experiment_configuration=None):
+    def __init__(self, experiment, round_data=None, round_configuration=None, groups=None,
+                 participant_group_relationship=None, experiment_configuration=None):
         self.experiment = experiment
         if round_data is None:
             round_data = experiment.current_round_data
@@ -127,7 +126,10 @@ class GroupScores(object):
         self.groups = groups
         self.experiment_configuration = experiment_configuration
         self.exchange_rate = float(experiment_configuration.exchange_rate)
-        self.is_linear_public_good_game = is_linear_public_good_game(experiment_configuration)
+# FIXME: death by a thousand small inefficiencies, better to pull all ExperimentParameterValues instead of issuing
+# multiple queries. look into updating API to handle this better for a given session
+        self.is_linear_public_good_experiment = is_linear_public_good_experiment(experiment_configuration)
+        self.has_leaderboard = has_leaderboard(experiment_configuration)
         self.number_of_groups = len(groups)
         # { group : {average_daily_points, total_daily_points} }
         self.group_rankings = None
@@ -155,11 +157,11 @@ class GroupScores(object):
         return self.treatment_type == 'NEIGHBORHOOD'
 
     @property
-    def has_leaderboard(self):
-        return self.treatment_type == 'LEADERBOARD'
+    def group_clusters(self):
+        return self.experiment.group_cluster_set
 
     def linear_public_good_configuration_check(self, activity_points_cache):
-        if self.is_linear_public_good_game:
+        if self.is_linear_public_good_experiment:
             all_activities_performed_qs = ParticipantRoundDataValue.objects.for_experiment(
                 experiment=self.experiment,
                 parameter=get_activity_performed_parameter())
@@ -169,14 +171,17 @@ class GroupScores(object):
 
     def neighborhood_treatment_initialization_check(self):
         if self.is_neighborhood_treatment:
-            for gc in self.group_clusters:
+            for gc in self.group_clusters.all():
                 total_cluster_points = 0
                 groups = list(gc.groups)
+                number_of_groups = len(groups)
                 for group in groups:
                     total_cluster_points += self.scores_dict[group]['total_points']
+                average_cluster_points = total_cluster_points / number_of_groups
                 for group in groups:
                     group_data_dict = self.scores_dict[group]
                     group_data_dict['total_cluster_points'] = total_cluster_points
+                    group_data_dict['average_cluster_points'] = average_cluster_points
 
     def initialize_scores(self, participant_group_relationship):
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
@@ -195,7 +200,6 @@ class GroupScores(object):
             group_size = group.size
             group_data_dict['average_daily_points'] = group_data_dict['total_daily_points'] / group_size
             group_data_dict['total_average_points'] = group_data_dict['total_points'] / group_size
-
         self.neighborhood_treatment_initialization_check()
 
     def average_daily_points(self, group):
@@ -229,7 +233,7 @@ class GroupScores(object):
         if self.has_scheduled_activities:
             # FIXME: hard coded limit for linear public good games, should be dependent on total number of scheduled
             # activities available per day instead?
-            return 250 if self.is_linear_public_good_game else get_group_threshold(self.round_configuration)
+            return 250 if self.is_linear_public_good_experiment else get_group_threshold(self.round_configuration)
         else:
             return get_points_to_next_level(self.get_group_level(group))
 
@@ -313,7 +317,7 @@ class GroupScores(object):
         plaintext_template = select_template(
             ['lighterprints/email/scheduled-activity/group-summary-email.txt'])
         experiment = group.experiment
-        #experimenter_email = experiment.experimenter.email
+        # experimenter_email = experiment.experimenter.email
         # FIXME: change this to the experimenter or add a dedicated settings
         # email from
         experimenter_email = settings.SERVER_EMAIL
@@ -330,7 +334,7 @@ class GroupScores(object):
             'threshold': threshold,
             'average_daily_points': average_group_points,
             'number_of_chat_messages': number_of_chat_messages,
-            'linear_public_good': self.is_linear_public_good_game,
+            'linear_public_good': self.is_linear_public_good_experiment,
             'daily_earnings': self.daily_earnings_currency(group),
             'total_earnings': self.total_earnings_currency(group),
             'has_leaderboard': self.has_leaderboard
@@ -579,8 +583,7 @@ def daily_update(experiment, debug=False, round_data=None, **kwargs):
         round_data = experiment.current_round_data if round_data is None else round_data
         logger.debug(
             "sending summary emails to %s for round %s", experiment, round_data)
-        group_scores = GroupScores(
-            experiment, round_data, list(experiment.groups))
+        group_scores = GroupScores(experiment, round_data, list(experiment.groups))
         all_messages = list(group_scores.perform_daily_update())
     if not debug and all_messages:
         logger.debug(

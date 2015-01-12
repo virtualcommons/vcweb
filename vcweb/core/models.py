@@ -1086,10 +1086,10 @@ class Experiment(models.Model):
         FIXME: needs refactoring, replace get_or_create with creates and separate initialization of data values from
         copy_to_next_round semantics
         Issues:
-            1. Make it simpler for experiment devs to signal "I have these data values to initialize at the start of each
-            round"
-            2. get_or_create logic has the possibility for degenerate data (e.g., duplicate group round data values) that
-            cause the rest of the rounds to not run properly
+            1. Make it simpler for experiment devs to signal "I have these data values to initialize at the start of
+            each round"
+            2. get_or_create logic has the possibility for degenerate data (e.g., duplicate group round data values)
+            that cause the rest of the rounds to not run properly
         """
         if round_data is None:
             round_data = self.current_round_data
@@ -1446,13 +1446,14 @@ class Experiment(models.Model):
             'pk': self.pk
         })
         if include_round_data:
-            # XXX: stubs for round data
             experiment_dict['allRoundData'] = self.all_round_data()
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
             experiment_dict['messages'] = map(str, self.activity_log_set.order_by('-date_created')[:100])
-            experiment_dict['experimenterNotes'] = self.current_round_data.experimenter_notes
+            # FIXME: experimenterNotes should be included in allRoundData instead
+            crd = self.current_round_data
+            experiment_dict['experimenterNotes'] = crd.experimenter_notes if crd else ''
             experiment_dict['groups'] = [group.to_dict() for group in self.groups]
-        # FIXME: intended to provide some way to include more experiment attributes at invocation time, may remove
+        # FIXME: intended to provide some way to include more experiment attributes at invocation time, remove if unused
         if attrs:
             experiment_dict.update([(attr, getattr(self, attr, None)) for attr in attrs])
         return experiment_dict
@@ -1781,7 +1782,7 @@ class Parameter(models.Model):
     description = models.TextField(blank=True)
     type = models.CharField(max_length=32, choices=ParameterType)
     class_name = models.CharField(max_length=64, blank=True, help_text=_(
-        'Signifies which model class a foreign key parameter is pointing to, "core.Experiment".'))
+        'Signifies which model class a foreign key parameter is pointing to, e.g., "lighterprints.Activity"'))
     default_value_string = models.CharField(max_length=255, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -1958,8 +1959,7 @@ class ParameterizedValue(models.Model):
 class ExperimentParameterValue(ParameterizedValue):
 
     """ Represents an experiment configuration parameter applicable across the entire experiment """
-    experiment_configuration = models.ForeignKey(
-        ExperimentConfiguration, related_name='parameter_value_set')
+    experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='parameter_value_set')
 
     def to_dict(self, **kwargs):
         return {
@@ -2027,7 +2027,12 @@ class Group(models.Model, DataValueMixin):
 
     @property
     def name(self):
-        return u"Group %s" % string.ascii_uppercase[self.number]
+        # XXX: major assumption, this gives us AA - ZZ groups.
+        quotient, remainder = divmod(self.number, 26)
+        group_name = string.ascii_uppercase[remainder]
+        if quotient > 0:
+            group_name = string.ascii_uppercase[quotient] + group_name
+        return u"Group %s" % group_name
 
     @property
     def channel(self):

@@ -1,22 +1,23 @@
 from datetime import datetime
-import logging
 
-from django.contrib import auth, messages
+from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
+
+import logging
 import unicodecsv
 
-from vcweb.core.decorators import group_required, ownership_required, is_participant
+from vcweb.core.decorators import group_required, ownership_required
 from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, LoginForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship,
                                ParticipantRoundDataValue, Like, PermissionGroup)
 from vcweb.core.views import (dumps, get_active_experiment, set_authentication_token, mimetypes)
 from .forms import ActivityForm
-from .models import (Activity, get_lighterprints_experiment_metadata, is_linear_public_good_game,
-                     is_high_school_treatment, get_treatment_type, get_activity_performed_parameter, )
+from .models import (Activity, get_lighterprints_experiment_metadata, is_high_school_treatment, get_treatment_type,
+                     get_activity_performed_parameter, is_neighborhood_treatment)
 from .services import (ActivityStatusList, GroupScores, do_activity, get_time_remaining, GroupActivity)
 
 
@@ -131,16 +132,16 @@ def post_comment(request):
 
 class LighterprintsViewModel(object):
 
-    def __init__(self, participant_group_relationship, experiment=None, round_configuration=None, round_data=None,
-                 activities=None):
+    def __init__(self, participant_group_relationship, experiment=None,
+                 round_configuration=None, round_data=None, activities=None):
         self.participant_group_relationship = participant_group_relationship
         self.group = participant_group_relationship.group
         self.experiment = self.group.experiment if experiment is None else experiment
         self.round_data = self.experiment.current_round_data if round_data is None else round_data
         self.round_configuration = self.experiment.current_round if round_configuration is None else round_configuration
-        self.treatment_type = get_treatment_type(self.round_configuration).string_value
-        self.experiment_configuration = self.experiment.experiment_configuration
-        self.group_scores = GroupScores(self.experiment, self.round_data,
+        self.group_scores = GroupScores(self.experiment,
+                                        round_data=self.round_data,
+                                        round_configuration=self.round_configuration,
                                         participant_group_relationship=self.participant_group_relationship)
         self.total_participant_points = self.group_scores.total_participant_points
         if activities is None:
@@ -150,22 +151,41 @@ class LighterprintsViewModel(object):
                                                        self.round_configuration,
                                                        group_level=self.own_group_level)
 
-    @property
-    def linear_public_good(self):
-        return is_linear_public_good_game(self.experiment_configuration)
+    @staticmethod
+    def _get_model_class(treatment_type):
+        if is_high_school_treatment(treatment_type=treatment_type):
+            return HighSchoolViewModel
+        elif is_neighborhood_treatment(treatment_type=treatment_type):
+            return NeighborhoodViewModel
+        else:
+            return LighterprintsViewModel
+
+    @staticmethod
+    def create(participant_group_relationship, experiment, round_configuration=None, round_data=None, activities=None):
+        treatment_type = get_treatment_type(experiment).string_value
+        klass = LighterprintsViewModel._get_model_class(treatment_type)
+        return klass(participant_group_relationship, experiment, round_configuration, round_data, activities)
 
     @property
-    def own_group(self):
-        return self.participant_group_relationship.group
+    def is_linear_public_good_experiment(self):
+        return self.group_scores.is_linear_public_good_experiment
+
+    @property
+    def has_leaderboard(self):
+        return self.group_scores.has_leaderboard
+
+    @property
+    def treatment_type(self):
+        return self.group_scores.treatment_type
 
     @property
     def own_group_level(self):
-        return self.group_scores.get_group_level(self.own_group)
+        return self.group_scores.get_group_level(self.group)
 
     def to_dict(self):
         (hours_left, minutes_left) = get_time_remaining()
+        own_group = self.group
         participant_group_relationship = self.participant_group_relationship
-        own_group = participant_group_relationship.group
         group_scores = self.group_scores
         group_activity = GroupActivity(participant_group_relationship)
         group_data = group_scores.get_group_data_list()
@@ -180,7 +200,8 @@ class LighterprintsViewModel(object):
             'firstVisit': participant_group_relationship.first_visit,
             # FIXME: extract this from groupData, store & use group id as a key
             'groupLevel': own_group_level,
-            'linearPublicGood': self.linear_public_good,
+            'treatmentType': self.treatment_type,
+            'linearPublicGood': self.is_linear_public_good_experiment,
             'totalDailyEarnings': "{0:.2f}".format(group_scores.daily_earnings(own_group)),
             'totalEarnings': "{0:.2f}".format(group_scores.total_earnings(own_group)),
             'averagePoints': group_scores.average_daily_points(own_group),
@@ -192,20 +213,20 @@ class LighterprintsViewModel(object):
             'totalPoints': self.total_participant_points,
         }
 
+    @property
+    def template_name(self):
+        return 'lighterprints/participate.html'
+
     def to_json(self):
         return dumps(self.to_dict())
 
 
 class NeighborhoodViewModel(LighterprintsViewModel):
 
-    @property
-    def is_neighborhood_treatment(self):
-        return self.treatment_type == 'NEIGHBORHOOD'
-
     def to_dict(self):
         d = super(NeighborhoodViewModel, self).to_dict()
         d.update({
-            'showGroupClusterData': self.is_neighborhood_treatment,
+            'showGroupClusterData': True
         })
         return d
 
@@ -318,12 +339,6 @@ def get_view_model(request, participant_group_id=None):
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def participate(request, experiment_id=None):
     user = request.user
-    if not is_participant(user):
-        logger.warning(
-            "%s trying to participate in experiment %s", user, experiment_id)
-        messages.warning(
-            request, "You are not a participant and cannot participate in experiment %s." % experiment_id)
-        return redirect('core:dashboard')
     participant = user.participant
     experiment = get_object_or_404(Experiment, pk=experiment_id,
                                    experiment_metadata=get_lighterprints_experiment_metadata())
@@ -331,23 +346,12 @@ def participate(request, experiment_id=None):
         round_configuration = experiment.current_round
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user', 'group'),
                                 participant=participant, group__experiment=experiment)
-        treatment_type = get_treatment_type(experiment).string_value
-        if treatment_type == 'HIGH_SCHOOL':
-            view_model = HighSchoolViewModel(pgr, experiment=experiment, round_configuration=round_configuration)
-            return render(request, view_model.template_name, {
-                'experiment': experiment,
-                'participant_group_relationship': pgr,
-                'view_model_json': view_model.to_json(),
-            })
-
-        all_activities = Activity.objects.all()
-        view_model = get_view_model_dict(pgr, activities=all_activities, experiment=experiment,
-                                         round_configuration=round_configuration)
-        return render(request, 'lighterprints/participate.html', {
+        view_model = LighterprintsViewModel.create(pgr, experiment, round_configuration=round_configuration)
+        return render(request, view_model.template_name, {
             'experiment': experiment,
             'participant_group_relationship': pgr,
-            'has_leaderboard': treatment_type == 'LEADERBOARD',
-            'view_model_json': dumps(view_model),
+            'has_leaderboard': view_model.has_leaderboard,
+            'view_model_json': view_model.to_json(),
         })
     else:
         sd = experiment.start_date
