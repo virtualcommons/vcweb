@@ -35,6 +35,7 @@ env.services = 'nginx memcached redis supervisord'
 env.docs_path = os.path.join(env.project_path, 'docs')
 env.test_fixtures = ' '.join(['forestry_experiment_metadata', 'lighterprints_experiment_metadata',
                               'activities', 'bound_experiment_metadata', 'bound_parameters'])
+env.virtualenv = 'vcweb'
 env.virtualenv_path = '%s/.virtualenvs/%s' % (os.getenv('HOME'), env.project_name)
 env.ignored_coverage = ('test', 'settings', 'migrations', 'fabfile', 'wsgi',
                         'broker', 'irrigation', 'commands', 'sanitation', 'vcweb-sockjs', 'sockjs-redis')
@@ -86,9 +87,9 @@ def dj(command, **kwargs):
 
 def _virtualenv(executor, *commands, **kwargs):
     """ source the virtualenv before executing this command """
-    env.command = ' && '.join(commands)
+    command = ' && '.join(commands)
     with prefix('. %(virtualenv_path)s/bin/activate' % env):
-        executor('%(command)s' % env, **kwargs)
+        executor(command, **kwargs)
 
 
 @roles('localhost')
@@ -197,6 +198,7 @@ def deploy(vcs_branch_dict):
                 'chmod -R g+rw logs/',
                 user=env.deploy_user, pty=True)
             env.static_root = vcweb_settings.STATIC_ROOT
+            _virtualenv(sudo, 'pip install -Ur requirements.txt', user=env.deploy_user)
             _virtualenv(sudo, '%(python)s manage.py collectstatic' % env, user=env.deploy_user)
             _virtualenv(sudo, '%(python)s manage.py installtasks' % env, user=env.deploy_user)
             sudo_chain(
