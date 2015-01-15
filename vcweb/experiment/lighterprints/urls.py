@@ -10,6 +10,7 @@ urlpatterns = [
         participate, name='participate'),
     url(r'^(?P<pk>\d+)/download-payment-data/$',
         download_payment_data, name='download_payment_data'),
+    # used only by the increasingly out-of-date mobile UI
     url(r'^api/view-model/(?P<participant_group_id>\d+)?', get_view_model),
     url(r'^api/perform-activity$', perform_activity, name='perform_activity'),
     url(r'^api/message', post_chat_message, name='post_chat'),

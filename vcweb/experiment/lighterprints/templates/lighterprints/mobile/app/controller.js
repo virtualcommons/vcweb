@@ -67,13 +67,12 @@ function LighterFootprintsModel(modelJson){
 
 function initKOModel(response){
     var groupURL = "//lighterprints/api/view-model/" + participant_group_id;
-    $.ajax({
-        type: "GET",
+    $.get({
         url: groupURL,
         dataType: "json",
         cache: false,
         success: function(response){
-            var viewModelData = $.parseJSON(response.view_model_json);
+            var viewModelData = $.parseJSON(response.viewModel);
             globalViewModel = new LighterFootprintsModel(viewModelData);
 			ko.applyBindings(globalViewModel);
 			$.mobile.changePage($("#dashboardPage"));

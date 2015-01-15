@@ -24,112 +24,6 @@ from .services import (ActivityStatusList, GroupScores, do_activity, get_time_re
 logger = logging.getLogger(__name__)
 
 
-@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
-def perform_activity(request):
-    form = ActivityForm(request.POST or None)
-    if form.is_valid():
-        activity_id = form.cleaned_data['activity_id']
-        participant_group_id = form.cleaned_data['participant_group_id']
-        logger.debug("%s request to perform activity %s", participant_group_id, activity_id)
-        participant_group_relationship = get_object_or_404(
-            ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'),
-            pk=participant_group_id)
-        if participant_group_relationship.participant == request.user.participant:
-            activity = get_object_or_404(Activity, pk=activity_id)
-            performed_activity = do_activity(activity=activity,
-                                             participant_group_relationship=participant_group_relationship)
-            if performed_activity is not None:
-                participant_group_relationship.set_first_visit()
-                return JsonResponse({
-                    'success': True,
-                    'viewModel': get_view_model_dict(participant_group_relationship)
-                })
-            else:
-                message = "Activity was not available at this time"
-        else:
-            message = "Unauthorized access logged for %s" % participant_group_relationship
-            logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id,
-                           participant_group_relationship)
-    return JsonResponse({'success': False, 'response': message})
-
-
-@login_required
-def post_chat_message(request):
-    form = ChatForm(request.POST or None)
-    if form.is_valid():
-        participant_group_id = form.cleaned_data['participant_group_id']
-        message = form.cleaned_data['message']
-        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'),
-                                pk=participant_group_id)
-        if pgr.participant != request.user.participant:
-            logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, pgr)
-            return JsonResponse({'success': False, 'message': "Invalid request"})
-        chat_message = ChatMessage.objects.create(value=message, participant_group_relationship=pgr)
-        logger.debug("%s: %s", pgr.participant, chat_message)
-        # FIXME: optimize, only retrieving the latest group activity since the last checkin time
-        group_activity = GroupActivity(pgr)
-        return JsonResponse({'success': True, 'viewModel': {'groupActivity': group_activity.all_activities}})
-    return JsonResponse({'success': False, 'message': "Invalid chat message post"})
-
-
-@login_required
-def like(request):
-    form = LikeForm(request.POST or None)
-    if form.is_valid():
-        participant_group_id = form.cleaned_data['participant_group_id']
-        target_id = form.cleaned_data['target_id']
-        participant_group_relationship = get_object_or_404(
-            ParticipantGroupRelationship.objects.select_related(
-                'participant__user', 'group__experiment'),
-            pk=participant_group_id)
-        if participant_group_relationship.participant != request.user.participant:
-            logger.warning("authenticated user %s tried to like target_id %s as %s", request.user, target_id,
-                           participant_group_relationship)
-            return JsonResponse({'success': False, 'message': "Invalid request"})
-        target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
-        # FIXME: either needs a uniqueness constraint to ensure that duplicates don't get created or add guards when we
-        # retrieve them to only send back the latest one (feels hacky).  See
-        # https://bitbucket.org/virtualcommons/vcweb/issue/59/get_or_create-issues-for-likes
-        round_data = participant_group_relationship.current_round_data
-        Like.objects.create(round_data=round_data, participant_group_relationship=participant_group_relationship,
-                            target_data_value=target)
-        logger.debug(
-            "Participant %s liked %s", participant_group_relationship, target)
-        return JsonResponse({'success': True, 'viewModel': get_view_model_dict(participant_group_relationship)})
-    else:
-        logger.debug("invalid form: %s from request: %s", form, request)
-        return JsonResponse({'success': False, 'message': 'Invalid like post'})
-
-
-@login_required
-def post_comment(request):
-    form = CommentForm(request.POST or None)
-    if form.is_valid():
-        participant_group_id = form.cleaned_data['participant_group_id']
-        target_id = form.cleaned_data['target_id']
-        message = form.cleaned_data['message']
-        participant_group_relationship = get_object_or_404(
-            ParticipantGroupRelationship.objects.select_related(
-                'participant__user', 'group__experiment'),
-            pk=participant_group_id)
-        if participant_group_relationship.participant != request.user.participant:
-            logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message,
-                           target_id, participant_group_relationship)
-            return JsonResponse({'success': False, 'message': "Invalid request"})
-        target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
-        Comment.objects.create(
-            string_value=message,
-            round_data=participant_group_relationship.current_round_data,
-            participant_group_relationship=participant_group_relationship,
-            target_data_value=target)
-        logger.debug("Participant %s commented '%s' on %s",
-                     participant_group_relationship.participant, message, target)
-        return JsonResponse({'success': True, 'viewModel': get_view_model_dict(participant_group_relationship)})
-    else:
-        logger.debug("invalid form: %s from request: %s", form, request)
-        return JsonResponse({'success': False, 'message': 'Invalid post comment'})
-
-
 class LighterprintsViewModel(object):
 
     def __init__(self, participant_group_relationship, experiment=None,
@@ -161,7 +55,10 @@ class LighterprintsViewModel(object):
             return LighterprintsViewModel
 
     @staticmethod
-    def create(participant_group_relationship, experiment, round_configuration=None, round_data=None, activities=None):
+    def create(participant_group_relationship, experiment=None, round_configuration=None,
+               round_data=None, activities=None):
+        if experiment is None:
+            experiment = participant_group_relationship.experiment
         treatment_type = get_treatment_type(experiment).string_value
         klass = LighterprintsViewModel._get_model_class(treatment_type)
         return klass(participant_group_relationship, experiment, round_configuration, round_data, activities)
@@ -181,6 +78,10 @@ class LighterprintsViewModel(object):
     @property
     def own_group_level(self):
         return self.group_scores.get_group_level(self.group)
+
+    @property
+    def scores(self):
+        return self.group_scores.scores_dict[self.group]
 
     def to_dict(self):
         (hours_left, minutes_left) = get_time_remaining()
@@ -282,6 +183,114 @@ class HighSchoolViewModel(LighterprintsViewModel):
         return 'lighterprints/highschool.html'
 
 
+@group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
+def perform_activity(request):
+    form = ActivityForm(request.POST or None)
+    if form.is_valid():
+        activity_id = form.cleaned_data['activity_id']
+        participant_group_id = form.cleaned_data['participant_group_id']
+        logger.debug("%s request to perform activity %s", participant_group_id, activity_id)
+        participant_group_relationship = get_object_or_404(
+            ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'),
+            pk=participant_group_id)
+        if participant_group_relationship.participant == request.user.participant:
+            activity = get_object_or_404(Activity, pk=activity_id)
+            performed_activity = do_activity(activity=activity,
+                                             participant_group_relationship=participant_group_relationship)
+            experiment = participant_group_relationship.experiment
+            if performed_activity is not None:
+                participant_group_relationship.set_first_visit()
+                return JsonResponse({
+                    'success': True,
+                    'viewModel': LighterprintsViewModel.create(participant_group_relationship, experiment).to_dict()
+                })
+            else:
+                message = "Activity was not available at this time"
+        else:
+            message = "Unauthorized access logged for %s" % participant_group_relationship
+            logger.warning("authenticated user %s tried to perform activity %s as %s", request.user, activity_id,
+                           participant_group_relationship)
+    return JsonResponse({'success': False, 'response': message})
+
+
+@login_required
+def post_chat_message(request):
+    form = ChatForm(request.POST or None)
+    if form.is_valid():
+        participant_group_id = form.cleaned_data['participant_group_id']
+        message = form.cleaned_data['message']
+        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'),
+                                pk=participant_group_id)
+        if pgr.participant != request.user.participant:
+            logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, pgr)
+            return JsonResponse({'success': False, 'message': "Invalid request"})
+        chat_message = ChatMessage.objects.create(value=message, participant_group_relationship=pgr)
+        logger.debug("%s: %s", pgr.participant, chat_message)
+        # FIXME: optimize, only retrieving the latest group activity since the last checkin time
+        group_activity = GroupActivity(pgr)
+        return JsonResponse({'success': True, 'viewModel': {'groupActivity': group_activity.all_activities}})
+    return JsonResponse({'success': False, 'message': "Invalid chat message post"})
+
+
+@login_required
+def like(request):
+    form = LikeForm(request.POST or None)
+    if form.is_valid():
+        participant_group_id = form.cleaned_data['participant_group_id']
+        target_id = form.cleaned_data['target_id']
+        participant_group_relationship = get_object_or_404(
+            ParticipantGroupRelationship.objects.select_related(
+                'participant__user', 'group__experiment'),
+            pk=participant_group_id)
+        if participant_group_relationship.participant != request.user.participant:
+            logger.warning("authenticated user %s tried to like target_id %s as %s", request.user, target_id,
+                           participant_group_relationship)
+            return JsonResponse({'success': False, 'message': "Invalid request"})
+        target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
+        # FIXME: either needs a uniqueness constraint to ensure that duplicates don't get created or add guards when we
+        # retrieve them to only send back the latest one (feels hacky).  See
+        # https://bitbucket.org/virtualcommons/vcweb/issue/59/get_or_create-issues-for-likes
+        round_data = participant_group_relationship.current_round_data
+        Like.objects.create(round_data=round_data, participant_group_relationship=participant_group_relationship,
+                            target_data_value=target)
+        logger.debug("Participant %s liked %s", participant_group_relationship, target)
+        return JsonResponse({'success': True,
+                             'viewModel': LighterprintsViewModel.create(participant_group_relationship).to_dict()})
+    else:
+        logger.debug("invalid form: %s from request: %s", form, request)
+        return JsonResponse({'success': False, 'message': 'Invalid like post'})
+
+
+@login_required
+def post_comment(request):
+    form = CommentForm(request.POST or None)
+    if form.is_valid():
+        participant_group_id = form.cleaned_data['participant_group_id']
+        target_id = form.cleaned_data['target_id']
+        message = form.cleaned_data['message']
+        participant_group_relationship = get_object_or_404(
+            ParticipantGroupRelationship.objects.select_related(
+                'participant__user', 'group__experiment'),
+            pk=participant_group_id)
+        if participant_group_relationship.participant != request.user.participant:
+            logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message,
+                           target_id, participant_group_relationship)
+            return JsonResponse({'success': False, 'message': "Invalid request"})
+        target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
+        Comment.objects.create(
+            string_value=message,
+            round_data=participant_group_relationship.current_round_data,
+            participant_group_relationship=participant_group_relationship,
+            target_data_value=target)
+        logger.debug("Participant %s commented '%s' on %s",
+                     participant_group_relationship.participant, message, target)
+        return JsonResponse({'success': True,
+                             'viewModel': LighterprintsViewModel.create(participant_group_relationship).to_dict()})
+    else:
+        logger.debug("invalid form: %s from request: %s", form, request)
+        return JsonResponse({'success': False, 'message': 'Invalid post comment'})
+
+
 @group_required(PermissionGroup.experimenter)
 @ownership_required(Experiment)
 def download_payment_data(request, pk=None):
@@ -299,41 +308,19 @@ def download_payment_data(request, pk=None):
     return response
 
 
-def get_view_model_dict(participant_group_relationship, activities=None, experiment=None,
-                        round_configuration=None, round_data=None):
-    """
-    FIXME: replace with view model class that stitches together ActivityStatusList and GroupScores appropriately and
-    handles conditional switches between the different experiment types (scheduled activities, level based, high school)
-    """
-    own_group = participant_group_relationship.group
-    if experiment is None:
-        experiment = own_group.experiment
-    if round_configuration is None:
-        round_configuration = experiment.current_round
-    experiment_configuration = round_configuration.experiment_configuration
-    if is_high_school_treatment(experiment_configuration=experiment_configuration):
-        return HighSchoolViewModel(participant_group_relationship, experiment, round_configuration).to_dict()
-    else:
-        return LighterprintsViewModel(participant_group_relationship, experiment, round_configuration).to_dict()
-
-
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def get_view_model(request, participant_group_id=None):
     if participant_group_id is None:
         # check in the request query parameters as well
         participant_group_id = request.GET.get('participant_group_id')
-    # FIXME: replace with
-    # ParticipantGroupRelationship.objects.fetch(pk=participant_group_id)
     pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user',
                                                                                 'group__experiment'),
                             pk=participant_group_id)
     if pgr.participant != request.user.participant:
-        # security check to ensure that the authenticated participant is the same as the participant whose data is
-        # being requested
+        # check that authenticated participant is the same as the participant whose data is being requested
         logger.warning("user %s tried to access view model for %s", request.user.participant, pgr)
         raise PermissionDenied("You don't appear to have permission to access this experiment.")
-    view_model = get_view_model_dict(pgr, experiment=pgr.group.experiment)
-    return JsonResponse(dumps({'success': True, 'view_model_json': view_model}))
+    return JsonResponse({'success': True, 'viewModel': LighterprintsViewModel(pgr, pgr.experiment).to_dict()})
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
@@ -377,11 +364,10 @@ def mobile_login(request):
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def mobile_participate(request, experiment_id=None):
     participant = request.user.participant
-    experiment = get_active_experiment(
-        participant, experiment_metadata=get_lighterprints_experiment_metadata())
+    experiment = get_active_experiment(participant, experiment_metadata=get_lighterprints_experiment_metadata())
     pgr = experiment.get_participant_group_relationship(participant)
     all_activities = Activity.objects.all()
-    view_model = get_view_model_dict(pgr, all_activities, experiment)
+    view_model = LighterprintsViewModel.create(pgr, experiment, activities=all_activities)
     return render(request, 'lighterprints/mobile/index.html', {
         'experiment': experiment,
         'participant_group_relationship': pgr,

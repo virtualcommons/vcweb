@@ -172,16 +172,16 @@ class GroupScores(object):
     def neighborhood_treatment_initialization_check(self):
         if self.is_neighborhood_treatment:
             for gc in self.group_clusters.all():
-                total_cluster_points = 0
+                total_daily_cluster_points = 0
                 groups = list(gc.groups)
                 number_of_groups = len(groups)
                 for group in groups:
-                    total_cluster_points += self.scores_dict[group]['total_points']
-                average_cluster_points = total_cluster_points / number_of_groups
+                    total_daily_cluster_points += self.scores_dict[group]['total_daily_points']
+                average_daily_cluster_points = total_daily_cluster_points / number_of_groups
                 for group in groups:
                     group_data_dict = self.scores_dict[group]
-                    group_data_dict['total_cluster_points'] = total_cluster_points
-                    group_data_dict['average_cluster_points'] = average_cluster_points
+                    group_data_dict['total_daily_cluster_points'] = total_daily_cluster_points
+                    group_data_dict['average_daily_cluster_points'] = average_daily_cluster_points
 
     def initialize_scores(self, participant_group_relationship):
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
@@ -436,7 +436,6 @@ class GroupActivity(object):
         self.all_activity = defaultdict(list)
         # FIXME: consider using InheritanceManager or manually selecting likes, comments, chatmessages, activities
         # performed to avoid n+1 selects when doing a to_dict
-        participant_group_relationship = self.participant_group_relationship
         group = participant_group_relationship.group
         data_values = ParticipantRoundDataValue.objects.for_group(group).with_parameter_names(
             names=('chat_message', 'comment', 'like', 'activity_performed'))
