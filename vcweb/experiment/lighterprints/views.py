@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 
 class LighterprintsViewModel(object):
 
+    """ FIXME: more refactoring needed, continue to merge this with GroupScores """
+
     def __init__(self, participant_group_relationship, experiment=None,
                  round_configuration=None, round_data=None, activities=None):
         self.participant_group_relationship = participant_group_relationship
@@ -61,6 +63,7 @@ class LighterprintsViewModel(object):
             experiment = participant_group_relationship.experiment
         treatment_type = get_treatment_type(experiment).string_value
         klass = LighterprintsViewModel._get_model_class(treatment_type)
+        logger.debug("klass: %s", klass)
         return klass(participant_group_relationship, experiment, round_configuration, round_data, activities)
 
     @property
@@ -80,6 +83,10 @@ class LighterprintsViewModel(object):
         return self.group_scores.get_group_level(self.group)
 
     @property
+    def group_data(self):
+        return self.group_scores.get_group_data_list()
+
+    @property
     def scores(self):
         return self.group_scores.scores_dict[self.group]
 
@@ -89,13 +96,12 @@ class LighterprintsViewModel(object):
         participant_group_relationship = self.participant_group_relationship
         group_scores = self.group_scores
         group_activity = GroupActivity(participant_group_relationship)
-        group_data = group_scores.get_group_data_list()
         own_group_level = group_scores.get_group_level(own_group)
         return {
             'participantGroupId': participant_group_relationship.pk,
             'completed': group_scores.is_completed(own_group),
             'hasLeaderboard': group_scores.has_leaderboard,
-            'groupData': group_data,
+            'groupData': self.group_data,
             'hoursLeft': hours_left,
             'minutesLeft': minutes_left,
             'firstVisit': participant_group_relationship.first_visit,
@@ -124,11 +130,30 @@ class LighterprintsViewModel(object):
 
 class NeighborhoodViewModel(LighterprintsViewModel):
 
+    @property
+    def group_cluster_data(self):
+        # perform lazy init check
+        return self.group_scores.group_cluster_data
+
+    @property
+    def group_data(self):
+        all_group_data = []
+        for gc in self.group_scores.group_clusters.all():
+            all_group_data.append({
+                'groupName': gc.display_name,
+                'averagePoints': self.group_cluster_data[gc]['average_daily_points'],
+                'totalPoints': self.group_cluster_data[gc]['total_daily_points'],
+                'member': self.group_scores.group_cluster == gc
+            })
+        return all_group_data
+
     def to_dict(self):
         d = super(NeighborhoodViewModel, self).to_dict()
+# groupData expected to be a list of dicts
         d.update({
-            'showGroupClusterData': True
+            'showGroupClusterData': True,
         })
+        logger.debug("returning neighborhood view model dict: %s", self.group_data)
         return d
 
 

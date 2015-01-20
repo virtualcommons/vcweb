@@ -60,7 +60,7 @@ def is_high_school_treatment(experiment=None, treatment_type=None, experiment_co
 def is_neighborhood_treatment(experiment=None, treatment_type=None, experiment_configuration=None):
     if treatment_type is None:
         treatment_type = get_treatment_type(experiment, experiment_configuration).string_value
-    return 'NEIGBORHOOD' in treatment_type
+    return treatment_type == 'NEIGHBORHOOD'
 
 
 class ActivityQuerySet(models.query.QuerySet):

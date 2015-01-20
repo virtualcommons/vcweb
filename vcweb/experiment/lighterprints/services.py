@@ -118,13 +118,19 @@ class GroupScores(object):
         self.experiment = experiment
         if round_data is None:
             round_data = experiment.current_round_data
+        if round_configuration is None:
+            round_configuration = round_data.round_configuration
         if groups is None:
             groups = list(experiment.groups)
         if experiment_configuration is None:
             experiment_configuration = experiment.experiment_configuration
-        self.round_data = round_data
-        self.groups = groups
+        if participant_group_relationship is not None:
+            self.participant_group_relationship = participant_group_relationship
+            self.group = participant_group_relationship.group
         self.experiment_configuration = experiment_configuration
+        self.round_data = round_data
+        self.round_configuration = round_configuration
+        self.groups = groups
         self.exchange_rate = float(experiment_configuration.exchange_rate)
 # FIXME: death by a thousand small inefficiencies, better to pull all ExperimentParameterValues instead of issuing
 # multiple queries. look into updating API to handle this better for a given session
@@ -135,7 +141,6 @@ class GroupScores(object):
         self.group_rankings = None
         self.total_participant_points = 0
         # establish date range
-        self.round_configuration = self.round_data.round_configuration
         self.treatment_type = get_treatment_type(experiment_configuration=experiment_configuration).string_value
         self.initialize_scores(participant_group_relationship)
 
@@ -171,13 +176,22 @@ class GroupScores(object):
 
     def neighborhood_treatment_initialization_check(self):
         if self.is_neighborhood_treatment:
+            self.group_cluster_data = {}
+            group_size = self.experiment_configuration.max_group_size
             for gc in self.group_clusters.all():
                 total_daily_cluster_points = 0
                 groups = list(gc.groups)
                 number_of_groups = len(groups)
                 for group in groups:
                     total_daily_cluster_points += self.scores_dict[group]['total_daily_points']
-                average_daily_cluster_points = total_daily_cluster_points / number_of_groups
+# cache the group cluster that this group belongs to
+                    if group == self.group:
+                        self.group_cluster = gc
+                average_daily_cluster_points = total_daily_cluster_points / (number_of_groups * group_size)
+                self.group_cluster_data[gc] = {
+                    'total_daily_points': total_daily_cluster_points,
+                    'average_daily_points': average_daily_cluster_points
+                }
                 for group in groups:
                     group_data_dict = self.scores_dict[group]
                     group_data_dict['total_daily_cluster_points'] = total_daily_cluster_points
@@ -284,7 +298,6 @@ class GroupScores(object):
             'groupSize': group.size,
             'averagePoints': self.average_daily_points(group),
             'totalPoints': self.total_daily_points(group),
-            'pointsToNextLevel': self.get_points_goal(group),
         }
 
     def perform_daily_update(self):
@@ -303,8 +316,7 @@ class GroupScores(object):
         # FIXME: remove code duplication / redundancy between this and
         # create_level_experiment_email_messages
         round_data = self.round_data
-        logger.debug(
-            "Calculating thresholds for scheduled activity experiment")
+        logger.debug("Calculating thresholds for scheduled activity experiment")
         threshold = self.get_points_goal(group)
         average_group_points = self.average_daily_points(group)
         logger.debug(

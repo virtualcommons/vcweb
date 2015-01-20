@@ -333,7 +333,7 @@
     {% if has_leaderboard %}
     <h3 class='lighterprints-sidebar-header'><i class='text-gold fa fa-trophy'></i> Leaderboard</h3>
     <ul class='nav' data-bind='foreach: groupData'>
-        <li class='leaderboard-group-name'><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold lighterprints-blue": groupName() == $root.groupName()}'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-lighterprints-green' data-bind='text: averagePoints'></span></li>
+        <li class='leaderboard-group-name'><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold lighterprints-blue": member }'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-lighterprints-green' data-bind='text: averagePoints'></span></li>
         <li class='divider'></li>
     </ul>
     {% endif %}
@@ -664,7 +664,8 @@ $(function() {
 </div>
 </script>
 <script type='text/html' id='no-group-activity-template'>
-Your group has not had any activity yet.  You can <a href='#dashboard' data-bind='click:activateDashboardTab'
-data-toggle='tab'>perform challenges in your dashboard</a> or post messages in the <a href='#group' data-bind='click:activateGroupTab'>the group wall</a> .
+Your group has been rather quiet lately. You can 
+<a href='#dashboard' data-bind='click:activateDashboardTab' data-toggle='tab'>perform challenges in your dashboard</a>
+or <a href='#group' data-bind='click:activateGroupTab'>post messages on the group wall</a> .
 </script>
 {% endblock %}
