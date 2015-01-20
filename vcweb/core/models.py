@@ -450,6 +450,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='experiment_configuration_set')
     creator = models.ForeignKey(Experimenter, related_name='experiment_configuration_set')
     name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, help_text=_('Description of experiment treatment'))
     max_number_of_participants = models.PositiveIntegerField(default=0)
     registration_email_subject = models.TextField(blank=True, help_text=_('Subject header for email registrations'))
     invitation_text = models.TextField(blank=True, help_text=_('Text to send out via email invitations'))
@@ -1225,17 +1226,14 @@ class Experiment(models.Model):
                              group_cluster_size, len(groups))
                 return
             random.shuffle(groups)
-            current_group_cluster = GroupCluster.objects.create(
-                session_id=session_id, experiment=self)
+            current_group_cluster = None
             logger.debug("creating group clusters with %s groups per cluster", group_cluster_size)
             for index, group in enumerate(groups):
-                if index >= group_cluster_size and (index % group_cluster_size == 0):
+                if current_group_cluster is None or index >= group_cluster_size and (index % group_cluster_size == 0):
                     # the current group cluster is full, create a new one
-                    current_group_cluster = GroupCluster.objects.create(
-                        session_id=session_id, experiment=self)
+                    current_group_cluster = self.group_cluster_set.create(session_id=session_id, name=group.identifier)
                 # add group to the cluster
-                GroupRelationship.objects.create(
-                    cluster=current_group_cluster, group=group)
+                GroupRelationship.objects.create(cluster=current_group_cluster, group=group)
 
     def get_round_configuration(self, sequence_number):
         return RoundConfiguration.objects.select_related('experiment_configuration').get(
@@ -2027,12 +2025,16 @@ class Group(models.Model, DataValueMixin):
 
     @property
     def name(self):
-        # XXX: major assumption, this gives us AA - ZZ groups.
+        # XXX: major assumption, this allows AA - ZZ groups.
+        return u"Group %s" % self.identifier
+
+    @property
+    def identifier(self):
         quotient, remainder = divmod(self.number, 26)
-        group_name = string.ascii_uppercase[remainder]
+        group_identifier = string.ascii_uppercase[remainder]
         if quotient > 0:
-            group_name = string.ascii_uppercase[quotient] + group_name
-        return u"Group %s" % group_name
+            group_identifier = string.ascii_uppercase[quotient] + group_identifier
+        return group_identifier
 
     @property
     def channel(self):
@@ -2199,6 +2201,15 @@ class GroupCluster(models.Model, DataValueMixin):
     experiment = models.ForeignKey(Experiment, related_name='group_cluster_set')
 
     objects = PassThroughManager.for_queryset_class(GroupClusterQuerySet)()
+
+    @property
+    def display_name(self):
+        if self.name:
+            return self.name
+        group_cluster_identifier = ''
+        for group in self.groups:
+            group_cluster_identifier += group.identifier
+        return "Group " + group_cluster_identifier
 
     @property
     def size(self):
