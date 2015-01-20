@@ -125,6 +125,8 @@ class GroupScores(object):
         if experiment_configuration is None:
             experiment_configuration = experiment.experiment_configuration
         if participant_group_relationship is not None:
+            # FIXME: used to construct a view model. distinction between view model and GroupScores is becoming
+            # increasingly tenuous
             self.participant_group_relationship = participant_group_relationship
             self.group = participant_group_relationship.group
         self.experiment_configuration = experiment_configuration
@@ -300,7 +302,7 @@ class GroupScores(object):
             'totalPoints': self.total_daily_points(group),
         }
 
-    def perform_daily_update(self):
+    def generate_daily_update_messages(self):
         logger.debug("creating daily update email messages for all groups")
         return itertools.chain.from_iterable(self.update(group) for group in self.groups)
 
@@ -319,22 +321,18 @@ class GroupScores(object):
         logger.debug("Calculating thresholds for scheduled activity experiment")
         threshold = self.get_points_goal(group)
         average_group_points = self.average_daily_points(group)
-        logger.debug(
-            "threshold: %s vs average group points: %s", threshold, average_group_points)
+        logger.debug("threshold: %s vs average group points: %s", threshold, average_group_points)
         goal_reached = average_group_points >= threshold
         # they reached their goal, set their completion flag for this round
-        get_experiment_completed_dv(
-            group, round_data=round_data).update_boolean(goal_reached)
+        get_experiment_completed_dv(group, round_data=round_data).update_boolean(goal_reached)
         yesterday = date.today() - timedelta(1)
-        plaintext_template = select_template(
-            ['lighterprints/email/scheduled-activity/group-summary-email.txt'])
+        plaintext_template = select_template(['lighterprints/email/scheduled-activity/group-summary-email.txt'])
         experiment = group.experiment
         # experimenter_email = experiment.experimenter.email
         # FIXME: change this to the experimenter or add a dedicated settings
         # email from
         experimenter_email = settings.SERVER_EMAIL
-        number_of_chat_messages = ChatMessage.objects.for_group(
-            group, round_data=round_data).count()
+        number_of_chat_messages = ChatMessage.objects.for_group(group, round_data=round_data).count()
         messages = []
         c = Context({
             'experiment': experiment,
@@ -586,19 +584,17 @@ def get_group_activity(participant_group_relationship, limit=None):
 
 def daily_update(experiment, debug=False, round_data=None, **kwargs):
     """
-    uses the current round data if not explicitly set and assumes this is invoked before the experiment has been
-    advanced to the next round.
+    Triggered by round_ended_handler in experiment/lighterprints/signals.py, uses experiment.current_round_data if not
+    explicitly set which assumes that the experiment has *not* advanced to the next round yet.
     """
     all_messages = None
     with transaction.atomic():
         round_data = experiment.current_round_data if round_data is None else round_data
-        logger.debug(
-            "sending summary emails to %s for round %s", experiment, round_data)
+        logger.debug("sending summary emails to %s for round %s", experiment, round_data)
         group_scores = GroupScores(experiment, round_data, list(experiment.groups))
-        all_messages = list(group_scores.perform_daily_update())
+        all_messages = list(group_scores.generate_daily_update_messages())
     if not debug and all_messages:
-        logger.debug(
-            "sending %s generated emails for lighter footprints", len(all_messages))
+        logger.debug("sending %s generated emails for lighter footprints", len(all_messages))
         mail.get_connection().send_messages(all_messages)
 
 

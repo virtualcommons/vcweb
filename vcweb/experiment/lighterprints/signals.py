@@ -14,8 +14,7 @@ logger = logging.getLogger(__name__)
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME, dispatch_uid=EXPERIMENT_METADATA_NAME)
 @transaction.atomic
 def round_ended_handler(sender, experiment=None, **kwargs):
-    logger.debug(
-        "ending lighter footprints round %s, sending summary emails", experiment)
+    logger.debug("ending lighter footprints round %s, sending summary emails", experiment)
     daily_update(experiment)
 
 
@@ -29,7 +28,7 @@ def round_started_handler(sender, experiment=None, **kwargs):
     experiment_completed_parameter = get_experiment_completed_parameter()
     initial_group_parameters = [experiment_completed_parameter]
     initial_parameter_defaults = {experiment_completed_parameter: False}
-    if is_level_based_experiment(round_data.round_configuration):
+    if is_level_based_experiment(experiment):
         footprint_level_parameter = get_footprint_level_parameter()
         initial_group_parameters.append(footprint_level_parameter)
         initial_parameter_defaults[footprint_level_parameter] = 1

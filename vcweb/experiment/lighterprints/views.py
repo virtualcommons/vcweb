@@ -33,11 +33,9 @@ class LighterprintsViewModel(object):
         self.participant_group_relationship = participant_group_relationship
         self.group = participant_group_relationship.group
         self.experiment = self.group.experiment if experiment is None else experiment
-        self.round_data = self.experiment.current_round_data if round_data is None else round_data
-        self.round_configuration = self.experiment.current_round if round_configuration is None else round_configuration
         self.group_scores = GroupScores(self.experiment,
-                                        round_data=self.round_data,
-                                        round_configuration=self.round_configuration,
+                                        round_data=round_data,
+                                        round_configuration=round_configuration,
                                         participant_group_relationship=self.participant_group_relationship)
         self.total_participant_points = self.group_scores.total_participant_points
         if activities is None:
@@ -63,20 +61,10 @@ class LighterprintsViewModel(object):
             experiment = participant_group_relationship.experiment
         treatment_type = get_treatment_type(experiment).string_value
         klass = LighterprintsViewModel._get_model_class(treatment_type)
-        logger.debug("klass: %s", klass)
         return klass(participant_group_relationship, experiment, round_configuration, round_data, activities)
 
-    @property
-    def is_linear_public_good_experiment(self):
-        return self.group_scores.is_linear_public_good_experiment
-
-    @property
-    def has_leaderboard(self):
-        return self.group_scores.has_leaderboard
-
-    @property
-    def treatment_type(self):
-        return self.group_scores.treatment_type
+    def __getattr__(self, attr):
+        return getattr(self.group_scores, attr)
 
     @property
     def own_group_level(self):
