@@ -780,7 +780,7 @@ function onYouTubeIframeAPIReady() {
                 if (! model.isPlayableRound()) {
                     return;
                 }
-                // model.setupTour();
+                model.setupTour();
                 if (! model.alive()) {
                     model.secondsLeft(0);
                     model.clearCurrentInterval();
@@ -808,8 +808,7 @@ function onYouTubeIframeAPIReady() {
                 return model.submitHarvestDecisionEnabled() && (model.harvestDecision() >= numberOfTrees);
             }
             model.submitDecision = function() {
-                // FIXME: re-enable tour once we figure out what the bad interaction is, see https://github.com/virtualcommons/vcweb/issues/69
-                // model.endTour();
+                model.endTour();
                 $.post('submit-harvest-decision', { participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true }, 
                 function(response) {
                     // hide selection, disable chat, show waiting room
