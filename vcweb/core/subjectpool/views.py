@@ -132,7 +132,6 @@ def get_invitations_count(request):
     """
     API endpoint that returns the potential participant count based on the selected experiment metadata and Institution
     """
-
     form = SessionInviteForm(request.GET or None)
     if form.is_valid():
         session_pk_list = request.GET.get('session_pk_list').split(",")
@@ -141,11 +140,13 @@ def get_invitations_count(request):
         if len(set(experiment_metadata_ids)) == 1:
             # As all sessions selected by experimenter to send invitations belong to same experiment metadata
             # get the experiment metadata pk of any session (This is ensured as it is a constraint)
+            gender = form.cleaned_data.get('gender')
             potential_participants = Participant.objects.invitation_eligible(
                 experiment_metadata_ids[0],
                 gender=form.cleaned_data.get('gender'),
                 institution_name=form.cleaned_data.get('affiliated_institution'),
                 only_undergrad=form.cleaned_data.get('only_undergrad'))
+            logger.debug("potential participants: %s", potential_participants)
             return JsonResponse({'success': True, 'invitesCount': len(potential_participants)})
     return JsonResponse({'success': False, 'invitesCount': 0, 'errors': form.errors})
 

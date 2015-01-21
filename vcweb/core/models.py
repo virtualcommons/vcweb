@@ -2358,7 +2358,7 @@ class ParticipantQuerySet(models.query.QuerySet):
                 logger.warning("Tried to invite generate invitations for unknown institution: %s", institution_name)
         if only_undergrad:
             criteria.update(class_status__in=Participant.UNDERGRADUATE_CLASS_CHOICES)
-        if gender is not None:
+        if gender in ('M', 'F'):
             criteria.update(gender=gender)
         return self.filter(**criteria).exclude(pk__in=ineligible_participants)
 

@@ -57,18 +57,19 @@ class ExperimentSessionForm(forms.ModelForm):
 
 
 class SessionInviteForm(forms.Form):
-    number_of_people = forms.IntegerField(help_text=_(
-        "Number of participants to invite to the selected experiment session(s)"), widget=NumberInput(attrs={'value': 0, 'class': 'input-mini'}))
-    only_undergrad = forms.BooleanField(help_text=_(
-        "Limit to self-reported undergraduate students"), widget=CheckboxInput(attrs={'checked': True}), required=False)
-
     GENDER_CHOICES = (('A', 'All'), ('M', 'Male'), ('F', 'Female'),)
+
+    number_of_people = forms.IntegerField(
+        help_text=_("Number of participants to invite to the selected experiment session(s)"),
+        widget=NumberInput(attrs={'value': 0, 'class': 'input-mini'}))
+    only_undergrad = forms.BooleanField(
+        help_text=_("Limit to self-reported undergraduate students"),
+        widget=CheckboxInput(attrs={'checked': True}), required=False)
     gender = forms.ChoiceField(choices=GENDER_CHOICES)
     affiliated_institution = forms.CharField(required=False, widget=autocomplete_light.TextWidget(
         InstitutionAutocomplete, attrs={'value': 'Arizona State University'}))
     invitation_subject = forms.CharField(widget=widgets.TextInput())
-    invitation_text = forms.CharField(
-        widget=widgets.Textarea(attrs={'rows': '4'}))
+    invitation_text = forms.CharField(widget=widgets.Textarea(attrs={'rows': '4'}))
 
 
 class ParticipantAttendanceForm(ModelForm):
