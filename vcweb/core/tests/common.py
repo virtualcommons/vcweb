@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.test.client import RequestFactory, Client
+from django.utils.http import urlencode
 
 from ..models import (Experiment, Experimenter, ExperimentConfiguration, RoundConfiguration, Parameter, Group, User,
                       PermissionGroup, Participant, ParticipantSignup, Institution, ExperimentSession, Invitation)
@@ -96,8 +97,11 @@ class BaseVcwebTest(TestCase):
         kwargs.update(experiment_id=self.experiment.pk, action=action)
         return self.post(self.update_experiment_url, kwargs)
 
-    def reverse(self, *args, **kwargs):
-        return reverse(*args, **kwargs)
+    def reverse(self, viewname, query_parameters=None, **kwargs):
+        reversed_url = reverse(viewname, **kwargs)
+        if query_parameters is not None:
+            return '%s?%s' % (reversed_url, urlencode(query_parameters))
+        return reversed_url
 
     def login(self, *args, **kwargs):
         return self.client.login(*args, **kwargs)
@@ -294,8 +298,6 @@ class SubjectPoolTest(BaseVcwebTest):
 
     def setup_participant_signup(self, participant_list, es_pk_list):
         participant_list = participant_list[:25]
-        today = date.today()
-
         for person in participant_list:
             inv = Invitation.objects.filter(participant=person,
                                             experiment_session__pk__in=es_pk_list).order_by('?')[:1]

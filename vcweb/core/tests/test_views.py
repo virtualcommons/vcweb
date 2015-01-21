@@ -399,19 +399,19 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.setup_participants()
         es_pk_list = self.setup_experiment_sessions()
         response = self.get(self.reverse('subjectpool:get_invitations_count',
-                                         kwargs={'session_pk_list': ",".join(map(str, es_pk_list)),
-                                                 'number_of_people': 30,
-                                                 'only_undergrad': 'on',
-                                                 'gender': 'M',
-                                                 'affiliated_institution': 'Arizona State University',
-                                                 'invitation_subject': 'Text',
-                                                 'invitation_text': 'Text'}))
+                                         query_parameters={
+                                             'session_pk_list': ",".join(map(str, es_pk_list)),
+                                             'number_of_people': 30,
+                                             'only_undergrad': 'on',
+                                             'gender': 'M',
+                                             'affiliated_institution': 'Arizona State University',
+                                             'invitation_subject': 'Text',
+                                             'invitation_text': 'Text'}))
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
         self.assertTrue(response_dict['success'])
 
         # test invalid experiment sessions
-# FIXME: refactor to use reversed kwargs instead of constructing the URL string manually
         response = self.get(self.reverse('subjectpool:get_invitations_count')+'?session_pk_list=-1&affiliated_institution=Arizona State University&only_undergrad=True&invitation_text=Test&invitation_subject=Test&gender=M&number_of_people=30')
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
