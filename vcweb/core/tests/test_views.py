@@ -399,7 +399,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.setup_participants()
         es_pk_list = self.setup_experiment_sessions()
         response = self.get(self.reverse('subjectpool:get_invitations_count',
-                                         kwargs={'session_pk_list': ",".join(es_pk_list),
+                                         kwargs={'session_pk_list': ",".join(map(str, es_pk_list)),
                                                  'number_of_people': 30,
                                                  'only_undergrad': 'on',
                                                  'gender': 'M',
