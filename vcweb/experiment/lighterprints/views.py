@@ -126,12 +126,14 @@ class NeighborhoodViewModel(LighterprintsViewModel):
     @property
     def group_data(self):
         all_group_data = []
+        own_group_cluster = self.group_scores.group_cluster
         for gc in self.group_scores.group_clusters.all():
+            group_cluster_data = self.group_cluster_data[gc]
             all_group_data.append({
                 'groupName': gc.display_name,
-                'averagePoints': self.group_cluster_data[gc]['average_daily_points'],
-                'totalPoints': self.group_cluster_data[gc]['total_daily_points'],
-                'member': self.group_scores.group_cluster == gc
+                'averagePoints': group_cluster_data['average_daily_points'],
+                'totalPoints': group_cluster_data['total_daily_points'],
+                'member': own_group_cluster == gc
             })
         return all_group_data
 

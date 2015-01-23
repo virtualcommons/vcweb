@@ -514,26 +514,25 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
         """
         if creator is None:
             creator = self.creator
-        ec = ExperimentConfiguration.objects.get(pk=self.pk)
-        ec.pk = None
-        ec.creator = creator
-        ec.date_created = datetime.now()
-        ec.save()
-        for epv in self.parameter_value_set.all():
-            epv_clone = ExperimentParameterValue.objects.get(pk=epv.pk)
+        cloned_experiment_configuration = ExperimentConfiguration.objects.get(pk=self.pk)
+        cloned_experiment_configuration.pk = None
+        cloned_experiment_configuration.creator = creator
+        cloned_experiment_configuration.date_created = datetime.now()
+        cloned_experiment_configuration.save()
+        for epv_clone in self.parameter_value_set.all():
             epv_clone.pk = None
-            epv_clone.experiment_configuration = ec
-            epv.save()
+            epv_clone.experiment_configuration = cloned_experiment_configuration
+            epv_clone.save()
         for rc in self.round_configuration_set.all():
             rc_clone = RoundConfiguration.objects.get(pk=rc.pk)
             rc_clone.pk = None
-            rc_clone.experiment_configuration = ec
+            rc_clone.experiment_configuration = cloned_experiment_configuration
             rc_clone.save()
-            for rpv in RoundParameterValue.objects.filter(round_configuration=rc):
-                rpv.pk = None
-                rpv.round_configuration = rc_clone
-                rpv.save()
-        return ec
+            for rpv_clone in RoundParameterValue.objects.filter(round_configuration=rc):
+                rpv_clone.pk = None
+                rpv_clone.round_configuration = rc_clone
+                rpv_clone.save()
+        return cloned_experiment_configuration
 
     def is_owner(self, user):
         return self.creator == user.experimenter or user.is_superuser
@@ -1897,8 +1896,7 @@ class ParameterizedValue(models.Model):
 
     @property
     def value(self):
-        value = getattr(
-            self, self.parameter.value_field_name, self.parameter.none_value)
+        value = getattr(self, self.parameter.value_field_name, self.parameter.none_value)
         if value is None:
             return self.parameter.none_value
         if self.parameter.is_foreign_key:
@@ -1912,25 +1910,19 @@ class ParameterizedValue(models.Model):
         setattr(self, self.parameter.value_field_name, converted_value)
 
     def update(self, val, submitted=None):
-        self.value = val
-        if submitted is not None:
-            self.submitted = submitted
-        self.save()
+        self._update('value', val, submitted)
 
     def update_str(self, str_value, submitted=None):
-        self.string_value = str_value
-        if submitted is not None:
-            self.submitted = submitted
-        self.save()
+        self._update('string_value', str_value, submitted)
 
     def update_int(self, integer_value, submitted=None):
-        self.int_value = integer_value
-        if submitted is not None:
-            self.submitted = submitted
-        self.save()
+        self._update('int_value', integer_value, submitted)
 
     def update_boolean(self, boolean_value, submitted=None):
-        self.boolean_value = boolean_value
+        self._update('boolean_value', boolean_value, submitted)
+
+    def _update(self, attr, val, submitted=None):
+        setattr(self, attr, val)
         if submitted is not None:
             self.submitted = submitted
         self.save()

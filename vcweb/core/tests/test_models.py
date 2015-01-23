@@ -1,15 +1,13 @@
 from datetime import datetime, timedelta
-import random
 import logging
 
-from django.contrib.auth.models import User
 from django.core import serializers
 
 from .common import BaseVcwebTest, SubjectPoolTest
 from .. import signals
 from ..models import (ParticipantRoundDataValue, Participant, ParticipantExperimentRelationship,
                       BookmarkedExperimentMetadata, ParticipantGroupRelationship, ExperimentMetadata, Parameter,
-                      RoundParameterValue, Institution, ExperimentSession, Invitation, ParticipantSignup, DefaultValue,)
+                      RoundParameterValue, Institution, Invitation, ParticipantSignup, DefaultValue,)
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +48,6 @@ class ExperimentMetadataTest(BaseVcwebTest):
         self.assertTrue(em.pk and (em.pk > 0),
                         'test unicode namespace experiment metadata record should have valid id now')
         self.assertTrue(unicode(em))
-        #self.assertRaises(ValueError, unicode(em).index, '{')
 
 
 class ExperimentConfigurationTest(BaseVcwebTest):
@@ -58,8 +55,35 @@ class ExperimentConfigurationTest(BaseVcwebTest):
     def test_final_sequence_number(self):
         e = self.experiment
         ec = e.experiment_configuration
-        self.assertEqual(
-            ec.final_sequence_number, ec.last_round_sequence_number)
+        self.assertEqual(ec.final_sequence_number, ec.last_round_sequence_number)
+
+    def test_clone(self):
+        e = self.experiment
+        new_experimenter = self.create_experimenter()
+        ec = e.experiment_configuration
+        ecc = ec.clone(creator=new_experimenter)
+        self.assertNotEqual(ec.creator, ecc.creator)
+        self.assertEqual(ecc.creator, new_experimenter)
+        for epv in ecc.parameter_value_set.all():
+            # FIXME: assumes parameter is unique across ExperimentParameterValues, this may not always be the case.
+            # Consider other ways to retrieve the source ExperimentParameterValue that was cloned
+            criteria = {'parameter': epv.parameter, epv.parameter.value_field_name: epv.value}
+            original_epv = ec.parameter_value_set.get(**criteria)
+            self.assertNotEqual(original_epv.pk, epv.pk)
+            self.assertEqual(original_epv.value, epv.value)
+        for rc in ecc.round_configuration_set.all():
+            original_rc = ec.round_configuration_set.get(sequence_number=rc.sequence_number)
+            self.assertNotEqual(original_rc.pk, rc.pk)
+# ensure all other fields are equal
+            for attr in ('duration', 'instructions', 'round_type', 'debriefing', 'template_id', 'template_filename',
+                         'survey_url', 'chat_enabled', 'create_group_clusters', 'group_cluster_size',
+                         'randomize_groups', 'preserve_existing_groups', 'session_id', 'repeat',
+                         'initialize_data_values'):
+                self.assertEqual(getattr(original_rc, attr), getattr(rc, attr))
+            for rpv in rc.parameter_value_set.all():
+                criteria = {'parameter': rpv.parameter, rpv.parameter.value_field_name: rpv.value}
+                original_rpv = original_rc.parameter_value_set.get(**criteria)
+                self.assertNotEqual(original_rpv.pk, rpv.pk)
 
     def test_serialization_stream(self):
         pass
@@ -408,7 +432,8 @@ class SubjectPoolInvitationTest(SubjectPoolTest):
 
             # The chosen set of participants should not have received
             # invitations in last threshold days
-            self.assertEqual(Invitation.objects.filter(participant__in=final_participants, date_created__gt=last_week_date).count(),
+            self.assertEqual(Invitation.objects.filter(participant__in=final_participants,
+                                                       date_created__gt=last_week_date).count(),
                              0)
             # The chosen set of participants should be from provided
             # university and must have enabled can_receive invitations
@@ -540,6 +565,7 @@ class BookmarkedExperimentMetadataTest(BaseVcwebTest):
         for experiment_metadata in bookmarks:
             self.assertFalse(experiment_metadata.bookmarked)
 
+
 class ExperimenterTest(BaseVcwebTest):
 
     def test_is_valid(self):
@@ -549,4 +575,3 @@ class ExperimenterTest(BaseVcwebTest):
         self.assertFalse(e.is_valid(ee))
         self.assertFalse(ee.is_valid(e))
         self.assertTrue(ee.is_valid())
-
