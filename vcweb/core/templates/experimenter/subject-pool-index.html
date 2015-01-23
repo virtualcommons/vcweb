@@ -25,7 +25,9 @@
             <div class='alert alert-info'>
                 <i class='fa fa-info-circle'></i> If you need to create a new experiment type to manage exclusion of past participants please <a href='/contact'>contact us</a>.
             </div>
+
             <div id="error-messages"></div>
+
             <div class="tabbable">
                 <ul class='nav nav-tabs'>
                     <li class='active'><a href='#active' data-toggle='tab'><i class='fa fa-wrench'></i> Active sessions</a></li>
@@ -45,7 +47,7 @@
                             <i class="fa fa-plus"></i>
                             Add Session
                         </button>
-                        <button data-bind="click: function() { $('#invite-form').toggle('fast'); }, enable: inviteSessionCount()" class="btn btn-primary">
+                        <button data-bind="click: function() { $('#invite-form').toggle('fast'); }, enable: selectedSessions().length" class="btn btn-primary">
                             <i class="fa fa-envelope"></i>
                             Create Invitations
                         </button>
@@ -122,7 +124,7 @@
                                 <td rowspan="2" data-bind="if: active">
                                     <div class="checkbox">
                                       <label>
-                                        <input type="checkbox" data-bind="value:pk, click: $root.addInvite, enable: !isEditable()">
+                                        <input type="checkbox" data-bind="click: $root.verifyConstraint, enable: !isEditable()">
                                       </label>
                                     </div>
                                 </td>
@@ -270,22 +272,22 @@
             var SessionListViewModel = function(data) {
                 var self = this;
                 var model = ko.mapping.fromJS(data, session_mapping, self)
- 
-                model.inviteSessionCount = ko.observable(0);
-                model.invite_experiment_metadata = -1;
-                model.addInvite = function(data, event) {
-                    if( data.experiment_metadata() == model.invite_experiment_metadata
-                            || model.invite_experiment_metadata == -1 ) {
-                        var oldCount = model.inviteSessionCount();
+
+                model.selectedSessions = ko.computed(function() {
+                    return ko.utils.arrayFilter(model.session_list(), function(session) {
+                        return session.selected();
+                    });
+                });
+
+                model.verifyConstraint = function(session, event) {
+                    if (model.selectedSessions().length == 0 || session.experiment_metadata() == model.selectedSessions()[0].experiment_metadata()) { 
                         if($(event.target).is(':checked')){
-                            model.invite_experiment_metadata = data.experiment_metadata();
-                            model.inviteSessionCount(oldCount + 1);
-                            $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) + 3 * data.capacity());
+                            $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) + 3 * session.capacity());
+                            session.selected(true);
                         } else {
-                            model.inviteSessionCount(oldCount - 1);
-                            $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) - 3 * data.capacity());
-                            if(oldCount == 1) {
-                                model.invite_experiment_metadata = -1;
+                            $('#id_number_of_people').val(parseInt($('#id_number_of_people').val()) - 3 * session.capacity());
+                            session.selected(false);
+                            if(model.selectedSessions().length == 0) {
                                 $('#invite-form').slideUp("slow");
                                 $('#invite-form form')[0].reset();
                                 $('#email-content').html("");
@@ -293,10 +295,11 @@
                         }
                         return true;
                     } else {
+                        session.selected(false);
                         bootbox.alert("You can not invite participants for a list of experiment sessions spanning more than one experiment", function() {});
                         return false;
                     }
-                };
+                }
 
                 model.activeSessions = ko.computed(function() {
                     return ko.utils.arrayFilter(model.session_list(), function(session) {
@@ -338,24 +341,21 @@
                         );
                         return;
                     }
-                    experiment_session_old_pk = session.pk();
                     var formData = 'location='+session.location()+'&capacity='+session.capacity()+'&scheduled_date='+session.start_date()+'&experiment_metadata='+session.experiment_metadata()+ '&scheduled_end_date='+session.end_date();
-                    $.post("session/manage/"+ experiment_session_old_pk, formData)
+                    $.post("session/manage/"+ session.pk(), formData)
                         .done(function(result) {
                             if(result.success) {
-                                session.pk(result.session.pk);
-                                session.isEditable(false);
-                                calendar = createCalendar();
-                                if(experiment_session_old_pk == -1) {
-                                    var selected_experiment_metadata = session.experiment_metadata();
-                                    if(selected_experiment_metadata == model.invite_experiment_metadata
-                                        || model.invite_experiment_metadata == -1 ) {
+                                if(session.pk() == -1) session.selected(true);
+                                if(session.pk() == -1) {
+                                    if(model.selectedSessions().length == 0 || session.experiment_metadata() == model.selectedSessions()[0].experiment_metadata()) {
                                         $(event.target).parents("form").find("input[type=checkbox]").prop('checked', true);
-                                        model.invite_experiment_metadata = selected_experiment_metadata;
-                                        model.inviteSessionCount(model.inviteSessionCount() + 1);
+                                        session.selected(true);
                                         $('#id_number_of_people').val(parseInt($('#id_number_of_people').val())+3 * session.capacity());
                                     }
                                 }
+                                session.pk(result.session.pk);
+                                session.isEditable(false);
+                                calendar = createCalendar();
                             } else {
                                 displayFormError(result.errors);
                             }
@@ -364,43 +364,40 @@
 
                 model.removeSession = function(session, event) {
                     if(session.pk() == -1) return model.session_list.remove(session);
-                        bootbox.confirm("Delete this session? All associated invitations and signups will be removed.",
-                        function(result) {
-                            if (result) {
-                                var formData = 'request_type=delete&location='+session.location()+'&capacity='+session.capacity()+'&scheduled_date='+session.start_date()+'&experiment_metadata='+session.experiment_metadata();
-                                $.post("session/manage/"+ session.pk(), formData)
-                                    .done(function(result) {
-                                        if(result.success){
-                                            model.session_list.remove(session);
-                                            calendar = createCalendar();
-                                        } else {
-                                            displayiFormError(result.errors);
-                                        }
-                                    });
-                            } 
+                    bootbox.confirm("Delete this session? All associated invitations and signups will be removed.",
+                    function(result) {
+                        if (result) {
+                            var formData = 'request_type=delete&location='+session.location()+'&capacity='+session.capacity()+'&scheduled_date='+session.start_date()+'&experiment_metadata='+session.experiment_metadata();
+                            $.post("session/manage/"+ session.pk(), formData)
+                                .done(function(result) {
+                                    if(result.success){
+                                        model.session_list.remove(session);
+                                        calendar = createCalendar();
+                                    } else {
+                                        displayiFormError(result.errors);
+                                    }
+                                });
+                        } 
                     });
                 };
 
                 model.onInvite = function(formElement) {
-                    var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked')
-                                                               .map(function(){ return this.value }).get();
+                    var session_pk_list = ko.utils.arrayMap(model.selectedSessions(), function(item) { return item.pk(); });
                     var btn = $(formElement).find("#invite-btn");
                     if(session_pk_list.length) {
                         btn.button('loading')
-                        var formData = $(formElement).serialize()  + '&session_pk_list='+ session_pk_list;
+                        var formData = $(formElement).serialize() + '&session_pk_list='+ session_pk_list;
                         $.post("{% url 'subjectpool:send_invites' %}", formData)
                             .done(function(result) {
                                 if(result.success){
                                     $('#invite-form').slideUp("slow");
-                                    $('#active-sessions').find('input[type=checkbox]:checked').removeAttr('checked');
-                                    model.inviteSessionCount(0);
-                                    model.invite_experiment_metadata = -1;
                                     $("#error-messages").html('<div class="alert alert-success">' + result.message + '</strong></div>');
                                     $('#invite-form form')[0].reset();
                                     $('#email-content').html("");
 
                                     ko.utils.arrayForEach(model.session_list(), function(session) {
-                                        if($.inArray(session.pk() +"", session_pk_list) != -1){
+                                        session.selected(false);
+                                        if($.inArray(session.pk(), session_pk_list) != -1){
                                             session.invite_count(session.invite_count() + result.invitesCount);
                                         }
                                     });
@@ -415,8 +412,7 @@
                     }
                 };
                 model.emailPreview = function(data, event) {
-                    var session_pk_list = $('#active-sessions').find('input[type=checkbox]:checked')
-                                                               .map( function(){ return this.value }).get();
+                    var session_pk_list = ko.utils.arrayMap(model.selectedSessions(), function(item) { return item.pk(); });
                     if(session_pk_list.length) {
                         var formData = $("#invite-form form").serialize()  + '&session_pk_list='+ session_pk_list;
                         $.get("{% url 'subjectpool:get_invitations_count' %}?" + formData)
@@ -436,12 +432,14 @@
                             });
                     }
                 }
+                return model;
             }
 
             var SessionModel = function(data) {
                 var self = this;
                 ko.mapping.fromJS(data, {}, self);
 
+                self.selected = ko.observable(false); 
                 self.active = ko.computed( function() {
                     return (self.pk() == -1 || ( +new Date(self.end_date()) >= +new Date()));
                 });
