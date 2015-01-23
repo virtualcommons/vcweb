@@ -15,7 +15,7 @@ from vcweb.core.models import (ParticipantRoundDataValue, ChatMessage, Like, Com
 from .models import (Activity, is_scheduled_activity_experiment, get_activity_availability_cache, has_leaderboard,
                      get_activity_performed_parameter, ActivityAvailability, is_linear_public_good_experiment,
                      get_activity_points_cache, get_footprint_level, get_group_threshold, get_experiment_completed_dv,
-                     get_footprint_level_dv, get_treatment_type)
+                     get_footprint_level_dv, get_treatment_type, is_community_treatment, is_high_school_treatment,)
 
 import itertools
 import locale
@@ -113,6 +113,10 @@ class ActivityStatusList(object):
 
 class GroupScores(object):
 
+    """ Data model encapsulating group scores across all treatments. Used by view models that are
+    ParticipantGroupRelationship-specific, and by the nightly email service that aggregates group information and sends
+    personalized email digests containing that day's group activity to each group. """
+
     def __init__(self, experiment, round_data=None, round_configuration=None, groups=None,
                  participant_group_relationship=None, experiment_configuration=None):
         self.experiment = experiment
@@ -157,11 +161,11 @@ class GroupScores(object):
 
     @property
     def is_high_school_treatment(self):
-        return self.treatment_type == 'HIGH_SCHOOL'
+        return is_high_school_treatment(treatment_type=self.treatment_type)
 
     @property
-    def is_neighborhood_treatment(self):
-        return self.treatment_type == 'NEIGHBORHOOD'
+    def is_community_treatment(self):
+        return is_community_treatment(treatment_type=self.treatment_type)
 
     @property
     def group_clusters(self):
@@ -176,8 +180,8 @@ class GroupScores(object):
                 activity_points = activity_points_cache[dv.int_value]
                 self.scores_dict[dv.participant_group_relationship.group]['total_points'] += activity_points
 
-    def neighborhood_treatment_initialization_check(self):
-        if self.is_neighborhood_treatment:
+    def community_treatment_initialization_check(self):
+        if self.is_community_treatment:
             self.group_cluster_data = {}
             group_size = self.experiment_configuration.max_group_size
             for gc in self.group_clusters.all():
@@ -216,7 +220,7 @@ class GroupScores(object):
             group_size = group.size
             group_data_dict['average_daily_points'] = group_data_dict['total_daily_points'] / group_size
             group_data_dict['total_average_points'] = group_data_dict['total_points'] / group_size
-        self.neighborhood_treatment_initialization_check()
+        self.community_treatment_initialization_check()
 
     def average_daily_points(self, group):
         return self.scores_dict[group]['average_daily_points']
@@ -438,6 +442,8 @@ class GroupScores(object):
 
 
 class GroupActivity(object):
+
+    """ Models group activity anchored from the POV of a given ParticipantGroupRelationship """
 
     def __init__(self, participant_group_relationship, limit=None):
         self.participant_group_relationship = participant_group_relationship

@@ -57,10 +57,10 @@ def is_high_school_treatment(experiment=None, treatment_type=None, experiment_co
     return treatment_type == 'HIGH_SCHOOL'
 
 
-def is_neighborhood_treatment(experiment=None, treatment_type=None, experiment_configuration=None):
+def is_community_treatment(experiment=None, treatment_type=None, experiment_configuration=None):
     if treatment_type is None:
         treatment_type = get_treatment_type(experiment, experiment_configuration).string_value
-    return treatment_type == 'NEIGHBORHOOD'
+    return treatment_type == 'COMMUNITY'
 
 
 class ActivityQuerySet(models.query.QuerySet):
@@ -330,10 +330,10 @@ def get_experiment_completed_dv(group, round_data=None):
     return group.get_data_value(parameter=get_experiment_completed_parameter(), round_data=round_data)
 
 
-def get_treatment_type(experiment=None, experiment_configuration=None, default_treatment_type='LEADERBOARD', **kwargs):
+def get_treatment_type(experiment=None, experiment_configuration=None, default_treatment_type='SCHEDULED_ACTIVITY', **kwargs):
     """
     possible treatment types:
-    SCHEDULED_ACTIVITY / HIGH_SCHOOL / LEVEL_BASED / NEIGHBORHOOD
+    SCHEDULED_ACTIVITY / HIGH_SCHOOL / LEVEL_BASED / COMMUNITY
     """
     if experiment_configuration is None:
         experiment_configuration = experiment.experiment_configuration

@@ -3,6 +3,8 @@ import logging
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
+# valid values: 'DEVELOPMENT', 'STAGING', 'PRODUCTION'
+ENVIRONMENT = 'DEVELOPMENT'
 
 USE_TZ = False
 

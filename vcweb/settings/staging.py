@@ -1,8 +1,9 @@
-# Production Django settings for vcweb
+# Local Development Django settings for vcweb
 from .base import *
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
-ENVIRONMENT = "PRODUCTION"
+
+ENVIRONMENT = "STAGING"
 
 CACHES = {
     'default': {
@@ -14,7 +15,6 @@ CACHES = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'HOST': 'localhost',
         'NAME': 'vcweb',
         'USER': 'vcweb',
         'PASSWORD': 'CUSTOMIZE_ME',
@@ -22,14 +22,20 @@ DATABASES = {
 }
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-# Make this unique, and don't share it with anybody.
-SECRET_KEY = 'CUSTOMIZE_ME'
+# XXX: no i18n for the time being
+USE_I18N = False
 
-RAVEN_CONFIG = {
-    'dsn': 'https://public:secret@vcsentry.asu.edu/1',
+SITE_URL = 'https://vcweb-dev.asu.edu'
+
+# Make this unique, and don't share it with anybody.
+SECRET_KEY = 'customize this dev secret key'
+
+INSTALLED_APPS += (
+    'debug_toolbar.apps.DebugToolbarConfig',
+    'sslserver',
+)
+DEBUG_TOOLBAR_CONFIG = {
+    'INTERCEPT_REDIRECTS': False,
 }
 
-SITE_URL = 'https://vcweb.asu.edu'
-
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 WEBSOCKET_SSL = True

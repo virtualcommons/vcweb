@@ -17,7 +17,7 @@ from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGrou
 from vcweb.core.views import (dumps, get_active_experiment, set_authentication_token, mimetypes)
 from .forms import ActivityForm
 from .models import (Activity, get_lighterprints_experiment_metadata, is_high_school_treatment, get_treatment_type,
-                     get_activity_performed_parameter, is_neighborhood_treatment)
+                     get_activity_performed_parameter, is_community_treatment)
 from .services import (ActivityStatusList, GroupScores, do_activity, get_time_remaining, GroupActivity)
 
 
@@ -37,6 +37,7 @@ class LighterprintsViewModel(object):
                                         round_data=round_data,
                                         round_configuration=round_configuration,
                                         participant_group_relationship=self.participant_group_relationship)
+        self.group_activity = GroupActivity(participant_group_relationship)
         self.total_participant_points = self.group_scores.total_participant_points
         if activities is None:
             activities = Activity.objects.all()
@@ -49,8 +50,8 @@ class LighterprintsViewModel(object):
     def _get_model_class(treatment_type):
         if is_high_school_treatment(treatment_type=treatment_type):
             return HighSchoolViewModel
-        elif is_neighborhood_treatment(treatment_type=treatment_type):
-            return NeighborhoodViewModel
+        elif is_community_treatment(treatment_type=treatment_type):
+            return CommunityViewModel
         else:
             return LighterprintsViewModel
 
@@ -83,7 +84,6 @@ class LighterprintsViewModel(object):
         own_group = self.group
         participant_group_relationship = self.participant_group_relationship
         group_scores = self.group_scores
-        group_activity = GroupActivity(participant_group_relationship)
         own_group_level = group_scores.get_group_level(own_group)
         return {
             'participantGroupId': participant_group_relationship.pk,
@@ -102,7 +102,7 @@ class LighterprintsViewModel(object):
             'averagePoints': group_scores.average_daily_points(own_group),
             'pointsToNextLevel': group_scores.get_points_goal(own_group),
             'hasScheduledActivities': group_scores.has_scheduled_activities,
-            'groupActivity': group_activity.all_activities,
+            'groupActivity': self.group_activity.all_activities,
             'groupName': own_group.name,
             'activities': self.activity_status_list.activity_dict_list,
             'totalPoints': self.total_participant_points,
@@ -116,7 +116,7 @@ class LighterprintsViewModel(object):
         return dumps(self.to_dict())
 
 
-class NeighborhoodViewModel(LighterprintsViewModel):
+class CommunityViewModel(LighterprintsViewModel):
 
     @property
     def group_cluster_data(self):
@@ -138,12 +138,12 @@ class NeighborhoodViewModel(LighterprintsViewModel):
         return all_group_data
 
     def to_dict(self):
-        d = super(NeighborhoodViewModel, self).to_dict()
+        d = super(CommunityViewModel, self).to_dict()
 # groupData expected to be a list of dicts
         d.update({
             'showGroupClusterData': True,
         })
-        logger.debug("returning neighborhood view model dict: %s", self.group_data)
+        logger.debug("returning community view model dict: %s", self.group_data)
         return d
 
 
@@ -175,7 +175,6 @@ class HighSchoolViewModel(LighterprintsViewModel):
         participant_group_relationship = self.participant_group_relationship
         own_group = participant_group_relationship.group
         group_scores = self.group_scores
-        group_activity = GroupActivity(participant_group_relationship)
         return {
             'activities': self.activities,
             'quizCompleted': participant_group_relationship.survey_completed,
@@ -190,7 +189,7 @@ class HighSchoolViewModel(LighterprintsViewModel):
             'groupActivity': group_activity.all_activities,
             'groupName': own_group.name,
             'totalPoints': group_scores.total_participant_points,
-            'surveyUrl': self.round_configuration.make_survey_url(pid=participant_group_relationship.pk),
+            'surveyUrl': self.round_configuration.build_survey_url(pid=participant_group_relationship.pk),
         }
 
     @property

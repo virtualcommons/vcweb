@@ -451,6 +451,8 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     creator = models.ForeignKey(Experimenter, related_name='experiment_configuration_set')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, help_text=_('Description of experiment treatment'))
+    payment_information = models.TextField(blank=True, help_text=_(
+        'Markdown formatted payment information to be displayed to a participant at the conclusion of this experiment'))
     max_number_of_participants = models.PositiveIntegerField(default=0)
     registration_email_subject = models.TextField(blank=True, help_text=_('Subject header for email registrations'))
     invitation_text = models.TextField(blank=True, help_text=_('Text to send out via email invitations'))
@@ -957,7 +959,7 @@ class Experiment(models.Model):
         email_messages = []
         registered_participants = []
         if number_of_participants > 0:
-            logger.warning("This experiment %s already has %d participants - aborting", self, number_of_participants)
+            logger.warning("Experiment %s already has %d participants - aborting", self, number_of_participants)
             return
         if users is None:
             users = []
@@ -1624,7 +1626,7 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
         else:
             return u"%d of %d" % (self.sequence_number, self.experiment_configuration.final_sequence_number)
 
-    def make_survey_url(self, **kwargs):
+    def build_survey_url(self, **kwargs):
         if self.is_survey_enabled and kwargs:
             query_parameters = urlencode(kwargs)
             survey_url = self.survey_url
