@@ -1,7 +1,7 @@
-from ..models import (Participant, ExperimentMetadata, ExperimentSession,
-                      Experiment, Invitation, ParticipantSignup, PermissionGroup)
+from ..models import (Participant, ExperimentMetadata, ExperimentSession, Experiment, Invitation, ParticipantSignup,
+                      PermissionGroup, BookmarkedExperimentMetadata)
 from ..forms import LoginForm
-from ..views import ExperimenterDashboardViewModel
+from ..views import DashboardViewModel, ExperimenterDashboardViewModel, ParticipantDashboardViewModel
 from .common import BaseVcwebTest, SubjectPoolTest
 
 import random
@@ -46,7 +46,7 @@ class ParticipantProfileTest(BaseVcwebTest):
     def setUp(self, **kwargs):
         super(ParticipantProfileTest, self).setUp(demo_participants=False)
 
-    def test_save_profile(self):
+    def test_update_profile(self):
         e = self.experiment
         e.activate()
         for p in e.participant_set.all():
@@ -59,6 +59,19 @@ class ParticipantProfileTest(BaseVcwebTest):
             self.assertTrue(self.profile_url in response['Location'])
 # FIXME: fill in profile save
             self.post(self.profile_url, {})
+
+
+class ParticipateTest(BaseVcwebTest):
+
+    def test_demo_participant(self):
+        e = self.experiment
+        e.activate()
+        for p in e.participant_set.all():
+            self.assertTrue(self.login_participant(p))
+            response = self.get('core:participate')
+            # should redirect to first active experiment participant url
+            self.assertEqual(302, response.status_code)
+            self.assertTrue(e.participant_url in response['Location'])
 
 
 class ParticipantDashboardTest(BaseVcwebTest):
@@ -102,22 +115,19 @@ class ParticipantDashboardTest(BaseVcwebTest):
 class ExperimenterDashboardTest(BaseVcwebTest):
 
     def test_dashboard_view_model(self):
-        dashboard_view_model = ExperimenterDashboardViewModel(
-            self.demo_experimenter.user)
+        dashboard_view_model = DashboardViewModel.create(self.demo_experimenter.user)
+        self.assertEqual(type(dashboard_view_model), ExperimenterDashboardViewModel)
         vmdict = dashboard_view_model.to_dict()
         self.assertFalse(vmdict['isAdmin'])
         self.assertEqual(vmdict['experimenterId'], self.demo_experimenter.pk)
         self.assertFalse(vmdict['runningExperiments'])
         self.experiment.activate()
-        dashboard_view_model = ExperimenterDashboardViewModel(
-            self.experiment.experimenter.user)
+        dashboard_view_model = DashboardViewModel.create(self.experiment.experimenter.user)
         vmdict = dashboard_view_model.to_dict()
         self.assertFalse(vmdict['isAdmin'])
-        self.assertEqual(
-            vmdict['experimenterId'], self.experiment.experimenter.pk)
+        self.assertEqual(vmdict['experimenterId'], self.experiment.experimenter.pk)
         self.assertTrue(vmdict['runningExperiments'])
-        self.assertEqual(
-            self.experiment.status, vmdict['runningExperiments'][0]['status'])
+        self.assertEqual(self.experiment.status, vmdict['runningExperiments'][0]['status'])
 
     def test_experimenter_dashboard(self):
         e = self.experiment
@@ -129,6 +139,26 @@ class ExperimenterDashboardTest(BaseVcwebTest):
         response = self.get(self.dashboard_url)
         self.assertEqual(200, response.status_code)
 
+
+class BookmarkExperimentMetadataTest(BaseVcwebTest):
+
+    def test_toggle_bookmark(self):
+        experimenter = self.experimenter
+        experiment = self.experiment
+        self.assertTrue(self.login_experimenter(experimenter))
+        self.assertFalse(BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).exists())
+        response = self.post('core:bookmark_experiment_metadata', {
+            'experimenter_id': experimenter.pk,
+            'experiment_metadata_id': experiment.experiment_metadata.pk,
+        })
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).exists())
+        response = self.post('core:bookmark_experiment_metadata', {
+            'experimenter_id': experimenter.pk,
+            'experiment_metadata_id': experiment.experiment_metadata.pk,
+        })
+        self.assertEqual(200, response.status_code)
+        self.assertFalse(BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).exists())
 
 class ClearParticipantsApiTest(BaseVcwebTest):
 

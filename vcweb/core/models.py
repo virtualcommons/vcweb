@@ -432,10 +432,9 @@ class ExperimenterRequest(models.Model):
 
 
 class ExperimentConfigurationQuerySet(models.query.QuerySet):
-    pass
 
-
-class ExperimentConfigurationManager(PassThroughManager):
+    def active(self, **kwargs):
+        return self.select_related('experiment_metadata', 'creator').filter(experiment_metadata__active=True)
 
     def demo_configurations(self, **kwargs):
         return self.filter(experiment_metadata__namespace__in=('lighterprints', 'forestry'), is_public=True, **kwargs)
@@ -476,7 +475,7 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
         "This experiment configuration has rounds that start and end each day starting at midnight."))
     cached_final_sequence_number = 0
 
-    objects = ExperimentConfigurationManager.for_queryset_class(ExperimentConfigurationQuerySet)()
+    objects = PassThroughManager.for_queryset_class(ExperimentConfigurationQuerySet)()
 
     @property
     def is_open(self):
@@ -1449,7 +1448,6 @@ class Experiment(models.Model):
             'isActive': self.is_active,
             'isArchived': self.is_archived,
             'exchangeRate': float(self.experiment_configuration.exchange_rate),
-            'participants': [{'full_name': p.full_name, 'email': p.email} for p in self.participant_set.all()],
             'readyParticipants': self.number_of_ready_participants,
             'status': self.status,
             'pk': self.pk
@@ -2397,10 +2395,10 @@ class Participant(CommonsUser):
     @property
     def should_update_profile(self):
         if self.is_demo_participant or not self.can_receive_invitations:
-            # incomplete profile doesn't matter if they're not set to receive
-            # experiment invitations or a demo participant
+            # incomplete profile doesn't matter if they're not set to receive experiment invitations or they are a demo
+            # participant
             return False
-        # otherwise return all the fields we want them to submit
+        # returns true if any of the following fields are not set
         return not all([self.class_status, self.gender, self.favorite_sport, self.favorite_color, self.favorite_food,
                         self.favorite_movie_genre, self.major])
 
@@ -2459,7 +2457,8 @@ class Participant(CommonsUser):
 class ParticipantExperimentRelationshipQuerySet(models.query.QuerySet):
 
     def active(self, **kwargs):
-        return self.filter(experiment__status__in=('ACTIVE', 'ROUND_IN_PROGRESS'), **kwargs)
+        return self.select_related('experiment').filter(experiment__status__in=('ACTIVE', 'ROUND_IN_PROGRESS'),
+                                                        **kwargs)
 
 
 class ParticipantExperimentRelationship(models.Model):

@@ -44,7 +44,7 @@ def is_participant(user):
     return hasattr(user, 'participant') and user.is_active
 
 
-def group_required(*permission_groups):
+def group_required(*permission_groups, **kwargs):
     """Requires user membership in at least one of the groups passed in."""
     def in_groups(u):
         if u.is_authenticated() and (is_experimenter(u) or is_participant(u)):

@@ -92,7 +92,7 @@ $(function() {
         var model = ko.mapping.fromJS(viewModelObject);
         model.formatDate = function(dateString) { return moment(dateString).format("dddd MMM Do YYYY"); };
         model.addToGoogleCalendarLink = function(startDate, endDate, location) {
-            return "https://www.google.com/calendar/render?action=TEMPLATE&text=VCWEB+Experiment"
+            return "https://www.google.com/calendar/render?action=TEMPLATE&text=vcweb+experiment"
             + "&dates=" + startDate.replace(/[-:.]/g, '') + '/' + endDate.replace(/[-:.]/g, '')
             + "&details=For more details please visit https://vcweb.asu.edu or contact your experimenter"
             + "&location=" + location
@@ -102,13 +102,12 @@ $(function() {
         };
         model.hasUpcomingEvents = ko.computed(function() {
             return model.pendingExperiments().length > 0 || model.runningExperiments().length > 0
-                || model.signups().length > 0 || model.hasPendingInvitations();
+                || model.signups().length > 0;
         });
         return model;
     }
-    var model = new DashboardViewModel($.parseJSON("{{ dashboardViewModelJson|escapejs }}"));
-    ko.applyBindings(model);
-    globalModel = model;
+    var viewModel = new DashboardViewModel($.parseJSON("{{ dashboardViewModelJson|escapejs }}"));
+    ko.applyBindings(viewModel);
 });
 </script>
 {%  endblock javascript %}

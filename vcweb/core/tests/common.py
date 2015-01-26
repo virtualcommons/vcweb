@@ -41,8 +41,7 @@ class BaseVcwebTest(TestCase):
         if not experiment.experiment_metadata.parameters.exists():
             experiment.experiment_metadata.parameters.add(
                 *Parameter.objects.values_list('pk', flat=True))
-        experiment.experiment_configuration.round_configuration_set.exclude(
-            sequence_number=1).update(duration=60)
+        experiment.experiment_configuration.round_configuration_set.exclude(sequence_number=1).update(duration=60)
         experiment.save()
         u = experiment.experimenter.user
         u.set_password(experimenter_password)

@@ -50,7 +50,7 @@ class AnonymousMixin(object):
 
 class ParticipateView(TemplateView):
 
-    @method_decorator(group_required(PermissionGroup.participant))
+    @method_decorator(group_required(PermissionGroup.participant, PermissionGroup.demo_participant))
     def dispatch(self, *args, **kwargs):
         participant = self.request.user.participant
         experiment = get_active_experiment(participant)
@@ -62,6 +62,14 @@ class ParticipateView(TemplateView):
 
 class DashboardViewModel(object):
 
+    @staticmethod
+    def create(user, *args, **kwargs):
+        if user is None or not user.is_active:
+            logger.error("can't create dashboard view model from invalid user %s", user)
+            raise ValueError("invalid user: %s" % user)
+        klass = ExperimenterDashboardViewModel if is_experimenter(user) else ParticipantDashboardViewModel
+        return klass(user, *args, **kwargs)
+
     def to_json(self):
         return dumps(self.to_dict())
 
@@ -69,12 +77,11 @@ class DashboardViewModel(object):
 class ExperimenterDashboardViewModel(DashboardViewModel):
     template_name = 'experimenter/dashboard.html'
 
-    def __init__(self, user):
+    def __init__(self, user, *args, **kwargs):
         self.experimenter = user.experimenter
         _configuration_cache = {}
         self.experiment_metadata_dict = defaultdict(list)
-        for ec in ExperimentConfiguration.objects.select_related('experiment_metadata', 'creator').filter(
-                experiment_metadata__active=True):
+        for ec in ExperimentConfiguration.objects.active():
             self.experiment_metadata_dict[ec.experiment_metadata].append(ec)
             _configuration_cache[ec.pk] = ec
         self.experiment_metadata_list = []
@@ -87,13 +94,11 @@ class ExperimenterDashboardViewModel(DashboardViewModel):
 
         experiment_status_dict = defaultdict(list)
         for e in Experiment.objects.for_experimenter(self.experimenter).order_by('-pk'):
-            e.experiment_configuration = _configuration_cache[
-                e.experiment_configuration.pk]
+            e.experiment_configuration = _configuration_cache[e.experiment_configuration.pk]
             experiment_status_dict[e.status].append(
                 e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
         self.pending_experiments = experiment_status_dict['INACTIVE']
-        self.running_experiments = experiment_status_dict[
-            'ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+        self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
         self.archived_experiments = experiment_status_dict['COMPLETED']
 
     def to_dict(self):
@@ -110,15 +115,14 @@ class ExperimenterDashboardViewModel(DashboardViewModel):
 class ParticipantDashboardViewModel(DashboardViewModel):
     template_name = 'participant/dashboard.html'
 
-    def __init__(self, user):
+    def __init__(self, user, *args, **kwargs):
         self.participant = user.participant
         experiment_status_dict = defaultdict(list)
         for e in self.participant.experiments.select_related('experiment_configuration').all():
             experiment_status_dict[e.status].append(
                 e.to_dict(attrs=('participant_url', 'start_date'), name=e.experiment_metadata.title))
         self.pending_experiments = experiment_status_dict['INACTIVE']
-        self.running_experiments = experiment_status_dict[
-            'ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
+        self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
         upcoming_signups = ParticipantSignup.objects.upcoming(self.participant)
         self.show_end_dates = False
         self.signups = []
@@ -131,21 +135,9 @@ class ParticipantDashboardViewModel(DashboardViewModel):
         return {
             'pendingExperiments': self.pending_experiments,
             'runningExperiments': self.running_experiments,
-            'hasPendingInvitations': self.participant.has_pending_invitations,
             'signups': self.signups,
             'showEndDates': self.show_end_dates,
         }
-
-
-def create_dashboard_view_model(user):
-    if user is None or not user.is_active:
-        logger.error(
-            "can't create dashboard view model from invalid user %s", user)
-        raise ValueError("invalid user: %s" % user)
-    if is_experimenter(user):
-        return ExperimenterDashboardViewModel(user)
-    else:
-        return ParticipantDashboardViewModel(user)
 
 
 def csrf_failure(request, reason=""):
@@ -164,15 +156,13 @@ def dashboard(request):
         participant = user.participant
         # special case for if this participant needs to update their profile or if they have pending invitations to
         # respond to immediately.
-        # FIXME: see https://github.com/virtualcommons/vcweb/issues/8
         if participant.should_update_profile:
             # redirect to the profile page if this is a non-demo participant
             # and their profile is incomplete
             return redirect('core:profile')
         elif participant.has_pending_invitations:
             return redirect('subjectpool:experiment_session_signup')
-
-    dashboard_view_model = create_dashboard_view_model(user)
+    dashboard_view_model = DashboardViewModel.create(user)
     return render(request, dashboard_view_model.template_name,
                   {'dashboardViewModelJson': dashboard_view_model.to_json()})
 
@@ -223,7 +213,7 @@ def cas_asu_registration_submit(request):
 def get_dashboard_view_model(request):
     return JsonResponse({
         'success': True,
-        'dashboardViewModelJson': create_dashboard_view_model(request.user).to_json()
+        'dashboardViewModelJson': DashboardViewModel.create(request.user).to_json()
     })
 
 
@@ -244,16 +234,12 @@ def set_authentication_token(user, authentication_token=''):
 
 def get_active_experiment(participant, experiment_metadata=None, **kwargs):
     pers = []
+    criteria = dict(participant=participant, **kwargs)
     if experiment_metadata is not None:
-        pers = ParticipantExperimentRelationship.objects.active(participant=participant,
-                                                                experiment__experiment_metadata=experiment_metadata,
-                                                                **kwargs)
-    else:
-        pers = ParticipantExperimentRelationship.objects.active(
-            participant=participant, **kwargs)
-    if pers:
-        logger.debug(
-            "using first active experiment %s for participant %s", pers[0], participant)
+        criteria.update(experiment__experiment_metadata=experiment_metadata)
+    pers = ParticipantExperimentRelationship.objects.active(**criteria)
+    if pers.exists():
+        logger.debug("using first active experiment %s for participant %s", pers[0], participant)
         return pers[0].experiment
     return None
 
@@ -481,7 +467,7 @@ class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, Templa
         return self.render_to_response(context)
 
 
-@group_required(PermissionGroup.experimenter)
+@group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
 @require_POST
 def toggle_bookmark_experiment_metadata(request):
     form = BookmarkExperimentMetadataForm(request.POST or None)
