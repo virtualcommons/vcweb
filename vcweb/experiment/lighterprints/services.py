@@ -289,10 +289,15 @@ class GroupScores(object):
                                    for g in self.get_sorted_group_scores()]
         return self.group_rankings
 
-    def get_group_data_list(self):
+    def get_group_cluster_data_list(self):
+        return self.get_group_data_list(groups=self.group_cluster.groups)
+
+    def get_group_data_list(self, groups=None):
         # FIXME: cache group_data if multiple invocations occur
+        if groups is None:
+            groups = self.groups
         group_data = []
-        for group in self.groups:
+        for group in groups:
             group_data.append(self.to_dict(group))
         group_data.sort(key=itemgetter('averagePoints'), reverse=True)
         return group_data
@@ -304,6 +309,7 @@ class GroupScores(object):
             'groupSize': group.size,
             'averagePoints': self.average_daily_points(group),
             'totalPoints': self.total_daily_points(group),
+            'member': group == self.group
         }
 
     def generate_daily_update_messages(self):
