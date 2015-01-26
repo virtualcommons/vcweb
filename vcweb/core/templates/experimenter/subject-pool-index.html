@@ -334,7 +334,7 @@
                 };
 
                 model.saveSession = function(session, event) { 
-                    if(+moment(session.start_date()).toDate() >= +moment(session.end_date()).toDate()){
+                    if(!moment(session.start_date()).isBefore(session.end_date())){
                         bootbox.alert(
                             "ERROR: End date cannot be earlier than or same as the start date. Please choose a later end date.",
                             function() {}
@@ -441,7 +441,7 @@
 
                 self.selected = ko.observable(false); 
                 self.active = ko.computed( function() {
-                    return (self.pk() == -1 || ( +moment(self.end_date()).toDate() >= +moment().toDate()));
+                    return (self.pk() == -1 || !(moment(self.end_date()).isBefore()));
                 });
                 self.makeEditable = function () {
                     self.isEditable(true);
