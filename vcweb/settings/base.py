@@ -1,10 +1,32 @@
+from enum import Enum
 import os
 import logging
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
+
+
+class Environment(Enum):
+    PRODUCTION = 1
+    STAGING = 2
+    DEVELOPMENT = 3
+
+    @property
+    def is_production(self):
+        return self.value == 1
+
+    @property
+    def is_staging(self):
+        return self.value == 2
+
+    @property
+    def is_development(self):
+        return self.value == 3
+
+
 # valid values: 'DEVELOPMENT', 'STAGING', 'PRODUCTION'
-ENVIRONMENT = 'DEVELOPMENT'
+ENVIRONMENT = Environment.DEVELOPMENT
+
 
 USE_TZ = False
 

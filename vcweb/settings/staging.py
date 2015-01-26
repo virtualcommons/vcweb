@@ -3,7 +3,7 @@ from .base import *
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
-ENVIRONMENT = "STAGING"
+ENVIRONMENT = Environment.STAGING
 
 CACHES = {
     'default': {
@@ -28,14 +28,5 @@ USE_I18N = False
 SITE_URL = 'https://vcweb-dev.asu.edu'
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'customize this dev secret key'
-
-INSTALLED_APPS += (
-    'debug_toolbar.apps.DebugToolbarConfig',
-    'sslserver',
-)
-DEBUG_TOOLBAR_CONFIG = {
-    'INTERCEPT_REDIRECTS': False,
-}
-
+SECRET_KEY = 'customize this secret key'
 WEBSOCKET_SSL = True

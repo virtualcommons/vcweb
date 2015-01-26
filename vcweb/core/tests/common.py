@@ -144,7 +144,7 @@ class BaseVcwebTest(TestCase):
         if demo_participants:
             if experiment.participant_set.count() == 0:
                 logger.debug("no participants found. adding %d participants to %s", number_of_participants, experiment)
-                experiment.setup_test_participants(email_suffix=test_email_suffix,
+                experiment.setup_demo_participants(email_suffix=test_email_suffix,
                                                    count=number_of_participants, password='test')
         else:
             if participant_emails is None:

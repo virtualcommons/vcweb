@@ -22,7 +22,7 @@ from .forms import (SessionInviteForm, ExperimentSessionForm,
                     ParticipantAttendanceForm, CancelSignupForm)
 from vcweb.core.views import mimetypes
 
-from vcweb.core.models import (ExperimentSession, ExperimentMetadata, Invitation, send_email)
+from vcweb.core.models import (ExperimentSession, ExperimentMetadata, Invitation, send_markdown_email)
 from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.decorators import group_required, ownership_required
 from vcweb.core.models import (Participant, ParticipantSignup, PermissionGroup)
@@ -217,19 +217,22 @@ def send_invitations(request):
                 recipient_list = [settings.SERVER_EMAIL]
                 for participant in final_participants:
                     recipient_list.append(participant.email)
-                    for es in experiment_sessions:
-                        invitations.append(Invitation(participant=participant,
-                                                      experiment_session=es,
-                                                      date_created=today,
-                                                      sender=user))
+                    invitations.extend([Invitation(participant=participant,
+                                                   experiment_session=es,
+                                                   date_created=today,
+                                                   sender=user)
+                                        for es in experiment_sessions])
                 Invitation.objects.bulk_create(invitations)
 
-                plaintext_content, html_content = get_invitation_email_content(invitation_text, session_pk_list)
-
-                msg = EmailMultiAlternatives(subject=invitation_subject, body=plaintext_content, from_email=from_email,
-                                             to=[from_email], bcc=recipient_list)
-                msg.attach_alternative(html_content, "text/html")
-                msg.send()
+                if settings.ENVIRONMENT.is_production:
+                    plaintext_content, html_content = get_invitation_email_content(invitation_text, session_pk_list)
+                    msg = EmailMultiAlternatives(subject=invitation_subject, body=plaintext_content,
+                                                 from_email=from_email, to=[from_email], bcc=recipient_list)
+                    msg.attach_alternative(html_content, "text/html")
+                    msg.send()
+                else:
+                    logger.debug("Sending invitation emails in non-production environment is disabled: %s",
+                                 recipient_list)
 
             return JsonResponse({
                 'success': True,
@@ -237,10 +240,9 @@ def send_invitations(request):
                 'invitesCount': len(final_participants)
             })
         else:
-            message = "To Invite Participants Please Select Experiment Sessions of same Experiment"
             return JsonResponse({
                 'success': False,
-                'message': message
+                'message': "Please select experiment sessions from the same experiment to send invitations."
             })
     else:
         # Form is not valid
@@ -351,8 +353,11 @@ def submit_experiment_session_signup(request):
 
     if registered or waitlist:
         messages.success(request, _(message))
-        send_email("email/confirmation-email.txt", {'session': invitation.experiment_session}, "Confirmation Email",
-                   settings.SERVER_EMAIL, [user.email])
+        send_markdown_email(template="email/confirmation-email.txt",
+                            context={'session': invitation.experiment_session},
+                            subject="Confirmation Email",
+                            from_email=settings.SERVER_EMAIL,
+                            to_email=[user.email])
         return redirect('core:dashboard')
     else:
         messages.error(request, _("""This session is currently full. Please select a different session or try again

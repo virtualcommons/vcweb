@@ -2,7 +2,7 @@
 from .base import *
 DEBUG = False
 TEMPLATE_DEBUG = DEBUG
-ENVIRONMENT = "PRODUCTION"
+ENVIRONMENT = Environment.PRODUCTION
 
 CACHES = {
     'default': {

@@ -954,7 +954,14 @@ class Experiment(models.Model):
 
     @transaction.atomic
     def register_participants(self, users=None, emails=None, institution=None, password=None, sender=None,
-                              from_email=None, should_send_email=True):
+                              from_email=None, send_email=True):
+        """
+        Registers a set of users with this experiment and returns a list of tuples of the Participants and their
+        passwords (to be used in a registration email if needed).
+        1. If given a set of emails, it creates Users for those emails if they do not already exist already and then
+        proceeds to step 2.
+        2. Given a set of users, create Participants for those Users if they do not exist.
+        """
         number_of_participants = self.participant_set.count()
         email_messages = []
         registered_participants = []
@@ -962,31 +969,12 @@ class Experiment(models.Model):
             logger.warning("Experiment %s already has %d participants - aborting", self, number_of_participants)
             return
         if users is None:
-            users = []
             if emails is None:
                 logger.warning("No users or emails supplied, aborting.")
                 return
-            participants_group = PermissionGroup.participant.get_django_group()
-            for email_line in emails:
-                if not email_line:
-                    logger.debug("invalid participant data: %s", email_line)
-                    continue
-                # FIXME: parsing logic was already performed once in EmailListField.clean, this is redundant
-                (full_name, email_address) = parseaddr(email_line)
-                # lowercase all usernames/email addresses internally and strip all whitespace
-                email_address = email_address.lower().strip()
-                full_name = full_name.strip()
-                userqs = User.objects.select_for_update().filter(
-                    models.Q(email=email_address) | models.Q(username=email_address))
-                if userqs.exists():
-                    u = userqs[0]
-                else:
-                    u = User.objects.create_user(username=email_address, email=email_address, password=password)
-                updated = set_full_name(u, full_name)
-                if updated:
-                    u.save()
-                u.groups.add(participants_group)
-                users.append(u)
+            users = self.create_users(emails, password)
+
+        creator = self.experimenter.user
         for user in users:
             # FIXME: unsafe for concurrent usage, but only one experimenter
             # at a time should be invoking this
@@ -995,16 +983,41 @@ class Experiment(models.Model):
                 p.institution = institution
                 p.save()
             per = ParticipantExperimentRelationship.objects.create(participant=p, experiment=self,
-                                                                   created_by=self.experimenter.user)
+                                                                   created_by=creator)
             registered_participants.append((user, password))
             email_messages.append(self.create_registration_email(per, password=password, is_new_participant=created,
                                                                  sender=sender, from_email=from_email))
-        if email_messages and should_send_email:
+        if email_messages and send_email:
             mail.get_connection().send_messages(email_messages)
         return registered_participants
 
-    def create_registration_email(self, participant_experiment_relationship, password='', sender=None, from_email=None,
-                                  **kwargs):
+    def create_users(self, emails, password):
+        users = []
+        participants_group = PermissionGroup.participant.get_django_group()
+        for email_line in emails:
+            if not email_line:
+                logger.debug("invalid participant data: %s", email_line)
+                continue
+            # FIXME: parsing logic was already performed once in EmailListField.clean, this is redundant
+            (full_name, email_address) = parseaddr(email_line)
+            # lowercase all usernames/email addresses internally and strip all whitespace
+            email_address = email_address.lower().strip()
+            full_name = full_name.strip()
+            userqs = User.objects.select_for_update().filter(
+                models.Q(email=email_address) | models.Q(username=email_address))
+            if userqs.exists():
+                u = userqs[0]
+            else:
+                u = User.objects.create_user(username=email_address, email=email_address, password=password)
+            updated = set_full_name(u, full_name)
+            if updated:
+                u.save()
+            u.groups.add(participants_group)
+            users.append(u)
+        return users
+
+    def create_registration_email(self, participant_experiment_relationship, password=None, sender=None,
+                                  from_email=None, **kwargs):
         """
         Creates a registration email, sets a password for the given participant, and sends it to the participant in
         plain text. Insecure at the expense of convenience, lowering barrier to participant registration.
@@ -1036,22 +1049,19 @@ class Experiment(models.Model):
         if from_email is None or not from_email.strip():
             from_email = experimenter_email
         msg = EmailMultiAlternatives(subject=subject, body=plaintext_content, from_email=from_email,
-                                     to=[participant_experiment_relationship.participant.email], bcc=[
-                                         'vcweb@asu.edu'],
+                                     to=[participant_experiment_relationship.participant.email], bcc=['vcweb@asu.edu'],
                                      headers={'Reply-To': experimenter_email})
         msg.attach_alternative(html_content, "text/html")
         return msg
 
-# FIXME: rename to setup_demo_participants
     @transaction.atomic
-    def setup_test_participants(self, count=20, institution=None, email_suffix='mailinator.com', username_suffix='asu',
+    def setup_demo_participants(self, count=20, institution=None, email_suffix='mailinator.com', username_suffix='asu',
                                 password=None):
         if password is None:
             password = 'test'
         number_of_participants = self.participant_set.count()
         if number_of_participants > 0:
-            logger.warning(
-                "This experiment %s already has %d participants - aborting", self, number_of_participants)
+            logger.warning("Experiment %s already has %d participants - aborting", self, number_of_participants)
             return
         users = []
 
@@ -1069,7 +1079,7 @@ class Experiment(models.Model):
             user.groups.add(demo_participants_group)
             users.append(user)
         return self.register_participants(users=users, institution=institution, password=password,
-                                          should_send_email=False)
+                                          send_email=False)
 
     def should_initialize_data_values(self, round_configuration=None):
         if round_configuration is None:
@@ -1078,8 +1088,8 @@ class Experiment(models.Model):
         Returns true iff this round configuration has initialize_data_values set on it and it is not a repeating round
         past the first repeating round (e.g., repeat #0 should initialize data values, but repeat #1-5 should not)
         """
-        return round_configuration.initialize_data_values and not (round_configuration.is_repeating_round and
-                                                                   self.current_repeated_round_sequence_number > 0)
+        is_repeated_round = round_configuration.is_repeating_round and self.current_repeated_round_sequence_number > 0
+        return round_configuration.initialize_data_values and not is_repeated_round
 
     @transaction.atomic
     def initialize_data_values(self, group_parameters=None, participant_parameters=None, group_cluster_parameters=None,
@@ -3114,7 +3124,7 @@ def set_full_name(user, full_name):
     return updated
 
 
-def send_email(template=None, context=None, subject=None, from_email=None, to_email=None, bcc=None):
+def send_markdown_email(template=None, context=None, subject=None, from_email=None, to_email=None, bcc=None):
     """
     Utility function to send emails. Expects a plaintext markdown template and converts it into an HTML message as well.
     """
@@ -3134,8 +3144,8 @@ def send_reminder_emails(sender, start=None, **kwargs):
     midnight check sending reminder emails to participants signed up for an ExperimentSession being run
     on the following day
     """
-    if settings.DEBUG:
-        logger.debug("not sending reminder emails in debug mode")
+    if not settings.ENVIRONMENT.is_production:
+        logger.debug("not sending reminder emails in non-prod mode")
         return
     tomorrow = date.today() + timedelta(days=1)
     start_date_time = datetime.combine(tomorrow, time.min)
@@ -3145,8 +3155,8 @@ def send_reminder_emails(sender, start=None, **kwargs):
         participant_emails = ParticipantSignup.objects.filter(invitation__experiment_session=es).values_list(
             'invitation__participant__email', flat=True)
         logger.debug("subject pool sending reminder emails to %s", participant_emails)
-        send_email("email/reminder-email.txt", {"session": es}, "Reminder Email",
-                   settings.SERVER_EMAIL, participant_emails)
+        send_markdown_email("email/reminder-email.txt", {"session": es}, "Reminder Email",
+                            settings.SERVER_EMAIL, participant_emails)
 
 
 @receiver(signals.system_daily_tick, dispatch_uid='update-daily-experiments')
@@ -3170,6 +3180,5 @@ def update_daily_experiments(sender, timestamp=None, start=None, **kwargs):
     inactive_daily_experiments = Experiment.objects.inactive(experiment_configuration__has_daily_rounds=True)
     for e in inactive_daily_experiments:
         if e.start_date == today:
-            logger.debug(
-                "activating experiment %s with start date of %s", e, e.start_date)
+            logger.debug("activating experiment %s with start date of %s", e, e.start_date)
             e.activate()

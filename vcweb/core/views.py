@@ -555,12 +555,12 @@ class RegisterEmailListView(BaseExperimentRegistrationView):
         sender = form.cleaned_data.get('sender')
         from_email = form.cleaned_data.get('registration_email_from_address')
         experiment = self.object
-        logger.debug("registering participants %s at institution %s for experiment: %s", emails, institution,
+        logger.debug("registering participants %s at institution %s for experiment %s", emails, institution,
                      experiment)
         experiment.register_participants(emails=emails, institution=institution,
                                          password=experiment.authentication_code,
                                          sender=sender, from_email=from_email,
-                                         should_send_email=send_email)
+                                         send_email=send_email)
         return valid
 
 
@@ -577,7 +577,7 @@ class RegisterTestParticipantsView(BaseExperimentRegistrationView):
             email_suffix = form.cleaned_data.get('email_suffix')
             institution = form.cleaned_data.get('institution')
             experiment = self.object
-            experiment.setup_test_participants(count=number_of_participants,
+            experiment.setup_demo_participants(count=number_of_participants,
                                                institution=institution,
                                                email_suffix=email_suffix,
                                                username_suffix=username_suffix)
