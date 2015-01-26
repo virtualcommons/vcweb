@@ -73,13 +73,13 @@ ko.bindingHandlers.datepicker = {
 
         ko.utils.registerEventHandler(element, "dp.show", function(event) {
             var value = ko.utils.unwrapObservable(valueAccessor());
-            $(element).data("DateTimePicker").setDate(value);
+            $(element).data("DateTimePicker").date(value);
         });
 
         ko.utils.registerEventHandler(element, "dp.change", function(event) {
             if($(element).hasClass("date-start")) {
-                $(element).parents("tbody").find(".date-end").data("DateTimePicker").setMinDate(event.date);
-                $(element).parents("tbody").find(".date-end").data("DateTimePicker").setDate(event.date);
+                $(element).parents("tbody").find(".date-end").data("DateTimePicker").minDate(event.date);
+                $(element).parents("tbody").find(".date-end").data("DateTimePicker").date(event.date);
             }
         });
     }
