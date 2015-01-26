@@ -6,8 +6,8 @@ PyYAML==3.11
 backports.ssl-match-hostname==3.4.0.2
 certifi==14.05.14
 coverage==3.7.1
-django-autocomplete-light==2.0.5
-django-bootstrap3==5.0.3
+django-autocomplete-light==2.0.7
+django-bootstrap3==5.1.1
 django-contact-form==1.0
 django-extensions==1.4.9
 django-kronos==0.5
