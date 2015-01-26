@@ -80,7 +80,7 @@
                                         'pointer-icon': children().length > 0
                                     }, click: toggleVisibility
                                     "></span>
-                                <span data-bind="text: display_name()"></span>
+                                <span class="has-popover" data-bind="text: display_name(), attr: { 'data-content' : props()}" data-container="body" title="Round Configuration's properties"></span>
                                 <div data-bind="slideVisible: isExpanded">
                                     <ul data-bind="foreach: children">
                                         <li>
@@ -122,9 +122,15 @@
 
             self.isExpanded = ko.observable(false);
             self.display_name = function() {
-               return self.repeat() > 0 ? self.name() + ' ' + self.sequence_number() +
-                   ' [x '+ self.repeat() +']': self.name() + ' ' + self.sequence_number();
+                return self.repeat() > 0 ? self.name() + ' ' + self.sequence_number() +
+                   ' [x '+ self.repeat() +']' : self.name() + ' ' + self.sequence_number();
             };
+            self.props = function() {
+                var props = "Duration: "+ self.duration() + "<br /> Chat Enabled: " + self.chat_enabled() + "<br /> Initialize Data Values: " + self.initialize_data_values() + "<br /> Randomize Groups: " + self.randomize_groups() + "<br /> Preserve Existing Groups: " + self.preserve_existing_groups();
+                if(self.survey_url()) props += "<br /> Survey Url: "+ self.survey_url();
+                if(self.session_id()) props += "<br /> Session Id: "+ self.session_id();
+                return props;
+            }
             self.toggleVisibility = function() {
                 self.isExpanded(!self.isExpanded());
             };
@@ -148,6 +154,8 @@
         }
 
         ko.applyBindings(new PageModel(JSONdata));
+
+        $('.has-popover').popover({'trigger':'hover', html:true});
     });
 </script>
 {% endblock javascript %}
