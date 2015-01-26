@@ -23,7 +23,7 @@
 <script type='text/javascript'>
     $(function() {
         $('#vcweb-form').validate();
-        $('#id_start_date').datetimepicker({ startDate: '+0d', pickTime: false });
+        $('#id_start_date').datetimepicker({ minDate: moment(), format: 'MM/DD/YYYY'});
     });
 </script>
 {% endblock %}
