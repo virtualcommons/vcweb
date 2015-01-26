@@ -141,7 +141,7 @@
                                 <td>
 				                    <span >
                                         <div class="input-group input-group-sm">
-                                            <input name="start_date" type="text" class="form-control date-start" data-date-format="YYYY-MM-DD hh:mm" data-bind="datepicker : start_date, value: start_date , enable: isEditable" />
+                                            <input name="start_date" type="text" class="form-control date-start" data-date-format="YYYY-MM-DD HH:mm" data-bind="datepicker : start_date, value: start_date, enable: isEditable" />
                                             <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
                                         </div>
                                     </span>
@@ -207,7 +207,7 @@
                                 <td>
                                     <span>
                                         <div class="input-group input-group-sm">
-                                            <input name="end_date" type="text" class="form-control date-end" data-date-format="YYYY-MM-DD hh:mm" data-bind="datepicker : end_date, value: end_date, enable: isEditable" />
+                                            <input name="end_date" type="text" class="form-control date-end" data-date-format="YYYY-MM-DD HH:mm" data-bind="datepicker : end_date, value: end_date, enable: isEditable" />
                                             <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
                                         </div>
                                     </span>
@@ -333,8 +333,9 @@
                     );
                 };
 
-                model.saveSession = function(session, event) { 
-                    if (moment(session.start_date()).isAfter(session.end_date())) {
+                model.saveSession = function(session, event) {
+                    //  Using isBefore and then negating its result to replicate >= behaviour
+                    if (!moment(session.start_date()).isBefore(session.end_date())) {
                         bootbox.alert(
                             "ERROR: End date cannot be earlier than or same as the start date. Please choose a later end date.",
                             function() {}
@@ -441,7 +442,8 @@
 
                 self.selected = ko.observable(false); 
                 self.active = ko.computed( function() {
-                    return self.pk() == -1 || moment(self.end_date()).isAfter();
+                    //  Using isBefore and then negating its result to replicate >= behaviour
+                    return self.pk() == -1 || !(moment(self.end_date()).isBefore());
                 });
                 self.makeEditable = function () {
                     self.isEditable(true);
