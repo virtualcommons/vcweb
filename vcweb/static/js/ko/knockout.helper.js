@@ -68,20 +68,20 @@ ko.bindingHandlers.slideVisible = {
 ko.bindingHandlers.datepicker = {
     init: function(element, valueAccessor, allBindingsAccessor) {
         //initialize datepicker with some optional options
-	var options = { minDate: moment(), sideBySide: true };
+        var options = { minDate: moment(), sideBySide: true };
         $(element).datetimepicker(options);
 
-	ko.utils.registerEventHandler(element, "dp.show", function(event) {
-		var value = ko.utils.unwrapObservable(valueAccessor());
-		$(element).data("DateTimePicker").setDate(value);
-	});	
+        ko.utils.registerEventHandler(element, "dp.show", function(event) {
+            var value = ko.utils.unwrapObservable(valueAccessor());
+            $(element).data("DateTimePicker").setDate(value);
+        });
 
-	ko.utils.registerEventHandler(element, "dp.change", function(event) {
-	    if($(element).hasClass("date-start")) {
-		$(element).parents("tbody").find(".date-end").data("DateTimePicker").setMinDate(event.date);
-		$(element).parents("tbody").find(".date-end").data("DateTimePicker").setDate(event.date);
-	    }
-	});
+        ko.utils.registerEventHandler(element, "dp.change", function(event) {
+            if($(element).hasClass("date-start")) {
+                $(element).parents("tbody").find(".date-end").data("DateTimePicker").setMinDate(event.date);
+                $(element).parents("tbody").find(".date-end").data("DateTimePicker").setDate(event.date);
+            }
+        });
     }
 };
 
