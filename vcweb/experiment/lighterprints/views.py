@@ -137,7 +137,9 @@ class CommunityViewModel(LighterprintsViewModel):
 
     def to_dict(self):
         d = super(CommunityViewModel, self).to_dict()
-        d.update(communityTreatment=True)
+        d.update(communityTreatment=True,
+                 averageClusterPoints=self.group_scores.average_daily_cluster_points(self.group_cluster),
+                 )
         return d
 
 

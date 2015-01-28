@@ -22,9 +22,7 @@ def get_activity_points_cache():
     cv = 'activity_points_cache'
     activity_points_cache = cache.get(cv)
     if activity_points_cache is None:
-        activity_points_cache = dict(
-            [(a.pk, a.points) for a in Activity.objects.all()])
-        # cache.set(cv, activity_points_cache, timedelta(days=1).total_seconds())
+        activity_points_cache = dict([(a.pk, a.points) for a in Activity.objects.all()])
         cache.set(cv, activity_points_cache, 86400)
     return activity_points_cache
 
@@ -35,7 +33,7 @@ def get_activity_availability_cache():
         aac = defaultdict(list)
         for aa in ActivityAvailability.objects.select_related('activity').all():
             aac[aa.activity.pk].append(aa)
-        cache.set('activity_availability_cache', aac)
+        cache.set('activity_availability_cache', aac, 86400)
     return aac
 
 
@@ -178,6 +176,8 @@ class Activity(MPTTModel):
 
     objects = ActivityManager.for_queryset_class(ActivityQuerySet)()
     data_fields = [name, display_name, points]
+    _default_attrs = ('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day',
+                      'level', 'icon_url', 'icon_name', 'personal_benefits', 'points', 'time_slots')
 
     @property
     def label(self):
@@ -206,19 +206,12 @@ class Activity(MPTTModel):
     def is_available_for(self, participant_group_relationship, round_data):
         return Activity.objects.is_activity_available(self, participant_group_relationship, round_data)
 
-    @property
-    def default_attrs(self):
-        return ('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day', 'level',
-                'icon_url', 'icon_name', 'personal_benefits', 'points', 'time_slots')
-
-    def to_dict(self, attrs=None):
-        if attrs is None:
-            attrs = self.default_attrs
+    def to_dict(self):
         ck = 'activity.%s' % self.pk
         cv = cache.get(ck)
         if cv is None:
             cv = {}
-            for attr_name in attrs:
+            for attr_name in self._default_attrs:
                 cv[attr_name] = getattr(self, attr_name, None)
             cache.set(ck, cv)
         return cv
@@ -330,7 +323,8 @@ def get_experiment_completed_dv(group, round_data=None):
     return group.get_data_value(parameter=get_experiment_completed_parameter(), round_data=round_data)
 
 
-def get_treatment_type(experiment=None, experiment_configuration=None, default_treatment_type='SCHEDULED_ACTIVITY', **kwargs):
+def get_treatment_type(experiment=None, experiment_configuration=None, default_treatment_type='SCHEDULED_ACTIVITY',
+                       **kwargs):
     """
     possible treatment types:
     SCHEDULED_ACTIVITY / HIGH_SCHOOL / LEVEL_BASED / COMMUNITY

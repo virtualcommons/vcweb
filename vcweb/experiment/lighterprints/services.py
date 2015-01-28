@@ -184,23 +184,31 @@ class GroupScores(object):
             self.group_cluster_data = {}
             group_size = self.experiment_configuration.max_group_size
             for gc in self.group_clusters.all():
+                total_cluster_points = 0
                 total_daily_cluster_points = 0
                 groups = list(gc.groups)
                 number_of_groups = len(groups)
                 for group in groups:
+                    total_cluster_points += self.scores_dict[group]['total_points']
                     total_daily_cluster_points += self.scores_dict[group]['total_daily_points']
 # cache the group cluster that this group belongs to
-                    if group == self.group:
+                    if group == getattr(self, 'group', None):
                         self.group_cluster = gc
-                average_daily_cluster_points = total_daily_cluster_points / (number_of_groups * group_size)
+                divisor = number_of_groups * group_size
+                average_daily_cluster_points = total_daily_cluster_points / divisor
+                total_average_points = total_cluster_points / divisor
                 self.group_cluster_data[gc] = {
                     'total_daily_points': total_daily_cluster_points,
-                    'average_daily_points': average_daily_cluster_points
+                    'average_daily_points': average_daily_cluster_points,
+                    'total_average_points': total_average_points,
                 }
                 for group in groups:
                     group_data_dict = self.scores_dict[group]
-                    group_data_dict['total_daily_cluster_points'] = total_daily_cluster_points
-                    group_data_dict['average_daily_cluster_points'] = average_daily_cluster_points
+                    group_data_dict.update(
+                        total_average_cluster_points=total_average_points,
+                        total_daily_cluster_points=total_daily_cluster_points,
+                        average_daily_cluster_points=average_daily_cluster_points,
+                    )
 
     def initialize_scores(self, participant_group_relationship):
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
@@ -235,6 +243,13 @@ class GroupScores(object):
             return self.scores_dict[group]['total_daily_cluster_points']
         raise ValueError("no group or group cluster specified")
 
+    def total_average_cluster_points(self, group_cluster=None, group=None):
+        if group_cluster is not None:
+            return self.group_cluster_data[group_cluster]['total_average_points']
+        elif group is not None:
+            return self.scores_dict[group]['total_average_cluster_points']
+        raise ValueError("no group or group cluster specified")
+
     def average_daily_points(self, group):
         return self.scores_dict[group]['average_daily_points']
 
@@ -248,7 +263,7 @@ class GroupScores(object):
 
     def total_earnings(self, group):
         if self.is_community_treatment:
-            total_points = self.total_daily_cluster_points(group=group)
+            total_points = self.total_average_cluster_points(group=group)
         else:
             total_points = self.total_average_points(group)
         logger.debug("total earnings: %s", total_points)
@@ -498,7 +513,7 @@ class GroupActivity(object):
                 data = getattr(prdv, parameter_name).to_dict()
             elif parameter_name == 'activity_performed':
                 activity = prdv.cached_value
-                data = activity.to_dict(attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
+                data = activity.to_dict()
                 pgr = prdv.participant_group_relationship
                 data.update(
                     pk=prdv.pk,
@@ -515,13 +530,14 @@ class GroupActivity(object):
                 commented=prdv.pk in comment_target_ids,
                 parameter_name=parameter_name,
                 date_created=abbreviated_timesince(prdv.date_created),
-                dc=prdv.date_created,
+                date_created_sort_key=prdv.date_created,
             )
             self.all_activity[parameter_name].append(data)
 
     @property
     def all_activities(self):
-        return sorted(itertools.chain.from_iterable(self.all_activity.values()), key=lambda x: x['dc'], reverse=True)
+        return sorted(itertools.chain.from_iterable(self.all_activity.values()),
+                      key=itemgetter('date_created_sort_key'), reverse=True)
 
     @property
     def chat_messages(self):

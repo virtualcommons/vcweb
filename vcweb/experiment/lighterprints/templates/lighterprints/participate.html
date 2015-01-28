@@ -33,17 +33,24 @@
                 <h2 class='welcome-header lighterprints-dark-gray'>Welcome to Lighter Footprints, <i class='lighterprints-blue'><span data-bind='text: groupName'></span>!</i></h2>
                 <p>
                     You have been randomly placed in a group of {{ participant_group_relationship.group.size }}
-                    participants.
-                    In this experiment you can perform virtual actions that represent green alternatives
+                    participants. In this experiment you can perform virtual actions that represent green alternatives
                     to some common daily activities.
                 </p>
+                {% if treatment_type == "COMMUNITY" %}
+                <p>
+                Your earnings will depend on your actions as well as your group members and all the other three groups
+                in the experiment. You can see how your group is doing compared to all the other groups on the right
+                sidebar.
+                </p>
+                {% endif %}
                 <p>
                     <i class='lighterprints-green fa fa-leaf'></i> Earn <span class='badge badge-lighterprints-green'>green points</span> by
                     performing challenges.
                     <span data-bind='if: linearPublicGood'>
                         You will earn <b class='lighterprints-green'><i class='fa fa-usd'></i>0.02</b> for each point in
                         {% if treatment_type == "COMMUNITY" %}
-                        your Community score.
+                        your Overall Score. Your Overall Score is the average number of green points earned by all
+                        members of your group and all the other groups.
                         {% else %}
                         your Group Score.
                         {% endif %}
@@ -57,7 +64,7 @@
                     <i class='fa fa-star text-gold'></i> Some challenges are unlocked all day, and others are only unlocked at specific times.
                 </p>
                 <p>
-                <strong><i class='fa fa-warning text-error'></i> Your group score resets at midnight every day.</strong>
+                <strong><i class='fa fa-warning text-error'></i> Your score resets at midnight every day.</strong>
                 </p>
                 <p>
                 <i class='fa fa-info-circle'></i> Your group has earned <b class='lighterprints-green'><i class='fa fa-usd'></i><span
@@ -68,16 +75,20 @@
             </div>
             <div class='row lighterprints-scoreboard'>
                 <div class='col-md-3'>
-                    <h5 id='progress'><span class='lighterprints-scoreboard-uppercase'>Today's Progress</span></h5>
+                    <h5 id='progress'><span class='lighterprints-scoreboard-uppercase'>Group Progress</span></h5>
                     <div data-bind='popover: { content: "#progressChartPopoverContent", id: "progress-chart-popover"}' class='chart'>
                         <canvas id='progressChart' width="74px" height="74px"></canvas>
                     </div>
                 </div>
                 <div class='col-md-3 left-divider'>
-                    <h5 id='group-score'><span class='lighterprints-scoreboard-uppercase'>Group Score</span></h5>
+                    <h5 id='group-score'><span class='lighterprints-scoreboard-uppercase'>Overall Score</span></h5>
                     <table class='lighterprints-scoreboard'>
                         <tr>
+                            {% if treatment_type == "COMMUNITY" %}
+                            <td class='lighterprints-scoreboard-xlarge'><span class='lighterprints-blue' data-bind='text: averageClusterPoints'></span></td>
+                            {% else %}
                             <td class='lighterprints-scoreboard-xlarge'><span class='lighterprints-blue' data-bind='text: averagePoints'></span></td>
+                            {% endif %}
                             <td class='lighterprints-scoreboard-large'> / </td>
                             <td class='lighterprints-scoreboard-xlarge'><span class='muted' data-bind='text:pointsToNextLevel'></span></td>
                         </tr>
@@ -134,8 +145,14 @@
                 <p>
                     Different challenges are available at different times and days.
                     <span data-bind='if: linearPublicGood'>You will earn <b><i class='fa fa-usd'></i>0.02</b> for each
-                        point in your group average score. For example, if your group average score is <b>123</b> by the
-                        end of today you would have earned <b><i class='fa fa-usd'></i>2.46</b>.
+                        {% if treatment_type == "COMMUNITY" %}
+                        your Overall Score. Your Overall Score is the average number of green points earned by all
+                        members of your group and all the other groups.
+                        {% else %}
+                        your Group Score.
+                        {% endif %}
+                        For example, if your overall score is <b>123</b> by the end of today you would have earned
+                        <b><i class='fa fa-usd'></i>2.46</b>.
                     </span>
                     <span data-bind='ifnot: linearPublicGood'>In order to maximize your chances at
                         winning a prize, your group must earn enough points so that the <strong>average number of points</strong> per participant is greater than
@@ -297,7 +314,13 @@
 {% block sidebar %}
 <div class='lighterprints-sidebar'>
     {% if has_leaderboard %}
-    <h3 class='lighterprints-sidebar-header'><i class='text-gold fa fa-trophy'></i> Leaderboard</h3>
+    <h3 class='lighterprints-sidebar-header'><i class='text-gold fa fa-trophy'></i>
+        {% if treatment_type == "COMMUNITY" %}
+        All Groups
+        {% else %}
+        Leaderboard
+        {% endif %}
+    </h3>
     <ul class='nav' data-bind='foreach: groupData'>
         <li class='leaderboard-group-name'><strong>#<span data-bind='text:$index() + 1'></span></strong> <span data-bind='css: { "bold lighterprints-blue": member }'><span data-bind='text: groupName'></span></span><span class='pull-right badge badge-lighterprints-green' data-bind='text: averagePoints'></span></li>
         <li class='divider'></li>
@@ -361,7 +384,7 @@ $(function() {
     };
     viewModel.endTour = function() {
         var tour = viewModel.tutorialTour();
-        if (tour.ended()) {
+        if (!tour || tour.ended()) {
             return;
         }
         tour.end();
@@ -604,7 +627,7 @@ $(function() {
             <span data-bind='if: $root.isUpcoming($data)'>Not yet available <i class='fa fa-clock-o'></i></span>
             <span data-bind='if: $root.isLocked($data)'>Locked <i class='fa fa-lock'></i></span>
             </button>
-            {% comment %} FIXME: enable once we have more info again
+            {% comment %} XXX: enable if we have more info again
             <small><a href='#'>Learn more</a></small>
             {% endcomment %}
         </form>
@@ -622,7 +645,7 @@ $(function() {
 </div>
 </script>
 <script type='text/html' id='no-group-activity-template'>
-Your group has been rather quiet lately. You can 
+Your group has been rather quiet lately. You can
 <a href='#dashboard' data-bind='click:activateDashboardTab' data-toggle='tab'>perform challenges in your dashboard</a>
 or <a href='#group' data-bind='click:activateGroupTab'>post messages on the group wall</a> .
 </script>
