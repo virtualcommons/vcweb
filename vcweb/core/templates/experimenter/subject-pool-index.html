@@ -25,9 +25,7 @@
             <div class='alert alert-info'>
                 <i class='fa fa-info-circle'></i> If you need to create a new experiment type to manage exclusion of past participants please <a href='/contact'>contact us</a>.
             </div>
-
             <div id="error-messages"></div>
-
             <div class="tabbable">
                 <ul class='nav nav-tabs'>
                     <li class='active'><a href='#active' data-toggle='tab'><i class='fa fa-wrench'></i> Active sessions</a></li>
@@ -109,7 +107,6 @@
     <script type= "text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/calendar.js"></script>
     <link rel="stylesheet" href="{{ STATIC_URL }}css/calendar.css">
-
     <script type="text/javascript" src="{{ STATIC_URL }}js/bootbox.min.js"></script>
 
     <script type='text/html' id='session-template'>
@@ -141,7 +138,7 @@
                                 <td>
 				                    <span >
                                         <div class="input-group input-group-sm">
-                                            <input name="start_date" type="text" class="form-control date-start" data-date-format="YYYY-MM-DD HH:mm" data-bind="datepicker : start_date, value: start_date, enable: isEditable" />
+                                            <input name="start_date" type="text" class="form-control date-start" data-date-format="YYYY-MM-DD HH:mm" data-bind="datepicker: start_date, value: start_date, enable: isEditable" />
                                             <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
                                         </div>
                                     </span>
@@ -175,7 +172,7 @@
                                         </button>
                                     </div>
                                     <div class="btn-group" data-bind = "visible: !isEditable()">
-                                        <a class="btn btn-primary" data-bind="attr: {href: 'session/detail/event/'+ pk()} ">
+                                        <a class="btn btn-primary" data-bind="attr: {href: 'session/detail/event/'+ pk()}">
                                             <i class="fa fa-eye"></i>
                                         </a>
                                         <button class="btn btn-success" data-bind="click: makeEditable">
@@ -326,8 +323,7 @@
                 ];
 
                 model.addSession = function() {
-                    var tom = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
-                    var tom_date_time = tom.getFullYear() + "-" +tom.getMonthFormatted() + "-" + tom.getDateFormatted() + " " + tom.getHours() + ":" + tom.getMinutes();
+                    var tom_date_time = moment().add(1, 'days').format('YYYY-MM-DD HH:mm');
                     model.session_list.push(
                         new SessionModel({ pk: -1, experiment_metadata: -1, start_date: tom_date_time, end_date: tom_date_time, capacity:10, invite_count: 0, location: "Online", isEditable: true, signup_count: 0})
                     );
@@ -346,7 +342,6 @@
                     $.post("session/manage/"+ session.pk(), formData)
                         .done(function(result) {
                             if(result.success) {
-                                if(session.pk() == -1) session.selected(true);
                                 if(session.pk() == -1) {
                                     if(model.selectedSessions().length == 0 || session.experiment_metadata() == model.selectedSessions()[0].experiment_metadata()) {
                                         $(event.target).parents("form").find("input[type=checkbox]").prop('checked', true);
@@ -365,21 +360,22 @@
 
                 model.removeSession = function(session, event) {
                     if(session.pk() == -1) return model.session_list.remove(session);
+
                     bootbox.confirm("Delete this session? All associated invitations and signups will be removed.",
-                    function(result) {
-                        if (result) {
-                            var formData = 'request_type=delete&location='+session.location()+'&capacity='+session.capacity()+'&scheduled_date='+session.start_date()+'&experiment_metadata='+session.experiment_metadata();
-                            $.post("session/manage/"+ session.pk(), formData)
-                                .done(function(result) {
-                                    if(result.success){
-                                        model.session_list.remove(session);
-                                        calendar = createCalendar();
-                                    } else {
-                                        displayiFormError(result.errors);
-                                    }
-                                });
-                        } 
-                    });
+                        function(result) {
+                            if (result) {
+                                var formData = 'request_type=delete&location='+session.location()+'&capacity='+session.capacity()+'&scheduled_date='+session.start_date()+'&experiment_metadata='+session.experiment_metadata();
+                                $.post("session/manage/"+ session.pk(), formData)
+                                    .done(function(result) {
+                                        if(result.success){
+                                            model.session_list.remove(session);
+                                            calendar = createCalendar();
+                                        } else {
+                                            displayiFormError(result.errors);
+                                        }
+                                    });
+                            } 
+                        });
                 };
 
                 model.onInvite = function(formElement) {
@@ -395,10 +391,9 @@
                                     $("#error-messages").html('<div class="alert alert-success">' + result.message + '</strong></div>');
                                     $('#invite-form form')[0].reset();
                                     $('#email-content').html("");
-
                                     ko.utils.arrayForEach(model.session_list(), function(session) {
                                         session.selected(false);
-                                        if($.inArray(session.pk(), session_pk_list) != -1){
+                                        if($.inArray(session.pk(), session_pk_list) != -1) {
                                             session.invite_count(session.invite_count() + result.invitesCount);
                                         }
                                     });
@@ -415,12 +410,11 @@
                 model.emailPreview = function(data, event) {
                     var session_pk_list = ko.utils.arrayMap(model.selectedSessions(), function(item) { return item.pk(); });
                     if(session_pk_list.length) {
-                        var formData = $("#invite-form form").serialize()  + '&session_pk_list='+ session_pk_list;
+                        var formData = $("#invite-form form").serialize() + '&session_pk_list='+ session_pk_list;
                         $.get("{% url 'subjectpool:get_invitations_count' %}?" + formData)
                             .done(function(result) {
                                 model.potentialParticipantsCount(result.invitesCount);
                             });
-
                         $.get("{% url 'subjectpool:invite_email_preview' %}?" + formData)
                             .done(function(result) {
                                 $("#email-content").html(
