@@ -1,4 +1,4 @@
-Django==1.7.3
+Django==1.7.4
 Fabric==1.10.1
 Markdown==2.5.2
 Pillow==2.7.0

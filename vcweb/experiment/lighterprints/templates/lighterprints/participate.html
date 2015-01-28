@@ -400,13 +400,18 @@ $(function() {
                     element: "#progress",
                     placement: "top",
                     title: "Progress",
-                    content: "This chart shows your current group score (blue) and your group score goal (gray)."
+                    content: "This chart shows your current group score (blue) compared to the maximum possible score (gray)."
                 },
                 {
                     element: "#group-score",
-                    title: "Group Score",
                     placement: "top",
-                    content: "This is your group score for the day. The group score is the average number of points each member of your group has earned, starting at midnight each day."
+                    {% if treatment_type == "COMMUNITY" %}
+                    content: "This is your overall score for the day. Your score is the average number of green points each member of every group has earned, starting at midnight each day."
+                    title: "Overall Score",
+                    {% else %}
+                    content: "This is your overall score for the day. Your score is the average number of points each member of your group has earned, starting at midnight each day."
+                    title: "Group Score",
+                    {% endif %}
                 },
                 {
                     element: "#third-box",
