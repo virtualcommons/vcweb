@@ -125,7 +125,7 @@ function LighterFootprintsModel(data) {
             return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.status() === 'locked' });
         });
     model.unlockedChallenges = ko.computed(function() {
-            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.status()  !== 'locked' });
+            return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.status() !== 'locked' });
         });
     model.availableActivities = ko.computed(function() {
             return ko.utils.arrayFilter(model.activities(), function(activity) { return activity.status() === 'available' });

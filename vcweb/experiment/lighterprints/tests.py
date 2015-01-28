@@ -7,7 +7,7 @@ from vcweb.core.models import ParticipantRoundDataValue, ChatMessage, Like, Comm
 from .models import (Activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter,
                      get_footprint_level, get_performed_activity_ids, get_treatment_type_parameter,
                      is_scheduled_activity_experiment, is_level_based_experiment, is_high_school_treatment)
-from .services import (GroupScores, get_individual_points, get_group_activity)
+from .services import (GroupScores, get_individual_points, GroupActivity)
 
 
 logger = logging.getLogger(__name__)
@@ -146,9 +146,8 @@ class GroupActivityTest(LevelBasedTest):
         e.activate()
         performed_activities = self.perform_activities()
         for pgr in e.participant_group_relationships:
-            (group_activity, chat_messages) = get_group_activity(pgr)
-            self.assertEqual(
-                len(group_activity), len(performed_activities) * pgr.group.size)
+            group_activity = GroupActivity(pgr)
+            self.assertEqual(len(group_activity.all_activities), len(performed_activities) * pgr.group.size)
 
     def test_group_activity_email(self):
         e = self.experiment
@@ -156,8 +155,7 @@ class GroupActivityTest(LevelBasedTest):
         self.perform_activities()
         group_scores = GroupScores(e, e.current_round_data)
         for group in e.groups:
-            messages = group_scores.create_level_based_group_summary_emails(
-                group, level=2)
+            messages = group_scores.create_level_based_group_summary_emails(group, level=2)
             self.assertEqual(len(messages), group.size)
 
 

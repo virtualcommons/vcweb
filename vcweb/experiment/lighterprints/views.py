@@ -17,7 +17,7 @@ from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGrou
 from vcweb.core.views import (dumps, get_active_experiment, set_authentication_token, mimetypes)
 from .forms import ActivityForm
 from .models import (Activity, get_lighterprints_experiment_metadata, is_high_school_treatment, get_treatment_type,
-                     get_activity_performed_parameter, is_community_treatment)
+                     get_activity_performed_parameter, is_community_treatment, is_level_based_experiment)
 from .services import (ActivityStatusList, GroupScores, do_activity, get_time_remaining, GroupActivity)
 
 
@@ -52,6 +52,8 @@ class LighterprintsViewModel(object):
             return HighSchoolViewModel
         elif is_community_treatment(treatment_type=treatment_type):
             return CommunityViewModel
+        elif is_level_based_experiment(treatment_type=treatment_type):
+            return LevelBasedViewModel
         else:
             return LighterprintsViewModel
 
@@ -96,12 +98,12 @@ class LighterprintsViewModel(object):
             # FIXME: extract this from groupData, store & use group id as a key
             'groupLevel': own_group_level,
             'treatmentType': self.treatment_type,
-            'linearPublicGood': self.is_linear_public_good_experiment,
+            'linearPublicGood': group_scores.is_linear_public_good_experiment,
+            'hasScheduledActivities': group_scores.has_scheduled_activities,
             'totalDailyEarnings': "{0:.2f}".format(group_scores.daily_earnings(own_group)),
             'totalEarnings': "{0:.2f}".format(group_scores.total_earnings(own_group)),
             'averagePoints': group_scores.average_daily_points(own_group),
             'pointsToNextLevel': group_scores.get_points_goal(own_group),
-            'hasScheduledActivities': group_scores.has_scheduled_activities,
             'groupActivity': self.group_activity.all_activities,
             'groupName': own_group.name,
             'activities': self.activity_status_list.activity_dict_list,
@@ -116,12 +118,18 @@ class LighterprintsViewModel(object):
         return dumps(self.to_dict())
 
 
+class LevelBasedViewModel(LighterprintsViewModel):
+
+    @property
+    def template_name(self):
+        return 'lighterprints/level-based.html'
+
+
 class CommunityViewModel(LighterprintsViewModel):
 
     @property
-    def group_cluster_data(self):
-        # perform lazy init check
-        return self.group_scores.group_cluster_data
+    def group_cluster(self):
+        return self.group_scores.group_cluster
 
     @property
     def group_data(self):
@@ -129,11 +137,7 @@ class CommunityViewModel(LighterprintsViewModel):
 
     def to_dict(self):
         d = super(CommunityViewModel, self).to_dict()
-# groupData expected to be a list of dicts
-        d.update({
-            'showGroupClusterData': True,
-        })
-        logger.debug("returning community view model dict: %s", self.group_data)
+        d.update(communityTreatment=True)
         return d
 
 
@@ -176,7 +180,7 @@ class HighSchoolViewModel(LighterprintsViewModel):
             'firstVisit': participant_group_relationship.first_visit,
             'averagePoints': group_scores.average_daily_points(own_group),
             'pointsToNextLevel': group_scores.get_points_goal(own_group),
-            'groupActivity': group_activity.all_activities,
+            'groupActivity': self.group_activity.all_activities,
             'groupName': own_group.name,
             'totalPoints': group_scores.total_participant_points,
             'surveyUrl': self.round_configuration.build_survey_url(pid=participant_group_relationship.pk),
@@ -342,6 +346,7 @@ def participate(request, experiment_id=None):
             'experiment': experiment,
             'participant_group_relationship': pgr,
             'has_leaderboard': view_model.has_leaderboard,
+            'treatment_type': view_model.treatment_type,
             'view_model_json': view_model.to_json(),
         })
     else:

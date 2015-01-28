@@ -90,8 +90,7 @@ class ActivityStatusList(object):
             activity_status = self.get_activity_status(activity)
             activity_dict['status'] = activity_status
             activity_dict['availableNow'] = activity_status == 'available'
-            activity_dict['availabilities'] = [aa.to_dict()
-                                               for aa in activity_availability_cache[activity.pk]]
+            activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
             self.activity_dict_list.append(activity_dict)
         self.activity_dict_list.sort(key=_activity_status_sort_key)
 
@@ -222,14 +221,38 @@ class GroupScores(object):
             group_data_dict['total_average_points'] = group_data_dict['total_points'] / group_size
         self.community_treatment_initialization_check()
 
+    def average_daily_cluster_points(self, group_cluster=None, group=None):
+        if group_cluster is not None:
+            return self.group_cluster_data[group_cluster]['average_daily_points']
+        elif group is not None:
+            return self.scores_dict[group]['average_daily_cluster_points']
+        raise ValueError("no group or group cluster specified")
+
+    def total_daily_cluster_points(self, group_cluster=None, group=None):
+        if group_cluster is not None:
+            return self.group_cluster_data[group_cluster]['total_daily_points']
+        elif group is not None:
+            return self.scores_dict[group]['total_daily_cluster_points']
+        raise ValueError("no group or group cluster specified")
+
     def average_daily_points(self, group):
         return self.scores_dict[group]['average_daily_points']
 
     def daily_earnings(self, group):
-        return self.average_daily_points(group) * self.exchange_rate
+        if self.is_community_treatment:
+            average_points = self.average_daily_cluster_points(group=group)
+        else:
+            average_points = self.average_daily_points(group)
+        logger.debug("daily earnings: %s", average_points)
+        return average_points * self.exchange_rate
 
     def total_earnings(self, group):
-        return self.total_average_points(group) * self.exchange_rate
+        if self.is_community_treatment:
+            total_points = self.total_daily_cluster_points(group=group)
+        else:
+            total_points = self.total_average_points(group)
+        logger.debug("total earnings: %s", total_points)
+        return total_points * self.exchange_rate
 
     def total_earnings_currency(self, group):
         return locale.currency(self.total_earnings(group), grouping=True)
@@ -285,12 +308,18 @@ class GroupScores(object):
         """
         # cached because we invoke this often via get_group_rank
         if self.group_rankings is None:
-            self.group_rankings = [g[0]
-                                   for g in self.get_sorted_group_scores()]
+            self.group_rankings = [g[0] for g in self.get_sorted_group_scores()]
         return self.group_rankings
 
     def get_group_cluster_data_list(self):
-        return self.get_group_data_list(groups=self.group_cluster.groups)
+        group_cluster = self.group_cluster
+        gdl = self.get_group_data_list(groups=group_cluster.groups)
+        average_cluster_points = self.average_daily_cluster_points(group_cluster)
+        total_cluster_points = self.total_daily_cluster_points(group_cluster)
+        for d in gdl:
+            d.update(averageClusterPoints=average_cluster_points,
+                     totalClusterPoints=total_cluster_points)
+        return gdl
 
     def get_group_data_list(self, groups=None):
         # FIXME: cache group_data if multiple invocations occur
@@ -389,15 +418,13 @@ class GroupScores(object):
 
     def update_level_experiment(self, group):
         round_data = self.round_data
-        experiment_completed_dv = get_experiment_completed_dv(
-            group, round_data=round_data)
+        experiment_completed_dv = get_experiment_completed_dv(group, round_data=round_data)
         already_completed = experiment_completed_dv.boolean_value
         if already_completed:
             # skip this group if it's already completed the experiment.
             return []
         level_status_dict = self.check_and_advance_level(group)
-        group_summary_emails = self.create_level_based_group_summary_emails(
-            group, **level_status_dict)
+        group_summary_emails = self.create_level_based_group_summary_emails(group, **level_status_dict)
         # XXX: push into check_and_advance_level? would then have to thread experiment completed dv into method params
         # as well
         if level_status_dict['completed']:
@@ -406,15 +433,12 @@ class GroupScores(object):
         return group_summary_emails
 
     def create_level_based_group_summary_emails(self, group, level=1, promoted=False, completed=False):
-        logger.debug(
-            "creating level based group summary email for group %s", group)
+        logger.debug("creating level based group summary email for group %s", group)
         yesterday = date.today() - timedelta(1)
         experiment = group.experiment
         experimenter_email = experiment.experimenter.email
-        plaintext_template = select_template(
-            ['lighterprints/email/group-summary-email.txt'])
-        number_of_chat_messages = ChatMessage.objects.for_group(
-            group, round_data=self.round_data).count()
+        plaintext_template = select_template(['lighterprints/email/group-summary-email.txt'])
+        number_of_chat_messages = ChatMessage.objects.for_group(group, round_data=self.round_data).count()
         summary_emails = []
         average_group_points = self.average_daily_points(group)
         points_to_next_level = get_points_to_next_level(level)
@@ -437,8 +461,7 @@ class GroupScores(object):
             html_content = markdown.markdown(plaintext_content)
             subject = 'Lighter Footprints Summary for %s' % yesterday
             to_address = [experimenter_email, pgr.participant.email]
-            msg = EmailMultiAlternatives(
-                subject, plaintext_content, experimenter_email, to_address)
+            msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
             msg.attach_alternative(html_content, 'text/html')
             summary_emails.append(msg)
         return summary_emails
@@ -541,57 +564,6 @@ def get_time_remaining():
     # pad minutes to have a leading 0 for single digits
     minutes = str(total_minutes_left % 60).zfill(2)
     return hours_left, minutes
-
-
-def get_group_activity(participant_group_relationship, limit=None):
-    group = participant_group_relationship.group
-    all_activity = []
-    chat_messages = []
-    # FIXME: consider using InheritanceManager or manually selecting likes, comments, chatmessages, activities performed
-    # to avoid n+1 selects when doing a to_dict
-    data_values = ParticipantRoundDataValue.objects.for_group(group, parameter__name__in=('chat_message',
-                                                                                          'comment',
-                                                                                          'like',
-                                                                                          'activity_performed'))
-    like_target_ids = Like.objects.target_ids(participant_group_relationship)
-    comment_target_ids = Comment.objects.target_ids(
-        participant_group_relationship)
-    if limit is not None:
-        data_values = data_values[:limit]
-    for prdv in data_values:
-        parameter_name = prdv.parameter.name
-        if parameter_name == 'chat_message':
-            data = prdv.chatmessage.to_dict()
-            chat_messages.append(data)
-        elif parameter_name in ('comment', 'like'):
-            # filters out comments not directed at the given participant_group_relationship (parameter to this method)
-            # FIXME: extra query per comment
-            if prdv.target_data_value.participant_group_relationship != participant_group_relationship:
-                continue
-            data = getattr(prdv, parameter_name).to_dict()
-        elif parameter_name == 'activity_performed':
-            activity = prdv.cached_value
-            data = activity.to_dict(
-                attrs=('display_name', 'name', 'icon_url', 'savings', 'points'))
-            pgr = prdv.participant_group_relationship
-            data.update(
-                pk=prdv.pk,
-                date_created=abbreviated_timesince(prdv.date_created),
-                participant_number=pgr.participant_number,
-                participant_name=pgr.full_name,
-                participant_group_id=pgr.pk,
-            )
-        else:
-            logger.warn("Invalid participant round data value %s", prdv)
-            continue
-        data.update(
-            liked=prdv.pk in like_target_ids,
-            commented=prdv.pk in comment_target_ids,
-            parameter_name=parameter_name,
-            date_created=abbreviated_timesince(prdv.date_created),
-        )
-        all_activity.append(data)
-    return all_activity, chat_messages
 
 
 def daily_update(experiment, debug=False, round_data=None, **kwargs):
