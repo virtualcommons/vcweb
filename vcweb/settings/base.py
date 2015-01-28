@@ -119,12 +119,24 @@ MIDDLEWARE_CLASSES = (
     'cas.middleware.CASMiddleware',
 )
 
+
 ROOT_URLCONF = 'vcweb.urls'
 
 # cookie storage vs session storage of django messages
 # MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
@@ -149,6 +161,7 @@ THIRD_PARTY_APPS = (
     'mptt',
     'bootstrap3',
     'cas',
+    'django_redis',
 )
 
 
