@@ -38,7 +38,7 @@
                 </p>
                 {% if treatment_type == "COMMUNITY" %}
                 <p>
-                Your earnings will depend on your actions as well as your group members and all the other three groups
+                Your earnings will depend on your actions as well as your group members and <b>all the other groups</b>
                 in the experiment. You can see how your group is doing compared to all the other groups on the right
                 sidebar.
                 </p>
@@ -50,7 +50,7 @@
                         You will earn <b class='lighterprints-green'><i class='fa fa-usd'></i>0.02</b> for each point in
                         {% if treatment_type == "COMMUNITY" %}
                         your Overall Score. Your Overall Score is the average number of green points earned by all
-                        members of your group and all the other groups.
+                        members of your group and <b>the members of all the other groups</b>
                         {% else %}
                         your Group Score.
                         {% endif %}
@@ -151,8 +151,8 @@
                         {% else %}
                         your Group Score.
                         {% endif %}
-                        For example, if your overall score is <b>123</b> by the end of today you would have earned
-                        <b><i class='fa fa-usd'></i>2.46</b>.
+                        For example, if your overall score is <b>150</b> by the end of today you would have earned
+                        <b><i class='fa fa-usd'></i>3.00</b>.
                     </span>
                     <span data-bind='ifnot: linearPublicGood'>In order to maximize your chances at
                         winning a prize, your group must earn enough points so that the <strong>average number of points</strong> per participant is greater than
@@ -170,8 +170,8 @@
             <p>
             You have been randomly placed in a group of <strong>{{ participant_group_relationship.group.size }} participants</strong>.
             In this experiment you can perform virtual actions that represent green alternatives to some common daily
-            activities.  Some of these activities are available all day, and others are only available at
-            specific times.  You can learn more about them by clicking on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a> and selecting an activity.
+            activities. Some of these activities are available all day, and others are only available at
+            specific times. You can view a list of all activities on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a>.
             </p>
             <h3>Challenges, Green Points, and Prizes</h3>
             <p>
@@ -201,11 +201,26 @@
             </p>
             <h3 id='faq' class='underline'>Frequently Asked Questions</h3>
             <div class='well alert-white'>
-                <h4>I performed an activity worth 15 points but only 3 points were added to my Group Score and Progress.  Why?</h4>
+                {% if treatment_type == "COMMUNITY" %}
+                <h4>I performed an activity worth 40 points but only 2 points were added to my Overall Score and 8 points
+                    were added to my Group Progress. Why?</h4>
+                <p>
+                The Group Progress chart represents <b>your group's average progress</b> and is simply the average
+                number of green points earned by each member of <b>your group</b>. There are 5 members in each group, so
+                earning 40 green points increases <b>your group's average score</b> by 40 / 5 = 8 points.
+                </p>
+                <p>
+                The number in your Overall Score is the average number of earned points across all members of your group
+                and <b>all other groups</b>. In total, there are twenty participants so if you earned 40 green points you'd
+                add 1 to the average by 40 / 20 = 2 points, which is equivalent to <b class='lighterprints-green'><i class='fa fa-usd'></i>0.04</b>
+                </p>
+                {% else %}
+                <h4>I performed an activity worth 15 points but only 3 points were added to my Group Score and Progress. Why?</h4>
                 <p>
                 The numbers in the Group Score and Progress boxes represent your group's <b>average number of earned points</b>.  If there are 5
                 people in your group, performing a 15 point activity adds 3 points to the group average (15 / 5 = 3).
                 </p>
+                {% endif %}
             </div>
             <div class='well alert-white'>
                 <h4>I don't have a car or anyone to carpool with, so how can I carpool?</h4>
