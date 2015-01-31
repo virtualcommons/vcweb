@@ -45,9 +45,8 @@ GITHUB_ISSUE_LABELS = ["bug"]
 SUBJECT_POOL_WAITLIST_SIZE = 10
 
 DEMO_EXPERIMENTER_EMAIL = 'vcweb.demo@mailinator.com'
-DEFAULT_FROM_EMAIL = 'vcweb@asu.edu'
-SERVER_EMAIL = 'vcweb@asu.edu'
 SERVER_NAME = 'vcweb.asu.edu'
+DEFAULT_FROM_EMAIL = 'vcweb@asu.edu'
 EMAIL_HOST = 'smtp.asu.edu'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ALLOWED_HOSTS = ('.asu.edu', 'localhost',)

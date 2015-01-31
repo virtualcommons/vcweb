@@ -1,0 +1,27 @@
+Lighter Footprints Summary for {{ summary_date }}
+=================================================
+
+{% if experiment_completed %}
+**The experiment is now over.** Thank you for participating. The experiment was a variation of a public good game 
+(http://en.wikipedia.org/wiki/Public_good) where there often exists a conflict between individual and collective interests. 
+
+{{ payment_information }}
+{% else %}
+You are a member of {{ group_name }}. To participate in this experiment, visit [{{experiment.full_participant_url}}]({{experiment.full_participant_url}}).
+{% endif %}
+
+* You earned {{ individual_points }} points 
+* Members of your group earned, on average, {{ average_daily_points }} point(s).
+* Members of all groups earned, on average, {{ average_daily_cluster_points }} point(s).
+{% if has_leaderboard %}
+* Your group was ranked {{ group_rank}} out of {{ number_of_groups }}
+{% endif %}
+* {{ number_of_chat_messages }} chat messages were posted by your group.
+{% if linear_public_good %}
+* Each member of your group earned {{ daily_earnings }}
+* Your total earnings over the entire experiment are: {{ total_earnings }}
+{% endif %}
+
+{% if completed %}
+Congratulations! Your group reached the target of {{ threshold }} average points per person.
+{% endif %}

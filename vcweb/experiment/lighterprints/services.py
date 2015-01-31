@@ -385,7 +385,7 @@ class GroupScores(object):
         # experimenter_email = experiment.experimenter.email
         # FIXME: change this to the experimenter or add a dedicated settings
         # email from
-        experimenter_email = settings.SERVER_EMAIL
+        experimenter_email = settings.DEFAULT_FROM_EMAIL
         number_of_chat_messages = ChatMessage.objects.for_group(group, round_data=round_data).count()
         messages = []
         c = Context({
@@ -409,15 +409,29 @@ class GroupScores(object):
             html_content = markdown.markdown(plaintext_content)
             subject = 'Lighter Footprints Summary for %s' % yesterday
             to_address = [experimenter_email, pgr.participant.email]
-            msg = EmailMultiAlternatives(
-                subject, plaintext_content, experimenter_email, to_address)
+            msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
             msg.attach_alternative(html_content, 'text/html')
             messages.append(msg)
         return messages
 
+    def generate_emails(group, context, template, round_data, experimenter_email):
+        messages = []
+        yesterday = date.today() - timedelta(1)
+        for pgr in group.participant_group_relationship_set.all():
+            context['individual_points'] = get_individual_points(pgr, round_data)
+            text = template.render(context)
+            html = markdown.markdown(text)
+            subject = 'Lighter Footprints Summary for %s' % yesterday
+            to_address = [experimenter_email, pgr.participant.email]
+            msg = EmailMultiAlternatives(subject, text, experimenter_email, to_address)
+            msg.attach_alternative(html, 'text/html')
+            messages.append(msg)
+        return messages
+
+
+
     def check_and_advance_level(self, group):
-        footprint_level_grdv = get_footprint_level_dv(
-            group, round_data=self.round_data)
+        footprint_level_grdv = get_footprint_level_dv(group, round_data=self.round_data)
         current_level = footprint_level_grdv.int_value
         promoted = False
         completed = False

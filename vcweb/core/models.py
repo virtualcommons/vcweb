@@ -3101,9 +3101,11 @@ def find_duplicate_users(field='email'):
                                                count_id=models.Count('id')).filter(count_id__gt=1).order_by()
 
 
-def reset_password(email_address, from_email=settings.SERVER_EMAIL, template='registration/password_reset_email.html'):
+def reset_password(email_address,
+                   from_email=settings.DEFAULT_FROM_EMAIL,
+                   template='registration/password_reset_email.html'):
     """
-    Reset the password for all (active) users with given E-Mail address
+    Reset password for all active users with the given E-Mail address
     """
     form = PasswordResetForm({'email': email_address, })
     return form.save(from_email=from_email, email_template_name=template)
@@ -3123,7 +3125,12 @@ def set_full_name(user, full_name):
     return updated
 
 
-def send_markdown_email(template=None, context=None, subject=None, from_email=None, to_email=None, bcc=None):
+def send_markdown_email(**kwargs):
+    return create_markdown_email(**kwargs).send()
+
+
+def create_markdown_email(template=None, context=None, subject=None, from_email=settings.DEFAULT_FROM_EMAIL,
+                          to_email=None, bcc=None):
     """
     Utility function to send emails. Expects a plaintext markdown template and converts it into an HTML message as well.
     """
@@ -3131,10 +3138,9 @@ def send_markdown_email(template=None, context=None, subject=None, from_email=No
     c = Context(context)
     plaintext_content = plaintext_template.render(c)
     html_content = markdown.markdown(plaintext_content)
-
     msg = EmailMultiAlternatives(subject=subject, body=plaintext_content, from_email=from_email, to=to_email, bcc=bcc)
     msg.attach_alternative(html_content, "text/html")
-    msg.send()
+    return msg
 
 
 @receiver(signals.system_daily_tick, dispatch_uid='send-reminder-emails')
@@ -3155,7 +3161,7 @@ def send_reminder_emails(sender, start=None, **kwargs):
             'invitation__participant__email', flat=True)
         logger.debug("subject pool sending reminder emails to %s", participant_emails)
         send_markdown_email("email/reminder-email.txt", {"session": es}, "Reminder Email",
-                            settings.SERVER_EMAIL, participant_emails)
+                            settings.DEFAULT_FROM_EMAIL, participant_emails)
 
 
 @receiver(signals.system_daily_tick, dispatch_uid='update-daily-experiments')

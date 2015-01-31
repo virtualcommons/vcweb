@@ -214,7 +214,7 @@ def send_invitations(request):
 
                 today = datetime.now()
                 invitations = []
-                recipient_list = [settings.SERVER_EMAIL]
+                recipient_list = [settings.DEFAULT_FROM_EMAIL]
                 for participant in final_participants:
                     recipient_list.append(participant.email)
                     invitations.extend([Invitation(participant=participant,
@@ -356,7 +356,6 @@ def submit_experiment_session_signup(request):
         send_markdown_email(template="email/confirmation-email.txt",
                             context={'session': invitation.experiment_session},
                             subject="Confirmation Email",
-                            from_email=settings.SERVER_EMAIL,
                             to_email=[user.email])
         return redirect('core:dashboard')
     else:
