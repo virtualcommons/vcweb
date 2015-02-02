@@ -101,8 +101,7 @@ class ParameterValueMixin(object):
         none exists, creates one.
         """
         if parameter is None and name is None:
-            raise ValueError(
-                "Cannot retrieve parameter value with no name or parameter")
+            raise ValueError("Cannot retrieve parameter value with no name or parameter")
         parameter_value_set = self.parameter_value_set.select_for_update()
         try:
             if parameter:

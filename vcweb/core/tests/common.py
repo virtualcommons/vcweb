@@ -137,8 +137,7 @@ class BaseVcwebTest(TestCase):
                          test_email_suffix='asu.edu', **kwargs):
         if number_of_participants is None:
             # set default number of participants to max group size * 2
-            number_of_participants = self.experiment.experiment_configuration.max_group_size * \
-                2
+            number_of_participants = self.experiment.experiment_configuration.max_group_size * 2
         experiment = self.experiment
         if demo_participants:
             if experiment.participant_set.count() == 0:
@@ -268,7 +267,7 @@ class SubjectPoolTest(BaseVcwebTest):
             es.experiment_metadata = e.experiment_metadata
             year = date.today().year
             month = date.today().month
-            day = random.choice(range(1, 30))
+            day = random.choice(range(1, 29))
             random_date = datetime(year, month, day)
             es.scheduled_date = random_date
             es.scheduled_end_date = random_date
@@ -316,7 +315,7 @@ class SubjectPoolTest(BaseVcwebTest):
         for participant in participants:
             # recipient_list.append(participant.email)
             for es in experiment_sessions:
-                day = random.choice(range(1, 30))
+                day = random.choice(range(1, 29))
 # FIXME: what is the point of setting date_created to random dates in this month & year?
                 random_date = datetime(year, month, day)
                 invitations.append(Invitation(participant=participant, experiment_session=es, date_created=random_date,

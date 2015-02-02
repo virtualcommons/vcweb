@@ -67,7 +67,7 @@ class LighterprintsViewModel(object):
         return klass(participant_group_relationship, experiment, round_configuration, round_data, activities)
 
     def __getattr__(self, attr):
-        return getattr(self.group_scores, attr)
+        return getattr(self.group_scores, attr, None)
 
     @property
     def own_group_level(self):

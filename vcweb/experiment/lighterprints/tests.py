@@ -107,8 +107,7 @@ class UpdateLevelTest(LevelBasedTest):
         current_round_data = e.current_round_data
         self.assertTrue(is_level_based_experiment(e))
         # initialize participant carbon savings
-        level_one_activities = Activity.objects.filter(
-            level=1).values_list('pk', flat=True)
+        level_one_activities = Activity.objects.filter(level=1).values_list('pk', flat=True)
         for pgr in e.participant_group_relationships:
             for activity_pk in level_one_activities:
                 activity_performed = ParticipantRoundDataValue.objects.create(
@@ -118,18 +117,16 @@ class UpdateLevelTest(LevelBasedTest):
                 )
                 activity_performed.update_int(activity_pk)
         gs = e.groups
-        group_scores = GroupScores(e, current_round_data, gs)
+        group_scores = GroupScores(e, round_data=current_round_data, groups=gs)
         logger.debug("group scores created for current round data")
         for group in gs:
-            self.assertEqual(
-                get_footprint_level(group), 1, 'All participants should still be on level 1')
+            self.assertEqual(get_footprint_level(group), 1, 'All participants should still be on level 1')
             self.assertEqual(group_scores.average_daily_points(group), 177)
         # manually invoking daily_update
         e.advance_to_next_round()
-        group_scores = GroupScores(e, current_round_data, gs)
+        group_scores = GroupScores(e, round_data=current_round_data, groups=gs)
         for group in gs:
-            self.assertEqual(
-                get_footprint_level(group), 2, 'All levels should have advanced to 2')
+            self.assertEqual(get_footprint_level(group), 2, 'All levels should have advanced to 2')
             self.assertEqual(group_scores.average_daily_points(group), 177)
         group_scores = GroupScores(e, groups=gs)
         for group in gs:
@@ -153,10 +150,10 @@ class GroupActivityTest(LevelBasedTest):
         e = self.experiment
         e.activate()
         self.perform_activities()
-        group_scores = GroupScores(e, e.current_round_data)
-        for group in e.groups:
-            messages = group_scores.create_level_based_group_summary_emails(group, level=2)
-            self.assertEqual(len(messages), group.size)
+        group_scores = GroupScores(e)
+        messages = list(group_scores.generate_daily_update_messages())
+        self.assertEqual(len(messages), len(e.groups) * e.experiment_configuration.max_group_size)
+        logger.error("messages: %s", messages)
 
 
 class PerformActivityTest(LevelBasedTest):

@@ -304,8 +304,11 @@ def has_leaderboard(experiment_configuration, default=False):
                                                         default=default).boolean_value
 
 
-def get_group_threshold(round_configuration, default=125):
-    return round_configuration.get_parameter_value(name='threshold', default=default).int_value
+def get_group_threshold(experiment_configuration, default=125):
+    if is_linear_public_good_experiment(experiment_configuration):
+        return 250
+    else:
+        return 125
 
 
 def get_footprint_level_dv(group, round_data=None):

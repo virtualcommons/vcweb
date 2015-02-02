@@ -110,11 +110,140 @@ class ActivityStatusList(object):
         return activity_status
 
 
+class EmailGenerator(object):
+
+    def __init__(self, group_scores):
+        self.yesterday = date.today() - timedelta(1)
+        self.experimenter_email = settings.DEFAULT_FROM_EMAIL
+        self.experiment = group_scores.experiment
+        self.round_data = group_scores.round_data
+        self.treatment_type = group_scores.treatment_type
+        self.has_leaderboard = group_scores.has_leaderboard
+        self.group_scores = group_scores
+
+    def __getattr__(self, attr):
+        return getattr(self.group_scores, attr, None)
+
+    def should_generate_emails(self, group):
+        return True
+
+    @property
+    def email_template(self):
+        return 'lighterprints/email/group-summary-email.txt'
+
+    def get_context(self, group):
+        experiment = self.experiment
+        number_of_chat_messages = ChatMessage.objects.for_group(group, round_data=self.round_data).count()
+        return Context({
+            'experiment': experiment,
+            'experiment_completed': experiment.is_last_round,
+            'number_of_groups': self.number_of_groups,
+            'group_name': group.name,
+            'summary_date': self.yesterday,
+            'number_of_chat_messages': number_of_chat_messages,
+            'treatment_type': self.treatment_type,
+            'linear_public_good': self.is_linear_public_good_experiment,
+            'group_rank': self.get_group_rank(group),
+            'daily_earnings': self.daily_earnings_currency(group),
+            'total_earnings': self.total_earnings_currency(group),
+            'has_leaderboard': self.has_leaderboard
+        })
+
+    def generate(self, group):
+        if not self.should_generate_emails(group):
+            logger.debug("no need to generate emails for group %s", group)
+            return []
+        plaintext_template = select_template([self.email_template])
+        # experimenter_email = experiment.experimenter.email
+        round_data = self.round_data
+        experimenter_email = self.experimenter_email
+        context = self.get_context(group)
+        messages = []
+        for pgr in group.participant_group_relationship_set.all():
+            context['individual_points'] = get_individual_points(pgr, round_data)
+            plaintext_content = plaintext_template.render(context)
+            html_content = markdown.markdown(plaintext_content)
+            subject = 'Lighter Footprints Summary for %s' % self.yesterday
+            to_address = [experimenter_email, pgr.participant.email]
+            msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
+            msg.attach_alternative(html_content, 'text/html')
+            messages.append(msg)
+        return messages
+
+
+class LevelBasedEmailGenerator(EmailGenerator):
+
+    def should_generate_emails(self, group):
+        self.experiment_completed_dv = get_experiment_completed_dv(group, round_data=self.round_data)
+        return not self.experiment_completed_dv.boolean_value
+
+    def get_context(self, group):
+        c = super(LevelBasedEmailGenerator, self).get_context(group)
+        footprint_level_grdv = get_footprint_level_dv(group, round_data=self.round_data)
+        current_level = footprint_level_grdv.int_value
+        promoted = False
+        completed = False
+        if self.should_advance_level(group, footprint_level_grdv.int_value):
+            # group was promoted
+            promoted = True
+            next_level = min(current_level + 1, 3)
+            footprint_level_grdv.update_int(next_level)
+            if current_level == 3:
+                completed = True
+        current_level = footprint_level_grdv.int_value
+        group.copy_to_next_round(footprint_level_grdv)
+        if completed:
+            self.experiment_completed_dv.update_boolean(True)
+        c.update(dict(
+            group_level=current_level,
+            points_to_next_level=get_points_to_next_level(current_level),
+            promoted=promoted,
+            completed=completed))
+        return c
+
+
+class ScheduledActivityEmailGenerator(EmailGenerator):
+
+    def get_context(self, group):
+        context = super(ScheduledActivityEmailGenerator, self).get_context(group)
+        # these aren't used for linear public good experiments introduced in Spring 2013
+        threshold = self.get_points_goal(group)
+        average_group_points = self.average_daily_points(group)
+        goal_reached = average_group_points >= threshold
+        context.update(dict(
+            experiment_completed=self.experiment.is_last_round,
+            average_daily_points=average_group_points,
+            threshold=threshold,
+            goal_reached=goal_reached,
+        ))
+        return context
+
+    @property
+    def email_template(self):
+        return 'lighterprints/email/scheduled-activity/group-summary-email.txt'
+
+
+class CommunityEmailGenerator(EmailGenerator):
+
+    def should_generate_emails(self, group):
+        return True
+
+    @property
+    def email_template(self):
+        return 'lighterprints/email/community/group-summary-email.txt'
+
+
 class GroupScores(object):
 
     """ Data model encapsulating group scores across all treatments. Used by view models that are
     ParticipantGroupRelationship-specific, and by the nightly email service that aggregates group information and sends
     personalized email digests containing that day's group activity to each group. """
+
+    email_generators = {
+        'COMMUNITY': CommunityEmailGenerator,
+        'SCHEDULED_ACTIVITY': ScheduledActivityEmailGenerator,
+        'LEVEL_BASED': LevelBasedEmailGenerator
+    }
 
     def __init__(self, experiment, round_data=None, round_configuration=None, groups=None,
                  participant_group_relationship=None, experiment_configuration=None):
@@ -291,7 +420,7 @@ class GroupScores(object):
         if self.has_scheduled_activities:
             # FIXME: hard coded limit for linear public good games, should be dependent on total number of scheduled
             # activities available per day instead?
-            return 250 if self.is_linear_public_good_experiment else get_group_threshold(self.round_configuration)
+            return get_group_threshold(self.experiment_configuration)
         else:
             return get_points_to_next_level(self.get_group_level(group))
 
@@ -357,143 +486,9 @@ class GroupScores(object):
         }
 
     def generate_daily_update_messages(self):
-        logger.debug("creating daily update email messages for all groups")
-        return itertools.chain.from_iterable(self.update(group) for group in self.groups)
-
-    def update(self, group):
-        if self.is_level_based_experiment:
-            # calculate total carbon savings and determine if the group should
-            # advance to the next level
-            return self.update_level_experiment(group)
-        else:
-            return self.update_scheduled_activity_experiment(group)
-
-    def update_scheduled_activity_experiment(self, group):
-        # FIXME: remove code duplication / redundancy between this and
-        # create_level_experiment_email_messages
-        round_data = self.round_data
-        logger.debug("Calculating thresholds for scheduled activity experiment")
-        threshold = self.get_points_goal(group)
-        average_group_points = self.average_daily_points(group)
-        logger.debug("threshold: %s vs average group points: %s", threshold, average_group_points)
-        goal_reached = average_group_points >= threshold
-        # they reached their goal, set their completion flag for this round
-        get_experiment_completed_dv(group, round_data=round_data).update_boolean(goal_reached)
-        yesterday = date.today() - timedelta(1)
-        plaintext_template = select_template(['lighterprints/email/scheduled-activity/group-summary-email.txt'])
-        experiment = group.experiment
-        # experimenter_email = experiment.experimenter.email
-        # FIXME: change this to the experimenter or add a dedicated settings
-        # email from
-        experimenter_email = settings.DEFAULT_FROM_EMAIL
-        number_of_chat_messages = ChatMessage.objects.for_group(group, round_data=round_data).count()
-        messages = []
-        c = Context({
-            'experiment': experiment,
-            'experiment_completed': experiment.is_last_round,
-            'number_of_groups': self.number_of_groups,
-            'group_name': group.name,
-            'group_rank': self.get_group_rank(group),
-            'summary_date': yesterday,
-            'threshold': threshold,
-            'average_daily_points': average_group_points,
-            'number_of_chat_messages': number_of_chat_messages,
-            'linear_public_good': self.is_linear_public_good_experiment,
-            'daily_earnings': self.daily_earnings_currency(group),
-            'total_earnings': self.total_earnings_currency(group),
-            'has_leaderboard': self.has_leaderboard
-        })
-        for pgr in group.participant_group_relationship_set.all():
-            c['individual_points'] = get_individual_points(pgr, round_data)
-            plaintext_content = plaintext_template.render(c)
-            html_content = markdown.markdown(plaintext_content)
-            subject = 'Lighter Footprints Summary for %s' % yesterday
-            to_address = [experimenter_email, pgr.participant.email]
-            msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
-            msg.attach_alternative(html_content, 'text/html')
-            messages.append(msg)
-        return messages
-
-    def generate_emails(group, context, template, round_data, experimenter_email):
-        messages = []
-        yesterday = date.today() - timedelta(1)
-        for pgr in group.participant_group_relationship_set.all():
-            context['individual_points'] = get_individual_points(pgr, round_data)
-            text = template.render(context)
-            html = markdown.markdown(text)
-            subject = 'Lighter Footprints Summary for %s' % yesterday
-            to_address = [experimenter_email, pgr.participant.email]
-            msg = EmailMultiAlternatives(subject, text, experimenter_email, to_address)
-            msg.attach_alternative(html, 'text/html')
-            messages.append(msg)
-        return messages
-
-
-
-    def check_and_advance_level(self, group):
-        footprint_level_grdv = get_footprint_level_dv(group, round_data=self.round_data)
-        current_level = footprint_level_grdv.int_value
-        promoted = False
-        completed = False
-        if self.should_advance_level(group, footprint_level_grdv.int_value):
-            # group was promoted
-            promoted = True
-            next_level = min(current_level + 1, 3)
-            footprint_level_grdv.update_int(next_level)
-            if current_level == 3:
-                completed = True
-        group.copy_to_next_round(footprint_level_grdv)
-        return {'promoted': promoted, 'completed': completed, 'level': footprint_level_grdv.int_value}
-
-    def update_level_experiment(self, group):
-        round_data = self.round_data
-        experiment_completed_dv = get_experiment_completed_dv(group, round_data=round_data)
-        already_completed = experiment_completed_dv.boolean_value
-        if already_completed:
-            # skip this group if it's already completed the experiment.
-            return []
-        level_status_dict = self.check_and_advance_level(group)
-        group_summary_emails = self.create_level_based_group_summary_emails(group, **level_status_dict)
-        # XXX: push into check_and_advance_level? would then have to thread experiment completed dv into method params
-        # as well
-        if level_status_dict['completed']:
-            # store the completed flag for the group
-            experiment_completed_dv.update_boolean(True)
-        return group_summary_emails
-
-    def create_level_based_group_summary_emails(self, group, level=1, promoted=False, completed=False):
-        logger.debug("creating level based group summary email for group %s", group)
-        yesterday = date.today() - timedelta(1)
-        experiment = group.experiment
-        experimenter_email = experiment.experimenter.email
-        plaintext_template = select_template(['lighterprints/email/group-summary-email.txt'])
-        number_of_chat_messages = ChatMessage.objects.for_group(group, round_data=self.round_data).count()
-        summary_emails = []
-        average_group_points = self.average_daily_points(group)
-        points_to_next_level = get_points_to_next_level(level)
-        c = Context(dict(experiment=experiment,
-                         number_of_groups=self.number_of_groups,
-                         group_name=group.name,
-                         group_level=level,
-                         group_rank=self.get_group_rank(group),
-                         summary_date=yesterday,
-                         has_leaderboard=self.has_leaderboard,
-                         points_to_next_level=points_to_next_level,
-                         average_daily_points=average_group_points,
-                         number_of_chat_messages=number_of_chat_messages,
-                         promoted=promoted,
-                         completed=completed)
-                    )
-        for pgr in group.participant_group_relationship_set.all():
-            c['individual_points'] = get_individual_points(pgr)
-            plaintext_content = plaintext_template.render(c)
-            html_content = markdown.markdown(plaintext_content)
-            subject = 'Lighter Footprints Summary for %s' % yesterday
-            to_address = [experimenter_email, pgr.participant.email]
-            msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
-            msg.attach_alternative(html_content, 'text/html')
-            summary_emails.append(msg)
-        return summary_emails
+        email_generator = GroupScores.email_generators[self.treatment_type](self)
+        logger.debug("generating daily update email messages for all groups with %s", email_generator)
+        return itertools.chain.from_iterable(email_generator.generate(group) for group in self.groups)
 
     def __str__(self):
         return str(self.scores_dict)
@@ -605,7 +600,7 @@ def daily_update(experiment, debug=False, round_data=None, **kwargs):
     with transaction.atomic():
         round_data = experiment.current_round_data if round_data is None else round_data
         logger.debug("sending summary emails to %s for round %s", experiment, round_data)
-        group_scores = GroupScores(experiment, round_data, list(experiment.groups))
+        group_scores = GroupScores(experiment, round_data=round_data, groups=list(experiment.groups))
         all_messages = list(group_scores.generate_daily_update_messages())
     if not debug and all_messages:
         logger.debug("sending %s generated emails for lighter footprints", len(all_messages))
