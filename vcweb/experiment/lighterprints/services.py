@@ -475,9 +475,12 @@ class GroupScores(object):
             'member': group == self.group
         }
 
+    @property
+    def email_generator(self):
+        return GroupScores.email_generators[self.treatment_type](self)
+
     def generate_daily_update_messages(self):
-        email_generator = GroupScores.email_generators[self.treatment_type](self)
-        logger.debug("generating daily update email messages for all groups with %s", email_generator)
+        email_generator = self.email_generator
         return itertools.chain.from_iterable(email_generator.generate(group) for group in self.groups)
 
     def __str__(self):

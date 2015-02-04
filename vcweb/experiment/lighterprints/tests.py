@@ -8,7 +8,7 @@ from .models import (Activity, get_lighterprints_experiment_metadata, get_activi
                      get_footprint_level, get_performed_activity_ids, get_treatment_type_parameter,
                      get_leaderboard_parameter, is_scheduled_activity_experiment, is_level_based_experiment,
                      is_high_school_treatment, is_community_treatment)
-from .services import (GroupScores, get_individual_points, GroupActivity)
+from .services import (GroupScores, get_individual_points, GroupActivity, CommunityEmailGenerator)
 from .views import (LighterprintsViewModel, LevelBasedViewModel, CommunityViewModel, HighSchoolViewModel)
 
 logger = logging.getLogger(__name__)
@@ -85,6 +85,8 @@ class CommunityTreatmentTest(BaseTest):
             lvm = LighterprintsViewModel.create(pgr)
             self.assertEqual(lvm.template_name, CommunityViewModel.template_name)
             # make more assertions on community view model activities and score
+            self.assertEqual(type(lvm.email_generator), CommunityEmailGenerator)
+
 
 
 class LevelTreatmentTest(LevelBasedTest):

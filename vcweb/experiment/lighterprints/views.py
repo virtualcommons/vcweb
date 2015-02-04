@@ -324,7 +324,6 @@ def get_view_model(request, participant_group_id=None):
 def participate(request, experiment_id=None):
     user = request.user
     participant = user.participant
-    logger.error("participate for user: %s and experiment id %s", user, experiment_id)
     experiment = get_object_or_404(Experiment, pk=experiment_id,
                                    experiment_metadata=get_lighterprints_experiment_metadata())
     if experiment.is_active:
