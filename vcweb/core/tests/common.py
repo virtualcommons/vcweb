@@ -231,53 +231,54 @@ class BaseVcwebTest(TestCase):
 
 class SubjectPoolTest(BaseVcwebTest):
 
-    def setup_participants(self):
+    def setup_participants(self, number=500):
         password = "test"
         participants = []
-        for x in xrange(500):
-            email = "student" + str(x) + "asu@asu.edu"
-            user = User.objects.create_user(first_name='xyz', last_name='%d' % x, username=email, email=email,
+        institution = Institution.objects.get(name="Arizona State University")
+        for x in xrange(number):
+            email = 'student%s@asu.edu' % x
+            user = User.objects.create_user(first_name='Student', last_name='%d' % x, username=email, email=email,
                                             password=password)
             # Assign the user to participant permission group
             user.groups.add(PermissionGroup.participant.get_django_group())
             user.save()
-
-            p = Participant(user=user)
-            p.can_receive_invitations = random.choice([True, False])
-            p.gender = random.choice(['M', 'F'])
             year = random.choice(range(1980, 1995))
             month = random.choice(range(1, 12))
             day = random.choice(range(1, 28))
             random_date = datetime(year, month, day)
-            p.birthdate = random_date
-            p.major = 'CS'
-            p.class_status = random.choice(
-                ['Freshman', 'Sophomore', 'Junior', 'Senior'])
-            p.institution = Institution.objects.get(
-                name="Arizona State University")
+            p = Participant(
+                user=user,
+                can_receive_invitations=random.choice([True, False]),
+                gender=random.choice(['M', 'F']),
+                birthdate=random_date,
+                major='Complex Adaptive Systems',
+                class_status=random.choice(['Freshman', 'Sophomore', 'Junior', 'Senior']),
+                institution=institution
+            )
             participants.append(p)
         Participant.objects.bulk_create(participants)
-        # logger.debug("TOTAL PARTICIPANTS %d", len(Participant.objects.all()))
+        return participants
 
-    def setup_experiment_sessions(self):
+    def setup_experiment_sessions(self, capacity=1, location="Online", number=4, start_date=None):
         e = self.experiment
-        es_pk = []
-        for x in xrange(4):
-            es = ExperimentSession()
-            es.experiment_metadata = e.experiment_metadata
-            year = date.today().year
-            month = date.today().month
-            day = random.choice(range(1, 29))
-            random_date = datetime(year, month, day)
-            es.scheduled_date = random_date
-            es.scheduled_end_date = random_date
-            es.capacity = 1
-            es.location = "Online"
-            es.creator = self.demo_experimenter.user
-            es.date_created = datetime.now()
-            es.save()
-            es_pk.append(es.pk)
-        return es_pk
+        experiment_session_pks = []
+        today = date.today()
+        year = today.year
+        month = today.month
+        for x in xrange(number):
+            if start_date is None:
+                day = random.choice(range(1, 29))
+                start_date = datetime(year, month, day)
+            es = ExperimentSession.objects.create(
+                experiment_metadata=e.experiment_metadata,
+                scheduled_date=start_date,
+                scheduled_end_date=start_date,
+                capacity=capacity,
+                location=location,
+                creator=e.experimenter.user,
+            )
+            experiment_session_pks.append(es.pk)
+        return experiment_session_pks
 
     def get_final_participants(self):
         potential_participants = Participant.objects.invitation_eligible(self.experiment_metadata.pk,
@@ -296,13 +297,21 @@ class SubjectPoolTest(BaseVcwebTest):
 
     def setup_participant_signup(self, participant_list, es_pk_list):
         participant_list = participant_list[:25]
-        for person in participant_list:
-            inv = Invitation.objects.filter(participant=person,
+        participant_signups = []
+        for participant in participant_list:
+            inv = Invitation.objects.filter(participant=participant,
                                             experiment_session__pk__in=es_pk_list).order_by('?')[:1]
-            ps = ParticipantSignup()
-            ps.invitation = inv[0]
-            ps.attendance = random.choice([0, 1, 2, 3])
-            ps.save()
+            participant_signups.append(
+                ParticipantSignup(invitation=inv[0],
+                                  attendance=random.choice([0, 1, 2, 3])))
+        ParticipantSignup.objects.bulk_create(participant_signups)
+
+    def initialize(self, number_of_participants=50, start_date=None, number_of_experiment_sessions=5):
+        es_pks = self.setup_experiment_sessions(start_date=start_date, number=number_of_experiment_sessions)
+        self.setup_participants(number=number_of_participants)
+        participants = Participant.objects.all()
+        self.setup_invitations(participants, es_pks)
+        self.setup_participant_signup(participants, es_pks)
 
     def setup_invitations(self, participants, es_pk_list):
         invitations = []

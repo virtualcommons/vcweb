@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import logging
 
 from django.core import serializers
@@ -7,7 +7,8 @@ from .common import BaseVcwebTest, SubjectPoolTest
 from .. import signals
 from ..models import (ParticipantRoundDataValue, Participant, ParticipantExperimentRelationship,
                       BookmarkedExperimentMetadata, ParticipantGroupRelationship, ExperimentMetadata, Parameter,
-                      RoundParameterValue, Institution, Invitation, ParticipantSignup, DefaultValue,)
+                      RoundParameterValue, Institution, Invitation, ParticipantSignup, DefaultValue,
+                      create_reminder_emails)
 
 logger = logging.getLogger(__name__)
 
@@ -391,8 +392,7 @@ class RoundConfigurationTest(BaseVcwebTest):
 
         # Parameter.type generates the value_field_name property by
         # concatenating the name of the type with _value
-        sample_values_for_type = {
-            'int': 3, 'float': 3.0, 'string': 'ich bin ein ooga booga', 'boolean': True}
+        sample_values_for_type = {'int': 3, 'float': 3.0, 'string': 'ich bin ein ooga booga', 'boolean': True}
         for value_type in ('int', 'float', 'string', 'boolean'):
             p = self.create_parameter(scope='round',
                                       name="test_round_parameter_%s" % value_type,
@@ -403,8 +403,7 @@ class RoundConfigurationTest(BaseVcwebTest):
             rp = RoundParameterValue.objects.create(parameter=p, round_configuration=e.current_round,
                                                     value=sample_values_for_type[value_type])
             self.assertEqual(rp.value, sample_values_for_type[value_type])
-            self.assertEqual(
-                getattr(rp, field_name), sample_values_for_type[value_type])
+            self.assertEqual(getattr(rp, field_name), sample_values_for_type[value_type])
 
 
 class SubjectPoolInvitationTest(SubjectPoolTest):
@@ -575,3 +574,15 @@ class ExperimenterTest(BaseVcwebTest):
         self.assertFalse(e.is_valid(ee))
         self.assertFalse(ee.is_valid(e))
         self.assertTrue(ee.is_valid())
+
+
+class SubjectPoolReminderTest(SubjectPoolTest):
+
+    def test(self):
+        tomorrow = date.today() + timedelta(1)
+        self.initialize(number_of_experiment_sessions=5, start_date=tomorrow)
+        emails = create_reminder_emails()
+        self.assertEqual(len(emails), 5)
+        for email in emails:
+            self.assertTrue('automated email to remind you' in email.body)
+            self.assertTrue(len(email.recipients()) > 0)

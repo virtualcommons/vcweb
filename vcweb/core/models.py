@@ -829,7 +829,7 @@ class Experiment(models.Model):
         try:
             return RoundData.objects.select_related('round_configuration').get(experiment=self, **ps)
         except RoundData.DoesNotExist:
-            logger.error("No round data exists yet for round configuration %s", round_configuration)
+            logger.warning("No round data exists yet for round configuration %s", round_configuration)
             return None
 
     @property
@@ -3131,7 +3131,8 @@ def send_markdown_email(**kwargs):
 def create_markdown_email(template=None, context=None, subject=None, from_email=settings.DEFAULT_FROM_EMAIL,
                           to_email=None, bcc=None):
     """
-    Utility function to send emails. Expects a plaintext markdown template and converts it into an HTML message as well.
+    Creates and returns an EmailMultiAlternatives object. Assumes template is markdown, converts it to HTML and attaches
+    it.
     """
     plaintext_template = get_template(template)
     c = Context(context)
@@ -3151,16 +3152,24 @@ def send_reminder_emails(sender, start=None, **kwargs):
     if not settings.ENVIRONMENT.is_production:
         logger.debug("not sending reminder emails in non-prod mode")
         return
+    mail.get_connection().send_messages(create_reminder_emails())
+
+
+def create_reminder_emails():
     tomorrow = date.today() + timedelta(days=1)
     start_date_time = datetime.combine(tomorrow, time.min)
     end_date_time = datetime.combine(tomorrow, time.max)
     es_list = ExperimentSession.objects.filter(scheduled_date__range=(start_date_time, end_date_time))
+    emails = []
     for es in es_list:
         participant_emails = ParticipantSignup.objects.filter(invitation__experiment_session=es).values_list(
-            'invitation__participant__email', flat=True)
-        logger.debug("subject pool sending reminder emails to %s", participant_emails)
-        send_markdown_email("email/reminder-email.txt", {"session": es}, "Reminder Email",
-                            settings.DEFAULT_FROM_EMAIL, participant_emails)
+            'invitation__participant__user__email', flat=True)
+        logger.debug("SUBJECT POOL: sending reminder emails to %s", participant_emails)
+        emails.append(create_markdown_email(template="email/reminder-email.txt",
+                                            context={"session": es},
+                                            subject="vcweb experiment reminder",
+                                            to_email=participant_emails))
+    return emails
 
 
 @receiver(signals.system_daily_tick, dispatch_uid='update-daily-experiments')
