@@ -6,10 +6,8 @@ from .views import (
 )
 
 urlpatterns = [
-    url(r'^(?P<experiment_id>\d+)/participate/$',
-        participate, name='participate'),
-    url(r'^(?P<pk>\d+)/download-payment-data/$',
-        download_payment_data, name='download_payment_data'),
+    url(r'^(?P<experiment_id>\d+)/participate/$', participate, name='participate'),
+    url(r'^(?P<pk>\d+)/download-payment-data/$', download_payment_data, name='download_payment_data'),
     # used only by the increasingly out-of-date mobile UI
     url(r'^api/view-model/(?P<participant_group_id>\d+)?', get_view_model),
     url(r'^api/perform-activity$', perform_activity, name='perform_activity'),

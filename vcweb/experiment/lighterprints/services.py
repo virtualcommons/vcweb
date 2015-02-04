@@ -15,7 +15,8 @@ from vcweb.core.models import (ParticipantRoundDataValue, ChatMessage, Like, Com
 from .models import (Activity, is_scheduled_activity_experiment, get_activity_availability_cache, has_leaderboard,
                      get_activity_performed_parameter, ActivityAvailability, is_linear_public_good_experiment,
                      get_activity_points_cache, get_footprint_level, get_group_threshold, get_experiment_completed_dv,
-                     get_footprint_level_dv, get_treatment_type, is_community_treatment, is_high_school_treatment,)
+                     get_footprint_level_dv, get_treatment_type, is_community_treatment, is_high_school_treatment,
+                     is_level_based_experiment,)
 
 import itertools
 import locale
@@ -60,8 +61,7 @@ class ActivityStatusList(object):
         self.all_unlocked_activities = Activity.objects.unlocked(self.round_configuration,
                                                                  scheduled=self.has_scheduled_activities,
                                                                  level=group_level)
-        all_unlocked_activity_ids = self.all_unlocked_activities.values_list(
-            'pk', flat=True)
+        all_unlocked_activity_ids = self.all_unlocked_activities.values_list('pk', flat=True)
         self.today = datetime.combine(date.today(), time())
         self.current_time = datetime.now().time()
         # first grab all the activities that have already been completed today
@@ -112,6 +112,8 @@ class ActivityStatusList(object):
 
 class EmailGenerator(object):
 
+    email_template = 'lighterprints/email/group-summary-email.txt'
+
     def __init__(self, group_scores):
         self.yesterday = date.today() - timedelta(1)
         self.experimenter_email = settings.DEFAULT_FROM_EMAIL
@@ -126,10 +128,6 @@ class EmailGenerator(object):
 
     def should_generate_emails(self, group):
         return True
-
-    @property
-    def email_template(self):
-        return 'lighterprints/email/group-summary-email.txt'
 
     def get_context(self, group):
         experiment = self.experiment
@@ -204,6 +202,8 @@ class LevelBasedEmailGenerator(EmailGenerator):
 
 class ScheduledActivityEmailGenerator(EmailGenerator):
 
+    email_template = 'lighterprints/email/scheduled-activity/group-summary-email.txt'
+
     def get_context(self, group):
         context = super(ScheduledActivityEmailGenerator, self).get_context(group)
         # these aren't used for linear public good experiments introduced in Spring 2013
@@ -218,19 +218,10 @@ class ScheduledActivityEmailGenerator(EmailGenerator):
         ))
         return context
 
-    @property
-    def email_template(self):
-        return 'lighterprints/email/scheduled-activity/group-summary-email.txt'
-
 
 class CommunityEmailGenerator(EmailGenerator):
 
-    def should_generate_emails(self, group):
-        return True
-
-    @property
-    def email_template(self):
-        return 'lighterprints/email/community/group-summary-email.txt'
+    email_template = 'lighterprints/email/community/group-summary-email.txt'
 
 
 class GroupScores(object):
@@ -278,14 +269,13 @@ class GroupScores(object):
         self.treatment_type = get_treatment_type(experiment_configuration=experiment_configuration).string_value
         self.initialize_scores(participant_group_relationship)
 
-    # FIXME: refactor this logic strewn across models.py and services.py
     @property
     def is_level_based_experiment(self):
-        return self.treatment_type == 'LEVEL_BASED'
+        return is_level_based_experiment(treatment_type=self.treatment_type)
 
     @property
     def has_scheduled_activities(self):
-        return self.treatment_type != 'LEVEL_BASED'
+        return is_scheduled_activity_experiment(treatment_type=self.treatment_type)
 
     @property
     def is_high_school_treatment(self):

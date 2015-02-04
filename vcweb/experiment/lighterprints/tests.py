@@ -6,8 +6,10 @@ from vcweb.core.tests import BaseVcwebTest
 from vcweb.core.models import ParticipantRoundDataValue, ChatMessage, Like, Comment
 from .models import (Activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter,
                      get_footprint_level, get_performed_activity_ids, get_treatment_type_parameter,
-                     is_scheduled_activity_experiment, is_level_based_experiment, is_high_school_treatment)
+                     get_leaderboard_parameter, is_scheduled_activity_experiment, is_level_based_experiment,
+                     is_high_school_treatment, is_community_treatment)
 from .services import (GroupScores, get_individual_points, GroupActivity)
+from .views import (LighterprintsViewModel, LevelBasedViewModel, CommunityViewModel, HighSchoolViewModel)
 
 
 logger = logging.getLogger(__name__)
@@ -15,16 +17,19 @@ logger = logging.getLogger(__name__)
 
 class BaseTest(BaseVcwebTest):
 
-    def setUp(self, treatment_type='LEADERBOARD', **kwargs):
-        super(BaseTest, self).setUp(
-            experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
+    def setUp(self, treatment_type='LEVEL_BASED', **kwargs):
+        super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
         cache.clear()
         ec = self.experiment_configuration
         ec.has_daily_rounds = True
-        ec.set_parameter_value(
-            parameter=get_treatment_type_parameter(), string_value=treatment_type)
+        ec.set_parameter_value(parameter=get_leaderboard_parameter(), boolean_value=True)
+        self.set_treatment_type(treatment_type)
+        ec.round_configuration_set.update(initialize_data_values=True)
         ec.save()
-        ec.round_configuration_set.all().update(initialize_data_values=True)
+
+    def set_treatment_type(self, treatment_type):
+        self.experiment_configuration.set_parameter_value(parameter=get_treatment_type_parameter(),
+                                                          string_value=treatment_type)
 
     class Meta:
         abstract = True
@@ -46,8 +51,7 @@ class LevelBasedTest(BaseTest):
             self.assertTrue(self.client.login(username=participant.email, password='test'),
                             "%s failed to login" % participant)
             for activity in activities:
-                expected_success = activity.is_available_for(
-                    participant_group_relationship, rd)
+                expected_success = activity.is_available_for(participant_group_relationship, rd)
                 if expected_success:
                     performed_activities.add(activity)
                 response = self.post(self.reverse('lighterprints:perform_activity'), {
@@ -60,16 +64,53 @@ class LevelBasedTest(BaseTest):
         return performed_activities
 
     def setUp(self, **kwargs):
-        super(LevelBasedTest, self).setUp(
-            treatment_type='LEVEL_BASED', **kwargs)
+        super(LevelBasedTest, self).setUp(treatment_type='LEVEL_BASED', **kwargs)
+
+
+class CommunityTreatmentTest(BaseTest):
+
+    def setUp(self, **kwargs):
+        super(CommunityTreatmentTest, self).setUp(treatment_type='COMMUNITY', **kwargs)
+
+    def test_treatment_type(self):
+        e = self.experiment
+        self.assertFalse(is_level_based_experiment(e))
+        self.assertFalse(is_scheduled_activity_experiment(e))
+        self.assertFalse(is_high_school_treatment(e))
+        self.assertTrue(is_community_treatment(e))
+
+    def test_view_model(self):
+        e = self.experiment
+        # perform activities
+        for pgr in e.participant_group_relationships:
+            lvm = LighterprintsViewModel.create(pgr)
+            self.assertEqual(lvm.template_name, CommunityViewModel.template_name)
+            # make more assertions on community view model activities and score
+
 
 
 class LevelTreatmentTest(LevelBasedTest):
 
     def test_treatment_type(self):
-        self.assertTrue(is_level_based_experiment(self.experiment))
-        self.assertFalse(is_scheduled_activity_experiment(self.experiment))
-        self.assertFalse(is_high_school_treatment(self.experiment))
+        e = self.experiment
+        self.assertTrue(is_level_based_experiment(e))
+        self.assertFalse(is_scheduled_activity_experiment(e))
+        self.assertFalse(is_high_school_treatment(e))
+        self.assertFalse(is_community_treatment(e))
+
+    def test_view_model(self):
+        e = self.experiment
+        for pgr in e.participant_group_relationships:
+            lvm = LighterprintsViewModel.create(pgr)
+            self.assertEqual(lvm.template_name, LevelBasedViewModel.template_name)
+
+    def test_participate(self):
+        e = self.experiment
+        e.activate()
+        for pgr in e.participant_group_relationships:
+            self.assertTrue(self.login_participant(pgr.participant))
+            response = self.get(e.participant_url, follow=True)
+            self.assertEqual(response.status_code, 200)
 
     def test_footprint_level_initialized(self):
         e = self.experiment
@@ -81,13 +122,12 @@ class LevelTreatmentTest(LevelBasedTest):
             e.advance_to_next_round()
 
 
-class ActivityViewTest(LevelBasedTest):
+class ActivityViewTest(BaseTest):
 
     def test_list(self):
         for pgr in self.experiment.participant_group_relationships:
             participant = pgr.participant
-            response = self.client.get(
-                '/lighterprints/activity/list', {'format': 'json'})
+            response = self.client.get('/lighterprints/activity/list', {'format': 'json'})
             self.assertEqual(response.status_code, 403)
             self.client.login(username=participant.email, password='test')
             response = self.client.get('/lighterprints/activity/list',
@@ -153,7 +193,6 @@ class GroupActivityTest(LevelBasedTest):
         group_scores = GroupScores(e)
         messages = list(group_scores.generate_daily_update_messages())
         self.assertEqual(len(messages), len(e.groups) * e.experiment_configuration.max_group_size)
-        logger.error("messages: %s", messages)
 
 
 class PerformActivityTest(LevelBasedTest):
@@ -229,9 +268,9 @@ class PerformActivityTest(LevelBasedTest):
                                                     target_data_value__id=performed_activity_id).exists())
 
 
-class GroupScoreTest(LevelBasedTest):
+class LevelBasedGroupScoreTest(LevelBasedTest):
 
-    def test_group_score(self):
+    def test(self):
         e = self.experiment
         e.activate()
         performed_activities = self.perform_activities()
@@ -253,7 +292,7 @@ class GroupScoreTest(LevelBasedTest):
             self.assertEqual(group_scores.total_daily_points(group), 0)
 
 
-class TestRoundEndedSignal(LevelBasedTest):
+class TestRoundEndedSignal(BaseTest):
 
     def test_system_daily_tick(self):
         self.experiment.activate()
@@ -263,11 +302,12 @@ class TestRoundEndedSignal(LevelBasedTest):
         self.assertEqual(self.reload_experiment().current_round.sequence_number, 2)
 
 
-class ChatMessageTest(LevelBasedTest):
+class ChatMessageTest(BaseTest):
 
-    def test_chat_and_likes(self):
-        self.experiment.activate()
-        for pgr in self.experiment.participant_group_relationships:
+    def test_post_chat(self):
+        e = self.experiment
+        e.activate()
+        for pgr in e.participant_group_relationships:
             message = "Chat message from %s" % pgr
             self.login_participant(pgr.participant)
             response = self.post('lighterprints:post_chat',
@@ -277,15 +317,26 @@ class ChatMessageTest(LevelBasedTest):
             self.assertEqual(ChatMessage.objects.get(participant_group_relationship=pgr).string_value, message)
 
 
-class LikeTest(LevelBasedTest):
+class LikeTest(BaseTest):
 
     def test(self):
-        self.experiment.activate()
-        for pgr in self.experiment.participant_group_relationships:
+        e = self.experiment
+        e.activate()
+        for pgr in e.participant_group_relationships:
             message = "Chat message from %s" % pgr
-            self.login_participant(pgr.participant)
+            self.assertTrue(self.login_participant(pgr.participant))
             response = self.post('lighterprints:post_chat',
                                  {'participant_group_id': pgr.pk, 'message': message})
             self.assertEqual(response.status_code, 200)
             self.assertTrue(json.loads(response.content)['success'])
             self.assertEqual(ChatMessage.objects.get(participant_group_relationship=pgr).string_value, message)
+        for pgr in e.participant_group_relationships:
+            for cm in ChatMessage.objects.for_group(pgr.group):
+                if cm.participant_group_relationship != pgr:
+                    self.assertTrue(self.login_participant(pgr.participant))
+                    response = self.post('lighterprints:like',
+                                         {'participant_group_id': pgr.pk,  'target_id': cm.pk})
+                    self.assertEqual(response.status_code, 200)
+                    self.assertTrue(json.loads(response.content)['success'])
+                    self.assertTrue(Like.objects.filter(participant_group_relationship__pk=pgr.pk,
+                                                        target_data_value__pk=cm.pk).exists())

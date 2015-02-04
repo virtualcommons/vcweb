@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class LighterprintsViewModel(object):
+    template_name = 'lighterprints/participate.html'
 
     """ FIXME: more refactoring needed, continue to merge this with GroupScores """
 
@@ -77,10 +78,6 @@ class LighterprintsViewModel(object):
     def group_data(self):
         return self.group_scores.get_group_data_list()
 
-    @property
-    def scores(self):
-        return self.group_scores.scores_dict[self.group]
-
     def to_dict(self):
         (hours_left, minutes_left) = get_time_remaining()
         own_group = self.group
@@ -110,19 +107,12 @@ class LighterprintsViewModel(object):
             'totalPoints': self.total_participant_points,
         }
 
-    @property
-    def template_name(self):
-        return 'lighterprints/participate.html'
-
     def to_json(self):
         return dumps(self.to_dict())
 
 
 class LevelBasedViewModel(LighterprintsViewModel):
-
-    @property
-    def template_name(self):
-        return 'lighterprints/level-based.html'
+    template_name = 'lighterprints/level-based.html'
 
 
 class CommunityViewModel(LighterprintsViewModel):
@@ -144,6 +134,7 @@ class CommunityViewModel(LighterprintsViewModel):
 
 
 class HighSchoolViewModel(LighterprintsViewModel):
+    template_name = 'lighterprints/highschool.html'
 
     @property
     def activities(self):
@@ -187,10 +178,6 @@ class HighSchoolViewModel(LighterprintsViewModel):
             'totalPoints': group_scores.total_participant_points,
             'surveyUrl': self.round_configuration.build_survey_url(pid=participant_group_relationship.pk),
         }
-
-    @property
-    def template_name(self):
-        return 'lighterprints/highschool.html'
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
@@ -330,13 +317,14 @@ def get_view_model(request, participant_group_id=None):
         # check that authenticated participant is the same as the participant whose data is being requested
         logger.warning("user %s tried to access view model for %s", request.user.participant, pgr)
         raise PermissionDenied("You don't appear to have permission to access this experiment.")
-    return JsonResponse({'success': True, 'viewModel': LighterprintsViewModel(pgr, pgr.experiment).to_dict()})
+    return JsonResponse({'success': True, 'viewModel': LighterprintsViewModel.create(pgr).to_dict()})
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)
 def participate(request, experiment_id=None):
     user = request.user
     participant = user.participant
+    logger.error("participate for user: %s and experiment id %s", user, experiment_id)
     experiment = get_object_or_404(Experiment, pk=experiment_id,
                                    experiment_metadata=get_lighterprints_experiment_metadata())
     if experiment.is_active:
