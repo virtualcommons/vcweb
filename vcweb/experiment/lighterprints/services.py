@@ -84,15 +84,16 @@ class ActivityStatusList(object):
 
     def initialize_activity_dict_list(self):
         activity_availability_cache = get_activity_availability_cache()
-        self.activity_dict_list = []
+        adl = []
         for activity in self.activities:
             activity_dict = activity.to_dict()
             activity_status = self.get_activity_status(activity)
             activity_dict['status'] = activity_status
             activity_dict['availableNow'] = activity_status == 'available'
             activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
-            self.activity_dict_list.append(activity_dict)
-        self.activity_dict_list.sort(key=_activity_status_sort_key)
+            adl.append(activity_dict)
+        adl.sort(key=_activity_status_sort_key)
+        self.activity_dict_list = adl
 
     def get_activity_status(self, activity):
         activity_status = 'locked'
@@ -161,7 +162,7 @@ class EmailGenerator(object):
             context['individual_points'] = get_individual_points(pgr, round_data)
             plaintext_content = plaintext_template.render(context)
             html_content = markdown.markdown(plaintext_content)
-            subject = 'Lighter Footprints Summary for %s' % self.yesterday
+            subject = 'Lighter Footprints Summary for %s' % self.yesterday.strftime('%b. %d %Y')
             to_address = [experimenter_email, pgr.participant.email]
             msg = EmailMultiAlternatives(subject, plaintext_content, experimenter_email, to_address)
             msg.attach_alternative(html_content, 'text/html')
@@ -222,6 +223,16 @@ class ScheduledActivityEmailGenerator(EmailGenerator):
 class CommunityEmailGenerator(EmailGenerator):
 
     email_template = 'lighterprints/email/community/group-summary-email.txt'
+
+    def get_context(self, group):
+        context = super(CommunityEmailGenerator, self).get_context(group)
+        # these aren't used for linear public good experiments introduced in Spring 2013
+        context.update(dict(
+            experiment_completed=self.experiment.is_last_round,
+            average_daily_points=self.average_daily_points(group),
+            average_daily_cluster_points=self.average_daily_cluster_points(group=group),
+        ))
+        return context
 
 
 class GroupScores(object):

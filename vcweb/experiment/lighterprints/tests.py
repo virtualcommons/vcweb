@@ -73,6 +73,7 @@ class CommunityTreatmentTest(BaseTest):
 
     def test_treatment_type(self):
         e = self.experiment
+        e.activate()
         self.assertFalse(is_level_based_experiment(e))
         self.assertTrue(is_scheduled_activity_experiment(e))
         self.assertFalse(is_high_school_treatment(e))
@@ -80,13 +81,55 @@ class CommunityTreatmentTest(BaseTest):
 
     def test_view_model(self):
         e = self.experiment
+        e.activate()
         # perform activities
+        activities = Activity.objects.scheduled(e.current_round)
+        current_round_data = e.current_round_data
         for pgr in e.participant_group_relationships:
             lvm = LighterprintsViewModel.create(pgr)
             self.assertEqual(lvm.template_name, CommunityViewModel.template_name)
+            ChatMessage.objects.create(participant_group_relationship=pgr,
+                                       string_value='Harrowing message from %s' % pgr)
+            for a in activities:
+                logger.error("%s performing activity %s", pgr, a)
+                ParticipantRoundDataValue.objects.create(
+                    parameter=get_activity_performed_parameter(),
+                    participant_group_relationship=pgr,
+                    round_data=current_round_data,
+                    int_value=a.pk
+                )
             # make more assertions on community view model activities and score
             self.assertEqual(type(lvm.email_generator), CommunityEmailGenerator)
 
+        gs = GroupScores(e)
+        for group in e.groups:
+            summary_emails = gs.email_generator.generate(group)
+            for email in summary_emails:
+                logger.error("email to %s with subject %s, body: %s", email.recipients(), email.subject, email.body)
+                self.assertTrue(email.recipients())
+                self.assertTrue("5 chat messages were posted" in email.body)
+
+
+class HighSchoolTreatmentTest(BaseTest):
+
+    def setUp(self, **kwargs):
+        super(HighSchoolTreatmentTest, self).setUp(treatment_type='HIGH_SCHOOL', **kwargs)
+
+    def test_treatment_type(self):
+        e = self.experiment
+        e.activate()
+        self.assertFalse(is_level_based_experiment(e))
+        self.assertTrue(is_scheduled_activity_experiment(e))
+        self.assertTrue(is_high_school_treatment(e))
+        self.assertFalse(is_community_treatment(e))
+
+    def test_view_model(self):
+        e = self.experiment
+        e.activate()
+        for pgr in e.participant_group_relationships:
+            lvm = LighterprintsViewModel.create(pgr)
+            self.assertEqual(lvm.template_name, HighSchoolViewModel.template_name)
+            self.assertEqual(type(lvm), HighSchoolViewModel)
 
 
 class LevelTreatmentTest(LevelBasedTest):
